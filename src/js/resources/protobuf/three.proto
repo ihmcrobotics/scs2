@@ -7,8 +7,7 @@ option java_package = "us.ihmc.scs2.protobuf";
 option java_outer_classname = "ThreeProto";
 
 message Color {
-   int32 rgba = 1;
-   string webcolor = 2;
+   string webcolor = 1;
 }
 
 message BoxGeometry {

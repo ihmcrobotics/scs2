@@ -12,6 +12,7 @@ public class SessionVisualizerJS
       toolkit = new SessionVisualizerToolkitJS();
       toolkit.getJavalinManager().start(4567);
       multiSessionManager = new MultiSessionManagerJS(toolkit);
+      new SessionSimpleControlsControllerJS(toolkit.getMessager(), toolkit.getTopics(), toolkit.getJavalinManager());
    }
 
    public void startSession(Session session)

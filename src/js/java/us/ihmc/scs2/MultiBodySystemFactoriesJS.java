@@ -75,7 +75,7 @@ public class MultiBodySystemFactoriesJS
 
    private static void loadRigidBodyGraphic(List<VisualDefinition> visualDefinitions, RigidBodyJS rigidBodyJS)
    {
-      MeshGroup meshGroup = ThreeProtoTools.toProtoMeshGroup(visualDefinitions);
+      MeshGroup meshGroup = ThreeProtoTools.toProtoMeshGroup(rigidBodyJS.getName(), visualDefinitions);
       ReferenceFrame graphicFrame = rigidBodyJS.isRootBody() ? rigidBodyJS.getBodyFixedFrame() : rigidBodyJS.getParentJoint().getFrameAfterJoint();
 
       if (meshGroup != null)

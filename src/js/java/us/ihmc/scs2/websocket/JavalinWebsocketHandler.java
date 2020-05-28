@@ -17,6 +17,7 @@ public class JavalinWebsocketHandler
    private final ConcurrentLinkedQueue<Session> activeSessions = new ConcurrentLinkedQueue<>();
    private final ConcurrentLinkedQueue<Consumer<WsConnectContext>> onConnectHandlers = new ConcurrentLinkedQueue<>();
    private final ConcurrentLinkedQueue<Consumer<WsCloseContext>> onCloseHandlers = new ConcurrentLinkedQueue<>();
+   private final ConcurrentLinkedQueue<Consumer<WsMessageContext>> onMessageHandlers = new ConcurrentLinkedQueue<>();
 
    public JavalinWebsocketHandler()
    {
@@ -54,6 +55,16 @@ public class JavalinWebsocketHandler
       onCloseHandlers.remove(handler);
    }
 
+   public void addOnMessage(Consumer<WsMessageContext> handler)
+   {
+      onMessageHandlers.add(handler);
+   }
+
+   public void removeOnMessage(Consumer<WsMessageContext> handler)
+   {
+      onMessageHandlers.remove(handler);
+   }
+
    public ConcurrentLinkedQueue<Session> getActiveSessions()
    {
       return activeSessions;
@@ -67,7 +78,7 @@ public class JavalinWebsocketHandler
 
    private void handleMessage(WsMessageContext context)
    {
-
+      onMessageHandlers.forEach(handler -> handler.accept(context));
    }
 
    private void handleBinaryMessage(WsBinaryMessageContext context)

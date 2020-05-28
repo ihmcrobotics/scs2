@@ -19,18 +19,12 @@ public final class ThreeProto {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>int32 rgba = 1;</code>
-     * @return The rgba.
-     */
-    int getRgba();
-
-    /**
-     * <code>string webcolor = 2;</code>
+     * <code>string webcolor = 1;</code>
      * @return The webcolor.
      */
     java.lang.String getWebcolor();
     /**
-     * <code>string webcolor = 2;</code>
+     * <code>string webcolor = 1;</code>
      * @return The bytes for webcolor.
      */
     com.google.protobuf.ByteString
@@ -82,12 +76,7 @@ public final class ThreeProto {
             case 0:
               done = true;
               break;
-            case 8: {
-
-              rgba_ = input.readInt32();
-              break;
-            }
-            case 18: {
+            case 10: {
               java.lang.String s = input.readStringRequireUtf8();
 
               webcolor_ = s;
@@ -125,20 +114,10 @@ public final class ThreeProto {
               us.ihmc.scs2.protobuf.ThreeProto.Color.class, us.ihmc.scs2.protobuf.ThreeProto.Color.Builder.class);
     }
 
-    public static final int RGBA_FIELD_NUMBER = 1;
-    private int rgba_;
-    /**
-     * <code>int32 rgba = 1;</code>
-     * @return The rgba.
-     */
-    public int getRgba() {
-      return rgba_;
-    }
-
-    public static final int WEBCOLOR_FIELD_NUMBER = 2;
+    public static final int WEBCOLOR_FIELD_NUMBER = 1;
     private volatile java.lang.Object webcolor_;
     /**
-     * <code>string webcolor = 2;</code>
+     * <code>string webcolor = 1;</code>
      * @return The webcolor.
      */
     public java.lang.String getWebcolor() {
@@ -154,7 +133,7 @@ public final class ThreeProto {
       }
     }
     /**
-     * <code>string webcolor = 2;</code>
+     * <code>string webcolor = 1;</code>
      * @return The bytes for webcolor.
      */
     public com.google.protobuf.ByteString
@@ -185,11 +164,8 @@ public final class ThreeProto {
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (rgba_ != 0) {
-        output.writeInt32(1, rgba_);
-      }
       if (!getWebcolorBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, webcolor_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, webcolor_);
       }
       unknownFields.writeTo(output);
     }
@@ -200,12 +176,8 @@ public final class ThreeProto {
       if (size != -1) return size;
 
       size = 0;
-      if (rgba_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(1, rgba_);
-      }
       if (!getWebcolorBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, webcolor_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, webcolor_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -222,8 +194,6 @@ public final class ThreeProto {
       }
       us.ihmc.scs2.protobuf.ThreeProto.Color other = (us.ihmc.scs2.protobuf.ThreeProto.Color) obj;
 
-      if (getRgba()
-          != other.getRgba()) return false;
       if (!getWebcolor()
           .equals(other.getWebcolor())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
@@ -237,8 +207,6 @@ public final class ThreeProto {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + RGBA_FIELD_NUMBER;
-      hash = (53 * hash) + getRgba();
       hash = (37 * hash) + WEBCOLOR_FIELD_NUMBER;
       hash = (53 * hash) + getWebcolor().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
@@ -374,8 +342,6 @@ public final class ThreeProto {
       @java.lang.Override
       public Builder clear() {
         super.clear();
-        rgba_ = 0;
-
         webcolor_ = "";
 
         return this;
@@ -404,7 +370,6 @@ public final class ThreeProto {
       @java.lang.Override
       public us.ihmc.scs2.protobuf.ThreeProto.Color buildPartial() {
         us.ihmc.scs2.protobuf.ThreeProto.Color result = new us.ihmc.scs2.protobuf.ThreeProto.Color(this);
-        result.rgba_ = rgba_;
         result.webcolor_ = webcolor_;
         onBuilt();
         return result;
@@ -454,9 +419,6 @@ public final class ThreeProto {
 
       public Builder mergeFrom(us.ihmc.scs2.protobuf.ThreeProto.Color other) {
         if (other == us.ihmc.scs2.protobuf.ThreeProto.Color.getDefaultInstance()) return this;
-        if (other.getRgba() != 0) {
-          setRgba(other.getRgba());
-        }
         if (!other.getWebcolor().isEmpty()) {
           webcolor_ = other.webcolor_;
           onChanged();
@@ -490,39 +452,9 @@ public final class ThreeProto {
         return this;
       }
 
-      private int rgba_ ;
-      /**
-       * <code>int32 rgba = 1;</code>
-       * @return The rgba.
-       */
-      public int getRgba() {
-        return rgba_;
-      }
-      /**
-       * <code>int32 rgba = 1;</code>
-       * @param value The rgba to set.
-       * @return This builder for chaining.
-       */
-      public Builder setRgba(int value) {
-        
-        rgba_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>int32 rgba = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearRgba() {
-        
-        rgba_ = 0;
-        onChanged();
-        return this;
-      }
-
       private java.lang.Object webcolor_ = "";
       /**
-       * <code>string webcolor = 2;</code>
+       * <code>string webcolor = 1;</code>
        * @return The webcolor.
        */
       public java.lang.String getWebcolor() {
@@ -538,7 +470,7 @@ public final class ThreeProto {
         }
       }
       /**
-       * <code>string webcolor = 2;</code>
+       * <code>string webcolor = 1;</code>
        * @return The bytes for webcolor.
        */
       public com.google.protobuf.ByteString
@@ -555,7 +487,7 @@ public final class ThreeProto {
         }
       }
       /**
-       * <code>string webcolor = 2;</code>
+       * <code>string webcolor = 1;</code>
        * @param value The webcolor to set.
        * @return This builder for chaining.
        */
@@ -570,7 +502,7 @@ public final class ThreeProto {
         return this;
       }
       /**
-       * <code>string webcolor = 2;</code>
+       * <code>string webcolor = 1;</code>
        * @return This builder for chaining.
        */
       public Builder clearWebcolor() {
@@ -580,7 +512,7 @@ public final class ThreeProto {
         return this;
       }
       /**
-       * <code>string webcolor = 2;</code>
+       * <code>string webcolor = 1;</code>
        * @param value The bytes for webcolor to set.
        * @return This builder for chaining.
        */
@@ -9325,37 +9257,37 @@ public final class ThreeProto {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\013three.proto\022\010protobuf\032\014euclid.proto\"\'\n" +
-      "\005Color\022\014\n\004rgba\030\001 \001(\005\022\020\n\010webcolor\030\002 \001(\t\"/" +
-      "\n\013BoxGeometry\022 \n\004size\030\001 \001(\0132\022.protobuf.V" +
-      "ector3D\"G\n\014ConeGeometry\022\016\n\006radius\030\001 \001(\001\022" +
-      "\016\n\006height\030\002 \001(\001\022\027\n\017radial_segments\030\003 \001(\005" +
-      "\"f\n\020CylinderGeometry\022\022\n\nradius_top\030\001 \001(\001" +
-      "\022\025\n\rradius_bottom\030\002 \001(\001\022\016\n\006height\030\003 \001(\001\022" +
-      "\027\n\017radial_segments\030\004 \001(\005\"Q\n\016SphereGeomet" +
-      "ry\022\016\n\006radius\030\001 \001(\001\022\026\n\016width_segments\030\002 \001" +
-      "(\005\022\027\n\017height_segments\030\003 \001(\005\"m\n\rTorusGeom" +
-      "etry\022\016\n\006radius\030\001 \001(\001\022\014\n\004tube\030\002 \001(\001\022\027\n\017ra" +
-      "dial_segments\030\003 \001(\005\022\030\n\020tubular_segments\030" +
-      "\004 \001(\005\022\013\n\003arc\030\005 \001(\001\"\307\001\n\021ModelFileGeometry" +
-      "\022\020\n\010filename\030\001 \001(\t\0226\n\tsubmeshes\030\002 \003(\0132#." +
-      "protobuf.ModelFileGeometry.SubMesh\022\034\n\024re" +
-      "source_directories\030\003 \003(\t\022!\n\005scale\030\004 \001(\0132" +
-      "\022.protobuf.Vector3D\032\'\n\007SubMesh\022\014\n\004name\030\001" +
-      " \001(\t\022\016\n\006center\030\002 \001(\010\"\201\003\n\004Mesh\022\017\n\007mesh_id" +
-      "\030\001 \001(\t\022\036\n\004pose\030\002 \001(\0132\020.protobuf.Pose3D\022*" +
-      "\n\013boxGeometry\030\003 \001(\0132\025.protobuf.BoxGeomet" +
-      "ry\022,\n\014coneGeometry\030\004 \001(\0132\026.protobuf.Cone" +
-      "Geometry\0224\n\020cylinderGeometry\030\005 \001(\0132\032.pro" +
-      "tobuf.CylinderGeometry\0220\n\016sphereGeometry" +
-      "\030\006 \001(\0132\030.protobuf.SphereGeometry\022.\n\rtoru" +
-      "sGeometry\030\007 \001(\0132\027.protobuf.TorusGeometry" +
-      "\0226\n\021modelFileGeometry\030\010 \001(\0132\033.protobuf.M" +
-      "odelFileGeometry\022\036\n\005color\030\t \001(\0132\017.protob" +
-      "uf.Color\"]\n\tMeshGroup\022\020\n\010group_id\030\001 \001(\t\022" +
-      "\036\n\004pose\030\002 \001(\0132\020.protobuf.Pose3D\022\036\n\006meshe" +
-      "s\030\003 \003(\0132\016.protobuf.MeshB#\n\025us.ihmc.scs2." +
-      "protobufB\nThreeProtob\006proto3"
+      "\n\013three.proto\022\010protobuf\032\014euclid.proto\"\031\n" +
+      "\005Color\022\020\n\010webcolor\030\001 \001(\t\"/\n\013BoxGeometry\022" +
+      " \n\004size\030\001 \001(\0132\022.protobuf.Vector3D\"G\n\014Con" +
+      "eGeometry\022\016\n\006radius\030\001 \001(\001\022\016\n\006height\030\002 \001(" +
+      "\001\022\027\n\017radial_segments\030\003 \001(\005\"f\n\020CylinderGe" +
+      "ometry\022\022\n\nradius_top\030\001 \001(\001\022\025\n\rradius_bot" +
+      "tom\030\002 \001(\001\022\016\n\006height\030\003 \001(\001\022\027\n\017radial_segm" +
+      "ents\030\004 \001(\005\"Q\n\016SphereGeometry\022\016\n\006radius\030\001" +
+      " \001(\001\022\026\n\016width_segments\030\002 \001(\005\022\027\n\017height_s" +
+      "egments\030\003 \001(\005\"m\n\rTorusGeometry\022\016\n\006radius" +
+      "\030\001 \001(\001\022\014\n\004tube\030\002 \001(\001\022\027\n\017radial_segments\030" +
+      "\003 \001(\005\022\030\n\020tubular_segments\030\004 \001(\005\022\013\n\003arc\030\005" +
+      " \001(\001\"\307\001\n\021ModelFileGeometry\022\020\n\010filename\030\001" +
+      " \001(\t\0226\n\tsubmeshes\030\002 \003(\0132#.protobuf.Model" +
+      "FileGeometry.SubMesh\022\034\n\024resource_directo" +
+      "ries\030\003 \003(\t\022!\n\005scale\030\004 \001(\0132\022.protobuf.Vec" +
+      "tor3D\032\'\n\007SubMesh\022\014\n\004name\030\001 \001(\t\022\016\n\006center" +
+      "\030\002 \001(\010\"\201\003\n\004Mesh\022\017\n\007mesh_id\030\001 \001(\t\022\036\n\004pose" +
+      "\030\002 \001(\0132\020.protobuf.Pose3D\022*\n\013boxGeometry\030" +
+      "\003 \001(\0132\025.protobuf.BoxGeometry\022,\n\014coneGeom" +
+      "etry\030\004 \001(\0132\026.protobuf.ConeGeometry\0224\n\020cy" +
+      "linderGeometry\030\005 \001(\0132\032.protobuf.Cylinder" +
+      "Geometry\0220\n\016sphereGeometry\030\006 \001(\0132\030.proto" +
+      "buf.SphereGeometry\022.\n\rtorusGeometry\030\007 \001(" +
+      "\0132\027.protobuf.TorusGeometry\0226\n\021modelFileG" +
+      "eometry\030\010 \001(\0132\033.protobuf.ModelFileGeomet" +
+      "ry\022\036\n\005color\030\t \001(\0132\017.protobuf.Color\"]\n\tMe" +
+      "shGroup\022\020\n\010group_id\030\001 \001(\t\022\036\n\004pose\030\002 \001(\0132" +
+      "\020.protobuf.Pose3D\022\036\n\006meshes\030\003 \003(\0132\016.prot" +
+      "obuf.MeshB#\n\025us.ihmc.scs2.protobufB\nThre" +
+      "eProtob\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -9367,7 +9299,7 @@ public final class ThreeProto {
     internal_static_protobuf_Color_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_protobuf_Color_descriptor,
-        new java.lang.String[] { "Rgba", "Webcolor", });
+        new java.lang.String[] { "Webcolor", });
     internal_static_protobuf_BoxGeometry_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_protobuf_BoxGeometry_fieldAccessorTable = new

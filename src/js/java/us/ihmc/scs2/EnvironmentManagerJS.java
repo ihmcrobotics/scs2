@@ -67,7 +67,7 @@ public class EnvironmentManagerJS implements Manager
       List<TerrainObjectDefinition> terrainObjectDefinitions = session.getTerrainObjectDefinitions();
       for (TerrainObjectDefinition definition : terrainObjectDefinitions)
       {
-         MeshGroup meshGroup = ThreeProtoTools.toProtoMeshGroup(definition.getVisualDefinitions());
+         MeshGroup meshGroup = ThreeProtoTools.toProtoMeshGroup(definition.getName(), definition.getVisualDefinitions());
          broadcastMesh(meshGroup);
          environmentMeshGroups.add(meshGroup);
       }

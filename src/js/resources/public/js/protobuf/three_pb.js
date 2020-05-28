@@ -266,8 +266,7 @@ proto.protobuf.Color.prototype.toObject = function(opt_includeInstance) {
  */
 proto.protobuf.Color.toObject = function(includeInstance, msg) {
   var f, obj = {
-    rgba: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    webcolor: jspb.Message.getFieldWithDefault(msg, 2, "")
+    webcolor: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -305,10 +304,6 @@ proto.protobuf.Color.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt32());
-      msg.setRgba(value);
-      break;
-    case 2:
       var value = /** @type {string} */ (reader.readString());
       msg.setWebcolor(value);
       break;
@@ -341,47 +336,22 @@ proto.protobuf.Color.prototype.serializeBinary = function() {
  */
 proto.protobuf.Color.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getRgba();
-  if (f !== 0) {
-    writer.writeInt32(
+  f = message.getWebcolor();
+  if (f.length > 0) {
+    writer.writeString(
       1,
       f
     );
   }
-  f = message.getWebcolor();
-  if (f.length > 0) {
-    writer.writeString(
-      2,
-      f
-    );
-  }
 };
 
 
 /**
- * optional int32 rgba = 1;
- * @return {number}
- */
-proto.protobuf.Color.prototype.getRgba = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.protobuf.Color} returns this
- */
-proto.protobuf.Color.prototype.setRgba = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
-};
-
-
-/**
- * optional string webcolor = 2;
+ * optional string webcolor = 1;
  * @return {string}
  */
 proto.protobuf.Color.prototype.getWebcolor = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
@@ -390,7 +360,7 @@ proto.protobuf.Color.prototype.getWebcolor = function() {
  * @return {!proto.protobuf.Color} returns this
  */
 proto.protobuf.Color.prototype.setWebcolor = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 

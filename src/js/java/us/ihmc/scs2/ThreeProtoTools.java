@@ -116,11 +116,12 @@ public class ThreeProtoTools
       return protoMeshBuilder.build();
    }
 
-   public static ThreeProto.MeshGroup toProtoMeshGroup(List<VisualDefinition> visualDefinitions)
+   public static ThreeProto.MeshGroup toProtoMeshGroup(String groupId, List<VisualDefinition> visualDefinitions)
    {
       if (visualDefinitions == null)
          return null;
       ThreeProto.MeshGroup.Builder builder = ThreeProto.MeshGroup.newBuilder();
+      builder.setGroupId(groupId);
       visualDefinitions.forEach(visualDefinition -> builder.addMeshes(toProtoMesh(visualDefinition)));
       return builder.build();
    }

@@ -24,7 +24,7 @@ public class SlopeGroundDefinition extends TerrainObjectDefinition
       originPose.getRotation().setToPitchOrientation(slopeAngle);
       originPose.appendTranslation(0.0, 0.0, -0.25);
 
-      GeometryDefinition groundGeometryDefinition = new BoxGeometryDefinition(10000.0, 10000.0, 0.50);
+      GeometryDefinition groundGeometryDefinition = new BoxGeometryDefinition(100.0, 100.0, 0.50);
       addVisualDefinition(new VisualDefinition(originPose, groundGeometryDefinition, new MaterialDefinition(ColorDefinitions.DeepSkyBlue())));
       addCollisionShapeDefinition(new CollisionShapeDefinition(originPose, groundGeometryDefinition));
    }

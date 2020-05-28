@@ -52,7 +52,7 @@ public class YoRobotJS
       for (RigidBodyJS body : rootBody.subtreeIterable())
       {
          ByteBuffer asReadOnlyByteBuffer = body.getGraphics().getFullMeshGroup().toByteString().asReadOnlyByteBuffer();
-//         session.getRemote().sendBytesByFuture(asReadOnlyByteBuffer);
+         session.getRemote().sendBytesByFuture(asReadOnlyByteBuffer);
       }
 
       activeWebSocketSessions.add(session);
@@ -75,7 +75,7 @@ public class YoRobotJS
             for (RigidBodyJS body : rootBody.subtreeIterable())
             {
                ByteBuffer asReadOnlyByteBuffer = body.getGraphics().getLightMeshGroup().toByteString().asReadOnlyByteBuffer();
-//               activeWebSocketSessions.forEach(session -> session.getRemote().sendBytesByFuture(asReadOnlyByteBuffer));
+               activeWebSocketSessions.forEach(session -> session.getRemote().sendBytesByFuture(asReadOnlyByteBuffer));
             }
          }
       }

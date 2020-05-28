@@ -38,6 +38,15 @@ public class SessionVisualizerToolkitJS
       apiFactory.createRootCategory("SCS2");
       apiFactory.includeMessagerAPIs(SessionMessagerAPI.API, YoSharedBufferMessagerAPI.API, SessionVisualizerMessagerAPI.API);
       messager = new BufferedMessager(apiFactory.getAPIAndCloseFactory());
+      topics.setupTopics();
+      try
+      {
+         messager.startMessager();
+      }
+      catch (Exception e)
+      {
+         throw new RuntimeException(e);
+      }
    }
 
    public void startSession(Session session, Runnable sessionLoadedCallback)
@@ -47,7 +56,7 @@ public class SessionVisualizerToolkitJS
       yoRobotJSManager.startSession(session);
       environmentManager.startSession(session);
 
-      topics.setupTopics();
+      session.setupWithMessager(messager);
 
       referenceFrameManager.refreshReferenceFramesNow();
       messager.submitMessage(topics.getSessionCurrentState(), SessionState.ACTIVE);
