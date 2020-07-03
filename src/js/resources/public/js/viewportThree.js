@@ -26,12 +26,7 @@ var scene = new THREE.Scene();
 const loader = new THREE.CubeTextureLoader();
 scene.background = loader
   .setPath("./skybox/cloudy/")
-  .load(
-    ["Back.png", "Front.png", "Left.png", "Right.png", "Up.png", "Down.png"],
-    function (texture) {
-      console.info(texture);
-    }
-  );
+  .load(["Back.png", "Front.png", "Left.png", "Right.png", "Up.png", "Down.png"]);
 var camera = new THREE.PerspectiveCamera(75, 2, 0.1, 1000.0);
 camera.position.z = 5;
 
@@ -40,9 +35,6 @@ controls.update();
 
 var renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
 renderer.setClearColor("#e5e5e5");
-
-var raycaster = new THREE.Raycaster();
-var mouse = new THREE.Vector2();
 
 var geometry = new THREE.BoxGeometry(1, 1, 1);
 

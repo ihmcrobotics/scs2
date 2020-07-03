@@ -5,22 +5,63 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>ShapeViewer</title>
-    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/Off-Canvas-Sidebar-Drawer-Navbar.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 
-<body>
+<body class="text-center">
+    <nav class="navbar navbar-dark fixed-top bg-dark off-canvas" data-right-drawer="0" data-open-drawer="0">
+        <div class="container-fluid flex-column">
+            <button class="btn btn-dark drawer-knob" type="button" data-open="drawer">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="d-flex justify-content-between brand-line"><a class="navbar-brand" href="#">YoVariables</a>
+                <button class="btn btn-dark" type="button" data-dismiss="drawer">
+                    <span class="sr-only">Toggle Navigation&nbsp;</span>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <ul class="nav navbar-nav flex-column drawer-menu">
+                <li class="nav-item" role="presentation"><a class="nav-link active" href="#">First Item</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="#">Second Item</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="#">Third Item</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="#">Nav Item</a></li>
+                <li class="nav-item" role="presentation"></li>
+                <li class="nav-item" role="presentation"></li>
+            </ul>
+            <ul class="nav navbar-nav flex-column bottom-nav">
+                <li class="nav-item" role="presentation"><a class="nav-link active" href="#">First Item</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="#">Second Item</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="#">Third Item</a></li>
+            </ul>
+        </div>
+    </nav>
     <div id="mainViewportContainer" class="viewportContainer">
-        <canvas id="mainViewportCanvas" style="border: 1px solid #000000;"></canvas>
+        <canvas id="mainViewportCanvas"></canvas>
+        <div class="btn-group shadow-sm" role="group" id="mainControlButton">
+            <button class="btn btn-primary bg-secondary border-secondary simple-control-button" id="simulateButton"
+                type="button">
+                <i class="fa fa-gears"></i>
+            </button>
+            <button class="btn btn-primary bg-secondary border-secondary simple-control-button" id="playButton"
+                type="button">
+                <i class="fa fa-play-circle"></i>
+            </button>
+            <button class="btn btn-primary bg-secondary border-secondary simple-control-button" id="pauseButton"
+                type="button">
+                <i class="fa fa-pause-circle"></i>
+            </button>
+        </div>
     </div>
-    <div class="btn-group" role="group">
-        <button class="btn btn-primary" id="simulateButton" type="button">Simulate</button>
-        <button class="btn btn-primary" id="playButton" type="button">Play</button>
-        <button class="btn btn-primary" id="pauseButton" type="button">Pause</button>
-    </div>
-    <script src="assets/js/jquery.min.js"></script>
-    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
+    <script src="js/Off-Canvas-Sidebar-Drawer-Navbar.js"></script>
+    <script src="js/Off-Canvas-Sidebar-Drawer-Navbar-1.js"></script>
     <script src="js/w3color.js"></script>
     <script src="js/messages.js"></script>
     <script type="module" src="js/viewportThree.js"></script>
