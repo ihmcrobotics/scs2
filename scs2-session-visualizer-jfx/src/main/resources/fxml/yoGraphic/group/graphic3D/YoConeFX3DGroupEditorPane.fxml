@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.graphic3D.YoConeFX3DGroupEditorController">
+   <children>
+      <GridPane hgap="10.0" styleClass="graphic-editor-gridpane" vgap="10.0">
+         <columnConstraints>
+            <ColumnConstraints hgrow="NEVER" minWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+            <ColumnConstraints halignment="RIGHT" hgrow="NEVER" minWidth="10.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints />
+            <RowConstraints prefHeight="30.0" />
+         </rowConstraints>
+         <children>
+            <Label text="Height:" />
+            <JFXTextField fx:id="heightTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" />
+            <ImageView fx:id="heightValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2">
+               <image>
+                  <Image url="@../../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <Label text="Radius:" GridPane.rowIndex="1" />
+            <JFXTextField fx:id="radiusTextField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <ImageView fx:id="radiusValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="1">
+               <image>
+                  <Image url="@../../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+         </children>
+      </GridPane>
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="styleEditor" source="../../editor/YoGraphic3DStyleEditorPane.fxml" />
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="nameEditor" source="../../editor/YoGraphicNameEditorPane.fxml" GridPane.columnSpan="2147483647" GridPane.rowIndex="8" />
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</VBox>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXProgressBar?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogCropProgressController">
+   <children>
+      <GridPane styleClass="log-crop-grid-pane">
+         <columnConstraints>
+            <ColumnConstraints hgrow="NEVER"/>
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0"/>
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES"/>
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES"/>
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES"/>
+         </rowConstraints>
+         <children>
+            <Label text="Task:"/>
+            <Label fx:id="taskInProgressLabel" text="TaskInProgressLabel" GridPane.columnIndex="1"/>
+            <Label text="Info:" GridPane.rowIndex="1"/>
+            <Label fx:id="progressInfoLabel" text="ProgressInfoLabel" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            <Label text="Error:" GridPane.rowIndex="2"/>
+            <Label fx:id="progressErrorLabel" text="ProgressErrorLabel" textFill="#d30f0f" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+         </children>
+      </GridPane>
+      <JFXProgressBar fx:id="progressBar" maxWidth="1.7976931348623157E308" prefHeight="10.0" progress="0.13"/>
+   </children>
+</VBox>

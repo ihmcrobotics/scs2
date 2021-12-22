@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import java.lang.String?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuItem?>
+
+<Menu fx:id="menu" text="Session" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.SessionMenuController">
+   <items>
+      <MenuItem onAction="#startRemoteSession" text="Start remote session...">
+         <graphic>
+            <FontAwesomeIconView>
+               <styleClass>
+                  <String fx:value="start-remote-session-icon-view" />
+                  <String fx:value="menu-item-icon-view" />
+               </styleClass>
+            </FontAwesomeIconView>
+         </graphic>
+      </MenuItem>
+      <MenuItem onAction="#startLogSession" text="Start log session...">
+         <graphic>
+            <FontAwesomeIconView>
+               <styleClass>
+                  <String fx:value="start-log-session-icon-view" />
+                  <String fx:value="menu-item-icon-view" />
+               </styleClass>
+            </FontAwesomeIconView>
+         </graphic>
+      </MenuItem>
+   </items>
+   <graphic>
+      <FontAwesomeIconView glyphName="ROCKET" />
+   </graphic>
+</Menu>

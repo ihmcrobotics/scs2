@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXCheckBox?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D.YoArrowFX3DEditorController">
+   <children>
+      <fx:include fx:id="originEditor" source="../editor/YoCompositeEditorPane.fxml" GridPane.columnSpan="2147483647" />
+      <fx:include fx:id="directionEditor" source="../editor/YoCompositeEditorPane.fxml" GridPane.columnSpan="2147483647" GridPane.rowIndex="1" />
+      <Separator prefWidth="200.0" />
+      <GridPane hgap="10.0" styleClass="graphic-editor-gridpane" vgap="10.0">
+         <columnConstraints>
+            <ColumnConstraints hgrow="NEVER" minWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+            <ColumnConstraints halignment="RIGHT" hgrow="NEVER" minWidth="10.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints />
+            <RowConstraints prefHeight="30.0" />
+            <RowConstraints prefHeight="30.0" />
+            <RowConstraints prefHeight="30.0" />
+         </rowConstraints>
+         <children>
+            <Label text="Body length:" />
+            <JFXTextField fx:id="bodyLengthTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" />
+            <ImageView fx:id="bodyLengthValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3">
+               <image>
+                  <Image url="@../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <Label text="Head length:" GridPane.rowIndex="1" />
+            <JFXTextField fx:id="headLengthTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <ImageView fx:id="headLengthValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3" GridPane.rowIndex="1">
+               <image>
+                  <Image url="@../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <JFXCheckBox fx:id="scaleLengthCheckBox" graphicTextGap="0.0" text="Scale" GridPane.columnIndex="2" GridPane.rowSpan="2" />
+            <Label text="Body radius:" GridPane.rowIndex="2" />
+            <JFXTextField fx:id="bodyRadiusTextField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <ImageView fx:id="bodyRadiusValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3" GridPane.rowIndex="2">
+               <image>
+                  <Image url="@../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <Label text="Head radius:" GridPane.rowIndex="3" />
+            <JFXTextField fx:id="headRadiusTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <ImageView fx:id="headRadiusValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3" GridPane.rowIndex="3">
+               <image>
+                  <Image url="@../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <JFXCheckBox fx:id="scaleRadiusCheckBox" graphicTextGap="0.0" text="Scale" GridPane.columnIndex="2" GridPane.rowIndex="2" GridPane.rowSpan="2" />
+         </children>
+      </GridPane>
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="styleEditor" source="../editor/YoGraphic3DStyleEditorPane.fxml" />
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="nameEditor" source="../editor/YoGraphicNameEditorPane.fxml" GridPane.columnSpan="2147483647" GridPane.rowIndex="8" />
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</VBox>

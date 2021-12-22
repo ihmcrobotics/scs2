@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="600.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.SidePaneController">
+   <children>
+      <SplitPane dividerPositions="0.66" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <items>
+            <fx:include fx:id="yoSearchTabPane" source="yoComposite/search/YoSearchTabPane.fxml" />
+            <fx:include fx:id="yoEntryTabPane" source="yoComposite/entry/YoEntryTabPane.fxml" />
+         </items>
+      </SplitPane>
+   </children>
+</AnchorPane>

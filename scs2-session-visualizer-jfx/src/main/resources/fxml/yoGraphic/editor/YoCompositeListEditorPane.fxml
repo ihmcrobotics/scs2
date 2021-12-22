@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import java.lang.String?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeListEditorPaneController">
+   <children>
+      <HBox alignment="CENTER" styleClass="graphic-editor-hbox">
+         <children>
+            <GridPane fx:id="listSearchGridPane" styleClass="graphic-editor-gridpane" HBox.hgrow="ALWAYS">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="NEVER" />
+                  <ColumnConstraints hgrow="ALWAYS" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints vgrow="SOMETIMES" />
+                  <RowConstraints vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label fx:id="compositeListLabel" text="Composite list:" />
+                  <JFXTextField fx:id="compositeListSearchTextField" GridPane.columnIndex="1" />
+                  <Label fx:id="listFrameLabel" text="Reference frame:" GridPane.rowIndex="1" />
+                  <JFXTextField fx:id="referenceFrameSearchTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+               </children>
+            </GridPane>
+            <JFXButton fx:id="addCompositeButton" alignment="CENTER_RIGHT" contentDisplay="GRAPHIC_ONLY" graphicTextGap="0.0" onAction="#addComposite" HBox.hgrow="NEVER">
+               <graphic>
+                  <FontAwesomeIconView>
+                     <styleClass>
+                        <String fx:value="add-icon-view" />
+                        <String fx:value="graphic-editor-icon-view" />
+                     </styleClass>
+                  </FontAwesomeIconView>
+               </graphic>
+            </JFXButton>
+         </children>
+      </HBox>
+      <ListView fx:id="listView" prefHeight="50.0" VBox.vgrow="ALWAYS" />
+      <HBox alignment="CENTER" styleClass="graphic-editor-hbox" VBox.vgrow="NEVER">
+         <children>
+            <Label fx:id="numberOfCompositesLabel" text="Number of composites" HBox.hgrow="NEVER" />
+            <JFXTextField fx:id="numberOfCompositesTextField" HBox.hgrow="ALWAYS" />
+            <ImageView fx:id="numberOfCompositesValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" HBox.hgrow="NEVER">
+               <image>
+                  <Image url="@../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+         </children>
+      </HBox>
+   </children>
+</VBox>

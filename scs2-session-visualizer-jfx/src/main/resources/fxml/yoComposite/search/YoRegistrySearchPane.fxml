@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" spacing="3.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.YoRegistrySearchPaneController">
+   <children>
+      <JFXTextField fx:id="searchTextField" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="25.0" VBox.vgrow="NEVER" />
+      <TreeView fx:id="registryTreeView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onKeyReleased="#openRegistryTab" onMouseClicked="#openRegistryTab" prefHeight="200.0" VBox.vgrow="ALWAYS" />
+   </children>
+</VBox>

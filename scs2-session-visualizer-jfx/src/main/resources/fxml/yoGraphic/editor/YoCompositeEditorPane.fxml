@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<GridPane fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" styleClass="graphic-editor-gridpane" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" />
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+      <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="-Infinity" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <HBox alignment="CENTER_LEFT" GridPane.columnSpan="2" styleClass="graphic-editor-hbox">
+         <children>
+            <Label fx:id="searchYoCompositeLabel" text="Search YoComposite:" />
+            <JFXTextField fx:id="searchYoCompositeTextField" HBox.hgrow="ALWAYS" />
+         </children>
+      </HBox>
+   </children>
+</GridPane>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<YoCompositePatternList name='defaultComposites'>
+   <yoCompositePatterns name='YoTuple2D'>
+      <crossRegistry>false</crossRegistry>
+      <identifiers>x</identifiers>
+      <identifiers>y</identifiers>
+      <preferredConfigurations name='single'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='horizontal'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='1'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='vertical'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='1' column='0'/>
+      </preferredConfigurations>
+   </yoCompositePatterns>
+   <yoCompositePatterns name='YoTuple3D'>
+      <crossRegistry>false</crossRegistry>
+      <identifiers>x</identifiers>
+      <identifiers>y</identifiers>
+      <identifiers>z</identifiers>
+      <preferredConfigurations name='single'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='horizontal'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='1'/>
+         <chartIdentifiers row='0' column='2'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='vertical'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='1' column='0'/>
+         <chartIdentifiers row='2' column='0'/>
+      </preferredConfigurations>
+   </yoCompositePatterns>
+   <yoCompositePatterns name='YoQuaternion'>
+      <crossRegistry>false</crossRegistry>
+      <identifiers>qx</identifiers>
+      <identifiers>qy</identifiers>
+      <identifiers>qz</identifiers>
+      <identifiers>qs</identifiers>
+      <preferredConfigurations name='single'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='horizontal'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='1'/>
+         <chartIdentifiers row='0' column='2'/>
+         <chartIdentifiers row='0' column='3'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='vertical'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='1' column='0'/>
+         <chartIdentifiers row='2' column='0'/>
+         <chartIdentifiers row='3' column='0'/>
+      </preferredConfigurations>
+   </yoCompositePatterns>
+   <yoCompositePatterns name='YoYawPitchRoll'>
+      <crossRegistry>false</crossRegistry>
+      <identifiers>yaw</identifiers>
+      <identifiers>pitch</identifiers>
+      <identifiers>roll</identifiers>
+      <preferredConfigurations name='single'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='0'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='horizontal'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='0' column='1'/>
+         <chartIdentifiers row='0' column='2'/>
+      </preferredConfigurations>
+      <preferredConfigurations name='vertical'>
+         <chartIdentifiers row='0' column='0'/>
+         <chartIdentifiers row='1' column='0'/>
+         <chartIdentifiers row='2' column='0'/>
+      </preferredConfigurations>
+   </yoCompositePatterns>
+</YoCompositePatternList>

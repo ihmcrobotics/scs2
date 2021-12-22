@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXSpinner?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="rootPane" alignment="CENTER" spacing="5.0" styleClass="sliderboard-grid-cell" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000KnobController">
+   <children>
+      <JFXTextField fx:id="knobMaxTextField" />
+      <JFXSpinner fx:id="spinner" progress="0.0" />
+      <JFXTextField fx:id="knobMinTextField" />
+      <Label fx:id="yoVariableDropLabel" text="Drop YoVariable Here" />
+   </children>
+</VBox>

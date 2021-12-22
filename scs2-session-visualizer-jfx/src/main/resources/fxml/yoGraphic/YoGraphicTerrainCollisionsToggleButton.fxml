@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+
+<ToggleButton contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" stylesheets="@../../css/GeneralStylesheet.css" text="Terrain Collisions" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <graphic>
+      <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
+         <image>
+            <Image url="@../../icons/yoGraphic/TerrainObjectIcon.png" />
+         </image>
+      </ImageView>
+   </graphic>
+</ToggleButton>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXToggleNode?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+
+<VBox fx:id="rootPane" alignment="CENTER" styleClass="sliderboard-grid-cell" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000ButtonController">
+   <children>
+      <JFXToggleNode fx:id="button" maxWidth="1.7976931348623157E308" styleClass="sliderboard-button" text="Drop YoBoolean Here" />
+   </children>
+</VBox>

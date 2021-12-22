@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Font?>
+
+<HBox fx:id="mainPane" alignment="CENTER_LEFT" spacing="8.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartIdentifierEditorController">
+   <children>
+      <Label fx:id="chartIdLabel" text="ChartId">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+      </Label>
+      <Label fx:id="rowLabel" text="Row:" />
+      <JFXTextField fx:id="rowTextField" alignment="CENTER_RIGHT" prefWidth="20.0" />
+      <Label fx:id="columnLabel" text="Column:" />
+      <JFXTextField fx:id="columnTextField" alignment="CENTER_RIGHT" prefWidth="20.0" />
+   </children>
+   <opaqueInsets>
+      <Insets />
+   </opaqueInsets>
+   <padding>
+      <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+   </padding>
+</HBox>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXSpinner?>
+<?import com.jfoenix.controls.JFXToggleButton?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import us.ihmc.scs2.sessionVisualizer.jfx.tools.CropSlider?>
+
+<AnchorPane fx:id="mainPane" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController">
+   <children>
+      <VBox layoutY="45.0" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox alignment="CENTER" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" VBox.vgrow="NEVER">
+               <children>
+                  <JFXSpinner fx:id="loadingSpinner" prefHeight="30.0" prefWidth="30.0" visible="false" HBox.hgrow="NEVER" />
+                  <JFXButton fx:id="openSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Open session..." />
+                  <JFXButton fx:id="endSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="end-session-button" text="End session" />
+               </children>
+            </HBox>
+            <GridPane hgap="5.0" minHeight="-Infinity" minWidth="-Infinity" vgap="5.0" VBox.vgrow="NEVER">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="NEVER" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label minHeight="-Infinity" minWidth="-Infinity" text="Session name:" />
+                  <Label fx:id="sessionNameLabel" minHeight="-Infinity" minWidth="-Infinity" text="sessionNameLabel" GridPane.columnIndex="1" />
+                  <Label minHeight="-Infinity" minWidth="-Infinity" text="Date:" GridPane.rowIndex="1" />
+                  <Label fx:id="dateLabel" minHeight="-Infinity" minWidth="-Infinity" text="dateLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label minHeight="-Infinity" minWidth="-Infinity" text="Log path:" GridPane.rowIndex="2" />
+                  <Label fx:id="logPathLabel" minHeight="-Infinity" minWidth="-Infinity" text="logPathLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               </children>
+            </GridPane>
+            <HBox fx:id="cropControlsContainer" alignment="CENTER" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" VBox.vgrow="NEVER">
+               <children>
+                  <JFXToggleButton fx:id="showTrimsButton" text="Enable crop data controls" />
+                  <JFXButton fx:id="resetTrimsButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#resetTrims" text="Reset" />
+                  <JFXButton fx:id="cropAndExportButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#cropAndExport" text="Crop &amp; Export" />
+               </children>
+            </HBox>
+            <CropSlider fx:id="logPositionSlider" VBox.vgrow="NEVER">
+               <padding>
+                  <Insets bottom="20.0" />
+               </padding>
+            </CropSlider>
+            <AnchorPane fx:id="cropProgressMonitorPane" VBox.vgrow="NEVER" />
+            <TitledPane fx:id="thumbnailsTitledPane" animated="false" disable="true" expanded="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" text="No video" VBox.vgrow="ALWAYS">
+               <content>
+                  <FlowPane fx:id="videoThumbnailPane" hgap="2.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefWidth="660.0" vgap="2.0" />
+               </content>
+            </TitledPane>
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </VBox>
+   </children>
+</AnchorPane>

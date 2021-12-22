@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="100mm"
+   height="100mm"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg8"
+   sodipodi:docname="SCS-Icon-v7.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   inkscape:export-filename="C:\EclipseWorkspaces\Workspace2\standalone-repos\simulation-construction-set-2\src\session-visualizer\resources\icons\SCS-Icon-v7.png"
+   inkscape:export-xdpi="65.024002"
+   inkscape:export-ydpi="65.024002">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.9899495"
+     inkscape:cx="-253.23687"
+     inkscape:cy="215.94481"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1177"
+     inkscape:window-x="4472"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-197)">
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.36353531;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect67"
+       width="99.636467"
+       height="99.636467"
+       x="0.18177292"
+       y="197.18176" />
+    <path
+       style="fill:#4f84ba;fill-opacity:1;stroke:#000000;stroke-width:0.42674729px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 26.755112,236.12517 c 0,0 8.165098,-6.02415 15.310995,-8.00768 7.14589,-1.98352 17.30439,0.0295 24.898035,0.69015 7.593628,0.66067 16.484596,-2.8012 18.895999,-5.06315 2.411387,-2.26195 4.023145,-4.29322 4.023145,-4.29322 l 7.464984,8.19704 c -4.540645,10.06892 -14.815371,13.86107 -27.763838,14.00899 l -0.525774,19.0764 c 6.584387,0.0332 14.216112,-1.94277 18.403161,2.52445 4.517161,5.18384 5.164387,17.44647 5.299693,26.47874 l -12.5525,0.72283 c 0,0 -0.214161,-5.16965 -0.637838,-7.94323 -0.423678,-2.77358 -1.033484,-7.14085 -2.988226,-8.35618 -1.954742,-1.21532 -10.110774,0.15242 -10.110774,0.15242 0,0 -2.580307,4.67871 -4.418565,6.57397 -2.831871,2.91968 -6.195354,5.46679 -9.914838,7.11281 -5.45429,2.41374 -17.49684,3.74693 -17.49684,3.74693 l -0.06968,-12.88235 c 0,0 11.731405,-2.46913 16.38105,-5.95237 2.628661,-1.96925 3.406419,-6.17521 4.050629,-9.58275 1.393419,-7.37064 1.337871,-22.31716 1.337871,-22.31716 0,0 -8.668274,-1.21816 -12.743019,-0.0186 -3.437434,1.01202 -9.026531,5.83807 -9.026531,5.83807 z"
+       inkscape:connector-curvature="0"
+       id="path21"
+       sodipodi:nodetypes="czzzccccccczzcaaccsscacc" />
+    <circle
+       style="fill:#4f84ba;fill-opacity:1;stroke:#000000;stroke-width:0.5320155;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path23"
+       cx="63.239063"
+       cy="212.39886"
+       r="10.03803" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.33333206px;line-height:1.25;font-family:Stencil;-inkscape-font-specification:'Stencil, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.42674729"
+       x="1.810784"
+       y="227.21722"
+       id="text27"><tspan
+         sodipodi:role="line"
+         x="1.810784"
+         y="227.21722"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.33333206px;font-family:Stencil;-inkscape-font-specification:'Stencil, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;stroke-width:0.42674729"
+         id="tspan37">S</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.33333206px;line-height:1.25;font-family:Stencil;-inkscape-font-specification:'Stencil, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.42674729"
+       x="1.619077"
+       y="261.14188"
+       id="text27-4"><tspan
+         sodipodi:role="line"
+         x="1.619077"
+         y="261.14188"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.33333206px;font-family:Stencil;-inkscape-font-specification:'Stencil, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;stroke-width:0.42674729"
+         id="tspan37-6">C</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.33333206px;line-height:1.25;font-family:Stencil;-inkscape-font-specification:'Stencil, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.42674729"
+       x="1.810784"
+       y="295.04587"
+       id="text27-48"><tspan
+         sodipodi:role="line"
+         x="1.810784"
+         y="295.04587"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.33333206px;font-family:Stencil;-inkscape-font-specification:'Stencil, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;stroke-width:0.42674729"
+         id="tspan37-0">S</tspan></text>
+  </g>
+</svg>

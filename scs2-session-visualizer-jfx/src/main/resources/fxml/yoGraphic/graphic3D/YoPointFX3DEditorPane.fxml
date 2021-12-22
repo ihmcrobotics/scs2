@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D.YoPointFX3DEditorController">
+   <children>
+      <fx:include fx:id="positionEditor" source="../editor/YoCompositeEditorPane.fxml" GridPane.columnSpan="3" />
+      <Separator prefWidth="200.0" />
+      <GridPane hgap="10.0" styleClass="graphic-editor-gridpane" vgap="10.0">
+         <columnConstraints>
+            <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="10.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+            <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+         </rowConstraints>
+         <children>
+            <Label text="Size" />
+            <JFXTextField fx:id="sizeTextField" GridPane.columnIndex="1" />
+            <ImageView fx:id="sizeValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2">
+               <image>
+                  <Image url="@../../../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <Label text="Graphic" GridPane.rowIndex="1" />
+            <JFXComboBox fx:id="graphicComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+         </children>
+      </GridPane>
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="styleEditor" source="../editor/YoGraphic3DStyleEditorPane.fxml" />
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="nameEditor" source="../editor/YoGraphicNameEditorPane.fxml" GridPane.columnSpan="2147483647" GridPane.rowIndex="5" />
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</VBox>

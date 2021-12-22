@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+
+<TabPane fx:id="yoEntryTabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="ALL_TABS" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry.YoEntryTabPaneController">
+   <tabs>
+      <Tab fx:id="initialTab" closable="false" text="Default">
+         <content>
+            <fx:include fx:id="initialListView" source="YoEntryListView.fxml" />
+         </content>
+      </Tab>
+   </tabs>
+</TabPane>

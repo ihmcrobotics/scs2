@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import java.lang.String?>
+<?import javafx.scene.control.CheckMenuItem?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuItem?>
+
+<Menu text="YoGraphic" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoGraphicMenuController">
+   <items>
+      <CheckMenuItem fx:id="overheadPlotterMenuItem" text="Overhead Plotter" />
+      <MenuItem onAction="#loadYoGraphic" text="Load YoGraphic...">
+         <graphic>
+            <FontAwesomeIconView>
+               <styleClass>
+                  <String fx:value="load-icon-view" />
+                  <String fx:value="menu-item-icon-view" />
+               </styleClass>
+            </FontAwesomeIconView>
+         </graphic>
+      </MenuItem>
+      <MenuItem onAction="#saveYoGraphic" text="Save YoGraphic...">
+         <graphic>
+            <FontAwesomeIconView>
+               <styleClass>
+                  <String fx:value="save-icon-view" />
+                  <String fx:value="menu-item-icon-view" />
+               </styleClass>
+            </FontAwesomeIconView>
+         </graphic>
+      </MenuItem>
+      <MenuItem onAction="#openYoGraphicEditor" text="YoGraphic properties...">
+         <graphic>
+            <FontAwesomeIconView>
+               <styleClass>
+                  <String fx:value="properties-icon-view" />
+                  <String fx:value="menu-item-icon-view" />
+               </styleClass>
+            </FontAwesomeIconView>
+         </graphic>
+      </MenuItem>
+   </items>
+   <graphic>
+      <FontAwesomeIconView glyphName="CUBES" />
+   </graphic>
+</Menu>
