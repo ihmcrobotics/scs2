@@ -160,7 +160,6 @@ public class SessionVisualizer
       LogTools.info("Simulation GUI is going down.");
       try
       {
-         sessionVisualizerControls.visualizerShutdownLatch.countDown();
          cameraController.dispose();
          multiSessionManager.stopSession(saveConfiguration);
          multiSessionManager.shutdown();
@@ -176,6 +175,10 @@ public class SessionVisualizer
       catch (Exception e)
       {
          e.printStackTrace();
+      }
+      finally
+      {
+         sessionVisualizerControls.visualizerShutdownLatch.countDown();
       }
    }
 
