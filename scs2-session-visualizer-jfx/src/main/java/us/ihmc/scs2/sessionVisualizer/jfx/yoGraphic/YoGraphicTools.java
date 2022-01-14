@@ -33,6 +33,7 @@ import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.ExtrudedPolygon2DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Point3DDefinition;
+import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
 import us.ihmc.scs2.definition.geometry.STPBox3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
@@ -59,6 +60,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicPointcloud3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygon2DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygonExtruded3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolynomial3DDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicRamp3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicSTPBox3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
@@ -724,6 +726,28 @@ public class YoGraphicTools
       yoGraphicFXToPack.setMaximumMargin(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getMaximumMargin()));
    }
 
+   public static YoRampFX3D toYoRampFX3D(YoVariableDatabase yoVariableDatabase,
+                                         YoGraphicFXResourceManager resourceManager,
+                                         ReferenceFrameManager referenceFrameManager,
+                                         YoGraphicRamp3DDefinition definition)
+   {
+      YoRampFX3D yoGraphicFX = new YoRampFX3D();
+      toYoRampFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFX);
+      return yoGraphicFX;
+   }
+
+   public static void toYoRampFX3D(YoVariableDatabase yoVariableDatabase,
+                                   YoGraphicFXResourceManager resourceManager,
+                                   ReferenceFrameManager referenceFrameManager,
+                                   YoGraphicRamp3DDefinition definition,
+                                   YoRampFX3D yoGraphicFXToPack)
+   {
+      toYoGraphicFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
+      yoGraphicFXToPack.setPosition(CompositePropertyTools.toTuple3DProperty(yoVariableDatabase, referenceFrameManager, definition.getPosition()));
+      yoGraphicFXToPack.setOrientation(CompositePropertyTools.toOrientation3DProperty(yoVariableDatabase, referenceFrameManager, definition.getOrientation()));
+      yoGraphicFXToPack.setSize(CompositePropertyTools.toTuple3DProperty(yoVariableDatabase, referenceFrameManager, definition.getSize()));
+   }
+
    public static YoGroupFX convertRobotCollisionShapeDefinitions(RigidBodyReadOnly rootBody, RobotDefinition robotDefinition)
    {
       Color color = Color.AQUAMARINE.deriveColor(0.0, 1.0, 1.0, 0.4); // Transparent aquamarine
@@ -884,6 +908,8 @@ public class YoGraphicTools
          return convertExtrudedPolygon2DDefinition(referenceFrame, originPose, (ExtrudedPolygon2DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof Point3DDefinition)
          return convertPoint3DDefinition(referenceFrame, originPose, (Point3DDefinition) geometryDefinition);
+      else if (geometryDefinition instanceof Ramp3DDefinition)
+         return convertRamp3DDefinition(referenceFrame, originPose, (Ramp3DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof Sphere3DDefinition)
          return convertSphere3DDefinition(referenceFrame, originPose, (Sphere3DDefinition) geometryDefinition);
       else
@@ -1092,6 +1118,17 @@ public class YoGraphicTools
       Tuple3DReadOnly position = originPose.getTranslation();
       yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
       yoGraphicFX.setSize(geometryDefinition.getRadius());
+      return yoGraphicFX;
+   }
+
+   public static YoRampFX3D convertRamp3DDefinition(ReferenceFrame referenceFrame, RigidBodyTransformReadOnly originPose, Ramp3DDefinition geometryDefinition)
+   {
+      YoRampFX3D yoGraphicFX = new YoRampFX3D();
+      Tuple3DReadOnly position = originPose.getTranslation();
+      yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
+      Quaternion orientation = new Quaternion(originPose.getRotation());
+      yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
+      yoGraphicFX.setSize(new Tuple3DProperty(referenceFrame, geometryDefinition.getSizeX(), geometryDefinition.getSizeY(), geometryDefinition.getSizeZ()));
       return yoGraphicFX;
    }
 
@@ -1447,6 +1484,23 @@ public class YoGraphicTools
       definition.setSize(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getSize()));
       definition.setMinimumMargin(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getMinimumMargin()));
       definition.setMaximumMargin(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getMaximumMargin()));
+      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+
+      return definition;
+   }
+
+   public static YoGraphicRamp3DDefinition toYoGraphicRamp3DDefinition(YoRampFX3D yoGraphicFX)
+   {
+      if (yoGraphicFX == null)
+         return null;
+
+      YoGraphicRamp3DDefinition definition = new YoGraphicRamp3DDefinition();
+
+      definition.setName(yoGraphicFX.getName());
+      definition.setVisible(yoGraphicFX.isVisible());
+      definition.setPosition(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getPosition()));
+      definition.setOrientation(CompositePropertyTools.toYoOrientation3DDefinition(yoGraphicFX.getOrientation()));
+      definition.setSize(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getSize()));
       definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
 
       return definition;
