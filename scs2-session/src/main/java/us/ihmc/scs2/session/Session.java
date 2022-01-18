@@ -46,7 +46,7 @@ public abstract class Session
    protected final YoRegistry rootRegistry = new YoRegistry(ROOT_REGISTRY_NAME);
    protected final YoRegistry sessionRegistry = new YoRegistry(getClass().getSimpleName());
    protected final YoDouble time = new YoDouble("time", rootRegistry);
-   private final JVMStatisticsGenerator jvmStatisticsGenerator = new JVMStatisticsGenerator(sessionRegistry);
+   private final JVMStatisticsGenerator jvmStatisticsGenerator = new JVMStatisticsGenerator("SCS2Stats", sessionRegistry);
 
    protected final YoRegistry runRegistry = new YoRegistry("runStatistics");
    private final YoTimer runActualDT = new YoTimer("runActualDT", TimeUnit.MILLISECONDS, runRegistry);
