@@ -17,34 +17,55 @@ import us.ihmc.yoVariables.variable.YoLong;
 
 public class JVMStatisticsGenerator
 {
-   private final YoRegistry registry = new YoRegistry("JVMStatistics");
+   private final YoRegistry registry;
 
-   private final YoTimer timer = new YoTimer("jvmStatsTimer", TimeUnit.MILLISECONDS, registry);
+   private final YoTimer timer;
 
-   private final YoLong freeMemory = new YoLong("freeMemoryInBytes", registry);
-   private final YoLong maxMemory = new YoLong("maxMemoryInBytes", registry);
-   private final YoLong usedMemory = new YoLong("usedMemoryInBytes", registry);
-   private final YoLong totalMemory = new YoLong("totalMemoryInBytes", registry);
+   private final YoLong freeMemory;
+   private final YoLong maxMemory;
+   private final YoLong usedMemory;
+   private final YoLong totalMemory;
 
-   private final YoLong totalGCInvocations = new YoLong("totalGCInvocations", registry);
-   private final YoLong totalGCTotalCollectionTimeMs = new YoLong("gcTotalCollectionTimeMs", registry);
+   private final YoLong totalGCInvocations;
+   private final YoLong totalGCTotalCollectionTimeMs;
 
-   private final YoInteger loadedClassCount = new YoInteger("loadedClassCount", registry);
-   private final YoLong totalLoadedClassCount = new YoLong("totalLoadedClassCount", registry);
-   private final YoLong unloadedClassCount = new YoLong("unloadedClassCount", registry);
+   private final YoInteger loadedClassCount;
+   private final YoLong totalLoadedClassCount;
+   private final YoLong unloadedClassCount;
 
-   private final YoLong totalCompilationTime = new YoLong("totalCompilationTimeMs", registry);
+   private final YoLong totalCompilationTime;
 
-   private final YoInteger availableProcessors = new YoInteger("availableProcessors", registry);
-   private final YoDouble systemLoadAverage = new YoDouble("systemLoadAverage", registry);
+   private final YoInteger availableProcessors;
+   private final YoDouble systemLoadAverage;
 
    private final ArrayList<GCBeanHolder> gcBeanHolders = new ArrayList<>();
    private final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
    private final CompilationMXBean compilationMXBean = ManagementFactory.getCompilationMXBean();
    private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
 
-   public JVMStatisticsGenerator(YoRegistry parentRegistry)
+   public JVMStatisticsGenerator(String prefix, YoRegistry parentRegistry)
    {
+      registry = new YoRegistry(prefix + "SCS2JVMStatistics");
+
+      timer = new YoTimer(prefix + "JVMStatsTimer", TimeUnit.MILLISECONDS, registry);
+
+      freeMemory = new YoLong(prefix + "FreeMemoryInBytes", registry);
+      maxMemory = new YoLong(prefix + "MaxMemoryInBytes", registry);
+      usedMemory = new YoLong(prefix + "UsedMemoryInBytes", registry);
+      totalMemory = new YoLong(prefix + "TotalMemoryInBytes", registry);
+
+      totalGCInvocations = new YoLong(prefix + "TotalGCInvocations", registry);
+      totalGCTotalCollectionTimeMs = new YoLong(prefix + "GCTotalCollectionTimeMs", registry);
+
+      loadedClassCount = new YoInteger(prefix + "LoadedClassCount", registry);
+      totalLoadedClassCount = new YoLong(prefix + "TotalLoadedClassCount", registry);
+      unloadedClassCount = new YoLong(prefix + "UnloadedClassCount", registry);
+
+      totalCompilationTime = new YoLong(prefix + "TotalCompilationTimeMs", registry);
+
+      availableProcessors = new YoInteger(prefix + "AvailableProcessors", registry);
+      systemLoadAverage = new YoDouble(prefix + "SystemLoadAverage", registry);
+
       createGCBeanHolders();
 
       availableProcessors.set(operatingSystemMXBean.getAvailableProcessors());

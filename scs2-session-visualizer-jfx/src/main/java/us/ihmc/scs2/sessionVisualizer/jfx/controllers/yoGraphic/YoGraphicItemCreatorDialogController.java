@@ -3,6 +3,8 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools.createAvailableYoGraphicFXItemName;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.TitledPane;
@@ -27,7 +30,7 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -58,6 +61,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPointcloudFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPolygonExtrudedFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPolygonFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPolynomialFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoRampFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoSTPBoxFX3D;
 
 public class YoGraphicItemCreatorDialogController
@@ -69,9 +73,9 @@ public class YoGraphicItemCreatorDialogController
    @FXML
    private ToggleButton yoArrowFX3DToggleButton, yoBoxFX3DToggleButton, yoCapsuleFX3DToggleButton, yoConeFX3DToggleButton, yoCoordinateSystemFX3DToggleButton,
          yoCylinderFX3DToggleButton, yoEllipsoidFX3DToggleButton, yoPointcloudFX3DToggleButton, yoPointFX3DToggleButton, yoPolygonExtrudedFX3DToggleButton,
-         yoPolynomialFX3DToggleButton, yoSTPBoxFX3DToggleButton;
+         yoPolynomialFX3DToggleButton, yoRampFX3DToggleButton, yoSTPBoxFX3DToggleButton;
    @FXML
-   private FlowPane miscFlowPane;
+   private GridPane miscPane;
    @FXML
    private ToggleButton yoGroupFXToggleButton;
    @FXML
@@ -135,6 +139,7 @@ public class YoGraphicItemCreatorDialogController
       buttonToTypeMap.put(yoPointFX3DToggleButton, YoPointFX3D.class);
       buttonToTypeMap.put(yoPolygonExtrudedFX3DToggleButton, YoPolygonExtrudedFX3D.class);
       buttonToTypeMap.put(yoPolynomialFX3DToggleButton, YoPolynomialFX3D.class);
+      buttonToTypeMap.put(yoRampFX3DToggleButton, YoRampFX3D.class);
       buttonToTypeMap.put(yoSTPBoxFX3DToggleButton, YoSTPBoxFX3D.class);
       // Misc.:
       buttonToTypeMap.put(yoGroupFXToggleButton, YoGroupFX.class);
@@ -157,6 +162,7 @@ public class YoGraphicItemCreatorDialogController
       typeToDefaultNameMap.put(YoPointFX3D.class, "Point 3D");
       typeToDefaultNameMap.put(YoPolygonExtrudedFX3D.class, "Polygon Extruded 3D");
       typeToDefaultNameMap.put(YoPolynomialFX3D.class, "Polynomial 3D");
+      typeToDefaultNameMap.put(YoRampFX3D.class, "Ramp 3D");
       typeToDefaultNameMap.put(YoSTPBoxFX3D.class, "STP Box 3D");
       // Misc.:
       typeToDefaultNameMap.put(YoGroupFX.class, "Group");
@@ -227,13 +233,14 @@ public class YoGraphicItemCreatorDialogController
 
    private void refreshRobotCollisionsToggleButtons()
    {
-      miscFlowPane.getChildren().removeAll(robotCollisionsToggleButtons);
+      miscPane.getChildren().removeAll(robotCollisionsToggleButtons);
       robotCollisionsToggleButtons.forEach(button -> button.setToggleGroup(null));
+      cleanupMiscPane();
 
       robotCollisionsToggleButtons.clear();
       robotCollisionsToggleButtons.addAll(sessionRobotDefinitions.stream().map(this::createRobotCollisionsToggleButton).collect(Collectors.toList()));
 
-      miscFlowPane.getChildren().addAll(robotCollisionsToggleButtons);
+      addNodesToMiscPane(robotCollisionsToggleButtons);
       robotCollisionsToggleButtons.forEach(button -> button.setToggleGroup(toggleGroup));
    }
 
@@ -244,8 +251,9 @@ public class YoGraphicItemCreatorDialogController
          if (terrainCollisionsToggleButton != null)
          {
             terrainCollisionsToggleButton.setToggleGroup(null);
-            miscFlowPane.getChildren().remove(terrainCollisionsToggleButton);
+            miscPane.getChildren().remove(terrainCollisionsToggleButton);
             terrainCollisionsToggleButton = null;
+            cleanupMiscPane();
          }
       }
       else
@@ -253,7 +261,7 @@ public class YoGraphicItemCreatorDialogController
          if (terrainCollisionsToggleButton == null)
          {
             terrainCollisionsToggleButton = createTerrainCollisionsToggleButton();
-            miscFlowPane.getChildren().add(terrainCollisionsToggleButton);
+            addNodeToMiscPane(terrainCollisionsToggleButton);
             terrainCollisionsToggleButton.setToggleGroup(toggleGroup);
          }
       }
@@ -261,14 +269,48 @@ public class YoGraphicItemCreatorDialogController
 
    private void refreshRobotMassPropertiesToggleButtons()
    {
-      miscFlowPane.getChildren().removeAll(robotMassPropertiesToggleButtons);
+      miscPane.getChildren().removeAll(robotMassPropertiesToggleButtons);
       robotMassPropertiesToggleButtons.forEach(button -> button.setToggleGroup(null));
+      cleanupMiscPane();
 
       robotMassPropertiesToggleButtons.clear();
       robotMassPropertiesToggleButtons.addAll(sessionRobotDefinitions.stream().map(this::createRobotMassPropertiesToggleButton).collect(Collectors.toList()));
 
-      miscFlowPane.getChildren().addAll(robotMassPropertiesToggleButtons);
+      addNodesToMiscPane(robotMassPropertiesToggleButtons);
       robotMassPropertiesToggleButtons.forEach(button -> button.setToggleGroup(toggleGroup));
+   }
+
+   private void cleanupMiscPane()
+   {
+      ArrayList<Node> nodes = new ArrayList<>(miscPane.getChildren());
+      miscPane.getChildren().clear();
+      addNodesToMiscPane(nodes);
+   }
+
+   private void addNodesToMiscPane(Collection<? extends Node> nodes)
+   {
+      int numberOfColumns = miscPane.getColumnConstraints().size();
+      int row = miscPane.getChildren().size() / numberOfColumns;
+      int col = miscPane.getChildren().size() % numberOfColumns;
+
+      for (Node node : nodes)
+      {
+         miscPane.add(node, col, row);
+         col++;
+         if (col >= numberOfColumns)
+         {
+            col = 0;
+            row++;
+         }
+      }
+   }
+
+   private void addNodeToMiscPane(Node node)
+   {
+      int numberOfColumns = miscPane.getColumnConstraints().size();
+      int row = miscPane.getChildren().size() / numberOfColumns;
+      int col = miscPane.getChildren().size() % numberOfColumns;
+      miscPane.add(node, col, row);
    }
 
    public void setParent(YoGroupFX parent)

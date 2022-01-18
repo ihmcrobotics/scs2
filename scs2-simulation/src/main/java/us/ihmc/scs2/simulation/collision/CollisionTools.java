@@ -279,6 +279,8 @@ public class CollisionTools
       stpRamp3D.setMargins(definition.getMinimumMargin(), definition.getMaximumMargin());
       if (originPose != null)
          stpRamp3D.getPose().set(originPose);
+      // Ramp3DDefinition assume the origin at the center of the bottom face while Euclid places it at the bottom of the ramp.
+      stpRamp3D.getPose().appendTranslation(-0.5 * definition.getSizeX(), 0.0, 0.0);
       return stpRamp3D;
    }
 
@@ -288,6 +290,8 @@ public class CollisionTools
       ramp3D.getSize().set(definition.getSizeX(), definition.getSizeY(), definition.getSizeZ());
       if (originPose != null)
          ramp3D.getPose().set(originPose);
+      // Ramp3DDefinition assume the origin at the center of the bottom face while Euclid places it at the bottom of the ramp.
+      ramp3D.getPose().appendTranslation(-0.5 * definition.getSizeX(), 0.0, 0.0);
       return ramp3D;
    }
 }
