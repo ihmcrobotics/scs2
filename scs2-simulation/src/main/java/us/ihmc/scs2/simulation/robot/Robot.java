@@ -34,6 +34,7 @@ import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintControl
 import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimCrossFourBarJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFixedJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPlanarJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
@@ -275,18 +276,22 @@ public class Robot implements RobotInterface
       {
          if (definition instanceof FixedJointDefinition)
             return new SimFixedJoint((FixedJointDefinition) definition, predecessor);
-         else if (definition instanceof PlanarJointDefinition)
+         if (definition instanceof PlanarJointDefinition)
             return new SimPlanarJoint((PlanarJointDefinition) definition, predecessor);
-         else if (definition instanceof SixDoFJointDefinition)
-            return new SimSixDoFJoint((SixDoFJointDefinition) definition, predecessor);
-         else if (definition instanceof PrismaticJointDefinition)
+         if (definition instanceof SixDoFJointDefinition)
+         {
+            if (definition.getParentJoint() == null)
+               return new SimFloatingRootJoint((SixDoFJointDefinition) definition, predecessor); // TODO Find better way to identify root joint
+            else
+               return new SimSixDoFJoint((SixDoFJointDefinition) definition, predecessor);
+         }
+         if (definition instanceof PrismaticJointDefinition)
             return new SimPrismaticJoint((PrismaticJointDefinition) definition, predecessor);
-         else if (definition instanceof RevoluteJointDefinition)
+         if (definition instanceof RevoluteJointDefinition)
             return new SimRevoluteJoint((RevoluteJointDefinition) definition, predecessor);
-         else if (definition instanceof CrossFourBarJointDefinition)
+         if (definition instanceof CrossFourBarJointDefinition)
             return new SimCrossFourBarJoint((CrossFourBarJointDefinition) definition, predecessor);
-         else
-            throw new UnsupportedOperationException("Unsupported joint definition: " + definition.getClass().getSimpleName());
+         throw new UnsupportedOperationException("Unsupported joint definition: " + definition.getClass().getSimpleName());
       }
    }
 

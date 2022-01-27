@@ -45,7 +45,9 @@ public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasic
 
       registry = predecessor.getRegistry();
       auxiliaryData = new SimJointAuxiliaryData(this);
-      jointAngularDeltaVelocity = new YoFrameVector3D(name + "AngularDeltaVelocity", afterJointFrame, registry);
+
+      String varName = !name.isEmpty() ? "_" + name + "_" : "_";
+      jointAngularDeltaVelocity = new YoFrameVector3D("qd_delta" + varName + "w", afterJointFrame, registry);
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(afterJointFrame, beforeJointFrame, jointAngularDeltaVelocity, new FrameVector3D(afterJointFrame));
    }
 
