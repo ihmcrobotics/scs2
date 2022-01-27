@@ -119,32 +119,54 @@ public class CollisionShapeDefinition
    }
 
    @Override
-   public boolean equals(Object object)
+   public int hashCode()
    {
-      if (object == this)
-      {
-         return true;
-      }
-      else if (object instanceof CollisionShapeDefinition)
-      {
-         CollisionShapeDefinition other = (CollisionShapeDefinition) object;
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + (int) (collisionGroup ^ (collisionGroup >>> 32));
+      result = prime * result + (int) (collisionMask ^ (collisionMask >>> 32));
+      result = prime * result + ((geometryDefinition == null) ? 0 : geometryDefinition.hashCode());
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((originPose == null) ? 0 : originPose.hashCode());
+      return result;
+   }
 
-         if (!Objects.equals(name, other.name))
-            return false;
-         if (!Objects.equals(originPose, other.originPose))
-            return false;
-         if (!Objects.equals(geometryDefinition, other.geometryDefinition))
-            return false;
-         if (collisionMask != other.collisionMask)
-            return false;
-         if (collisionGroup != other.collisionGroup)
-            return false;
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
          return true;
-      }
-      else
-      {
+      if (obj == null)
          return false;
+      if (getClass() != obj.getClass())
+         return false;
+      CollisionShapeDefinition other = (CollisionShapeDefinition) obj;
+      if (collisionGroup != other.collisionGroup)
+         return false;
+      if (collisionMask != other.collisionMask)
+         return false;
+      if (geometryDefinition == null)
+      {
+         if (other.geometryDefinition != null)
+            return false;
       }
+      else if (!geometryDefinition.equals(other.geometryDefinition))
+         return false;
+      if (name == null)
+      {
+         if (other.name != null)
+            return false;
+      }
+      else if (!name.equals(other.name))
+         return false;
+      if (originPose == null)
+      {
+         if (other.originPose != null)
+            return false;
+      }
+      else if (!originPose.equals(other.originPose))
+         return false;
+      return true;
    }
 
    @Override

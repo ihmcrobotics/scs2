@@ -104,4 +104,44 @@ public class SensorDefinition implements Transformable
    {
       return getClass().getSimpleName() + " - " + name;
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((transformToJoint == null) ? 0 : transformToJoint.hashCode());
+      result = prime * result + updatePeriod;
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      SensorDefinition other = (SensorDefinition) obj;
+      if (name == null)
+      {
+         if (other.name != null)
+            return false;
+      }
+      else if (!name.equals(other.name))
+         return false;
+      if (transformToJoint == null)
+      {
+         if (other.transformToJoint != null)
+            return false;
+      }
+      else if (!transformToJoint.equals(other.transformToJoint))
+         return false;
+      if (updatePeriod != other.updatePeriod)
+         return false;
+      return true;
+   }
 }

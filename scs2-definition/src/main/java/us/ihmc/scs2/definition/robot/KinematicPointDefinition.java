@@ -75,4 +75,41 @@ public class KinematicPointDefinition implements Transformable
    {
       return getClass().getSimpleName() + " - " + name;
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((transformToParent == null) ? 0 : transformToParent.hashCode());
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      KinematicPointDefinition other = (KinematicPointDefinition) obj;
+      if (name == null)
+      {
+         if (other.name != null)
+            return false;
+      }
+      else if (!name.equals(other.name))
+         return false;
+      if (transformToParent == null)
+      {
+         if (other.transformToParent != null)
+            return false;
+      }
+      else if (!transformToParent.equals(other.transformToParent))
+         return false;
+      return true;
+   }
 }

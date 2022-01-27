@@ -382,4 +382,57 @@ public class RobotDefinition
    {
       RigidBodyBasics newRootBody(ReferenceFrame parentFrame, RigidBodyDefinition definition);
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((controllerDefinitions == null) ? 0 : controllerDefinitions.hashCode());
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((nameOfJointsToIgnore == null) ? 0 : nameOfJointsToIgnore.hashCode());
+      result = prime * result + ((rootBodyDefinition == null) ? 0 : rootBodyDefinition.hashCode());
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      RobotDefinition other = (RobotDefinition) obj;
+      if (controllerDefinitions == null)
+      {
+         if (other.controllerDefinitions != null)
+            return false;
+      }
+      else if (!controllerDefinitions.equals(other.controllerDefinitions))
+         return false;
+      if (name == null)
+      {
+         if (other.name != null)
+            return false;
+      }
+      else if (!name.equals(other.name))
+         return false;
+      if (nameOfJointsToIgnore == null)
+      {
+         if (other.nameOfJointsToIgnore != null)
+            return false;
+      }
+      else if (!nameOfJointsToIgnore.equals(other.nameOfJointsToIgnore))
+         return false;
+      if (rootBodyDefinition == null)
+      {
+         if (other.rootBodyDefinition != null)
+            return false;
+      }
+      else if (!rootBodyDefinition.equals(other.rootBodyDefinition))
+         return false;
+      return true;
+   }
 }

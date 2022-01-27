@@ -132,4 +132,49 @@ public class LoopClosureDefinition
       orthogonalMatrixToPack.setM22(0.0);
       R.transform(orthogonalMatrixToPack);
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((kdSoftConstraint == null) ? 0 : kdSoftConstraint.hashCode());
+      result = prime * result + ((kpSoftConstraint == null) ? 0 : kpSoftConstraint.hashCode());
+      result = prime * result + ((transformToSuccessorParent == null) ? 0 : transformToSuccessorParent.hashCode());
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      LoopClosureDefinition other = (LoopClosureDefinition) obj;
+      if (kdSoftConstraint == null)
+      {
+         if (other.kdSoftConstraint != null)
+            return false;
+      }
+      else if (!kdSoftConstraint.equals(other.kdSoftConstraint))
+         return false;
+      if (kpSoftConstraint == null)
+      {
+         if (other.kpSoftConstraint != null)
+            return false;
+      }
+      else if (!kpSoftConstraint.equals(other.kpSoftConstraint))
+         return false;
+      if (transformToSuccessorParent == null)
+      {
+         if (other.transformToSuccessorParent != null)
+            return false;
+      }
+      else if (!transformToSuccessorParent.equals(other.transformToSuccessorParent))
+         return false;
+      return true;
+   }
 }

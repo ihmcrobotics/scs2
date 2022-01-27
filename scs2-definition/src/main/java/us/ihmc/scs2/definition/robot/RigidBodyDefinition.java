@@ -264,4 +264,77 @@ public class RigidBodyDefinition implements Transformable
       String childrenString = childrenJoints == null ? "[]" : EuclidCoreIOTools.getCollectionString("[", "]", ", ", childrenJoints, JointDefinition::getName);
       return name + ": inertia pose: " + inertiaPose + ", children: " + childrenString;
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((childrenJoints == null) ? 0 : childrenJoints.hashCode());
+      result = prime * result + ((collisionShapeDefinitions == null) ? 0 : collisionShapeDefinitions.hashCode());
+      result = prime * result + ((inertiaPose == null) ? 0 : inertiaPose.hashCode());
+      long temp;
+      temp = Double.doubleToLongBits(mass);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      result = prime * result + ((momentOfInertia == null) ? 0 : momentOfInertia.hashCode());
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      RigidBodyDefinition other = (RigidBodyDefinition) obj;
+      if (childrenJoints == null)
+      {
+         if (other.childrenJoints != null)
+            return false;
+      }
+      else if (!childrenJoints.equals(other.childrenJoints))
+         return false;
+      if (collisionShapeDefinitions == null)
+      {
+         if (other.collisionShapeDefinitions != null)
+            return false;
+      }
+      else if (!collisionShapeDefinitions.equals(other.collisionShapeDefinitions))
+         return false;
+      if (inertiaPose == null)
+      {
+         if (other.inertiaPose != null)
+            return false;
+      }
+      else if (!inertiaPose.equals(other.inertiaPose))
+         return false;
+      if (Double.doubleToLongBits(mass) != Double.doubleToLongBits(other.mass))
+         return false;
+      if (momentOfInertia == null)
+      {
+         if (other.momentOfInertia != null)
+            return false;
+      }
+      else if (!momentOfInertia.equals(other.momentOfInertia))
+         return false;
+      if (name == null)
+      {
+         if (other.name != null)
+            return false;
+      }
+      else if (!name.equals(other.name))
+         return false;
+      if (parentJoint == null)
+      {
+         if (other.parentJoint != null)
+            return false;
+      }
+      else if (!parentJoint.equals(other.parentJoint))
+         return false;
+      return true;
+   }
 }

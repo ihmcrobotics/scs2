@@ -161,4 +161,41 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
       return "[(x,y,z)=" + translation + ", (y,p,r)="
             + EuclidCoreIOTools.getStringOf("(", ")]", ", ", orientation.getYaw(), orientation.getPitch(), orientation.getRoll());
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((orientation == null) ? 0 : orientation.hashCode());
+      result = prime * result + ((translation == null) ? 0 : translation.hashCode());
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) obj;
+      if (orientation == null)
+      {
+         if (other.orientation != null)
+            return false;
+      }
+      else if (!orientation.equals(other.orientation))
+         return false;
+      if (translation == null)
+      {
+         if (other.translation != null)
+            return false;
+      }
+      else if (!translation.equals(other.translation))
+         return false;
+      return true;
+   }
 }

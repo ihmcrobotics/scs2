@@ -260,4 +260,96 @@ public abstract class JointDefinition implements Transformable
       String successorString = successor == null ? "null" : successor.getName();
       return name + ": origin: " + transformToParent + ", successor: " + successorString;
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((externalWrenchPointDefinitions == null) ? 0 : externalWrenchPointDefinitions.hashCode());
+      result = prime * result + ((groundContactPointDefinitions == null) ? 0 : groundContactPointDefinitions.hashCode());
+      result = prime * result + ((kinematicPointDefinitions == null) ? 0 : kinematicPointDefinitions.hashCode());
+      result = prime * result + ((loopClosureDefinition == null) ? 0 : loopClosureDefinition.hashCode());
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((sensorDefinitions == null) ? 0 : sensorDefinitions.hashCode());
+      result = prime * result + ((successor == null) ? 0 : successor.hashCode());
+      result = prime * result + ((transformToParent == null) ? 0 : transformToParent.hashCode());
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      JointDefinition other = (JointDefinition) obj;
+      if (externalWrenchPointDefinitions == null)
+      {
+         if (other.externalWrenchPointDefinitions != null)
+            return false;
+      }
+      else if (!externalWrenchPointDefinitions.equals(other.externalWrenchPointDefinitions))
+         return false;
+      if (groundContactPointDefinitions == null)
+      {
+         if (other.groundContactPointDefinitions != null)
+            return false;
+      }
+      else if (!groundContactPointDefinitions.equals(other.groundContactPointDefinitions))
+         return false;
+      if (kinematicPointDefinitions == null)
+      {
+         if (other.kinematicPointDefinitions != null)
+            return false;
+      }
+      else if (!kinematicPointDefinitions.equals(other.kinematicPointDefinitions))
+         return false;
+      if (loopClosureDefinition == null)
+      {
+         if (other.loopClosureDefinition != null)
+            return false;
+      }
+      else if (!loopClosureDefinition.equals(other.loopClosureDefinition))
+         return false;
+      if (name == null)
+      {
+         if (other.name != null)
+            return false;
+      }
+      else if (!name.equals(other.name))
+         return false;
+      if (predecessor == null)
+      {
+         if (other.predecessor != null)
+            return false;
+      }
+      else if (!predecessor.equals(other.predecessor))
+         return false;
+      if (sensorDefinitions == null)
+      {
+         if (other.sensorDefinitions != null)
+            return false;
+      }
+      else if (!sensorDefinitions.equals(other.sensorDefinitions))
+         return false;
+      if (successor == null)
+      {
+         if (other.successor != null)
+            return false;
+      }
+      else if (!successor.equals(other.successor))
+         return false;
+      if (transformToParent == null)
+      {
+         if (other.transformToParent != null)
+            return false;
+      }
+      else if (!transformToParent.equals(other.transformToParent))
+         return false;
+      return true;
+   }
 }

@@ -272,4 +272,50 @@ public class MomentOfInertiaDefinition implements Matrix3DBasics
    {
       return getIzz();
    }
+
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      long temp;
+      temp = Double.doubleToLongBits(ixx);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(ixy);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(ixz);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(iyy);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(iyz);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(izz);
+      result = prime * result + (int) (temp ^ (temp >>> 32));
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      MomentOfInertiaDefinition other = (MomentOfInertiaDefinition) obj;
+      if (Double.doubleToLongBits(ixx) != Double.doubleToLongBits(other.ixx))
+         return false;
+      if (Double.doubleToLongBits(ixy) != Double.doubleToLongBits(other.ixy))
+         return false;
+      if (Double.doubleToLongBits(ixz) != Double.doubleToLongBits(other.ixz))
+         return false;
+      if (Double.doubleToLongBits(iyy) != Double.doubleToLongBits(other.iyy))
+         return false;
+      if (Double.doubleToLongBits(iyz) != Double.doubleToLongBits(other.iyz))
+         return false;
+      if (Double.doubleToLongBits(izz) != Double.doubleToLongBits(other.izz))
+         return false;
+      return true;
+   }
 }
