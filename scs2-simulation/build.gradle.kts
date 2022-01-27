@@ -21,7 +21,7 @@ mainDependencies {
    api("us.ihmc:euclid-frame-shape:0.17.0")
    api("us.ihmc:ihmc-messager:0.1.7")
    api("us.ihmc:ihmc-yovariables:0.9.11")
-   api("us.ihmc:mecano-yovariables:0.9.0")
+   api("us.ihmc:mecano-yovariables:0.9.1")
 }
 
 testDependencies {
