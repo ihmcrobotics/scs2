@@ -2,7 +2,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -65,11 +67,28 @@ public class SCS1GraphicConversionTools
       List<ArtifactList> artifactLists = new ArrayList<>();
       registry.getRegisteredArtifactLists(artifactLists);
 
-      List<YoGraphicDefinition> definitions = new ArrayList<>();
-      yoGraphicsLists.forEach(yoGraphicsList -> definitions.add(toYoGraphicGroupDefinition(yoGraphicsList)));
-      artifactLists.forEach(artifactList -> definitions.add(toYoGraphicGroupDefinition(artifactList)));
+      Map<String, YoGraphicGroupDefinition> definitionMap = new LinkedHashMap<>();
 
-      return definitions;
+      for (YoGraphicsList yoGraphicsList : yoGraphicsLists)
+      {
+         YoGraphicGroupDefinition newDefinition = toYoGraphicGroupDefinition(yoGraphicsList);
+         YoGraphicGroupDefinition oldDefinition = definitionMap.get(newDefinition.getName());
+         if (oldDefinition != null)
+            oldDefinition.getChildren().addAll(newDefinition.getChildren());
+         else
+            definitionMap.put(newDefinition.getName(), newDefinition);
+      }
+      for (ArtifactList artifactList : artifactLists)
+      {
+         YoGraphicGroupDefinition newDefinition = toYoGraphicGroupDefinition(artifactList);
+         YoGraphicGroupDefinition oldDefinition = definitionMap.get(newDefinition.getName());
+         if (oldDefinition != null)
+            oldDefinition.getChildren().addAll(newDefinition.getChildren());
+         else
+            definitionMap.put(newDefinition.getName(), newDefinition);
+      }
+
+      return new ArrayList<>(definitionMap.values());
    }
 
    public static YoGraphicGroupDefinition toYoGraphicGroupDefinition(YoGraphicsList yoGraphicsList)
