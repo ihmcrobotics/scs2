@@ -66,7 +66,7 @@ public class ImpulseBasedRobotPhysics
       this.owner = owner;
       inertialFrame = owner.getInertialFrame();
 
-      jointDeltaVelocityMatrix = new DMatrixRMaj(MultiBodySystemTools.computeDegreesOfFreedom(owner.getAllJoints()), 1);
+      jointDeltaVelocityMatrix = new DMatrixRMaj(MultiBodySystemTools.computeDegreesOfFreedom(owner.getJointsToConsider()), 1);
       rigidBodyDeltaTwistCalculator = new RigidBodyDeltaTwistCalculator(inertialFrame, owner.getJointMatrixIndexProvider(), jointDeltaVelocityMatrix);
       rigidBodyDeltaTwistProvider = rigidBodyDeltaTwistCalculator.getDeltaTwistProvider();
 
@@ -79,7 +79,7 @@ public class ImpulseBasedRobotPhysics
 
       YoRegistry jointLimitConstraintCalculatorRegistry = new YoRegistry(RobotJointLimitImpulseBasedCalculator.class.getSimpleName());
 
-      jointLimitConstraintCalculator = new YoRobotJointLimitImpulseBasedCalculator(rootBody, forwardDynamicsCalculator, jointLimitConstraintCalculatorRegistry);
+      jointLimitConstraintCalculator = new YoRobotJointLimitImpulseBasedCalculator(owner, forwardDynamicsCalculator, jointLimitConstraintCalculatorRegistry);
 
       environmentContactConstraintCalculatorPool = new YoSingleContactImpulseCalculatorPool(20,
                                                                                             owner.getName() + "Single",

@@ -13,6 +13,7 @@ import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.MultiBodyResponseCalculator;
 import us.ihmc.mecano.algorithms.interfaces.RigidBodyTwistProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
+import us.ihmc.mecano.multiBodySystem.interfaces.MultiBodySystemBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -68,18 +69,23 @@ public class RobotJointLimitImpulseBasedCalculator implements ImpulseBasedConstr
    private final DMatrixRMaj impulsePrevious = new DMatrixRMaj(matrixInitialSize, 1);
    private final DMatrixRMaj impulseUpdate = new DMatrixRMaj(matrixInitialSize, 1);
 
-   private final RigidBodyBasics rootBody;
+   private final MultiBodySystemBasics input;
    private final ForwardDynamicsCalculator forwardDynamicsCalculator;
    private final MultiBodyResponseCalculator responseCalculator;
 
    public RobotJointLimitImpulseBasedCalculator(RigidBodyBasics rootBody, ForwardDynamicsCalculator forwardDynamicsCalculator)
    {
-      this.rootBody = rootBody;
+      this(MultiBodySystemBasics.toMultiBodySystemBasics(rootBody), forwardDynamicsCalculator);
+   }
+
+   public RobotJointLimitImpulseBasedCalculator(MultiBodySystemBasics input, ForwardDynamicsCalculator forwardDynamicsCalculator)
+   {
+      this.input = input;
       this.forwardDynamicsCalculator = forwardDynamicsCalculator;
 
       responseCalculator = new MultiBodyResponseCalculator(forwardDynamicsCalculator);
-      rigidBodyTwistModifier = new ImpulseBasedRigidBodyTwistProvider(responseCalculator.getTwistChangeProvider().getInertialFrame(), rootBody);
-      jointTwistModifier = new ImpulseBasedJointTwistProvider(rootBody);
+      rigidBodyTwistModifier = new ImpulseBasedRigidBodyTwistProvider(responseCalculator.getTwistChangeProvider().getInertialFrame(), input.getRootBody());
+      jointTwistModifier = new ImpulseBasedJointTwistProvider(input.getRootBody());
    }
 
    @Override
@@ -88,7 +94,7 @@ public class RobotJointLimitImpulseBasedCalculator implements ImpulseBasedConstr
       jointsAtLimit.clear();
       activeLimits.clear();
 
-      for (JointBasics joint : rootBody.childrenSubtreeIterable())
+      for (JointBasics joint : input.getJointsToConsider())
       {
          if (joint instanceof OneDoFJointBasics)
          {
@@ -341,7 +347,7 @@ public class RobotJointLimitImpulseBasedCalculator implements ImpulseBasedConstr
    @Override
    public RigidBodyBasics getRootBody(int index)
    {
-      return rootBody;
+      return input.getRootBody();
    }
 
    @Override

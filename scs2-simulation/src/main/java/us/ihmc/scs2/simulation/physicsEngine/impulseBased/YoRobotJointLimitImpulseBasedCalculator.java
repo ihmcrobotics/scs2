@@ -5,9 +5,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
+import us.ihmc.mecano.multiBodySystem.interfaces.MultiBodySystemBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
-import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
@@ -17,14 +16,15 @@ public class YoRobotJointLimitImpulseBasedCalculator extends RobotJointLimitImpu
    private final YoInteger numberOfJointsAtLimit;
    private final Map<OneDoFJointReadOnly, YoJointLimitImpulseData> yoJointDataMap;
 
-   public YoRobotJointLimitImpulseBasedCalculator(RigidBodyBasics rootBody, ForwardDynamicsCalculator forwardDynamicsCalculator, YoRegistry registry)
+   public YoRobotJointLimitImpulseBasedCalculator(MultiBodySystemBasics input, ForwardDynamicsCalculator forwardDynamicsCalculator, YoRegistry registry)
    {
-      super(rootBody, forwardDynamicsCalculator);
+      super(input, forwardDynamicsCalculator);
 
       numberOfJointsAtLimit = new YoInteger("numberOfJointsAtLimit", registry);
 
-      yoJointDataMap = SubtreeStreams.fromChildren(OneDoFJointReadOnly.class, rootBody).map(joint -> new YoJointLimitImpulseData(joint, registry))
-                                     .collect(Collectors.toMap(YoJointLimitImpulseData::getJoint, Function.identity()));
+      yoJointDataMap = input.getJointsToConsider().stream().filter(OneDoFJointReadOnly.class::isInstance)
+                            .map(joint -> new YoJointLimitImpulseData((OneDoFJointReadOnly) joint, registry))
+                            .collect(Collectors.toMap(YoJointLimitImpulseData::getJoint, Function.identity()));
    }
 
    @Override
