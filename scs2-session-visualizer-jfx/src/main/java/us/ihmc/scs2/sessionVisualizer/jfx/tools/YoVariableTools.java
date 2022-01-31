@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -19,8 +18,6 @@ import org.apache.commons.text.similarity.SimilarityScore;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.RegularExpression;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
-import us.ihmc.yoVariables.buffer.YoBuffer;
-import us.ihmc.yoVariables.buffer.YoBufferVariableEntry;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameQuaternion;
@@ -48,25 +45,6 @@ public class YoVariableTools
          hashCode = 31L * hashCode + hashCode(yoVariable);
       }
       return hashCode;
-   }
-   
-   public static long hashCode(YoBuffer buffer)
-   {
-      final int prime = 31;
-      long result = 1;
-      
-      int inPoint = buffer.getInPoint();
-      int outPoint = buffer.getOutPoint();
-      
-      List<YoBufferVariableEntry> entries = buffer.getEntries();
-      for(int i = 0; i < entries.size(); i++)
-      {
-         YoBufferVariableEntry entry = entries.get(i);
-         double[] bufferWindow = entry.getBufferWindow(inPoint, outPoint);
-         result = prime * result + Arrays.hashCode(bufferWindow);
-      }
-      
-      return result;
    }
 
    public static long hashCode(YoVariable yoVariable)
