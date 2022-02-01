@@ -1,8 +1,7 @@
 package us.ihmc.scs2.definition.state;
 
-import java.util.EnumSet;
-import java.util.Objects;
-import java.util.Set;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
 
 import org.ejml.data.DMatrixRMaj;
 
@@ -12,33 +11,37 @@ import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
 
+@XmlType(propOrder = {"configuration", "velocity", "acceleration", "effort"})
 public class OneDoFJointState extends JointStateBase implements OneDoFJointStateBasics
 {
-   private final Set<JointStateType> availableStates = EnumSet.noneOf(JointStateType.class);
-   private double configuration = 0.0;
-   private double velocity = 0.0;
-   private double acceleration = 0.0;
-   private double effort = 0.0;
+   private double configuration;
+   private double velocity;
+   private double acceleration;
+   private double effort;
 
    private final DMatrixRMaj temp = new DMatrixRMaj(1, 1);
 
    public OneDoFJointState()
    {
+      clear();
    }
 
    public OneDoFJointState(double q)
    {
+      this();
       setConfiguration(q);
    }
 
    public OneDoFJointState(double q, double qd)
    {
+      this();
       setConfiguration(q);
       setVelocity(qd);
    }
 
    public OneDoFJointState(double q, double qd, double tau)
    {
+      this();
       setConfiguration(q);
       setVelocity(qd);
       setEffort(tau);
@@ -52,7 +55,10 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    @Override
    public void clear()
    {
-      availableStates.clear();
+      configuration = Double.NaN;
+      velocity = Double.NaN;
+      acceleration = Double.NaN;
+      effort = Double.NaN;
    }
 
    public void set(OneDoFJointState other)
@@ -61,7 +67,6 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
       velocity = other.velocity;
       acceleration = other.acceleration;
       effort = other.effort;
-      availableStates.addAll(other.availableStates);
    }
 
    @Override
@@ -103,38 +108,50 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
       }
    }
 
+   @XmlAttribute
    @Override
    public void setConfiguration(double q)
    {
-      availableStates.add(JointStateType.CONFIGURATION);
       configuration = q;
    }
 
+   @XmlAttribute
    @Override
    public void setVelocity(double qd)
    {
-      availableStates.add(JointStateType.VELOCITY);
       velocity = qd;
    }
 
+   @XmlAttribute
    @Override
    public void setAcceleration(double qdd)
    {
-      availableStates.add(JointStateType.ACCELERATION);
       acceleration = qdd;
    }
 
+   @XmlAttribute
    @Override
    public void setEffort(double tau)
    {
-      availableStates.add(JointStateType.EFFORT);
       effort = tau;
    }
 
    @Override
    public boolean hasOutputFor(JointStateType query)
    {
-      return availableStates.contains(query);
+      switch (query)
+      {
+         case CONFIGURATION:
+            return !Double.isNaN(configuration);
+         case VELOCITY:
+            return !Double.isNaN(velocity);
+         case ACCELERATION:
+            return !Double.isNaN(acceleration);
+         case EFFORT:
+            return !Double.isNaN(effort);
+         default:
+            throw new IllegalStateException("Should get here.");
+      }
    }
 
    @Override
@@ -171,15 +188,10 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    public int hashCode()
    {
       long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
-      if (availableStates.contains(JointStateType.CONFIGURATION))
-         bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
-      if (availableStates.contains(JointStateType.VELOCITY))
-         bits = EuclidHashCodeTools.addToHashCode(bits, velocity);
-      if (availableStates.contains(JointStateType.ACCELERATION))
-         bits = EuclidHashCodeTools.addToHashCode(bits, acceleration);
-      if (availableStates.contains(JointStateType.EFFORT))
-         bits = EuclidHashCodeTools.addToHashCode(bits, effort);
+      bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, velocity);
+      bits = EuclidHashCodeTools.addToHashCode(bits, acceleration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, effort);
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -195,15 +207,13 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
 
       OneDoFJointState other = (OneDoFJointState) object;
 
-      if (!Objects.equals(availableStates, other.availableStates))
+      if (Double.doubleToLongBits(configuration) != Double.doubleToLongBits(other.configuration))
          return false;
-      if (availableStates.contains(JointStateType.CONFIGURATION) && Double.doubleToLongBits(configuration) != Double.doubleToLongBits(other.configuration))
+      if (Double.doubleToLongBits(velocity) != Double.doubleToLongBits(other.velocity))
          return false;
-      if (availableStates.contains(JointStateType.VELOCITY) && Double.doubleToLongBits(velocity) != Double.doubleToLongBits(other.velocity))
+      if (Double.doubleToLongBits(acceleration) != Double.doubleToLongBits(other.acceleration))
          return false;
-      if (availableStates.contains(JointStateType.ACCELERATION) && Double.doubleToLongBits(acceleration) != Double.doubleToLongBits(other.acceleration))
-         return false;
-      if (availableStates.contains(JointStateType.EFFORT) && Double.doubleToLongBits(effort) != Double.doubleToLongBits(other.effort))
+      if (Double.doubleToLongBits(effort) != Double.doubleToLongBits(other.effort))
          return false;
 
       return true;

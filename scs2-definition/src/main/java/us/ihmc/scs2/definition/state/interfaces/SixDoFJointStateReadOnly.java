@@ -6,21 +6,63 @@ import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
+import us.ihmc.mecano.tools.JointStateType;
 
 public interface SixDoFJointStateReadOnly extends JointStateReadOnly
 {
+   /**
+    * The 3D pose (orientation and position) of the joint local frame.
+    * 
+    * @return the joint pose.
+    */
    Pose3DReadOnly getConfiguration();
 
+   /**
+    * The 3D angular velocity expressed in the local frame of the joint, i.e. the coordinate system
+    * defined by {@link #getConfiguration()}.
+    * 
+    * @return the joint angular velocity.
+    */
    Vector3DReadOnly getAngularVelocity();
 
+   /**
+    * The 3D linear velocity expressed in the local frame of the joint, i.e. the coordinate system
+    * defined by {@link #getConfiguration()}.
+    * 
+    * @return the joint linear velocity.
+    */
    Vector3DReadOnly getLinearVelocity();
 
+   /**
+    * The 3D angular acceleration expressed in the local frame of the joint, i.e. the coordinate system
+    * defined by {@link #getConfiguration()}.
+    * 
+    * @return the joint angular acceleration.
+    */
    Vector3DReadOnly getAngularAcceleration();
 
+   /**
+    * The 3D linear acceleration expressed in the local frame of the joint, i.e. the coordinate system
+    * defined by {@link #getConfiguration()}.
+    * 
+    * @return the joint linear acceleration.
+    */
    Vector3DReadOnly getLinearAcceleration();
 
+   /**
+    * The 3D torque expressed in the local frame of the joint, i.e. the coordinate system defined by
+    * {@link #getConfiguration()}.
+    * 
+    * @return the joint torque.
+    */
    Vector3DReadOnly getTorque();
 
+   /**
+    * The 3D force expressed in the local frame of the joint, i.e. the coordinate system defined by
+    * {@link #getConfiguration()}.
+    * 
+    * @return the joint force.
+    */
    Vector3DReadOnly getForce();
 
    @Override
@@ -33,6 +75,24 @@ public interface SixDoFJointStateReadOnly extends JointStateReadOnly
    default int getDegreesOfFreedom()
    {
       return 6;
+   }
+
+   @Override
+   default boolean hasOutputFor(JointStateType query)
+   {
+      switch (query)
+      {
+         case CONFIGURATION:
+            return !getConfiguration().containsNaN();
+         case VELOCITY:
+            return !getAngularVelocity().containsNaN() && !getLinearVelocity().containsNaN();
+         case ACCELERATION:
+            return !getAngularAcceleration().containsNaN() && !getLinearAcceleration().containsNaN();
+         case EFFORT:
+            return !getTorque().containsNaN() && !getForce().containsNaN();
+         default:
+            throw new IllegalStateException("Should not get here.");
+      }
    }
 
    @Override

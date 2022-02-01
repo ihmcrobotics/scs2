@@ -1,19 +1,16 @@
 package us.ihmc.scs2.definition.state;
 
-import java.util.EnumSet;
 import java.util.Objects;
-import java.util.Set;
 
-import org.ejml.data.DMatrix;
+import javax.xml.bind.annotation.XmlElement;
+
 import org.ejml.data.DMatrixRMaj;
 
 import us.ihmc.euclid.geometry.Pose3D;
-import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.SixDoFJointStateBasics;
@@ -21,7 +18,6 @@ import us.ihmc.scs2.definition.state.interfaces.SixDoFJointStateReadOnly;
 
 public class SixDoFJointState extends JointStateBase implements SixDoFJointStateBasics
 {
-   private final Set<JointStateType> availableStates = EnumSet.noneOf(JointStateType.class);
    private final Pose3D configuration = new Pose3D();
    private final Vector3D angularVelocity = new Vector3D();
    private final Vector3D linearVelocity = new Vector3D();
@@ -34,22 +30,31 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
 
    public SixDoFJointState()
    {
+      clear();
    }
 
    public SixDoFJointState(Orientation3DReadOnly orientation, Tuple3DReadOnly position)
    {
+      this();
       setConfiguration(orientation, position);
    }
 
    public SixDoFJointState(JointStateReadOnly other)
    {
+      this();
       set(other);
    }
 
    @Override
    public void clear()
    {
-      availableStates.clear();
+      configuration.setToNaN();
+      angularVelocity.setToNaN();
+      linearVelocity.setToNaN();
+      angularAcceleration.setToNaN();
+      linearAcceleration.setToNaN();
+      torque.setToNaN();
+      force.setToNaN();
    }
 
    public void set(SixDoFJointState other)
@@ -61,7 +66,6 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
       linearAcceleration.set(other.linearAcceleration);
       torque.set(other.torque);
       force.set(other.force);
-      availableStates.addAll(other.availableStates);
    }
 
    @Override
@@ -79,168 +83,132 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
       {
          if (jointStateReadOnly.getConfigurationSize() != getConfigurationSize() || jointStateReadOnly.getDegreesOfFreedom() != getDegreesOfFreedom())
             throw new IllegalArgumentException("Dimension mismatch");
-         clear();
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.CONFIGURATION))
          {
             jointStateReadOnly.getConfiguration(0, temp);
             setConfiguration(0, temp);
          }
+         else
+         {
+            configuration.setToNaN();
+         }
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.VELOCITY))
          {
             jointStateReadOnly.getVelocity(0, temp);
             setVelocity(0, temp);
          }
+         else
+         {
+            angularVelocity.setToNaN();
+            linearVelocity.setToNaN();
+         }
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.ACCELERATION))
          {
             jointStateReadOnly.getAcceleration(0, temp);
             setAcceleration(0, temp);
          }
+         else
+         {
+            angularAcceleration.setToNaN();
+            linearAcceleration.setToNaN();
+         }
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.EFFORT))
          {
             jointStateReadOnly.getEffort(0, temp);
             setEffort(0, temp);
          }
+         else
+         {
+            torque.setToNaN();
+            force.setToNaN();
+         }
       }
    }
 
-   @Override
-   public void setConfiguration(Orientation3DReadOnly orientation, Tuple3DReadOnly position)
+   @XmlElement
+   public void setConfiguration(Pose3D configuration)
    {
-      availableStates.add(JointStateType.CONFIGURATION);
+      SixDoFJointStateBasics.super.setConfiguration(configuration);
+   }
 
-      if (orientation != null)
-         configuration.getOrientation().set(orientation);
-      else
-         configuration.getOrientation().setToZero();
+   @XmlElement
+   public void setAngularVelocity(Vector3D angularVelocity)
+   {
+      this.angularVelocity.set(angularVelocity);
+   }
 
-      if (position != null)
-         configuration.getPosition().set(position);
-      else
-         configuration.getPosition().setToZero();
+   @XmlElement
+   public void setLinearVelocity(Vector3D linearVelocity)
+   {
+      this.linearVelocity.set(linearVelocity);
+   }
+
+   @XmlElement
+   public void setAngularAcceleration(Vector3D angularAcceleration)
+   {
+      this.angularAcceleration.set(angularAcceleration);
+   }
+
+   @XmlElement
+   public void setLinearAcceleration(Vector3D linearAcceleration)
+   {
+      this.linearAcceleration.set(linearAcceleration);
+   }
+
+   @XmlElement
+   public void setTorque(Vector3D torque)
+   {
+      this.torque.set(torque);
+   }
+
+   @XmlElement
+   public void setForce(Vector3D force)
+   {
+      this.force.set(force);
    }
 
    @Override
-   public int setConfiguration(int startRow, DMatrix configuration)
-   {
-      this.configuration.getOrientation().set(startRow, configuration);
-      this.configuration.getPosition().set(startRow + 4, configuration);
-      availableStates.add(JointStateType.CONFIGURATION);
-      return startRow + getConfigurationSize();
-   }
-
-   @Override
-   public void setVelocity(Vector3DReadOnly angularVelocity, Vector3DReadOnly linearVelocity)
-   {
-      availableStates.add(JointStateType.VELOCITY);
-      if (angularVelocity == null)
-         this.angularVelocity.setToZero();
-      else
-         this.angularVelocity.set(angularVelocity);
-      if (linearVelocity == null)
-         this.linearVelocity.setToZero();
-      else
-         this.linearVelocity.set(linearVelocity);
-   }
-
-   @Override
-   public int setVelocity(int startRow, DMatrix velocity)
-   {
-      angularVelocity.set(startRow, velocity);
-      linearVelocity.set(startRow + 3, velocity);
-      availableStates.add(JointStateType.VELOCITY);
-      return startRow + getDegreesOfFreedom();
-   }
-
-   @Override
-   public void setAcceleration(Vector3DReadOnly angularAcceleration, Vector3DReadOnly linearAcceleration)
-   {
-      availableStates.add(JointStateType.ACCELERATION);
-      if (angularAcceleration != null)
-         this.angularAcceleration.set(angularAcceleration);
-      else
-         this.angularAcceleration.setToZero();
-      if (linearAcceleration != null)
-         this.linearAcceleration.set(linearAcceleration);
-      else
-         this.linearAcceleration.setToZero();
-   }
-
-   @Override
-   public int setAcceleration(int startRow, DMatrix acceleration)
-   {
-      angularAcceleration.set(startRow, acceleration);
-      linearAcceleration.set(startRow + 3, acceleration);
-      availableStates.add(JointStateType.ACCELERATION);
-      return startRow + getDegreesOfFreedom();
-   }
-
-   @Override
-   public void setEffort(Vector3DReadOnly torque, Vector3DReadOnly force)
-   {
-      availableStates.add(JointStateType.EFFORT);
-      if (torque != null)
-         this.torque.set(torque);
-      else
-         this.torque.setToZero();
-      if (force != null)
-         this.force.set(force);
-      else
-         this.force.setToZero();
-   }
-
-   @Override
-   public int setEffort(int startRow, DMatrix effort)
-   {
-      torque.set(startRow, effort);
-      force.set(startRow + 3, effort);
-      availableStates.add(JointStateType.EFFORT);
-      return startRow + getDegreesOfFreedom();
-   }
-
-   @Override
-   public boolean hasOutputFor(JointStateType query)
-   {
-      return availableStates.contains(query);
-   }
-
-   @Override
-   public Pose3DReadOnly getConfiguration()
+   public Pose3D getConfiguration()
    {
       return configuration;
    }
 
    @Override
-   public Vector3DReadOnly getAngularVelocity()
+   public Vector3D getAngularVelocity()
    {
       return angularVelocity;
    }
 
    @Override
-   public Vector3DReadOnly getLinearVelocity()
+   public Vector3D getLinearVelocity()
    {
       return linearVelocity;
    }
 
    @Override
-   public Vector3DReadOnly getAngularAcceleration()
+   public Vector3D getAngularAcceleration()
    {
       return angularAcceleration;
    }
 
    @Override
-   public Vector3DReadOnly getLinearAcceleration()
+   public Vector3D getLinearAcceleration()
    {
       return linearAcceleration;
    }
 
    @Override
-   public Vector3DReadOnly getTorque()
+   public Vector3D getTorque()
    {
       return torque;
    }
 
    @Override
-   public Vector3DReadOnly getForce()
+   public Vector3D getForce()
    {
       return force;
    }
@@ -255,26 +223,13 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    public int hashCode()
    {
       long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
-      if (availableStates.contains(JointStateType.CONFIGURATION))
-      {
-         bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
-      }
-      if (availableStates.contains(JointStateType.VELOCITY))
-      {
-         bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
-         bits = EuclidHashCodeTools.addToHashCode(bits, linearVelocity);
-      }
-      if (availableStates.contains(JointStateType.ACCELERATION))
-      {
-         bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
-         bits = EuclidHashCodeTools.addToHashCode(bits, linearAcceleration);
-      }
-      if (availableStates.contains(JointStateType.EFFORT))
-      {
-         bits = EuclidHashCodeTools.addToHashCode(bits, torque);
-         bits = EuclidHashCodeTools.addToHashCode(bits, force);
-      }
+      bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
+      bits = EuclidHashCodeTools.addToHashCode(bits, linearVelocity);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, linearAcceleration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, torque);
+      bits = EuclidHashCodeTools.addToHashCode(bits, force);
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -290,34 +245,20 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
 
       SixDoFJointState other = (SixDoFJointState) object;
 
-      if (!Objects.equals(availableStates, other.availableStates))
+      if (!Objects.equals(configuration, other.configuration))
          return false;
-      if (availableStates.contains(JointStateType.CONFIGURATION))
-      {
-         if (!Objects.equals(configuration, other.configuration))
-            return false;
-      }
-      if (availableStates.contains(JointStateType.VELOCITY))
-      {
-         if (!Objects.equals(angularVelocity, other.angularVelocity))
-            return false;
-         if (!Objects.equals(linearVelocity, other.linearVelocity))
-            return false;
-      }
-      if (availableStates.contains(JointStateType.ACCELERATION))
-      {
-         if (!Objects.equals(angularAcceleration, other.angularAcceleration))
-            return false;
-         if (!Objects.equals(linearAcceleration, other.linearAcceleration))
-            return false;
-      }
-      if (availableStates.contains(JointStateType.EFFORT))
-      {
-         if (!Objects.equals(torque, other.torque))
-            return false;
-         if (!Objects.equals(force, other.force))
-            return false;
-      }
+      if (!Objects.equals(angularVelocity, other.angularVelocity))
+         return false;
+      if (!Objects.equals(linearVelocity, other.linearVelocity))
+         return false;
+      if (!Objects.equals(angularAcceleration, other.angularAcceleration))
+         return false;
+      if (!Objects.equals(linearAcceleration, other.linearAcceleration))
+         return false;
+      if (!Objects.equals(torque, other.torque))
+         return false;
+      if (!Objects.equals(force, other.force))
+         return false;
 
       return true;
    }
