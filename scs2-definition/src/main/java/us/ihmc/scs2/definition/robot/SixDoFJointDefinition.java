@@ -1,5 +1,8 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.SixDoFJoint;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -81,5 +84,31 @@ public class SixDoFJointDefinition extends JointDefinition
    public SixDoFJointDefinition copy()
    {
       return new SixDoFJointDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, initialJointState);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      SixDoFJointDefinition other = (SixDoFJointDefinition) object;
+
+      if (!Objects.equals(initialJointState, other.initialJointState))
+         return false;
+      if (!Objects.equals(variableName, other.variableName))
+         return false;
+
+      return true;
    }
 }

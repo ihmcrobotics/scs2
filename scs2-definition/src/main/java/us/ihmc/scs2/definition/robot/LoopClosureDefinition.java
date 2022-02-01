@@ -1,9 +1,12 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
 import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DBasics;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -136,44 +139,30 @@ public class LoopClosureDefinition
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((kdSoftConstraint == null) ? 0 : kdSoftConstraint.hashCode());
-      result = prime * result + ((kpSoftConstraint == null) ? 0 : kpSoftConstraint.hashCode());
-      result = prime * result + ((transformToSuccessorParent == null) ? 0 : transformToSuccessorParent.hashCode());
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToSuccessorParent);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kpSoftConstraint);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kdSoftConstraint);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (this == object)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      LoopClosureDefinition other = (LoopClosureDefinition) obj;
-      if (kdSoftConstraint == null)
-      {
-         if (other.kdSoftConstraint != null)
-            return false;
-      }
-      else if (!kdSoftConstraint.equals(other.kdSoftConstraint))
+
+      LoopClosureDefinition other = (LoopClosureDefinition) object;
+
+      if (!Objects.equals(transformToSuccessorParent, other.transformToSuccessorParent))
          return false;
-      if (kpSoftConstraint == null)
-      {
-         if (other.kpSoftConstraint != null)
-            return false;
-      }
-      else if (!kpSoftConstraint.equals(other.kpSoftConstraint))
+      if (!Objects.equals(kpSoftConstraint, other.kpSoftConstraint))
          return false;
-      if (transformToSuccessorParent == null)
-      {
-         if (other.transformToSuccessorParent != null)
-            return false;
-      }
-      else if (!transformToSuccessorParent.equals(other.transformToSuccessorParent))
+      if (!Objects.equals(kdSoftConstraint, other.kdSoftConstraint))
          return false;
       return true;
    }

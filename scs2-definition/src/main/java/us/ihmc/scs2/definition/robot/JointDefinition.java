@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -9,6 +10,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import us.ihmc.euclid.interfaces.Transformable;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -264,92 +266,51 @@ public abstract class JointDefinition implements Transformable
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((externalWrenchPointDefinitions == null) ? 0 : externalWrenchPointDefinitions.hashCode());
-      result = prime * result + ((groundContactPointDefinitions == null) ? 0 : groundContactPointDefinitions.hashCode());
-      result = prime * result + ((kinematicPointDefinitions == null) ? 0 : kinematicPointDefinitions.hashCode());
-      result = prime * result + ((loopClosureDefinition == null) ? 0 : loopClosureDefinition.hashCode());
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      result = prime * result + ((sensorDefinitions == null) ? 0 : sensorDefinitions.hashCode());
-      result = prime * result + ((successor == null) ? 0 : successor.hashCode());
-      result = prime * result + ((transformToParent == null) ? 0 : transformToParent.hashCode());
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToParent);
+      // The predecessor is not used. This joint's hash code depends on the subtree it is the root of.
+      bits = EuclidHashCodeTools.addToHashCode(bits, successor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, sensorDefinitions);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kinematicPointDefinitions);
+      bits = EuclidHashCodeTools.addToHashCode(bits, externalWrenchPointDefinitions);
+      bits = EuclidHashCodeTools.addToHashCode(bits, groundContactPointDefinitions);
+      bits = EuclidHashCodeTools.addToHashCode(bits, loopClosureDefinition);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (object == this)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      JointDefinition other = (JointDefinition) obj;
-      if (externalWrenchPointDefinitions == null)
-      {
-         if (other.externalWrenchPointDefinitions != null)
-            return false;
-      }
-      else if (!externalWrenchPointDefinitions.equals(other.externalWrenchPointDefinitions))
+
+      JointDefinition other = (JointDefinition) object;
+
+      if (!Objects.equals(name, other.name))
          return false;
-      if (groundContactPointDefinitions == null)
-      {
-         if (other.groundContactPointDefinitions != null)
-            return false;
-      }
-      else if (!groundContactPointDefinitions.equals(other.groundContactPointDefinitions))
+      if (!Objects.equals(transformToParent, other.transformToParent))
          return false;
-      if (kinematicPointDefinitions == null)
-      {
-         if (other.kinematicPointDefinitions != null)
-            return false;
-      }
-      else if (!kinematicPointDefinitions.equals(other.kinematicPointDefinitions))
+      // The predecessors are not compared. We only compared from this joint to downstream towards the end-effectors.
+      if (!Objects.equals(successor, other.successor))
          return false;
-      if (loopClosureDefinition == null)
-      {
-         if (other.loopClosureDefinition != null)
-            return false;
-      }
-      else if (!loopClosureDefinition.equals(other.loopClosureDefinition))
+
+      if (!Objects.equals(sensorDefinitions, other.sensorDefinitions))
          return false;
-      if (name == null)
-      {
-         if (other.name != null)
-            return false;
-      }
-      else if (!name.equals(other.name))
+      if (!Objects.equals(kinematicPointDefinitions, other.kinematicPointDefinitions))
          return false;
-      if (predecessor == null)
-      {
-         if (other.predecessor != null)
-            return false;
-      }
-      else if (!predecessor.equals(other.predecessor))
+      if (!Objects.equals(externalWrenchPointDefinitions, other.externalWrenchPointDefinitions))
          return false;
-      if (sensorDefinitions == null)
-      {
-         if (other.sensorDefinitions != null)
-            return false;
-      }
-      else if (!sensorDefinitions.equals(other.sensorDefinitions))
+      if (!Objects.equals(groundContactPointDefinitions, other.groundContactPointDefinitions))
          return false;
-      if (successor == null)
-      {
-         if (other.successor != null)
-            return false;
-      }
-      else if (!successor.equals(other.successor))
+
+      if (!Objects.equals(loopClosureDefinition, other.loopClosureDefinition))
          return false;
-      if (transformToParent == null)
-      {
-         if (other.transformToParent != null)
-            return false;
-      }
-      else if (!transformToParent.equals(other.transformToParent))
-         return false;
+
       return true;
    }
 }

@@ -1,5 +1,8 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.SphericalJoint;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -63,5 +66,29 @@ public class SphericalJointDefinition extends JointDefinition
    public SphericalJointDefinition copy()
    {
       return new SphericalJointDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, initialJointState);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      SphericalJointDefinition other = (SphericalJointDefinition) object;
+
+      if (!Objects.equals(initialJointState, other.initialJointState))
+         return false;
+
+      return true;
    }
 }

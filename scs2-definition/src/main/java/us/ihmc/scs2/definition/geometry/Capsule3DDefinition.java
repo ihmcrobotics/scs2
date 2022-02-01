@@ -252,13 +252,12 @@ public class Capsule3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, length);
       bits = EuclidHashCodeTools.addToHashCode(bits, radiusX);
       bits = EuclidHashCodeTools.addToHashCode(bits, radiusY);
       bits = EuclidHashCodeTools.addToHashCode(bits, radiusZ);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -266,28 +265,24 @@ public class Capsule3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Capsule3DDefinition)
-      {
-         Capsule3DDefinition other = (Capsule3DDefinition) object;
-         if (length != other.length)
-            return false;
-         if (radiusX != other.radiusX)
-            return false;
-         if (radiusY != other.radiusY)
-            return false;
-         if (radiusZ != other.radiusZ)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Capsule3DDefinition other = (Capsule3DDefinition) object;
+
+      if (Double.doubleToLongBits(length) != Double.doubleToLongBits(other.length))
+         return false;
+      if (Double.doubleToLongBits(radiusX) != Double.doubleToLongBits(other.radiusX))
+         return false;
+      if (Double.doubleToLongBits(radiusY) != Double.doubleToLongBits(other.radiusY))
+         return false;
+      if (Double.doubleToLongBits(radiusZ) != Double.doubleToLongBits(other.radiusZ))
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

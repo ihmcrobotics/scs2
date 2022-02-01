@@ -68,13 +68,9 @@ public class STPRamp3DDefinition extends Ramp3DDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, getSizeX());
-      bits = EuclidHashCodeTools.addToHashCode(bits, getSizeY());
-      bits = EuclidHashCodeTools.addToHashCode(bits, getSizeZ());
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, minimumMargin);
       bits = EuclidHashCodeTools.addToHashCode(bits, maximumMargin);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -82,22 +78,18 @@ public class STPRamp3DDefinition extends Ramp3DDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof STPRamp3DDefinition)
-      {
-         STPRamp3DDefinition other = (STPRamp3DDefinition) object;
-         if (minimumMargin != other.minimumMargin)
-            return false;
-         if (maximumMargin != other.maximumMargin)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      STPRamp3DDefinition other = (STPRamp3DDefinition) object;
+
+      if (Double.doubleToLongBits(minimumMargin) != Double.doubleToLongBits(other.minimumMargin))
+         return false;
+      if (Double.doubleToLongBits(maximumMargin) != Double.doubleToLongBits(other.maximumMargin))
+         return false;
+
+      return true;
    }
 
    @Override

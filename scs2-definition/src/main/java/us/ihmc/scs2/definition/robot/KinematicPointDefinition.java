@@ -1,6 +1,9 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import us.ihmc.euclid.interfaces.Transformable;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
@@ -79,37 +82,29 @@ public class KinematicPointDefinition implements Transformable
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      result = prime * result + ((transformToParent == null) ? 0 : transformToParent.hashCode());
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToParent);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (this == object)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      KinematicPointDefinition other = (KinematicPointDefinition) obj;
-      if (name == null)
-      {
-         if (other.name != null)
-            return false;
-      }
-      else if (!name.equals(other.name))
+
+      KinematicPointDefinition other = (KinematicPointDefinition) object;
+
+      if (!Objects.equals(name, other.name))
          return false;
-      if (transformToParent == null)
-      {
-         if (other.transformToParent != null)
-            return false;
-      }
-      else if (!transformToParent.equals(other.transformToParent))
+      if (!Objects.equals(transformToParent, other.transformToParent))
          return false;
+
       return true;
    }
 }

@@ -2,11 +2,13 @@ package us.ihmc.scs2.definition.geometry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
 
 /**
@@ -163,6 +165,39 @@ public class ModelFileGeometryDefinition extends GeometryDefinition
       return new ModelFileGeometryDefinition(this);
    }
 
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, fileName);
+      bits = EuclidHashCodeTools.addToHashCode(bits, submeshes);
+      bits = EuclidHashCodeTools.addToHashCode(bits, resourceDirectories);
+      bits = EuclidHashCodeTools.addToHashCode(bits, scale);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      ModelFileGeometryDefinition other = (ModelFileGeometryDefinition) object;
+
+      if (!Objects.equals(fileName, other.fileName))
+         return false;
+      if (!Objects.equals(submeshes, other.submeshes))
+         return false;
+      if (!Objects.equals(resourceDirectories, other.resourceDirectories))
+         return false;
+      if (!Objects.equals(scale, other.scale))
+         return false;
+
+      return true;
+   }
+
    /**
     * Definition of a sub-mesh to be loaded together with a main mesh.
     */
@@ -245,6 +280,35 @@ public class ModelFileGeometryDefinition extends GeometryDefinition
       public SubMeshDefinition copy()
       {
          return new SubMeshDefinition(this);
+      }
+
+      @Override
+      public int hashCode()
+      {
+         long bits = 1L;
+         bits = EuclidHashCodeTools.addToHashCode(bits, name);
+         bits = EuclidHashCodeTools.addToHashCode(bits, center);
+         return EuclidHashCodeTools.toIntHashCode(bits);
+      }
+
+      @Override
+      public boolean equals(Object object)
+      {
+         if (object == this)
+            return true;
+         if (object == null)
+            return false;
+         if (getClass() != object.getClass())
+            return false;
+
+         SubMeshDefinition other = (SubMeshDefinition) object;
+
+         if (!Objects.equals(name, other.name))
+            return false;
+         if (center != other.center)
+            return false;
+
+         return true;
       }
    }
 }

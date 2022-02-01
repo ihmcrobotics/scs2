@@ -70,9 +70,8 @@ public class Tetrahedron3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, edgeLength);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -80,20 +79,16 @@ public class Tetrahedron3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Tetrahedron3DDefinition)
-      {
-         Tetrahedron3DDefinition other = (Tetrahedron3DDefinition) object;
-         if (edgeLength != other.edgeLength)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Tetrahedron3DDefinition other = (Tetrahedron3DDefinition) object;
+
+      if (Double.doubleToLongBits(edgeLength) != Double.doubleToLongBits(other.edgeLength))
+         return false;
+
+      return true;
    }
 
    @Override

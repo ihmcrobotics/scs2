@@ -135,11 +135,10 @@ public class Cone3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, height);
       bits = EuclidHashCodeTools.addToHashCode(bits, radius);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -147,24 +146,20 @@ public class Cone3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Cone3DDefinition)
-      {
-         Cone3DDefinition other = (Cone3DDefinition) object;
-         if (height != other.height)
-            return false;
-         if (radius != other.radius)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Cone3DDefinition other = (Cone3DDefinition) object;
+
+      if (Double.doubleToLongBits(height) != Double.doubleToLongBits(other.height))
+         return false;
+      if (Double.doubleToLongBits(radius) != Double.doubleToLongBits(other.radius))
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

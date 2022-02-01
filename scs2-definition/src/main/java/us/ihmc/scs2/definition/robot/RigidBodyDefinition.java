@@ -3,6 +3,7 @@ package us.ihmc.scs2.definition.robot;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -13,6 +14,7 @@ import us.ihmc.euclid.interfaces.Transformable;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -268,73 +270,44 @@ public class RigidBodyDefinition implements Transformable
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((childrenJoints == null) ? 0 : childrenJoints.hashCode());
-      result = prime * result + ((collisionShapeDefinitions == null) ? 0 : collisionShapeDefinitions.hashCode());
-      result = prime * result + ((inertiaPose == null) ? 0 : inertiaPose.hashCode());
-      long temp;
-      temp = Double.doubleToLongBits(mass);
-      result = prime * result + (int) (temp ^ (temp >>> 32));
-      result = prime * result + ((momentOfInertia == null) ? 0 : momentOfInertia.hashCode());
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, mass);
+      bits = EuclidHashCodeTools.addToHashCode(bits, momentOfInertia);
+      bits = EuclidHashCodeTools.addToHashCode(bits, inertiaPose);
+      bits = EuclidHashCodeTools.addToHashCode(bits, childrenJoints);
+      bits = EuclidHashCodeTools.addToHashCode(bits, visualDefinitions);
+      bits = EuclidHashCodeTools.addToHashCode(bits, collisionShapeDefinitions);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (this == object)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      RigidBodyDefinition other = (RigidBodyDefinition) obj;
-      if (childrenJoints == null)
-      {
-         if (other.childrenJoints != null)
-            return false;
-      }
-      else if (!childrenJoints.equals(other.childrenJoints))
-         return false;
-      if (collisionShapeDefinitions == null)
-      {
-         if (other.collisionShapeDefinitions != null)
-            return false;
-      }
-      else if (!collisionShapeDefinitions.equals(other.collisionShapeDefinitions))
-         return false;
-      if (inertiaPose == null)
-      {
-         if (other.inertiaPose != null)
-            return false;
-      }
-      else if (!inertiaPose.equals(other.inertiaPose))
+
+      RigidBodyDefinition other = (RigidBodyDefinition) object;
+
+      if (!Objects.equals(name, other.name))
          return false;
       if (Double.doubleToLongBits(mass) != Double.doubleToLongBits(other.mass))
          return false;
-      if (momentOfInertia == null)
-      {
-         if (other.momentOfInertia != null)
-            return false;
-      }
-      else if (!momentOfInertia.equals(other.momentOfInertia))
+      if (!Objects.equals(momentOfInertia, other.momentOfInertia))
          return false;
-      if (name == null)
-      {
-         if (other.name != null)
-            return false;
-      }
-      else if (!name.equals(other.name))
+      if (!Objects.equals(inertiaPose, other.inertiaPose))
          return false;
-      if (parentJoint == null)
-      {
-         if (other.parentJoint != null)
-            return false;
-      }
-      else if (!parentJoint.equals(other.parentJoint))
+      if (!Objects.equals(childrenJoints, other.childrenJoints))
          return false;
+      if (!Objects.equals(visualDefinitions, other.visualDefinitions))
+         return false;
+      if (!Objects.equals(collisionShapeDefinitions, other.collisionShapeDefinitions))
+         return false;
+
       return true;
    }
 }

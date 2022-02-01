@@ -1,7 +1,10 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -266,5 +269,65 @@ public abstract class OneDoFJointDefinition extends JointDefinition
    public OneDoFJointState getInitialJointState()
    {
       return initialJointState;
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, axis);
+      bits = EuclidHashCodeTools.addToHashCode(bits, positionLowerLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, positionUpperLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, velocityLowerLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, velocityUpperLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, effortLowerLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, effortUpperLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, damping);
+      bits = EuclidHashCodeTools.addToHashCode(bits, stiction);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kpSoftLimitStop);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kdSoftLimitStop);
+      bits = EuclidHashCodeTools.addToHashCode(bits, dampingVelocitySoftLimit);
+      bits = EuclidHashCodeTools.addToHashCode(bits, initialJointState);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      OneDoFJointDefinition other = (OneDoFJointDefinition) object;
+
+      if (!Objects.equals(axis, other.axis))
+         return false;
+      if (Double.doubleToLongBits(positionLowerLimit) != Double.doubleToLongBits(other.positionLowerLimit))
+         return false;
+      if (Double.doubleToLongBits(positionUpperLimit) != Double.doubleToLongBits(other.positionUpperLimit))
+         return false;
+      if (Double.doubleToLongBits(velocityLowerLimit) != Double.doubleToLongBits(other.velocityLowerLimit))
+         return false;
+      if (Double.doubleToLongBits(velocityUpperLimit) != Double.doubleToLongBits(other.velocityUpperLimit))
+         return false;
+      if (Double.doubleToLongBits(effortLowerLimit) != Double.doubleToLongBits(other.effortLowerLimit))
+         return false;
+      if (Double.doubleToLongBits(effortUpperLimit) != Double.doubleToLongBits(other.effortUpperLimit))
+         return false;
+      if (Double.doubleToLongBits(damping) != Double.doubleToLongBits(other.damping))
+         return false;
+      if (Double.doubleToLongBits(stiction) != Double.doubleToLongBits(other.stiction))
+         return false;
+      if (Double.doubleToLongBits(kpSoftLimitStop) != Double.doubleToLongBits(other.kpSoftLimitStop))
+         return false;
+      if (Double.doubleToLongBits(kdSoftLimitStop) != Double.doubleToLongBits(other.kdSoftLimitStop))
+         return false;
+      if (Double.doubleToLongBits(dampingVelocitySoftLimit) != Double.doubleToLongBits(other.dampingVelocitySoftLimit))
+         return false;
+      if (!Objects.equals(initialJointState, other.initialJointState))
+         return false;
+
+      return true;
    }
 }

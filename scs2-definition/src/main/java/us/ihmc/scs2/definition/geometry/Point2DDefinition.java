@@ -1,7 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Point2DBasics;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
@@ -57,20 +60,27 @@ public class Point2DDefinition extends GeometryDefinition implements Point2DBasi
    }
 
    @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, position);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
    public boolean equals(Object object)
    {
       if (object == this)
          return true;
-      if (object instanceof Point2DDefinition)
-         return position.equals(((Point2DDefinition) object).position);
-      else
+      if (!super.equals(object))
          return false;
-   }
 
-   @Override
-   public int hashCode()
-   {
-      return position.hashCode();
+      Point2DDefinition other = (Point2DDefinition) object;
+
+      if (!Objects.equals(position, other.position))
+         return false;
+
+      return true;
    }
 
    @Override

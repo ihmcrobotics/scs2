@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
@@ -121,50 +122,36 @@ public class CollisionShapeDefinition
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + (int) (collisionGroup ^ (collisionGroup >>> 32));
-      result = prime * result + (int) (collisionMask ^ (collisionMask >>> 32));
-      result = prime * result + ((geometryDefinition == null) ? 0 : geometryDefinition.hashCode());
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      result = prime * result + ((originPose == null) ? 0 : originPose.hashCode());
-      return result;
+      long bits = 1;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, originPose);
+      bits = EuclidHashCodeTools.addToHashCode(bits, geometryDefinition);
+      bits = EuclidHashCodeTools.addToHashCode(bits, collisionMask);
+      bits = EuclidHashCodeTools.addToHashCode(bits, collisionGroup);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (object == this)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      CollisionShapeDefinition other = (CollisionShapeDefinition) obj;
-      if (collisionGroup != other.collisionGroup)
+
+      CollisionShapeDefinition other = (CollisionShapeDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (!Objects.equals(originPose, other.originPose))
+         return false;
+      if (!Objects.equals(geometryDefinition, other.geometryDefinition))
          return false;
       if (collisionMask != other.collisionMask)
          return false;
-      if (geometryDefinition == null)
-      {
-         if (other.geometryDefinition != null)
-            return false;
-      }
-      else if (!geometryDefinition.equals(other.geometryDefinition))
-         return false;
-      if (name == null)
-      {
-         if (other.name != null)
-            return false;
-      }
-      else if (!name.equals(other.name))
-         return false;
-      if (originPose == null)
-      {
-         if (other.originPose != null)
-            return false;
-      }
-      else if (!originPose.equals(other.originPose))
+      if (collisionGroup != other.collisionGroup)
          return false;
       return true;
    }

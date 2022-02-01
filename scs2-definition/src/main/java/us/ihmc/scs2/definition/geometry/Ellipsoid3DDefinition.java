@@ -204,12 +204,11 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, radiusX);
       bits = EuclidHashCodeTools.addToHashCode(bits, radiusY);
       bits = EuclidHashCodeTools.addToHashCode(bits, radiusZ);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -217,26 +216,22 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Ellipsoid3DDefinition)
-      {
-         Ellipsoid3DDefinition other = (Ellipsoid3DDefinition) object;
-         if (radiusX != other.radiusX)
-            return false;
-         if (radiusY != other.radiusY)
-            return false;
-         if (radiusZ != other.radiusZ)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Ellipsoid3DDefinition other = (Ellipsoid3DDefinition) object;
+
+      if (Double.doubleToLongBits(radiusX) != Double.doubleToLongBits(other.radiusX))
+         return false;
+      if (Double.doubleToLongBits(radiusY) != Double.doubleToLongBits(other.radiusY))
+         return false;
+      if (Double.doubleToLongBits(radiusZ) != Double.doubleToLongBits(other.radiusZ))
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

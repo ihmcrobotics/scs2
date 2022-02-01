@@ -180,8 +180,13 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
     *                    center its bottom face at the origin.
     * @param resolution  used for discretizing the geometry.
     */
-   public TruncatedCone3DDefinition(double height, double topRadiusX, double topRadiusY, double baseRadiusX, double baseRadiusY, boolean centered,
-                                     int resolution)
+   public TruncatedCone3DDefinition(double height,
+                                    double topRadiusX,
+                                    double topRadiusY,
+                                    double baseRadiusX,
+                                    double baseRadiusY,
+                                    boolean centered,
+                                    int resolution)
    {
       this();
       this.height = height;
@@ -407,7 +412,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, height);
       bits = EuclidHashCodeTools.addToHashCode(bits, topRadiusX);
       bits = EuclidHashCodeTools.addToHashCode(bits, topRadiusY);
@@ -415,7 +420,6 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
       bits = EuclidHashCodeTools.addToHashCode(bits, baseRadiusY);
       bits = EuclidHashCodeTools.addToHashCode(bits, centered);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -423,32 +427,28 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof TruncatedCone3DDefinition)
-      {
-         TruncatedCone3DDefinition other = (TruncatedCone3DDefinition) object;
-         if (height != other.height)
-            return false;
-         if (topRadiusX != other.topRadiusX)
-            return false;
-         if (topRadiusY != other.topRadiusY)
-            return false;
-         if (baseRadiusX != other.baseRadiusX)
-            return false;
-         if (baseRadiusY != other.baseRadiusY)
-            return false;
-         if (centered != other.centered)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      TruncatedCone3DDefinition other = (TruncatedCone3DDefinition) object;
+
+      if (Double.doubleToLongBits(height) != Double.doubleToLongBits(other.height))
+         return false;
+      if (Double.doubleToLongBits(topRadiusX) != Double.doubleToLongBits(other.topRadiusX))
+         return false;
+      if (Double.doubleToLongBits(topRadiusY) != Double.doubleToLongBits(other.topRadiusY))
+         return false;
+      if (Double.doubleToLongBits(baseRadiusX) != Double.doubleToLongBits(other.baseRadiusX))
+         return false;
+      if (Double.doubleToLongBits(baseRadiusY) != Double.doubleToLongBits(other.baseRadiusY))
+         return false;
+      if (centered != other.centered)
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

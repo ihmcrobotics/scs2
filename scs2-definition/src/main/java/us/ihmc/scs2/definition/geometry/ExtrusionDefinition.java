@@ -9,6 +9,9 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
+import java.util.Objects;
+
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 
 public class ExtrusionDefinition extends GeometryDefinition
 {
@@ -96,5 +99,32 @@ public class ExtrusionDefinition extends GeometryDefinition
    public ExtrusionDefinition copy()
    {
       return new ExtrusionDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, image);
+      bits = EuclidHashCodeTools.addToHashCode(bits, thickness);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      ExtrusionDefinition other = (ExtrusionDefinition) object;
+
+      if (!Objects.equals(image, other.image))
+         return false;
+      if (Double.doubleToLongBits(thickness) != Double.doubleToLongBits(other.thickness))
+         return false;
+
+      return true;
    }
 }

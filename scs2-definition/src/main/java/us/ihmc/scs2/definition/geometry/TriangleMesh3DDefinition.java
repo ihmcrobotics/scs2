@@ -1,10 +1,12 @@
 package us.ihmc.scs2.definition.geometry;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple2D.Point2D32;
 import us.ihmc.euclid.tuple3D.Point3D32;
 import us.ihmc.euclid.tuple3D.Vector3D32;
@@ -96,5 +98,41 @@ public class TriangleMesh3DDefinition extends GeometryDefinition
    public TriangleMesh3DDefinition copy()
    {
       return new TriangleMesh3DDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, vertices);
+      bits = EuclidHashCodeTools.addToHashCode(bits, textures);
+      bits = EuclidHashCodeTools.addToHashCode(bits, normals);
+      bits = EuclidHashCodeTools.addToHashCode(bits, triangleIndices);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      TriangleMesh3DDefinition other = (TriangleMesh3DDefinition) object;
+
+      if (!Objects.equals(getName(), other.getName()))
+         return false;
+      if (!Arrays.equals(vertices, other.vertices))
+         return false;
+      if (!Arrays.equals(textures, other.textures))
+         return false;
+      if (!Arrays.equals(normals, other.normals))
+         return false;
+      if (!Arrays.equals(triangleIndices, other.triangleIndices))
+         return false;
+      return super.equals(object);
    }
 }

@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 
 public class LidarSensorDefinition extends SensorDefinition
@@ -191,5 +192,59 @@ public class LidarSensorDefinition extends SensorDefinition
    public LidarSensorDefinition copy()
    {
       return new LidarSensorDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, sweepYawMin);
+      bits = EuclidHashCodeTools.addToHashCode(bits, sweepYawMax);
+      bits = EuclidHashCodeTools.addToHashCode(bits, heightPitchMin);
+      bits = EuclidHashCodeTools.addToHashCode(bits, heightPitchMax);
+      bits = EuclidHashCodeTools.addToHashCode(bits, minRange);
+      bits = EuclidHashCodeTools.addToHashCode(bits, maxRange);
+      bits = EuclidHashCodeTools.addToHashCode(bits, rangeResolution);
+      bits = EuclidHashCodeTools.addToHashCode(bits, pointsPerSweep);
+      bits = EuclidHashCodeTools.addToHashCode(bits, scanHeight);
+      bits = EuclidHashCodeTools.addToHashCode(bits, gaussianNoiseMean);
+      bits = EuclidHashCodeTools.addToHashCode(bits, gaussianNoiseStandardDeviation);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      LidarSensorDefinition other = (LidarSensorDefinition) object;
+
+      if (Double.doubleToLongBits(sweepYawMin) != Double.doubleToLongBits(other.sweepYawMin))
+         return false;
+      if (Double.doubleToLongBits(sweepYawMax) != Double.doubleToLongBits(other.sweepYawMax))
+         return false;
+      if (Double.doubleToLongBits(heightPitchMin) != Double.doubleToLongBits(other.heightPitchMin))
+         return false;
+      if (Double.doubleToLongBits(heightPitchMax) != Double.doubleToLongBits(other.heightPitchMax))
+         return false;
+      if (Double.doubleToLongBits(minRange) != Double.doubleToLongBits(other.minRange))
+         return false;
+      if (Double.doubleToLongBits(maxRange) != Double.doubleToLongBits(other.maxRange))
+         return false;
+      if (Double.doubleToLongBits(rangeResolution) != Double.doubleToLongBits(other.rangeResolution))
+         return false;
+      if (pointsPerSweep != other.pointsPerSweep)
+         return false;
+      if (scanHeight != other.scanHeight)
+         return false;
+      if (Double.doubleToLongBits(gaussianNoiseMean) != Double.doubleToLongBits(other.gaussianNoiseMean))
+         return false;
+      if (Double.doubleToLongBits(gaussianNoiseStandardDeviation) != Double.doubleToLongBits(other.gaussianNoiseStandardDeviation))
+         return false;
+
+      return true;
    }
 }

@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -10,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -386,53 +388,35 @@ public class RobotDefinition
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((controllerDefinitions == null) ? 0 : controllerDefinitions.hashCode());
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      result = prime * result + ((nameOfJointsToIgnore == null) ? 0 : nameOfJointsToIgnore.hashCode());
-      result = prime * result + ((rootBodyDefinition == null) ? 0 : rootBodyDefinition.hashCode());
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, rootBodyDefinition);
+      bits = EuclidHashCodeTools.addToHashCode(bits, nameOfJointsToIgnore);
+      bits = EuclidHashCodeTools.addToHashCode(bits, controllerDefinitions);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (this == object)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      RobotDefinition other = (RobotDefinition) obj;
-      if (controllerDefinitions == null)
-      {
-         if (other.controllerDefinitions != null)
-            return false;
-      }
-      else if (!controllerDefinitions.equals(other.controllerDefinitions))
+
+      RobotDefinition other = (RobotDefinition) object;
+
+      if (!Objects.equals(name, other.name))
          return false;
-      if (name == null)
-      {
-         if (other.name != null)
-            return false;
-      }
-      else if (!name.equals(other.name))
+      if (!Objects.equals(rootBodyDefinition, other.rootBodyDefinition))
          return false;
-      if (nameOfJointsToIgnore == null)
-      {
-         if (other.nameOfJointsToIgnore != null)
-            return false;
-      }
-      else if (!nameOfJointsToIgnore.equals(other.nameOfJointsToIgnore))
+      if (!Objects.equals(nameOfJointsToIgnore, other.nameOfJointsToIgnore))
          return false;
-      if (rootBodyDefinition == null)
-      {
-         if (other.rootBodyDefinition != null)
-            return false;
-      }
-      else if (!rootBodyDefinition.equals(other.rootBodyDefinition))
+      if (!Objects.equals(controllerDefinitions, other.controllerDefinitions))
          return false;
+
       return true;
    }
 }

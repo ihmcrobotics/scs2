@@ -1,8 +1,11 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 
 import us.ihmc.euclid.interfaces.Transformable;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -108,40 +111,32 @@ public class SensorDefinition implements Transformable
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      result = prime * result + ((transformToJoint == null) ? 0 : transformToJoint.hashCode());
-      result = prime * result + updatePeriod;
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToJoint);
+      bits = EuclidHashCodeTools.addToHashCode(bits, updatePeriod);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (this == object)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      SensorDefinition other = (SensorDefinition) obj;
-      if (name == null)
-      {
-         if (other.name != null)
-            return false;
-      }
-      else if (!name.equals(other.name))
+
+      SensorDefinition other = (SensorDefinition) object;
+
+      if (!Objects.equals(name, other.name))
          return false;
-      if (transformToJoint == null)
-      {
-         if (other.transformToJoint != null)
-            return false;
-      }
-      else if (!transformToJoint.equals(other.transformToJoint))
+      if (!Objects.equals(transformToJoint, other.transformToJoint))
          return false;
       if (updatePeriod != other.updatePeriod)
          return false;
+
       return true;
    }
 }

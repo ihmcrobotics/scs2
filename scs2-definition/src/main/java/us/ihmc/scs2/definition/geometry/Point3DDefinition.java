@@ -1,7 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -70,20 +73,27 @@ public class Point3DDefinition extends GeometryDefinition implements Point3DBasi
    }
 
    @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, position);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
    public boolean equals(Object object)
    {
       if (object == this)
          return true;
-      if (object instanceof Point3DDefinition)
-         return position.equals(((Point3DDefinition) object).position);
-      else
+      if (!super.equals(object))
          return false;
-   }
 
-   @Override
-   public int hashCode()
-   {
-      return position.hashCode();
+      Point3DDefinition other = (Point3DDefinition) object;
+
+      if (!Objects.equals(position, other.position))
+         return false;
+
+      return true;
    }
 
    @Override
