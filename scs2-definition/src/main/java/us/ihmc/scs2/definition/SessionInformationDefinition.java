@@ -14,6 +14,7 @@ public class SessionInformationDefinition
 
    private List<String> robotFileNames = new ArrayList<>();
    private List<String> terrainFileNames = new ArrayList<>();
+   private List<String> robotStateFileNames = new ArrayList<>();
    private String graphicFileName;
    private String registryFileName;
    private String dataFileName;
@@ -44,6 +45,12 @@ public class SessionInformationDefinition
    public void setTerrainFileNames(List<String> terrainFileNames)
    {
       this.terrainFileNames = terrainFileNames;
+   }
+
+   @XmlElement
+   public void setRobotStateFileNames(List<String> robotStateFileNames)
+   {
+      this.robotStateFileNames = robotStateFileNames;
    }
 
    @XmlElement
@@ -82,6 +89,11 @@ public class SessionInformationDefinition
    public List<String> getTerrainFileNames()
    {
       return terrainFileNames;
+   }
+
+   public List<String> getRobotStateFileNames()
+   {
+      return robotStateFileNames;
    }
 
    public String getGraphicFileName()
