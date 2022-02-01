@@ -1,7 +1,10 @@
 package us.ihmc.scs2.definition.visual;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.transform.interfaces.AffineTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
@@ -123,5 +126,40 @@ public class VisualDefinition
    {
       return "VisualDefinition [name=" + name + ", originPose=" + originPose + ", geometryDefinition=" + geometryDefinition + ", materialDefinition="
             + materialDefinition + "]";
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, originPose);
+      bits = EuclidHashCodeTools.addToHashCode(bits, geometryDefinition);
+      bits = EuclidHashCodeTools.addToHashCode(bits, materialDefinition);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      VisualDefinition other = (VisualDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (!Objects.equals(originPose, other.originPose))
+         return false;
+      if (!Objects.equals(geometryDefinition, other.geometryDefinition))
+         return false;
+      if (!Objects.equals(materialDefinition, other.materialDefinition))
+         return false;
+
+      return true;
    }
 }

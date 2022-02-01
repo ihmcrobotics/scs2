@@ -1,11 +1,14 @@
 package us.ihmc.scs2.definition;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformBasics;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -165,37 +168,29 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
    @Override
    public int hashCode()
    {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((orientation == null) ? 0 : orientation.hashCode());
-      result = prime * result + ((translation == null) ? 0 : translation.hashCode());
-      return result;
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, translation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, orientation);
+      return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
    @Override
-   public boolean equals(Object obj)
+   public boolean equals(Object object)
    {
-      if (this == obj)
+      if (this == object)
          return true;
-      if (obj == null)
+      if (object == null)
          return false;
-      if (getClass() != obj.getClass())
+      if (getClass() != object.getClass())
          return false;
-      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) obj;
-      if (orientation == null)
-      {
-         if (other.orientation != null)
-            return false;
-      }
-      else if (!orientation.equals(other.orientation))
+
+      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) object;
+
+      if (!Objects.equals(translation, other.translation))
          return false;
-      if (translation == null)
-      {
-         if (other.translation != null)
-            return false;
-      }
-      else if (!translation.equals(other.translation))
+      if (!Objects.equals(orientation, other.orientation))
          return false;
+
       return true;
    }
 }
