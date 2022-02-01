@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 
 public class IMUSensorDefinition extends SensorDefinition
@@ -156,5 +157,50 @@ public class IMUSensorDefinition extends SensorDefinition
    public IMUSensorDefinition copy()
    {
       return new IMUSensorDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, accelerationNoiseMean);
+      bits = EuclidHashCodeTools.addToHashCode(bits, accelerationNoiseStandardDeviation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, accelerationBiasMean);
+      bits = EuclidHashCodeTools.addToHashCode(bits, accelerationBiasStandardDeviation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocityNoiseMean);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocityNoiseStandardDeviation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocityBiasMean);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocityBiasStandardDeviation);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      IMUSensorDefinition other = (IMUSensorDefinition) object;
+
+      if (Double.doubleToLongBits(accelerationNoiseMean) != Double.doubleToLongBits(other.accelerationNoiseMean))
+         return false;
+      if (Double.doubleToLongBits(accelerationNoiseStandardDeviation) != Double.doubleToLongBits(other.accelerationNoiseStandardDeviation))
+         return false;
+      if (Double.doubleToLongBits(accelerationBiasMean) != Double.doubleToLongBits(other.accelerationBiasMean))
+         return false;
+      if (Double.doubleToLongBits(accelerationBiasStandardDeviation) != Double.doubleToLongBits(other.accelerationBiasStandardDeviation))
+         return false;
+      if (Double.doubleToLongBits(angularVelocityNoiseMean) != Double.doubleToLongBits(other.angularVelocityNoiseMean))
+         return false;
+      if (Double.doubleToLongBits(angularVelocityNoiseStandardDeviation) != Double.doubleToLongBits(other.angularVelocityNoiseStandardDeviation))
+         return false;
+      if (Double.doubleToLongBits(angularVelocityBiasMean) != Double.doubleToLongBits(other.angularVelocityBiasMean))
+         return false;
+      if (Double.doubleToLongBits(angularVelocityBiasStandardDeviation) != Double.doubleToLongBits(other.angularVelocityBiasStandardDeviation))
+         return false;
+
+      return true;
    }
 }

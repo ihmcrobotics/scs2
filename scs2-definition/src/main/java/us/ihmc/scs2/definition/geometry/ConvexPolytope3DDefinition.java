@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.geometry;
 
+import java.util.Objects;
+
 import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.ConvexPolytope3DReadOnly;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
@@ -67,9 +69,8 @@ public class ConvexPolytope3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, convexPolytope);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -77,20 +78,16 @@ public class ConvexPolytope3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof ConvexPolytope3DDefinition)
-      {
-         ConvexPolytope3DDefinition other = (ConvexPolytope3DDefinition) object;
-         if (convexPolytope == null ? other.convexPolytope != null : !convexPolytope.equals(other.convexPolytope))
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      ConvexPolytope3DDefinition other = (ConvexPolytope3DDefinition) object;
+
+      if (!Objects.equals(convexPolytope, other.convexPolytope))
+         return false;
+
+      return true;
    }
 
    @Override

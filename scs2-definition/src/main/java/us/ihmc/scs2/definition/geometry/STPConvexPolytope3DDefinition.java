@@ -64,11 +64,9 @@ public class STPConvexPolytope3DDefinition extends ConvexPolytope3DDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, getConvexPolytope());
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, minimumMargin);
       bits = EuclidHashCodeTools.addToHashCode(bits, maximumMargin);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -76,22 +74,18 @@ public class STPConvexPolytope3DDefinition extends ConvexPolytope3DDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof STPConvexPolytope3DDefinition)
-      {
-         STPConvexPolytope3DDefinition other = (STPConvexPolytope3DDefinition) object;
-         if (minimumMargin != other.minimumMargin)
-            return false;
-         if (maximumMargin != other.maximumMargin)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      STPConvexPolytope3DDefinition other = (STPConvexPolytope3DDefinition) object;
+
+      if (Double.doubleToLongBits(minimumMargin) != Double.doubleToLongBits(other.minimumMargin))
+         return false;
+      if (Double.doubleToLongBits(maximumMargin) != Double.doubleToLongBits(other.maximumMargin))
+         return false;
+
+      return true;
    }
 
    @Override

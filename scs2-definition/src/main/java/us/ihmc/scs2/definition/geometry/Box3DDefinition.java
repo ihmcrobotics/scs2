@@ -202,12 +202,11 @@ public class Box3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, sizeX);
       bits = EuclidHashCodeTools.addToHashCode(bits, sizeY);
       bits = EuclidHashCodeTools.addToHashCode(bits, sizeZ);
       bits = EuclidHashCodeTools.addToHashCode(bits, centered);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -215,26 +214,21 @@ public class Box3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Box3DDefinition)
-      {
-         Box3DDefinition other = (Box3DDefinition) object;
-         if (sizeX != other.sizeX)
-            return false;
-         if (sizeY != other.sizeY)
-            return false;
-         if (sizeZ != other.sizeZ)
-            return false;
-         if (centered != other.centered)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Box3DDefinition other = (Box3DDefinition) object;
+      if (Double.doubleToLongBits(sizeX) != Double.doubleToLongBits(other.sizeX))
+         return false;
+      if (Double.doubleToLongBits(sizeY) != Double.doubleToLongBits(other.sizeY))
+         return false;
+      if (Double.doubleToLongBits(sizeZ) != Double.doubleToLongBits(other.sizeZ))
+         return false;
+      if (centered != other.centered)
+         return false;
+
+      return true;
    }
 
    @Override

@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -10,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -381,5 +383,40 @@ public class RobotDefinition
    public static interface RootBodyCreator
    {
       RigidBodyBasics newRootBody(ReferenceFrame parentFrame, RigidBodyDefinition definition);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, rootBodyDefinition);
+      bits = EuclidHashCodeTools.addToHashCode(bits, nameOfJointsToIgnore);
+      bits = EuclidHashCodeTools.addToHashCode(bits, controllerDefinitions);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      RobotDefinition other = (RobotDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (!Objects.equals(rootBodyDefinition, other.rootBodyDefinition))
+         return false;
+      if (!Objects.equals(nameOfJointsToIgnore, other.nameOfJointsToIgnore))
+         return false;
+      if (!Objects.equals(controllerDefinitions, other.controllerDefinitions))
+         return false;
+
+      return true;
    }
 }

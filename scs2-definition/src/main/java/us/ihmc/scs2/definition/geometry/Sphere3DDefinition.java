@@ -104,10 +104,9 @@ public class Sphere3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, radius);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -115,22 +114,18 @@ public class Sphere3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Sphere3DDefinition)
-      {
-         Sphere3DDefinition other = (Sphere3DDefinition) object;
-         if (radius != other.radius)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Sphere3DDefinition other = (Sphere3DDefinition) object;
+
+      if (Double.doubleToLongBits(radius) != Double.doubleToLongBits(other.radius))
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

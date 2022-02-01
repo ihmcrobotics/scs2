@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.state;
 
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.ejml.data.DMatrix;
@@ -9,6 +10,7 @@ import org.ejml.data.DMatrixRMaj;
 import us.ihmc.euclid.geometry.Pose3D;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -247,5 +249,76 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    public SixDoFJointState copy()
    {
       return new SixDoFJointState(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
+      if (availableStates.contains(JointStateType.CONFIGURATION))
+      {
+         bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
+      }
+      if (availableStates.contains(JointStateType.VELOCITY))
+      {
+         bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
+         bits = EuclidHashCodeTools.addToHashCode(bits, linearVelocity);
+      }
+      if (availableStates.contains(JointStateType.ACCELERATION))
+      {
+         bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
+         bits = EuclidHashCodeTools.addToHashCode(bits, linearAcceleration);
+      }
+      if (availableStates.contains(JointStateType.EFFORT))
+      {
+         bits = EuclidHashCodeTools.addToHashCode(bits, torque);
+         bits = EuclidHashCodeTools.addToHashCode(bits, force);
+      }
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      SixDoFJointState other = (SixDoFJointState) object;
+
+      if (!Objects.equals(availableStates, other.availableStates))
+         return false;
+      if (availableStates.contains(JointStateType.CONFIGURATION))
+      {
+         if (!Objects.equals(configuration, other.configuration))
+            return false;
+      }
+      if (availableStates.contains(JointStateType.VELOCITY))
+      {
+         if (!Objects.equals(angularVelocity, other.angularVelocity))
+            return false;
+         if (!Objects.equals(linearVelocity, other.linearVelocity))
+            return false;
+      }
+      if (availableStates.contains(JointStateType.ACCELERATION))
+      {
+         if (!Objects.equals(angularAcceleration, other.angularAcceleration))
+            return false;
+         if (!Objects.equals(linearAcceleration, other.linearAcceleration))
+            return false;
+      }
+      if (availableStates.contains(JointStateType.EFFORT))
+      {
+         if (!Objects.equals(torque, other.torque))
+            return false;
+         if (!Objects.equals(force, other.force))
+            return false;
+      }
+
+      return true;
    }
 }

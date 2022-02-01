@@ -215,13 +215,12 @@ public class ArcTorus3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, startAngle);
       bits = EuclidHashCodeTools.addToHashCode(bits, endAngle);
       bits = EuclidHashCodeTools.addToHashCode(bits, majorRadius);
       bits = EuclidHashCodeTools.addToHashCode(bits, minorRadius);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -229,28 +228,24 @@ public class ArcTorus3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof ArcTorus3DDefinition)
-      {
-         ArcTorus3DDefinition other = (ArcTorus3DDefinition) object;
-         if (startAngle != other.startAngle)
-            return false;
-         if (endAngle != other.endAngle)
-            return false;
-         if (majorRadius != other.majorRadius)
-            return false;
-         if (minorRadius != other.minorRadius)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      ArcTorus3DDefinition other = (ArcTorus3DDefinition) object;
+
+      if (Double.doubleToLongBits(startAngle) != Double.doubleToLongBits(other.startAngle))
+         return false;
+      if (Double.doubleToLongBits(endAngle) != Double.doubleToLongBits(other.endAngle))
+         return false;
+      if (Double.doubleToLongBits(majorRadius) != Double.doubleToLongBits(other.majorRadius))
+         return false;
+      if (Double.doubleToLongBits(minorRadius) != Double.doubleToLongBits(other.minorRadius))
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

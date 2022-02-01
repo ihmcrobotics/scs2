@@ -1,11 +1,14 @@
 package us.ihmc.scs2.definition;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformBasics;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -160,5 +163,34 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
    {
       return "[(x,y,z)=" + translation + ", (y,p,r)="
             + EuclidCoreIOTools.getStringOf("(", ")]", ", ", orientation.getYaw(), orientation.getPitch(), orientation.getRoll());
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, translation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, orientation);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) object;
+
+      if (!Objects.equals(translation, other.translation))
+         return false;
+      if (!Objects.equals(orientation, other.orientation))
+         return false;
+
+      return true;
    }
 }

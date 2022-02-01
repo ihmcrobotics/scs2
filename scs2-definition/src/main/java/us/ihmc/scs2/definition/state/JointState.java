@@ -1,12 +1,14 @@
 package us.ihmc.scs2.definition.state;
 
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
@@ -247,5 +249,54 @@ public class JointState extends JointStateBase implements JointStateBasics
    public JointState copy()
    {
       return new JointState(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
+      if (availableStates.contains(JointStateType.CONFIGURATION))
+         bits = EuclidHashCodeTools.addToHashCode(bits, configuration.getData());
+      if (availableStates.contains(JointStateType.VELOCITY))
+         bits = EuclidHashCodeTools.addToHashCode(bits, velocity.getData());
+      if (availableStates.contains(JointStateType.ACCELERATION))
+         bits = EuclidHashCodeTools.addToHashCode(bits, acceleration.getData());
+      if (availableStates.contains(JointStateType.EFFORT))
+         bits = EuclidHashCodeTools.addToHashCode(bits, effort.getData());
+      bits = EuclidHashCodeTools.addToHashCode(bits, configurationSize);
+      bits = EuclidHashCodeTools.addToHashCode(bits, degreesOfFreedom);
+
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      JointState other = (JointState) object;
+
+      if (!Objects.equals(availableStates, other.availableStates))
+         return false;
+      if (availableStates.contains(JointStateType.CONFIGURATION) && !Objects.equals(configuration, other.configuration))
+         return false;
+      if (availableStates.contains(JointStateType.VELOCITY) && !Objects.equals(velocity, other.velocity))
+         return false;
+      if (availableStates.contains(JointStateType.ACCELERATION) && !Objects.equals(acceleration, other.acceleration))
+         return false;
+      if (availableStates.contains(JointStateType.EFFORT) && !Objects.equals(effort, other.effort))
+         return false;
+      if (configurationSize != other.configurationSize)
+         return false;
+      if (degreesOfFreedom != other.degreesOfFreedom)
+         return false;
+
+      return true;
    }
 }

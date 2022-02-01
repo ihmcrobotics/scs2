@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.geometry;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 
 public abstract class GeometryDefinition
@@ -31,22 +33,24 @@ public abstract class GeometryDefinition
    public abstract GeometryDefinition copy();
 
    @Override
+   public int hashCode()
+   {
+      return Objects.hashCode(name);
+   }
+
+   @Override
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof GeometryDefinition)
-      {
-         GeometryDefinition other = (GeometryDefinition) object;
-         if (name == null ? other.name != null : !name.equals(other.name))
-            return false;
-         return true;
-      }
-      else
-      {
+      if (object == null)
          return false;
-      }
+      if (getClass() != object.getClass())
+         return false;
+
+      GeometryDefinition other = (GeometryDefinition) object;
+      if (!Objects.equals(name, other.name))
+         return false;
+      return true;
    }
 }

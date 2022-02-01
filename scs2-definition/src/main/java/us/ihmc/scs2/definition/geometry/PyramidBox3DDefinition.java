@@ -158,12 +158,11 @@ public class PyramidBox3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, boxSizeX);
       bits = EuclidHashCodeTools.addToHashCode(bits, boxSizeY);
       bits = EuclidHashCodeTools.addToHashCode(bits, boxSizeZ);
       bits = EuclidHashCodeTools.addToHashCode(bits, pyramidHeight);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -171,26 +170,22 @@ public class PyramidBox3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof PyramidBox3DDefinition)
-      {
-         PyramidBox3DDefinition other = (PyramidBox3DDefinition) object;
-         if (boxSizeX != other.boxSizeX)
-            return false;
-         if (boxSizeY != other.boxSizeY)
-            return false;
-         if (boxSizeZ != other.boxSizeZ)
-            return false;
-         if (pyramidHeight != other.pyramidHeight)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      PyramidBox3DDefinition other = (PyramidBox3DDefinition) object;
+
+      if (Double.doubleToLongBits(boxSizeX) != Double.doubleToLongBits(other.boxSizeX))
+         return false;
+      if (Double.doubleToLongBits(boxSizeY) != Double.doubleToLongBits(other.boxSizeY))
+         return false;
+      if (Double.doubleToLongBits(boxSizeZ) != Double.doubleToLongBits(other.boxSizeZ))
+         return false;
+      if (Double.doubleToLongBits(pyramidHeight) != Double.doubleToLongBits(other.pyramidHeight))
+         return false;
+
+      return true;
    }
 
    @Override

@@ -78,14 +78,9 @@ public class STPBox3DDefinition extends Box3DDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, getSizeX());
-      bits = EuclidHashCodeTools.addToHashCode(bits, getSizeY());
-      bits = EuclidHashCodeTools.addToHashCode(bits, getSizeZ());
-      bits = EuclidHashCodeTools.addToHashCode(bits, isCentered());
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, minimumMargin);
       bits = EuclidHashCodeTools.addToHashCode(bits, maximumMargin);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -93,22 +88,18 @@ public class STPBox3DDefinition extends Box3DDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof STPBox3DDefinition)
-      {
-         STPBox3DDefinition other = (STPBox3DDefinition) object;
-         if (minimumMargin != other.minimumMargin)
-            return false;
-         if (maximumMargin != other.maximumMargin)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      STPBox3DDefinition other = (STPBox3DDefinition) object;
+
+      if (Double.doubleToLongBits(minimumMargin) != Double.doubleToLongBits(other.minimumMargin))
+         return false;
+      if (Double.doubleToLongBits(maximumMargin) != Double.doubleToLongBits(other.maximumMargin))
+         return false;
+
+      return true;
    }
 
    @Override
