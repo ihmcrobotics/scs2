@@ -10,6 +10,7 @@ import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.controller.interfaces.Controller;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
@@ -127,5 +128,14 @@ public class VisualizationSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   @Override
+   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   {
+      Robot robot = robots.stream().filter(candidate -> candidate.getRobotDefinition() == robotDefinition).findFirst().orElse(null);
+      if (robot == null)
+         return null;
+      return extractRobotState(robot.getName(), robot.getRootBody());
    }
 }

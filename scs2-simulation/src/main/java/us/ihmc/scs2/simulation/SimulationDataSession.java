@@ -17,6 +17,7 @@ import javax.xml.bind.JAXBException;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.SessionInformationDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
@@ -143,5 +144,15 @@ public class SimulationDataSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   @Override
+   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   {
+      int indexOf = robotDefinitions.indexOf(robotDefinition);
+      if (indexOf == -1)
+         return null;
+      Robot robot = robots.get(indexOf);
+      return extractRobotState(robot.getName(), robot.getRootBody());
    }
 }
