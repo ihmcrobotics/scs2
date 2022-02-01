@@ -72,6 +72,8 @@ public class SessionDataExportStageController
    @FXML
    private JFXToggleButton exportYoGraphicsDefinitionToggleButton;
    @FXML
+   private JFXToggleButton exportRobotStateToggleButton;
+   @FXML
    private JFXToggleButton exportDataToggleButton;
    @FXML
    private JFXComboBox<DataFormat> dataFormatComboBox;
@@ -326,6 +328,7 @@ public class SessionDataExportStageController
       request.setExportRobotDefinitions(exportRobotDefinitionToggleButton.isSelected());
       request.setExportTerrainObjectDefinitions(exportTerrainDefinitionToggleButton.isSelected());
       request.setExportSessionYoGraphicDefinitions(exportYoGraphicsDefinitionToggleButton.isSelected());
+      request.setExportRobotStateDefinitions(exportRobotStateToggleButton.isSelected());
       request.setExportSessionBufferRegistryDefinition(exportDataToggleButton.isSelected());
       if (exportDataToggleButton.isSelected())
          request.setExportSessionBufferDataFormat(dataFormatComboBox.getSelectionModel().getSelectedItem());
