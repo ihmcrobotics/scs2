@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.remote;
+package us.ihmc.scs2.session.remote;
 
 import us.ihmc.robotDataLogger.YoVariablesUpdatedListener;
 

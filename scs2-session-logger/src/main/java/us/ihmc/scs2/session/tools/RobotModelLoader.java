@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.tools;
+package us.ihmc.scs2.session.tools;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

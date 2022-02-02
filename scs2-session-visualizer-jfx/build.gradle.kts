@@ -14,6 +14,7 @@ ihmc {
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
    api("us.ihmc:scs2-session:source")
+   api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer:source")
 
    api("us.ihmc:ihmc-javafx-toolkit:0.20.0") {

@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
+package us.ihmc.scs2.session.log;
 
 public interface ProgressConsumer
 {

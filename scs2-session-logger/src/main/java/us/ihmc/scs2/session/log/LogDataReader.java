@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
+package us.ihmc.scs2.session.log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +15,7 @@ import us.ihmc.robotDataLogger.LogIndex;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.jointState.JointState;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.RobotDataLogTools;
+import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
