@@ -41,7 +41,7 @@ public class SimulationDataSession extends Session
    {
       SessionInformationDefinition sessionInfo = DefinitionIOTools.loadSessionInformationDefinition(new FileInputStream(sessionInfoFile));
       sessionName = sessionInfo.getSessionName();
-      setSessionDTSeconds(sessionInfo.getSessionDTSeconds());
+      setSessionDTSeconds(sessionInfo.getRecordDTSeconds());
 
       File dataDirectory = sessionInfoFile.getParentFile();
 

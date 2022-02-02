@@ -174,7 +174,8 @@ public class SessionIOTools
 
       SessionInformationDefinition sessionInfo = new SessionInformationDefinition();
       sessionInfo.setSessionName(session.getSessionName());
-      sessionInfo.setSessionDTSeconds(session.getSessionDTSeconds() * session.getBufferRecordTickPeriod());
+      sessionInfo.setSessionDTSeconds(session.getSessionDTSeconds());
+      sessionInfo.setRecordDTSeconds(session.getSessionDTSeconds() * session.getBufferRecordTickPeriod());
 
       File resourcesDirectory = new File(file, "resources");
       resourcesDirectory.mkdir();
