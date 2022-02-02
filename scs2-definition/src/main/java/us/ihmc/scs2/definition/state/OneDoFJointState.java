@@ -218,4 +218,19 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
 
       return true;
    }
+
+   @Override
+   public String toString()
+   {
+      String ret = "1-DoF joint state";
+      if (hasOutputFor(JointStateType.CONFIGURATION))
+         ret += ", q: " + configuration;
+      if (hasOutputFor(JointStateType.VELOCITY))
+         ret += ", qd: " + velocity;
+      if (hasOutputFor(JointStateType.ACCELERATION))
+         ret += ", qdd: " + acceleration;
+      if (hasOutputFor(JointStateType.EFFORT))
+         ret += ", tau: " + effort;
+      return ret;
+   }
 }

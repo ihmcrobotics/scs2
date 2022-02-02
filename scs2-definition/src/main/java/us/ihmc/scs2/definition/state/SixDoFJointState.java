@@ -282,4 +282,19 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
 
       return true;
    }
+
+   @Override
+   public String toString()
+   {
+      String ret = "6-DoF joint state";
+      if (hasOutputFor(JointStateType.CONFIGURATION))
+         ret += ", orientation: " + orientation.toStringAsYawPitchRoll() + ", position: " + position;
+      if (hasOutputFor(JointStateType.VELOCITY))
+         ret += ", angular velocity: " + angularVelocity + ", linear velocity: " + linearVelocity;
+      if (hasOutputFor(JointStateType.ACCELERATION))
+         ret += ", angular acceleration: " + angularAcceleration + ", linear acceleration: " + linearAcceleration;
+      if (hasOutputFor(JointStateType.EFFORT))
+         ret += ", torqe: " + torque + ", force: " + force;
+      return ret;
+   }
 }

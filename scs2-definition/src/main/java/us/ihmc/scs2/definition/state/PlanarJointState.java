@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.state;
 
 import org.ejml.data.DMatrixRMaj;
 
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.mecano.tools.JointStateType;
@@ -300,5 +301,20 @@ public class PlanarJointState extends JointStateBase implements PlanarJointState
          return false;
 
       return true;
+   }
+
+   @Override
+   public String toString()
+   {
+      String ret = "Planar joint state";
+      if (hasOutputFor(JointStateType.CONFIGURATION))
+         ret += EuclidCoreIOTools.getStringOf(", configuration: [", "]", ", ", pitch, positionX, positionZ);
+      if (hasOutputFor(JointStateType.VELOCITY))
+         ret += EuclidCoreIOTools.getStringOf(", velocity: [", "]", ", ", pitchVelocity, linearVelocityX, linearVelocityZ);
+      if (hasOutputFor(JointStateType.ACCELERATION))
+         ret += EuclidCoreIOTools.getStringOf(", acceleration: [", "]", ", ", pitchAcceleration, linearAccelerationX, linearAccelerationZ);
+      if (hasOutputFor(JointStateType.EFFORT))
+         ret += EuclidCoreIOTools.getStringOf(", effort: [", "]", ", ", torqueY, forceX, forceZ);
+      return ret;
    }
 }

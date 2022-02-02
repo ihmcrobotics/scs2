@@ -227,4 +227,19 @@ public class SphericalJointState extends JointStateBase implements SphericalJoin
 
       return true;
    }
+
+   @Override
+   public String toString()
+   {
+      String ret = "6-DoF joint state";
+      if (hasOutputFor(JointStateType.CONFIGURATION))
+         ret += ", configuration: " + configuration.toStringAsYawPitchRoll();
+      if (hasOutputFor(JointStateType.VELOCITY))
+         ret += ", velocity: " + angularVelocity;
+      if (hasOutputFor(JointStateType.ACCELERATION))
+         ret += ", acceleration: " + angularAcceleration;
+      if (hasOutputFor(JointStateType.EFFORT))
+         ret += ", effort: " + torque;
+      return ret;
+   }
 }

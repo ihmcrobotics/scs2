@@ -1,5 +1,6 @@
 package us.ihmc.scs2.definition.state;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import org.ejml.data.DMatrix;
@@ -305,5 +306,20 @@ public class JointState extends JointStateBase implements JointStateBasics
          return false;
 
       return true;
+   }
+
+   @Override
+   public String toString()
+   {
+      String ret = degreesOfFreedom + "-DoF joint state";
+      if (hasOutputFor(JointStateType.CONFIGURATION))
+         ret += ", configuration: " + Arrays.toString(configuration.getData());
+      if (hasOutputFor(JointStateType.VELOCITY))
+         ret += ", velocity: " + Arrays.toString(velocity.getData());
+      if (hasOutputFor(JointStateType.ACCELERATION))
+         ret += ", acceleration: " + Arrays.toString(acceleration.getData());
+      if (hasOutputFor(JointStateType.EFFORT))
+         ret += ", effort: " + Arrays.toString(effort.getData());
+      return ret;
    }
 }
