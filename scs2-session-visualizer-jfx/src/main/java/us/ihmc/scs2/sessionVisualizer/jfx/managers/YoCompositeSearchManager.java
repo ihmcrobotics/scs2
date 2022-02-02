@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import javax.xml.bind.JAXBException;
 
@@ -90,10 +90,13 @@ public class YoCompositeSearchManager implements Manager
 
    private final YoRegistryChangedListener rootRegistryChangeListener = change -> refreshYoCompositesInBackground();
 
+   private final Property<Boolean> includeSCS2YoVariables;
    private final YoManager yoManager;
    private final BackgroundExecutorManager backgroundExecutorManager;
 
-   public YoCompositeSearchManager(JavaFXMessager messager, SessionVisualizerTopics topics, YoManager yoManager,
+   public YoCompositeSearchManager(JavaFXMessager messager,
+                                   SessionVisualizerTopics topics,
+                                   YoManager yoManager,
                                    BackgroundExecutorManager backgroundExecutorManager)
    {
       this.yoManager = yoManager;
@@ -153,6 +156,8 @@ public class YoCompositeSearchManager implements Manager
       messager.registerTopicListener(topics.getYoCompositePatternLoadRequest(), this::loadYoCompositePatternFromFile);
       messager.registerTopicListener(topics.getYoCompositePatternSaveRequest(), this::saveYoCompositePatternToFile);
       messager.registerTopicListener(topics.getYoCompositeRefreshAll(), m -> refreshYoCompositesInBackground());
+      includeSCS2YoVariables = messager.createPropertyInput(topics.getShowSCS2YoVariables(), false);
+      includeSCS2YoVariables.addListener((o, oldValue, newValue) -> refreshYoCompositesInBackground());
    }
 
    @Override
@@ -211,20 +216,25 @@ public class YoCompositeSearchManager implements Manager
       if (rootRegistry == null)
          return; // Stopping the session
 
+      Predicate<YoRegistry> registryFilter;
+
+      if (includeSCS2YoVariables.getValue())
+         registryFilter = reg -> true;
+      else
+         registryFilter = reg -> !reg.getNamespace().equals(Session.SESSION_INTERNAL_NAMESPACE);
+
       Class<? extends YoVariable> primitiveClass = primitivePatternToClass.get(pattern);
       String type = pattern.getType();
 
       if (primitiveClass != null)
       {
-         List<YoVariable> allYoPrimitives = rootRegistry.collectSubtreeVariables().stream().filter(primitiveClass::isInstance).collect(Collectors.toList());
-         List<YoComposite> result = allYoPrimitives.stream().map(yoVariable -> new YoComposite(pattern, yoVariable)).collect(Collectors.toList());
-         YoCompositeCollection collection = new YoCompositeCollection(pattern, result);
-
+         YoCompositeCollection collection = new YoCompositeCollection(pattern,
+                                                                      collectPrimitiveYoComposites(pattern, primitiveClass, rootRegistry, registryFilter));
          JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> typeToCompositeCollection.get(type).setValue(collection));
       }
       else
       {
-         List<YoComposite> result = searchYoComposites(pattern, rootRegistry);
+         List<YoComposite> result = searchYoComposites(pattern, rootRegistry, registryFilter);
 
          if (result != null)
          {
@@ -246,6 +256,35 @@ public class YoCompositeSearchManager implements Manager
             });
          }
       }
+   }
+
+   private static List<YoComposite> collectPrimitiveYoComposites(YoCompositePattern pattern,
+                                                                 Class<? extends YoVariable> primitiveClass,
+                                                                 YoRegistry start,
+                                                                 Predicate<YoRegistry> registryFilter)
+   {
+      return collectPrimitiveYoComposites(pattern, primitiveClass, start, registryFilter, new ArrayList<>());
+   }
+
+   private static List<YoComposite> collectPrimitiveYoComposites(YoCompositePattern pattern,
+                                                                 Class<? extends YoVariable> primitiveClass,
+                                                                 YoRegistry start,
+                                                                 Predicate<YoRegistry> registryFilter,
+                                                                 List<YoComposite> compositesToPack)
+   {
+      if (registryFilter.test(start))
+      {
+         for (YoVariable variable : start.getVariables())
+         {
+            if (primitiveClass.isInstance(variable))
+               compositesToPack.add(new YoComposite(pattern, variable));
+         }
+
+         for (YoRegistry child : start.getChildren())
+            collectPrimitiveYoComposites(pattern, primitiveClass, child, registryFilter, compositesToPack);
+      }
+
+      return compositesToPack;
    }
 
    public void discardYoComposite(String typeToDiscard)

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -191,11 +192,11 @@ public class YoCompositeTools
       return false;
    }
 
-   public static List<YoComposite> searchYoComposites(YoCompositePattern pattern, YoRegistry registry)
+   public static List<YoComposite> searchYoComposites(YoCompositePattern pattern, YoRegistry registry, Predicate<YoRegistry> registryFilter)
    {
       try
       {
-         return searchYoCompositesRecursive(pattern, registry).getKey();
+         return searchYoCompositesRecursive(pattern, registry, registryFilter).getKey();
       }
       catch (Exception e)
       {
@@ -204,8 +205,13 @@ public class YoCompositeTools
       }
    }
 
-   private static Pair<List<YoComposite>, List<YoVariable>> searchYoCompositesRecursive(YoCompositePattern pattern, YoRegistry registry)
+   private static Pair<List<YoComposite>, List<YoVariable>> searchYoCompositesRecursive(YoCompositePattern pattern,
+                                                                                        YoRegistry registry,
+                                                                                        Predicate<YoRegistry> registryFilter)
    {
+      if (!registryFilter.test(registry))
+         return new Pair<>(Collections.emptyList(), Collections.emptyList());
+
       Pair<List<YoComposite>, List<YoVariable>> result = new Pair<>(new ArrayList<>(), new ArrayList<>());
 
       List<YoVariable> yoVariables = registry.getVariables();
@@ -231,7 +237,7 @@ public class YoCompositeTools
       for (int i = 0; i < children.size(); i++)
       {
          YoRegistry childRegistry = children.get(i);
-         Pair<List<YoComposite>, List<YoVariable>> childResult = searchYoCompositesRecursive(pattern, childRegistry);
+         Pair<List<YoComposite>, List<YoVariable>> childResult = searchYoCompositesRecursive(pattern, childRegistry, registryFilter);
          result.getKey().addAll(childResult.getKey());
          result.getValue().addAll(childResult.getValue());
       }
@@ -480,7 +486,7 @@ public class YoCompositeTools
             container = new ArrayList<>();
             nameToHolderMap.put(name.toLowerCase(), container);
          }
-         NamedObjectHolder<T> namedObjectHolder = new NamedObjectHolder<T>(name, namespaceFunction.apply(namedObject), namedObject);
+         NamedObjectHolder<T> namedObjectHolder = new NamedObjectHolder<>(name, namespaceFunction.apply(namedObject), namedObject);
          container.add(namedObjectHolder);
          nameObjectHolderList.add(namedObjectHolder);
       }

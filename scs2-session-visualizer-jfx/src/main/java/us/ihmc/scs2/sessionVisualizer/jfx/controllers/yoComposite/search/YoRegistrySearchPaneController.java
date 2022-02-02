@@ -7,8 +7,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javafx.beans.property.Property;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
@@ -22,6 +24,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
@@ -47,6 +50,9 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
    private TreeItem<YoRegistry> defaultRootItem;
    private TreeItem<YoRegistry> searchResult = null;
    private boolean showRoot = true;
+
+   private Property<Boolean> showSCS2YoVariables;
+   private Predicate<YoRegistry> scs2InternalRegistryFilter;
 
    private AtomicReference<SearchEngines> activeSearchEngine;
 
@@ -106,6 +112,10 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
             searchTextField.clear();
          }
       });
+
+      showSCS2YoVariables = messager.createPropertyInput(topics.getShowSCS2YoVariables(), false);
+      showSCS2YoVariables.addListener((o, oldValue, newValue) -> refreshRootRegistry = true);
+      scs2InternalRegistryFilter = reg -> showSCS2YoVariables.getValue() || !reg.getNamespace().equals(Session.SESSION_INTERNAL_NAMESPACE);
    }
 
    public void setRegistryViewRequestConsumer(Consumer<YoRegistry> consumer)
@@ -127,7 +137,7 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       {
          allRegistries = rootRegistry.collectSubtreeRegistries();
          defaultRootItem = new TreeItem<>(rootRegistry);
-         buildTreeRecursively(defaultRootItem);
+         buildTreeRecursively(defaultRootItem, scs2InternalRegistryFilter);
       }
    }
 
@@ -229,7 +239,7 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
    private TreeItem<YoRegistry> createRootItemForRegistries(Set<YoRegistry> subSelection)
    {
       TreeItem<YoRegistry> root = new TreeItem<>(rootRegistry);
-      buildTreeRecursively(root);
+      buildTreeRecursively(root, scs2InternalRegistryFilter);
       filterRegistries(root, subSelection);
       TreeViewTools.expandRecursively(root);
       return root;
@@ -255,16 +265,20 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       }
    }
 
-   private static void buildTreeRecursively(TreeItem<YoRegistry> parent)
+   private static void buildTreeRecursively(TreeItem<YoRegistry> parent, Predicate<YoRegistry> registryFilter)
    {
       List<YoRegistry> children = parent.getValue().getChildren();
 
       for (int i = 0; i < children.size(); i++)
       {
          YoRegistry child = children.get(i);
+
+         if (!registryFilter.test(child))
+            continue;
+
          TreeItem<YoRegistry> childItem = new TreeItem<>(child);
          parent.getChildren().add(childItem);
-         buildTreeRecursively(childItem);
+         buildTreeRecursively(childItem, registryFilter);
       }
    }
 }

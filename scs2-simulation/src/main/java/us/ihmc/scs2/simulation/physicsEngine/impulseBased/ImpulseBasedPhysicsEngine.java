@@ -89,8 +89,6 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       this.rootRegistry = rootRegistry;
       this.inertialFrame = inertialFrame;
 
-      rootRegistry.addChild(physicsEngineRegistry);
-
       collisionDetectionPlugin = new SimpleCollisionDetection(inertialFrame);
 
       YoRegistry multiContactCalculatorRegistry = new YoRegistry(MultiContactImpulseCalculator.class.getSimpleName());
@@ -114,7 +112,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    public void addRobot(Robot robot)
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
-      ImpulseBasedRobot ibRobot = new ImpulseBasedRobot(robot);
+      ImpulseBasedRobot ibRobot = new ImpulseBasedRobot(robot, physicsEngineRegistry);
       robotMap.put(ibRobot.getRootBody(), ibRobot);
       rootRegistry.addChild(ibRobot.getRegistry());
       robotList.add(ibRobot);

@@ -45,6 +45,7 @@ import us.ihmc.scs2.simulation.collision.CollisionResult;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.MultiRobotCollisionGroup;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
+import us.ihmc.yoVariables.registry.YoRegistry;
 
 /**
  * The {@link MultiContactImpulseCalculator} often doesn't converge, which is still to be debugged
@@ -285,7 +286,7 @@ public class MultiContactImpulseCalculatorTest
 
    static ImpulseBasedRobot nextSingleFloatingBodyRobot(Random random, String name)
    {
-      ImpulseBasedRobot robot = new ImpulseBasedRobot(nextSingleFloatingBodyRobotDefinition(random, name), worldFrame);
+      ImpulseBasedRobot robot = new ImpulseBasedRobot(nextSingleFloatingBodyRobotDefinition(random, name), worldFrame, new YoRegistry("dummy"));
       robot.initializeState();
       return robot;
    }

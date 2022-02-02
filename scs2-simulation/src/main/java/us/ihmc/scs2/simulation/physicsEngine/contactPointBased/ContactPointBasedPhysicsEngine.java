@@ -56,7 +56,6 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       this.rootRegistry = rootRegistry;
 
       forceCalculator = new ContactPointBasedForceCalculator(inertialFrame, physicsEngineRegistry);
-      rootRegistry.addChild(physicsEngineRegistry);
    }
 
    @Override

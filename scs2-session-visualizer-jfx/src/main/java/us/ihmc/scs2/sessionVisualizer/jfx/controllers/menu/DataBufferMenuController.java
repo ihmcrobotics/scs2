@@ -4,6 +4,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javafx.beans.property.Property;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
@@ -33,6 +34,8 @@ public class DataBufferMenuController
    private Spinner<Integer> numberPrecisionSpinner;
    @FXML
    private MenuItem sizeMenuItem;
+   @FXML
+   private CheckMenuItem showSCS2YoVariablesMenuItem;
 
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
@@ -107,6 +110,8 @@ public class DataBufferMenuController
       IntegerSpinnerValueFactory numberPrecisionSpinnerValueFactory = new IntegerSpinnerValueFactory(1, 30, 3, 1);
       numberPrecisionSpinner.setValueFactory(numberPrecisionSpinnerValueFactory);
       messager.bindBidirectional(topics.getControlsNumberPrecision(), numberPrecisionSpinnerValueFactory.valueProperty(), false);
+
+      messager.bindBidirectional(topics.getShowSCS2YoVariables(), showSCS2YoVariablesMenuItem.selectedProperty(), true);
    }
 
    @FXML

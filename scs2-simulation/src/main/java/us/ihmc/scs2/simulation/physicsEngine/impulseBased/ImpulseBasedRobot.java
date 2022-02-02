@@ -15,21 +15,22 @@ import us.ihmc.scs2.simulation.collision.CollidableHolder;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class ImpulseBasedRobot extends RobotExtension implements CollidableHolder
 {
    private final ImpulseBasedRobotPhysics robotPhysics;
 
-   public ImpulseBasedRobot(Robot robot)
+   public ImpulseBasedRobot(Robot robot, YoRegistry physicsRegistry)
    {
       super(robot);
-      robotPhysics = new ImpulseBasedRobotPhysics(this);
+      robotPhysics = new ImpulseBasedRobotPhysics(this, physicsRegistry);
    }
 
-   public ImpulseBasedRobot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
+   public ImpulseBasedRobot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame, YoRegistry physicsRegistry)
    {
       super(robotDefinition, inertialFrame);
-      robotPhysics = new ImpulseBasedRobotPhysics(this);
+      robotPhysics = new ImpulseBasedRobotPhysics(this, physicsRegistry);
    }
 
    public void resetCalculators()

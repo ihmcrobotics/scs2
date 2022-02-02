@@ -97,6 +97,7 @@ public class SimulationSession extends Session
       this.simulationName = simulationName;
 
       physicsEngine = physicsEngineFactory.build(inertialFrame, rootRegistry);
+      sessionRegistry.addChild(physicsEngine.getPhysicsEngineRegistry());
 
       setSessionDTSeconds(0.0001);
       setSessionMode(SessionMode.PAUSE);

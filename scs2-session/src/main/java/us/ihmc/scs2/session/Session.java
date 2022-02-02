@@ -48,17 +48,21 @@ import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public abstract class Session
 {
    public static final String ROOT_REGISTRY_NAME = "root";
+   public static final String SESSION_INTERNAL_REGISTRY_NAME = Session.class.getSimpleName() + "InternalRegistry";
+   public static final YoNamespace ROOT_NAMESPACE = new YoNamespace(ROOT_REGISTRY_NAME);
+   public static final YoNamespace SESSION_INTERNAL_NAMESPACE = ROOT_NAMESPACE.append(SESSION_INTERNAL_REGISTRY_NAME);
 
    protected final ReferenceFrame inertialFrame;
 
    protected final YoRegistry rootRegistry = new YoRegistry(ROOT_REGISTRY_NAME);
-   protected final YoRegistry sessionRegistry = new YoRegistry(getClass().getSimpleName());
+   protected final YoRegistry sessionRegistry = new YoRegistry(SESSION_INTERNAL_REGISTRY_NAME);
    protected final YoDouble time = new YoDouble("time", rootRegistry);
    private final JVMStatisticsGenerator jvmStatisticsGenerator = new JVMStatisticsGenerator("SCS2Stats", sessionRegistry);
 
