@@ -51,6 +51,7 @@ import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
 import us.ihmc.scs2.definition.robot.ExternalWrenchPointDefinition;
 import us.ihmc.scs2.definition.robot.FixedJointDefinition;
 import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
@@ -168,6 +169,7 @@ public class DefinitionIOTools
          classesToBeBound.add(JointDefinition.class);
          classesToBeBound.add(FixedJointDefinition.class);
          classesToBeBound.add(OneDoFJointDefinition.class);
+         classesToBeBound.add(CrossFourBarJointDefinition.class);
          classesToBeBound.add(PrismaticJointDefinition.class);
          classesToBeBound.add(RevoluteJointDefinition.class);
          classesToBeBound.add(PlanarJointDefinition.class);
