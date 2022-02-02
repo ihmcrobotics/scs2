@@ -2,12 +2,13 @@ package us.ihmc.scs2.definition.state.interfaces;
 
 import org.ejml.data.DMatrix;
 
-import us.ihmc.euclid.geometry.interfaces.Pose3DBasics;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.euclid.tuple4D.interfaces.QuaternionBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorReadOnly;
@@ -16,7 +17,10 @@ import us.ihmc.mecano.tools.JointStateType;
 public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointStateReadOnly
 {
    @Override
-   Pose3DBasics getConfiguration();
+   QuaternionBasics getOrientation();
+
+   @Override
+   Point3DBasics getPosition();
 
    @Override
    Vector3DBasics getAngularVelocity();
@@ -40,11 +44,12 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
    {
       if (other.hasOutputFor(JointStateType.CONFIGURATION))
       {
-         setConfiguration(other.getConfiguration());
+         setConfiguration(other.getOrientation(), other.getPosition());
       }
       else
       {
-         getConfiguration().setToNaN();
+         getOrientation().setToNaN();
+         getPosition().setToNaN();
       }
 
       if (other.hasOutputFor(JointStateType.VELOCITY))
@@ -86,14 +91,14 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
    default void setConfiguration(Orientation3DReadOnly orientation, Tuple3DReadOnly position)
    {
       if (orientation != null)
-         getConfiguration().getOrientation().set(orientation);
+         getOrientation().set(orientation);
       else
-         getConfiguration().getOrientation().setToZero();
+         getOrientation().setToZero();
 
       if (position != null)
-         getConfiguration().getPosition().set(position);
+         getPosition().set(position);
       else
-         getConfiguration().getPosition().setToZero();
+         getPosition().setToZero();
    }
 
    default void setVelocity(SpatialVectorReadOnly velocity)
@@ -177,8 +182,8 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
    @Override
    default int setConfiguration(int startRow, DMatrix configuration)
    {
-      getConfiguration().getOrientation().set(startRow, configuration);
-      getConfiguration().getPosition().set(startRow + 4, configuration);
+      getOrientation().set(startRow, configuration);
+      getPosition().set(startRow + 4, configuration);
       return startRow + getConfigurationSize();
    }
 

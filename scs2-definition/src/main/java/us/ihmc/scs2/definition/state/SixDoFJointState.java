@@ -6,19 +6,21 @@ import javax.xml.bind.annotation.XmlElement;
 
 import org.ejml.data.DMatrixRMaj;
 
-import us.ihmc.euclid.geometry.Pose3D;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
+import us.ihmc.scs2.definition.QuaternionDefinition;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.SixDoFJointStateBasics;
 import us.ihmc.scs2.definition.state.interfaces.SixDoFJointStateReadOnly;
 
 public class SixDoFJointState extends JointStateBase implements SixDoFJointStateBasics
 {
-   private final Pose3D configuration = new Pose3D();
+   private final QuaternionDefinition orientation = new QuaternionDefinition();
+   private final Point3D position = new Point3D();
    private final Vector3D angularVelocity = new Vector3D();
    private final Vector3D linearVelocity = new Vector3D();
    private final Vector3D angularAcceleration = new Vector3D();
@@ -48,7 +50,8 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    @Override
    public void clear()
    {
-      configuration.setToNaN();
+      orientation.setToNaN();
+      position.setToNaN();
       angularVelocity.setToNaN();
       linearVelocity.setToNaN();
       angularAcceleration.setToNaN();
@@ -59,7 +62,8 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
 
    public void set(SixDoFJointState other)
    {
-      configuration.set(other.configuration);
+      orientation.set(other.orientation);
+      position.set(other.position);
       angularVelocity.set(other.angularVelocity);
       linearVelocity.set(other.linearVelocity);
       angularAcceleration.set(other.angularAcceleration);
@@ -91,7 +95,8 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
          }
          else
          {
-            configuration.setToNaN();
+            orientation.setToNaN();
+            position.setToNaN();
          }
 
          if (jointStateReadOnly.hasOutputFor(JointStateType.VELOCITY))
@@ -130,9 +135,15 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    }
 
    @XmlElement
-   public void setConfiguration(Pose3D configuration)
+   public void setOrientation(QuaternionDefinition orientation)
    {
-      SixDoFJointStateBasics.super.setConfiguration(configuration);
+      this.orientation.set(orientation);
+   }
+
+   @XmlElement
+   public void setPosition(Point3D position)
+   {
+      this.position.set(position);
    }
 
    @XmlElement
@@ -172,9 +183,15 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    }
 
    @Override
-   public Pose3D getConfiguration()
+   public QuaternionDefinition getOrientation()
    {
-      return configuration;
+      return orientation;
+   }
+
+   @Override
+   public Point3D getPosition()
+   {
+      return position;
    }
 
    @Override
@@ -223,7 +240,8 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    public int hashCode()
    {
       long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, orientation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, position);
       bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
       bits = EuclidHashCodeTools.addToHashCode(bits, linearVelocity);
       bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
@@ -245,7 +263,9 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
 
       SixDoFJointState other = (SixDoFJointState) object;
 
-      if (!Objects.equals(configuration, other.configuration))
+      if (!Objects.equals(orientation, other.orientation))
+         return false;
+      if (!Objects.equals(position, other.position))
          return false;
       if (!Objects.equals(angularVelocity, other.angularVelocity))
          return false;
