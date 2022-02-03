@@ -23,13 +23,13 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
 
    public ImpulseBasedRobot(Robot robot, YoRegistry physicsRegistry)
    {
-      super(robot);
+      super(robot, physicsRegistry);
       robotPhysics = new ImpulseBasedRobotPhysics(this, physicsRegistry);
    }
 
    public ImpulseBasedRobot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame, YoRegistry physicsRegistry)
    {
-      super(robotDefinition, inertialFrame);
+      super(robotDefinition, inertialFrame, physicsRegistry);
       robotPhysics = new ImpulseBasedRobotPhysics(this, physicsRegistry);
    }
 

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.robotDataLogger.YoVariableClientInterface;
@@ -267,13 +268,9 @@ public class RemoteSession extends Session
    }
 
    @Override
-   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
-      int indexOf = robotDefinitions.indexOf(robotDefinition);
-      if (indexOf == -1)
-         return null;
-      Robot robot = robots.get(indexOf);
-      return extractRobotState(robot.getName(), robot.getRootBody());
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 
    public LoggerStatusUpdater getLoggerStatusUpdater()

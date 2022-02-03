@@ -24,23 +24,10 @@ import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.log.LogTools;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.PlanarJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointReadOnly;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
-import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
-import us.ihmc.scs2.definition.state.JointState;
-import us.ihmc.scs2.definition.state.JointStateBase;
-import us.ihmc.scs2.definition.state.OneDoFJointState;
-import us.ihmc.scs2.definition.state.PlanarJointState;
-import us.ihmc.scs2.definition.state.SixDoFJointState;
-import us.ihmc.scs2.definition.state.SphericalJointState;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
@@ -964,50 +951,14 @@ public abstract class Session
     * SimulationDataSession, and VisualizationSession should live in the session project.
     */
    /**
-    * Override me to allow exporting robot state.
+    * Override me to allow exporting robot states.
+    * 
+    * @param initialState    when {@code true}, the state of the robot as of before performing the
+    *                        run-tick operations.
     */
-   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
       return null;
-   }
-
-   public static RobotStateDefinition extractRobotState(String robotName, RigidBodyReadOnly rootBody)
-   {
-      RobotStateDefinition definition = new RobotStateDefinition();
-      definition.setRobotName(robotName);
-      List<JointStateEntry> jointStateEntries = new ArrayList<>();
-
-      for (JointReadOnly joint : rootBody.childrenSubtreeIterable())
-      {
-         jointStateEntries.add(new JointStateEntry(joint.getName(), extractJointState(joint)));
-      }
-
-      definition.setJointStateEntries(jointStateEntries);
-      return definition;
-   }
-
-   private static JointStateBase extractJointState(JointReadOnly joint)
-   {
-      if (joint == null)
-         return null;
-
-      JointStateBase state;
-      if (joint instanceof OneDoFJointReadOnly)
-         state = new OneDoFJointState();
-      else if (joint instanceof SixDoFJointReadOnly)
-         state = new SixDoFJointState();
-      else if (joint instanceof SphericalJointReadOnly)
-         state = new SphericalJointState();
-      else if (joint instanceof PlanarJointReadOnly)
-         state = new PlanarJointState();
-      else
-         state = new JointState(joint.getConfigurationMatrixSize(), joint.getDegreesOfFreedom());
-
-      state.setConfiguration(joint);
-      state.setVelocity(joint);
-      state.setAcceleration(joint);
-      state.setEffort(joint);
-      return state;
    }
 
    YoSharedBuffer getBuffer()

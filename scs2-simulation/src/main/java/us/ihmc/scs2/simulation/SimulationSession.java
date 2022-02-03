@@ -287,15 +287,14 @@ public class SimulationSession extends Session
    {
       return yoGraphicDefinitions;
    }
-   
+
    @Override
-   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
-      int indexOf = physicsEngine.getRobotDefinitions().indexOf(robotDefinition);
-      if (indexOf == -1)
-         return null;
-      Robot robot = physicsEngine.getRobots().get(indexOf);
-      return extractRobotState(robot.getName(), physicsEngine.getRobots().get(indexOf).getRootBody());
+      if (initialState)
+         return physicsEngine.getBeforePhysicsRobotStateDefinitions();
+      else
+         return physicsEngine.getCurrentRobotStateDefinitions();
    }
 
    private void checkSessionHasNotStarted()

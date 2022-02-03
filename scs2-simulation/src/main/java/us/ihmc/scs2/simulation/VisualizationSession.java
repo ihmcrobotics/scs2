@@ -131,11 +131,8 @@ public class VisualizationSession extends Session
    }
 
    @Override
-   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
-      Robot robot = robots.stream().filter(candidate -> candidate.getRobotDefinition() == robotDefinition).findFirst().orElse(null);
-      if (robot == null)
-         return null;
-      return extractRobotState(robot.getName(), robot.getRootBody());
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 }

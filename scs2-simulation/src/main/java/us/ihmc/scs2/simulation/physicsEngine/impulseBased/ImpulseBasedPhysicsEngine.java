@@ -16,6 +16,7 @@ import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.mecano.spatial.interfaces.FixedFrameWrenchBasics;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.YoTimer;
 import us.ihmc.scs2.simulation.collision.Collidable;
@@ -28,6 +29,7 @@ import us.ihmc.scs2.simulation.physicsEngine.MultiRobotCollisionGroup;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.SimpleCollisionDetection;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
@@ -170,13 +172,14 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       {
          robot.resetCalculators();
          robot.getControllerManager().updateControllers(currentTime);
-         robot.updateCollidableBoundingBoxes();
+         robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
+         robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
+         robot.saveRobotBeforePhysicsState();
       }
 
       for (ImpulseBasedRobot robot : robotList)
       {
-         robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
-         robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
+         robot.updateCollidableBoundingBoxes();
 
          for (SimJointBasics joint : robot.getJointsToConsider())
          {
@@ -300,6 +303,12 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    public List<TerrainObjectDefinition> getTerrainObjectDefinitions()
    {
       return terrainObjectDefinitions;
+   }
+
+   @Override
+   public List<RobotStateDefinition> getBeforePhysicsRobotStateDefinitions()
+   {
+      return robotList.stream().map(RobotExtension::getRobotBeforePhysicsStateDefinition).collect(Collectors.toList());
    }
 
    @Override

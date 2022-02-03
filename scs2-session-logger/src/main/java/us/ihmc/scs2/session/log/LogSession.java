@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
@@ -164,13 +165,9 @@ public class LogSession extends Session
    }
 
    @Override
-   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
-      int indexOf = robotDefinitions.indexOf(robotDefinition);
-      if (indexOf == -1)
-         return null;
-      Robot robot = robots.get(indexOf);
-      return extractRobotState(robot.getName(), robot.getRootBody());
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 
    public File getLogDirectory()

@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
@@ -147,12 +148,8 @@ public class SimulationDataSession extends Session
    }
 
    @Override
-   public RobotStateDefinition getCurrentRobotStateDefinition(RobotDefinition robotDefinition)
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
-      int indexOf = robotDefinitions.indexOf(robotDefinition);
-      if (indexOf == -1)
-         return null;
-      Robot robot = robots.get(indexOf);
-      return extractRobotState(robot.getName(), robot.getRootBody());
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 }

@@ -255,9 +255,8 @@ public class SessionIOTools
 
       if (request.getExportRobotStateDefinitions())
       {
-         for (RobotDefinition robotDefinition : session.getRobotDefinitions())
+         for (RobotStateDefinition robotStateDefinition : session.getCurrentRobotStateDefinitions(true))
          {
-            RobotStateDefinition robotStateDefinition = session.getCurrentRobotStateDefinition(robotDefinition);
             String name = robotStateDefinition.getRobotName() + "State";
             File robotStateFile = new File(file, name + robotStateDefinitionFileExtension);
             LogTools.info("Exporting RobotStateDefinition for: {} File: {}", name, robotStateFile);

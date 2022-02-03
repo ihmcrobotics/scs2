@@ -13,6 +13,11 @@ import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.frames.MovingReferenceFrame;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.PlanarJointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
@@ -26,9 +31,17 @@ import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.robot.SensorDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
+import us.ihmc.scs2.definition.state.JointState;
+import us.ihmc.scs2.definition.state.JointStateBase;
+import us.ihmc.scs2.definition.state.OneDoFJointState;
+import us.ihmc.scs2.definition.state.PlanarJointState;
+import us.ihmc.scs2.definition.state.SixDoFJointState;
+import us.ihmc.scs2.definition.state.SphericalJointState;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
 import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
@@ -268,6 +281,45 @@ public class Robot implements RobotInterface
    public YoRegistry getRegistry()
    {
       return registry;
+   }
+
+   public RobotStateDefinition getCurrentRobotStateDefinition()
+   {
+      RobotStateDefinition definition = new RobotStateDefinition();
+      definition.setRobotName(name);
+      List<JointStateEntry> jointStateEntries = new ArrayList<>();
+
+      for (JointReadOnly joint : rootBody.childrenSubtreeIterable())
+      {
+         jointStateEntries.add(new JointStateEntry(joint.getName(), extractJointState(joint)));
+      }
+
+      definition.setJointStateEntries(jointStateEntries);
+      return definition;
+   }
+
+   private static JointStateBase extractJointState(JointReadOnly joint)
+   {
+      if (joint == null)
+         return null;
+
+      JointStateBase state;
+      if (joint instanceof OneDoFJointReadOnly)
+         state = new OneDoFJointState();
+      else if (joint instanceof SixDoFJointReadOnly)
+         state = new SixDoFJointState();
+      else if (joint instanceof SphericalJointReadOnly)
+         state = new SphericalJointState();
+      else if (joint instanceof PlanarJointReadOnly)
+         state = new PlanarJointState();
+      else
+         state = new JointState(joint.getConfigurationMatrixSize(), joint.getDegreesOfFreedom());
+
+      state.setConfiguration(joint);
+      state.setVelocity(joint);
+      state.setAcceleration(joint);
+      state.setEffort(joint);
+      return state;
    }
 
    public static interface JointBuilderFromDefinition
