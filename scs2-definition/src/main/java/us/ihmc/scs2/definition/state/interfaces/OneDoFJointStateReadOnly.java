@@ -30,7 +30,7 @@ public interface OneDoFJointStateReadOnly extends JointStateReadOnly
          case EFFORT:
             return !Double.isNaN(getEffort());
          default:
-            throw new IllegalStateException("Should get here.");
+            throw new IllegalStateException("Should not get here.");
       }
    }
 

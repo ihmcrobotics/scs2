@@ -12,7 +12,6 @@ import us.ihmc.euclid.tuple4D.interfaces.QuaternionBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorReadOnly;
-import us.ihmc.mecano.tools.JointStateType;
 
 public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointStateReadOnly
 {
@@ -40,52 +39,35 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
    @Override
    Vector3DBasics getForce();
 
+   @Override
+   default void clear()
+   {
+      getOrientation().setToNaN();
+      getPosition().setToNaN();
+      getAngularVelocity().setToNaN();
+      getLinearVelocity().setToNaN();
+      getAngularAcceleration().setToNaN();
+      getLinearAcceleration().setToNaN();
+      getTorque().setToNaN();
+      getForce().setToNaN();
+   }
+
    default void set(SixDoFJointStateReadOnly other)
    {
-      if (other.hasOutputFor(JointStateType.CONFIGURATION))
-      {
-         setConfiguration(other.getOrientation(), other.getPosition());
-      }
-      else
-      {
-         getOrientation().setToNaN();
-         getPosition().setToNaN();
-      }
-
-      if (other.hasOutputFor(JointStateType.VELOCITY))
-      {
-         setVelocity(other.getAngularVelocity(), other.getLinearVelocity());
-      }
-      else
-      {
-         getAngularVelocity().setToNaN();
-         getLinearVelocity().setToNaN();
-      }
-
-      if (other.hasOutputFor(JointStateType.ACCELERATION))
-      {
-         setAcceleration(other.getAngularAcceleration(), other.getLinearAcceleration());
-      }
-      else
-      {
-         getAngularAcceleration().setToNaN();
-         getLinearAcceleration().setToNaN();
-      }
-
-      if (other.hasOutputFor(JointStateType.EFFORT))
-      {
-         setEffort(other.getTorque(), other.getForce());
-      }
-      else
-      {
-         getTorque().setToNaN();
-         getForce().setToNaN();
-      }
+      getOrientation().set(other.getOrientation());
+      getPosition().set(other.getPosition());
+      getAngularVelocity().set(other.getAngularVelocity());
+      getLinearVelocity().set(other.getLinearVelocity());
+      getAngularAcceleration().set(other.getAngularAcceleration());
+      getLinearAcceleration().set(other.getLinearAcceleration());
+      getTorque().set(other.getTorque());
+      getForce().set(other.getForce());
    }
 
    default void setConfiguration(Pose3DReadOnly configuration)
    {
-      setConfiguration(configuration.getOrientation(), configuration.getPosition());
+      getOrientation().set(configuration.getOrientation());
+      getPosition().set(configuration.getPosition());
    }
 
    default void setConfiguration(Orientation3DReadOnly orientation, Tuple3DReadOnly position)
@@ -103,7 +85,8 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
 
    default void setVelocity(SpatialVectorReadOnly velocity)
    {
-      setVelocity(velocity.getAngularPart(), velocity.getLinearPart());
+      getAngularVelocity().set(velocity.getAngularPart());
+      getLinearVelocity().set(velocity.getLinearPart());
    }
 
    default void setVelocity(Vector3DReadOnly angularVelocity, Vector3DReadOnly linearVelocity)
@@ -121,7 +104,8 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
 
    default void setAcceleration(SpatialVectorReadOnly acceleration)
    {
-      setAcceleration(acceleration.getAngularPart(), acceleration.getLinearPart());
+      getAngularAcceleration().set(acceleration.getAngularPart());
+      getLinearAcceleration().set(acceleration.getLinearPart());
    }
 
    default void setAcceleration(Vector3DReadOnly angularAcceleration, Vector3DReadOnly linearAcceleration)
@@ -139,7 +123,8 @@ public interface SixDoFJointStateBasics extends JointStateBasics, SixDoFJointSta
 
    default void setEffort(SpatialVectorReadOnly effort)
    {
-      setEffort(effort.getAngularPart(), effort.getLinearPart());
+      getTorque().set(effort.getAngularPart());
+      getForce().set(effort.getLinearPart());
    }
 
    default void setEffort(Vector3DReadOnly torque, Vector3DReadOnly force)

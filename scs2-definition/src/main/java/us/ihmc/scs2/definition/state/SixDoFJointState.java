@@ -1,7 +1,5 @@
 package us.ihmc.scs2.definition.state;
 
-import java.util.Objects;
-
 import javax.xml.bind.annotation.XmlElement;
 
 import org.ejml.data.DMatrixRMaj;
@@ -48,38 +46,9 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
    }
 
    @Override
-   public void clear()
-   {
-      orientation.setToNaN();
-      position.setToNaN();
-      angularVelocity.setToNaN();
-      linearVelocity.setToNaN();
-      angularAcceleration.setToNaN();
-      linearAcceleration.setToNaN();
-      torque.setToNaN();
-      force.setToNaN();
-   }
-
-   public void set(SixDoFJointState other)
-   {
-      orientation.set(other.orientation);
-      position.set(other.position);
-      angularVelocity.set(other.angularVelocity);
-      linearVelocity.set(other.linearVelocity);
-      angularAcceleration.set(other.angularAcceleration);
-      linearAcceleration.set(other.linearAcceleration);
-      torque.set(other.torque);
-      force.set(other.force);
-   }
-
-   @Override
    public void set(JointStateReadOnly jointStateReadOnly)
    {
-      if (jointStateReadOnly instanceof SixDoFJointState)
-      {
-         set((SixDoFJointState) jointStateReadOnly);
-      }
-      else if (jointStateReadOnly instanceof SixDoFJointStateReadOnly)
+      if (jointStateReadOnly instanceof SixDoFJointStateReadOnly)
       {
          SixDoFJointStateBasics.super.set((SixDoFJointStateReadOnly) jointStateReadOnly);
       }
@@ -263,21 +232,21 @@ public class SixDoFJointState extends JointStateBase implements SixDoFJointState
 
       SixDoFJointState other = (SixDoFJointState) object;
 
-      if (!Objects.equals(orientation, other.orientation))
+      if (orientation.containsNaN() ? !other.orientation.containsNaN() : !orientation.equals(other.orientation))
          return false;
-      if (!Objects.equals(position, other.position))
+      if (position.containsNaN() ? !other.position.containsNaN() : !position.equals(other.position))
          return false;
-      if (!Objects.equals(angularVelocity, other.angularVelocity))
+      if (angularVelocity.containsNaN() ? !other.angularVelocity.containsNaN() : !angularVelocity.equals(other.angularVelocity))
          return false;
-      if (!Objects.equals(linearVelocity, other.linearVelocity))
+      if (linearVelocity.containsNaN() ? !other.linearVelocity.containsNaN() : !linearVelocity.equals(other.linearVelocity))
          return false;
-      if (!Objects.equals(angularAcceleration, other.angularAcceleration))
+      if (angularAcceleration.containsNaN() ? !other.angularAcceleration.containsNaN() : !angularAcceleration.equals(other.angularAcceleration))
          return false;
-      if (!Objects.equals(linearAcceleration, other.linearAcceleration))
+      if (linearAcceleration.containsNaN() ? !other.linearAcceleration.containsNaN() : !linearAcceleration.equals(other.linearAcceleration))
          return false;
-      if (!Objects.equals(torque, other.torque))
+      if (torque.containsNaN() ? !other.torque.containsNaN() : !torque.equals(other.torque))
          return false;
-      if (!Objects.equals(force, other.force))
+      if (force.containsNaN() ? !other.force.containsNaN() : !force.equals(other.force))
          return false;
 
       return true;

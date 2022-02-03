@@ -3,7 +3,6 @@ package us.ihmc.scs2.definition.state;
 import org.ejml.data.DMatrixRMaj;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
@@ -42,49 +41,9 @@ public class PlanarJointState extends JointStateBase implements PlanarJointState
    }
 
    @Override
-   public void clear()
-   {
-      pitch = Double.NaN;
-      positionX = Double.NaN;
-      positionZ = Double.NaN;
-
-      pitchVelocity = Double.NaN;
-      linearVelocityX = Double.NaN;
-      linearVelocityZ = Double.NaN;
-
-      pitchAcceleration = Double.NaN;
-      linearAccelerationX = Double.NaN;
-      linearAccelerationZ = Double.NaN;
-
-      torqueY = Double.NaN;
-      forceX = Double.NaN;
-      forceZ = Double.NaN;
-   }
-
-   public void set(PlanarJointState other)
-   {
-      pitch = other.pitch;
-      positionX = other.positionX;
-      positionZ = other.positionZ;
-      pitchVelocity = other.pitchVelocity;
-      linearVelocityX = other.linearVelocityX;
-      linearVelocityZ = other.linearVelocityZ;
-      pitchAcceleration = other.pitchAcceleration;
-      linearAccelerationX = other.linearAccelerationX;
-      linearAccelerationZ = other.linearAccelerationZ;
-      torqueY = other.torqueY;
-      forceX = other.forceX;
-      forceZ = other.forceZ;
-   }
-
-   @Override
    public void set(JointStateReadOnly jointStateReadOnly)
    {
-      if (jointStateReadOnly instanceof PlanarJointState)
-      {
-         set((PlanarJointState) jointStateReadOnly);
-      }
-      else if (jointStateReadOnly instanceof PlanarJointStateReadOnly)
+      if (jointStateReadOnly instanceof PlanarJointStateReadOnly)
       {
          PlanarJointStateBasics.super.set((PlanarJointStateReadOnly) jointStateReadOnly);
       }
@@ -146,24 +105,6 @@ public class PlanarJointState extends JointStateBase implements PlanarJointState
       this.torqueY = torqueY;
       this.forceX = forceX;
       this.forceZ = forceZ;
-   }
-
-   @Override
-   public boolean hasOutputFor(JointStateType query)
-   {
-      switch (query)
-      {
-         case CONFIGURATION:
-            return !EuclidCoreTools.containsNaN(pitch, positionX, positionZ);
-         case VELOCITY:
-            return !EuclidCoreTools.containsNaN(pitchVelocity, linearVelocityX, linearVelocityZ);
-         case ACCELERATION:
-            return !EuclidCoreTools.containsNaN(pitchAcceleration, linearAccelerationX, linearAccelerationZ);
-         case EFFORT:
-            return !EuclidCoreTools.containsNaN(torqueY, forceX, forceZ);
-         default:
-            throw new IllegalStateException("Should not get here.");
-      }
    }
 
    @Override

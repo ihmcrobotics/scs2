@@ -44,33 +44,25 @@ public interface JointStateReadOnly
 
    default void checkConfigurationSize(JointReadOnly joint)
    {
-      checkConfigurationSize(joint.getConfigurationMatrixSize());
+      if (joint.getConfigurationMatrixSize() != getConfigurationSize())
+         throw new IllegalArgumentException("Bad configuration size: expected = " + getConfigurationSize() + ", was = " + joint.getConfigurationMatrixSize());
    }
 
-   default void checkConfigurationSize(DMatrix configurationMatrix)
+   default void checkConfigurationSize(int startRow, DMatrix configurationMatrix)
    {
-      checkConfigurationSize(configurationMatrix.getNumRows());
-   }
-
-   default void checkConfigurationSize(int query)
-   {
-      if (query != getConfigurationSize())
-         throw new IllegalArgumentException("Bad configuration size: expected = " + getConfigurationSize() + ", was = " + query);
+      if (configurationMatrix.getNumRows() - startRow < getConfigurationSize())
+         throw new IllegalArgumentException("Bad configuration size: expected >= " + getConfigurationSize() + ", was = " + configurationMatrix.getNumRows());
    }
 
    default void checkDegreesOfFreedom(JointReadOnly joint)
    {
-      checkDegreesOfFreedom(joint.getDegreesOfFreedom());
+      if (joint.getDegreesOfFreedom() != getDegreesOfFreedom())
+         throw new IllegalArgumentException("Bad number of DoFs: expected = " + getDegreesOfFreedom() + ", was = " + joint.getDegreesOfFreedom());
    }
 
-   default void checkDegreesOfFreedom(DMatrix degreesOfFreedomMatrix)
+   default void checkDegreesOfFreedom(int startRow, DMatrix degreesOfFreedomMatrix)
    {
-      checkDegreesOfFreedom(degreesOfFreedomMatrix.getNumRows());
-   }
-
-   default void checkDegreesOfFreedom(int query)
-   {
-      if (query != getDegreesOfFreedom())
-         throw new IllegalArgumentException("Bad number of DoFs: expected = " + getDegreesOfFreedom() + ", was = " + query);
+      if (degreesOfFreedomMatrix.getNumRows() - startRow < getDegreesOfFreedom())
+         throw new IllegalArgumentException("Bad number of DoFs: expected >= " + getDegreesOfFreedom() + ", was = " + degreesOfFreedomMatrix.getNumRows());
    }
 }

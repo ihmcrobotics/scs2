@@ -16,6 +16,15 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
 
    void setEffort(double tau);
 
+   @Override
+   default void clear()
+   {
+      setConfiguration(Double.NaN);
+      setVelocity(Double.NaN);
+      setAcceleration(Double.NaN);
+      setEffort(Double.NaN);
+   }
+
    default void addConfiguration(double q)
    {
       if (!hasOutputFor(JointStateType.CONFIGURATION))
@@ -50,15 +59,10 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
 
    default void set(OneDoFJointStateReadOnly other)
    {
-      clear();
-      if (other.hasOutputFor(JointStateType.CONFIGURATION))
-         setConfiguration(other.getConfiguration());
-      if (other.hasOutputFor(JointStateType.VELOCITY))
-         setVelocity(other.getVelocity());
-      if (other.hasOutputFor(JointStateType.ACCELERATION))
-         setAcceleration(other.getAcceleration());
-      if (other.hasOutputFor(JointStateType.EFFORT))
-         setEffort(other.getEffort());
+      setConfiguration(other.getConfiguration());
+      setVelocity(other.getVelocity());
+      setAcceleration(other.getAcceleration());
+      setEffort(other.getEffort());
    }
 
    @Override

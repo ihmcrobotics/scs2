@@ -53,30 +53,9 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    }
 
    @Override
-   public void clear()
-   {
-      configuration = Double.NaN;
-      velocity = Double.NaN;
-      acceleration = Double.NaN;
-      effort = Double.NaN;
-   }
-
-   public void set(OneDoFJointState other)
-   {
-      configuration = other.configuration;
-      velocity = other.velocity;
-      acceleration = other.acceleration;
-      effort = other.effort;
-   }
-
-   @Override
    public void set(JointStateReadOnly jointStateReadOnly)
    {
-      if (jointStateReadOnly instanceof OneDoFJointState)
-      {
-         set((OneDoFJointState) jointStateReadOnly);
-      }
-      else if (jointStateReadOnly instanceof OneDoFJointStateReadOnly)
+      if (jointStateReadOnly instanceof OneDoFJointStateReadOnly)
       {
          OneDoFJointStateBasics.super.set((OneDoFJointStateReadOnly) jointStateReadOnly);
       }
@@ -134,24 +113,6 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    public void setEffort(double tau)
    {
       effort = tau;
-   }
-
-   @Override
-   public boolean hasOutputFor(JointStateType query)
-   {
-      switch (query)
-      {
-         case CONFIGURATION:
-            return !Double.isNaN(configuration);
-         case VELOCITY:
-            return !Double.isNaN(velocity);
-         case ACCELERATION:
-            return !Double.isNaN(acceleration);
-         case EFFORT:
-            return !Double.isNaN(effort);
-         default:
-            throw new IllegalStateException("Should get here.");
-      }
    }
 
    @Override

@@ -1,7 +1,9 @@
 package us.ihmc.scs2.definition.state;
 
+import static org.ejml.dense.row.MatrixFeatures_DDRM.hasNaN;
+import static org.ejml.dense.row.MatrixFeatures_DDRM.isEquals;
+
 import java.util.Arrays;
-import java.util.Objects;
 
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
@@ -292,13 +294,13 @@ public class JointState extends JointStateBase implements JointStateBasics
 
       JointState other = (JointState) object;
 
-      if (!Objects.equals(configuration, other.configuration))
+      if (hasNaN(configuration) ? !hasNaN(other.configuration) : !isEquals(configuration, other.configuration))
          return false;
-      if (!Objects.equals(velocity, other.velocity))
+      if (hasNaN(velocity) ? !hasNaN(other.velocity) : !isEquals(velocity, other.velocity))
          return false;
-      if (!Objects.equals(acceleration, other.acceleration))
+      if (hasNaN(acceleration) ? !hasNaN(other.acceleration) : !isEquals(acceleration, other.acceleration))
          return false;
-      if (!Objects.equals(effort, other.effort))
+      if (hasNaN(effort) ? !hasNaN(other.effort) : !isEquals(effort, other.effort))
          return false;
       if (configurationSize != other.configurationSize)
          return false;
