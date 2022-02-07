@@ -133,7 +133,7 @@ public class RemoteSessionManagerController implements SessionControlsController
 
       createStaticHostButton.setOnAction(e ->
       {
-         staticDescriptionProperty.set(new HTTPDataServerDescription(staticHostTextField.getText(), Integer.parseInt(staticPortTextField.getText()), true));
+         staticDescriptionProperty.set(new HTTPDataServerDescription(staticHostTextField.getText(), Integer.parseInt(staticPortTextField.getText()), null, true));
       });
 
       staticDescriptionProperty.addListener((o, oldValue, newValue) ->
