@@ -3,6 +3,7 @@ package us.ihmc.scs2.definition.robot;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -13,6 +14,7 @@ import us.ihmc.euclid.interfaces.Transformable;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -263,5 +265,49 @@ public class RigidBodyDefinition implements Transformable
    {
       String childrenString = childrenJoints == null ? "[]" : EuclidCoreIOTools.getCollectionString("[", "]", ", ", childrenJoints, JointDefinition::getName);
       return name + ": inertia pose: " + inertiaPose + ", children: " + childrenString;
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, mass);
+      bits = EuclidHashCodeTools.addToHashCode(bits, momentOfInertia);
+      bits = EuclidHashCodeTools.addToHashCode(bits, inertiaPose);
+      bits = EuclidHashCodeTools.addToHashCode(bits, childrenJoints);
+      bits = EuclidHashCodeTools.addToHashCode(bits, visualDefinitions);
+      bits = EuclidHashCodeTools.addToHashCode(bits, collisionShapeDefinitions);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      RigidBodyDefinition other = (RigidBodyDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (Double.doubleToLongBits(mass) != Double.doubleToLongBits(other.mass))
+         return false;
+      if (!Objects.equals(momentOfInertia, other.momentOfInertia))
+         return false;
+      if (!Objects.equals(inertiaPose, other.inertiaPose))
+         return false;
+      if (!Objects.equals(childrenJoints, other.childrenJoints))
+         return false;
+      if (!Objects.equals(visualDefinitions, other.visualDefinitions))
+         return false;
+      if (!Objects.equals(collisionShapeDefinitions, other.collisionShapeDefinitions))
+         return false;
+
+      return true;
    }
 }

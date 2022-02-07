@@ -40,9 +40,10 @@ public class SimPlanarJoint extends YoPlanarJoint implements SimJointBasics, Sim
       registry = predecessor.getRegistry();
       auxiliaryData = new SimJointAuxiliaryData(this);
 
-      YoDouble angularDeltaVelocityY = new YoDouble(name + "AngularDeltaVelocityY", registry);
-      YoDouble linearDeltaVelocityX = new YoDouble(name + "LinearDeltaVelocityX", registry);
-      YoDouble linearDeltaVelocityZ = new YoDouble(name + "LinearDeltaVelocityZ", registry);
+      String varName = !name.isEmpty() ? "_" + name + "_" : "_";
+      YoDouble angularDeltaVelocityY = new YoDouble("qd_delta" + varName + "wy", registry);
+      YoDouble linearDeltaVelocityX = new YoDouble( "qd_delta" + varName + "x", registry);
+      YoDouble linearDeltaVelocityZ = new YoDouble( "qd_delta" + varName + "z", registry);
       jointDeltaTwist = YoMecanoFactories.newPlanarYoFixedFrameTwistBasics(angularDeltaVelocityY,
                                                                            linearDeltaVelocityX,
                                                                            linearDeltaVelocityZ,

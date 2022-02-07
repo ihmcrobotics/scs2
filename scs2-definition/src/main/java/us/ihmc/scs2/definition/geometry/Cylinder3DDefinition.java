@@ -199,12 +199,11 @@ public class Cylinder3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, length);
       bits = EuclidHashCodeTools.addToHashCode(bits, radius);
       bits = EuclidHashCodeTools.addToHashCode(bits, centered);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -212,26 +211,22 @@ public class Cylinder3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Cylinder3DDefinition)
-      {
-         Cylinder3DDefinition other = (Cylinder3DDefinition) object;
-         if (length != other.length)
-            return false;
-         if (radius != other.radius)
-            return false;
-         if (centered != other.centered)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Cylinder3DDefinition other = (Cylinder3DDefinition) object;
+
+      if (Double.doubleToLongBits(length) != Double.doubleToLongBits(other.length))
+         return false;
+      if (Double.doubleToLongBits(radius) != Double.doubleToLongBits(other.radius))
+         return false;
+      if (centered != other.centered)
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

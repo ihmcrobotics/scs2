@@ -15,6 +15,7 @@ import us.ihmc.scs2.simulation.robot.SimJointAuxiliaryData;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimFloatingJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, SimFloatingJointBasics
@@ -38,7 +39,12 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
       super(name, predecessor, transformToParent, predecessor.getRegistry());
       registry = predecessor.getRegistry();
       auxiliaryData = new SimJointAuxiliaryData(this);
-      jointDeltaTwist = new YoFixedFrameTwist(name + "DeltaTwist", afterJointFrame, beforeJointFrame, afterJointFrame, registry);
+
+      String varName = !name.isEmpty() ? "_" + name + "_" : "_";
+      jointDeltaTwist = new YoFixedFrameTwist(afterJointFrame,
+                                              beforeJointFrame,
+                                              new YoFrameVector3D("qd_delta" + varName + "w", afterJointFrame, registry),
+                                              new YoFrameVector3D("qd_delta" + varName, afterJointFrame, registry));
    }
 
    @Override

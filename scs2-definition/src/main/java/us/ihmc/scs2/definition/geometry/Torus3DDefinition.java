@@ -134,11 +134,10 @@ public class Torus3DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, majorRadius);
       bits = EuclidHashCodeTools.addToHashCode(bits, minorRadius);
       bits = EuclidHashCodeTools.addToHashCode(bits, resolution);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -146,24 +145,20 @@ public class Torus3DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Torus3DDefinition)
-      {
-         Torus3DDefinition other = (Torus3DDefinition) object;
-         if (majorRadius != other.majorRadius)
-            return false;
-         if (minorRadius != other.minorRadius)
-            return false;
-         if (resolution != other.resolution)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Torus3DDefinition other = (Torus3DDefinition) object;
+
+      if (Double.doubleToLongBits(majorRadius) != Double.doubleToLongBits(other.majorRadius))
+         return false;
+      if (Double.doubleToLongBits(minorRadius) != Double.doubleToLongBits(other.minorRadius))
+         return false;
+      if (resolution != other.resolution)
+         return false;
+
+      return true;
    }
 
    @Override

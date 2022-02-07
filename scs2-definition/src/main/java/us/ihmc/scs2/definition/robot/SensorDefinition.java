@@ -1,8 +1,11 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 
 import us.ihmc.euclid.interfaces.Transformable;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -103,5 +106,37 @@ public class SensorDefinition implements Transformable
    public String toString()
    {
       return getClass().getSimpleName() + " - " + name;
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToJoint);
+      bits = EuclidHashCodeTools.addToHashCode(bits, updatePeriod);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      SensorDefinition other = (SensorDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (!Objects.equals(transformToJoint, other.transformToJoint))
+         return false;
+      if (updatePeriod != other.updatePeriod)
+         return false;
+
+      return true;
    }
 }

@@ -1,9 +1,12 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
 import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DBasics;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -131,5 +134,36 @@ public class LoopClosureDefinition
       orthogonalMatrixToPack.setIdentity();
       orthogonalMatrixToPack.setM22(0.0);
       R.transform(orthogonalMatrixToPack);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToSuccessorParent);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kpSoftConstraint);
+      bits = EuclidHashCodeTools.addToHashCode(bits, kdSoftConstraint);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      LoopClosureDefinition other = (LoopClosureDefinition) object;
+
+      if (!Objects.equals(transformToSuccessorParent, other.transformToSuccessorParent))
+         return false;
+      if (!Objects.equals(kpSoftConstraint, other.kpSoftConstraint))
+         return false;
+      if (!Objects.equals(kdSoftConstraint, other.kdSoftConstraint))
+         return false;
+      return true;
    }
 }

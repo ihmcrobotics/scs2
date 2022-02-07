@@ -1,6 +1,9 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import us.ihmc.euclid.interfaces.Transformable;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
@@ -74,5 +77,34 @@ public class KinematicPointDefinition implements Transformable
    public String toString()
    {
       return getClass().getSimpleName() + " - " + name;
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformToParent);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      KinematicPointDefinition other = (KinematicPointDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (!Objects.equals(transformToParent, other.transformToParent))
+         return false;
+
+      return true;
    }
 }

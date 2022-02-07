@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 
@@ -122,5 +123,41 @@ public class CameraSensorDefinition extends SensorDefinition
    public CameraSensorDefinition copy()
    {
       return new CameraSensorDefinition(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, enable);
+      bits = EuclidHashCodeTools.addToHashCode(bits, fieldOfView);
+      bits = EuclidHashCodeTools.addToHashCode(bits, clipNear);
+      bits = EuclidHashCodeTools.addToHashCode(bits, clipFar);
+      bits = EuclidHashCodeTools.addToHashCode(bits, imageWidth);
+      bits = EuclidHashCodeTools.addToHashCode(bits, imageHeight);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+      CameraSensorDefinition other = (CameraSensorDefinition) object;
+      if (enable != other.enable)
+         return false;
+      if (Double.doubleToLongBits(fieldOfView) != Double.doubleToLongBits(other.fieldOfView))
+         return false;
+      if (Double.doubleToLongBits(clipNear) != Double.doubleToLongBits(other.clipNear))
+         return false;
+      if (Double.doubleToLongBits(clipFar) != Double.doubleToLongBits(other.clipFar))
+         return false;
+      if (imageWidth != other.imageWidth)
+         return false;
+      if (imageHeight != other.imageHeight)
+         return false;
+      return true;
    }
 }

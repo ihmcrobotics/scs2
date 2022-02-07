@@ -1,10 +1,12 @@
 package us.ihmc.scs2.definition.state;
 
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.ejml.data.DMatrixRMaj;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
@@ -163,5 +165,47 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    public OneDoFJointState copy()
    {
       return new OneDoFJointState(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
+      if (availableStates.contains(JointStateType.CONFIGURATION))
+         bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
+      if (availableStates.contains(JointStateType.VELOCITY))
+         bits = EuclidHashCodeTools.addToHashCode(bits, velocity);
+      if (availableStates.contains(JointStateType.ACCELERATION))
+         bits = EuclidHashCodeTools.addToHashCode(bits, acceleration);
+      if (availableStates.contains(JointStateType.EFFORT))
+         bits = EuclidHashCodeTools.addToHashCode(bits, effort);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      OneDoFJointState other = (OneDoFJointState) object;
+
+      if (!Objects.equals(availableStates, other.availableStates))
+         return false;
+      if (availableStates.contains(JointStateType.CONFIGURATION) && Double.doubleToLongBits(configuration) != Double.doubleToLongBits(other.configuration))
+         return false;
+      if (availableStates.contains(JointStateType.VELOCITY) && Double.doubleToLongBits(velocity) != Double.doubleToLongBits(other.velocity))
+         return false;
+      if (availableStates.contains(JointStateType.ACCELERATION) && Double.doubleToLongBits(acceleration) != Double.doubleToLongBits(other.acceleration))
+         return false;
+      if (availableStates.contains(JointStateType.EFFORT) && Double.doubleToLongBits(effort) != Double.doubleToLongBits(other.effort))
+         return false;
+
+      return true;
    }
 }

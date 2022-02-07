@@ -1,5 +1,8 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.CrossFourBarJoint;
@@ -238,5 +241,61 @@ public class CrossFourBarJointDefinition extends OneDoFJointDefinition
       clone.actuatedJointIndex = actuatedJointIndex;
       clone.loopClosureJointIndex = loopClosureJointIndex;
       return clone;
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = super.hashCode();
+      bits = EuclidHashCodeTools.addToHashCode(bits, jointNameA);
+      bits = EuclidHashCodeTools.addToHashCode(bits, jointNameB);
+      bits = EuclidHashCodeTools.addToHashCode(bits, jointNameC);
+      bits = EuclidHashCodeTools.addToHashCode(bits, jointNameD);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformAToPredecessor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformBToPredecessor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformCToB);
+      bits = EuclidHashCodeTools.addToHashCode(bits, transformDToA);
+      bits = EuclidHashCodeTools.addToHashCode(bits, bodyDA);
+      bits = EuclidHashCodeTools.addToHashCode(bits, bodyBC);
+      bits = EuclidHashCodeTools.addToHashCode(bits, actuatedJointIndex);
+      bits = EuclidHashCodeTools.addToHashCode(bits, loopClosureJointIndex);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+         return true;
+      if (!super.equals(object))
+         return false;
+
+      CrossFourBarJointDefinition other = (CrossFourBarJointDefinition) object;
+
+      if (!Objects.equals(jointNameA, other.jointNameA))
+         return false;
+      if (!Objects.equals(jointNameB, other.jointNameB))
+         return false;
+      if (!Objects.equals(jointNameC, other.jointNameC))
+         return false;
+      if (!Objects.equals(jointNameD, other.jointNameD))
+         return false;
+      if (!Objects.equals(transformAToPredecessor, other.transformAToPredecessor))
+         return false;
+      if (!Objects.equals(transformBToPredecessor, other.transformBToPredecessor))
+         return false;
+      if (!Objects.equals(transformCToB, other.transformCToB))
+         return false;
+      if (!Objects.equals(transformDToA, other.transformDToA))
+         return false;
+      if (!Objects.equals(bodyDA, other.bodyDA))
+         return false;
+      if (!Objects.equals(bodyBC, other.bodyBC))
+         return false;
+      if (actuatedJointIndex != other.actuatedJointIndex)
+         return false;
+      if (loopClosureJointIndex != other.loopClosureJointIndex)
+         return false;
+      return true;
    }
 }

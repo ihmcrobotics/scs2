@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
@@ -119,32 +120,40 @@ public class CollisionShapeDefinition
    }
 
    @Override
+   public int hashCode()
+   {
+      long bits = 1;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, originPose);
+      bits = EuclidHashCodeTools.addToHashCode(bits, geometryDefinition);
+      bits = EuclidHashCodeTools.addToHashCode(bits, collisionMask);
+      bits = EuclidHashCodeTools.addToHashCode(bits, collisionGroup);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof CollisionShapeDefinition)
-      {
-         CollisionShapeDefinition other = (CollisionShapeDefinition) object;
-
-         if (!Objects.equals(name, other.name))
-            return false;
-         if (!Objects.equals(originPose, other.originPose))
-            return false;
-         if (!Objects.equals(geometryDefinition, other.geometryDefinition))
-            return false;
-         if (collisionMask != other.collisionMask)
-            return false;
-         if (collisionGroup != other.collisionGroup)
-            return false;
-         return true;
-      }
-      else
-      {
+      if (object == null)
          return false;
-      }
+      if (getClass() != object.getClass())
+         return false;
+
+      CollisionShapeDefinition other = (CollisionShapeDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+      if (!Objects.equals(originPose, other.originPose))
+         return false;
+      if (!Objects.equals(geometryDefinition, other.geometryDefinition))
+         return false;
+      if (collisionMask != other.collisionMask)
+         return false;
+      if (collisionGroup != other.collisionGroup)
+         return false;
+      return true;
    }
 
    @Override

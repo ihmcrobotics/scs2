@@ -8,6 +8,7 @@ import org.ejml.data.DMatrix;
 
 import us.ihmc.euclid.matrix.interfaces.Matrix3DBasics;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 
 @XmlType(propOrder = {"ixx", "iyy", "izz", "ixy", "ixz", "iyz"})
 public class MomentOfInertiaDefinition implements Matrix3DBasics
@@ -271,5 +272,45 @@ public class MomentOfInertiaDefinition implements Matrix3DBasics
    public double getM22()
    {
       return getIzz();
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, ixx);
+      bits = EuclidHashCodeTools.addToHashCode(bits, iyy);
+      bits = EuclidHashCodeTools.addToHashCode(bits, izz);
+      bits = EuclidHashCodeTools.addToHashCode(bits, ixy);
+      bits = EuclidHashCodeTools.addToHashCode(bits, ixz);
+      bits = EuclidHashCodeTools.addToHashCode(bits, iyz);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      MomentOfInertiaDefinition other = (MomentOfInertiaDefinition) object;
+
+      if (Double.doubleToLongBits(ixx) != Double.doubleToLongBits(other.ixx))
+         return false;
+      if (Double.doubleToLongBits(iyy) != Double.doubleToLongBits(other.iyy))
+         return false;
+      if (Double.doubleToLongBits(izz) != Double.doubleToLongBits(other.izz))
+         return false;
+      if (Double.doubleToLongBits(ixy) != Double.doubleToLongBits(other.ixy))
+         return false;
+      if (Double.doubleToLongBits(ixz) != Double.doubleToLongBits(other.ixz))
+         return false;
+      if (Double.doubleToLongBits(iyz) != Double.doubleToLongBits(other.iyz))
+         return false;
+      return true;
    }
 }

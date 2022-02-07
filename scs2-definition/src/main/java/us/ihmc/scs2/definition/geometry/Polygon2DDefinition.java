@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -116,10 +117,9 @@ public class Polygon2DDefinition extends GeometryDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, polygonVertices);
       bits = EuclidHashCodeTools.addToHashCode(bits, counterClockwiseOrdered);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -127,22 +127,18 @@ public class Polygon2DDefinition extends GeometryDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof Polygon2DDefinition)
-      {
-         Polygon2DDefinition other = (Polygon2DDefinition) object;
-         if (polygonVertices == null ? other.polygonVertices != null : !polygonVertices.equals(other.polygonVertices))
-            return false;
-         if (counterClockwiseOrdered != other.counterClockwiseOrdered)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      Polygon2DDefinition other = (Polygon2DDefinition) object;
+
+      if (!Objects.equals(polygonVertices, other.polygonVertices))
+         return false;
+      if (counterClockwiseOrdered != other.counterClockwiseOrdered)
+         return false;
+
+      return true;
    }
 
    @Override

@@ -82,14 +82,9 @@ public class STPCylinder3DDefinition extends Cylinder3DDefinition
    @Override
    public int hashCode()
    {
-      long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, getLength());
-      bits = EuclidHashCodeTools.addToHashCode(bits, getRadius());
-      bits = EuclidHashCodeTools.addToHashCode(bits, isCentered());
-      bits = EuclidHashCodeTools.addToHashCode(bits, getResolution());
+      long bits = super.hashCode();
       bits = EuclidHashCodeTools.addToHashCode(bits, minimumMargin);
       bits = EuclidHashCodeTools.addToHashCode(bits, maximumMargin);
-      bits = EuclidHashCodeTools.addToHashCode(bits, getName());
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -97,22 +92,18 @@ public class STPCylinder3DDefinition extends Cylinder3DDefinition
    public boolean equals(Object object)
    {
       if (object == this)
-      {
          return true;
-      }
-      else if (object instanceof STPCylinder3DDefinition)
-      {
-         STPCylinder3DDefinition other = (STPCylinder3DDefinition) object;
-         if (minimumMargin != other.minimumMargin)
-            return false;
-         if (maximumMargin != other.maximumMargin)
-            return false;
-         return super.equals(object);
-      }
-      else
-      {
+      if (!super.equals(object))
          return false;
-      }
+
+      STPCylinder3DDefinition other = (STPCylinder3DDefinition) object;
+
+      if (Double.doubleToLongBits(minimumMargin) != Double.doubleToLongBits(other.minimumMargin))
+         return false;
+      if (Double.doubleToLongBits(maximumMargin) != Double.doubleToLongBits(other.maximumMargin))
+         return false;
+
+      return true;
    }
 
    @Override

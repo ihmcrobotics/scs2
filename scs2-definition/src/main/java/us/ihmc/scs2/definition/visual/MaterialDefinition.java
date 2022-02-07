@@ -1,5 +1,9 @@
 package us.ihmc.scs2.definition.visual;
 
+import java.util.Objects;
+
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
 public class MaterialDefinition
 {
    private String name;
@@ -31,7 +35,10 @@ public class MaterialDefinition
       this.diffuseColor = diffuseColor;
    }
 
-   public MaterialDefinition(ColorDefinition ambientColor, ColorDefinition diffuseColor, ColorDefinition specularColor, ColorDefinition emissiveColor,
+   public MaterialDefinition(ColorDefinition ambientColor,
+                             ColorDefinition diffuseColor,
+                             ColorDefinition specularColor,
+                             ColorDefinition emissiveColor,
                              double shininess)
    {
       this.ambientColor = ambientColor;
@@ -178,4 +185,65 @@ public class MaterialDefinition
    {
       return new MaterialDefinition(this);
    }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, name);
+      bits = EuclidHashCodeTools.addToHashCode(bits, ambientColor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, diffuseColor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, specularColor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, emissiveColor);
+      bits = EuclidHashCodeTools.addToHashCode(bits, shininess);
+      bits = EuclidHashCodeTools.addToHashCode(bits, diffuseMap);
+      bits = EuclidHashCodeTools.addToHashCode(bits, normalMap);
+      bits = EuclidHashCodeTools.addToHashCode(bits, specularMap);
+      bits = EuclidHashCodeTools.addToHashCode(bits, emissiveMap);
+      bits = EuclidHashCodeTools.addToHashCode(bits, scriptDefinition);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      MaterialDefinition other = (MaterialDefinition) object;
+
+      if (!Objects.equals(name, other.name))
+         return false;
+
+      if (!Objects.equals(ambientColor, other.ambientColor))
+         return false;
+      if (!Objects.equals(diffuseColor, other.diffuseColor))
+         return false;
+      if (!Objects.equals(specularColor, other.specularColor))
+         return false;
+      if (!Objects.equals(emissiveColor, other.emissiveColor))
+         return false;
+
+      if (Double.doubleToLongBits(shininess) == Double.doubleToLongBits(other.shininess))
+         return false;
+
+      if (!Objects.equals(diffuseMap, other.diffuseMap))
+         return false;
+      if (!Objects.equals(normalMap, other.normalMap))
+         return false;
+      if (!Objects.equals(specularMap, other.specularMap))
+         return false;
+      if (!Objects.equals(emissiveMap, other.emissiveMap))
+         return false;
+
+      if (!Objects.equals(scriptDefinition, other.scriptDefinition))
+         return false;
+
+      return true;
+   }
+
 }

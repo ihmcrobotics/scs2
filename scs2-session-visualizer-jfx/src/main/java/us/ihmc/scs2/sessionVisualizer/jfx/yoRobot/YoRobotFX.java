@@ -12,14 +12,10 @@ import javafx.collections.ObservableMap;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.util.Duration;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
-import us.ihmc.mecano.tools.MultiBodySystemFactories;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
-import us.ihmc.mecano.yoVariables.tools.YoMultiBodySystemFactories;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
@@ -28,7 +24,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.RigidBodyFrameNodeFact
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
-import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -42,7 +37,7 @@ public class YoRobotFX
    private final ReferenceFrameManager referenceFrameManager;
 
    private RigidBodyBasics rootBody;
-   private final YoRegistry robotRegistry;
+   private YoRegistry robotRegistry;
    private ObservableMap<String, FrameNode> rigidBodyFrameNodeMap = FXCollections.observableMap(new ConcurrentHashMap<>(64));
 
    private LinkedYoRegistry robotLinkedYoRegistry;
@@ -54,21 +49,18 @@ public class YoRobotFX
       this.yoManager = yoManager;
       this.referenceFrameManager = referenceFrameManager;
       this.robotDefinition = robotDefinition;
-
-      // FIXME This is britle any change to the registry structure of the active Session will break this robot visualization 
-      robotRegistry = SharedMemoryTools.newRegistryFromNamespace(SimulationSession.ROOT_REGISTRY_NAME, robotDefinition.getName());
    }
 
    public void loadRobot(Executor graphicLoader)
    {
       LogTools.info("Loading robot: " + robotDefinition.getName());
-      ReferenceFrame robotRootFrame = Robot.createRobotRootFrame(robotDefinition, referenceFrameManager.getWorldFrame());
 
-      rootBody = MultiBodySystemFactories.cloneMultiBodySystem(robotDefinition.newInstance(ReferenceFrameTools.constructARootFrame("dummy")),
-                                                               robotRootFrame,
-                                                               "",
-                                                               MultiBodySystemFactories.DEFAULT_RIGID_BODY_BUILDER,
-                                                               YoMultiBodySystemFactories.newYoJointBuilder(robotRegistry));
+      YoRegistry rootRegistry = new YoRegistry(SimulationSession.ROOT_REGISTRY_NAME);
+      Robot robot = new Robot(robotDefinition, referenceFrameManager.getWorldFrame());
+      robotRegistry = robot.getRegistry();
+      rootRegistry.addChild(robotRegistry);
+      rootBody = robot.getRootBody();
+
       rigidBodyFrameNodeMap.addListener((MapChangeListener<String, FrameNode>) change ->
       {
          if (change.wasRemoved())
@@ -108,8 +100,11 @@ public class YoRobotFX
       robotLinkedYoRegistry = yoManager.newLinkedYoRegistry(robotRegistry);
       robotRegistry.getVariables().forEach(var ->
       {
-         LinkedYoVariable<YoVariable> linkYoVariable = robotLinkedYoRegistry.linkYoVariable(var);
-         linkYoVariable.addUser(this);
+         if (var.getName().startsWith("q_"))
+         { // Only link the YoVariables for the joint angles and root joint configuration.
+            LinkedYoVariable<YoVariable> linkYoVariable = robotLinkedYoRegistry.linkYoVariable(var);
+            linkYoVariable.addUser(this);
+         }
       });
    }
 

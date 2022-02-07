@@ -1,12 +1,14 @@
 package us.ihmc.scs2.definition.state;
 
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
 
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
@@ -182,5 +184,47 @@ public class SphericalJointState extends JointStateBase implements SphericalJoin
    public SphericalJointState copy()
    {
       return new SphericalJointState(this);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      long bits = 1L;
+      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
+      if (availableStates.contains(JointStateType.CONFIGURATION))
+         bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
+      if (availableStates.contains(JointStateType.VELOCITY))
+         bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
+      if (availableStates.contains(JointStateType.ACCELERATION))
+         bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
+      if (availableStates.contains(JointStateType.EFFORT))
+         bits = EuclidHashCodeTools.addToHashCode(bits, torque);
+      return EuclidHashCodeTools.toIntHashCode(bits);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (this == object)
+         return true;
+      if (object == null)
+         return false;
+      if (getClass() != object.getClass())
+         return false;
+
+      SphericalJointState other = (SphericalJointState) object;
+
+      if (!Objects.equals(availableStates, other.availableStates))
+         return false;
+      if (availableStates.contains(JointStateType.CONFIGURATION) && !Objects.equals(configuration, other.configuration))
+         return false;
+      if (availableStates.contains(JointStateType.VELOCITY) && !Objects.equals(angularVelocity, other.angularVelocity))
+         return false;
+      if (availableStates.contains(JointStateType.ACCELERATION) && !Objects.equals(angularAcceleration, other.angularAcceleration))
+         return false;
+      if (availableStates.contains(JointStateType.EFFORT) && !Objects.equals(torque, other.torque))
+         return false;
+
+      return true;
    }
 }
