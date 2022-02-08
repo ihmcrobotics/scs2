@@ -243,6 +243,12 @@ public class RemoteSession extends Session
       }
    }
 
+   public void sendCommandToYoVariableServer(DataServerCommand command, int argument)
+   {
+      if (yoVariableClientInterface != null && yoVariableClientInterface.isConnected())
+         yoVariableClientInterface.sendCommand(command, argument);
+   }
+
    @Override
    public String getSessionName()
    {
