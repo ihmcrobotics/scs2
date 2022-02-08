@@ -86,6 +86,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
 
    private boolean initialize = true;
 
+   private MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener;
+
    public ImpulseBasedPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
       this.rootRegistry = rootRegistry;
@@ -101,6 +103,11 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       hasGlobalConstraintParameters = new YoBoolean("hasGlobalConstraintParameters", physicsEngineRegistry);
       globalConstraintParameters = new YoConstraintParameters("globalConstraint", physicsEngineRegistry);
       multiContactImpulseCalculatorPool = new YoMultiContactImpulseCalculatorPool(1, inertialFrame, multiContactCalculatorRegistry);
+   }
+
+   public void setMultiContactCalculatorStepListener(MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener)
+   {
+      this.multiContactCalculatorStepListener = multiContactCalculatorStepListener;
    }
 
    @Override
@@ -230,6 +237,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
             calculator.setConstraintParameters(globalConstraintParameters);
          if (hasGlobalContactParameters.getValue())
             calculator.setContactParameters(globalContactParameters);
+         if (multiContactCalculatorStepListener != null)
+            calculator.setListener(multiContactCalculatorStepListener);
 
          impulseCalculators.add(calculator);
          uncoveredRobotsRootBody.removeAll(collisionGroup.getRootBodies());
@@ -253,6 +262,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
          impulseCalculator.computeImpulses(currentTime, dt, false);
          impulseCalculator.writeJointDeltaVelocities();
          impulseCalculator.writeImpulses();
+         impulseCalculator.setListener(null);
       }
 
       handleCollisionsTimer.stop();
