@@ -42,6 +42,7 @@ import us.ihmc.scs2.simulation.parameters.ContactParameters;
 import us.ihmc.scs2.simulation.parameters.ContactParametersBasics;
 import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
 import us.ihmc.scs2.simulation.physicsEngine.JointStateProvider;
+import us.ihmc.scs2.simulation.physicsEngine.impulseBased.SingleContactImpulseSolver.SolverOutput;
 
 /**
  * From <i>"Per-Contact Iteration Method for Solving Contact Dynamics"</i>
@@ -59,6 +60,8 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
    private boolean isFirstUpdate = false;
    private boolean isImpulseZero = false;
    private boolean isContactClosing = false;
+   private boolean isContactSlipping = false;
+   private boolean wasMomentFrictionZero = false;
 
    private final ForwardDynamicsCalculator forwardDynamicsCalculatorA;
    private final ForwardDynamicsCalculator forwardDynamicsCalculatorB;
@@ -108,6 +111,7 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
    private RigidBodyBasics contactingBodyA, contactingBodyB;
    private MovingReferenceFrame bodyFrameA, bodyFrameB;
 
+   private final SolverOutput solverOutput = new SolverOutput();
    private final SingleContactImpulseSolver solver = new SingleContactImpulseSolver();
 
    /**
@@ -120,8 +124,11 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
     */
    private final DMatrixRMaj M_inv = new DMatrixRMaj(4, 4);
 
-   public SingleContactImpulseCalculator(ReferenceFrame rootFrame, RigidBodyBasics rootBodyA, ForwardDynamicsCalculator forwardDynamicsCalculatorA,
-                                         RigidBodyBasics rootBodyB, ForwardDynamicsCalculator forwardDynamicsCalculatorB)
+   public SingleContactImpulseCalculator(ReferenceFrame rootFrame,
+                                         RigidBodyBasics rootBodyA,
+                                         ForwardDynamicsCalculator forwardDynamicsCalculatorA,
+                                         RigidBodyBasics rootBodyB,
+                                         ForwardDynamicsCalculator forwardDynamicsCalculatorB)
    {
       this.forwardDynamicsCalculatorA = forwardDynamicsCalculatorA;
       this.forwardDynamicsCalculatorB = forwardDynamicsCalculatorB;
@@ -179,8 +186,6 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
    public void setContactParameters(ContactParametersReadOnly parameters)
    {
       contactParameters.set(parameters);
-      solver.setEnableFrictionMoment(parameters.getComputeFrictionMoment());
-      solver.setCoulombMomentRatio(parameters.getCoulombMomentFrictionRatio());
    }
 
    @Override
@@ -231,6 +236,10 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       velocitySolverInput.setToZero(contactFrame);
 
       isFirstUpdate = true;
+      wasMomentFrictionZero = true;
+
+      solver.setEnableFrictionMoment(contactParameters.getComputeFrictionMoment());
+      solver.setCoulombMomentRatio(contactParameters.getCoulombMomentFrictionRatio());
    }
 
    @Override
@@ -269,9 +278,12 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       solver.reset();
    }
 
-   public static void computeContactPointLinearVelocity(double dt, RigidBodyReadOnly rootBody, RigidBodyReadOnly contactingBody,
+   public static void computeContactPointLinearVelocity(double dt,
+                                                        RigidBodyReadOnly rootBody,
+                                                        RigidBodyReadOnly contactingBody,
                                                         RigidBodyAccelerationProvider noVelocityRigidBodyAccelerationProvider,
-                                                        FramePoint3DReadOnly contactPoint, FrameVector3DBasics linearVelocityToPack)
+                                                        FramePoint3DReadOnly contactPoint,
+                                                        FrameVector3DBasics linearVelocityToPack)
    {
       MovingReferenceFrame bodyFixedFrame = contactingBody.getBodyFixedFrame();
       linearVelocityToPack.setReferenceFrame(bodyFixedFrame);
@@ -288,9 +300,12 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       linearVelocityToPack.add(vx, vy, vz);
    }
 
-   public static void predictContactPointSpatialVelocity(double dt, RigidBodyReadOnly rootBody, RigidBodyReadOnly contactingBody,
+   public static void predictContactPointSpatialVelocity(double dt,
+                                                         RigidBodyReadOnly rootBody,
+                                                         RigidBodyReadOnly contactingBody,
                                                          RigidBodyAccelerationProvider noVelocityRigidBodyAccelerationProvider,
-                                                         FramePoint3DReadOnly contactPoint, SpatialVectorBasics spatialVelocityToPack)
+                                                         FramePoint3DReadOnly contactPoint,
+                                                         SpatialVectorBasics spatialVelocityToPack)
    {
       MovingReferenceFrame bodyFixedFrame = contactingBody.getBodyFixedFrame();
       spatialVelocityToPack.setReferenceFrame(bodyFixedFrame);
@@ -405,7 +420,22 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
 
       if (isContactClosing)
       { // Closing contact, impulse needs to be calculated.
-         solver.solveImpulseGeneral(velocitySolverInput, M_inv, contactParameters.getCoefficientOfFriction(), impulseA);
+         solver.solveImpulseGeneral(velocitySolverInput, M_inv, contactParameters.getCoefficientOfFriction(), solverOutput);
+         solverOutput.getSpatialImpulse(impulseA);
+         isContactSlipping = solverOutput.isLinearSlipping();
+
+         boolean isMomentFrictionZero = impulseA.getAngularPartZ() == 0.0;
+
+         if (isMomentFrictionZero && !wasMomentFrictionZero)
+         { // We stop computing the moment friction as soon it fails for the first time.
+            solver.setEnableFrictionMoment(false);
+         }
+
+         wasMomentFrictionZero = isMomentFrictionZero;
+      }
+      else
+      {
+         isContactSlipping = false;
       }
 
       if (impulseA.getLinearPart().getZ() < 0.0)
@@ -519,9 +549,11 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
    private final SpatialImpulse testImpulse = new SpatialImpulse();
    private final Twist testTwist = new Twist();
 
-   private void computeApparentInertiaInverse(RigidBodyBasics body, MultiBodyResponseCalculator calculator,
+   private void computeApparentInertiaInverse(RigidBodyBasics body,
+                                              MultiBodyResponseCalculator calculator,
                                               ImpulseBasedRigidBodyTwistProvider rigidBodyTwistModifierToUpdate,
-                                              ImpulseBasedJointTwistProvider jointTwistModifierToUpdate, DMatrixRMaj inertiaMatrixToPack)
+                                              ImpulseBasedJointTwistProvider jointTwistModifierToUpdate,
+                                              DMatrixRMaj inertiaMatrixToPack)
    {
       calculator.reset();
       inertiaMatrixToPack.reshape(solver.getProblemSize(), solver.getProblemSize());
@@ -611,6 +643,11 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
    public boolean isContactClosing()
    {
       return isContactClosing;
+   }
+
+   public boolean isContactSlipping()
+   {
+      return isContactSlipping;
    }
 
    public CollisionResult getCollisionResult()

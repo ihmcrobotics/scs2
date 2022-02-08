@@ -8,6 +8,8 @@ import us.ihmc.robotDataLogger.handshake.LogHandshake;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.util.DebugRegistry;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
+import us.ihmc.scs2.session.remote.RemoteSession;
+import us.ihmc.scs2.session.remote.SimpleYoVariablesUpdatedListener;
 
 public class RemoteSessionFactory implements SimpleYoVariablesUpdatedListener
 {

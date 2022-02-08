@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.remote;
+package us.ihmc.scs2.session.remote;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.robotDataLogger.YoVariableClientInterface;
@@ -14,13 +15,15 @@ import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.util.DebugRegistry;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.RobotModelLoader;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.SCS1GraphicConversionTools;
+import us.ihmc.scs2.session.tools.RobotModelLoader;
+import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
+import us.ihmc.scs2.simulation.robot.Robot;
 
 public class RemoteSession extends Session
 {
@@ -29,6 +32,7 @@ public class RemoteSession extends Session
    private YoVariableClientInterface yoVariableClientInterface;
 
    private final String sessionName;
+   private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions;
    private final Runnable robotStateUpdater;
@@ -59,9 +63,17 @@ public class RemoteSession extends Session
                                                                    handshake.getResourceDirectories(),
                                                                    handshake.getModel(),
                                                                    handshake.getResourceZip());
-      robotStateUpdater = RobotModelLoader.setupRobotUpdater(robotDefinition, handshakeParser, rootRegistry, getInertialFrame());
       if (robotDefinition != null)
+      {
          robotDefinitions.add(robotDefinition);
+         Robot robot = new Robot(robotDefinition, getInertialFrame());
+         robots.add(robot);
+         robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, handshakeParser, rootRegistry);
+      }
+      else
+      {
+         robotStateUpdater = null;
+      }
 
       setSessionDTSeconds(handshakeParser.getDt());
       setSessionModeTask(SessionMode.RUNNING, () ->
@@ -253,6 +265,12 @@ public class RemoteSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   @Override
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
+   {
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 
    public LoggerStatusUpdater getLoggerStatusUpdater()

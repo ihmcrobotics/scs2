@@ -16,6 +16,7 @@ import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
 import us.ihmc.concurrent.ConcurrentCopier;
 import us.ihmc.robotDataLogger.Camera;
+import us.ihmc.scs2.session.log.ProgressConsumer;
 
 public class VideoDataReader
 {

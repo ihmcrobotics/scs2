@@ -26,6 +26,10 @@ public class CrossFourBarJointDefinition extends OneDoFJointDefinition
    private int actuatedJointIndex;
    private int loopClosureJointIndex;
 
+   public CrossFourBarJointDefinition()
+   {
+   }
+
    public CrossFourBarJointDefinition(String name)
    {
       super(name);

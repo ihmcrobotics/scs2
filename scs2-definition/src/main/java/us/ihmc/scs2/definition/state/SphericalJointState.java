@@ -1,26 +1,20 @@
 package us.ihmc.scs2.definition.state;
 
-import java.util.EnumSet;
-import java.util.Objects;
-import java.util.Set;
+import javax.xml.bind.annotation.XmlElement;
 
-import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
 
-import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.mecano.tools.JointStateType;
+import us.ihmc.scs2.definition.QuaternionDefinition;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.SphericalJointStateBasics;
 import us.ihmc.scs2.definition.state.interfaces.SphericalJointStateReadOnly;
 
 public class SphericalJointState extends JointStateBase implements SphericalJointStateBasics
 {
-   private final Set<JointStateType> availableStates = EnumSet.noneOf(JointStateType.class);
-   private final Quaternion configuration = new Quaternion();
+   private final QuaternionDefinition orientation = new QuaternionDefinition();
    private final Vector3D angularVelocity = new Vector3D();
    private final Vector3D angularAcceleration = new Vector3D();
    private final Vector3D torque = new Vector3D();
@@ -37,28 +31,9 @@ public class SphericalJointState extends JointStateBase implements SphericalJoin
    }
 
    @Override
-   public void clear()
-   {
-      availableStates.clear();
-   }
-
-   public void set(SphericalJointState other)
-   {
-      configuration.set(other.configuration);
-      angularVelocity.set(other.angularVelocity);
-      angularAcceleration.set(other.angularAcceleration);
-      torque.set(other.torque);
-      availableStates.addAll(other.availableStates);
-   }
-
-   @Override
    public void set(JointStateReadOnly jointStateReadOnly)
    {
-      if (jointStateReadOnly instanceof SphericalJointState)
-      {
-         set((SphericalJointState) jointStateReadOnly);
-      }
-      else if (jointStateReadOnly instanceof SphericalJointStateReadOnly)
+      if (jointStateReadOnly instanceof SphericalJointStateReadOnly)
       {
          SphericalJointStateBasics.super.set((SphericalJointStateReadOnly) jointStateReadOnly);
       }
@@ -66,116 +41,93 @@ public class SphericalJointState extends JointStateBase implements SphericalJoin
       {
          if (jointStateReadOnly.getConfigurationSize() != getConfigurationSize() || jointStateReadOnly.getDegreesOfFreedom() != getDegreesOfFreedom())
             throw new IllegalArgumentException("Dimension mismatch");
-         clear();
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.CONFIGURATION))
          {
             jointStateReadOnly.getConfiguration(0, temp);
             setConfiguration(0, temp);
          }
+         else
+         {
+            orientation.setToNaN();
+         }
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.VELOCITY))
          {
             jointStateReadOnly.getVelocity(0, temp);
             setVelocity(0, temp);
          }
+         else
+         {
+            angularVelocity.setToNaN();
+         }
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.ACCELERATION))
          {
             jointStateReadOnly.getAcceleration(0, temp);
             setAcceleration(0, temp);
          }
+         else
+         {
+            angularAcceleration.setToNaN();
+         }
+
          if (jointStateReadOnly.hasOutputFor(JointStateType.EFFORT))
          {
             jointStateReadOnly.getEffort(0, temp);
             setEffort(0, temp);
          }
+         else
+         {
+            torque.setToNaN();
+         }
       }
    }
 
-   @Override
-   public void setConfiguration(Orientation3DReadOnly configuration)
+   @XmlElement
+   public void setOrientation(QuaternionDefinition orientation)
    {
-      this.configuration.set(configuration);
-      availableStates.add(JointStateType.CONFIGURATION);
+      this.orientation.set(orientation);
    }
 
-   @Override
-   public int setConfiguration(int startRow, DMatrix configuration)
-   {
-      this.configuration.set(startRow, configuration);
-      availableStates.add(JointStateType.CONFIGURATION);
-      return startRow + getConfigurationSize();
-   }
-
-   @Override
-   public void setVelocity(Vector3DReadOnly angularVelocity)
+   @XmlElement
+   public void setAngularVelocity(Vector3D angularVelocity)
    {
       this.angularVelocity.set(angularVelocity);
-      availableStates.add(JointStateType.VELOCITY);
    }
 
-   @Override
-   public int setVelocity(int startRow, DMatrix velocity)
-   {
-      this.angularVelocity.set(startRow, velocity);
-      availableStates.add(JointStateType.VELOCITY);
-      return startRow + getDegreesOfFreedom();
-   }
-
-   @Override
-   public void setAcceleration(Vector3DReadOnly angularAcceleration)
+   @XmlElement
+   public void setAngularAcceleration(Vector3D angularAcceleration)
    {
       this.angularAcceleration.set(angularAcceleration);
-      availableStates.add(JointStateType.ACCELERATION);
    }
 
-   @Override
-   public int setAcceleration(int startRow, DMatrix acceleration)
-   {
-      this.angularAcceleration.set(startRow, acceleration);
-      availableStates.add(JointStateType.ACCELERATION);
-      return startRow + getDegreesOfFreedom();
-   }
-
-   @Override
-   public void setEffort(Vector3DReadOnly torque)
+   @XmlElement
+   public void setTorque(Vector3D torque)
    {
       this.torque.set(torque);
-      availableStates.add(JointStateType.EFFORT);
    }
 
    @Override
-   public int setEffort(int startRow, DMatrix effort)
+   public QuaternionDefinition getOrientation()
    {
-      this.torque.set(startRow, effort);
-      availableStates.add(JointStateType.EFFORT);
-      return startRow + getDegreesOfFreedom();
+      return orientation;
    }
 
    @Override
-   public boolean hasOutputFor(JointStateType query)
-   {
-      return availableStates.contains(query);
-   }
-
-   @Override
-   public Quaternion getConfiguration()
-   {
-      return configuration;
-   }
-
-   @Override
-   public Vector3D getVelocity()
+   public Vector3D getAngularVelocity()
    {
       return angularVelocity;
    }
 
    @Override
-   public Vector3D getAcceleration()
+   public Vector3D getAngularAcceleration()
    {
       return angularAcceleration;
    }
 
    @Override
-   public Vector3D getEffort()
+   public Vector3D getTorque()
    {
       return torque;
    }
@@ -190,15 +142,10 @@ public class SphericalJointState extends JointStateBase implements SphericalJoin
    public int hashCode()
    {
       long bits = 1L;
-      bits = EuclidHashCodeTools.addToHashCode(bits, availableStates);
-      if (availableStates.contains(JointStateType.CONFIGURATION))
-         bits = EuclidHashCodeTools.addToHashCode(bits, configuration);
-      if (availableStates.contains(JointStateType.VELOCITY))
-         bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
-      if (availableStates.contains(JointStateType.ACCELERATION))
-         bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
-      if (availableStates.contains(JointStateType.EFFORT))
-         bits = EuclidHashCodeTools.addToHashCode(bits, torque);
+      bits = EuclidHashCodeTools.addToHashCode(bits, orientation);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularVelocity);
+      bits = EuclidHashCodeTools.addToHashCode(bits, angularAcceleration);
+      bits = EuclidHashCodeTools.addToHashCode(bits, torque);
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -214,17 +161,30 @@ public class SphericalJointState extends JointStateBase implements SphericalJoin
 
       SphericalJointState other = (SphericalJointState) object;
 
-      if (!Objects.equals(availableStates, other.availableStates))
+      if (orientation.containsNaN() ? !other.orientation.containsNaN() : !orientation.equals(other.orientation))
          return false;
-      if (availableStates.contains(JointStateType.CONFIGURATION) && !Objects.equals(configuration, other.configuration))
+      if (angularVelocity.containsNaN() ? !other.angularVelocity.containsNaN() : !angularVelocity.equals(other.angularVelocity))
          return false;
-      if (availableStates.contains(JointStateType.VELOCITY) && !Objects.equals(angularVelocity, other.angularVelocity))
+      if (angularAcceleration.containsNaN() ? !other.angularAcceleration.containsNaN() : !angularAcceleration.equals(other.angularAcceleration))
          return false;
-      if (availableStates.contains(JointStateType.ACCELERATION) && !Objects.equals(angularAcceleration, other.angularAcceleration))
-         return false;
-      if (availableStates.contains(JointStateType.EFFORT) && !Objects.equals(torque, other.torque))
+      if (torque.containsNaN() ? !other.torque.containsNaN() : !torque.equals(other.torque))
          return false;
 
       return true;
+   }
+
+   @Override
+   public String toString()
+   {
+      String ret = "Spherical joint state";
+      if (hasOutputFor(JointStateType.CONFIGURATION))
+         ret += ", orientaiton: " + orientation.toStringAsYawPitchRoll();
+      if (hasOutputFor(JointStateType.VELOCITY))
+         ret += ", angular velocity: " + angularVelocity;
+      if (hasOutputFor(JointStateType.ACCELERATION))
+         ret += ", angular acceleration: " + angularAcceleration;
+      if (hasOutputFor(JointStateType.EFFORT))
+         ret += ", torque: " + torque;
+      return ret;
    }
 }

@@ -79,6 +79,11 @@ public class SensorDefinition implements Transformable
       return updatePeriod;
    }
 
+   /**
+    * Sets the interval in milliseconds between updates for this sensor.
+    * 
+    * @param updatePeriod the update period in milliseconds.
+    */
    @XmlElement
    public void setUpdatePeriod(int updatePeriod)
    {

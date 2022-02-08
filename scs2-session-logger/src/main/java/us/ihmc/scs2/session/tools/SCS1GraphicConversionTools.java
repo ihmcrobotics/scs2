@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
+package us.ihmc.scs2.session.tools;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,12 +54,22 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicPoint3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygon2DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygonExtruded3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolynomial3DDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SCS1GraphicConversionTools
 {
+   public static final String WORLD_FRAME = "worldFrame";
+   private static final String GRAPHIC_2D_CIRCLE_NAME = "Circle";
+   private static final String GRAPHIC_2D_PLUS_NAME = "Plus";
+   private static final String GRAPHIC_2D_CIRCLE_PLUS_NAME = "Circle plus";
+   private static final String GRAPHIC_2D_CROSS_NAME = "Cross";
+   private static final String GRAPHIC_2D_CIRCLE_CROSS_NAME = "Circle cross";
+   private static final String GRAPHIC_2D_DIAMOND_NAME = "Diamond";
+   private static final String GRAPHIC_2D_DIAMOND_PLUS_NAME = "Diamond plus";
+   private static final String GRAPHIC_2D_SQUARE_NAME = "Square";
+   private static final String GRAPHIC_2D_SQUARE_CROSS_NAME = "Square cross";
+   private static final String GRAPHIC_3D_SPHERE_NAME = "Sphere";
+
    public static List<YoGraphicDefinition> toYoGraphicDefinitions(YoGraphicsListRegistry registry)
    {
       List<YoGraphicsList> yoGraphicsLists = new ArrayList<>();
@@ -420,10 +430,10 @@ public class SCS1GraphicConversionTools
       position.setX(yoVariables[0].getFullNameString());
       position.setY(yoVariables[1].getFullNameString());
       position.setZ(yoVariables.length == 3 ? yoVariables[2].getFullNameString() : Double.toString(0.0));
-      position.setReferenceFrame(ReferenceFrameManager.WORLD_FRAME);
+      position.setReferenceFrame(WORLD_FRAME);
       definition.setPosition(position);
       definition.setSize(constants[0]);
-      definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_3D_SPHERE_URL));
+      definition.setGraphicName(GRAPHIC_3D_SPHERE_NAME);
       definition.setColor(toColorDefinition(yoGraphicPosition.getAppearance()));
       definition.setVisible(yoGraphicPosition.isGraphicObjectShowing());
       return definition;
@@ -566,31 +576,31 @@ public class SCS1GraphicConversionTools
          {
             case BALL:
             case SOLID_BALL:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_CIRCLE_URL));
+               definition.setGraphicName(GRAPHIC_2D_CIRCLE_NAME);
                break;
             case CROSS:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_PLUS_URL));
+               definition.setGraphicName(GRAPHIC_2D_PLUS_NAME);
                break;
             case BALL_WITH_CROSS:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_CIRCLE_PLUS_URL));
+               definition.setGraphicName(GRAPHIC_2D_CIRCLE_PLUS_NAME);
                break;
             case ROTATED_CROSS:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_CROSS_URL));
+               definition.setGraphicName(GRAPHIC_2D_CROSS_NAME);
                break;
             case BALL_WITH_ROTATED_CROSS:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_CIRCLE_CROSS_URL));
+               definition.setGraphicName(GRAPHIC_2D_CIRCLE_CROSS_NAME);
                break;
             case DIAMOND:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_DIAMOND_URL));
+               definition.setGraphicName(GRAPHIC_2D_DIAMOND_NAME);
                break;
             case DIAMOND_WITH_CROSS:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_DIAMOND_PLUS_URL));
+               definition.setGraphicName(GRAPHIC_2D_DIAMOND_PLUS_NAME);
                break;
             case SQUARE:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_SQUARE_URL));
+               definition.setGraphicName(GRAPHIC_2D_SQUARE_NAME);
                break;
             case SQUARE_WITH_CROSS:
-               definition.setGraphicName(YoGraphicFXResourceManager.graphicName(SessionVisualizerIOTools.GRAPHIC_2D_SQUARE_CROSS_URL));
+               definition.setGraphicName(GRAPHIC_2D_SQUARE_CROSS_NAME);
                break;
             case ELLIPSOID:
                definition.setGraphicName(null);
@@ -642,7 +652,7 @@ public class SCS1GraphicConversionTools
       position.setX(x.getFullNameString());
       position.setY(y.getFullNameString());
       position.setZ(z.getFullNameString());
-      position.setReferenceFrame(ReferenceFrameManager.WORLD_FRAME);
+      position.setReferenceFrame(WORLD_FRAME);
       return position;
    }
 
@@ -656,7 +666,7 @@ public class SCS1GraphicConversionTools
       YoTuple2DDefinition position = new YoTuple2DDefinition();
       position.setX(x.getFullNameString());
       position.setY(y.getFullNameString());
-      position.setReferenceFrame(ReferenceFrameManager.WORLD_FRAME);
+      position.setReferenceFrame(WORLD_FRAME);
       return position;
    }
 
@@ -671,7 +681,7 @@ public class SCS1GraphicConversionTools
       orientation.setYaw(yaw.getFullNameString());
       orientation.setPitch(pitch.getFullNameString());
       orientation.setRoll(roll.getFullNameString());
-      orientation.setReferenceFrame(ReferenceFrameManager.WORLD_FRAME);
+      orientation.setReferenceFrame(WORLD_FRAME);
       return orientation;
    }
 
@@ -687,7 +697,7 @@ public class SCS1GraphicConversionTools
       orientation.setY(qy.getFullNameString());
       orientation.setZ(qz.getFullNameString());
       orientation.setS(qs.getFullNameString());
-      orientation.setReferenceFrame(ReferenceFrameManager.WORLD_FRAME);
+      orientation.setReferenceFrame(WORLD_FRAME);
       return orientation;
    }
 }

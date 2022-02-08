@@ -6,16 +6,30 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * This class gathers the general information for a session that is being exported to file.
+ */
 @XmlRootElement
 public class SessionInformationDefinition
 {
+   /** The name of the session that was running. */
    private String sessionName;
+   /** The update period of the session. */
    private double sessionDTSeconds;
+   /** The update period at which the data was recorded. */
+   private double recordDTSeconds;
 
+   /** The file names of the exported robots, 1 per robot. */
    private List<String> robotFileNames = new ArrayList<>();
+   /** The file names of the exported terrains, 1 per terrain. */
    private List<String> terrainFileNames = new ArrayList<>();
+   /** The file names of the exported robot states, 1 per robot. */
+   private List<String> robotStateFileNames = new ArrayList<>();
+   /** The file name of the exported yoGraphics. */
    private String graphicFileName;
+   /** The file name of the exported yoRegistry structure. */
    private String registryFileName;
+   /** The file name of the exported buffer data. */
    private String dataFileName;
 
    public SessionInformationDefinition()
@@ -35,6 +49,12 @@ public class SessionInformationDefinition
    }
 
    @XmlElement
+   public void setRecordDTSeconds(double recordDTSeconds)
+   {
+      this.recordDTSeconds = recordDTSeconds;
+   }
+
+   @XmlElement
    public void setRobotFileNames(List<String> robotFileNames)
    {
       this.robotFileNames = robotFileNames;
@@ -44,6 +64,12 @@ public class SessionInformationDefinition
    public void setTerrainFileNames(List<String> terrainFileNames)
    {
       this.terrainFileNames = terrainFileNames;
+   }
+
+   @XmlElement
+   public void setRobotStateFileNames(List<String> robotStateFileNames)
+   {
+      this.robotStateFileNames = robotStateFileNames;
    }
 
    @XmlElement
@@ -74,6 +100,11 @@ public class SessionInformationDefinition
       return sessionDTSeconds;
    }
 
+   public double getRecordDTSeconds()
+   {
+      return recordDTSeconds;
+   }
+
    public List<String> getRobotFileNames()
    {
       return robotFileNames;
@@ -82,6 +113,11 @@ public class SessionInformationDefinition
    public List<String> getTerrainFileNames()
    {
       return terrainFileNames;
+   }
+
+   public List<String> getRobotStateFileNames()
+   {
+      return robotStateFileNames;
    }
 
    public String getGraphicFileName()

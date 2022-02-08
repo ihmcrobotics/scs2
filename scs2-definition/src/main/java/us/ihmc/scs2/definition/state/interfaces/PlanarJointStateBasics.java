@@ -9,7 +9,6 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.PlanarJointReadOnly;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorReadOnly;
-import us.ihmc.mecano.tools.JointStateType;
 
 public interface PlanarJointStateBasics extends PlanarJointStateReadOnly, JointStateBasics
 {
@@ -21,17 +20,21 @@ public interface PlanarJointStateBasics extends PlanarJointStateReadOnly, JointS
 
    void setEffort(double torqueY, double forceX, double forceZ);
 
+   @Override
+   default void clear()
+   {
+      setConfiguration(Double.NaN, Double.NaN, Double.NaN);
+      setVelocity(Double.NaN, Double.NaN, Double.NaN);
+      setAcceleration(Double.NaN, Double.NaN, Double.NaN);
+      setEffort(Double.NaN, Double.NaN, Double.NaN);
+   }
+
    default void set(PlanarJointStateReadOnly other)
    {
-      clear();
-      if (other.hasOutputFor(JointStateType.CONFIGURATION))
-         setConfiguration(other.getPitch(), other.getPositionX(), other.getPositionZ());
-      if (other.hasOutputFor(JointStateType.VELOCITY))
-         setVelocity(other.getPitchVelocity(), other.getLinearVelocityX(), other.getLinearVelocityZ());
-      if (other.hasOutputFor(JointStateType.ACCELERATION))
-         setAcceleration(other.getPitchAcceleration(), other.getLinearAccelerationX(), other.getLinearAccelerationZ());
-      if (other.hasOutputFor(JointStateType.EFFORT))
-         setEffort(other.getTorqueY(), other.getForceX(), other.getForceZ());
+      setConfiguration(other.getPitch(), other.getPositionX(), other.getPositionZ());
+      setVelocity(other.getPitchVelocity(), other.getLinearVelocityX(), other.getLinearVelocityZ());
+      setAcceleration(other.getPitchAcceleration(), other.getLinearAccelerationX(), other.getLinearAccelerationZ());
+      setEffort(other.getTorqueY(), other.getForceX(), other.getForceZ());
    }
 
    default void setConfiguration(Pose3DReadOnly configuration)

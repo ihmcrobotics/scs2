@@ -11,12 +11,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.SessionInformationDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
@@ -40,7 +42,7 @@ public class SimulationDataSession extends Session
    {
       SessionInformationDefinition sessionInfo = DefinitionIOTools.loadSessionInformationDefinition(new FileInputStream(sessionInfoFile));
       sessionName = sessionInfo.getSessionName();
-      setSessionDTSeconds(sessionInfo.getSessionDTSeconds());
+      setSessionDTSeconds(sessionInfo.getRecordDTSeconds());
 
       File dataDirectory = sessionInfoFile.getParentFile();
 
@@ -143,5 +145,11 @@ public class SimulationDataSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   @Override
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
+   {
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 }

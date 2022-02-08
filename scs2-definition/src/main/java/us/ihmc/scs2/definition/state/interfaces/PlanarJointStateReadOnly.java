@@ -3,11 +3,13 @@ package us.ihmc.scs2.definition.state.interfaces;
 import org.ejml.data.DMatrix;
 
 import us.ihmc.euclid.geometry.interfaces.Pose3DBasics;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.PlanarJointBasics;
 import us.ihmc.mecano.spatial.interfaces.FixedFrameSpatialAccelerationBasics;
 import us.ihmc.mecano.spatial.interfaces.FixedFrameTwistBasics;
 import us.ihmc.mecano.spatial.interfaces.FixedFrameWrenchBasics;
+import us.ihmc.mecano.tools.JointStateType;
 
 public interface PlanarJointStateReadOnly extends JointStateReadOnly
 {
@@ -45,6 +47,24 @@ public interface PlanarJointStateReadOnly extends JointStateReadOnly
    default int getDegreesOfFreedom()
    {
       return 3;
+   }
+
+   @Override
+   default boolean hasOutputFor(JointStateType query)
+   {
+      switch (query)
+      {
+         case CONFIGURATION:
+            return !EuclidCoreTools.containsNaN(getPitch(), getPositionX(), getPositionZ());
+         case VELOCITY:
+            return !EuclidCoreTools.containsNaN(getPitchVelocity(), getLinearVelocityX(), getLinearVelocityZ());
+         case ACCELERATION:
+            return !EuclidCoreTools.containsNaN(getPitchAcceleration(), getLinearAccelerationX(), getLinearAccelerationZ());
+         case EFFORT:
+            return !EuclidCoreTools.containsNaN(getTorqueY(), getForceX(), getForceZ());
+         default:
+            throw new IllegalStateException("Should not get here.");
+      }
    }
 
    @Override

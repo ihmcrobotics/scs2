@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.remote;
+package us.ihmc.scs2.session.remote;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

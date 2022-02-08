@@ -51,6 +51,7 @@ import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
 import us.ihmc.scs2.definition.robot.ExternalWrenchPointDefinition;
 import us.ihmc.scs2.definition.robot.FixedJointDefinition;
 import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
@@ -64,12 +65,14 @@ import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.robot.SensorDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.SphericalJointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.state.JointState;
 import us.ihmc.scs2.definition.state.OneDoFJointState;
+import us.ihmc.scs2.definition.state.PlanarJointState;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.definition.state.SphericalJointState;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -161,10 +164,12 @@ public class DefinitionIOTools
 
          // RobotDefinition
          classesToBeBound.add(RobotDefinition.class);
+         classesToBeBound.add(RobotStateDefinition.class);
          classesToBeBound.add(RigidBodyDefinition.class);
          classesToBeBound.add(JointDefinition.class);
          classesToBeBound.add(FixedJointDefinition.class);
          classesToBeBound.add(OneDoFJointDefinition.class);
+         classesToBeBound.add(CrossFourBarJointDefinition.class);
          classesToBeBound.add(PrismaticJointDefinition.class);
          classesToBeBound.add(RevoluteJointDefinition.class);
          classesToBeBound.add(PlanarJointDefinition.class);
@@ -176,6 +181,7 @@ public class DefinitionIOTools
          classesToBeBound.add(OneDoFJointState.class);
          classesToBeBound.add(SixDoFJointState.class);
          classesToBeBound.add(SphericalJointState.class);
+         classesToBeBound.add(PlanarJointState.class);
 
          // Visuals
          classesToBeBound.add(ColorDefinition.class);
@@ -300,6 +306,33 @@ public class DefinitionIOTools
    }
 
    public static void saveTerrainObjectDefinition(OutputStream outputStream, TerrainObjectDefinition definition) throws JAXBException, IOException
+   {
+      try
+      {
+         Marshaller marshaller = definitionContext.createMarshaller();
+         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+         marshaller.marshal(definition, outputStream);
+      }
+      finally
+      {
+         outputStream.close();
+      }
+   }
+
+   public static RobotStateDefinition loadRobotStateDefinition(InputStream inputStream) throws JAXBException, IOException
+   {
+      try
+      {
+         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         return (RobotStateDefinition) unmarshaller.unmarshal(inputStream);
+      }
+      finally
+      {
+         inputStream.close();
+      }
+   }
+
+   public static void saveRobotStateDefinition(OutputStream outputStream, RobotStateDefinition definition) throws JAXBException, IOException
    {
       try
       {

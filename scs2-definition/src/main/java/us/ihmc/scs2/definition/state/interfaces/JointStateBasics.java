@@ -10,6 +10,14 @@ public interface JointStateBasics extends JointStateReadOnly
 
    void set(JointStateReadOnly other);
 
+   default void set(JointReadOnly joint)
+   {
+      setConfiguration(joint);
+      setVelocity(joint);
+      setAcceleration(joint);
+      setEffort(joint);
+   }
+
    int setConfiguration(int startRow, DMatrix configuration);
 
    void setConfiguration(JointReadOnly joint);

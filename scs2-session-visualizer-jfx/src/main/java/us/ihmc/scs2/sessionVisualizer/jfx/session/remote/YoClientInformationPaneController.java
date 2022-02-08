@@ -9,6 +9,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import us.ihmc.commons.Conversions;
+import us.ihmc.scs2.session.remote.LoggerStatusUpdater;
+import us.ihmc.scs2.session.remote.RemoteSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
