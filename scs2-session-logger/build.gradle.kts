@@ -15,7 +15,7 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:scs2-simulation:source") // TODO Need to fix this, it needs the Robot.
 
-   api("us.ihmc:ihmc-robot-data-logger:0.20.9")
+   api("us.ihmc:ihmc-robot-data-logger:0.22.1")
 }
 
 testDependencies {
