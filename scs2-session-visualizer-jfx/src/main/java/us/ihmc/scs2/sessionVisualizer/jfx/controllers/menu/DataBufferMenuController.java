@@ -111,7 +111,7 @@ public class DataBufferMenuController
       numberPrecisionSpinner.setValueFactory(numberPrecisionSpinnerValueFactory);
       messager.bindBidirectional(topics.getControlsNumberPrecision(), numberPrecisionSpinnerValueFactory.valueProperty(), false);
 
-      messager.bindBidirectional(topics.getShowSCS2YoVariables(), showSCS2YoVariablesMenuItem.selectedProperty(), true);
+      messager.bindBidirectional(topics.getShowSCS2YoVariables(), showSCS2YoVariablesMenuItem.selectedProperty(), false);
    }
 
    @FXML
