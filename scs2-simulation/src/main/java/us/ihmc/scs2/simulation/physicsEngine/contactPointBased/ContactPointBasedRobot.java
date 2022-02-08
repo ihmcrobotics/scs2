@@ -11,14 +11,15 @@ import us.ihmc.scs2.simulation.collision.CollidableHolder;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class ContactPointBasedRobot extends RobotExtension implements CollidableHolder
 {
    private final ContactPointBasedRobotPhysics robotPhysics;
 
-   public ContactPointBasedRobot(Robot robot)
+   public ContactPointBasedRobot(Robot robot, YoRegistry physicsRegistry)
    {
-      super(robot);
+      super(robot, physicsRegistry);
       robotPhysics = new ContactPointBasedRobotPhysics(this);
    }
 

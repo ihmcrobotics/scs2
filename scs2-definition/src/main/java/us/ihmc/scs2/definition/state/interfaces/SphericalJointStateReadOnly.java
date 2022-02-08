@@ -6,16 +6,17 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.tuple4D.interfaces.QuaternionReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointBasics;
+import us.ihmc.mecano.tools.JointStateType;
 
 public interface SphericalJointStateReadOnly extends JointStateReadOnly
 {
-   QuaternionReadOnly getConfiguration();
+   QuaternionReadOnly getOrientation();
 
-   Vector3DReadOnly getVelocity();
+   Vector3DReadOnly getAngularVelocity();
 
-   Vector3DReadOnly getAcceleration();
+   Vector3DReadOnly getAngularAcceleration();
 
-   Vector3DReadOnly getEffort();
+   Vector3DReadOnly getTorque();
 
    @Override
    default int getConfigurationSize()
@@ -30,16 +31,34 @@ public interface SphericalJointStateReadOnly extends JointStateReadOnly
    }
 
    @Override
+   default boolean hasOutputFor(JointStateType query)
+   {
+      switch (query)
+      {
+         case CONFIGURATION:
+            return !getOrientation().containsNaN();
+         case VELOCITY:
+            return !getAngularVelocity().containsNaN();
+         case ACCELERATION:
+            return !getAngularAcceleration().containsNaN();
+         case EFFORT:
+            return !getTorque().containsNaN();
+         default:
+            throw new IllegalStateException("Should not get here.");
+      }
+   }
+
+   @Override
    default void getConfiguration(JointBasics jointToUpdate)
    {
       SphericalJointBasics sphericalJoint = (SphericalJointBasics) jointToUpdate;
-      sphericalJoint.getJointOrientation().set(getConfiguration());
+      sphericalJoint.getJointOrientation().set(getOrientation());
    }
 
    @Override
    default int getConfiguration(int startRow, DMatrix configurationToPack)
    {
-      getConfiguration().get(startRow, configurationToPack);
+      getOrientation().get(startRow, configurationToPack);
       return startRow + getConfigurationSize();
    }
 
@@ -47,13 +66,13 @@ public interface SphericalJointStateReadOnly extends JointStateReadOnly
    default void getVelocity(JointBasics jointToUpdate)
    {
       SphericalJointBasics sphericalJoint = (SphericalJointBasics) jointToUpdate;
-      sphericalJoint.getJointAngularVelocity().set(getVelocity());
+      sphericalJoint.getJointAngularVelocity().set(getAngularVelocity());
    }
 
    @Override
    default int getVelocity(int startRow, DMatrix velocityToPack)
    {
-      getVelocity().get(startRow, velocityToPack);
+      getAngularVelocity().get(startRow, velocityToPack);
       return startRow + getDegreesOfFreedom();
    }
 
@@ -61,13 +80,13 @@ public interface SphericalJointStateReadOnly extends JointStateReadOnly
    default void getAcceleration(JointBasics jointToUpdate)
    {
       SphericalJointBasics sphericalJoint = (SphericalJointBasics) jointToUpdate;
-      sphericalJoint.getJointAngularAcceleration().set(getAcceleration());
+      sphericalJoint.getJointAngularAcceleration().set(getAngularAcceleration());
    }
 
    @Override
    default int getAcceleration(int startRow, DMatrix accelerationToPack)
    {
-      getAcceleration().get(startRow, accelerationToPack);
+      getAngularAcceleration().get(startRow, accelerationToPack);
       return startRow + getDegreesOfFreedom();
    }
 
@@ -75,13 +94,13 @@ public interface SphericalJointStateReadOnly extends JointStateReadOnly
    default void getEffort(JointBasics jointToUpdate)
    {
       SphericalJointBasics sphericalJoint = (SphericalJointBasics) jointToUpdate;
-      sphericalJoint.getJointTorque().set(getEffort());
+      sphericalJoint.getJointTorque().set(getTorque());
    }
 
    @Override
    default int getEffort(int startRow, DMatrix effortToPack)
    {
-      getEffort().get(startRow, effortToPack);
+      getTorque().get(startRow, effortToPack);
       return startRow + getDegreesOfFreedom();
    }
 }

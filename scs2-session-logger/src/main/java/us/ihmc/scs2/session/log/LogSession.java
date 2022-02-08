@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
+package us.ihmc.scs2.session.log;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,23 +6,27 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.RobotDataLogTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.RobotModelLoader;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.SCS1GraphicConversionTools;
+import us.ihmc.scs2.session.tools.RobotDataLogTools;
+import us.ihmc.scs2.session.tools.RobotModelLoader;
+import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
+import us.ihmc.scs2.simulation.robot.Robot;
 
 public class LogSession extends Session
 {
    private final String sessionName;
+   private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions;
    private final Runnable robotStateUpdater;
@@ -59,7 +63,9 @@ public class LogSession extends Session
       if (robotDefinition != null)
       {
          robotDefinitions.add(robotDefinition);
-         robotStateUpdater = RobotModelLoader.setupRobotUpdater(robotDefinition, parser, rootRegistry, getInertialFrame());
+         Robot robot = new Robot(robotDefinition, getInertialFrame());
+         robots.add(robot);
+         robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, parser, rootRegistry);
       }
       else
       {
@@ -156,6 +162,12 @@ public class LogSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   @Override
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
+   {
+      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
    }
 
    public File getLogDirectory()

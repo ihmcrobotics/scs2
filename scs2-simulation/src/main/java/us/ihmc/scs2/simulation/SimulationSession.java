@@ -21,6 +21,7 @@ import us.ihmc.messager.Messager;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.DaemonThreadFactory;
@@ -96,6 +97,7 @@ public class SimulationSession extends Session
       this.simulationName = simulationName;
 
       physicsEngine = physicsEngineFactory.build(inertialFrame, rootRegistry);
+      sessionRegistry.addChild(physicsEngine.getPhysicsEngineRegistry());
 
       setSessionDTSeconds(0.0001);
       setSessionMode(SessionMode.PAUSE);
@@ -284,6 +286,15 @@ public class SimulationSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   @Override
+   public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
+   {
+      if (initialState)
+         return physicsEngine.getBeforePhysicsRobotStateDefinitions();
+      else
+         return physicsEngine.getCurrentRobotStateDefinitions();
    }
 
    private void checkSessionHasNotStarted()

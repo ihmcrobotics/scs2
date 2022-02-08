@@ -23,6 +23,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.SessionInformationDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
@@ -48,6 +49,7 @@ public class SessionIOTools
 
    public static final String infoFileExtension = ".scs2.info";
    public static final String robotDefinitionFileExtension = ".scs2.robot";
+   public static final String robotStateDefinitionFileExtension = ".scs2.robotState";
    public static final String terrainObjectDefinitionFileExtension = ".scs2.terrain";
    public static final String yoGraphicConfigurationFileExtension = ".scs2.yoGraphic";
    public static final String yoRegistryDefinitionFileExtension = ".scs2.registry";
@@ -117,8 +119,11 @@ public class SessionIOTools
             if (file.list().length > 0)
             {
                // Clean up folder
-               String[] allExtensions = {infoFileExtension, robotDefinitionFileExtension, terrainObjectDefinitionFileExtension,
-                     yoGraphicConfigurationFileExtension, yoRegistryDefinitionFileExtension};
+               String[] allExtensions = {infoFileExtension,
+                                         robotDefinitionFileExtension,
+                                         terrainObjectDefinitionFileExtension,
+                                         yoGraphicConfigurationFileExtension,
+                                         yoRegistryDefinitionFileExtension};
                allExtensions = SharedMemoryTools.concatenate(allExtensions,
                                                              Arrays.stream(DataFormat.values()).map(DataFormat::getFileExtension).toArray(String[]::new));
 
@@ -169,7 +174,8 @@ public class SessionIOTools
 
       SessionInformationDefinition sessionInfo = new SessionInformationDefinition();
       sessionInfo.setSessionName(session.getSessionName());
-      sessionInfo.setSessionDTSeconds(session.getSessionDTSeconds() * session.getBufferRecordTickPeriod());
+      sessionInfo.setSessionDTSeconds(session.getSessionDTSeconds());
+      sessionInfo.setRecordDTSeconds(session.getSessionDTSeconds() * session.getBufferRecordTickPeriod());
 
       File resourcesDirectory = new File(file, "resources");
       resourcesDirectory.mkdir();
@@ -245,6 +251,18 @@ public class SessionIOTools
                                             request.getVariableFilter(),
                                             request.getRegistryFilter());
          sessionInfo.setRegistryFileName(registryFile.getName());
+      }
+
+      if (request.getExportRobotStateDefinitions())
+      {
+         for (RobotStateDefinition robotStateDefinition : session.getCurrentRobotStateDefinitions(true))
+         {
+            String name = robotStateDefinition.getRobotName() + "State";
+            File robotStateFile = new File(file, name + robotStateDefinitionFileExtension);
+            LogTools.info("Exporting RobotStateDefinition for: {} File: {}", name, robotStateFile);
+            DefinitionIOTools.saveRobotStateDefinition(new FileOutputStream(robotStateFile), robotStateDefinition);
+            sessionInfo.getRobotStateFileNames().add(robotStateFile.getName());
+         }
       }
 
       if (request.getExportSessionBufferDataFormat() != null)

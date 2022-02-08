@@ -10,12 +10,14 @@ import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.mecano.spatial.interfaces.FixedFrameWrenchBasics;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionTools;
 import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParametersReadOnly;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
@@ -56,7 +58,6 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       this.rootRegistry = rootRegistry;
 
       forceCalculator = new ContactPointBasedForceCalculator(inertialFrame, physicsEngineRegistry);
-      rootRegistry.addChild(physicsEngineRegistry);
    }
 
    @Override
@@ -92,6 +93,11 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
+         robot.saveRobotBeforePhysicsState();
+      }
+
+      for (ContactPointBasedRobot robot : robotList)
+      {
          robot.computeJointDamping();
          robot.computeJointSoftLimits();
          robot.updateCollidableBoundingBoxes();
@@ -169,7 +175,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    public void addRobot(Robot robot)
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
-      ContactPointBasedRobot cpbRobot = new ContactPointBasedRobot(robot);
+      ContactPointBasedRobot cpbRobot = new ContactPointBasedRobot(robot, physicsEngineRegistry);
       rootRegistry.addChild(cpbRobot.getRegistry());
       robotList.add(cpbRobot);
    }
@@ -203,6 +209,12 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    public List<TerrainObjectDefinition> getTerrainObjectDefinitions()
    {
       return terrainObjectDefinitions;
+   }
+
+   @Override
+   public List<RobotStateDefinition> getBeforePhysicsRobotStateDefinitions()
+   {
+      return robotList.stream().map(RobotExtension::getRobotBeforePhysicsStateDefinition).collect(Collectors.toList());
    }
 
    @Override

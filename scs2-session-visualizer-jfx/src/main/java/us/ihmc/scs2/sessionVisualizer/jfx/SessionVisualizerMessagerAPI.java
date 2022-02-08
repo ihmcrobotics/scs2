@@ -33,6 +33,7 @@ public class SessionVisualizerMessagerAPI
    private static final CategoryTheme Track = apiFactory.createCategoryTheme("Track");
    private static final CategoryTheme Video = apiFactory.createCategoryTheme("Video");
    private static final CategoryTheme User = apiFactory.createCategoryTheme("User");
+   private static final CategoryTheme Debug = apiFactory.createCategoryTheme("Debug");
 
    private static final TopicTheme Toggle = apiFactory.createTopicTheme("Toggle");
    private static final TopicTheme Next = apiFactory.createTopicTheme("Next");
@@ -105,6 +106,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<File> YoCompositePatternSaveRequest = APIRoot.child(YoSearch).child(YoCompositePattern).topic(Save);
       public static final Topic<List<String>> YoCompositePatternSelected = APIRoot.child(YoSearch).child(YoCompositePattern).topic(Selected);
       public static final Topic<Boolean> YoCompositeRefreshAll = APIRoot.child(YoSearch).child(YoCompositePattern).topic(Refresh);
+      public static final Topic<Boolean> ShowSCS2YoVariables = APIRoot.child(YoSearch).child(Debug).topic(Show);
    }
 
    public static class YoGraphic

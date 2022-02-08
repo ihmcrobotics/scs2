@@ -31,7 +31,15 @@ public class LinkedBufferArray extends LinkedBuffer
 
       for (int i = size - 1; i >= 0; i--)
       {
-         if (!linkedBuffers[i].isActive())
+         LinkedBuffer linkedBuffer = linkedBuffers[i];
+
+         if (linkedBuffer == null)
+         {
+            LogTools.error("Unexpected null pointer");
+            continue;
+         }
+
+         if (!linkedBuffer.isActive())
             remove(i);
       }
    }
@@ -169,7 +177,15 @@ public class LinkedBufferArray extends LinkedBuffer
 
       for (int i = 0; i < size; i++)
       {
-         linkedBuffers[i].flushPush();
+         LinkedBuffer linkedBuffer = linkedBuffers[i];
+
+         if (linkedBuffer == null)
+         {
+            LogTools.error("Unexpected null pointer");
+            continue;
+         }
+
+         linkedBuffer.flushPush();
       }
    }
 
@@ -184,7 +200,10 @@ public class LinkedBufferArray extends LinkedBuffer
          LinkedBuffer linkedBuffer = linkedBuffers[i];
 
          if (linkedBuffer == null)
+         {
             LogTools.error("Unexpected null pointer");
+            continue;
+         }
 
          if (!linkedBuffer.isActive())
             remove(i);
@@ -198,7 +217,15 @@ public class LinkedBufferArray extends LinkedBuffer
    {
       for (int i = 0; i < size; i++)
       {
-         if (linkedBuffers[i].hasRequestPending())
+         LinkedBuffer linkedBuffer = linkedBuffers[i];
+
+         if (linkedBuffer == null)
+         {
+            LogTools.error("Unexpected null pointer");
+            continue;
+         }
+
+         if (linkedBuffer.hasRequestPending())
             return true;
       }
       return false;

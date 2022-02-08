@@ -9,12 +9,15 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import us.ihmc.commons.Conversions;
+import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
+import us.ihmc.scs2.session.remote.LoggerStatusUpdater;
+import us.ihmc.scs2.session.remote.RemoteSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 public class YoClientInformationPaneController extends ObservedAnimationTimer implements SessionInfoController
 {
-   @FXML 
+   @FXML
    private AnchorPane mainPane;
    @FXML
    private Label delayLabel;
@@ -92,6 +95,15 @@ public class YoClientInformationPaneController extends ObservedAnimationTimer im
    public Pane getMainPane()
    {
       return mainPane;
+   }
+
+   @FXML
+   public void requestRestartLog()
+   {
+      RemoteSession remoteSession = activeSessionProperty.get();
+      if (remoteSession == null)
+         return;
+      remoteSession.sendCommandToYoVariableServer(DataServerCommand.RESTART_LOG, 0);
    }
 
    private void updateLabel(Label label, Supplier<String> textSupplier, String defaultText)

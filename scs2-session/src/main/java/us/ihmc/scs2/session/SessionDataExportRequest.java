@@ -21,6 +21,7 @@ public class SessionDataExportRequest
    private boolean exportTerrainObjectDefinitions = true;
    private boolean exportSessionYoGraphicDefinitions = true;
    private boolean exportSessionBufferRegistryDefinition = true;
+   private boolean exportRobotStateDefinitions = true;
    private DataFormat exportSessionBufferDataFormat = DataFormat.CSV;
 
    private Runnable onExportStartCallback = null;
@@ -100,6 +101,11 @@ public class SessionDataExportRequest
       this.exportSessionBufferRegistryDefinition = exportSessionBufferRegistryDefinition;
    }
 
+   public void setExportRobotStateDefinitions(boolean exportRobotStateDefinitions)
+   {
+      this.exportRobotStateDefinitions = exportRobotStateDefinitions;
+   }
+
    public void setExportSessionBufferDataFormat(DataFormat exportSessionBufferDataFormat)
    {
       this.exportSessionBufferDataFormat = exportSessionBufferDataFormat;
@@ -168,6 +174,11 @@ public class SessionDataExportRequest
    public boolean getExportSessionBufferRegistryDefinition()
    {
       return exportSessionBufferRegistryDefinition;
+   }
+
+   public boolean getExportRobotStateDefinitions()
+   {
+      return exportRobotStateDefinitions;
    }
 
    public DataFormat getExportSessionBufferDataFormat()

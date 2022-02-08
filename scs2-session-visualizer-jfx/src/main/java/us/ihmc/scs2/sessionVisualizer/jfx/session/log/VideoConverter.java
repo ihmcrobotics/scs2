@@ -11,6 +11,7 @@ import us.ihmc.codecs.builder.MP4MJPEGMovieBuilder;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.EProfileIdc;
 import us.ihmc.codecs.generated.YUVPicture;
+import us.ihmc.scs2.session.log.ProgressConsumer;
 
 public class VideoConverter
 {

@@ -45,19 +45,24 @@
                        </columnConstraints>
                        <rowConstraints>
                          <RowConstraints vgrow="SOMETIMES" />
-                           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                           <RowConstraints vgrow="SOMETIMES" />
+                           <RowConstraints vgrow="SOMETIMES" />
                        </rowConstraints>
                         <children>
                            <Label maxWidth="1.7976931348623157E308" text="In-point:" GridPane.columnIndex="1" />
                            <JFXTextField fx:id="inPointTextField" GridPane.columnIndex="2" />
                            <Label maxWidth="1.7976931348623157E308" text="Out-point:" GridPane.columnIndex="3" />
                            <JFXTextField fx:id="outPointTextField" GridPane.columnIndex="4" />
-                           <JFXButton buttonType="RAISED" onAction="#setInOutToCurrent" styleClass="set-indices-to-in-out-button" text="Set in/out to current" />
-                           <JFXToggleButton fx:id="exportRobotDefinitionToggleButton" selected="true" size="6.0" text="Robot definition" GridPane.rowIndex="1" />
-                           <JFXToggleButton fx:id="exportTerrainDefinitionToggleButton" selected="true" size="6.0" text="Terrain definition" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                           <JFXToggleButton fx:id="exportYoGraphicsDefinitionToggleButton" selected="true" size="6.0" text="YoGraphics definition" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                           <JFXToggleButton fx:id="exportDataToggleButton" selected="true" size="6.0" text="Data" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                           <JFXComboBox fx:id="dataFormatComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                           <JFXButton buttonType="RAISED" onAction="#setInOutToCurrent" styleClass="set-indices-to-in-out-button" text="Set in/out to current">
+                              <GridPane.margin>
+                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                              </GridPane.margin></JFXButton>
+                           <JFXToggleButton fx:id="exportRobotDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                           <JFXToggleButton fx:id="exportTerrainDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Terrain" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                           <JFXToggleButton fx:id="exportYoGraphicsDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="YoGraphics" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                           <JFXToggleButton fx:id="exportRobotStateToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot state" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                           <JFXToggleButton fx:id="exportDataToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Data" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                           <JFXComboBox fx:id="dataFormatComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                         </children>
                      </GridPane>
                      <HBox alignment="CENTER_RIGHT" spacing="15.0">

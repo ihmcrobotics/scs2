@@ -466,6 +466,14 @@
 	-jfx-button-type: RAISED;
 }
 
+.restart-log-button {
+	-fx-font-weight: bold;
+	-fx-font-size: 12.0;
+	-fx-background-color: -default-grey;
+	-jfx-button-type: RAISED;
+	-fx-opacity: 0.6;
+}
+
 /*******************************************************************************
  *                                                                             *
  * Composite pattern editor                                                    *

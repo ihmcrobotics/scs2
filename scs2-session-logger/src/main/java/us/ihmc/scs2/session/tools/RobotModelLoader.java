@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.tools;
+package us.ihmc.scs2.session.tools;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -43,12 +43,18 @@ public class RobotModelLoader
 
    private static final TLongObjectHashMap<RobotDefinition> cachedImportedModels = new TLongObjectHashMap<>();
 
-   public static Runnable setupRobotUpdater(RobotDefinition robotDefinition, YoVariableHandshakeParser handshakeParser, YoRegistry rootRegistry, ReferenceFrame inertialFrame)
+   public static Runnable setupRobotUpdater(RobotDefinition robotDefinition,
+                                            YoVariableHandshakeParser handshakeParser,
+                                            YoRegistry rootRegistry,
+                                            ReferenceFrame inertialFrame)
    {
-      if (robotDefinition == null)
-         return null;
+      return setupRobotUpdater(new Robot(robotDefinition, inertialFrame), handshakeParser, rootRegistry);
+   }
 
-      RobotInterface robot = new Robot(robotDefinition, inertialFrame);
+   public static Runnable setupRobotUpdater(RobotInterface robot, YoVariableHandshakeParser handshakeParser, YoRegistry rootRegistry)
+   {
+      if (robot == null)
+         return null;
 
       Map<String, JointState> jointNameToState = handshakeParser.getJointStates().stream().collect(Collectors.toMap(JointState::getName, Function.identity()));
 
@@ -57,7 +63,8 @@ public class RobotModelLoader
       SubtreeStreams.fromChildren(OneDoFJointBasics.class, robot.getRootBody()).forEach(oneDoFJoint ->
       {
          OneDoFState jointState = (OneDoFState) jointNameToState.get(oneDoFJoint.getName());
-         jointStateUpdaters.add(() -> {
+         jointStateUpdaters.add(() ->
+         {
             oneDoFJoint.setQ(jointState.getQ());
             oneDoFJoint.setQd(jointState.getQd());
          });

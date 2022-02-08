@@ -4,6 +4,7 @@ import org.ejml.data.DMatrix;
 
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
+import us.ihmc.mecano.tools.JointStateType;
 
 public interface OneDoFJointStateReadOnly extends JointStateReadOnly
 {
@@ -14,6 +15,24 @@ public interface OneDoFJointStateReadOnly extends JointStateReadOnly
    double getAcceleration();
 
    double getEffort();
+
+   @Override
+   default boolean hasOutputFor(JointStateType query)
+   {
+      switch (query)
+      {
+         case CONFIGURATION:
+            return !Double.isNaN(getConfiguration());
+         case VELOCITY:
+            return !Double.isNaN(getVelocity());
+         case ACCELERATION:
+            return !Double.isNaN(getAcceleration());
+         case EFFORT:
+            return !Double.isNaN(getEffort());
+         default:
+            throw new IllegalStateException("Should not get here.");
+      }
+   }
 
    @Override
    default int getConfigurationSize()

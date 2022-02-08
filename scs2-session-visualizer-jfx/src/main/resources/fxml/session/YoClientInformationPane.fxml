@@ -1,31 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.remote.YoClientInformationPaneController">
+<AnchorPane fx:id="mainPane" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.remote.YoClientInformationPaneController">
    <children>
       <GridPane styleClass="information-grip-pane">
          <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES"/>
-            <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES"/>
+            <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" />
          </columnConstraints>
          <rowConstraints>
-            <RowConstraints vgrow="SOMETIMES"/>
-            <RowConstraints vgrow="SOMETIMES"/>
-            <RowConstraints vgrow="SOMETIMES"/>
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
          </rowConstraints>
          <children>
-            <Label text="Delay:" styleClass="information-label"/>
-            <Label fx:id="delayLabel" text="N/D" GridPane.columnIndex="1" styleClass="information-label"/>
-            <Label text="Log duration:" GridPane.rowIndex="1" styleClass="information-label"/>
-            <Label fx:id="logDurationLabel" text="N/D" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="information-label"/>
-            <Label text="Camera:" GridPane.rowIndex="2" styleClass="information-label"/>
-            <Label fx:id="cameraLabel" text="N/D" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="information-label"/>
+            <JFXButton maxWidth="1.7976931348623157E308" onAction="#requestRestartLog" styleClass="restart-log-button" text="Restart Log" GridPane.columnSpan="2147483647">
+               <GridPane.margin>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </GridPane.margin>
+            </JFXButton>
+            <Label styleClass="information-label" text="Delay:" GridPane.rowIndex="1" />
+            <Label fx:id="delayLabel" styleClass="information-label" text="N/D" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label styleClass="information-label" text="Log duration:" GridPane.rowIndex="2" />
+            <Label fx:id="logDurationLabel" styleClass="information-label" text="N/D" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label styleClass="information-label" text="Camera:" GridPane.rowIndex="3" />
+            <Label fx:id="cameraLabel" styleClass="information-label" text="N/D" GridPane.columnIndex="1" GridPane.rowIndex="3" />
          </children>
       </GridPane>
    </children>

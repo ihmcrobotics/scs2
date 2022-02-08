@@ -59,9 +59,10 @@ public class ContactImpulseTools
     */
    public static void scaleAdd(double scale, DMatrix3 a, DMatrix3 b, DMatrix3 c)
    {
-      c.a1 = scale * a.a1 + b.a1;
-      c.a2 = scale * a.a2 + b.a2;
-      c.a3 = scale * a.a3 + b.a3;
+      double c1 = scale * a.a1 + b.a1;
+      double c2 = scale * a.a2 + b.a2;
+      double c3 = scale * a.a3 + b.a3;
+      c.set(c1, c2, c3);
    }
 
    /**

@@ -25,8 +25,6 @@ public class SimCameraSensor extends SimSensor
    private final YoInteger imageWidth;
    private final YoInteger imageHeight;
 
-   private final YoDouble framesPerSecond;
-
    private final List<CameraFrameConsumer> cameraFrameConsumers = new ArrayList<>();
 
    private final AtomicBoolean notifyDefinitionConsumers = new AtomicBoolean(false);
@@ -39,7 +37,7 @@ public class SimCameraSensor extends SimSensor
       setResolution(definition.getImageWidth(), definition.getImageHeight());
       setFieldOfView(definition.getFieldOfView());
       setClip(definition.getClipNear(), definition.getClipFar());
-      setMillisecondsPerFrame(definition.getUpdatePeriod());
+      setSamplingRate(toSamplingRate(definition.getUpdatePeriod()));
    }
 
    public SimCameraSensor(String name, SimJointBasics parentJoint, RigidBodyTransformReadOnly transformToParent)
@@ -53,7 +51,6 @@ public class SimCameraSensor extends SimSensor
       clipFar = new YoDouble(name + "ClipFar", registry);
       imageWidth = new YoInteger(name + "ImageWidth", registry);
       imageHeight = new YoInteger(name + "ImageHeight", registry);
-      framesPerSecond = new YoDouble(name + "FramesPerSecond", registry);
 
       enable.addListener(v -> notifyDefinitionConsumers.set(true));
       fieldOfView.addListener(v -> notifyDefinitionConsumers.set(true));
@@ -61,8 +58,8 @@ public class SimCameraSensor extends SimSensor
       clipFar.addListener(v -> notifyDefinitionConsumers.set(true));
       imageWidth.addListener(v -> notifyDefinitionConsumers.set(true));
       imageHeight.addListener(v -> notifyDefinitionConsumers.set(true));
-      framesPerSecond.addListener(v -> notifyDefinitionConsumers.set(true));
       getOffset().attachVariableChangedListener(v -> notifyDefinitionConsumers.set(true));
+      getSamplingRate().addListener(v -> notifyDefinitionConsumers.set(true));
    }
 
    @Override
@@ -89,10 +86,10 @@ public class SimCameraSensor extends SimSensor
       newDefinition.setClipFar(clipFar.getValue());
       newDefinition.setImageWidth(imageWidth.getValue());
       newDefinition.setImageHeight(imageHeight.getValue());
-      if (framesPerSecond.getValue() == Double.POSITIVE_INFINITY)
+      if (getSamplingRate().getValue() == Double.POSITIVE_INFINITY)
          newDefinition.setUpdatePeriod(0);
       else
-         newDefinition.setUpdatePeriod((int) (1000.0 / framesPerSecond.getValue()));
+         newDefinition.setUpdatePeriod((int) (1000.0 / getSamplingRate().getValue()));
       return newDefinition;
    }
 
@@ -136,19 +133,6 @@ public class SimCameraSensor extends SimSensor
    {
       this.clipNear.set(clipNear);
       this.clipFar.set(clipFar);
-   }
-
-   public void setFramesPerSecond(double framesPerSecond)
-   {
-      this.framesPerSecond.set(framesPerSecond);
-   }
-
-   public void setMillisecondsPerFrame(int millisecondsPerFrame)
-   {
-      if (millisecondsPerFrame <= 0)
-         setFramesPerSecond(Double.POSITIVE_INFINITY);
-      else
-         setFramesPerSecond(1000.0 / millisecondsPerFrame);
    }
 
    public void addCameraFrameConsumer(CameraFrameConsumer cameraFrameConsumer)
@@ -199,11 +183,6 @@ public class SimCameraSensor extends SimSensor
    public YoDouble getClipFar()
    {
       return clipFar;
-   }
-
-   public YoDouble getFramesPerSecond()
-   {
-      return framesPerSecond;
    }
 
    public List<CameraFrameConsumer> getCameraFrameConsumers()

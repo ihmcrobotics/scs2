@@ -4,6 +4,7 @@ import static us.ihmc.scs2.simulation.physicsEngine.impulseBased.ContactImpulseT
 import static us.ihmc.scs2.simulation.physicsEngine.impulseBased.ContactImpulseTools.isInsideFrictionCone;
 import static us.ihmc.scs2.simulation.physicsEngine.impulseBased.ContactImpulseTools.isInsideFrictionEllipsoid;
 
+import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrix3;
 import org.ejml.data.DMatrix3x3;
 import org.ejml.data.DMatrix4x4;
@@ -105,8 +106,6 @@ public class SingleContactImpulseSolver
    private final LinearSolverDense<DMatrixRMaj> svdSolver = LinearSolverFactory_DDRM.pseudoInverse(true);
    /** The linear impulse that fully cancels the contact velocity and may violate the friction law. */
    private final DMatrix3 lambda_linear_v_0 = new DMatrix3();
-   /** The linear impulse that best cancels the contact velocity and respect the friction law. */
-   private final DMatrix3 lambda_linear = new DMatrix3();
    /**
     * The impulse that fully cancels the contact velocity and may violate the friction law.
     * <p>
@@ -234,20 +233,24 @@ public class SingleContactImpulseSolver
     * </ul>
     * </p>
     * 
-    * @param velocity      the contact relative velocity to minimize. The z-axis is considered to be
-    *                      the contact normal. Not modified.
-    * @param M_inv         the collision matrix. It should be a 3-by-3 matrix when solving only for the
-    *                      linear part of the impulse, and 4-by-4 when solving for both linear and
-    *                      z-angular parts of the problem with the angular elements being in the last
-    *                      row and last column. Not modified.
-    * @param mu            the coefficient of friction.
-    * @param impulseToPack the output of this solve, the impulse response to the contact. Modified.
+    * @param velocity the contact relative velocity to minimize. The z-axis is considered to be the
+    *                 contact normal. Not modified.
+    * @param M_inv    the collision matrix. It should be a 3-by-3 matrix when solving only for the
+    *                 linear part of the impulse, and 4-by-4 when solving for both linear and z-angular
+    *                 parts of the problem with the angular elements being in the last row and last
+    *                 column. Not modified.
+    * @param mu       the coefficient of friction.
+    * @param output   used to store the output of this solver. Modified.
     */
-   public void solveImpulseGeneral(SpatialVectorReadOnly velocity, DMatrixRMaj M_inv, double mu, FixedFrameSpatialImpulseBasics impulseToPack)
+   public void solveImpulseGeneral(SpatialVectorReadOnly velocity, DMatrixRMaj M_inv, double mu, SolverOutput output)
    {
       if (EuclidCoreTools.isZero(mu, 1.0e-12))
       { // Trivial case, i.e. there is no friction => the impulse is along the collision axis.
-         impulseToPack.getLinearPart().setZ(-velocity.getLinearPart().getZ() / M_inv.get(2, 2));
+         output.impulseLinear.a1 = 0.0;
+         output.impulseLinear.a2 = 0.0;
+         output.impulseLinear.a3 = -velocity.getLinearPart().getZ() / M_inv.get(2, 2);
+         output.impulseAngularZ = 0.0;
+         output.isLinearSlipping = true;
          return;
       }
 
@@ -257,14 +260,16 @@ public class SingleContactImpulseSolver
          M_inv_det_dirty = false;
       }
 
+      output.isContactDegenerate = isProblemDegenerate;
+
       if (isProblemDegenerate)
       {
-         solveImpulseDegenerate(velocity, M_inv, mu, impulseToPack);
+         solveImpulseDegenerate(velocity, M_inv, mu, output);
          return;
       }
 
       velocity.getLinearPart().get(c_linear);
-      boolean isSlipping = solveLinearImpulse(M_inv, mu, impulseToPack);
+      boolean isSlipping = solveLinearImpulse(M_inv, mu, c_linear, output.impulseLinear);
 
       /*
        * When the contact is slipping and that we're considering only the linear part of it, we skip the
@@ -272,11 +277,17 @@ public class SingleContactImpulseSolver
        */
       if (!isSlipping && computeFrictionMoment)
       {
-         solveAngularImpulse(velocity.getAngularPartZ(), M_inv, mu, impulseToPack);
+         solveAngularImpulse(velocity.getAngularPartZ(), M_inv, mu, output);
       }
+      else
+      {
+         output.impulseAngularZ = 0.0;
+      }
+
+      return;
    }
 
-   private boolean solveLinearImpulse(DMatrixRMaj M_inv, double mu, FixedFrameSpatialImpulseBasics impulseToPack)
+   private boolean solveLinearImpulse(DMatrixRMaj M_inv, double mu, DMatrix3 c, DMatrix3 lambda)
    {
       if (M_linear_inv_dirty)
       {
@@ -285,18 +296,17 @@ public class SingleContactImpulseSolver
          M_linear_inv_dirty = false;
       }
 
-      CommonOps_DDF3.mult(M_linear, c_linear, lambda_linear_v_0);
+      CommonOps_DDF3.mult(M_linear, c, lambda_linear_v_0);
       CommonOps_DDF3.changeSign(lambda_linear_v_0);
 
       if (lambda_linear_v_0.a3 > NEGATIVE_NORMAL_IMPULSE_THRESHOLD && isInsideFrictionCone(mu, lambda_linear_v_0))
       { // Contact is sticking, i.e. satisfies Coulomb's friction cone while canceling velocity.
-         impulseToPack.getLinearPart().set(lambda_linear_v_0);
+         lambda.set(lambda_linear_v_0);
          return false;
       }
       else
       { // Contact is slipping, that's the though case.
-         computeSlipLambda(beta1, beta2, beta3, gamma, mu, M_linear_inv, lambda_linear_v_0, c_linear, lambda_linear, false);
-         impulseToPack.getLinearPart().set(lambda_linear);
+         computeSlipLambda(beta1, beta2, beta3, gamma, mu, M_linear_inv, lambda_linear_v_0, c, lambda, false);
          return true;
       }
    }
@@ -315,7 +325,7 @@ public class SingleContactImpulseSolver
     * guaranteed to provide maximum dissipation.
     * </p>
     */
-   private void solveAngularImpulse(double velocityAngularZ, DMatrixRMaj M_inv, double mu, FixedFrameSpatialImpulseBasics impulseToPack)
+   private void solveAngularImpulse(double velocityAngularZ, DMatrixRMaj M_inv, double mu, SolverOutput output)
    {
       if (M_full_inv_dirty)
       {
@@ -335,30 +345,38 @@ public class SingleContactImpulseSolver
        * When
        * @formatter:on
        */
+      // lambda_linear_decoupled = - M_linear * c_linear
       DMatrix3 lambda_linear_decoupled = lambda_linear_v_0;
       lambda_linear_decoupled.a1 = -M_full.a11 * c_linear.a1 - M_full.a12 * c_linear.a2 - M_full.a13 * c_linear.a3;
       lambda_linear_decoupled.a2 = -M_full.a21 * c_linear.a1 - M_full.a22 * c_linear.a2 - M_full.a23 * c_linear.a3;
       lambda_linear_decoupled.a3 = -M_full.a31 * c_linear.a1 - M_full.a32 * c_linear.a2 - M_full.a33 * c_linear.a3;
 
+      // lambda_angular_coupling = - M_lin_ang * c_linear
       M_lin_ang.set(M_full.a14, M_full.a24, M_full.a34);
       double lambda_angular_coupling = -CommonOps_DDF3.dot(M_lin_ang, c_linear);
 
       // We first check that the contact is sticking when ignoring the angular velocity, if not we abort.
       if (lambda_linear_decoupled.a3 < NEGATIVE_NORMAL_IMPULSE_THRESHOLD
             || !isInsideFrictionEllipsoid(mu, lambda_linear_decoupled, lambda_angular_coupling, coulombMomentRatio))
+      {
+         output.impulseAngularZ = 0.0;
+         output.isAngularSlipping = true;
          return; // Unable to solve this for now, falling back to solution without friction moment.
+      }
 
       double M_angular = M_full.get(3, 3);
       double c_angular = velocityAngularZ;
 
-      ContactImpulseTools.scaleAdd(-c_angular, M_lin_ang, lambda_linear_decoupled, lambda_linear);
+      ContactImpulseTools.scaleAdd(-c_angular, M_lin_ang, lambda_linear_decoupled, output.impulseLinear);
+      // lambda_angular = lambda_angular_coupling - M_angular * c_angular = - M_lin_ang * c_linear - M_angular * c_angular 
       double lambda_angular = lambda_angular_coupling - M_angular * c_angular;
 
-      if (lambda_linear.a3 > NEGATIVE_NORMAL_IMPULSE_THRESHOLD && isInsideFrictionEllipsoid(mu, lambda_linear, lambda_angular, coulombMomentRatio))
+      if (output.impulseLinear.a3 > NEGATIVE_NORMAL_IMPULSE_THRESHOLD
+            && isInsideFrictionEllipsoid(mu, output.impulseLinear, lambda_angular, coulombMomentRatio))
       {
          // The contact is sticking, we're done.
-         impulseToPack.getLinearPart().set(lambda_linear);
-         impulseToPack.getAngularPart().setZ(lambda_angular);
+         output.impulseAngularZ = lambda_angular;
+         output.isAngularSlipping = false;
          return;
       }
 
@@ -370,10 +388,9 @@ public class SingleContactImpulseSolver
       double c_angular_lo = 0.0;
       // The upper bound is always slipping
       double c_angular_hi = c_angular;
-      double lambda_lo_x = lambda_linear_decoupled.a1;
-      double lambda_lo_y = lambda_linear_decoupled.a2;
-      double lambda_lo_z = lambda_linear_decoupled.a3;
-      double lambda_lo_zz = lambda_angular_coupling;
+      output.impulseLinear.set(lambda_linear_decoupled);
+      output.impulseAngularZ = lambda_angular_coupling;
+      output.isAngularSlipping = true;
       int iteration = 0;
 
       while (true)
@@ -381,11 +398,7 @@ public class SingleContactImpulseSolver
          iteration++;
 
          if (Math.abs(c_angular_hi - c_angular_lo) < gamma)
-         {
-            impulseToPack.getLinearPart().set(lambda_lo_x, lambda_lo_y, lambda_lo_z);
-            impulseToPack.getAngularPart().setZ(lambda_lo_zz);
             return;
-         }
 
          if (iteration > 1000)
          {
@@ -394,17 +407,17 @@ public class SingleContactImpulseSolver
 
          double c_angular_mid = 0.5 * (c_angular_lo + c_angular_hi);
 
-         ContactImpulseTools.scaleAdd(-c_angular_mid, M_lin_ang, lambda_linear_decoupled, lambda_linear);
+         ContactImpulseTools.scaleAdd(-c_angular_mid, M_lin_ang, lambda_linear_decoupled, output.impulseLinear);
 
-         if (lambda_linear.a3 < NEGATIVE_NORMAL_IMPULSE_THRESHOLD)
+         if (output.impulseLinear.a3 < NEGATIVE_NORMAL_IMPULSE_THRESHOLD)
          { // We're slipping
             c_angular_hi = c_angular_mid;
             continue;
          }
 
-         lambda_angular = lambda_angular_coupling - M_angular * c_angular_mid;
+         output.impulseAngularZ = lambda_angular_coupling - M_angular * c_angular_mid;
 
-         if (!isInsideFrictionEllipsoid(mu, lambda_linear, lambda_angular, coulombMomentRatio))
+         if (!isInsideFrictionEllipsoid(mu, output.impulseLinear, output.impulseAngularZ, coulombMomentRatio))
          { // We're slipping
             c_angular_hi = c_angular_mid;
             continue;
@@ -412,10 +425,6 @@ public class SingleContactImpulseSolver
 
          // We're sticking
          c_angular_lo = c_angular_mid;
-         lambda_lo_x = lambda_linear.a1;
-         lambda_lo_y = lambda_linear.a2;
-         lambda_lo_z = lambda_linear.a3;
-         lambda_lo_zz = lambda_angular;
       }
    }
 
@@ -423,7 +432,7 @@ public class SingleContactImpulseSolver
     * TODO This is not enough to cover the degenerate case, need to decompose the problem to work in
     * reduced space, i.e. either 2D or 1D.
     */
-   private void solveImpulseDegenerate(SpatialVectorReadOnly velocity, DMatrixRMaj M_inv, double mu, FixedFrameSpatialImpulseBasics impulseToPack)
+   private void solveImpulseDegenerate(SpatialVectorReadOnly velocity, DMatrixRMaj M_inv, double mu, SolverOutput output)
    {
       lambda_v_0.reshape(problemSize, 1);
       c.reshape(problemSize, 1);
@@ -443,20 +452,22 @@ public class SingleContactImpulseSolver
          }
          else
          {
-            impulseToPack.getLinearPart().set(lambda_v_0);
-            impulseToPack.getAngularPart().setZ(lambda_v_0.get(3, 0));
+            output.impulseLinear.set(lambda_v_0);
+            output.impulseAngularZ = lambda_v_0.get(3, 0);
+            output.isLinearSlipping = false;
          }
       }
       else
       {
          if (lambda_v_0.get(2) < NEGATIVE_NORMAL_IMPULSE_THRESHOLD || !isInsideFrictionCone(mu, lambda_v_0))
          {
-            computeSlipLambda(beta1, beta2, beta3, gamma, mu, M_inv, lambda_v_0, c, lambda_linear, false);
-            impulseToPack.getLinearPart().set(lambda_linear);
+            computeSlipLambda(beta1, beta2, beta3, gamma, mu, M_inv, lambda_v_0, c, output.impulseLinear, false);
+            output.isLinearSlipping = true;
          }
          else
          {
-            impulseToPack.getLinearPart().set(lambda_v_0);
+            output.impulseLinear.set(lambda_v_0);
+            output.isLinearSlipping = false;
          }
       }
    }
@@ -464,5 +475,36 @@ public class SingleContactImpulseSolver
    public void printForUnitTest(DMatrixRMaj M_inv, double mu)
    {
       System.err.println(ContactImpulseTools.toStringForUnitTest(beta1, beta2, beta3, gamma, mu, M_inv, lambda_linear_v_0, c_linear));
+   }
+
+   public static class SolverOutput
+   {
+      private final DMatrix3 impulseLinear = new DMatrix3();
+      private double impulseAngularZ;
+
+      private boolean isLinearSlipping;
+      private boolean isAngularSlipping;
+      private boolean isContactDegenerate;
+
+      public void getSpatialImpulse(FixedFrameSpatialImpulseBasics impulseToPack)
+      {
+         impulseToPack.getLinearPart().set(impulseLinear.a1, impulseLinear.a2, impulseLinear.a3);
+         impulseToPack.getAngularPart().set(0.0, 0.0, impulseAngularZ);
+      }
+
+      public boolean isLinearSlipping()
+      {
+         return isLinearSlipping;
+      }
+
+      public boolean isAngularSlipping()
+      {
+         return isAngularSlipping;
+      }
+
+      public boolean isContactDegenerate()
+      {
+         return isContactDegenerate;
+      }
    }
 }

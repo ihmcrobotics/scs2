@@ -21,6 +21,8 @@ import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
 import us.ihmc.scs2.simulation.physicsEngine.CombinedJointStateProviders;
 import us.ihmc.scs2.simulation.physicsEngine.CombinedRigidBodyTwistProviders;
 import us.ihmc.scs2.simulation.physicsEngine.MultiRobotCollisionGroup;
+import us.ihmc.scs2.simulation.physicsEngine.impulseBased.MultiContactImpulseCalculatorStepListener.CurrentStepInfo;
+import us.ihmc.scs2.simulation.physicsEngine.impulseBased.MultiContactImpulseCalculatorStepListener.Step;
 
 /**
  * Inspired from: <i>Per-Contact Iteration Method for Solving Contact Dynamics</i>
@@ -44,6 +46,8 @@ public class MultiContactImpulseCalculator
    private int maxNumberOfIterations = 100;
    private int iterationCounter = 0;
 
+   private MultiContactImpulseCalculatorStepListener listener;
+
    private static boolean hasCalculatorFailedOnce = false;
 
    private Map<RigidBodyBasics, ImpulseBasedRobot> robots;
@@ -51,6 +55,11 @@ public class MultiContactImpulseCalculator
    public MultiContactImpulseCalculator(ReferenceFrame rootFrame)
    {
       this.rootFrame = rootFrame;
+   }
+
+   public void setListener(MultiContactImpulseCalculatorStepListener listener)
+   {
+      this.listener = listener;
    }
 
    public void configure(Map<RigidBodyBasics, ImpulseBasedRobot> robots, MultiRobotCollisionGroup collisionGroup)
@@ -115,10 +124,14 @@ public class MultiContactImpulseCalculator
 
    public double computeImpulses(double time, double dt, boolean verbose)
    {
+      reportStepUpdate(Step.START);
+
       for (ImpulseBasedConstraintCalculator calculator : allCalculators)
       { // Request the calculators to predict velocity without applying impulse.
          calculator.initialize(dt);
       }
+
+      reportStepUpdate(Step.INITIALIZE);
 
       for (Iterator<RobotJointLimitImpulseBasedCalculator> iterator = jointLimitCalculators.iterator(); iterator.hasNext();)
       { // Once initialized, if the a joint limit calculator does not detect joints about to violate their limits, we skip it for this iteration.
@@ -129,6 +142,8 @@ public class MultiContactImpulseCalculator
             iterator.remove();
          }
       }
+
+      reportStepUpdate(Step.FILTER_CALCULATOR);
 
       for (ImpulseBasedConstraintCalculator calculator : allCalculators)
       {
@@ -142,6 +157,8 @@ public class MultiContactImpulseCalculator
          calculator.updateInertia(rigidBodyTargets, jointTargets);
       }
 
+      reportStepUpdate(Step.COMPUTE_INERTIA);
+
       if (allCalculators.size() == 1)
       {
          /*
@@ -151,18 +168,21 @@ public class MultiContactImpulseCalculator
          ImpulseBasedConstraintCalculator calculator = allCalculators.get(0);
          calculator.computeImpulse(dt);
          calculator.finalizeImpulse();
+         reportStepUpdate(Step.SOLVER_FINALIZE);
          return 0.0;
       }
       else
       { // Successive over-relaxation method to evaluate multiple inter-dependent constraints.
          double alpha = 1.0;
-         double maxUpdateMagnitude = Double.POSITIVE_INFINITY;
+         double maxImpulseUpdateMagnitude = Double.POSITIVE_INFINITY;
+         double maxVelocityUpdateMagnitude = Double.POSITIVE_INFINITY;
 
          iterationCounter = 0;
 
-         while (maxUpdateMagnitude > tolerance)
+         while (maxImpulseUpdateMagnitude > tolerance && maxVelocityUpdateMagnitude > tolerance)
          {
-            maxUpdateMagnitude = Double.NEGATIVE_INFINITY;
+            maxImpulseUpdateMagnitude = Double.NEGATIVE_INFINITY;
+            maxVelocityUpdateMagnitude = Double.NEGATIVE_INFINITY;
             int numberOfClosingContacts = 0;
 
             for (int i = 0; i < allCalculators.size(); i++)
@@ -170,15 +190,16 @@ public class MultiContactImpulseCalculator
                ImpulseBasedConstraintCalculator calculator = allCalculators.get(i);
                calculator.updateImpulse(dt, alpha, false);
                calculator.updateTwistModifiers();
-               double updateMagnitude = calculator.getVelocityUpdate();
+               double impulseUpdateMagnitude = calculator.getImpulseUpdate();
+               double velocityUpdateMagnitude = calculator.getVelocityUpdate();
                if (verbose)
                {
                   if (calculator instanceof SingleContactImpulseCalculator)
                   {
                      SingleContactImpulseCalculator contactCalculator = (SingleContactImpulseCalculator) calculator;
-                     System.out.println("Iteration " + iterationCounter + ", calc index: " + i + ", active: " + contactCalculator.isConstraintActive()
-                           + ", closing: " + contactCalculator.isContactClosing() + ", impulse update: " + contactCalculator.getImpulseUpdate()
-                           + ", velocity update: " + contactCalculator.getVelocityUpdate());
+                     System.out.println("Iteration " + iterationCounter + ", alpha: " + alpha + ", calc index: " + i + ", active: " + contactCalculator.isConstraintActive()
+                           + ", closing: " + contactCalculator.isContactClosing() + ", slip: " + contactCalculator.isContactSlipping() + ", impulse update: "
+                           + contactCalculator.getImpulseUpdate() + ", velocity update: " + contactCalculator.getVelocityUpdate() + ", moment: " + contactCalculator.getImpulseA().getAngularPartZ());
                   }
                   else
                   {
@@ -186,11 +207,14 @@ public class MultiContactImpulseCalculator
                            + ", impulse update: " + calculator.getImpulseUpdate() + ", velocity update: " + calculator.getVelocityUpdate());
                   }
                }
-               maxUpdateMagnitude = Math.max(maxUpdateMagnitude, updateMagnitude);
+               maxImpulseUpdateMagnitude = Math.max(maxImpulseUpdateMagnitude, impulseUpdateMagnitude);
+               maxVelocityUpdateMagnitude = Math.max(maxVelocityUpdateMagnitude, velocityUpdateMagnitude);
 
                if (calculator.isConstraintActive())
                   numberOfClosingContacts++;
             }
+
+            reportStepUpdate(Step.SOLVER_STEP);
 
             iterationCounter++;
 
@@ -225,9 +249,18 @@ public class MultiContactImpulseCalculator
                calculator.finalizeImpulse();
             }
          }
+         reportStepUpdate(Step.SOLVER_FINALIZE);
 
-         return maxUpdateMagnitude;
+         return Math.min(maxImpulseUpdateMagnitude, maxVelocityUpdateMagnitude);
       }
+   }
+
+   private void reportStepUpdate(Step step)
+   {
+      if (listener == null)
+         return;
+
+      listener.hasStepped(new CurrentStepInfoImpl(step));
    }
 
    public void setAlphaMin(double alphaMin)
@@ -405,5 +438,27 @@ public class MultiContactImpulseCalculator
       }
 
       return jointTargets;
+   }
+
+   private class CurrentStepInfoImpl implements CurrentStepInfo
+   {
+      private final Step step;
+
+      private CurrentStepInfoImpl(Step step)
+      {
+         this.step = step;
+      }
+
+      @Override
+      public Step getStep()
+      {
+         return step;
+      }
+
+      @Override
+      public List<? extends ImpulseBasedConstraintCalculator> getAllCalculators()
+      {
+         return allCalculators;
+      }
    }
 }

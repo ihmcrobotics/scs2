@@ -216,7 +216,10 @@ public class YoVariableTools
       return findYoFrameQuaternion(namespace, prefix, suffix, yoVariableHolder, null) != null;
    }
 
-   public static YoFramePoint2D findYoFramePoint2D(String namespace, String prefix, String suffix, Collection<? extends YoVariable> yoVariablesToSearch,
+   public static YoFramePoint2D findYoFramePoint2D(String namespace,
+                                                   String prefix,
+                                                   String suffix,
+                                                   Collection<? extends YoVariable> yoVariablesToSearch,
                                                    ReferenceFrame tupleFrame)
    {
       YoDouble x = findYoDouble(namespace, YoGeometryNameTools.createXName(prefix, suffix), yoVariablesToSearch);
@@ -239,7 +242,10 @@ public class YoVariableTools
       return new YoFramePoint2D(x, y, tupleFrame);
    }
 
-   public static YoFrameVector2D findYoFrameVector2D(String namespace, String prefix, String suffix, Collection<? extends YoVariable> yoVariablesToSearch,
+   public static YoFrameVector2D findYoFrameVector2D(String namespace,
+                                                     String prefix,
+                                                     String suffix,
+                                                     Collection<? extends YoVariable> yoVariablesToSearch,
                                                      ReferenceFrame tupleFrame)
    {
       YoDouble x = findYoDouble(namespace, YoGeometryNameTools.createXName(prefix, suffix), yoVariablesToSearch);
@@ -251,7 +257,10 @@ public class YoVariableTools
       return new YoFrameVector2D(x, y, tupleFrame);
    }
 
-   public static YoFrameVector2D findYoFrameVector2D(String namespace, String prefix, String suffix, YoVariableHolder yoVariableHolder,
+   public static YoFrameVector2D findYoFrameVector2D(String namespace,
+                                                     String prefix,
+                                                     String suffix,
+                                                     YoVariableHolder yoVariableHolder,
                                                      ReferenceFrame tupleFrame)
    {
       YoDouble x = findYoDouble(namespace, YoGeometryNameTools.createXName(prefix, suffix), yoVariableHolder);
@@ -263,7 +272,10 @@ public class YoVariableTools
       return new YoFrameVector2D(x, y, tupleFrame);
    }
 
-   public static YoFramePoint3D findYoFramePoint3D(String namespace, String prefix, String suffix, Collection<? extends YoVariable> yoVariablesToSearch,
+   public static YoFramePoint3D findYoFramePoint3D(String namespace,
+                                                   String prefix,
+                                                   String suffix,
+                                                   Collection<? extends YoVariable> yoVariablesToSearch,
                                                    ReferenceFrame tupleFrame)
    {
       YoDouble x = findYoDouble(namespace, YoGeometryNameTools.createXName(prefix, suffix), yoVariablesToSearch);
@@ -292,7 +304,10 @@ public class YoVariableTools
       return new YoFramePoint3D(x, y, z, tupleFrame);
    }
 
-   public static YoFrameVector3D findYoFrameVector3D(String namespace, String prefix, String suffix, Collection<? extends YoVariable> yoVariablesToSearch,
+   public static YoFrameVector3D findYoFrameVector3D(String namespace,
+                                                     String prefix,
+                                                     String suffix,
+                                                     Collection<? extends YoVariable> yoVariablesToSearch,
                                                      ReferenceFrame tupleFrame)
    {
       YoDouble x = findYoDouble(namespace, YoGeometryNameTools.createXName(prefix, suffix), yoVariablesToSearch);
@@ -307,7 +322,10 @@ public class YoVariableTools
       return new YoFrameVector3D(x, y, z, tupleFrame);
    }
 
-   public static YoFrameVector3D findYoFrameVector3D(String namespace, String prefix, String suffix, YoVariableHolder yoVariableHolder,
+   public static YoFrameVector3D findYoFrameVector3D(String namespace,
+                                                     String prefix,
+                                                     String suffix,
+                                                     YoVariableHolder yoVariableHolder,
                                                      ReferenceFrame tupleFrame)
    {
       YoDouble x = findYoDouble(namespace, YoGeometryNameTools.createXName(prefix, suffix), yoVariableHolder);
@@ -322,7 +340,10 @@ public class YoVariableTools
       return new YoFrameVector3D(x, y, z, tupleFrame);
    }
 
-   public static YoFrameQuaternion findYoFrameQuaternion(String namespace, String prefix, String suffix, Collection<? extends YoVariable> yoVariablesToSearch,
+   public static YoFrameQuaternion findYoFrameQuaternion(String namespace,
+                                                         String prefix,
+                                                         String suffix,
+                                                         Collection<? extends YoVariable> yoVariablesToSearch,
                                                          ReferenceFrame tupleFrame)
    {
       YoDouble qx = findYoDouble(namespace, YoGeometryNameTools.createQxName(prefix, suffix), yoVariablesToSearch);
@@ -340,7 +361,10 @@ public class YoVariableTools
       return new YoFrameQuaternion(qx, qy, qz, qs, tupleFrame);
    }
 
-   public static YoFrameQuaternion findYoFrameQuaternion(String namespace, String prefix, String suffix, YoVariableHolder yoVariableHolder,
+   public static YoFrameQuaternion findYoFrameQuaternion(String namespace,
+                                                         String prefix,
+                                                         String suffix,
+                                                         YoVariableHolder yoVariableHolder,
                                                          ReferenceFrame tupleFrame)
    {
       YoDouble qx = findYoDouble(namespace, YoGeometryNameTools.createQxName(prefix, suffix), yoVariableHolder);
@@ -411,26 +435,42 @@ public class YoVariableTools
       return (T) uncheckedVariable;
    }
 
-   public static <T> List<T> search(Collection<T> collectionToSearch, Function<T, String> stringConverter, String searchQuery,
-                                    SimilarityScore<? extends Number> searchEngine, int maxResults)
+   public static <T> List<T> search(Collection<T> collectionToSearch,
+                                    Function<T, String> stringConverter,
+                                    String searchQuery,
+                                    SimilarityScore<? extends Number> searchEngine,
+                                    int maxResults)
    {
       return search(collectionToSearch, stringConverter, searchQuery, searchEngine, maxResults, Collectors.toList(), null);
    }
 
-   public static <T> List<T> search(Collection<T> collectionToSearch, Function<T, String> stringConverter, String searchQuery,
-                                    SimilarityScore<? extends Number> searchEngine, int maxResults, List<Number> scoresToPack)
+   public static <T> List<T> search(Collection<T> collectionToSearch,
+                                    Function<T, String> stringConverter,
+                                    String searchQuery,
+                                    SimilarityScore<? extends Number> searchEngine,
+                                    int maxResults,
+                                    List<Number> scoresToPack)
    {
       return search(collectionToSearch, stringConverter, searchQuery, searchEngine, maxResults, Collectors.toList(), scoresToPack);
    }
 
-   public static <T, R> R search(Collection<T> collectionToSearch, Function<T, String> stringConverter, String searchQuery,
-                                 SimilarityScore<? extends Number> searchEngine, int maxResults, Collector<T, ?, R> collector)
+   public static <T, R> R search(Collection<T> collectionToSearch,
+                                 Function<T, String> stringConverter,
+                                 String searchQuery,
+                                 SimilarityScore<? extends Number> searchEngine,
+                                 int maxResults,
+                                 Collector<T, ?, R> collector)
    {
       return search(collectionToSearch, stringConverter, searchQuery, searchEngine, maxResults, collector, null);
    }
 
-   public static <T, R> R search(Collection<T> collectionToSearch, Function<T, String> stringConverter, String searchQuery,
-                                 SimilarityScore<? extends Number> searchEngine, int maxResults, Collector<T, ?, R> collector, List<Number> scoresToPack)
+   public static <T, R> R search(Collection<T> collectionToSearch,
+                                 Function<T, String> stringConverter,
+                                 String searchQuery,
+                                 SimilarityScore<? extends Number> searchEngine,
+                                 int maxResults,
+                                 Collector<T, ?, R> collector,
+                                 List<Number> scoresToPack)
    {
       if (collectionToSearch == null || collectionToSearch.isEmpty())
          return null;

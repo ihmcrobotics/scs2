@@ -8,6 +8,7 @@ import java.util.concurrent.Future;
 
 import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.robotDataLogger.LogProperties;
+import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
 public class MultiVideoDataReader
