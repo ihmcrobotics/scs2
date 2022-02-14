@@ -52,6 +52,7 @@ public class SimulationSession extends Session
    private final List<CameraDefinitionConsumer> cameraDefinitionNotifiers = new ArrayList<>();
    private final Map<String, Map<String, SimCameraSensor>> robotNameToSensorNameToCameraMap = new HashMap<>();
    private final ExecutorService cameraBroadcastExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("SCS2-Camera-Server"));
+   private final List<BooleanSupplier> terminalConditions = new ArrayList<>();
 
    private final List<TimeConsumer> beforePhysicsCallbacks = new ArrayList<>();
    private final List<TimeConsumer> afterPhysicsCallbacks = new ArrayList<>();
@@ -402,6 +403,14 @@ public class SimulationSession extends Session
             @Override
             public boolean getAsBoolean()
             {
+               for(int i = 0; i < terminalConditions.size(); i++)
+               {
+                  if(terminalConditions.get(i).getAsBoolean())
+                  {
+                     return true;
+                  }
+               }
+               
                tickCounter++;
                boolean done = tickCounter >= numberOfTicks;
 
@@ -428,6 +437,15 @@ public class SimulationSession extends Session
          activePeriodicTask.waitUntilFirstTickDone();
 
          return success.isTrue();
+      }
+      
+      @Override
+      public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
+      {
+         for(int i = 0; i < externalTerminalConditions.length; i++)
+         {
+            terminalConditions.add(externalTerminalConditions[i]);
+         }
       }
 
       @Override
