@@ -403,9 +403,9 @@ public class SimulationSession extends Session
             @Override
             public boolean getAsBoolean()
             {
-               for(int i = 0; i < terminalConditions.size(); i++)
+               for (int i = 0; i < terminalConditions.size(); i++)
                {
-                  if(terminalConditions.get(i).getAsBoolean())
+                  if (terminalConditions.get(i).getAsBoolean())
                   {
                      return true;
                   }
@@ -438,14 +438,26 @@ public class SimulationSession extends Session
 
          return success.isTrue();
       }
-      
+
       @Override
       public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
       {
-         for(int i = 0; i < externalTerminalConditions.length; i++)
+         for (int i = 0; i < externalTerminalConditions.length; i++)
          {
             terminalConditions.add(externalTerminalConditions[i]);
          }
+      }
+
+      @Override
+      public void removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+      {
+         terminalConditions.remove(externalTerminalCondition);
+      }
+
+      @Override
+      public void clearExternalTerminalConditions()
+      {
+         terminalConditions.clear();
       }
 
       @Override

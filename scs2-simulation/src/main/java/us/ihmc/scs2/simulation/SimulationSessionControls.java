@@ -27,6 +27,10 @@ public interface SimulationSessionControls
    void setBufferCurrentIndexToInPoint();
 
    void setBufferCurrentIndexToOutPoint();
-   
+
    void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions);
+
+   void removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition);
+
+   void clearExternalTerminalConditions();
 }
