@@ -155,6 +155,20 @@ public class SDFTools
 
          String authority = uri.getAuthority() == null ? "" : uri.getAuthority();
 
+         { // Try to load without using the resource directories
+            String fullname = authority + uri.getPath();
+            // Path relative to class root
+            if (resourceClassLoader.getResource(fullname) != null)
+            {
+               return fullname;
+            }
+            // Absolute path
+            if (new File(fullname).exists())
+            {
+               return fullname;
+            }
+         }
+
          for (String resourceDirectory : resourceDirectories)
          {
             String fullname = resourceDirectory + authority + uri.getPath();
