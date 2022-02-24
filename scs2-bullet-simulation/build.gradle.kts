@@ -12,6 +12,8 @@ ihmc {
 }
 
 mainDependencies {
+   api("us.ihmc:scs2-simulation:source")
+   api("us.ihmc:scs2-session-visualizer-jfx:source")
    api("us.ihmc:scs2-definition:source")
    api("us.ihmc:scs2-shared-memory:source")
    api("us.ihmc:scs2-session:source")
@@ -22,6 +24,9 @@ mainDependencies {
    api("us.ihmc:ihmc-messager:0.1.7")
    api("us.ihmc:ihmc-yovariables:0.9.11")
    api("us.ihmc:mecano-yovariables:0.9.1")
+   val libGDXVersion = "1.10.0"
+   api("com.badlogicgames.gdx:gdx-bullet:$libGDXVersion")
+   api("com.badlogicgames.gdx:gdx-bullet-platform:$libGDXVersion:natives-desktop")
 }
 
 testDependencies {
