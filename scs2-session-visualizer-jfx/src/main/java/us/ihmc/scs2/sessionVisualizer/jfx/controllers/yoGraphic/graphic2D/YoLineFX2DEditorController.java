@@ -18,6 +18,8 @@ public class YoLineFX2DEditorController extends YoGraphicFX2DEditorController<Yo
    @FXML
    private RadioButton directionRadioButton, destinationRadioButton;
 
+   private Tuple2DProperty directionProperty = new Tuple2DProperty(null, 0, 1);
+   private Tuple2DProperty destinationProperty = new Tuple2DProperty(null, 0, 0);
    private YoGraphicLine2DDefinition definitionBeforeEdits;
 
    @Override
@@ -31,29 +33,37 @@ public class YoLineFX2DEditorController extends YoGraphicFX2DEditorController<Yo
       directionEditorController.getMainPane().disableProperty().bind(destinationRadioButton.selectedProperty());
       destinationEditorController.getMainPane().disableProperty().bind(directionRadioButton.selectedProperty());
 
-      directionRadioButton.selectedProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue)
-         {
-            if (directionEditorController.inputsValidityProperty().get())
-               yoGraphicToEdit.setDirection(new Tuple2DProperty(directionEditorController.frameSupplierProperty().getValue(),
-                                                                directionEditorController.compositeSupplierProperty().get()));
-            yoGraphicToEdit.setDestination(null);
-         }
-         else
-         {
-            yoGraphicToEdit.setDirection(null);
-            if (destinationEditorController.inputsValidityProperty().get())
-               yoGraphicToEdit.setDestination(new Tuple2DProperty(destinationEditorController.frameSupplierProperty().getValue(),
-                                                                  destinationEditorController.compositeSupplierProperty().get()));
-         }
-      });
+      if (yoGraphicToEdit.getDirection() != null)
+         directionProperty = new Tuple2DProperty(yoGraphicToEdit.getDirection());
+      else
+         directionProperty = new Tuple2DProperty(toolkit.getReferenceFrameManager().getWorldFrame(), 0, 1);
+      if (yoGraphicToEdit.getDestination() != null)
+         destinationProperty = new Tuple2DProperty(yoGraphicToEdit.getDestination());
+      else
+         destinationProperty = new Tuple2DProperty(toolkit.getReferenceFrameManager().getWorldFrame(), 0, 1);
+
+      directionRadioButton.selectedProperty().addListener((o, oldValue, newValue) -> updateSelection(newValue, yoGraphicToEdit));
 
       setupTuple2DPropertyEditor(originEditorController, "Origin", true, yoGraphicToEdit.getOrigin());
-      setupTuple2DPropertyEditor(directionEditorController, "Direction", true, yoGraphicToEdit.getDirection());
-      setupTuple2DPropertyEditor(destinationEditorController, "Desintation", true, yoGraphicToEdit.getDestination());
+      setupTuple2DPropertyEditor(directionEditorController, "Direction", true, directionProperty);
+      setupTuple2DPropertyEditor(destinationEditorController, "Desintation", true, destinationProperty);
 
+      updateSelection(directionRadioButton.isSelected(), yoGraphicToEdit);
       resetFields();
+   }
+
+   private void updateSelection(boolean isDirectionSelected, YoLineFX2D yoGraphicToEdit)
+   {
+      if (isDirectionSelected)
+      {
+         yoGraphicToEdit.setDirection(directionProperty);
+         yoGraphicToEdit.setDestination(null);
+      }
+      else
+      {
+         yoGraphicToEdit.setDirection(null);
+         yoGraphicToEdit.setDestination(destinationProperty);
+      }
    }
 
    protected <T> void updateHasChangesPendingProperty(ObservableValue<? extends T> observable, T oldValue, T newValue)
