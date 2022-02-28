@@ -13,7 +13,6 @@ ihmc {
 
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
-   api("us.ihmc:scs2-session-visualizer-jfx:source")
    api("us.ihmc:scs2-definition:source")
    api("us.ihmc:scs2-shared-memory:source")
    api("us.ihmc:scs2-session:source")

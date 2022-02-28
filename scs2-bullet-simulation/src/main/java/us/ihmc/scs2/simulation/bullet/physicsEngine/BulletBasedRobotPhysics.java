@@ -18,7 +18,6 @@ public class BulletBasedRobotPhysics
    private final ReferenceFrame inertialFrame;
    private final List<Collidable> collidables;
    
-   
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry = new RigidBodyWrenchRegistry();
    private final ForwardDynamicsCalculator forwardDynamicsCalculator;
    private final SingleRobotFirstOrderIntegrator integrator;
