@@ -1,5 +1,6 @@
 package us.ihmc.scs2.simulation;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 public interface SimulationSessionControls
@@ -26,4 +27,10 @@ public interface SimulationSessionControls
    void setBufferCurrentIndexToInPoint();
 
    void setBufferCurrentIndexToOutPoint();
+
+   void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions);
+
+   void removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition);
+
+   void clearExternalTerminalConditions();
 }
