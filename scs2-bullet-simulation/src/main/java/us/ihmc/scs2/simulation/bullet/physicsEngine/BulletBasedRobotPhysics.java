@@ -1,11 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
-import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
@@ -16,8 +12,7 @@ public class BulletBasedRobotPhysics
 {
    private final RobotInterface owner;
    private final ReferenceFrame inertialFrame;
-   private final List<Collidable> collidables;
-   
+  
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry = new RigidBodyWrenchRegistry();
    private final ForwardDynamicsCalculator forwardDynamicsCalculator;
    private final SingleRobotFirstOrderIntegrator integrator;
@@ -29,18 +24,13 @@ public class BulletBasedRobotPhysics
       inertialFrame = owner.getInertialFrame();
       
       SimRigidBodyBasics rootBody = owner.getRootBody();
-      collidables = rootBody.subtreeStream().flatMap(body -> body.getCollidables().stream()).collect(Collectors.toList());
       
       integrator = new SingleRobotFirstOrderIntegrator();
       
       forwardDynamicsCalculator = new ForwardDynamicsCalculator(owner);
       physicsOutput = new RobotPhysicsOutput(forwardDynamicsCalculator.getAccelerationProvider(), null, rigidBodyWrenchRegistry, null);
    }
-   
-   public void updateCollidableBoundingBoxes()
-   {
-      collidables.forEach(collidable -> collidable.updateBoundingBox(inertialFrame));
-   }
+
    
    public void integrateState(double dt)
    {
@@ -48,10 +38,6 @@ public class BulletBasedRobotPhysics
       integrator.integrate(dt, owner);
    }
    
-   public List<Collidable> getCollidables()
-   {
-      return collidables;
-   }
    
    public RobotPhysicsOutput getPhysicsOutput()
    {

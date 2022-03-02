@@ -74,7 +74,7 @@ public class BoxExperimentalSimulation
       boxRobot2.getRootJointDefinitions().get(0).setInitialJointState(initialJointState2);
       Matrix4 transform2 = new Matrix4();
       BulletTools.toBullet(boxRobotTransform2, transform2);
-      
+     
       simulationSession.addRigidBodyRobot(boxRobot2, boxCollisionShape, 9.0f, transform2, false);
       
       

@@ -17,6 +17,7 @@ import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -101,17 +102,32 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT); 
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values()); 
          robot.saveRobotBeforePhysicsState();
+         robot.getWorldTransformation();
       }
  
+      for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)
+      {
+          btCollisionObject colObj = multiBodyDynamicsWorld.getCollisionObjectArray().atConst(i);
+          System.out.println(i  + " before transform" + colObj.getWorldTransform());
+      }
+      
       int maxSubSteps = 1000; // 0 means use variable time step
       float fixedTimeStep = 1.0f / 240f;  
       multiBodyDynamicsWorld.stepSimulation((float)currentTime, maxSubSteps, fixedTimeStep); // FIXME: Sometimes EXCEPTION_ACCESS_VIOLATION
       
+      for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)
+      {
+          btCollisionObject colObj = multiBodyDynamicsWorld.getCollisionObjectArray().atConst(i);
+          System.out.println(i  + " after transform" + colObj.getWorldTransform());
+      }
+
       for (BulletBasedRobot robot : robotList)
       {
          robot.updateFrames(); 
          robot.updateSensors();
+         robot.setWorldTransformation();
       }
+
    }
 
    @Override
@@ -138,33 +154,46 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
       
       return bulletRobot;
    }
+   public void addBulletMultiBodyRobot(RobotDefinition robotDefinition, btMultiBody bulletMultiBodyRobot)
+   {
+      Robot robot = new Robot(robotDefinition, inertialFrame);
+      addBulletMultiBodyRobot(robot, bulletMultiBodyRobot);
+   }
    
-//   public void addMultiBodyRobot(Robot robot, btMultiBody multiBody, btMultiBodyLinkCollider collisionShape)
-//   {
-//      BulletBasedRobot bulletRobot = addBulletRobot(robot);
-//      
-//      multiBodyDynamicsWorld.addMultiBody(multiBody);
-//      multiBodies.add(multiBody);
-//      
-//      int collisionGroup = 2; // Multi bodies need to be in a separate collision group
-//      int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
-//      multiBodyDynamicsWorld.addCollisionObject(collisionShape, collisionGroup, collisionGroupMask);
-//      
-//      //bulletRobot.setbtMultiBody(multiBody);
-//   }
+   public void addBulletMultiBodyRobot(Robot robot, btMultiBody bulletMultiBodyRobot)
+   {
+      BulletBasedRobot bulletRobot = addBulletRobot(robot);
+      
+      int collisionGroup = 2; // Multi bodies need to be in a separate collision group
+      int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
+      
+      multiBodyDynamicsWorld.addCollisionObject(bulletMultiBodyRobot.getBaseCollider(), collisionGroup, collisionGroupMask);
+      
+      for (int i = 0; i < bulletMultiBodyRobot.getNumLinks(); i++)
+      {
+         multiBodyDynamicsWorld.addCollisionObject(bulletMultiBodyRobot.getLinkCollider(i), collisionGroup, collisionGroupMask);
+      }
+      
+      bulletMultiBodyRobot.finalizeMultiDof();
+      multiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot);
+      multiBodies.add(bulletMultiBodyRobot);
+
+      bulletRobot.setbtMultiBody(bulletMultiBodyRobot);
+   }
    
    public Robot addRobot(RobotDefinition robotDefinition)
    {
       Robot robot = new Robot(robotDefinition, inertialFrame);
       addRobot(robot);
+      
       return robot;
    }
    
-   public Robot addRigidBodyRobot(RobotDefinition robotDefinition, btCollisionShape collisionShape, float mass, Matrix4 transformToWorld, boolean isKinematicObject)
+   public void addRigidBodyRobot(RobotDefinition robotDefinition, btCollisionShape collisionShape, float mass, Matrix4 transformToWorld, boolean isKinematicObject)
    {
       Robot robot = new Robot(robotDefinition, inertialFrame);
       addRigidBodyRobot(robot, collisionShape, mass, transformToWorld, isKinematicObject);
-      return robot;
+
    }
    
    public btRigidBody addRigidBodyRobot(Robot robot, btCollisionShape collisionShape, float mass, Matrix4 transformToWorld, boolean isKinematicObject)
@@ -200,12 +229,21 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
       for (btRigidBody rigidBody : rigidBodies)
       {
          multiBodyDynamicsWorld.removeRigidBody(rigidBody);
+         rigidBody.dispose();
       }
       
       for (btMultiBody multiBody : multiBodies)
       {
          multiBodyDynamicsWorld.removeMultiBody(multiBody);
+         multiBody.dispose();
       }
+
+      for (btCollisionObject shape : collisionObjects)
+      {
+         multiBodyDynamicsWorld.removeCollisionObject(shape);
+         shape.dispose();
+      }
+      collisionObjects.clear();
       
       multiBodyDynamicsWorld.dispose();
       collisionConfiguration.dispose();
