@@ -111,9 +111,10 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
           System.out.println(i  + " before transform" + colObj.getWorldTransform());
       }
       
-      int maxSubSteps = 1000; // 0 means use variable time step
-      float fixedTimeStep = 1.0f / 240f;  
-      multiBodyDynamicsWorld.stepSimulation((float)currentTime, maxSubSteps, fixedTimeStep); // FIXME: Sometimes EXCEPTION_ACCESS_VIOLATION
+      int maxSubSteps = 1; // With SCS, we want every tick to get a buffer entry and step through things one step at a time.
+      float fixedTimeStep = (float) dt;  // SCS has a fixed timestep already so let's just use it
+      float timePassedSinceThisWasCalledLast = fixedTimeStep; // We are essentially disabling interpolation here
+      multiBodyDynamicsWorld.stepSimulation(timePassedSinceThisWasCalledLast, maxSubSteps, fixedTimeStep);
       
       for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)
       {
