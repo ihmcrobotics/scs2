@@ -1,11 +1,15 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
+import com.badlogic.gdx.physics.bullet.Bullet;
+import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
+import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.transform.AffineTransform;
@@ -15,9 +19,23 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
+import us.ihmc.log.LogTools;
+
+import java.nio.FloatBuffer;
 
 public class BulletTools
 {
+   private static boolean bulletInitialized = false;
+
+   public static void ensureBulletInitialized()
+   {
+      if (!bulletInitialized)
+      {
+         bulletInitialized = true;
+         Bullet.init();
+         LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
+      }
+   }
 
    public static void toBullet(AffineTransform euclidAffine, Matrix4 BulletAffineToPack)
    {
@@ -170,5 +188,15 @@ public class BulletTools
    {
       return new Color((float) javaFXColor.getRed(), (float) javaFXColor.getGreen(), (float) javaFXColor.getBlue(), (float) javaFXColor.getOpacity());
    }
- 
+
+   public static btConvexHullShape createConcaveHullShapeFromMesh(Mesh mesh)
+   {
+      return createConcaveHullShapeFromMesh(mesh.getVerticesBuffer(), mesh.getNumVertices(), mesh.getVertexSize());
+   }
+
+   public static btConvexHullShape createConcaveHullShapeFromMesh(FloatBuffer floatBuffer, int numberOfPoints, int stride)
+   {
+      floatBuffer.rewind();
+      return new btConvexHullShape(floatBuffer, numberOfPoints, stride);
+   }
 }
