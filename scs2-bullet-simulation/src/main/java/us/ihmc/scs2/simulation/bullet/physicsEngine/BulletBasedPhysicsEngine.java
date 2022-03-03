@@ -17,7 +17,6 @@ import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -57,6 +56,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
    private boolean initialize = true;
+   boolean test = true;
 
    public BulletBasedPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
@@ -102,7 +102,9 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT); 
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values()); 
          robot.saveRobotBeforePhysicsState();
-         robot.getWorldTransformation();
+         if (test)
+            robot.getWorldTransformation();
+         test = false;
       }
  
       for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)

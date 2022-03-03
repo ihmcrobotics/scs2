@@ -38,6 +38,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletSimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletTools;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 
 public class ConnectedShapesExperimentalBulletSimulation
 {
@@ -70,7 +71,9 @@ public class ConnectedShapesExperimentalBulletSimulation
       RigidBodyDefinition rigidBody1 = ExampleExperimentalSimulationTools.newBoxRigidBody("box1", boxSize1, boxMass1, radiusOfGyrationPercent, boxApp1);
       rootJointDefinition.setSuccessor(rigidBody1);
       
-      Vector3 baseInertiaDiagonal = new Vector3(0.0f, 0.0f, 0.0f);
+      Vector3 baseInertiaDiagonal = new Vector3((float) rootBodyDefinition.getMomentOfInertia().getM00(),
+                                                (float) rootBodyDefinition.getMomentOfInertia().getM11(),
+                                                (float) rootBodyDefinition.getMomentOfInertia().getM22());
       
       btCollisionShape boxCollisionShape = new btBoxShape(new Vector3((float)boxSize1.getX() / 2.0f, (float)boxSize1.getY() / 2.0f, (float)boxSize1.getZ()/2.0f));
       boxCollisionShape.calculateLocalInertia((float)boxMass1, baseInertiaDiagonal);
@@ -84,11 +87,9 @@ public class ConnectedShapesExperimentalBulletSimulation
       baseCollider.setCollisionShape(boxCollisionShape);
       baseCollider.setFriction(1.0f);
       bulletMultiBodyRobot.setBaseCollider(baseCollider);
-
-      //bulletMultiBodyRobot.getBaseCollider().setCollisionShape(boxCollisionShape);
       
-      RevoluteJointDefinition pinJoint = new RevoluteJointDefinition("pin");
-      pinJoint.setAxis(Axis3D.Y);
+      RevoluteJointDefinition pinJointDefinition = new RevoluteJointDefinition("pin");
+      pinJointDefinition.setAxis(Axis3D.Y);
       RigidBodyDefinition rigidBody2 = ExampleExperimentalSimulationTools.newBoxRigidBody("box2", boxSize2, boxMass2, radiusOfGyrationPercent, boxApp2);
       rigidBody2.setCenterOfMassOffset(connectionOffset);
       VisualDefinitionFactory factory2 = new VisualDefinitionFactory();
@@ -97,8 +98,8 @@ public class ConnectedShapesExperimentalBulletSimulation
       factory2.addCylinder(connectionOffset.getX(), 0.02, new MaterialDefinition(ColorDefinitions.Chocolate()));
       rigidBody2.getVisualDefinitions().forEach(visual -> visual.getOriginPose().prependTranslation(connectionOffset));
       rigidBody2.addVisualDefinitions(factory2.getVisualDefinitions());
-      pinJoint.setSuccessor(rigidBody2);
-      rigidBody1.addChildJoint(pinJoint);
+      pinJointDefinition.setSuccessor(rigidBody2);
+      rigidBody1.addChildJoint(pinJointDefinition);
       
       robotDefinition.setRootBodyDefinition(rootBodyDefinition);
 
@@ -106,19 +107,45 @@ public class ConnectedShapesExperimentalBulletSimulation
       rootJointDefinition.setInitialJointState(initialRootJointState);
       OneDoFJointState initialPinJointState = new OneDoFJointState();
       initialPinJointState.setEffort(3.0);
-      pinJoint.setInitialJointState(initialPinJointState);
+      pinJointDefinition.setInitialJointState(initialPinJointState);
+     
+      Quaternion rotationFromParent = new Quaternion();
+      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent
+            = new us.ihmc.euclid.tuple4D.Quaternion(pinJointDefinition.getTransformToParent().getRotation());
+      euclidRotationFromParent.invert();
+      BulletTools.toBullet(euclidRotationFromParent, rotationFromParent);
       
       int linkIndex = 0;
       int parentIndex = -1;
-      Quaternion rotationFromParent = new Quaternion();
-      Vector3 offsetOfPivotFromParentCenterOfMass = new Vector3((float)rigidBody1.getCenterOfMassOffset().getX(), (float)rigidBody1.getCenterOfMassOffset().getY(), (float)rigidBody1.getCenterOfMassOffset().getZ()); //Vector3(0.0f, 0.0f, -linkHalfExtents.z);
-      Vector3 offsetOfCenterOfMassFromPivot = new Vector3((float)rigidBody2.getCenterOfMassOffset().getX(), (float)rigidBody2.getCenterOfMassOffset().getY(), (float)rigidBody2.getCenterOfMassOffset().getZ());
+      Vector3 jointAxis = new Vector3();
+      BulletTools.toBullet(pinJointDefinition.getAxis(), jointAxis);
+      
+      Vector3 offsetOfPivotFromParentCenterOfMass = new Vector3(0.0f, 0.0f, (float)boxSize1.getZ() / -2.0f); //Vector3(0.0f, 0.0f, -linkHalfExtents.z);
+//      RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
+//      parentRevoluteJoint.getPredecessor().getBodyFixedFrame().getTransformToDesiredFrame(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid,
+//                                                                                          parentRevoluteJoint.getFrameBeforeJoint());      
+//      parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.invert();
+//      
+//      Vector3 offsetOfPivotFromParentCenterOfMass = new Vector3();
+//      BulletTools.toBullet(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.getTranslation(),
+//                           offsetOfPivotFromParentCenterOfMass);
+      
+      Vector3 offsetOfCenterOfMassFromPivot = new Vector3((float)connectionOffset.getX(), (float)connectionOffset.getY(), (float)connectionOffset.getZ());
+//      RigidBodyTransform parentJointAfterFrameToLinkCenterOfMassTransformEuclid = new RigidBodyTransform();
+//      parentRevoluteJoint.getFrameAfterJoint().getTransformToDesiredFrame(parentJointAfterFrameToLinkCenterOfMassTransformEuclid,
+//                                                                          rigidBodyBasics.getBodyFixedFrame());
+//      parentJointAfterFrameToLinkCenterOfMassTransformEuclid.invert();
+//      Vector3 offsetOfCenterOfMassFromPivot = new Vector3();
+//      BulletTools.toBullet(parentJointAfterFrameToLinkCenterOfMassTransformEuclid.getTranslation(), offsetOfCenterOfMassFromPivot);
+//      
+      
       boolean disableParentCollision = true;
-      bulletMultiBodyRobot.setupSpherical(linkIndex,
+      bulletMultiBodyRobot.setupRevolute(linkIndex,
                                (float)boxMass2,
                                baseInertiaDiagonal,
                                parentIndex,
                                rotationFromParent,
+                               jointAxis,
                                offsetOfPivotFromParentCenterOfMass,
                                offsetOfCenterOfMassFromPivot,
                                disableParentCollision);
@@ -127,7 +154,6 @@ public class ConnectedShapesExperimentalBulletSimulation
       btCollisionShape linkBox = new btBoxShape(new Vector3((float)boxSize2.getX() / 2.0f, (float)boxSize2.getY() / 2.0f, (float)boxSize2.getZ()/2.0f));
       linkCollider.setCollisionShape(linkBox);
       linkCollider.setFriction(1.0f);
-      //linkCollider.setWorldTransform(worldTransform);
       bulletMultiBodyRobot.getLink(linkIndex).setCollider(linkCollider);
       simulationSession.addBulletMultiBodyRobot(robotDefinition, bulletMultiBodyRobot);
 

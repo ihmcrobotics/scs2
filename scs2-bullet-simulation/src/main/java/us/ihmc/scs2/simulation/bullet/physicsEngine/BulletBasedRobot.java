@@ -92,8 +92,8 @@ public class BulletBasedRobot extends RobotExtension
             //System.out.println("setWorld Base " + bulletMultiBodyRobot.getBaseCollider().getWorldTransform());
            // System.out.println("setWorld link " + bulletMultiBodyRobot.getLink(0).getCollider().getWorldTransform());
             
-//            System.out.println("T_succ_afterJoint " + T_succ_afterJoint);
-//            System.out.println("T_beforeJoint_pred" + T_beforeJoint_pred);
+            System.out.println("T_succ_afterJoint " + T_succ_afterJoint);
+            System.out.println("T_beforeJoint_pred" + T_beforeJoint_pred);
             
             //joint.getSuccessor().getBodyFixedFrame().getTransformToRoot();
             //joint.getJointConfiguration(tempTransform);
