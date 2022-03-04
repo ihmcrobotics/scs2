@@ -144,6 +144,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, this);
+      multiBodyDynamicsWorld.addMultiBody(bulletRobot.getBulletMultiBody());
       rootRegistry.addChild(bulletRobot.getRegistry());
       robotList.add(bulletRobot);
    }

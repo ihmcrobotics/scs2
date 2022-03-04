@@ -96,7 +96,7 @@ public class BulletRobot extends RobotExtension
 
    private void copyDataFromSCSToBullet(BulletRobotLinkBasics link)
    {
-      link.updateBulletLinkColliderTransformFromMecanoRigidBody();
+      link.copyDataFromSCSToBullet();
 
       for (BulletRobotLinkBasics child : link.getChildren())
       {
