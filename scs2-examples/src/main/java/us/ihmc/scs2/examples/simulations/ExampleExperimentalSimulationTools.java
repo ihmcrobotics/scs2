@@ -13,7 +13,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 
 public class ExampleExperimentalSimulationTools
 {
-   static RobotDefinition newSphereRobot(String name, double radius, double mass, double radiusOfGyrationPercent, ColorDefinition color, boolean addStripes,
+   public static RobotDefinition newSphereRobot(String name, double radius, double mass, double radiusOfGyrationPercent, ColorDefinition color, boolean addStripes,
                                          ColorDefinition stripesColor)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
@@ -48,7 +48,7 @@ public class ExampleExperimentalSimulationTools
       return rigidBody;
    }
 
-   static RobotDefinition newCylinderRobot(String name, double radius, double height, double mass, double radiusOfGyrationPercent, ColorDefinition color,
+   public static RobotDefinition newCylinderRobot(String name, double radius, double height, double mass, double radiusOfGyrationPercent, ColorDefinition color,
                                            boolean addStripes, ColorDefinition stripesColor)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
@@ -82,7 +82,7 @@ public class ExampleExperimentalSimulationTools
       return robotDefinition;
    }
 
-   static RobotDefinition newCapsuleRobot(String name, double radius, double height, double mass, double radiusOfGyrationPercent, ColorDefinition color,
+   public static RobotDefinition newCapsuleRobot(String name, double radius, double height, double mass, double radiusOfGyrationPercent, ColorDefinition color,
                                           boolean addStripes, ColorDefinition stripesColor)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
@@ -115,12 +115,12 @@ public class ExampleExperimentalSimulationTools
       return robotDefinition;
    }
 
-   static RobotDefinition newBoxRobot(String name, Tuple3DReadOnly size, double mass, double radiusOfGyrationPercent, ColorDefinition color)
+   public static RobotDefinition newBoxRobot(String name, Tuple3DReadOnly size, double mass, double radiusOfGyrationPercent, ColorDefinition color)
    {
       return newBoxRobot(name, size.getX(), size.getY(), size.getZ(), mass, radiusOfGyrationPercent, color);
    }
 
-   static RobotDefinition newBoxRobot(String name, double sizeX, double sizeY, double sizeZ, double mass, double radiusOfGyrationPercent, ColorDefinition color)
+   public static RobotDefinition newBoxRobot(String name, double sizeX, double sizeY, double sizeZ, double mass, double radiusOfGyrationPercent, ColorDefinition color)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
 

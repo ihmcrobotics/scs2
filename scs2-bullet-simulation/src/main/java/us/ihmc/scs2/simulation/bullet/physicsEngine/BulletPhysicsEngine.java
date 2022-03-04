@@ -91,7 +91,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-     
+   
       if (initialize(gravity))
          return;
       
@@ -102,23 +102,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values()); 
          robot.saveRobotBeforePhysicsState();
       }
- 
-//      for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)
-//      {
-//          btCollisionObject colObj = multiBodyDynamicsWorld.getCollisionObjectArray().atConst(i);
-//          System.out.println(i  + " before transform" + colObj.getWorldTransform());
-//      }
       
       int maxSubSteps = 1; // With SCS, we want every tick to get a buffer entry and step through things one step at a time.
       float fixedTimeStep = (float) dt;  // SCS has a fixed timestep already so let's just use it
       float timePassedSinceThisWasCalledLast = fixedTimeStep; // We are essentially disabling interpolation here
       multiBodyDynamicsWorld.stepSimulation(timePassedSinceThisWasCalledLast, maxSubSteps, fixedTimeStep);
-      
-//      for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)
-//      {
-//          btCollisionObject colObj = multiBodyDynamicsWorld.getCollisionObjectArray().atConst(i);
-//          System.out.println(i  + " after transform" + colObj.getWorldTransform());
-//      }
 
       for (BulletRobot robot : robotList)
       {
@@ -127,7 +115,6 @@ public class BulletPhysicsEngine implements PhysicsEngine
          robot.updateSensors();
          robot.afterSimulate();
       }
-
    }
 
    @Override
