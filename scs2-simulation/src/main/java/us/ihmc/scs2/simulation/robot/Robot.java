@@ -87,6 +87,11 @@ public class Robot implements RobotInterface
 
    public Robot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
    {
+      this(robotDefinition, inertialFrame, true);
+   }
+
+   public Robot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame, boolean loadControllers)
+   {
       this.robotDefinition = robotDefinition;
       this.inertialFrame = inertialFrame;
       robotRootFrame = createRobotRootFrame(robotDefinition, inertialFrame);
@@ -108,8 +113,11 @@ public class Robot implements RobotInterface
 
       controllerManager = new RobotControllerManager(this, registry);
 
-      createSoftConstraintControllerDefinitions(robotDefinition).forEach(controllerManager::addController);
-      robotDefinition.getControllerDefinitions().forEach(controllerManager::addController);
+      if (loadControllers)
+      {
+         createSoftConstraintControllerDefinitions(robotDefinition).forEach(controllerManager::addController);
+         robotDefinition.getControllerDefinitions().forEach(controllerManager::addController);
+      }
    }
 
    public static ReferenceFrame createRobotRootFrame(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
