@@ -2,17 +2,14 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.collision.btCompoundShape;
-import com.badlogic.gdx.physics.bullet.collision.btCylinderShapeZ;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
+import com.badlogic.gdx.physics.bullet.collision.*;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
+import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 
@@ -69,6 +66,16 @@ public class BulletRobotLinkCollisionShape
                                                                            (float) cylinderGeometryDefinition.getRadius(),
                                                                            (float) cylinderGeometryDefinition.getLength() / 2.0f));
          bulletCollisionShape = cylinderShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Capsule3DDefinition)
+      {
+         Capsule3DDefinition capsuleGeometryDefinition = (Capsule3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+         if (capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusY()
+         || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
+         || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
+            LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
+         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
+         bulletCollisionShape = capsuleShape;
       }
       else
       {
