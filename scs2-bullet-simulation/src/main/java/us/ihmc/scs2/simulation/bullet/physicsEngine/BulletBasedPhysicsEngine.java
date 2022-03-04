@@ -101,7 +101,6 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT); 
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values()); 
          robot.saveRobotBeforePhysicsState();
-         robot.updateFromBulletData();
       }
  
 //      for (int i = 0; i < multiBodyDynamicsWorld.getNumCollisionObjects(); i++)
@@ -123,6 +122,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
 
       for (BulletBasedRobot robot : robotList)
       {
+         robot.updateFromBulletData();
          robot.updateFrames(); 
          robot.updateSensors();
          robot.afterSimulate();
@@ -143,10 +143,9 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    public void addRobot(Robot robot)
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
-      BulletBasedRobot bulletRobot = new BulletBasedRobot(robot, physicsEngineRegistry);
+      BulletBasedRobot bulletRobot = new BulletBasedRobot(robot, physicsEngineRegistry, this);
       rootRegistry.addChild(bulletRobot.getRegistry());
       robotList.add(bulletRobot);
-      bulletRobot.createBulletMultiBody(this);
    }
 
    public void destroy()

@@ -24,7 +24,6 @@ public class BulletBasedRobotLinkCollisionShape
    private final RigidBodyTransform collisionShapeDefinitionToCenterOfMassFrameTransformEuclid = new RigidBodyTransform();
    private final ReferenceFrame collisionShapeDefinitionFrame;
    private btCollisionShape bulletCollisionShape;
-   private final RigidBodyTransform collisionShapeFrameToWorldTransformEuclid = new RigidBodyTransform();
 
    public BulletBasedRobotLinkCollisionShape(CollisionShapeDefinition collisionShapeDefinition,
                                              ReferenceFrame frameAfterParentJoint,
@@ -33,9 +32,11 @@ public class BulletBasedRobotLinkCollisionShape
       this.linkCenterOfMassFrame = linkCenterOfMassFrame;
 
       collisionShapeToFrameAfterParentJoint = collisionShapeDefinition.getOriginPose();
-      collisionShapeDefinitionFrame = BulletBasedReferenceFrameMissingTools.constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
-                                                                                                                        new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
-                                                                                                                                               collisionShapeToFrameAfterParentJoint.getTranslation()));
+      collisionShapeDefinitionFrame
+            = BulletBasedReferenceFrameMissingTools
+            .constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
+                                                           new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
+                                                                                  collisionShapeToFrameAfterParentJoint.getTranslation()));
 
       // Just need to make sure the vertices for the libGDX shapes and the bullet shapes are the same
       //Color color = new Color(Color.WHITE);
@@ -80,11 +81,6 @@ public class BulletBasedRobotLinkCollisionShape
       collisionShapeDefinitionFrame.getTransformToDesiredFrame(collisionShapeDefinitionToCenterOfMassFrameTransformEuclid, linkCenterOfMassFrame);
       BulletTools.toBullet(collisionShapeDefinitionToCenterOfMassFrameTransformEuclid, collisionShapeDefinitionToCenterOfMassFrameTransformGDX);
       bulletCompoundShape.addChildShape(collisionShapeDefinitionToCenterOfMassFrameTransformGDX, bulletCollisionShape);
-   }
-
-   public void updateTransforms()
-   {
-      collisionShapeDefinitionFrame.getTransformToDesiredFrame(collisionShapeFrameToWorldTransformEuclid, ReferenceFrame.getWorldFrame());
    }
 
    public btCollisionShape getBulletCollisionShape()

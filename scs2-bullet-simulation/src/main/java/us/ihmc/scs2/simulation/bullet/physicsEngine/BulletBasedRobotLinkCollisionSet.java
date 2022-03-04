@@ -20,19 +20,13 @@ public class BulletBasedRobotLinkCollisionSet
 
         for (CollisionShapeDefinition shapeDefinition : collisionShapeDefinitions)
         {
-           BulletBasedRobotLinkCollisionShape collisionShape = new BulletBasedRobotLinkCollisionShape(shapeDefinition, frameAfterParentJoint, linkCenterOfMassFrame);
+           BulletBasedRobotLinkCollisionShape collisionShape = new BulletBasedRobotLinkCollisionShape(shapeDefinition,
+                                                                                                      frameAfterParentJoint,
+                                                                                                      linkCenterOfMassFrame);
            collisionShape.addToCompoundShape(bulletCompoundShape);
            collisionShapes.add(collisionShape);
         }
      }
-
-   public void updateFromMecanoRigidBody()
-   {
-      for (BulletBasedRobotLinkCollisionShape collisionShape : collisionShapes)
-      {
-         collisionShape.updateTransforms();
-      }
-   }
 
    public btCompoundShape getBulletCompoundShape()
    {

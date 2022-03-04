@@ -2,231 +2,144 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.transform.RigidBodyTransform;
-import us.ihmc.mecano.multiBodySystem.SixDoFJoint;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.scs2.definition.robot.JointDefinition;
+import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class BulletBasedRobot extends RobotExtension 
 {
    private final BulletBasedRobotPhysics robotPhysics;
-   private final RigidBodyBasics rootRigidBody;
-   private final BulletBasedRobotLink elevator;
-   private final BulletBasedRobotLink pelvisLink;
-   private final float pelvisLinkMass;
-   private final SixDoFJoint pelvisSixDoFJoint;
-   private int linkCountingIndex = 0;
-   private int numberOfLinks;
+   private final RigidBodyDefinition rootBodyDefinition;
+   private final SimRigidBodyBasics rootSimRigidBodyBasics;
+   private final SimFloatingRootJoint rootSimFloatingRootJoint;
+   private final BulletBasedRobotLinkRoot rootLink;
    private final HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<>();
-   private final ArrayList<BulletBasedRobotLink> allLinks = new ArrayList<>();
-   private final ArrayList<BulletBasedRobotLink> afterElevatorLinks = new ArrayList<>();
-   private final ArrayList<BulletBasedRobotLink> afterPelvisLinks = new ArrayList<>();
-   private btMultiBody bulletMultiBody;
-   private btMultiBodyLinkCollider baseCollider;
-   private final Matrix4 bulletPelvisColliderCenterOfMassTransformToWorldBullet = new Matrix4();
-   private final RigidBodyTransform bulletPelvisColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
-   private final RigidBodyTransform bulletPelvisAfterJointTransformToWorldEuclid = new RigidBodyTransform();
-   private final RigidBodyTransform bulletPelvisCenterOfMassTransformToAfterParentJointEuclid = new RigidBodyTransform();
+   private final ArrayList<BulletBasedRobotLinkBasics> allLinks = new ArrayList<>();
+   private final ArrayList<BulletBasedRobotLinkRevolute> afterRootLinks = new ArrayList<>();
    private final YoRegistry yoRegistry;
    
-   public BulletBasedRobot(Robot robot, YoRegistry physicsRegistry)
+   public BulletBasedRobot(Robot robot, YoRegistry physicsRegistry, BulletBasedPhysicsEngine bulletPhysicsManager)
    {
       super(robot, physicsRegistry);
       robotPhysics = new BulletBasedRobotPhysics(this);
-      createBulletPhysicsFrom(robot);
+
+      // Initialize the jointPairingList?
       
       yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
-      rootRigidBody = getRobotDefinition().newInstance(ReferenceFrame.getWorldFrame());
-      rootRigidBody.updateFramesRecursively();
-      JointDefinition pelvisSixDoFJointDefinition = getRobotDefinition().getRootJointDefinitions().get(0);
-      numberOfLinks = countJoints(pelvisSixDoFJointDefinition) - 1; // which is also number of joints in this case
-      elevator = new BulletBasedRobotLink(getRobotDefinition().getRootBodyDefinition(), rootRigidBody, jointNameToBulletJointIndexMap, yoRegistry);
-      initializeLinkLists(elevator);
-      pelvisLink = elevator.getChildren().get(0);
-      pelvisLinkMass = (float) pelvisLink.getRigidBodyDefinition().getMass();
-      pelvisSixDoFJoint = (SixDoFJoint) pelvisLink.getParentJoint();
-      bulletPelvisCenterOfMassTransformToAfterParentJointEuclid.set(pelvisLink.getRigidBodyDefinition().getInertiaPose());
+
+      rootBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition();
+      JointDefinition rootJointDefinition = rootBodyDefinition.getChildrenJoints().get(0);
+      if (!(rootJointDefinition instanceof SixDoFJointDefinition))
+         throw new RuntimeException("Expecting a SixDoFJointDefinition, not a " + rootJointDefinition.getClass().getSimpleName());
+      SixDoFJointDefinition rootSixDoFJointDefinition = (SixDoFJointDefinition) rootJointDefinition;
+
+      rootSimRigidBodyBasics = robot.getRootBody();
+      JointBasics rootJoint = rootSimRigidBodyBasics.getChildrenJoints().get(0);
+      if (!(rootJoint instanceof SimFloatingRootJoint))
+         throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + rootJoint.getClass().getSimpleName());
+      rootSimFloatingRootJoint = (SimFloatingRootJoint) rootJoint;
+      rootLink = new BulletBasedRobotLinkRoot(rootSixDoFJointDefinition, rootSimFloatingRootJoint, jointNameToBulletJointIndexMap, yoRegistry);
+      initializeLinkLists(rootLink, true);
+
+      rootLink.setup();
+      rootLink.createBulletCollisionShape(bulletPhysicsManager);
+
+      for (BulletBasedRobotLinkRevolute link : afterRootLinks)
+      {
+         link.setBulletMultiBody(rootLink.getBulletMultiBody());
+         link.setup();
+         link.createBulletCollisionShape(bulletPhysicsManager);
+      }
+      rootLink.getBulletMultiBody().finalizeMultiDof();
    }
    
-   private void initializeLinkLists(BulletBasedRobotLink link)
+   private void initializeLinkLists(BulletBasedRobotLinkBasics link, boolean isRootLink)
    {
-      boolean isElevator = link.getRigidBodyDefinition().getName().equals("elevator");
-      boolean isPelvis = link.getRigidBodyDefinition().getName().equals("pelvis");
       allLinks.add(link);
-      if (!isElevator)
+      if (!isRootLink)
       {
-         afterElevatorLinks.add(link);
-      }
-      if (!isElevator && !isPelvis)
-      {
-         afterPelvisLinks.add(link);
+         afterRootLinks.add((BulletBasedRobotLinkRevolute) link);
       }
 
-      for (BulletBasedRobotLink child : link.getChildren())
+      for (BulletBasedRobotLinkBasics child : link.getChildren())
       {
-         initializeLinkLists(child);
+         initializeLinkLists(child, false);
       }
    }
-   
-   private int countJoints(JointDefinition joint)
+
+   @Override
+   public void initializeState()
    {
-      jointNameToBulletJointIndexMap.put(joint.getName(), linkCountingIndex - 1);
-      ++linkCountingIndex;
-      int numberOfJoints = 1;
-      for (JointDefinition childrenJoint : joint.getSuccessor().getChildrenJoints())
+      super.initializeState();
+
+      copyDataFromSCSToBullet();
+   }
+
+   @Override
+   public void saveRobotBeforePhysicsState()
+   {
+      copyDataFromSCSToBullet();
+   }
+
+   public void copyDataFromSCSToBullet()
+   {
+      copyDataFromSCSToBullet(rootLink);
+   }
+
+   private void copyDataFromSCSToBullet(BulletBasedRobotLinkBasics link)
+   {
+      link.updateBulletLinkColliderTransformFromMecanoRigidBody();
+
+      for (BulletBasedRobotLinkBasics child : link.getChildren())
       {
-         numberOfJoints += countJoints(childrenJoint);
-      }
-      return numberOfJoints;
-   }
-   
-   public void createBulletMultiBody(BulletBasedPhysicsEngine bulletPhysicsManager)
-   {
-      boolean fixedBase = false;
-      boolean canSleep = false;
-
-      Vector3 pelvisIntertia = new Vector3((float) pelvisLink.getRigidBodyDefinition().getMomentOfInertia().getM00(),
-                                           (float) pelvisLink.getRigidBodyDefinition().getMomentOfInertia().getM11(),
-                                           (float) pelvisLink.getRigidBodyDefinition().getMomentOfInertia().getM22());
-      bulletMultiBody = new btMultiBody(numberOfLinks, pelvisLinkMass, pelvisIntertia, fixedBase, canSleep);
-      bulletMultiBody.setHasSelfCollision(true);
-      bulletMultiBody.setUseGyroTerm(true);
-      bulletMultiBody.setLinearDamping(0.1f);
-      bulletMultiBody.setAngularDamping(0.9f);
-
-      pelvisLink.createBulletCollisionShape(bulletMultiBody, bulletPhysicsManager);
-      baseCollider = pelvisLink.getBulletMultiBodyLinkCollider();
-      bulletMultiBody.setBaseCollider(baseCollider);
-
-      for (BulletBasedRobotLink link : afterPelvisLinks)
-      {
-         link.createBulletJoint(bulletMultiBody);
-         link.createBulletCollisionShape(bulletMultiBody, bulletPhysicsManager);
-      }
-      bulletMultiBody.finalizeMultiDof();
-   }
-
-   public void setPelvisCenterOfMassTransformToWorld(RigidBodyTransform pelvisCenterOfMassTransformToWorld)
-   {
-      BulletTools.toBullet(pelvisCenterOfMassTransformToWorld, bulletPelvisColliderCenterOfMassTransformToWorldBullet);
-      bulletMultiBody.setBaseWorldTransform(bulletPelvisColliderCenterOfMassTransformToWorldBullet);
-      baseCollider.setWorldTransform(bulletPelvisColliderCenterOfMassTransformToWorldBullet);
-      bulletPelvisAfterJointTransformToWorldEuclid.set(pelvisCenterOfMassTransformToWorld);
-      bulletPelvisCenterOfMassTransformToAfterParentJointEuclid.inverseTransform(bulletPelvisAfterJointTransformToWorldEuclid);
-      pelvisSixDoFJoint.setJointPosition(bulletPelvisAfterJointTransformToWorldEuclid.getTranslation());
-      pelvisSixDoFJoint.setJointOrientation(bulletPelvisAfterJointTransformToWorldEuclid.getRotation());
-      rootRigidBody.updateFramesRecursively();
-   }
-
-   public void initializeRobotToDefaultJointAngles()
-   {
-      for (JointBasics joint : rootRigidBody.childrenSubtreeIterable())
-      {
-         if (joint instanceof OneDoFJointBasics)
-         {
-            getRobotDefinition().getJointDefinition(joint.getName()).getInitialJointState().getConfiguration(joint);
-         }
-      }
-      rootRigidBody.updateFramesRecursively();
-   }
-
-   public void updateFromMecanoRigidBody()
-   {
-      updateFromMecanoRigidBody(pelvisLink);
-   }
-
-   private void updateFromMecanoRigidBody(BulletBasedRobotLink link)
-   {
-      link.updateFromMecanoRigidBody();
-
-      for (BulletBasedRobotLink child : link.getChildren())
-      {
-         updateFromMecanoRigidBody(child);
+         copyDataFromSCSToBullet(child);
       }
    }
    
    public void updateFromBulletData()
    {
-      baseCollider.getWorldTransform(bulletPelvisColliderCenterOfMassTransformToWorldBullet);
-      BulletTools.toEuclid(bulletPelvisColliderCenterOfMassTransformToWorldBullet, bulletPelvisColliderCenterOfMassTransformToWorldEuclid);
-      bulletPelvisAfterJointTransformToWorldEuclid.set(bulletPelvisColliderCenterOfMassTransformToWorldEuclid);
-      bulletPelvisCenterOfMassTransformToAfterParentJointEuclid.inverseTransform(bulletPelvisAfterJointTransformToWorldEuclid);
-      pelvisSixDoFJoint.setJointPosition(bulletPelvisAfterJointTransformToWorldEuclid.getTranslation());
-      pelvisSixDoFJoint.setJointOrientation(bulletPelvisAfterJointTransformToWorldEuclid.getRotation());
-      // TODO: Calculate velocity & acceleration to pack Mecano stuff?
+      rootLink.copyBulletJointDataToSCS();
 
-      for (BulletBasedRobotLink afterPelvisLink : afterPelvisLinks)
+      for (BulletBasedRobotLinkRevolute afterPelvisLink : afterRootLinks)
       {
-         afterPelvisLink.updateJointAngleFromBulletData();
-      }
-
-      rootRigidBody.updateFramesRecursively();
-
-      for (BulletBasedRobotLink afterElevatorLink : afterElevatorLinks)
-      {
-         afterElevatorLink.updateFrames();
+         afterPelvisLink.copyBulletJointDataToSCS();
       }
    }
 
    public void afterSimulate()
    {
-      for (BulletBasedRobotLink afterPelvisLink : afterPelvisLinks)
+      for (BulletBasedRobotLinkRevolute afterPelvisLink : afterRootLinks)
       {
          afterPelvisLink.afterSimulate();
       }
    }
 
-   public BulletBasedRobotLink getElevator()
+   public BulletBasedRobotLinkRoot getRootLink()
    {
-      return elevator;
-   }
-
-   public BulletBasedRobotLink getPelvisLink()
-   {
-      return pelvisLink;
+      return rootLink;
    }
 
    public btMultiBody getBulletMultiBody()
    {
-      return bulletMultiBody;
+      return rootLink.getBulletMultiBody();
    }
 
-   public float getPelvisLinkMass()
+   public ArrayList<BulletBasedRobotLinkRevolute> getAfterRootLinks()
    {
-      return pelvisLinkMass;
+      return afterRootLinks;
    }
 
-   public ArrayList<BulletBasedRobotLink> getAfterPelvisLinks()
-   {
-      return afterPelvisLinks;
-   }
-
-   public ArrayList<BulletBasedRobotLink> getAfterElevatorLinks()
-   {
-      return afterElevatorLinks;
-   }
-
-   public ArrayList<BulletBasedRobotLink> getAllLinks()
+   public ArrayList<BulletBasedRobotLinkBasics> getAllLinks()
    {
       return allLinks;
-   }
-
-   private void createBulletPhysicsFrom(Robot robot)
-   {
-      robot.getRobotDefinition();
-      // Instantiate the bullet physics objects.
-      // Initialize the jointPairingList.
    }
 
    public void updateSensors()
@@ -236,5 +149,4 @@ public class BulletBasedRobot extends RobotExtension
          joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
       }
    }
-
 }
