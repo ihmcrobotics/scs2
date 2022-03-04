@@ -51,8 +51,8 @@ public class BoxExperimentalSimulation
                                                                                                                    boxZHeight / 2.0 * 1.05 + boxYWidth / 2.0 * Math.sin(Math.abs(initialBoxRoll))));
       boxRobot.getRigidBodyDefinition("boxRigidBody")
       .addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxXLength, boxYWidth, boxZHeight)));
-
       SixDoFJointState initialJointState = new SixDoFJointState(boxRobotTransform.getRotation(), boxRobotTransform.getTranslation());
+
       initialJointState.setVelocity(null, new Vector3D(initialVelocity, 0, 0));
       boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialJointState);
       
