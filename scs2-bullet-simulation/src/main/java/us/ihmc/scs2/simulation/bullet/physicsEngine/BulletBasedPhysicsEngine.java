@@ -3,14 +3,12 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
@@ -47,7 +45,8 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    private final ArrayList<btRigidBody> rigidBodies = new ArrayList<>();
    private final ArrayList<btMultiBody> multiBodies = new ArrayList<>();
    private final ArrayList<btCollisionObject> collisionObjects = new ArrayList<>();
-   
+   private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
+
    private final ReferenceFrame inertialFrame;
    private final YoRegistry rootRegistry;
    private final YoRegistry physicsEngineRegistry = new YoRegistry(getClass().getSimpleName());
@@ -191,24 +190,12 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
       terrainObjectDefinitions.add(terrainObjectDefinition);
+      terrainObjects.add(new BulletTerrainObject(terrainObjectDefinition, multiBodyDynamicsWorld));
    }
-   
-   public btCollisionObject addStaticObject(btCollisionShape collisionShape, Matrix4 transformToWorld)
-   {
-      btCollisionObject staticObject = new btCollisionObject();
-      staticObject.setCollisionShape(collisionShape);
-      staticObject.setWorldTransform(transformToWorld);
-      multiBodyDynamicsWorld.addCollisionObject(staticObject);
-      collisionObjects.add(staticObject);    
-      
-      return staticObject;
-   }
-   
+
    public void addMultiBodyCollisionShape(btMultiBodyLinkCollider collisionShape)
    {
-      int collisionGroup = 2; // Multi bodies need to be in a separate collision group
-      int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
-      multiBodyDynamicsWorld.addCollisionObject(collisionShape, collisionGroup, collisionGroupMask);
+      BulletTools.addMultiBodyCollisionShapeToWorld(multiBodyDynamicsWorld, collisionShape);
    }
    
    @Override

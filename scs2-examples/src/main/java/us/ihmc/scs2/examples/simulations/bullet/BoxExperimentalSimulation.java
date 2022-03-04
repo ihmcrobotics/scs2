@@ -1,9 +1,5 @@
 package us.ihmc.scs2.examples.simulations.bullet;
 
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -25,9 +21,8 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
+import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletBasedPhysicsEngine;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletSimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletTools;
 
 public class BoxExperimentalSimulation
 {
@@ -46,7 +41,7 @@ public class BoxExperimentalSimulation
       double groundWidth = 1.0;
       double groundLength = 1.0;
 
-      BulletSimulationSession simulationSession = new BulletSimulationSession((frame, rootRegistry) -> new BulletBasedPhysicsEngine(frame, rootRegistry));
+      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletBasedPhysicsEngine(frame, rootRegistry));
       
       RobotDefinition boxRobot = newBoxRobot("box", boxXLength, boxYWidth, boxZHeight, boxMass, boxRadiusOfGyrationPercent, ColorDefinitions.DarkCyan());
       
@@ -73,13 +68,7 @@ public class BoxExperimentalSimulation
                                                                                          terrainGeometry,
                                                                                          new MaterialDefinition(ColorDefinitions.DarkKhaki())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
-      
- 
-      btCollisionShape terrainShape = new btBoxShape(new Vector3((float)groundLength/2.0f, (float)groundWidth/2.0f, 0.1f / 2.0f));
-      Matrix4 terrainTransform = new Matrix4(); 
-      BulletTools.toBullet(terrainPose, terrainTransform); 
-      
-      simulationSession.addTerrainObject(terrain, terrainShape, terrainTransform);
+      simulationSession.addTerrainObject(terrain);
       
       SessionVisualizer.startSessionVisualizer(simulationSession);
    }
