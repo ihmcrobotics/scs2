@@ -22,7 +22,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletBasedPhysicsEngine;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 
 public class BoxExperimentalSimulation
 {
@@ -41,7 +41,7 @@ public class BoxExperimentalSimulation
       double groundWidth = 1.0;
       double groundLength = 1.0;
 
-      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletBasedPhysicsEngine(frame, rootRegistry));
+      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletPhysicsEngine(frame, rootRegistry));
       
       RobotDefinition boxRobot = newBoxRobot("box", boxXLength, boxYWidth, boxZHeight, boxMass, boxRadiusOfGyrationPercent, ColorDefinitions.DarkCyan());
       

@@ -8,7 +8,8 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasi
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.scs2.simulation.screwTools.SingleRobotFirstOrderIntegrator;
 
-public class BulletBasedRobotPhysics 
+// FIXME: Not sure if we need this class.
+public class BulletRobotPhysics
 {
    private final RobotInterface owner;
    private final ReferenceFrame inertialFrame;
@@ -18,7 +19,7 @@ public class BulletBasedRobotPhysics
    private final SingleRobotFirstOrderIntegrator integrator;
    private final RobotPhysicsOutput physicsOutput;
    
-   public BulletBasedRobotPhysics(RobotInterface owner)
+   public BulletRobotPhysics(RobotInterface owner)
    {
       this.owner = owner;
       inertialFrame = owner.getInertialFrame();

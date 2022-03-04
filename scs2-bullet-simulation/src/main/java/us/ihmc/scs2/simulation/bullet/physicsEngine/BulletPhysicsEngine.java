@@ -30,7 +30,7 @@ import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
-public class BulletBasedPhysicsEngine implements PhysicsEngine
+public class BulletPhysicsEngine implements PhysicsEngine
 {
    static
    {
@@ -51,13 +51,13 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    private final YoRegistry rootRegistry;
    private final YoRegistry physicsEngineRegistry = new YoRegistry(getClass().getSimpleName());
    
-   private final List<BulletBasedRobot> robotList = new ArrayList<>();
+   private final List<BulletRobot> robotList = new ArrayList<>();
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
    private boolean initialize = true;
    boolean test = true;
 
-   public BulletBasedPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
+   public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
       System.out.println("create");
       this.inertialFrame = inertialFrame;
@@ -78,7 +78,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
       if (!initialize)
          return false;
 
-      for (BulletBasedRobot robot : robotList)
+      for (BulletRobot robot : robotList)
       {
          robot.initializeState();
          robot.updateSensors();
@@ -95,7 +95,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
       if (initialize(gravity))
          return;
       
-      for (BulletBasedRobot robot : robotList)
+      for (BulletRobot robot : robotList)
       {
          robot.getControllerManager().updateControllers(currentTime); 
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT); 
@@ -120,7 +120,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
 //          System.out.println(i  + " after transform" + colObj.getWorldTransform());
 //      }
 
-      for (BulletBasedRobot robot : robotList)
+      for (BulletRobot robot : robotList)
       {
          robot.updateFromBulletData();
          robot.updateFrames(); 
@@ -133,7 +133,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    @Override
    public void pause()
    {
-      for (BulletBasedRobot robot : robotList)
+      for (BulletRobot robot : robotList)
       {
          robot.getControllerManager().pauseControllers();
       }   
@@ -143,7 +143,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    public void addRobot(Robot robot)
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
-      BulletBasedRobot bulletRobot = new BulletBasedRobot(robot, physicsEngineRegistry, this);
+      BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, this);
       rootRegistry.addChild(bulletRobot.getRegistry());
       robotList.add(bulletRobot);
    }
@@ -198,7 +198,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
    @Override
    public List<? extends Robot> getRobots()
    {
-      return robotList.stream().map(BulletBasedRobot::getRobot).collect(Collectors.toList());
+      return robotList.stream().map(BulletRobot::getRobot).collect(Collectors.toList());
    }
 
    @Override

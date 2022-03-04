@@ -7,7 +7,6 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
-import us.ihmc.mecano.frames.MovingReferenceFrame;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
@@ -15,7 +14,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
-public class BulletBasedRobotLinkRevolute extends BulletBasedRobotLinkBasics
+public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 {
    private final RevoluteJointDefinition revoluteJointDefinition;
    private final SimRevoluteJoint simRevoluteJoint;
@@ -33,10 +32,10 @@ public class BulletBasedRobotLinkRevolute extends BulletBasedRobotLinkBasics
    private YoDouble bulletLinkAppliedTorqueY;
    private YoDouble bulletLinkAppliedTorqueZ;
 
-   public BulletBasedRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
-                                       SimRevoluteJoint simRevoluteJoint,
-                                       HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                                       YoRegistry yoRegistry)
+   public BulletRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
+                                  SimRevoluteJoint simRevoluteJoint,
+                                  HashMap<String, Integer> jointNameToBulletJointIndexMap,
+                                  YoRegistry yoRegistry)
    {
       super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap);
       this.revoluteJointDefinition = revoluteJointDefinition;
@@ -106,7 +105,7 @@ public class BulletBasedRobotLinkRevolute extends BulletBasedRobotLinkBasics
       bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
    }
 
-   public void createBulletCollisionShape(BulletBasedPhysicsEngine bulletPhysicsManager)
+   public void createBulletCollisionShape(BulletPhysicsEngine bulletPhysicsManager)
    {
       super.createBulletCollisionShape(bulletPhysicsManager);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());

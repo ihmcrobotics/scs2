@@ -11,7 +11,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.util.HashMap;
 
-public class BulletBasedRobotLinkRoot extends BulletBasedRobotLinkBasics
+public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 {
    private int linkCountingIndex = 0;
    private final int numberOfLinks;
@@ -21,10 +21,10 @@ public class BulletBasedRobotLinkRoot extends BulletBasedRobotLinkBasics
    private final RigidBodyTransform bulletPelvisAfterJointTransformToWorldEuclid = new RigidBodyTransform();
    private final RigidBodyTransform bulletPelvisCenterOfMassTransformToAfterParentJointEuclid = new RigidBodyTransform();
 
-   public BulletBasedRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
-                                   SimFloatingRootJoint rootSimFloatingRootJoint,
-                                   HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                                   YoRegistry yoRegistry)
+   public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
+                              SimFloatingRootJoint rootSimFloatingRootJoint,
+                              HashMap<String, Integer> jointNameToBulletJointIndexMap,
+                              YoRegistry yoRegistry)
    {
       super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap);
       this.rootSimFloatingRootJoint = rootSimFloatingRootJoint;
@@ -55,7 +55,7 @@ public class BulletBasedRobotLinkRoot extends BulletBasedRobotLinkBasics
    }
 
    @Override
-   public void createBulletCollisionShape(BulletBasedPhysicsEngine bulletPhysicsManager)
+   public void createBulletCollisionShape(BulletPhysicsEngine bulletPhysicsManager)
    {
       super.createBulletCollisionShape(bulletPhysicsManager);
       getBulletMultiBody().setBaseCollider(getBulletMultiBodyLinkCollider());

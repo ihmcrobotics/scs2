@@ -6,7 +6,7 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 
-public class BulletBasedReferenceFrameMissingTools
+public class ReferenceFrameMissingTools
 {
    public static ThreadLocal<MutableInt> INDEX = ThreadLocal.withInitial(MutableInt::new);
 

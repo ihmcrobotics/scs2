@@ -14,22 +14,22 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
-public class BulletBasedRobot extends RobotExtension 
+public class BulletRobot extends RobotExtension 
 {
-   private final BulletBasedRobotPhysics robotPhysics;
+   private final BulletRobotPhysics robotPhysics;
    private final RigidBodyDefinition rootBodyDefinition;
    private final SimRigidBodyBasics rootSimRigidBodyBasics;
    private final SimFloatingRootJoint rootSimFloatingRootJoint;
-   private final BulletBasedRobotLinkRoot rootLink;
+   private final BulletRobotLinkRoot rootLink;
    private final HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<>();
-   private final ArrayList<BulletBasedRobotLinkBasics> allLinks = new ArrayList<>();
-   private final ArrayList<BulletBasedRobotLinkRevolute> afterRootLinks = new ArrayList<>();
+   private final ArrayList<BulletRobotLinkBasics> allLinks = new ArrayList<>();
+   private final ArrayList<BulletRobotLinkRevolute> afterRootLinks = new ArrayList<>();
    private final YoRegistry yoRegistry;
    
-   public BulletBasedRobot(Robot robot, YoRegistry physicsRegistry, BulletBasedPhysicsEngine bulletPhysicsManager)
+   public BulletRobot(Robot robot, YoRegistry physicsRegistry, BulletPhysicsEngine bulletPhysicsManager)
    {
       super(robot, physicsRegistry);
-      robotPhysics = new BulletBasedRobotPhysics(this);
+      robotPhysics = new BulletRobotPhysics(this);
 
       // Initialize the jointPairingList?
       
@@ -46,13 +46,13 @@ public class BulletBasedRobot extends RobotExtension
       if (!(rootJoint instanceof SimFloatingRootJoint))
          throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + rootJoint.getClass().getSimpleName());
       rootSimFloatingRootJoint = (SimFloatingRootJoint) rootJoint;
-      rootLink = new BulletBasedRobotLinkRoot(rootSixDoFJointDefinition, rootSimFloatingRootJoint, jointNameToBulletJointIndexMap, yoRegistry);
+      rootLink = new BulletRobotLinkRoot(rootSixDoFJointDefinition, rootSimFloatingRootJoint, jointNameToBulletJointIndexMap, yoRegistry);
       initializeLinkLists(rootLink, true);
 
       rootLink.setup();
       rootLink.createBulletCollisionShape(bulletPhysicsManager);
 
-      for (BulletBasedRobotLinkRevolute link : afterRootLinks)
+      for (BulletRobotLinkRevolute link : afterRootLinks)
       {
          link.setBulletMultiBody(rootLink.getBulletMultiBody());
          link.setup();
@@ -61,15 +61,15 @@ public class BulletBasedRobot extends RobotExtension
       rootLink.getBulletMultiBody().finalizeMultiDof();
    }
    
-   private void initializeLinkLists(BulletBasedRobotLinkBasics link, boolean isRootLink)
+   private void initializeLinkLists(BulletRobotLinkBasics link, boolean isRootLink)
    {
       allLinks.add(link);
       if (!isRootLink)
       {
-         afterRootLinks.add((BulletBasedRobotLinkRevolute) link);
+         afterRootLinks.add((BulletRobotLinkRevolute) link);
       }
 
-      for (BulletBasedRobotLinkBasics child : link.getChildren())
+      for (BulletRobotLinkBasics child : link.getChildren())
       {
          initializeLinkLists(child, false);
       }
@@ -94,11 +94,11 @@ public class BulletBasedRobot extends RobotExtension
       copyDataFromSCSToBullet(rootLink);
    }
 
-   private void copyDataFromSCSToBullet(BulletBasedRobotLinkBasics link)
+   private void copyDataFromSCSToBullet(BulletRobotLinkBasics link)
    {
       link.updateBulletLinkColliderTransformFromMecanoRigidBody();
 
-      for (BulletBasedRobotLinkBasics child : link.getChildren())
+      for (BulletRobotLinkBasics child : link.getChildren())
       {
          copyDataFromSCSToBullet(child);
       }
@@ -108,7 +108,7 @@ public class BulletBasedRobot extends RobotExtension
    {
       rootLink.copyBulletJointDataToSCS();
 
-      for (BulletBasedRobotLinkRevolute afterPelvisLink : afterRootLinks)
+      for (BulletRobotLinkRevolute afterPelvisLink : afterRootLinks)
       {
          afterPelvisLink.copyBulletJointDataToSCS();
       }
@@ -116,13 +116,13 @@ public class BulletBasedRobot extends RobotExtension
 
    public void afterSimulate()
    {
-      for (BulletBasedRobotLinkRevolute afterPelvisLink : afterRootLinks)
+      for (BulletRobotLinkRevolute afterPelvisLink : afterRootLinks)
       {
          afterPelvisLink.afterSimulate();
       }
    }
 
-   public BulletBasedRobotLinkRoot getRootLink()
+   public BulletRobotLinkRoot getRootLink()
    {
       return rootLink;
    }
@@ -132,12 +132,12 @@ public class BulletBasedRobot extends RobotExtension
       return rootLink.getBulletMultiBody();
    }
 
-   public ArrayList<BulletBasedRobotLinkRevolute> getAfterRootLinks()
+   public ArrayList<BulletRobotLinkRevolute> getAfterRootLinks()
    {
       return afterRootLinks;
    }
 
-   public ArrayList<BulletBasedRobotLinkBasics> getAllLinks()
+   public ArrayList<BulletRobotLinkBasics> getAllLinks()
    {
       return allLinks;
    }

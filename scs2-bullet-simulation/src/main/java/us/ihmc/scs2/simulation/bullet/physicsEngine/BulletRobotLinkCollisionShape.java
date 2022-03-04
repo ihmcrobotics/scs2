@@ -16,7 +16,7 @@ import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 
-public class BulletBasedRobotLinkCollisionShape
+public class BulletRobotLinkCollisionShape
 {
    private final YawPitchRollTransformDefinition collisionShapeToFrameAfterParentJoint;
    private final ReferenceFrame linkCenterOfMassFrame;
@@ -25,15 +25,15 @@ public class BulletBasedRobotLinkCollisionShape
    private final ReferenceFrame collisionShapeDefinitionFrame;
    private btCollisionShape bulletCollisionShape;
 
-   public BulletBasedRobotLinkCollisionShape(CollisionShapeDefinition collisionShapeDefinition,
-                                             ReferenceFrame frameAfterParentJoint,
-                                             ReferenceFrame linkCenterOfMassFrame)
+   public BulletRobotLinkCollisionShape(CollisionShapeDefinition collisionShapeDefinition,
+                                        ReferenceFrame frameAfterParentJoint,
+                                        ReferenceFrame linkCenterOfMassFrame)
    {
       this.linkCenterOfMassFrame = linkCenterOfMassFrame;
 
       collisionShapeToFrameAfterParentJoint = collisionShapeDefinition.getOriginPose();
       collisionShapeDefinitionFrame
-            = BulletBasedReferenceFrameMissingTools
+            = ReferenceFrameMissingTools
             .constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
                                                            new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
                                                                                   collisionShapeToFrameAfterParentJoint.getTranslation()));
