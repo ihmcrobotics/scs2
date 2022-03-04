@@ -148,15 +148,7 @@ public class BulletBasedPhysicsEngine implements PhysicsEngine
       robotList.add(bulletRobot);
       bulletRobot.createBulletMultiBody(this);
    }
-   
-   public Robot addRobot(RobotDefinition robotDefinition)
-   {
-      Robot robot = new Robot(robotDefinition, inertialFrame);
-      addRobot(robot);
-      
-      return robot;
-   }
-   
+
    public void destroy()
    {
       System.out.println("Destroy");
