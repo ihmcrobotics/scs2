@@ -67,7 +67,7 @@ public abstract class BulletRobotLinkBasics
       }
    }
 
-   public abstract void setup();
+   public abstract void setup(BulletPhysicsEngine bulletPhysicsEngine);
 
    public void createBulletCollisionShape(BulletPhysicsEngine bulletPhysicsManager)
    {

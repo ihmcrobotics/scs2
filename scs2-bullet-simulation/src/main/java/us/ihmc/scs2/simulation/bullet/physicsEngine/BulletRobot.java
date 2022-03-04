@@ -26,13 +26,11 @@ public class BulletRobot extends RobotExtension
    private final ArrayList<BulletRobotLinkRevolute> afterRootLinks = new ArrayList<>();
    private final YoRegistry yoRegistry;
    
-   public BulletRobot(Robot robot, YoRegistry physicsRegistry, BulletPhysicsEngine bulletPhysicsManager)
+   public BulletRobot(Robot robot, YoRegistry physicsRegistry, BulletPhysicsEngine bulletPhysicsEngine)
    {
       super(robot, physicsRegistry);
       robotPhysics = new BulletRobotPhysics(this);
 
-      // Initialize the jointPairingList?
-      
       yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
 
       rootBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition();
@@ -49,14 +47,12 @@ public class BulletRobot extends RobotExtension
       rootLink = new BulletRobotLinkRoot(rootSixDoFJointDefinition, rootSimFloatingRootJoint, jointNameToBulletJointIndexMap, yoRegistry);
       initializeLinkLists(rootLink, true);
 
-      rootLink.setup();
-      rootLink.createBulletCollisionShape(bulletPhysicsManager);
+      rootLink.setup(bulletPhysicsEngine);
 
       for (BulletRobotLinkRevolute link : afterRootLinks)
       {
          link.setBulletMultiBody(rootLink.getBulletMultiBody());
-         link.setup();
-         link.createBulletCollisionShape(bulletPhysicsManager);
+         link.setup(bulletPhysicsEngine);
       }
       rootLink.getBulletMultiBody().finalizeMultiDof();
    }
@@ -146,7 +142,7 @@ public class BulletRobot extends RobotExtension
    {
       for (SimJointBasics joint : getRootBody().childrenSubtreeIterable())
       {
-         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
+//         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
       }
    }
 }

@@ -38,7 +38,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    }
 
    @Override
-   public void setup()
+   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
    {
       boolean fixedBase = false;
       boolean canSleep = false;
@@ -52,12 +52,8 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       bulletMultiBody.setLinearDamping(0.1f);
       bulletMultiBody.setAngularDamping(0.9f);
       setBulletMultiBody(bulletMultiBody);
-   }
 
-   @Override
-   public void createBulletCollisionShape(BulletPhysicsEngine bulletPhysicsManager)
-   {
-      super.createBulletCollisionShape(bulletPhysicsManager);
+      createBulletCollisionShape(bulletPhysicsEngine);
       getBulletMultiBody().setBaseCollider(getBulletMultiBodyLinkCollider());
    }
 

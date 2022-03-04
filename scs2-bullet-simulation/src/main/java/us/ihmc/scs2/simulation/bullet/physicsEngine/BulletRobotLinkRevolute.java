@@ -60,7 +60,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    }
 
    @Override
-   public void setup()
+   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
    {
       Quaternion rotationFromParentGDX = new Quaternion();
       us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent
@@ -103,11 +103,8 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       bulletLink.setJointUpperLimit((float) revoluteJointDefinition.getPositionUpperLimit());
       bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
       bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
-   }
 
-   public void createBulletCollisionShape(BulletPhysicsEngine bulletPhysicsManager)
-   {
-      super.createBulletCollisionShape(bulletPhysicsManager);
+      createBulletCollisionShape(bulletPhysicsEngine);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());
    }
 
