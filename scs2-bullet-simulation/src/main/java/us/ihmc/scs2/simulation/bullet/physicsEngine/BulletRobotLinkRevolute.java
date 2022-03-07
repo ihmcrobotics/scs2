@@ -83,14 +83,19 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       Vector3 parentJointAfterFrameToLinkCenterOfMassTranslationGDX = new Vector3();
       BulletTools.toBullet(parentJointAfterFrameToLinkCenterOfMassTransformEuclid.getTranslation(), parentJointAfterFrameToLinkCenterOfMassTranslationGDX);
 
+      float linkMass = (float) getRigidBodyDefinition().getMass();
       Vector3 baseInertiaDiagonal = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
                                                 (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
                                                 (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
+      BulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
+      // TODO: Should we let Bullet compute this?
+      // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(linkMass, baseInertiaDiagonal);
+
       Vector3 jointAxis = new Vector3();
       BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
       boolean disableParentCollision = true;
       getBulletMultiBody().setupRevolute(getBulletJointIndex(),
-                                         (float) getRigidBodyDefinition().getMass(),
+                                         linkMass,
                                          baseInertiaDiagonal,
                                          parentBulletJointIndex,
                                          rotationFromParentGDX,
@@ -105,7 +110,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
       bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
 
-      createBulletCollisionShape(bulletPhysicsEngine);
+      createBulletCollider(bulletPhysicsEngine);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());
    }
 

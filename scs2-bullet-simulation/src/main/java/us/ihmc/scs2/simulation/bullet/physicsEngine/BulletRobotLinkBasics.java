@@ -26,8 +26,6 @@ public abstract class BulletRobotLinkBasics
    private BulletRobotLinkCollisionSet collisionSet;
    private int bulletJointIndex;
    private final ArrayList<BulletRobotLinkBasics> children = new ArrayList<>();
-   private final Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
-   private final RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
    private btMultiBody bulletMultiBody;
    private ReferenceFrame frameAfterJoint;
 
@@ -69,12 +67,15 @@ public abstract class BulletRobotLinkBasics
 
    public abstract void setup(BulletPhysicsEngine bulletPhysicsEngine);
 
-   public void createBulletCollisionShape(BulletPhysicsEngine bulletPhysicsManager)
+   public BulletRobotLinkCollisionSet createBulletCollisionShape()
    {
-      collisionSet = new BulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
-                                                     frameAfterJoint,
-                                                     simRigidBody.getBodyFixedFrame());
+      return collisionSet = new BulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
+                                                            frameAfterJoint,
+                                                            simRigidBody.getBodyFixedFrame());
+   }
 
+   public void createBulletCollider(BulletPhysicsEngine bulletPhysicsManager)
+   {
       bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
       bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
       bulletMultiBodyLinkCollider.setFriction(1.0f);
@@ -83,7 +84,10 @@ public abstract class BulletRobotLinkBasics
 
    public void updateBulletLinkColliderTransformFromMecanoRigidBody()
    {
-      simRigidBody.getBodyFixedFrame().getTransformToDesiredFrame(bulletColliderCenterOfMassTransformToWorldEuclid, SimulationSession.DEFAULT_INERTIAL_FRAME);
+      Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
+      RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
+      simRigidBody.getBodyFixedFrame().getTransformToDesiredFrame(bulletColliderCenterOfMassTransformToWorldEuclid,
+                                                                  SimulationSession.DEFAULT_INERTIAL_FRAME);
       BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletColliderCenterOfMassTransformToWorldBullet);
       bulletMultiBodyLinkCollider.setWorldTransform(bulletColliderCenterOfMassTransformToWorldBullet);
    }
@@ -135,15 +139,5 @@ public abstract class BulletRobotLinkBasics
    public btMultiBodyLinkCollider getBulletMultiBodyLinkCollider()
    {
       return bulletMultiBodyLinkCollider;
-   }
-
-   public RigidBodyTransform getBulletColliderCenterOfMassTransformToWorldEuclid()
-   {
-      return bulletColliderCenterOfMassTransformToWorldEuclid;
-   }
-
-   public Matrix4 getBulletColliderCenterOfMassTransformToWorldBullet()
-   {
-      return bulletColliderCenterOfMassTransformToWorldBullet;
    }
 }
