@@ -50,6 +50,7 @@ public class ConnectedShapesExperimentalBulletSimulation
       SixDoFJointDefinition rootJointDefinition = new SixDoFJointDefinition("rootJoint");
       rootBodyDefinition.addChildJoint(rootJointDefinition);
       RigidBodyDefinition rigidBody1 = ExampleExperimentalSimulationTools.newBoxRigidBody("box1", boxSize1, boxMass1, radiusOfGyrationPercent, boxApp1);
+      rigidBody1.getInertiaPose().getTranslation().add(0.01, -0.02, 0.03);
       rootJointDefinition.setSuccessor(rigidBody1);
       
       RevoluteJointDefinition pinJointDefinition = new RevoluteJointDefinition("pin");

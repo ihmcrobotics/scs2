@@ -59,7 +59,6 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
    public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
-      System.out.println("create");
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
       

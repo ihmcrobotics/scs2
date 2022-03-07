@@ -104,17 +104,17 @@ public class BulletRobot extends RobotExtension
    {
       rootLink.copyBulletJointDataToSCS();
 
-      for (BulletRobotLinkRevolute afterPelvisLink : afterRootLinks)
+      for (BulletRobotLinkRevolute afterRootLink : afterRootLinks)
       {
-         afterPelvisLink.copyBulletJointDataToSCS();
+         afterRootLink.copyBulletJointDataToSCS();
       }
    }
 
    public void afterSimulate()
    {
-      for (BulletRobotLinkRevolute afterPelvisLink : afterRootLinks)
+      for (BulletRobotLinkRevolute afterRootLink : afterRootLinks)
       {
-         afterPelvisLink.afterSimulate();
+         afterRootLink.afterSimulate();
       }
    }
 
