@@ -91,7 +91,8 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       boolean disableParentCollision = true;
       getBulletMultiBody().setupRevolute(getBulletJointIndex(),
                                          (float) getRigidBodyDefinition().getMass(),
-                                         baseInertiaDiagonal, parentBulletJointIndex,
+                                         baseInertiaDiagonal,
+                                         parentBulletJointIndex,
                                          rotationFromParentGDX,
                                          jointAxis,
                                          parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX,
