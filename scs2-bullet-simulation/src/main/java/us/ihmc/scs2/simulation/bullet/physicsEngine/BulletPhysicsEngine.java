@@ -112,7 +112,6 @@ public class BulletPhysicsEngine implements PhysicsEngine
          robot.updateFromBulletData();
          robot.updateFrames(); 
          robot.updateSensors();
-         robot.afterSimulate();
       }
    }
 

@@ -130,10 +130,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       simRevoluteJoint.setQ(jointPosition);
       float jointPVel = getBulletMultiBody().getJointVel(getBulletJointIndex());
       simRevoluteJoint.setQd(jointPVel);
-   }
 
-   public void afterSimulate()
-   {
       // https://pybullet.org/Bullet/phpBB3/viewtopic.php?p=36667&hilit=btMultiBody+joint+torque#p36667
       // Assumes fixed time step. TODO: Get time of current step
       bulletJointPosition.set(getBulletMultiBody().getJointPos(getBulletJointIndex()));
@@ -148,13 +145,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       bulletLinkAppliedTorqueX.set(linkTorque.x);
       bulletLinkAppliedTorqueY.set(linkTorque.y);
       bulletLinkAppliedTorqueX.set(linkTorque.z);
-
-      // Setting stuff
-      //      bulletMultiBody.clearForcesAndTorques();
-      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) bulletUserAddedTorque.getValue());
-      //      bulletMultiBody.get
    }
-
 
    public boolean isSameLink(RigidBodyDefinition rigidBodyDefinition)
    {

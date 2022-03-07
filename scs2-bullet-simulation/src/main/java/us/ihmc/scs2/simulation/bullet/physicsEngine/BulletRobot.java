@@ -102,14 +102,6 @@ public class BulletRobot extends RobotExtension
       }
    }
 
-   public void afterSimulate()
-   {
-      for (BulletRobotLinkRevolute afterRootLink : afterRootLinks)
-      {
-         afterRootLink.afterSimulate();
-      }
-   }
-
    public BulletRobotLinkRoot getRootLink()
    {
       return rootLink;
