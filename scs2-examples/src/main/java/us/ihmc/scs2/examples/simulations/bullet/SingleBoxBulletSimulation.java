@@ -44,12 +44,11 @@ public class SingleBoxBulletSimulation
                                                                                 boxMass,
                                                                                 boxRadiusOfGyrationPercent,
                                                                                 ColorDefinitions.DarkCyan());
-      boxRobot.getRootBodyDefinition().getInertiaPose().getTranslation().set(-0.002, 0.0, 0.0);
+      boxRobot.getRootJointDefinitions().get(0).getSuccessor().getInertiaPose().getTranslation().set(-0.002, 0.0, 0.0);
       RigidBodyTransform boxRobotTransform = new RigidBodyTransform(new YawPitchRoll(0, 0, initialBoxRoll),
                                                                     new Point3D(0.0,
-                                                                                groundWidth / 2.0 - 0.002,
-                                                                                boxZHeight / 2.0 * 1.05
-                                                                                + boxYWidth / 2.0 * Math.sin(Math.abs(initialBoxRoll))));
+                                                                                0.5,
+                                                                                0.3));
       boxRobot.getRigidBodyDefinition("boxRigidBody")
               .addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxXLength, boxYWidth, boxZHeight)));
 
