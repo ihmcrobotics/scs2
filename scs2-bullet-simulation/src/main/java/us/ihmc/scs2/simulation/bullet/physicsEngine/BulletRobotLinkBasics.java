@@ -28,6 +28,8 @@ public abstract class BulletRobotLinkBasics
    private final ArrayList<BulletRobotLinkBasics> children = new ArrayList<>();
    private btMultiBody bulletMultiBody;
    private ReferenceFrame frameAfterJoint;
+   private final Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
+   private final RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
 
    public BulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
                                 SimRigidBodyBasics simRigidBody,
@@ -84,8 +86,6 @@ public abstract class BulletRobotLinkBasics
 
    public void updateBulletLinkColliderTransformFromMecanoRigidBody()
    {
-      Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
-      RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
       simRigidBody.getBodyFixedFrame().getTransformToDesiredFrame(bulletColliderCenterOfMassTransformToWorldEuclid,
                                                                   SimulationSession.DEFAULT_INERTIAL_FRAME);
       BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletColliderCenterOfMassTransformToWorldBullet);

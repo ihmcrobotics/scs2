@@ -17,8 +17,8 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    private int linkCountingIndex = 0;
    private final int numberOfLinks;
    private final SimFloatingRootJoint rootSimFloatingRootJoint;
-//   private final RigidBodyTransform bulletAfterJointTransformToWorldEuclid = new RigidBodyTransform();
-//   private final RigidBodyTransform bulletCenterOfMassTransformToAfterParentJointEuclid = new RigidBodyTransform();
+   private final Matrix4 bulletSixDoFJointTransformToWorldBullet = new Matrix4();
+   private final RigidBodyTransform bulletSixDoFJointTransformToWorldEuclid = new RigidBodyTransform();
 
    public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
                               SimFloatingRootJoint rootSimFloatingRootJoint,
@@ -30,8 +30,6 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
       setBulletJointIndex(-1);
       numberOfLinks = countJoints(rootSimFloatingRootJoint) - 1; // which is also number of joints in this case
-
-//      bulletCenterOfMassTransformToAfterParentJointEuclid.set(getRigidBodyDefinition().getInertiaPose());
 
       addChildLinks(yoRegistry);
    }
@@ -66,8 +64,6 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    {
       updateBulletLinkColliderTransformFromMecanoRigidBody();
 
-      Matrix4 bulletSixDoFJointTransformToWorldBullet = new Matrix4();
-      RigidBodyTransform bulletSixDoFJointTransformToWorldEuclid = new RigidBodyTransform();
       rootSimFloatingRootJoint.getFrameAfterJoint().getTransformToDesiredFrame(bulletSixDoFJointTransformToWorldEuclid,
                                                                                SimulationSession.DEFAULT_INERTIAL_FRAME);
       BulletTools.toBullet(bulletSixDoFJointTransformToWorldEuclid, bulletSixDoFJointTransformToWorldBullet);
@@ -77,15 +73,10 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    @Override
    public void copyBulletJointDataToSCS()
    {
-      RigidBodyTransform bulletSixDoFJointTransformToWorldEuclidBefore = new RigidBodyTransform();
-      rootSimFloatingRootJoint.getFrameAfterJoint().getTransformToDesiredFrame(bulletSixDoFJointTransformToWorldEuclidBefore,
-                                                                               SimulationSession.DEFAULT_INERTIAL_FRAME);
+      BulletTools.toEuclid(getBulletMultiBody().getBaseWorldTransform(), bulletSixDoFJointTransformToWorldEuclid);
 
-      RigidBodyTransform bulletSixDoFJointTransformToWorldEuclidAfter = new RigidBodyTransform();
-      BulletTools.toEuclid(getBulletMultiBody().getBaseWorldTransform(), bulletSixDoFJointTransformToWorldEuclidAfter);
-
-      rootSimFloatingRootJoint.setJointPosition(bulletSixDoFJointTransformToWorldEuclidAfter.getTranslation());
-      rootSimFloatingRootJoint.setJointOrientation(bulletSixDoFJointTransformToWorldEuclidAfter.getRotation());
+      rootSimFloatingRootJoint.setJointPosition(bulletSixDoFJointTransformToWorldEuclid.getTranslation());
+      rootSimFloatingRootJoint.setJointOrientation(bulletSixDoFJointTransformToWorldEuclid.getRotation());
       rootSimFloatingRootJoint.getPredecessor().updateFramesRecursively();
       // TODO: Calculate velocity & acceleration to pack Mecano stuff?
    }
