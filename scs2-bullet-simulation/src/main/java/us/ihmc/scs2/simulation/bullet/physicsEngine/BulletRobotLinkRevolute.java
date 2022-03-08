@@ -83,15 +83,21 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       Vector3 parentJointAfterFrameToLinkCenterOfMassTranslationGDX = new Vector3();
       BulletTools.toBullet(parentJointAfterFrameToLinkCenterOfMassTransformEuclid.getTranslation(), parentJointAfterFrameToLinkCenterOfMassTranslationGDX);
 
+      float linkMass = (float) getRigidBodyDefinition().getMass();
       Vector3 baseInertiaDiagonal = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
                                                 (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
                                                 (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
+      BulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
+      // TODO: Should we let Bullet compute this?
+      // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(linkMass, baseInertiaDiagonal);
+
       Vector3 jointAxis = new Vector3();
       BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
       boolean disableParentCollision = true;
       getBulletMultiBody().setupRevolute(getBulletJointIndex(),
-                                         (float) getRigidBodyDefinition().getMass(),
-                                         baseInertiaDiagonal, parentBulletJointIndex,
+                                         linkMass,
+                                         baseInertiaDiagonal,
+                                         parentBulletJointIndex,
                                          rotationFromParentGDX,
                                          jointAxis,
                                          parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX,
@@ -104,7 +110,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
       bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
 
-      createBulletCollisionShape(bulletPhysicsEngine);
+      createBulletCollider(bulletPhysicsEngine);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());
    }
 
@@ -124,10 +130,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       simRevoluteJoint.setQ(jointPosition);
       float jointPVel = getBulletMultiBody().getJointVel(getBulletJointIndex());
       simRevoluteJoint.setQd(jointPVel);
-   }
 
-   public void afterSimulate()
-   {
       // https://pybullet.org/Bullet/phpBB3/viewtopic.php?p=36667&hilit=btMultiBody+joint+torque#p36667
       // Assumes fixed time step. TODO: Get time of current step
       bulletJointPosition.set(getBulletMultiBody().getJointPos(getBulletJointIndex()));
@@ -142,13 +145,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       bulletLinkAppliedTorqueX.set(linkTorque.x);
       bulletLinkAppliedTorqueY.set(linkTorque.y);
       bulletLinkAppliedTorqueX.set(linkTorque.z);
-
-      // Setting stuff
-      //      bulletMultiBody.clearForcesAndTorques();
-      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) bulletUserAddedTorque.getValue());
-      //      bulletMultiBody.get
    }
-
 
    public boolean isSameLink(RigidBodyDefinition rigidBodyDefinition)
    {

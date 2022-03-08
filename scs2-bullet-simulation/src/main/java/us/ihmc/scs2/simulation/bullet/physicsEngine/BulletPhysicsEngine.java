@@ -96,9 +96,9 @@ public class BulletPhysicsEngine implements PhysicsEngine
       
       for (BulletRobot robot : robotList)
       {
-         robot.getControllerManager().updateControllers(currentTime); 
-         robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT); 
-         robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values()); 
+         robot.getControllerManager().updateControllers(currentTime);
+         robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
+         robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
          robot.saveRobotBeforePhysicsState();
       }
       
@@ -112,7 +112,6 @@ public class BulletPhysicsEngine implements PhysicsEngine
          robot.updateFromBulletData();
          robot.updateFrames(); 
          robot.updateSensors();
-         robot.afterSimulate();
       }
    }
 

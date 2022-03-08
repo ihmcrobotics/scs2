@@ -113,6 +113,7 @@ public class SDFTools
       Unmarshaller um = context.createUnmarshaller();
       SDFRoot sdfRoot = (SDFRoot) um.unmarshal(sdfFile);
 
+      ensureListsNotNull(sdfRoot);
       resolvePaths(sdfRoot, allResourceDirectories);
 
       return sdfRoot;
@@ -124,9 +125,25 @@ public class SDFTools
       Unmarshaller um = context.createUnmarshaller();
       SDFRoot sdfRoot = (SDFRoot) um.unmarshal(inputStream);
 
+      ensureListsNotNull(sdfRoot);
       resolvePaths(sdfRoot, resourceDirectories, resourceClassLoader);
 
       return sdfRoot;
+   }
+
+   /** Otherwise, iteration later on will result in NullPointerException if there are none of something. */
+   public static void ensureListsNotNull(SDFRoot sdfRoot)
+   {
+      if (sdfRoot.getModels() == null)
+         sdfRoot.setModels(new ArrayList<>());
+
+      for (SDFModel model : sdfRoot.getModels())
+      {
+         if (model.getLinks() == null)
+            model.setLinks(new ArrayList<>());
+         if (model.getJoints() == null)
+            model.setJoints(new ArrayList<>());
+      }
    }
 
    public static void resolvePaths(SDFRoot sdfRoot, Collection<String> resourceDirectories)
@@ -284,10 +301,14 @@ public class SDFTools
          parentRigidBodyDefinition.addChildJoint(jointDefinition);
       }
 
-      RigidBodyDefinition rootBody = jointDefinitions.get(0).getPredecessor();
+      RigidBodyDefinition rootBody = rigidBodyDefinitions.get(0);
+      if (!jointDefinitions.isEmpty())
+      {
+         rootBody = jointDefinitions.get(0).getPredecessor();
 
-      while (rootBody.getParentJoint() != null)
-         rootBody = rootBody.getParentJoint().getPredecessor();
+         while (rootBody.getParentJoint() != null)
+            rootBody = rootBody.getParentJoint().getPredecessor();
+      }
 
       return rootBody;
    }
