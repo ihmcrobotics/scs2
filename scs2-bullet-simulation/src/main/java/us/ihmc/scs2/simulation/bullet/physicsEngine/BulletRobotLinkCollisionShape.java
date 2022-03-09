@@ -74,7 +74,7 @@ public class BulletRobotLinkCollisionShape
          || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
          || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
-         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
+         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX() / 2.0f, (float) capsuleGeometryDefinition.getLength() / 2.0f);
          bulletCollisionShape = capsuleShape;
       }
       else
