@@ -76,8 +76,7 @@ public class StackOfShapesExperimentalBulletSimulation
          {
             shapeRobot = ExampleExperimentalSimulationTools.newCapsuleRobot("Capsule" + i, boxSizeY, boxSizeZ/2.0, mass, 0.5, appearance, false, appearance);
             shapeRobot.getRigidBodyDefinition("Capsule" + i + "RigidBody")
-            //.addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeZ/2.0, boxSizeY)));
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeY, boxSizeZ/2.0)));
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeZ/2.0, boxSizeY)));
          }
          
          robotDefinitions.add(shapeRobot);
