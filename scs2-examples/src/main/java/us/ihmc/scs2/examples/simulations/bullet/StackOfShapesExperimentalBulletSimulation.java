@@ -44,6 +44,9 @@ public class StackOfShapesExperimentalBulletSimulation
       double boxSizeY = 0.08;
       double boxSizeZ = 0.1;
       double mass = 0.2;
+//      String typeShape = "BOX";
+//      String typeShape = "SPHERE";
+//      String typeShape = "CYLINDER";
       String typeShape = "CAPSULE";
 
       for (int i = 0; i < numberOfBlocks; i++)
@@ -67,13 +70,14 @@ public class StackOfShapesExperimentalBulletSimulation
          {
             shapeRobot = ExampleExperimentalSimulationTools.newCylinderRobot("Cylinder" + i, boxSizeY, boxSizeZ, mass, 0.5, appearance, false, appearance);
             shapeRobot.getRigidBodyDefinition("Cylinder" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Cylinder3DDefinition(boxSizeY, boxSizeZ)));
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Cylinder3DDefinition(boxSizeZ, boxSizeY)));
          }
          else 
          {
             shapeRobot = ExampleExperimentalSimulationTools.newCapsuleRobot("Capsule" + i, boxSizeY, boxSizeZ/2.0, mass, 0.5, appearance, false, appearance);
             shapeRobot.getRigidBodyDefinition("Capsule" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeY, boxSizeZ)));
+            //.addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeZ/2.0, boxSizeY)));
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeY, boxSizeZ/2.0)));
          }
          
          robotDefinitions.add(shapeRobot);

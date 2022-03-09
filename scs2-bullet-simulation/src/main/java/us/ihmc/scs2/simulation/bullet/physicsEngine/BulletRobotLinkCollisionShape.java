@@ -3,6 +3,8 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.*;
+import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
+
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
@@ -74,7 +76,7 @@ public class BulletRobotLinkCollisionShape
          || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
          || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
-         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX() / 2.0f, (float) capsuleGeometryDefinition.getLength() / 2.0f);
+         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
          bulletCollisionShape = capsuleShape;
       }
       else
