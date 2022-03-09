@@ -27,6 +27,12 @@ import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 /**
+ * Documentation:
+ * https://web.archive.org/web/20170706235814/http://www.bulletphysics.org/mediawiki-1.5.8/index.php/Main_Page
+ * https://web.archive.org/web/20170602122143/http://www.bulletphysics.org/mediawiki-1.5.8/index.php/Collision_Callbacks_and_Triggers
+ * https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=2568
+ * https://github.com/kripken/bullet/blob/master/Demos/CollisionInterfaceDemo/CollisionInterfaceDemo.cpp
+ *
  * CF_CUSTOM_MATERIAL_CALLBACK has to be added to get a callback when contacts are initially made
  */
 public class BulletPhysicsEngine implements PhysicsEngine
