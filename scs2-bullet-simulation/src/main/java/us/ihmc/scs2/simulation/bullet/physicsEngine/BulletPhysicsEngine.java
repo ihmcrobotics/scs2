@@ -69,7 +69,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       Vector3 gravity = new Vector3(0.0f, 0.0f, -9.81f);
       multiBodyDynamicsWorld.setGravity(gravity);
 
-      BulletTools.setupPostTickCallback(multiBodyDynamicsWorld, postTickCallbacks);
+//      BulletTools.setupPostTickCallback(multiBodyDynamicsWorld, postTickCallbacks);
    }
 
    @Override
@@ -110,7 +110,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
       for (BulletRobot robot : robotList)
       {
-         robot.updateFromBulletData();
+         robot.updateFromBulletData(this);
          robot.updateFrames(); 
          robot.updateSensors();
       }
@@ -217,4 +217,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
       return physicsEngineRegistry;
    }
 
+   public btMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
+   {
+      return multiBodyDynamicsWorld;
+   }
 }
