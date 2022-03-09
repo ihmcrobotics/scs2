@@ -12,9 +12,7 @@ import com.badlogic.gdx.physics.bullet.collision.CollisionConstants;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
-import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
+import com.badlogic.gdx.physics.bullet.dynamics.*;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
@@ -29,6 +27,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.log.LogTools;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 
 public class BulletTools
 {
@@ -242,5 +241,21 @@ public class BulletTools
       int collisionGroup = 2; // Multi bodies need to be in a separate collision group
       int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
       multiBodyDynamicsWorld.addCollisionObject(collisionShape, collisionGroup, collisionGroupMask);
+   }
+
+   public static void setupPostTickCallback(btMultiBodyDynamicsWorld multiBodyDynamicsWorld, ArrayList<Runnable> postTickCallbacks)
+   {
+      // Note: Apparently you can't have both pre and post tick callbacks, so we'll just do with post
+      new InternalTickCallback(multiBodyDynamicsWorld, false)
+      {
+         @Override
+         public void onInternalTick(btDynamicsWorld dynamicsWorld, float timeStep)
+         {
+            for (Runnable postTickRunnable : postTickCallbacks)
+            {
+               postTickRunnable.run();
+            }
+         }
+      };
    }
 }

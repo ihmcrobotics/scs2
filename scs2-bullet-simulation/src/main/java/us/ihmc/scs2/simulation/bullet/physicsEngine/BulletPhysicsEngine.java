@@ -11,11 +11,7 @@ import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
-import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
+import com.badlogic.gdx.physics.bullet.dynamics.*;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -30,6 +26,9 @@ import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
+/**
+ * CF_CUSTOM_MATERIAL_CALLBACK has to be added to get a callback when contacts are initially made
+ */
 public class BulletPhysicsEngine implements PhysicsEngine
 {
    static
@@ -55,7 +54,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
    private boolean initialize = true;
-   boolean test = true;
+   private final ArrayList<Runnable> postTickCallbacks = new ArrayList<>();
 
    public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
@@ -69,6 +68,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
       multiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(collisionDispatcher, broadphase, solver, collisionConfiguration);
       Vector3 gravity = new Vector3(0.0f, 0.0f, -9.81f);
       multiBodyDynamicsWorld.setGravity(gravity);
+
+//      BulletTools.setupPostTickCallback(multiBodyDynamicsWorld, postTickCallbacks);
    }
 
    @Override
@@ -109,7 +110,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
       for (BulletRobot robot : robotList)
       {
-         robot.updateFromBulletData();
+         robot.updateFromBulletData(this);
          robot.updateFrames(); 
          robot.updateSensors();
       }
@@ -174,6 +175,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       BulletTools.addMultiBodyCollisionShapeToWorld(multiBodyDynamicsWorld, collisionShape);
    }
+
+   public void addPostTickCallback(Runnable postTickCallback)
+   {
+      postTickCallbacks.add(postTickCallback);
+   }
    
    @Override
    public ReferenceFrame getInertialFrame()
@@ -211,4 +217,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
       return physicsEngineRegistry;
    }
 
+   public btMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
+   {
+      return multiBodyDynamicsWorld;
+   }
 }

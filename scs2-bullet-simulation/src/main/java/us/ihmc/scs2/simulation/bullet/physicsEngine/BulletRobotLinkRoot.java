@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.simulation.SimulationSession;
@@ -19,6 +20,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    private final SimFloatingRootJoint rootSimFloatingRootJoint;
    private final Matrix4 bulletSixDoFJointTransformToWorldBullet = new Matrix4();
    private final RigidBodyTransform bulletSixDoFJointTransformToWorldEuclid = new RigidBodyTransform();
+   private final Vector3D bulletBaseLinearVelocityEuclid = new Vector3D();
 
    public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
                               SimFloatingRootJoint rootSimFloatingRootJoint,
@@ -74,10 +76,11 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    public void copyBulletJointDataToSCS()
    {
       BulletTools.toEuclid(getBulletMultiBody().getBaseWorldTransform(), bulletSixDoFJointTransformToWorldEuclid);
+      BulletTools.toEuclid(getBulletMultiBody().getBaseVel(), bulletBaseLinearVelocityEuclid);
 
       rootSimFloatingRootJoint.setJointPosition(bulletSixDoFJointTransformToWorldEuclid.getTranslation());
       rootSimFloatingRootJoint.setJointOrientation(bulletSixDoFJointTransformToWorldEuclid.getRotation());
-      rootSimFloatingRootJoint.getPredecessor().updateFramesRecursively();
+      rootSimFloatingRootJoint.setJointLinearVelocity(bulletBaseLinearVelocityEuclid);
       // TODO: Calculate velocity & acceleration to pack Mecano stuff?
    }
 
