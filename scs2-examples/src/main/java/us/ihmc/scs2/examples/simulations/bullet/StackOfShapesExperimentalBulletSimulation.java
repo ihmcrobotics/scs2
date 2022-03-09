@@ -8,6 +8,7 @@ import us.ihmc.commons.RandomNumbers;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
+import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
@@ -28,7 +29,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 
 public class StackOfShapesExperimentalBulletSimulation
 {
-   public StackOfShapesExperimentalBulletSimulation()
+   public StackOfShapesExperimentalBulletSimulation(String typeShape)
    {  
       double groundWidth = 5.0;
       double groundLength = 5.0;
@@ -40,55 +41,51 @@ public class StackOfShapesExperimentalBulletSimulation
 
       List<RobotDefinition> robotDefinitions = new ArrayList<>();
 
-      double boxSizeX = 0.1;
-      double boxSizeY = 0.08;
-      double boxSizeZ = 0.1;
+      double shapeSizeX = 0.1;
+      double shapeSizeY = 0.08;
+      double shapeSizeZ = 0.1;
       double mass = 0.2;
-//      String typeShape = "BOX";
-//      String typeShape = "SPHERE";
-//      String typeShape = "CYLINDER";
-      String typeShape = "CAPSULE";
 
       for (int i = 0; i < numberOfBlocks; i++)
       {
          RobotDefinition shapeRobot = new RobotDefinition();
          
-         ColorDefinition appearance = ColorDefinition.rgb(random.nextInt());
-         if (typeShape == "BOX")
-         {
-            shapeRobot = ExampleExperimentalSimulationTools.newBoxRobot("Block" + i, boxSizeX, boxSizeY, boxSizeZ, mass, 0.5, appearance); 
-            shapeRobot.getRigidBodyDefinition("Block" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxSizeX, boxSizeY, boxSizeZ)));
-         }
-         else if (typeShape == "SPHERE")
-         {
-            shapeRobot = ExampleExperimentalSimulationTools.newSphereRobot("Sphere" + i, boxSizeX, mass, 0.5, appearance, false, appearance);
-            shapeRobot.getRigidBodyDefinition("Sphere" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Sphere3DDefinition(boxSizeX)));
-         }
-         else if (typeShape == "CYLINDER")
-         {
-            shapeRobot = ExampleExperimentalSimulationTools.newCylinderRobot("Cylinder" + i, boxSizeY, boxSizeZ, mass, 0.5, appearance, false, appearance);
-            shapeRobot.getRigidBodyDefinition("Cylinder" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Cylinder3DDefinition(boxSizeZ, boxSizeY)));
-         }
-         else 
-         {
-            shapeRobot = ExampleExperimentalSimulationTools.newCapsuleRobot("Capsule" + i, boxSizeY, boxSizeZ/2.0, mass, 0.5, appearance, false, appearance);
-            shapeRobot.getRigidBodyDefinition("Capsule" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(boxSizeZ/2.0, boxSizeY)));
-         }
-         
-         robotDefinitions.add(shapeRobot);
-         
          double x = 0.0;
          double y = i * 0.01;
-         double z = boxSizeZ * 2.1 * (i + 1.0);
+         double z = shapeSizeZ * 2.1 * (i + 1.0);
 
          double yaw = 0.0;
          double pitch = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
          double roll = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
-
+         
+         ColorDefinition appearance = ColorDefinition.rgb(random.nextInt());
+         if (typeShape == "BOX")
+         {
+            shapeRobot = ExampleExperimentalSimulationTools.newBoxRobot("Block" + i, shapeSizeX, shapeSizeY, shapeSizeZ, mass, 0.5, appearance);
+            shapeRobot.getRigidBodyDefinition("Block" + i + "RigidBody")
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new YawPitchRollTransformDefinition(x, y, z, yaw, pitch, roll), new Box3DDefinition(shapeSizeX, shapeSizeY, shapeSizeZ)));
+         }
+         else if (typeShape == "SPHERE")
+         {
+            shapeRobot = ExampleExperimentalSimulationTools.newSphereRobot("Sphere" + i, shapeSizeX, mass, 0.5, appearance, false, appearance);
+            shapeRobot.getRigidBodyDefinition("Sphere" + i + "RigidBody")
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Sphere3DDefinition(shapeSizeX)));
+         }
+         else if (typeShape == "CYLINDER")
+         {
+            shapeRobot = ExampleExperimentalSimulationTools.newCylinderRobot("Cylinder" + i, shapeSizeY, shapeSizeZ, mass, 0.5, appearance, false, appearance);
+            shapeRobot.getRigidBodyDefinition("Cylinder" + i + "RigidBody")
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Cylinder3DDefinition(shapeSizeZ, shapeSizeY)));
+         }
+         else 
+         {
+            shapeRobot = ExampleExperimentalSimulationTools.newCapsuleRobot("Capsule" + i, shapeSizeY, shapeSizeZ/2.0, mass, 0.5, appearance, false, appearance);
+            shapeRobot.getRigidBodyDefinition("Capsule" + i + "RigidBody")
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new Capsule3DDefinition(shapeSizeZ/2.0, shapeSizeY)));
+         }
+         
+         robotDefinitions.add(shapeRobot);
+ 
          shapeRobot.getRootJointDefinitions().get(0).setInitialJointState(new SixDoFJointState(new YawPitchRoll(yaw, pitch, roll), new Point3D(x, y, z)));
       }
       
@@ -104,8 +101,5 @@ public class StackOfShapesExperimentalBulletSimulation
       SessionVisualizer.startSessionVisualizer(simulationSession);
    }
    
-   public static void main(String[] args)
-   {
-      new StackOfShapesExperimentalBulletSimulation();
-   }
+
 }
