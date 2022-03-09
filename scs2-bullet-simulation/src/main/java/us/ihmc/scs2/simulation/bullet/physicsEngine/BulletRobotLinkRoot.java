@@ -21,6 +21,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    private final Matrix4 bulletSixDoFJointTransformToWorldBullet = new Matrix4();
    private final RigidBodyTransform bulletSixDoFJointTransformToWorldEuclid = new RigidBodyTransform();
    private final Vector3D bulletBaseLinearVelocityEuclid = new Vector3D();
+   private final Vector3D bulletBaseAngularVelocityEuclid = new Vector3D();
 
    public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
                               SimFloatingRootJoint rootSimFloatingRootJoint,
@@ -77,10 +78,12 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    {
       BulletTools.toEuclid(getBulletMultiBody().getBaseWorldTransform(), bulletSixDoFJointTransformToWorldEuclid);
       BulletTools.toEuclid(getBulletMultiBody().getBaseVel(), bulletBaseLinearVelocityEuclid);
+      BulletTools.toEuclid(getBulletMultiBody().getBaseOmega(), bulletBaseAngularVelocityEuclid);
 
       rootSimFloatingRootJoint.setJointPosition(bulletSixDoFJointTransformToWorldEuclid.getTranslation());
       rootSimFloatingRootJoint.setJointOrientation(bulletSixDoFJointTransformToWorldEuclid.getRotation());
       rootSimFloatingRootJoint.setJointLinearVelocity(bulletBaseLinearVelocityEuclid);
+      rootSimFloatingRootJoint.setJointAngularVelocity(bulletBaseAngularVelocityEuclid);
       // TODO: Calculate velocity & acceleration to pack Mecano stuff?
    }
 
