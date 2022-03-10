@@ -45,103 +45,103 @@ public class BulletTools
       }
    }
 
-   public static void toBullet(AffineTransform euclidAffine, Matrix4 BulletAffineToPack)
+   public static void toBullet(AffineTransform euclidAffine, Matrix4 bulletAffineToPack)
    {
-      BulletAffineToPack.val[Matrix4.M00] = (float) euclidAffine.getM00();
-      BulletAffineToPack.val[Matrix4.M01] = (float) euclidAffine.getM01();
-      BulletAffineToPack.val[Matrix4.M02] = (float) euclidAffine.getM02();
-      BulletAffineToPack.val[Matrix4.M10] = (float) euclidAffine.getM10();
-      BulletAffineToPack.val[Matrix4.M11] = (float) euclidAffine.getM11();
-      BulletAffineToPack.val[Matrix4.M12] = (float) euclidAffine.getM12();
-      BulletAffineToPack.val[Matrix4.M20] = (float) euclidAffine.getM20();
-      BulletAffineToPack.val[Matrix4.M21] = (float) euclidAffine.getM21();
-      BulletAffineToPack.val[Matrix4.M22] = (float) euclidAffine.getM22();
-      BulletAffineToPack.val[Matrix4.M03] = (float) euclidAffine.getM03();
-      BulletAffineToPack.val[Matrix4.M13] = (float) euclidAffine.getM13();
-      BulletAffineToPack.val[Matrix4.M23] = (float) euclidAffine.getM23();
+      bulletAffineToPack.val[Matrix4.M00] = (float) euclidAffine.getM00();
+      bulletAffineToPack.val[Matrix4.M01] = (float) euclidAffine.getM01();
+      bulletAffineToPack.val[Matrix4.M02] = (float) euclidAffine.getM02();
+      bulletAffineToPack.val[Matrix4.M10] = (float) euclidAffine.getM10();
+      bulletAffineToPack.val[Matrix4.M11] = (float) euclidAffine.getM11();
+      bulletAffineToPack.val[Matrix4.M12] = (float) euclidAffine.getM12();
+      bulletAffineToPack.val[Matrix4.M20] = (float) euclidAffine.getM20();
+      bulletAffineToPack.val[Matrix4.M21] = (float) euclidAffine.getM21();
+      bulletAffineToPack.val[Matrix4.M22] = (float) euclidAffine.getM22();
+      bulletAffineToPack.val[Matrix4.M03] = (float) euclidAffine.getM03();
+      bulletAffineToPack.val[Matrix4.M13] = (float) euclidAffine.getM13();
+      bulletAffineToPack.val[Matrix4.M23] = (float) euclidAffine.getM23();
    }
 
-   public static void toEuclid(Matrix4 BulletAffine, AffineTransform euclidAffine)
+   public static void toEuclid(Matrix4 bulletAffine, AffineTransform euclidAffine)
    {
-      euclidAffine.getLinearTransform().setM00(BulletAffine.val[Matrix4.M00]);
-      euclidAffine.getLinearTransform().setM01(BulletAffine.val[Matrix4.M01]);
-      euclidAffine.getLinearTransform().setM02(BulletAffine.val[Matrix4.M02]);
-      euclidAffine.getLinearTransform().setM10(BulletAffine.val[Matrix4.M10]);
-      euclidAffine.getLinearTransform().setM11(BulletAffine.val[Matrix4.M11]);
-      euclidAffine.getLinearTransform().setM12(BulletAffine.val[Matrix4.M12]);
-      euclidAffine.getLinearTransform().setM20(BulletAffine.val[Matrix4.M20]);
-      euclidAffine.getLinearTransform().setM21(BulletAffine.val[Matrix4.M21]);
-      euclidAffine.getLinearTransform().setM22(BulletAffine.val[Matrix4.M22]);
+      euclidAffine.getLinearTransform().setM00(bulletAffine.val[Matrix4.M00]);
+      euclidAffine.getLinearTransform().setM01(bulletAffine.val[Matrix4.M01]);
+      euclidAffine.getLinearTransform().setM02(bulletAffine.val[Matrix4.M02]);
+      euclidAffine.getLinearTransform().setM10(bulletAffine.val[Matrix4.M10]);
+      euclidAffine.getLinearTransform().setM11(bulletAffine.val[Matrix4.M11]);
+      euclidAffine.getLinearTransform().setM12(bulletAffine.val[Matrix4.M12]);
+      euclidAffine.getLinearTransform().setM20(bulletAffine.val[Matrix4.M20]);
+      euclidAffine.getLinearTransform().setM21(bulletAffine.val[Matrix4.M21]);
+      euclidAffine.getLinearTransform().setM22(bulletAffine.val[Matrix4.M22]);
       euclidAffine.getLinearTransform().normalize();
-      euclidAffine.getTranslation().setX(BulletAffine.val[Matrix4.M03]);
-      euclidAffine.getTranslation().setY(BulletAffine.val[Matrix4.M13]);
-      euclidAffine.getTranslation().setZ(BulletAffine.val[Matrix4.M23]);
+      euclidAffine.getTranslation().setX(bulletAffine.val[Matrix4.M03]);
+      euclidAffine.getTranslation().setY(bulletAffine.val[Matrix4.M13]);
+      euclidAffine.getTranslation().setZ(bulletAffine.val[Matrix4.M23]);
    }
 
-   public static void toEuclid(Matrix4 BulletAffine, RotationMatrix euclidRotationMatrix)
+   public static void toEuclid(Matrix4 bulletAffine, RotationMatrix euclidRotationMatrix)
    {
-      euclidRotationMatrix.setAndNormalize(BulletAffine.val[Matrix4.M00],
-                                           BulletAffine.val[Matrix4.M01],
-                                           BulletAffine.val[Matrix4.M02],
-                                           BulletAffine.val[Matrix4.M10],
-                                           BulletAffine.val[Matrix4.M11],
-                                           BulletAffine.val[Matrix4.M12],
-                                           BulletAffine.val[Matrix4.M20],
-                                           BulletAffine.val[Matrix4.M21],
-                                           BulletAffine.val[Matrix4.M22]);
+      euclidRotationMatrix.setAndNormalize(bulletAffine.val[Matrix4.M00],
+                                           bulletAffine.val[Matrix4.M01],
+                                           bulletAffine.val[Matrix4.M02],
+                                           bulletAffine.val[Matrix4.M10],
+                                           bulletAffine.val[Matrix4.M11],
+                                           bulletAffine.val[Matrix4.M12],
+                                           bulletAffine.val[Matrix4.M20],
+                                           bulletAffine.val[Matrix4.M21],
+                                           bulletAffine.val[Matrix4.M22]);
    }
 
-   public static void toBullet(RigidBodyTransform rigidBodyTransform, Matrix4 BulletAffineToPack)
+   public static void toBullet(RigidBodyTransform rigidBodyTransform, Matrix4 bulletAffineToPack)
    {
-      BulletAffineToPack.val[Matrix4.M00] = (float) rigidBodyTransform.getM00();
-      BulletAffineToPack.val[Matrix4.M01] = (float) rigidBodyTransform.getM01();
-      BulletAffineToPack.val[Matrix4.M02] = (float) rigidBodyTransform.getM02();
-      BulletAffineToPack.val[Matrix4.M10] = (float) rigidBodyTransform.getM10();
-      BulletAffineToPack.val[Matrix4.M11] = (float) rigidBodyTransform.getM11();
-      BulletAffineToPack.val[Matrix4.M12] = (float) rigidBodyTransform.getM12();
-      BulletAffineToPack.val[Matrix4.M20] = (float) rigidBodyTransform.getM20();
-      BulletAffineToPack.val[Matrix4.M21] = (float) rigidBodyTransform.getM21();
-      BulletAffineToPack.val[Matrix4.M22] = (float) rigidBodyTransform.getM22();
-      BulletAffineToPack.val[Matrix4.M03] = (float) rigidBodyTransform.getM03();
-      BulletAffineToPack.val[Matrix4.M13] = (float) rigidBodyTransform.getM13();
-      BulletAffineToPack.val[Matrix4.M23] = (float) rigidBodyTransform.getM23();
+      bulletAffineToPack.val[Matrix4.M00] = (float) rigidBodyTransform.getM00();
+      bulletAffineToPack.val[Matrix4.M01] = (float) rigidBodyTransform.getM01();
+      bulletAffineToPack.val[Matrix4.M02] = (float) rigidBodyTransform.getM02();
+      bulletAffineToPack.val[Matrix4.M10] = (float) rigidBodyTransform.getM10();
+      bulletAffineToPack.val[Matrix4.M11] = (float) rigidBodyTransform.getM11();
+      bulletAffineToPack.val[Matrix4.M12] = (float) rigidBodyTransform.getM12();
+      bulletAffineToPack.val[Matrix4.M20] = (float) rigidBodyTransform.getM20();
+      bulletAffineToPack.val[Matrix4.M21] = (float) rigidBodyTransform.getM21();
+      bulletAffineToPack.val[Matrix4.M22] = (float) rigidBodyTransform.getM22();
+      bulletAffineToPack.val[Matrix4.M03] = (float) rigidBodyTransform.getM03();
+      bulletAffineToPack.val[Matrix4.M13] = (float) rigidBodyTransform.getM13();
+      bulletAffineToPack.val[Matrix4.M23] = (float) rigidBodyTransform.getM23();
    }
 
-   public static void toEuclid(Matrix4 BulletAffine, RigidBodyTransform rigidBodyTransform)
+   public static void toEuclid(Matrix4 bulletAffine, RigidBodyTransform rigidBodyTransform)
    {
-      rigidBodyTransform.getRotation().setAndNormalize(BulletAffine.val[Matrix4.M00],
-                                                       BulletAffine.val[Matrix4.M01],
-                                                       BulletAffine.val[Matrix4.M02],
-                                                       BulletAffine.val[Matrix4.M10],
-                                                       BulletAffine.val[Matrix4.M11],
-                                                       BulletAffine.val[Matrix4.M12],
-                                                       BulletAffine.val[Matrix4.M20],
-                                                       BulletAffine.val[Matrix4.M21],
-                                                       BulletAffine.val[Matrix4.M22]);
-      rigidBodyTransform.getTranslation().setX(BulletAffine.val[Matrix4.M03]);
-      rigidBodyTransform.getTranslation().setY(BulletAffine.val[Matrix4.M13]);
-      rigidBodyTransform.getTranslation().setZ(BulletAffine.val[Matrix4.M23]);
+      rigidBodyTransform.getRotation().setAndNormalize(bulletAffine.val[Matrix4.M00],
+                                                       bulletAffine.val[Matrix4.M01],
+                                                       bulletAffine.val[Matrix4.M02],
+                                                       bulletAffine.val[Matrix4.M10],
+                                                       bulletAffine.val[Matrix4.M11],
+                                                       bulletAffine.val[Matrix4.M12],
+                                                       bulletAffine.val[Matrix4.M20],
+                                                       bulletAffine.val[Matrix4.M21],
+                                                       bulletAffine.val[Matrix4.M22]);
+      rigidBodyTransform.getTranslation().setX(bulletAffine.val[Matrix4.M03]);
+      rigidBodyTransform.getTranslation().setY(bulletAffine.val[Matrix4.M13]);
+      rigidBodyTransform.getTranslation().setZ(bulletAffine.val[Matrix4.M23]);
    }
 
-   public static void toBullet(RotationMatrix euclidRotationMatrix, Matrix4 BulletRotationMatrix)
+   public static void toBullet(RotationMatrix euclidRotationMatrix, Matrix4 bulletRotationMatrix)
    {
-      BulletRotationMatrix.val[Matrix4.M00] = (float) euclidRotationMatrix.getM00();
-      BulletRotationMatrix.val[Matrix4.M01] = (float) euclidRotationMatrix.getM01();
-      BulletRotationMatrix.val[Matrix4.M02] = (float) euclidRotationMatrix.getM02();
-      BulletRotationMatrix.val[Matrix4.M10] = (float) euclidRotationMatrix.getM10();
-      BulletRotationMatrix.val[Matrix4.M11] = (float) euclidRotationMatrix.getM11();
-      BulletRotationMatrix.val[Matrix4.M12] = (float) euclidRotationMatrix.getM12();
-      BulletRotationMatrix.val[Matrix4.M20] = (float) euclidRotationMatrix.getM20();
-      BulletRotationMatrix.val[Matrix4.M21] = (float) euclidRotationMatrix.getM21();
-      BulletRotationMatrix.val[Matrix4.M22] = (float) euclidRotationMatrix.getM22();
+      bulletRotationMatrix.val[Matrix4.M00] = (float) euclidRotationMatrix.getM00();
+      bulletRotationMatrix.val[Matrix4.M01] = (float) euclidRotationMatrix.getM01();
+      bulletRotationMatrix.val[Matrix4.M02] = (float) euclidRotationMatrix.getM02();
+      bulletRotationMatrix.val[Matrix4.M10] = (float) euclidRotationMatrix.getM10();
+      bulletRotationMatrix.val[Matrix4.M11] = (float) euclidRotationMatrix.getM11();
+      bulletRotationMatrix.val[Matrix4.M12] = (float) euclidRotationMatrix.getM12();
+      bulletRotationMatrix.val[Matrix4.M20] = (float) euclidRotationMatrix.getM20();
+      bulletRotationMatrix.val[Matrix4.M21] = (float) euclidRotationMatrix.getM21();
+      bulletRotationMatrix.val[Matrix4.M22] = (float) euclidRotationMatrix.getM22();
    }
 
-   public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, Quaternion BulletQuaternion)
+   public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, Quaternion bulletQuaternion)
    {
-      BulletQuaternion.x = euclidQuaternion.getX32();
-      BulletQuaternion.y = euclidQuaternion.getY32();
-      BulletQuaternion.z = euclidQuaternion.getZ32();
-      BulletQuaternion.w = euclidQuaternion.getS32();
+      bulletQuaternion.x = euclidQuaternion.getX32();
+      bulletQuaternion.y = euclidQuaternion.getY32();
+      bulletQuaternion.z = euclidQuaternion.getZ32();
+      bulletQuaternion.w = euclidQuaternion.getS32();
    }
 
    public static Vector3 toBullet(Tuple3DReadOnly euclidTuple)
@@ -154,42 +154,42 @@ public class BulletTools
       return new Vector2(euclidTuple.getX32(), euclidTuple.getY32());
    }
 
-   public static void toBullet(Tuple3DReadOnly euclidTuple, Vector3 BulletVector3)
+   public static void toBullet(Tuple3DReadOnly euclidTuple, Vector3 bulletVector3)
    {
-      BulletVector3.set(euclidTuple.getX32(), euclidTuple.getY32(), euclidTuple.getZ32());
+      bulletVector3.set(euclidTuple.getX32(), euclidTuple.getY32(), euclidTuple.getZ32());
    }
 
-   public static void toEuclid(Vector3 BulletVector3, Vector3DBasics euclidVector3D32)
+   public static void toEuclid(Vector3 bulletVector3, Vector3DBasics euclidVector3D32)
    {
-      euclidVector3D32.set(BulletVector3.x, BulletVector3.y, BulletVector3.z);
+      euclidVector3D32.set(bulletVector3.x, bulletVector3.y, bulletVector3.z);
    }
 
-   public static void toEuclid(Vector3 BulletVector3, Point3DBasics euclidPoint3D32)
+   public static void toEuclid(Vector3 bulletVector3, Point3DBasics euclidPoint3D32)
    {
-      euclidPoint3D32.set(BulletVector3.x, BulletVector3.y, BulletVector3.z);
+      euclidPoint3D32.set(bulletVector3.x, bulletVector3.y, bulletVector3.z);
    }
 
-   public static void toEuclid(Matrix4 BulletAffine, Point3DBasics euclidPoint)
+   public static void toEuclid(Matrix4 bulletAffine, Point3DBasics euclidPoint)
    {
-      euclidPoint.set(BulletAffine.val[Matrix4.M03],
-                      BulletAffine.val[Matrix4.M13],
-                      BulletAffine.val[Matrix4.M23]);
+      euclidPoint.set(bulletAffine.val[Matrix4.M03],
+                      bulletAffine.val[Matrix4.M13],
+                      bulletAffine.val[Matrix4.M23]);
    }
 
-   public static void toBullet(Point3DReadOnly euclidPoint, Matrix4 BulletAffine)
+   public static void toBullet(Point3DReadOnly euclidPoint, Matrix4 bulletAffine)
    {
-      BulletAffine.setTranslation(euclidPoint.getX32(), euclidPoint.getY32(), euclidPoint.getZ32());
+      bulletAffine.setTranslation(euclidPoint.getX32(), euclidPoint.getY32(), euclidPoint.getZ32());
    }
 
-   public static void toBullet(Pose3DReadOnly euclidPose, RigidBodyTransform tempTransform, Matrix4 BulletAffine)
+   public static void toBullet(Pose3DReadOnly euclidPose, RigidBodyTransform tempTransform, Matrix4 bulletAffine)
    {
       euclidPose.get(tempTransform);
-      toBullet(tempTransform, BulletAffine);
+      toBullet(tempTransform, bulletAffine);
    }
 
-   public static void toBullet(javafx.scene.paint.Color javaFXColor, Color BulletColor)
+   public static void toBullet(javafx.scene.paint.Color javaFXColor, Color bulletColor)
    {
-      BulletColor.set((float) javaFXColor.getRed(), (float) javaFXColor.getGreen(), (float) javaFXColor.getBlue(), (float) javaFXColor.getOpacity());
+      bulletColor.set((float) javaFXColor.getRed(), (float) javaFXColor.getGreen(), (float) javaFXColor.getBlue(), (float) javaFXColor.getOpacity());
    }
 
    public static Color toBullet(javafx.scene.paint.Color javaFXColor)
