@@ -48,22 +48,21 @@ public class StackOfShapesExperimentalBulletSimulation
 
       for (int i = 0; i < numberOfBlocks; i++)
       {
-         RobotDefinition shapeRobot = new RobotDefinition();
+         double intertiaPoseX = 0.05;
+         double intertiaPoseY = 0.05;
+         double intertiaPoseZ = shapeSizeZ * 2.1 * (i + 1.0);
+         double intertiaPoseYaw = 0.01;
+         double intertiaPosePitch = 0.01;
+         double intertiaPoseRoll = 0.01;
          
-         double x = 0.0;
-         double y = i * 0.01;
-         double z = shapeSizeZ * 2.1 * (i + 1.0);
-
-         double yaw = 0.0;
-         double pitch = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
-         double roll = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
+         RobotDefinition shapeRobot = new RobotDefinition();
          
          ColorDefinition appearance = ColorDefinition.rgb(random.nextInt());
          if (typeShape == "BOX")
          {
             shapeRobot = ExampleExperimentalSimulationTools.newBoxRobot("Block" + i, shapeSizeX, shapeSizeY, shapeSizeZ, mass, 0.5, appearance);
             shapeRobot.getRigidBodyDefinition("Block" + i + "RigidBody")
-            .addCollisionShapeDefinition(new CollisionShapeDefinition(new YawPitchRollTransformDefinition(x, y, z, yaw, pitch, roll), new Box3DDefinition(shapeSizeX, shapeSizeY, shapeSizeZ)));
+            .addCollisionShapeDefinition(new CollisionShapeDefinition(new YawPitchRollTransformDefinition(intertiaPoseX, intertiaPoseY, intertiaPoseZ, intertiaPoseYaw, intertiaPosePitch, intertiaPoseRoll), new Box3DDefinition(shapeSizeX, shapeSizeY, shapeSizeZ)));
          }
          else if (typeShape == "SPHERE")
          {
@@ -85,6 +84,14 @@ public class StackOfShapesExperimentalBulletSimulation
          }
          
          robotDefinitions.add(shapeRobot);
+         
+         double x = 0.0;
+         double y = i * 0.01;
+         double z = shapeSizeZ * 2.1 * (i + 1.0);
+
+         double yaw = 0.0;
+         double pitch = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
+         double roll = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
  
          shapeRobot.getRootJointDefinitions().get(0).setInitialJointState(new SixDoFJointState(new YawPitchRoll(yaw, pitch, roll), new Point3D(x, y, z)));
       }
