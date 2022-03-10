@@ -34,6 +34,9 @@ public class BulletDebugDrawingNode extends Group
    {
       this.multiBodyDynamicsWorld = multiBodyDynamicsWorld;
 
+      updateDebugDrawings.set(true);
+      showDebugDrawings.set(true);
+
       btIDebugDraw = new btIDebugDraw()
       {
          @Override
