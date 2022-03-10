@@ -78,6 +78,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
 //      BulletTools.setupPostTickCallback(multiBodyDynamicsWorld, postTickCallbacks);
    }
 
+   private void setupDrawingDebugMeshes()
+   {
+
+   }
+
    @Override
    public boolean initialize(Vector3DReadOnly gravity)
    {

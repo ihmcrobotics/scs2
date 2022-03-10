@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang3.mutable.MutableObject;
 
@@ -235,6 +236,33 @@ public class SessionVisualizer
       });
 
       return sessionVisualizerControls.getValue();
+   }
+
+   public static SessionVisualizer startSessionVisualizerExpert(Session session, Boolean javaFXThreadImplicitExit)
+   {
+      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
+         Platform.setImplicitExit(javaFXThreadImplicitExit);
+
+      JavaFXApplicationCreator.spawnJavaFXMainApplication();
+
+      AtomicReference<SessionVisualizer> sessionVisualizerAtomicReference = new AtomicReference<>();
+      JavaFXMissingTools.runAndWait(SessionVisualizer.class, () ->
+      {
+         try
+         {
+            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage());
+            if (session != null)
+               sessionVisualizer.startSession(session);
+            JavaFXApplicationCreator.attachStopListener(sessionVisualizer::stop);
+            sessionVisualizerAtomicReference.set(sessionVisualizer);
+         }
+         catch (Exception e)
+         {
+            throw new RuntimeException(e);
+         }
+      });
+
+      return sessionVisualizerAtomicReference.get();
    }
 
    private class SessionVisualizerControlsImpl implements SessionVisualizerControls
