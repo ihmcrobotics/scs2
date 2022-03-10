@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
-import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
+import com.badlogic.gdx.physics.bullet.collision.*;
 import com.badlogic.gdx.physics.bullet.dynamics.*;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -24,7 +19,9 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
+import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
  * Documentation:
@@ -55,6 +52,15 @@ public class BulletPhysicsEngine implements PhysicsEngine
    private final ReferenceFrame inertialFrame;
    private final YoRegistry rootRegistry;
    private final YoRegistry physicsEngineRegistry = new YoRegistry(getClass().getSimpleName());
+   private final YoInteger numberOfContacts = new YoInteger("numberOfContacts", physicsEngineRegistry);
+   private final ArrayList<YoPoint3D> contactPoints = new ArrayList<>();
+   {
+      for (int i = 0; i < 100; i++)
+      {
+         contactPoints.add(new YoPoint3D("contactPoint" + i, physicsEngineRegistry));
+      }
+   }
+   private final Vector3 contactPointOnBBullet = new Vector3();
    
    private final List<BulletRobot> robotList = new ArrayList<>();
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
@@ -78,11 +84,18 @@ public class BulletPhysicsEngine implements PhysicsEngine
 //      BulletTools.setupPostTickCallback(multiBodyDynamicsWorld, postTickCallbacks);
    }
 
+   private void setupDrawingDebugMeshes()
+   {
+
+   }
+
    @Override
    public boolean initialize(Vector3DReadOnly gravity)
    {
       if (!initialize)
          return false;
+
+      rootRegistry.addChild(physicsEngineRegistry);
 
       for (BulletRobot robot : robotList)
       {
@@ -113,6 +126,23 @@ public class BulletPhysicsEngine implements PhysicsEngine
       float fixedTimeStep = (float) dt;  // SCS has a fixed timestep already so let's just use it
       float timePassedSinceThisWasCalledLast = fixedTimeStep; // We are essentially disabling interpolation here
       multiBodyDynamicsWorld.stepSimulation(timePassedSinceThisWasCalledLast, maxSubSteps, fixedTimeStep);
+
+      btDispatcher dispatcher = multiBodyDynamicsWorld.getDispatcher();
+      int numberOfContactManifolds = dispatcher.getNumManifolds();
+      numberOfContacts.set(numberOfContactManifolds); // TODO: Is this number of contacts or what?
+      int contactIndex = 0;
+      for (int i = 0; i < numberOfContactManifolds; i++)
+      {
+         btPersistentManifold contactManifold = dispatcher.getManifoldByIndexInternal(i);
+         int numContacts = contactManifold.getNumContacts();
+         for (int j = 0; j < numContacts && contactIndex < 100; j++)
+         {
+            btManifoldPoint contactPoint = contactManifold.getContactPoint(j);
+            contactPoint.getPositionWorldOnB(contactPointOnBBullet);
+            BulletTools.toEuclid(contactPointOnBBullet, contactPoints.get(i));
+            contactIndex++;
+         }
+      }
 
       for (BulletRobot robot : robotList)
       {

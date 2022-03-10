@@ -13,7 +13,6 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoInteger;
 
 public class BulletRobot extends RobotExtension 
 {
@@ -26,15 +25,13 @@ public class BulletRobot extends RobotExtension
    private final ArrayList<BulletRobotLinkBasics> allLinks = new ArrayList<>();
    private final ArrayList<BulletRobotLinkRevolute> afterRootLinks = new ArrayList<>();
    private final YoRegistry yoRegistry;
-   private final YoInteger numberOfContacts;
-   
+
    public BulletRobot(Robot robot, YoRegistry physicsRegistry, BulletPhysicsEngine bulletPhysicsEngine)
    {
       super(robot, physicsRegistry);
       robotPhysics = new BulletRobotPhysics(this);
 
       yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
-      numberOfContacts = new YoInteger("numberOfContacts", yoRegistry);
       robot.getRegistry().addChild(yoRegistry);
 
       rootBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition();
@@ -104,10 +101,6 @@ public class BulletRobot extends RobotExtension
       {
          afterRootLink.copyBulletJointDataToSCS();
       }
-
-      int numberOfContactManifolds = bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getDispatcher().getNumManifolds();
-      numberOfContacts.set(numberOfContactManifolds); // TODO: Is this number of contacts or what?
-//      for (int i = 0)
    }
 
    public BulletRobotLinkRoot getRootLink()
