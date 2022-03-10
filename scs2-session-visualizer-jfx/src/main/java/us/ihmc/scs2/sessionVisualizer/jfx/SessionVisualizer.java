@@ -400,4 +400,9 @@ public class SessionVisualizer
             throw new IllegalOperationException("Unable to perform operation, visualizer has terminated.");
       }
    }
+
+   public SessionVisualizerControls getSessionVisualizerControls()
+   {
+      return sessionVisualizerControls;
+   }
 }

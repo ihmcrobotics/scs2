@@ -95,17 +95,7 @@ public class ConnectedShapesExperimentalBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
 
-      BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine) simulationSession.getPhysicsEngine();
-      BulletDebugDrawingNode bulletDebugDrawingNode = new BulletDebugDrawingNode(bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld());
-      simulationSession.getRootRegistry().addChild(bulletDebugDrawingNode.getYoRegistry());
-
-      SessionVisualizer sessionVisualizer = SessionVisualizer.startSessionVisualizerExpert(simulationSession, null);
-
-      Platform.runLater(() ->
-      {
-         bulletDebugDrawingNode.initializeWithJavaFX();
-         sessionVisualizer.getToolkit().getEnvironmentManager().getRootNode().getChildren().add(bulletDebugDrawingNode);
-      });
+      BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
    }
    
    public static void main(String[] args)
