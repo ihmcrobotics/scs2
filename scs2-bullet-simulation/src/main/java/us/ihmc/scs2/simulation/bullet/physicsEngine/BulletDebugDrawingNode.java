@@ -4,6 +4,11 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
 import javafx.scene.Group;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.MeshView;
+import us.ihmc.euclid.tuple3D.Point3D;
+import us.ihmc.javaFXToolkit.shapes.JavaFXMultiColorMeshBuilder;
 import us.ihmc.log.LogTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -13,13 +18,17 @@ public class BulletDebugDrawingNode extends Group
    private final com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw btIDebugDraw;
    private int debugMode = com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw.DebugDrawModes.DBG_DrawWireframe; // TODO: Provide options in combo box
    private final btMultiBodyDynamicsWorld multiBodyDynamicsWorld;
-   private final Timer autoDisableTimer = new Timer();
+   private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
    private PrivateAnimationTimer animationTimer;
    private int lineDraws;
    private final int maxLineDrawsPerModel = 100;
    private final YoRegistry yoRegistry = new YoRegistry(getClass().getSimpleName());
    private final YoBoolean updateDebugDrawings = new YoBoolean("updateDebugDrawings", yoRegistry);
    private final YoBoolean showDebugDrawings = new YoBoolean("showDebugDrawings", yoRegistry);
+   private final Color phongColor = Color.LIGHTGRAY;
+   private final Point3D fromEuclid = new Point3D();
+   private final Point3D toEuclid = new Point3D();
+   private final Point3D pointOnEuclid = new Point3D();
 
    public BulletDebugDrawingNode(btMultiBodyDynamicsWorld multiBodyDynamicsWorld)
    {
@@ -33,19 +42,26 @@ public class BulletDebugDrawingNode extends Group
             if (lineDraws >= maxLineDrawsPerModel)
             {
                lineDraws = 0;
-//               currentModel.end();
                nextModel();
             }
 
-//            currentModel.addLine(from, to, color);
+            BulletTools.toEuclid(from, fromEuclid);
+            BulletTools.toEuclid(to, toEuclid);
+            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
+
+            meshHelper.addLine(fromEuclid, toEuclid, 0.002, colorJavaFX);
 
             ++lineDraws;
          }
 
          @Override
-         public void drawContactPoint(Vector3 PointOnB, Vector3 normalOnB, float distance, int lifeTime, Vector3 color)
+         public void drawContactPoint(Vector3 pointOnB, Vector3 normalOnB, float distance, int lifeTime, Vector3 color)
          {
-
+            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
+            BulletTools.toEuclid(pointOnB, pointOnEuclid);
+            meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
+            BulletTools.toEuclid(normalOnB, pointOnEuclid);
+            meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
          }
 
          @Override
@@ -89,25 +105,27 @@ public class BulletDebugDrawingNode extends Group
 
    public void update(long now)
    {
-      if (autoDisableTimer.isExpired(3.0))
+      if (!showDebugDrawings.getBooleanValue())
       {
-         updateDebugDrawings.set(false);
+         getChildren().clear();
+         return;
       }
 
       if (updateDebugDrawings.getBooleanValue())
       {
-//         models.clear();
+         getChildren().clear();
          lineDraws = 0;
-         nextModel();
          multiBodyDynamicsWorld.debugDrawWorld();
-//         currentModel.end();
+         nextModel();
       }
    }
 
    private void nextModel()
    {
-//      currentModel = models.add();
-//      currentModel.begin();
+      MeshView meshView = new MeshView(meshHelper.generateMesh());
+      meshView.setMaterial(new PhongMaterial(phongColor));
+      getChildren().add(meshView);
+      meshHelper.clear();
    }
 
    public YoRegistry getYoRegistry()
