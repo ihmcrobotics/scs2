@@ -7,7 +7,6 @@ import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
-import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -62,21 +61,34 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       getBulletMultiBody().setBaseCollider(getBulletMultiBodyLinkCollider());
    }
 
+   private final RigidBodyTransform rootJointSuccessorBodyFixedFrameToWorldEuclid = new RigidBodyTransform();
+   private final Matrix4 rootJointSuccessorBodyFixedFrameToWorldBullet = new Matrix4();
+   
    @Override
    public void copyDataFromSCSToBullet()
    {
       updateBulletLinkColliderTransformFromMecanoRigidBody();
-
-      rootSimFloatingRootJoint.getFrameAfterJoint().getTransformToDesiredFrame(bulletSixDoFJointTransformToWorldEuclid,
-                                                                               SimulationSession.DEFAULT_INERTIAL_FRAME);
-      BulletTools.toBullet(bulletSixDoFJointTransformToWorldEuclid, bulletSixDoFJointTransformToWorldBullet);
-      getBulletMultiBody().setBaseWorldTransform(bulletSixDoFJointTransformToWorldBullet);
+      
+      BulletTools.toBullet(getbulletColliderCenterOfMassTransformToWorldEuclid(), rootJointSuccessorBodyFixedFrameToWorldBullet);
+      getBulletMultiBody().setBaseWorldTransform(rootJointSuccessorBodyFixedFrameToWorldBullet);
    }
 
+   private final RigidBodyTransform bodyFixedFrameToFrameAfterJointTranform = new RigidBodyTransform();
+   
    @Override
    public void copyBulletJointDataToSCS()
    {
-      BulletTools.toEuclid(getBulletMultiBody().getBaseWorldTransform(), bulletSixDoFJointTransformToWorldEuclid);
+      // T_BFF^W
+      getBulletMultiBodyLinkCollider().getWorldTransform(rootJointSuccessorBodyFixedFrameToWorldBullet);
+      BulletTools.toEuclid(rootJointSuccessorBodyFixedFrameToWorldBullet, rootJointSuccessorBodyFixedFrameToWorldEuclid);
+      
+      // T_FAJ^BFF
+      rootSimFloatingRootJoint.getFrameAfterJoint().getTransformToDesiredFrame(bodyFixedFrameToFrameAfterJointTranform, rootSimFloatingRootJoint.getSuccessor().getBodyFixedFrame());
+      
+      // T_FAJ^W = T_BFF^W * T_FAJ^BFF
+      bulletSixDoFJointTransformToWorldEuclid.set(rootJointSuccessorBodyFixedFrameToWorldEuclid);
+      bulletSixDoFJointTransformToWorldEuclid.multiply(bodyFixedFrameToFrameAfterJointTranform);
+      
       BulletTools.toEuclid(getBulletMultiBody().getBaseVel(), bulletBaseLinearVelocityEuclid);
       BulletTools.toEuclid(getBulletMultiBody().getBaseOmega(), bulletBaseAngularVelocityEuclid);
 

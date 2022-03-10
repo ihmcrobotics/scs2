@@ -1,5 +1,6 @@
 package us.ihmc.scs2.examples.simulations.bullet;
 
+import javafx.application.Platform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -21,6 +22,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletDebugDrawingNode;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 
 public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
@@ -40,8 +42,8 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
       double groundLength = 1.0;
 
       double intertiaPoseX = 0.05;
-      double intertiaPoseY = 0.05;
-      double intertiaPoseZ = 0.05;
+      double intertiaPoseY = 0.08;
+      double intertiaPoseZ = 0.09;
       double intertiaPoseYaw = 0.01;
       double intertiaPosePitch = 0.01;
       double intertiaPoseRoll = 0.01;
@@ -81,7 +83,7 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
                                                                                      boxRadiusOfGyrationPercent * boxXLength,
                                                                                      boxRadiusOfGyrationPercent * boxYWidth,
                                                                                      boxRadiusOfGyrationPercent * boxZHeight));
-      rigidBody.getInertiaPose().set(inertiaPose);
+      rigidBody.getInertiaPose().set(collisionShapePose);
 
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
       factory.appendTransform(collisionShapePose);
@@ -95,7 +97,7 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
                                                                                 0.3,
                                                                                 0.3));
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(new Box3DDefinition(boxXLength, boxYWidth, boxZHeight));
-      collisionShapeDefinition.getOriginPose().set(collisionShapePose);
+      collisionShapeDefinition.getOriginPose().set(inertiaPose);
       boxRobot.getRigidBodyDefinition("boxRigidBody")
               .addCollisionShapeDefinition(collisionShapeDefinition);
 
@@ -106,7 +108,7 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
       simulationSession.addRobot(boxRobot);
 
       GeometryDefinition terrainGeometry = new Box3DDefinition(groundLength, groundWidth, 0.1);
-      RigidBodyTransform terrainPose = new RigidBodyTransform(new Quaternion(), new Vector3D(0.0, 0.0, -0.05));
+      RigidBodyTransform terrainPose = new RigidBodyTransform(new Quaternion(), new Vector3D(0.05, 0.0, -0.05));
       TerrainObjectDefinition terrain = new TerrainObjectDefinition(new VisualDefinition(terrainPose,
                                                                                          terrainGeometry,
                                                                                          new MaterialDefinition(ColorDefinitions.DarkKhaki())),
@@ -114,9 +116,9 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
       simulationSession.addTerrainObject(terrain);
 
       simulationSession.initializeBufferSize(24000);
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
    }
-
+   
    public static void main(String[] args)
    {
       new SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation();

@@ -140,4 +140,9 @@ public abstract class BulletRobotLinkBasics
    {
       return bulletMultiBodyLinkCollider;
    }
+   
+   public RigidBodyTransform getbulletColliderCenterOfMassTransformToWorldEuclid()
+   {
+      return bulletColliderCenterOfMassTransformToWorldEuclid;
+   }
 }

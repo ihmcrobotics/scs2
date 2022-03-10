@@ -68,7 +68,7 @@ public class ConnectedShapesExperimentalBulletSimulation
       factory2.addCylinder(connectionOffset.getX(), 0.02, new MaterialDefinition(ColorDefinitions.Chocolate()));
       rigidBody2.getVisualDefinitions().forEach(visual -> visual.getOriginPose().prependTranslation(connectionOffset));
       rigidBody2.addVisualDefinitions(factory2.getVisualDefinitions());
-      rigidBody2.getInertiaPose().getTranslation().add(-0.02, 0.01, -0.03);
+      //rigidBody2.getInertiaPose().getTranslation().add(-0.02, 0.01, -0.03);
       pinJointDefinition.setSuccessor(rigidBody2);
       rigidBody1.addChildJoint(pinJointDefinition);
       
