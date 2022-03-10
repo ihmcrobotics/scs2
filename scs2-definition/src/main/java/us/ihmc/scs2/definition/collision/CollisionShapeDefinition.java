@@ -12,6 +12,7 @@ import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 public class CollisionShapeDefinition
 {
    private String name;
+   /** In parent after joint frame. */
    private YawPitchRollTransformDefinition originPose = new YawPitchRollTransformDefinition();
    private GeometryDefinition geometryDefinition;
 
