@@ -961,7 +961,7 @@ public abstract class Session
       return null;
    }
 
-   YoSharedBuffer getBuffer()
+   public YoSharedBuffer getBuffer()
    {
       return sharedBuffer;
    }
