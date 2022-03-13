@@ -139,7 +139,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
          {
             btManifoldPoint contactPoint = contactManifold.getContactPoint(j);
             contactPoint.getPositionWorldOnB(contactPointOnBBullet);
-            BulletTools.toEuclid(contactPointOnBBullet, contactPoints.get(i));
+            BulletTools.toEuclid(contactPointOnBBullet, contactPoints.get(j));
             contactIndex++;
          }
       }
