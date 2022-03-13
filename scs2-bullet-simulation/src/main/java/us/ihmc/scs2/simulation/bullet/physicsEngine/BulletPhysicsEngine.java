@@ -29,6 +29,9 @@ import us.ihmc.yoVariables.variable.YoInteger;
  * https://web.archive.org/web/20170602122143/http://www.bulletphysics.org/mediawiki-1.5.8/index.php/Collision_Callbacks_and_Triggers
  * https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=2568
  * https://github.com/kripken/bullet/blob/master/Demos/CollisionInterfaceDemo/CollisionInterfaceDemo.cpp
+ * https://libgdx.com/wiki/extensions/physics/bullet/bullet-physics
+ * PyBullet Quickstart Guide:
+ * https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.i4yo7k7s2gvx
  *
  * CF_CUSTOM_MATERIAL_CALLBACK has to be added to get a callback when contacts are initially made
  */
