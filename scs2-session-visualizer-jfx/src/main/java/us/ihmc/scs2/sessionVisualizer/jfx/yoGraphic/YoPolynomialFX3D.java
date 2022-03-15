@@ -95,8 +95,8 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       {
          return;
       }
-      else if (newPolynomialLocal.coefficientsX == null || newPolynomialLocal.coefficientsX.length == 0 || newPolynomialLocal.coefficientsY.length == 0
-            || newPolynomialLocal.coefficientsZ.length == 0)
+      else if (Double.isNaN(newPolynomialLocal.startTime) || Double.isNaN(newPolynomialLocal.endTime) || newPolynomialLocal.coefficientsX == null
+            || newPolynomialLocal.coefficientsX.length == 0 || newPolynomialLocal.coefficientsY.length == 0 || newPolynomialLocal.coefficientsZ.length == 0)
       {
          newMeshViews = new MeshView[0];
          return;
