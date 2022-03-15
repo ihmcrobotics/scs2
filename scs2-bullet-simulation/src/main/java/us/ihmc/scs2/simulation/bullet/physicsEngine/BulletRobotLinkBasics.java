@@ -106,7 +106,7 @@ public abstract class BulletRobotLinkBasics
 
    public abstract void copyDataFromSCSToBullet();
 
-   public abstract void copyBulletJointDataToSCS();
+   public abstract void copyBulletJointDataToSCS(double dt);
 
    public void setBulletJointIndex(int bulletJointIndex)
    {

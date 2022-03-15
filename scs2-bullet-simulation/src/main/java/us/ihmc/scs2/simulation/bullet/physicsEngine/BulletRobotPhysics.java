@@ -2,6 +2,7 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
+import us.ihmc.mecano.algorithms.SpatialAccelerationCalculator;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
@@ -13,36 +14,31 @@ public class BulletRobotPhysics
 {
    private final RobotInterface owner;
    private final ReferenceFrame inertialFrame;
-  
+
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry = new RigidBodyWrenchRegistry();
-   private final ForwardDynamicsCalculator forwardDynamicsCalculator;
-   private final SingleRobotFirstOrderIntegrator integrator;
+   private final SpatialAccelerationCalculator spatialAccelerationCalculator;
    private final RobotPhysicsOutput physicsOutput;
-   
+
    public BulletRobotPhysics(RobotInterface owner)
    {
       this.owner = owner;
       inertialFrame = owner.getInertialFrame();
-      
+
       SimRigidBodyBasics rootBody = owner.getRootBody();
-      
-      integrator = new SingleRobotFirstOrderIntegrator();
-      
-      forwardDynamicsCalculator = new ForwardDynamicsCalculator(owner);
-      physicsOutput = new RobotPhysicsOutput(forwardDynamicsCalculator.getAccelerationProvider(), null, rigidBodyWrenchRegistry, null);
+
+      spatialAccelerationCalculator = new SpatialAccelerationCalculator(rootBody, inertialFrame, false);
+      spatialAccelerationCalculator.setGravitionalAcceleration(-9.81); // FIXME This should be set wherever we set it for Bullet
+      physicsOutput = new RobotPhysicsOutput(spatialAccelerationCalculator, null, rigidBodyWrenchRegistry, null);
    }
 
-   
-   public void integrateState(double dt)
+   public void update()
    {
-      physicsOutput.setDT(dt);
-      integrator.integrate(dt, owner);
+      spatialAccelerationCalculator.reset();
    }
-   
-   
+
    public RobotPhysicsOutput getPhysicsOutput()
    {
       return physicsOutput;
    }
-   
+
 }

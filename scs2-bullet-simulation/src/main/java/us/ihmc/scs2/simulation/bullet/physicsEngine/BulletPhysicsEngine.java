@@ -149,7 +149,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
       for (BulletRobot robot : robotList)
       {
-         robot.updateFromBulletData(this);
+         robot.updateFromBulletData(this, dt);
          robot.updateFrames(); 
          robot.updateSensors();
       }

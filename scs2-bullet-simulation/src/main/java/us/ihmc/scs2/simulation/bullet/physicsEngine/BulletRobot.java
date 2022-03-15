@@ -93,14 +93,15 @@ public class BulletRobot extends RobotExtension
       }
    }
    
-   public void updateFromBulletData(BulletPhysicsEngine bulletPhysicsEngine)
+   public void updateFromBulletData(BulletPhysicsEngine bulletPhysicsEngine, double dt)
    {
-      rootLink.copyBulletJointDataToSCS();
+      rootLink.copyBulletJointDataToSCS(dt);
 
       for (BulletRobotLinkRevolute afterRootLink : afterRootLinks)
       {
-         afterRootLink.copyBulletJointDataToSCS();
+         afterRootLink.copyBulletJointDataToSCS(dt);
       }
+      robotPhysics.update();
    }
 
    public BulletRobotLinkRoot getRootLink()
@@ -127,7 +128,7 @@ public class BulletRobot extends RobotExtension
    {
       for (SimJointBasics joint : getRootBody().childrenSubtreeIterable())
       {
-//         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
+         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
       }
    }
 }

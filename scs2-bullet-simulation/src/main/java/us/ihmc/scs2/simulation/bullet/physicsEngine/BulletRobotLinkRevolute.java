@@ -23,6 +23,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    private YoDouble damping;
    private YoDouble bulletJointPosition;
    private YoDouble bulletJointVelocity;
+   private YoDouble bulletJointVelocityTest;
    private YoDouble bulletUserAddedTorque;
    private YoDouble bulletJointTorque;
    private YoDouble bulletLinkAppliedForceX;
@@ -49,6 +50,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       damping = new YoDouble(simRevoluteJoint.getName() + "_damping", yoRegistry);
       bulletJointPosition = new YoDouble(simRevoluteJoint.getName() + "_q", yoRegistry);
       bulletJointVelocity = new YoDouble(simRevoluteJoint.getName() + "_qd", yoRegistry);
+      bulletJointVelocityTest = new YoDouble(simRevoluteJoint.getName() + "_qdTest", yoRegistry);
       bulletUserAddedTorque = new YoDouble(simRevoluteJoint.getName() + "_btUserAddedTorque", yoRegistry);
       bulletJointTorque = new YoDouble(simRevoluteJoint.getName() + "_btJointTorque", yoRegistry);
       bulletLinkAppliedForceX = new YoDouble(simRevoluteJoint.getName() + "_btAppliedForceX", yoRegistry);
@@ -120,21 +122,24 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 
       getBulletMultiBody().setJointPos(getBulletJointIndex(), (float) simRevoluteJoint.getQ());
       getBulletMultiBody().setJointVel(getBulletJointIndex(), (float) simRevoluteJoint.getQd());
-      getBulletMultiBody().clearForcesAndTorques();
-      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) simRevoluteJoint.getTau());
+//      getBulletMultiBody().clearForcesAndTorques();
+//      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) simRevoluteJoint.getTau());
    }
 
-   public void copyBulletJointDataToSCS()
+   public void copyBulletJointDataToSCS(double dt)
    {
       float jointPosition = getBulletMultiBody().getJointPos(getBulletJointIndex());
+      bulletJointVelocityTest.set((jointPosition- simRevoluteJoint.getQ())/ dt);
       simRevoluteJoint.setQ(jointPosition);
       float jointPVel = getBulletMultiBody().getJointVel(getBulletJointIndex());
+      simRevoluteJoint.setQdd((jointPVel - simRevoluteJoint.getQd())/dt);
       simRevoluteJoint.setQd(jointPVel);
+//      simRevoluteJoint.setTau((double)getBulletMultiBody().getJointTorque(getBulletJointIndex()));
 
       // https://pybullet.org/Bullet/phpBB3/viewtopic.php?p=36667&hilit=btMultiBody+joint+torque#p36667
       // Assumes fixed time step. TODO: Get time of current step
-      bulletJointPosition.set(getBulletMultiBody().getJointPos(getBulletJointIndex()));
-      bulletJointVelocity.set(getBulletMultiBody().getJointVel(getBulletJointIndex()));
+      bulletJointPosition.set(jointPosition);
+      bulletJointVelocity.set(jointPVel);
       bulletUserAddedTorque.set(damping.getValue() * bulletJointVelocity.getValue());
       bulletJointTorque.set(getBulletMultiBody().getJointTorque(getBulletJointIndex()));
       Vector3 linkForce = getBulletMultiBody().getLinkForce(getBulletJointIndex());
