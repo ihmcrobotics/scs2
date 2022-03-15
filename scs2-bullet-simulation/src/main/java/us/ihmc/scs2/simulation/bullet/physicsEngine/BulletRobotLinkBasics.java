@@ -1,6 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -22,6 +23,7 @@ public abstract class BulletRobotLinkBasics
    private final RigidBodyDefinition rigidBodyDefinition;
    private SimRigidBodyBasics simRigidBody;
    private final HashMap<String, Integer> jointNameToBulletJointIndexMap;
+   private final HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap;
    private btMultiBodyLinkCollider bulletMultiBodyLinkCollider;
    private BulletRobotLinkCollisionSet collisionSet;
    private int bulletJointIndex;
@@ -33,11 +35,13 @@ public abstract class BulletRobotLinkBasics
 
    public BulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
                                 SimRigidBodyBasics simRigidBody,
-                                HashMap<String, Integer> jointNameToBulletJointIndexMap)
+                                HashMap<String, Integer> jointNameToBulletJointIndexMap,
+                                HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap)
    {
       this.rigidBodyDefinition = rigidBodyDefinition;
       this.simRigidBody = simRigidBody;
       this.jointNameToBulletJointIndexMap = jointNameToBulletJointIndexMap;
+      this.wrenchCalculatorMap = wrenchCalculatorMap;
       frameAfterJoint = simRigidBody.getParentJoint().getFrameAfterJoint();
    }
 
@@ -56,6 +60,7 @@ public abstract class BulletRobotLinkBasics
                   getChildren().add(new BulletRobotLinkRevolute(childRevoluteJointDefinition,
                                                                 childSimRevoluteJoint,
                                                                 jointNameToBulletJointIndexMap,
+                                                                wrenchCalculatorMap,
                                                                 yoRegistry));
                }
                else

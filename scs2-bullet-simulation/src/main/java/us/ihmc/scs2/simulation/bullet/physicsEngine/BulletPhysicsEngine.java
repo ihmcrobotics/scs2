@@ -1,6 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.badlogic.gdx.math.Vector3;
@@ -64,6 +65,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       }
    }
    private final Vector3 contactPointOnBBullet = new Vector3();
+   private final HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap = new HashMap<>();
    
    private final List<BulletRobot> robotList = new ArrayList<>();
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
@@ -137,6 +139,13 @@ public class BulletPhysicsEngine implements PhysicsEngine
       for (int i = 0; i < numberOfContactManifolds; i++)
       {
          btPersistentManifold contactManifold = dispatcher.getManifoldByIndexInternal(i);
+
+         BulletWrenchSensorCalculator bulletWrenchSensorCalculator = wrenchCalculatorMap.get(contactManifold.getBody1());
+         if (bulletWrenchSensorCalculator != null)
+         {
+            bulletWrenchSensorCalculator.handleContact(contactManifold);
+         }
+
          int numContacts = contactManifold.getNumContacts();
          for (int j = 0; j < numContacts && contactIndex < 100; j++)
          {
@@ -259,5 +268,10 @@ public class BulletPhysicsEngine implements PhysicsEngine
    public btMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
    {
       return multiBodyDynamicsWorld;
+   }
+
+   HashMap<btCollisionObject, BulletWrenchSensorCalculator> getWrenchCalculatorMap()
+   {
+      return wrenchCalculatorMap;
    }
 }

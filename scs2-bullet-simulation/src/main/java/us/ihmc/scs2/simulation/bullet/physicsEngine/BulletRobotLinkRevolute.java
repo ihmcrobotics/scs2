@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
@@ -11,6 +12,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
+import us.ihmc.scs2.simulation.robot.sensors.SimWrenchSensor;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
@@ -18,6 +20,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 {
    private final RevoluteJointDefinition revoluteJointDefinition;
    private final SimRevoluteJoint simRevoluteJoint;
+   private final HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap;
    private int parentBulletJointIndex;
    private btMultibodyLink bulletLink;
    private YoDouble damping;
@@ -35,11 +38,13 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    public BulletRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
                                   SimRevoluteJoint simRevoluteJoint,
                                   HashMap<String, Integer> jointNameToBulletJointIndexMap,
+                                  HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap,
                                   YoRegistry yoRegistry)
    {
-      super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap);
+      super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap, wrenchCalculatorMap);
       this.revoluteJointDefinition = revoluteJointDefinition;
       this.simRevoluteJoint = simRevoluteJoint;
+      this.wrenchCalculatorMap = wrenchCalculatorMap;
 
       setBulletJointIndex(jointNameToBulletJointIndexMap.get(revoluteJointDefinition.getName()));
       parentBulletJointIndex = jointNameToBulletJointIndexMap.get(revoluteJointDefinition.getParentJoint().getName());
@@ -112,6 +117,11 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 
       createBulletCollider(bulletPhysicsEngine);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());
+
+      for (SimWrenchSensor wrenchSensor : simRevoluteJoint.getAuxialiryData().getWrenchSensors())
+      {
+         wrenchCalculatorMap.put(getBulletMultiBodyLinkCollider(), new BulletWrenchSensorCalculator(simRevoluteJoint, wrenchSensor));
+      }
    }
 
    public void copyDataFromSCSToBullet()

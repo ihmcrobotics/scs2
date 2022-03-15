@@ -45,7 +45,11 @@ public class BulletRobot extends RobotExtension
       if (!(rootJoint instanceof SimFloatingRootJoint))
          throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + rootJoint.getClass().getSimpleName());
       rootSimFloatingRootJoint = (SimFloatingRootJoint) rootJoint;
-      rootLink = new BulletRobotLinkRoot(rootSixDoFJointDefinition, rootSimFloatingRootJoint, jointNameToBulletJointIndexMap, yoRegistry);
+      rootLink = new BulletRobotLinkRoot(rootSixDoFJointDefinition,
+                                         rootSimFloatingRootJoint,
+                                         jointNameToBulletJointIndexMap,
+                                         bulletPhysicsEngine.getWrenchCalculatorMap(),
+                                         yoRegistry);
       initializeLinkLists(rootLink, true);
 
       rootLink.setup(bulletPhysicsEngine);

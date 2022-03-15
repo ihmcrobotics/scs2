@@ -2,6 +2,7 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -25,9 +26,10 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
                               SimFloatingRootJoint rootSimFloatingRootJoint,
                               HashMap<String, Integer> jointNameToBulletJointIndexMap,
+                              HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap,
                               YoRegistry yoRegistry)
    {
-      super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap);
+      super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap, wrenchCalculatorMap);
       this.rootSimFloatingRootJoint = rootSimFloatingRootJoint;
 
       setBulletJointIndex(-1);
