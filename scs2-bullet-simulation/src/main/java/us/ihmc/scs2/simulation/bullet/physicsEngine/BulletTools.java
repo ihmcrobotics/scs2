@@ -229,18 +229,11 @@ public class BulletTools
       Vector3 localInertia = new Vector3();
       collisionShape.calculateLocalInertia(STATIC_OBJECT_MASS, localInertia);
       btRigidBody bulletRigidBody = new btRigidBody(STATIC_OBJECT_MASS, motionState, collisionShape, localInertia);
-      int collisionGroup = 1; // group 1 is rigid and static bodies
+      int collisionGroup = -1; //all bits sets: DefaultFilter | StaticFilter | KinematicFilter | DebrisFilter | SensorTrigger
       int collisionGroupMask = 1 + 2; // Allow interaction with group 2, which is multi bodies
       multiBodyDynamicsWorld.addRigidBody(bulletRigidBody, collisionGroup, collisionGroupMask);
       setKinematicObject(bulletRigidBody, true);
       return bulletRigidBody;
-   }
-
-   public static void addMultiBodyCollisionShapeToWorld(btMultiBodyDynamicsWorld multiBodyDynamicsWorld, btMultiBodyLinkCollider collisionShape)
-   {
-      int collisionGroup = 2; // Multi bodies need to be in a separate collision group
-      int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
-      multiBodyDynamicsWorld.addCollisionObject(collisionShape, collisionGroup, collisionGroupMask);
    }
 
    public static void setupPostTickCallback(btMultiBodyDynamicsWorld multiBodyDynamicsWorld, ArrayList<Runnable> postTickCallbacks)

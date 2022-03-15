@@ -210,10 +210,10 @@ public class BulletPhysicsEngine implements PhysicsEngine
       terrainObjects.add(new BulletTerrainObject(terrainObjectDefinition, multiBodyDynamicsWorld));
    }
 
-   public void addMultiBodyCollisionShape(btMultiBodyLinkCollider collisionShape)
+   public void addMultiBodyCollisionShape(btMultiBodyLinkCollider collisionShape, int collisionGroup, int collisionGroupMask)
    {
-      BulletTools.addMultiBodyCollisionShapeToWorld(multiBodyDynamicsWorld, collisionShape);
-   }
+      multiBodyDynamicsWorld.addCollisionObject(collisionShape, collisionGroup, collisionGroupMask);
+    }
 
    public void addPostTickCallback(Runnable postTickCallback)
    {

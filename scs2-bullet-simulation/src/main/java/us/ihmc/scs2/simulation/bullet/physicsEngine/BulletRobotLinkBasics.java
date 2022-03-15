@@ -30,6 +30,8 @@ public abstract class BulletRobotLinkBasics
    private ReferenceFrame frameAfterJoint;
    private final Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
    private final RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
+   private int collisionGroup = 2; // Multi bodies need to be in a separate collision group
+   private int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
 
    public BulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
                                 SimRigidBodyBasics simRigidBody,
@@ -71,6 +73,15 @@ public abstract class BulletRobotLinkBasics
 
    public BulletRobotLinkCollisionSet createBulletCollisionShape()
    {
+      
+      // Set collisionGroup and collisionGroupMask the same as the first shape in the CollisionShapeDefinitions.
+      if (rigidBodyDefinition.getCollisionShapeDefinitions().size() > 0)
+      {
+         setCollisionGroup((int)rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
+         setCollisionGroupMask((int)rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
+      }
+      
+
       return collisionSet = new BulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
                                                             frameAfterJoint,
                                                             simRigidBody.getBodyFixedFrame());
@@ -81,7 +92,8 @@ public abstract class BulletRobotLinkBasics
       bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
       bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
       bulletMultiBodyLinkCollider.setFriction(1.0f);
-      bulletPhysicsManager.addMultiBodyCollisionShape(bulletMultiBodyLinkCollider);
+      
+      bulletPhysicsManager.addMultiBodyCollisionShape(bulletMultiBodyLinkCollider, collisionGroup, collisionGroupMask);
    }
 
    public void updateBulletLinkColliderTransformFromMecanoRigidBody()
@@ -144,5 +156,23 @@ public abstract class BulletRobotLinkBasics
    public RigidBodyTransform getbulletColliderCenterOfMassTransformToWorldEuclid()
    {
       return bulletColliderCenterOfMassTransformToWorldEuclid;
+   }
+   
+   public void setCollisionGroup (int collisionGroup)
+   {
+      this.collisionGroup = collisionGroup;
+   }
+   public void setCollisionGroupMask (int collisionGroupMask)
+   {
+      this.collisionGroupMask = collisionGroupMask;
+   }   
+   
+   public int getCollisionGroup ()
+   {
+      return collisionGroup;
+   }
+   public int getCollisionGroupMask ()
+   {
+      return collisionGroupMask;
    }
 }
