@@ -10,10 +10,7 @@ import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
 
 public class BulletRobotLinkCollisionShape
 {
@@ -23,6 +20,7 @@ public class BulletRobotLinkCollisionShape
    private final RigidBodyTransform collisionShapeDefinitionToCenterOfMassFrameTransformEuclid = new RigidBodyTransform();
    private final ReferenceFrame collisionShapeDefinitionFrame;
    private btCollisionShape bulletCollisionShape;
+   private final GeometryDefinition geometryDefinition;
 
    public BulletRobotLinkCollisionShape(CollisionShapeDefinition collisionShapeDefinition,
                                         ReferenceFrame frameAfterParentJoint,
@@ -47,6 +45,7 @@ public class BulletRobotLinkCollisionShape
       //               convexHullShape.setMargin(0.01f);
       //               bulletCollisionShape = convexHullShape;
       //            }
+      this.geometryDefinition = collisionShapeDefinition.getGeometryDefinition();
       if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
       {
          Box3DDefinition boxGeometryDefinition = (Box3DDefinition) collisionShapeDefinition.getGeometryDefinition();
