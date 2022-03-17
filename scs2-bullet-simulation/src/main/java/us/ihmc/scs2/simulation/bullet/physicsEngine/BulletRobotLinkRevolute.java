@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
+import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -132,8 +133,12 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 
       getBulletMultiBody().setJointPos(getBulletJointIndex(), (float) simRevoluteJoint.getQ());
       getBulletMultiBody().setJointVel(getBulletJointIndex(), (float) simRevoluteJoint.getQd());
-//      getBulletMultiBody().clearForcesAndTorques();
-//      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) simRevoluteJoint.getTau());
+      // Don't call this here
+      // getBulletMultiBody().clearForcesAndTorques();
+      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) simRevoluteJoint.getTau());
+      
+      if (simRevoluteJoint.getTau() != 0.0)
+         System.out.println("sim tau " + simRevoluteJoint.getName() + " " + simRevoluteJoint.getTau() + " " + getBulletMultiBody().getJointTorque(getBulletJointIndex()));
    }
 
    public void copyBulletJointDataToSCS(double dt)
@@ -144,7 +149,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       float jointPVel = getBulletMultiBody().getJointVel(getBulletJointIndex());
       simRevoluteJoint.setQdd((jointPVel - simRevoluteJoint.getQd())/dt);
       simRevoluteJoint.setQd(jointPVel);
-//      simRevoluteJoint.setTau((double)getBulletMultiBody().getJointTorque(getBulletJointIndex()));
+      //simRevoluteJoint.setTau((double)getBulletMultiBody().getJointTorque(getBulletJointIndex()));
 
       // https://pybullet.org/Bullet/phpBB3/viewtopic.php?p=36667&hilit=btMultiBody+joint+torque#p36667
       // Assumes fixed time step. TODO: Get time of current step

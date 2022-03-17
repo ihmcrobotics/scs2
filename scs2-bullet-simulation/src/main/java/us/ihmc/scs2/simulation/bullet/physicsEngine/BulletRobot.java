@@ -79,6 +79,8 @@ public class BulletRobot extends RobotExtension
    @Override
    public void saveRobotBeforePhysicsState()
    {
+      super.saveRobotBeforePhysicsState();
+      
       copyDataFromSCSToBullet();
    }
 

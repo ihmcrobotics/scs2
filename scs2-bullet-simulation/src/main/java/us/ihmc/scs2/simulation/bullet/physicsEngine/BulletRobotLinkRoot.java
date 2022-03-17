@@ -99,6 +99,9 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
       BulletTools.toBullet(getbulletColliderCenterOfMassTransformToWorldEuclid(), rootJointSuccessorBodyFixedFrameToWorldBullet);
       getBulletMultiBody().setBaseWorldTransform(rootJointSuccessorBodyFixedFrameToWorldBullet);
+      
+//      getBulletMultiBody().setBaseOmega(null);
+//      getBulletMultiBody().setBaseVel(null);
    }
 
    private final RigidBodyTransform bodyFixedFrameToFrameAfterJointTranform = new RigidBodyTransform();
@@ -141,7 +144,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 //                                     rootSimFloatingRootJoint.getJointAcceleration());
       
       computeSixDoFJointTwistAcceleration(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), previousBaseTwist, rootSimFloatingRootJoint.getJointTwist(), rootSimFloatingRootJoint.getJointAcceleration());
-
+      
       // TODO: Calculate velocity & acceleration to pack Mecano stuff?
    }
 
