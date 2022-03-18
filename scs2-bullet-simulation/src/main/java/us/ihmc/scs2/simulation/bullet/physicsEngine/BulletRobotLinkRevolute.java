@@ -149,7 +149,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       float jointPVel = getBulletMultiBody().getJointVel(getBulletJointIndex());
       simRevoluteJoint.setQdd((jointPVel - simRevoluteJoint.getQd())/dt);
       simRevoluteJoint.setQd(jointPVel);
-      //simRevoluteJoint.setTau((double)getBulletMultiBody().getJointTorque(getBulletJointIndex()));
+      simRevoluteJoint.setTau((double)getBulletMultiBody().getJointTorque(getBulletJointIndex()));
 
       // https://pybullet.org/Bullet/phpBB3/viewtopic.php?p=36667&hilit=btMultiBody+joint+torque#p36667
       // Assumes fixed time step. TODO: Get time of current step

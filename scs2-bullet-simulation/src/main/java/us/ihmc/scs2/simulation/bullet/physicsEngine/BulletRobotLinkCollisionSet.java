@@ -17,6 +17,8 @@ public class BulletRobotLinkCollisionSet
                                       ReferenceFrame linkCenterOfMassFrame)
      {
         bulletCompoundShape = new btCompoundShape();
+        
+        if (frameAfterParentJoint.getFrameIndex() != 4)
 
         for (CollisionShapeDefinition shapeDefinition : collisionShapeDefinitions)
         {
