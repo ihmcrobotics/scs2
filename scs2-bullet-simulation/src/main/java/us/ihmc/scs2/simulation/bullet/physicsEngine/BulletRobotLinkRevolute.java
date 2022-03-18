@@ -133,12 +133,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 
       getBulletMultiBody().setJointPos(getBulletJointIndex(), (float) simRevoluteJoint.getQ());
       getBulletMultiBody().setJointVel(getBulletJointIndex(), (float) simRevoluteJoint.getQd());
-      // Don't call this here
-      // getBulletMultiBody().clearForcesAndTorques();
       getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) simRevoluteJoint.getTau());
-      
-      if (simRevoluteJoint.getTau() != 0.0)
-         System.out.println("sim tau " + simRevoluteJoint.getName() + " " + simRevoluteJoint.getTau() + " " + getBulletMultiBody().getJointTorque(getBulletJointIndex()));
    }
 
    public void copyBulletJointDataToSCS(double dt)

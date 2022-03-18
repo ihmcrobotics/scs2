@@ -96,7 +96,7 @@ public abstract class BulletRobotLinkBasics
    {
       bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
       bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
-      bulletMultiBodyLinkCollider.setFriction(1.0f);
+      bulletMultiBodyLinkCollider.setFriction(0.7f);
       
       bulletPhysicsManager.addMultiBodyCollisionShape(bulletMultiBodyLinkCollider, collisionGroup, collisionGroupMask);
    }

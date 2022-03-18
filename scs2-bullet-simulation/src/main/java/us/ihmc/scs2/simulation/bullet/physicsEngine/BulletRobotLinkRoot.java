@@ -79,10 +79,10 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(rootBodyMass, rootBodyIntertia);
 
       btMultiBody bulletMultiBody = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
-      bulletMultiBody.setHasSelfCollision(true);
-      bulletMultiBody.setUseGyroTerm(true);
-      bulletMultiBody.setLinearDamping(0.1f);
-      bulletMultiBody.setAngularDamping(0.9f);
+      bulletMultiBody.setHasSelfCollision(false);
+//      bulletMultiBody.setUseGyroTerm(true);
+//      bulletMultiBody.setLinearDamping(0.1f);
+//      bulletMultiBody.setAngularDamping(0.9f);
       setBulletMultiBody(bulletMultiBody);
 
       createBulletCollider(bulletPhysicsEngine);
