@@ -88,6 +88,8 @@ public class BulletRobotLinkCollisionShape
    {
       collisionShapeDefinitionFrame.getTransformToDesiredFrame(collisionShapeDefinitionToCenterOfMassFrameTransformEuclid, linkCenterOfMassFrame);
       BulletTools.toBullet(collisionShapeDefinitionToCenterOfMassFrameTransformEuclid, collisionShapeDefinitionToCenterOfMassFrameTransformGDX);
+      if (bulletCollisionShape == null)
+         throw new RuntimeException("Collision shape is null! Preventing native crash.");
       bulletCompoundShape.addChildShape(collisionShapeDefinitionToCenterOfMassFrameTransformGDX, bulletCollisionShape);
    }
 
