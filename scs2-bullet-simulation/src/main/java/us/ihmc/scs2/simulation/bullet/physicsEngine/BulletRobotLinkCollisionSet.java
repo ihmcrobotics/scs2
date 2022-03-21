@@ -18,8 +18,6 @@ public class BulletRobotLinkCollisionSet
      {
         bulletCompoundShape = new btCompoundShape();
         
-        if (frameAfterParentJoint.getFrameIndex() != 4)
-
         for (CollisionShapeDefinition shapeDefinition : collisionShapeDefinitions)
         {
            BulletRobotLinkCollisionShape collisionShape = new BulletRobotLinkCollisionShape(shapeDefinition,

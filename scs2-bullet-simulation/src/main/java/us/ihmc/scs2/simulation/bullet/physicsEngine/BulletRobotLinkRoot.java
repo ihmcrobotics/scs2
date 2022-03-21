@@ -80,9 +80,8 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
       btMultiBody bulletMultiBody = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
       bulletMultiBody.setHasSelfCollision(false);
-//      bulletMultiBody.setUseGyroTerm(true);
-//      bulletMultiBody.setLinearDamping(0.1f);
-//      bulletMultiBody.setAngularDamping(0.9f);
+      bulletMultiBody.setLinearDamping(0.1f);
+      bulletMultiBody.setAngularDamping(0.9f);
       setBulletMultiBody(bulletMultiBody);
 
       createBulletCollider(bulletPhysicsEngine);
@@ -99,9 +98,6 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
       BulletTools.toBullet(getbulletColliderCenterOfMassTransformToWorldEuclid(), rootJointSuccessorBodyFixedFrameToWorldBullet);
       getBulletMultiBody().setBaseWorldTransform(rootJointSuccessorBodyFixedFrameToWorldBullet);
-      
-//      getBulletMultiBody().setBaseOmega(null);
-//      getBulletMultiBody().setBaseVel(null);
    }
 
    private final RigidBodyTransform bodyFixedFrameToFrameAfterJointTranform = new RigidBodyTransform();
@@ -135,15 +131,15 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       rootSimFloatingRootJoint.setJointLinearVelocity(bulletBaseLinearVelocityEuclid);
       rootSimFloatingRootJoint.setJointAngularVelocity(bulletBaseAngularVelocityEuclid);
 
-//      computeSixDoFJointTwist(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), twistFD);
-//      computeSixDoFJointAcceleration(dt,
-//                                     previousBasePose,
-//                                     rootSimFloatingRootJoint.getJointPose(),
-//                                     previousBaseTwist,
-//                                     rootSimFloatingRootJoint.getJointTwist(),
-//                                     rootSimFloatingRootJoint.getJointAcceleration());
+      computeSixDoFJointTwist(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), twistFD);
+      computeSixDoFJointAcceleration(dt,
+                                     previousBasePose,
+                                     rootSimFloatingRootJoint.getJointPose(),
+                                     previousBaseTwist,
+                                     rootSimFloatingRootJoint.getJointTwist(),
+                                     rootSimFloatingRootJoint.getJointAcceleration());
       
-      computeSixDoFJointTwistAcceleration(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), previousBaseTwist, rootSimFloatingRootJoint.getJointTwist(), rootSimFloatingRootJoint.getJointAcceleration());
+      //computeSixDoFJointTwistAcceleration(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), previousBaseTwist, rootSimFloatingRootJoint.getJointTwist(), rootSimFloatingRootJoint.getJointAcceleration());
       
       // TODO: Calculate velocity & acceleration to pack Mecano stuff?
    }
