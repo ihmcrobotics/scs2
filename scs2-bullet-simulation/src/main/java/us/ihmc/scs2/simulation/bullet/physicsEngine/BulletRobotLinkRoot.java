@@ -161,6 +161,11 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       twistToPack.getLinearPart().sub(currentPose.getPosition(), previousPose.getPosition());
       twistToPack.getLinearPart().scale(1.0 / dt);
       currentPose.getOrientation().inverseTransform(twistToPack.getLinearPart());
+
+      Vector4D qDot = new Vector4D();
+      qDot.sub(currentPose.getOrientation(), previousPose.getOrientation());
+      qDot.scale(1.0 / dt);
+      computeAngularVelocityInBodyFixedFrame(currentPose.getOrientation(), qDot, twistToPack.getAngularPart());
    }
 
    public static void computeSixDoFJointAcceleration(double dt,
