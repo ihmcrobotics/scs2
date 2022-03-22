@@ -229,8 +229,8 @@ public class BulletTools
       Vector3 localInertia = new Vector3();
       collisionShape.calculateLocalInertia(STATIC_OBJECT_MASS, localInertia);
       btRigidBody bulletRigidBody = new btRigidBody(STATIC_OBJECT_MASS, motionState, collisionShape, localInertia);
-      int collisionGroup = -1; //all bits sets: DefaultFilter | StaticFilter | KinematicFilter | DebrisFilter | SensorTrigger
-      int collisionGroupMask = 1 + 2; // Allow interaction with group 2, which is multi bodies
+      int collisionGroup = -1; //all bits sets to allow for custom collisionGroups
+      int collisionGroupMask = -1;//1 + 2; //all bits sets  to allow for custom collisionGroupMasks
       multiBodyDynamicsWorld.addRigidBody(bulletRigidBody, collisionGroup, collisionGroupMask);
       setKinematicObject(bulletRigidBody, true);
       return bulletRigidBody;
