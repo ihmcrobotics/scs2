@@ -5,6 +5,8 @@ import java.util.HashMap;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyJointLimitConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 
@@ -111,12 +113,22 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
                                          parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX,
                                          parentJointAfterFrameToLinkCenterOfMassTranslationGDX,
                                          disableParentCollision);
+      btMultiBodyConstraint con = new btMultiBodyJointLimitConstraint(getBulletMultiBody(), getBulletJointIndex(), (float) revoluteJointDefinition.getPositionLowerLimit(), (float) revoluteJointDefinition.getPositionUpperLimit());
+      bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(con);
       bulletLink = getBulletMultiBody().getLink(getBulletJointIndex());
-      bulletLink.setJointDamping((float) revoluteJointDefinition.getDamping()); // Doesn't seem to do anything though
-      bulletLink.setJointLowerLimit((float) revoluteJointDefinition.getPositionLowerLimit());
-      bulletLink.setJointUpperLimit((float) revoluteJointDefinition.getPositionUpperLimit());
-      bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
-      bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
+      
+      //The setJoint methods below do nothing -- see notes from documentation lines 147 - 152
+//      147         btScalar m_jointDamping; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual damping.
+//      148         btScalar m_jointFriction; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual friction using a velocity motor.
+//      149         btScalar m_jointLowerLimit; //todo: implement this internally. It is unused for now, it is set by a URDF loader. 
+//      150         btScalar m_jointUpperLimit; //todo: implement this internally. It is unused for now, it is set by a URDF loader.
+//      151         btScalar m_jointMaxForce; //todo: implement this internally. It is unused for now, it is set by a URDF loader. 
+//      152         btScalar m_jointMaxVelocity;//todo: implement this internally. It is unused for now, it is set by a URDF loader.
+//      bulletLink.setJointDamping((float) revoluteJointDefinition.getDamping()); // Doesn't seem to do anything though
+//      bulletLink.setJointLowerLimit((float) revoluteJointDefinition.getPositionLowerLimit());
+//      bulletLink.setJointUpperLimit((float) revoluteJointDefinition.getPositionUpperLimit());
+//      bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
+//      bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
 
       createBulletCollider(bulletPhysicsEngine);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());
