@@ -1,7 +1,6 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -13,6 +12,7 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
+import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public abstract class BulletRobotLinkBasics
    private final RigidBodyDefinition rigidBodyDefinition;
    private SimRigidBodyBasics simRigidBody;
    private final HashMap<String, Integer> jointNameToBulletJointIndexMap;
-   private final HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap;
+   private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry;
    private btMultiBodyLinkCollider bulletMultiBodyLinkCollider;
    private BulletRobotLinkCollisionSet collisionSet;
    private int bulletJointIndex;
@@ -38,12 +38,12 @@ public abstract class BulletRobotLinkBasics
    public BulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
                                 SimRigidBodyBasics simRigidBody,
                                 HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                                HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap)
+                                RigidBodyWrenchRegistry rigidBodyWrenchRegistry)
    {
       this.rigidBodyDefinition = rigidBodyDefinition;
       this.simRigidBody = simRigidBody;
       this.jointNameToBulletJointIndexMap = jointNameToBulletJointIndexMap;
-      this.wrenchCalculatorMap = wrenchCalculatorMap;
+      this.rigidBodyWrenchRegistry = rigidBodyWrenchRegistry;
       frameAfterJoint = simRigidBody.getParentJoint().getFrameAfterJoint();
    }
 
@@ -62,7 +62,7 @@ public abstract class BulletRobotLinkBasics
                   getChildren().add(new BulletRobotLinkRevolute(childRevoluteJointDefinition,
                                                                 childSimRevoluteJoint,
                                                                 jointNameToBulletJointIndexMap,
-                                                                wrenchCalculatorMap,
+                                                                rigidBodyWrenchRegistry,
                                                                 yoRegistry));
                }
                else
@@ -78,14 +78,13 @@ public abstract class BulletRobotLinkBasics
 
    public BulletRobotLinkCollisionSet createBulletCollisionShape()
    {
-      
+
       // Set collisionGroup and collisionGroupMask the same as the first shape in the CollisionShapeDefinitions.
       if (rigidBodyDefinition.getCollisionShapeDefinitions().size() > 0)
       {
-         setCollisionGroup((int)rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
-         setCollisionGroupMask((int)rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
+         setCollisionGroup((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
+         setCollisionGroupMask((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
       }
-      
 
       return collisionSet = new BulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
                                                             frameAfterJoint,
@@ -97,14 +96,13 @@ public abstract class BulletRobotLinkBasics
       bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
       bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
       bulletMultiBodyLinkCollider.setFriction(0.7f);
-      
+
       bulletPhysicsManager.addMultiBodyCollisionShape(bulletMultiBodyLinkCollider, collisionGroup, collisionGroupMask);
    }
 
    public void updateBulletLinkColliderTransformFromMecanoRigidBody()
    {
-      simRigidBody.getBodyFixedFrame().getTransformToDesiredFrame(bulletColliderCenterOfMassTransformToWorldEuclid,
-                                                                  SimulationSession.DEFAULT_INERTIAL_FRAME);
+      simRigidBody.getBodyFixedFrame().getTransformToDesiredFrame(bulletColliderCenterOfMassTransformToWorldEuclid, SimulationSession.DEFAULT_INERTIAL_FRAME);
       BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletColliderCenterOfMassTransformToWorldBullet);
       bulletMultiBodyLinkCollider.setWorldTransform(bulletColliderCenterOfMassTransformToWorldBullet);
    }
@@ -157,26 +155,28 @@ public abstract class BulletRobotLinkBasics
    {
       return bulletMultiBodyLinkCollider;
    }
-   
+
    public RigidBodyTransform getbulletColliderCenterOfMassTransformToWorldEuclid()
    {
       return bulletColliderCenterOfMassTransformToWorldEuclid;
    }
-   
-   public void setCollisionGroup (int collisionGroup)
+
+   public void setCollisionGroup(int collisionGroup)
    {
       this.collisionGroup = collisionGroup;
    }
-   public void setCollisionGroupMask (int collisionGroupMask)
+
+   public void setCollisionGroupMask(int collisionGroupMask)
    {
       this.collisionGroupMask = collisionGroupMask;
-   }   
-   
-   public int getCollisionGroup ()
+   }
+
+   public int getCollisionGroup()
    {
       return collisionGroup;
    }
-   public int getCollisionGroupMask ()
+
+   public int getCollisionGroupMask()
    {
       return collisionGroupMask;
    }

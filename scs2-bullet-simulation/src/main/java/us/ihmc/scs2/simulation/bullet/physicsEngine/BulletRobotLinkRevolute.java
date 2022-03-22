@@ -10,12 +10,17 @@ import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyJointLimitConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
+import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 import us.ihmc.scs2.simulation.robot.sensors.SimWrenchSensor;
+import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
@@ -23,8 +28,8 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 {
    private final RevoluteJointDefinition revoluteJointDefinition;
    private final SimRevoluteJoint simRevoluteJoint;
-   private final HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap;
    private int parentBulletJointIndex;
+   private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry;
    private btMultibodyLink bulletLink;
    private YoDouble damping;
    private YoDouble bulletJointPosition;
@@ -42,13 +47,13 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    public BulletRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
                                   SimRevoluteJoint simRevoluteJoint,
                                   HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                                  HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap,
+                                  RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
                                   YoRegistry yoRegistry)
    {
-      super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap, wrenchCalculatorMap);
+      super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap, rigidBodyWrenchRegistry);
       this.revoluteJointDefinition = revoluteJointDefinition;
       this.simRevoluteJoint = simRevoluteJoint;
-      this.wrenchCalculatorMap = wrenchCalculatorMap;
+      this.rigidBodyWrenchRegistry = rigidBodyWrenchRegistry;
 
       setBulletJointIndex(jointNameToBulletJointIndexMap.get(revoluteJointDefinition.getName()));
       parentBulletJointIndex = jointNameToBulletJointIndexMap.get(revoluteJointDefinition.getParentJoint().getName());
@@ -113,9 +118,20 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
                                          parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX,
                                          parentJointAfterFrameToLinkCenterOfMassTranslationGDX,
                                          disableParentCollision);
+
       btMultiBodyConstraint con = new btMultiBodyJointLimitConstraint(getBulletMultiBody(), getBulletJointIndex(), (float) revoluteJointDefinition.getPositionLowerLimit(), (float) revoluteJointDefinition.getPositionUpperLimit());
       bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(con);
       bulletLink = getBulletMultiBody().getLink(getBulletJointIndex());
+      
+//      TODO: test if adding a multibodyJointMotor can be added to set max velocity and max force?      
+//      m_motor = new btMultiBodyJointMotor(pMultiBody, link, targetVelocity, maxForce);
+//      m_dynamicsWorld->addMultiBodyConstraint(m_motor);
+
+//       btMultiBodyJointMotor::btMultiBodyJointMotor (  btMultiBody *  body,
+//                                                       int   link,
+//                                                       btScalar    desiredVelocity,
+//                                                       btScalar    maxMotorImpulse 
+//                                                    )  
       
       //The setJoint methods below do nothing -- see notes from documentation lines 147 - 152
 //      147         btScalar m_jointDamping; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual damping.
@@ -132,11 +148,6 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
 
       createBulletCollider(bulletPhysicsEngine);
       bulletLink.setCollider(getBulletMultiBodyLinkCollider());
-
-      for (SimWrenchSensor wrenchSensor : simRevoluteJoint.getAuxialiryData().getWrenchSensors())
-      {
-         wrenchCalculatorMap.put(getBulletMultiBodyLinkCollider(), new BulletWrenchSensorCalculator(simRevoluteJoint, wrenchSensor));
-      }
    }
 
    public void copyDataFromSCSToBullet()
@@ -157,21 +168,27 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       simRevoluteJoint.setQdd((jointPVel - simRevoluteJoint.getQd())/dt);
       simRevoluteJoint.setQd(jointPVel);
       simRevoluteJoint.setTau((double)getBulletMultiBody().getJointTorque(getBulletJointIndex()));
-
+      
       // https://pybullet.org/Bullet/phpBB3/viewtopic.php?p=36667&hilit=btMultiBody+joint+torque#p36667
       // Assumes fixed time step. TODO: Get time of current step
       bulletJointPosition.set(jointPosition);
       bulletJointVelocity.set(jointPVel);
       bulletUserAddedTorque.set(damping.getValue() * bulletJointVelocity.getValue());
       bulletJointTorque.set(getBulletMultiBody().getJointTorque(getBulletJointIndex()));
-      Vector3 linkForce = getBulletMultiBody().getLinkForce(getBulletJointIndex());
-      bulletLinkAppliedForceX.set(linkForce.x);
-      bulletLinkAppliedForceY.set(linkForce.y);
-      bulletLinkAppliedForceZ.set(linkForce.z);
-      Vector3 linkTorque = getBulletMultiBody().getLinkTorque(getBulletJointIndex());
-      bulletLinkAppliedTorqueX.set(linkTorque.x);
-      bulletLinkAppliedTorqueY.set(linkTorque.y);
-      bulletLinkAppliedTorqueX.set(linkTorque.z);
+      btVector3 linkForce = getBulletMultiBody().getLink(getBulletJointIndex()).getAppliedConstraintForce();
+      bulletLinkAppliedForceX.set(linkForce.getX());
+      bulletLinkAppliedForceY.set(linkForce.getY());
+      bulletLinkAppliedForceZ.set(linkForce.getZ());
+      btVector3 linkTorque = getBulletMultiBody().getLink(getBulletJointIndex()).getAppliedConstraintTorque();
+      bulletLinkAppliedTorqueX.set(linkTorque.getX());
+      bulletLinkAppliedTorqueY.set(linkTorque.getY());
+      bulletLinkAppliedTorqueX.set(linkTorque.getZ());
+      
+      ReferenceFrame bodyFrame = getSimRigidBody().getBodyFixedFrame();
+      ReferenceFrame expressedInFrame =  simRevoluteJoint.getFrameAfterJoint(); //getSimRigidBody().getBodyFixedFrame();
+      Vector3DReadOnly torque = new Vector3D((double)linkTorque.getX(), (double)linkTorque.getY(), (double)linkTorque.getZ());
+      Vector3DReadOnly force = new Vector3D((double)linkForce.getX(), (double)linkForce.getY(), (double)linkForce.getZ());
+      rigidBodyWrenchRegistry.addWrench(getSimRigidBody(), new Wrench(bodyFrame, expressedInFrame, torque, force));
    }
 
    public boolean isSameLink(RigidBodyDefinition rigidBodyDefinition)

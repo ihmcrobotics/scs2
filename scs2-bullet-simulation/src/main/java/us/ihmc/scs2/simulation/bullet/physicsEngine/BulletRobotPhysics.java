@@ -1,13 +1,11 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.SpatialAccelerationCalculator;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
-import us.ihmc.scs2.simulation.screwTools.SingleRobotFirstOrderIntegrator;
 
 // FIXME: Not sure if we need this class.
 public class BulletRobotPhysics
@@ -31,6 +29,11 @@ public class BulletRobotPhysics
       physicsOutput = new RobotPhysicsOutput(spatialAccelerationCalculator, null, rigidBodyWrenchRegistry, null);
    }
 
+   public void reset()
+   {
+      rigidBodyWrenchRegistry.reset();
+   }
+
    public void update()
    {
       spatialAccelerationCalculator.reset();
@@ -39,6 +42,11 @@ public class BulletRobotPhysics
    public RobotPhysicsOutput getPhysicsOutput()
    {
       return physicsOutput;
+   }
+
+   public RigidBodyWrenchRegistry getRigidBodyWrenchRegistry()
+   {
+      return rigidBodyWrenchRegistry;
    }
 
 }

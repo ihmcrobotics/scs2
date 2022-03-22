@@ -26,6 +26,7 @@ import us.ihmc.mecano.spatial.interfaces.TwistReadOnly;
 import us.ihmc.mecano.yoVariables.spatial.YoFixedFrameTwist;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
+import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class BulletRobotLinkRoot extends BulletRobotLinkBasics
@@ -45,10 +46,10 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
                               SimFloatingRootJoint rootSimFloatingRootJoint,
                               HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                              HashMap<btCollisionObject, BulletWrenchSensorCalculator> wrenchCalculatorMap,
+                              RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
                               YoRegistry yoRegistry)
    {
-      super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap, wrenchCalculatorMap);
+      super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap, rigidBodyWrenchRegistry);
       this.rootSimFloatingRootJoint = rootSimFloatingRootJoint;
 
       setBulletJointIndex(-1);
@@ -138,10 +139,6 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                                      previousBaseTwist,
                                      rootSimFloatingRootJoint.getJointTwist(),
                                      rootSimFloatingRootJoint.getJointAcceleration());
-      
-      //computeSixDoFJointTwistAcceleration(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), previousBaseTwist, rootSimFloatingRootJoint.getJointTwist(), rootSimFloatingRootJoint.getJointAcceleration());
-      
-      // TODO: Calculate velocity & acceleration to pack Mecano stuff?
    }
 
    private int countJoints(JointBasics joint)
@@ -191,46 +188,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       accelerationToPack.scale(1.0 / dt);
       accelerationToPack.addCrossToLinearPart(currentTwist.getLinearPart(), currentTwist.getAngularPart());
    }
-   
-   public static void computeSixDoFJointTwistAcceleration(double dt,
-                                                          Pose3DReadOnly previousPose,
-                                                          Pose3DReadOnly currentPose,
-                                                          TwistReadOnly previousTwist,
-                                                          FixedFrameTwistBasics twistToPack,
-                                                          FixedFrameSpatialAccelerationBasics accelerationToPack)
-   {
-      QuaternionReadOnly previousOrientation = previousPose.getOrientation();
-      QuaternionReadOnly currentOrientation = currentPose.getOrientation();
-      FixedFrameVector3DBasics angularAcceleration = accelerationToPack.getAngularPart();
-      FixedFrameVector3DBasics linearAcceleration = accelerationToPack.getLinearPart();
-      FixedFrameVector3DBasics angularVelocity = twistToPack.getAngularPart();
-      FixedFrameVector3DBasics linearVelocity = twistToPack.getLinearPart();
-     
-      Vector4D qDot = new Vector4D();
-      // assume acceleration a is constant
-      // v^next = a * t + v^init
-      // x^next = 1/2 * a * t^2 + v^init * t + x^init
-      // We deduce:
-      // a = 2 * ( (x^next - x^init) / t^2 - v^init / t )
-      // v^next = 2 * (x^next - x^init) / t - v^init
-      // Let's compute v^next first
-      linearVelocity.sub(currentPose.getPosition(), previousPose.getPosition());
-      linearVelocity.scale(2.0 / dt);
-      currentOrientation.inverseTransform(linearVelocity);
-      linearVelocity.sub(previousTwist.getLinearPart());
-      qDot.sub(currentOrientation, previousOrientation);
-      qDot.scale(2.0 / dt);
-      computeAngularVelocityInBodyFixedFrame(currentOrientation, qDot, angularVelocity);
-      angularVelocity.sub(previousTwist.getAngularPart());
-      // Now compute the acceleration with the relation a = (v^next - v^init) / t
-      previousOrientation.transform(previousTwist.getAngularPart(), angularAcceleration);
-      currentOrientation.inverseTransform(angularAcceleration); // Previous angular velocity in current pose
-      angularAcceleration.sub(angularVelocity, angularAcceleration); // w^curr - w^prev
-      previousOrientation.transform(previousTwist.getLinearPart(), linearAcceleration);
-      currentOrientation.inverseTransform(linearAcceleration); // Previous linear velocity in current pose
-      linearAcceleration.sub(linearVelocity, linearAcceleration); // v^curr - v^prev
-      accelerationToPack.scale(1.0 / dt);
-   }
+
    public static void computeAngularVelocityInBodyFixedFrame(QuaternionReadOnly q, Vector4DReadOnly qDot, Vector3DBasics angularVelocityToPack)
    {
       Vector4D pureQuatForMultiply = new Vector4D();

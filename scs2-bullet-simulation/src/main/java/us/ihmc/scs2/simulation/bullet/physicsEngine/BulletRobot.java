@@ -48,7 +48,7 @@ public class BulletRobot extends RobotExtension
       rootLink = new BulletRobotLinkRoot(rootSixDoFJointDefinition,
                                          rootSimFloatingRootJoint,
                                          jointNameToBulletJointIndexMap,
-                                         bulletPhysicsEngine.getWrenchCalculatorMap(),
+                                         robotPhysics.getRigidBodyWrenchRegistry(),
                                          yoRegistry);
       initializeLinkLists(rootLink, true);
 
@@ -86,6 +86,7 @@ public class BulletRobot extends RobotExtension
 
    public void copyDataFromSCSToBullet()
    {
+      robotPhysics.reset();
       copyDataFromSCSToBullet(rootLink);
    }
 
