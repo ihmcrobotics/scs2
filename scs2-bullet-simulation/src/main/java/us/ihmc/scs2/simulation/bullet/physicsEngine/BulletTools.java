@@ -1,20 +1,26 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.collision.CollisionConstants;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
-import com.badlogic.gdx.physics.bullet.dynamics.*;
+import com.badlogic.gdx.physics.bullet.dynamics.InternalTickCallback;
+import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
+import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
+
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.transform.AffineTransform;
@@ -25,9 +31,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.log.LogTools;
-
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.modelLoader.AssimpLoader;
 
 public class BulletTools
 {
@@ -171,9 +175,7 @@ public class BulletTools
 
    public static void toEuclid(Matrix4 bulletAffine, Point3DBasics euclidPoint)
    {
-      euclidPoint.set(bulletAffine.val[Matrix4.M03],
-                      bulletAffine.val[Matrix4.M13],
-                      bulletAffine.val[Matrix4.M23]);
+      euclidPoint.set(bulletAffine.val[Matrix4.M03], bulletAffine.val[Matrix4.M13], bulletAffine.val[Matrix4.M23]);
    }
 
    public static void toBullet(Point3DReadOnly euclidPoint, Matrix4 bulletAffine)
@@ -197,9 +199,16 @@ public class BulletTools
       return new Color((float) javaFXColor.getRed(), (float) javaFXColor.getGreen(), (float) javaFXColor.getBlue(), (float) javaFXColor.getOpacity());
    }
 
-   public static btConvexHullShape createConcaveHullShapeFromMesh(Mesh mesh)
+   public static List<btConvexHullShape> loadConcaveHullShapeFromFile(String modelFilePath)
    {
-      return createConcaveHullShapeFromMesh(mesh.getVerticesBuffer(), mesh.getNumVertices(), mesh.getVertexSize());
+      List<FloatBuffer> vertexBuffers = AssimpLoader.loadVertices(modelFilePath);
+      List<btConvexHullShape> shapes = new ArrayList<>();
+
+      for (FloatBuffer vertexBuffer : vertexBuffers)
+      {
+         shapes.add(createConcaveHullShapeFromMesh(vertexBuffer, vertexBuffer.limit() / 3, 3));
+      }
+      return shapes;
    }
 
    public static btConvexHullShape createConcaveHullShapeFromMesh(FloatBuffer floatBuffer, int numberOfPoints, int stride)

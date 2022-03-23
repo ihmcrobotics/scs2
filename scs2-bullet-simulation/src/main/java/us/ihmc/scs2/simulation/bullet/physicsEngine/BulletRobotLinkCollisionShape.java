@@ -1,16 +1,28 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
+import java.util.List;
+
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.*;
-import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
+import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
+import com.badlogic.gdx.physics.bullet.collision.btCapsuleShapeZ;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
+import com.badlogic.gdx.physics.bullet.collision.btCompoundShape;
+import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
+import com.badlogic.gdx.physics.bullet.collision.btCylinderShapeZ;
+import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.*;
+import us.ihmc.scs2.definition.geometry.Box3DDefinition;
+import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
+import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
+import us.ihmc.scs2.definition.geometry.GeometryDefinition;
+import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
+import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 
 public class BulletRobotLinkCollisionShape
 {
@@ -29,22 +41,29 @@ public class BulletRobotLinkCollisionShape
       this.linkCenterOfMassFrame = linkCenterOfMassFrame;
 
       collisionShapeToFrameAfterParentJoint = collisionShapeDefinition.getOriginPose();
-      collisionShapeDefinitionFrame
-            = ReferenceFrameMissingTools
-            .constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
-                                                           new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
-                                                                                  collisionShapeToFrameAfterParentJoint.getTranslation()));
+      collisionShapeDefinitionFrame = ReferenceFrameMissingTools.constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
+                                                                                                               new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
+                                                                                                                                      collisionShapeToFrameAfterParentJoint.getTranslation()));
 
       // Just need to make sure the vertices for the libGDX shapes and the bullet shapes are the same
       //Color color = new Color(Color.WHITE);
       // TODO: Get to this later for the fingers
-      //            if (collisionShapeDefinition.getGeometryDefinition() instanceof ModelFileGeometryDefinition)
-      //            {
-      //               ModelFileGeometryDefinition modelFileGeometryDefinition = (ModelFileGeometryDefinition) collisionShapeDefinition.getGeometryDefinition();
-      //               btConvexHullShape convexHullShape = BulletTools.createConcaveHullShapeFromMesh(collisionModel.meshParts.get(0).mesh);
-      //               convexHullShape.setMargin(0.01f);
-      //               bulletCollisionShape = convexHullShape;
-      //            }
+      if (collisionShapeDefinition.getGeometryDefinition() instanceof ModelFileGeometryDefinition)
+      {
+         ModelFileGeometryDefinition modelFileGeometryDefinition = (ModelFileGeometryDefinition) collisionShapeDefinition.getGeometryDefinition();
+         List<btConvexHullShape> shapes = BulletTools.loadConcaveHullShapeFromFile(modelFileGeometryDefinition.getFileName());
+
+         btCompoundShape compoundShape = new btCompoundShape();
+         Matrix4 identity = new Matrix4();
+
+         for (btConvexHullShape shape : shapes)
+         {
+            shape.setMargin(0.01f);
+            compoundShape.addChildShape(identity, shape);
+         }
+
+         bulletCollisionShape = compoundShape;
+      }
       this.geometryDefinition = collisionShapeDefinition.getGeometryDefinition();
       if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
       {
@@ -72,8 +91,8 @@ public class BulletRobotLinkCollisionShape
       {
          Capsule3DDefinition capsuleGeometryDefinition = (Capsule3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          if (capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusY()
-         || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
-         || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
+               || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
+               || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
          btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
          bulletCollisionShape = capsuleShape;
