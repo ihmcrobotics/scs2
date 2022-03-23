@@ -4,7 +4,6 @@ import java.util.HashMap;
 
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyJointLimitConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
@@ -19,7 +18,6 @@ import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
-import us.ihmc.scs2.simulation.robot.sensors.SimWrenchSensor;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -43,6 +41,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    private YoDouble bulletLinkAppliedTorqueX;
    private YoDouble bulletLinkAppliedTorqueY;
    private YoDouble bulletLinkAppliedTorqueZ;
+   private btMultiBodyConstraint multiBodyJointLimitConstraint;
 
    public BulletRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
                                   SimRevoluteJoint simRevoluteJoint,
@@ -119,8 +118,11 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
                                          parentJointAfterFrameToLinkCenterOfMassTranslationGDX,
                                          disableParentCollision);
 
-      btMultiBodyConstraint con = new btMultiBodyJointLimitConstraint(getBulletMultiBody(), getBulletJointIndex(), (float) revoluteJointDefinition.getPositionLowerLimit(), (float) revoluteJointDefinition.getPositionUpperLimit());
-      bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(con);
+      multiBodyJointLimitConstraint = new btMultiBodyJointLimitConstraint(getBulletMultiBody(),
+                                                                          getBulletJointIndex(),
+                                                                          (float) revoluteJointDefinition.getPositionLowerLimit(),
+                                                                          (float) revoluteJointDefinition.getPositionUpperLimit());
+      bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(multiBodyJointLimitConstraint);
       bulletLink = getBulletMultiBody().getLink(getBulletJointIndex());
       
 //      TODO: test if adding a multibodyJointMotor can be added to set max velocity and max force?      
