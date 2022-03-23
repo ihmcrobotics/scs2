@@ -230,7 +230,7 @@ public class BulletTools
       collisionShape.calculateLocalInertia(STATIC_OBJECT_MASS, localInertia);
       btRigidBody bulletRigidBody = new btRigidBody(STATIC_OBJECT_MASS, motionState, collisionShape, localInertia);
       int collisionGroup = 1; // group 1 is rigid and static bodies
-      int collisionGroupMask = 1 + 2; // Allow interaction with group 2, which is multi bodies
+      int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
       multiBodyDynamicsWorld.addRigidBody(bulletRigidBody, collisionGroup, collisionGroupMask);
       setKinematicObject(bulletRigidBody, true);
       return bulletRigidBody;
