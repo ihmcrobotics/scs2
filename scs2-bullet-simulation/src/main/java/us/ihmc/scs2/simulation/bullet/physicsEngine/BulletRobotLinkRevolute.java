@@ -8,7 +8,6 @@ import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyJointLimitConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -187,7 +186,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       bulletLinkAppliedTorqueX.set(linkTorque.getZ());
       
       ReferenceFrame bodyFrame = getSimRigidBody().getBodyFixedFrame();
-      ReferenceFrame expressedInFrame =  simRevoluteJoint.getFrameAfterJoint(); //getSimRigidBody().getBodyFixedFrame();
+      ReferenceFrame expressedInFrame = getSimRigidBody().getBodyFixedFrame(); //simRevoluteJoint.getFrameAfterJoint(); 
       Vector3DReadOnly torque = new Vector3D((double)linkTorque.getX(), (double)linkTorque.getY(), (double)linkTorque.getZ());
       Vector3DReadOnly force = new Vector3D((double)linkForce.getX(), (double)linkForce.getY(), (double)linkForce.getZ());
       rigidBodyWrenchRegistry.addWrench(getSimRigidBody(), new Wrench(bodyFrame, expressedInFrame, torque, force));
