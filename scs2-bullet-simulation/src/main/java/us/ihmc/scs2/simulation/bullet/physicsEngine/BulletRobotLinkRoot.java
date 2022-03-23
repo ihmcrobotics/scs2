@@ -4,9 +4,7 @@ import java.util.HashMap;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-
 import us.ihmc.euclid.geometry.Pose3D;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -80,7 +78,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(rootBodyMass, rootBodyIntertia);
 
       btMultiBody bulletMultiBody = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
-      bulletMultiBody.setHasSelfCollision(false);
+      bulletMultiBody.setHasSelfCollision(true);
       bulletMultiBody.setLinearDamping(0.1f);
       bulletMultiBody.setAngularDamping(0.9f);
       setBulletMultiBody(bulletMultiBody);
