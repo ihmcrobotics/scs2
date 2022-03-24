@@ -26,12 +26,15 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 public abstract class RobotExtension implements RobotInterface
 {
    private final Robot robot;
+   private final YoRegistry robotPhysicsRegistry;
    private final RobotState robotBeforePhysicsState;
 
    public RobotExtension(Robot robot, YoRegistry physicsRegistry)
    {
       this.robot = robot;
-      robotBeforePhysicsState = new RobotState("beforePhysics", getRootBody(), physicsRegistry);
+      robotPhysicsRegistry = new YoRegistry(robot.getName() + "Physics");
+      physicsRegistry.addChild(robotPhysicsRegistry);
+      robotBeforePhysicsState = new RobotState("beforePhysics", getRootBody(), robotPhysicsRegistry);
    }
 
    public RobotExtension(RobotDefinition robotDefinition, ReferenceFrame inertialFrame, YoRegistry physicsRegistry)
@@ -42,6 +45,11 @@ public abstract class RobotExtension implements RobotInterface
    public Robot getRobot()
    {
       return robot;
+   }
+
+   public YoRegistry getRobotPhysicsRegistry()
+   {
+      return robotPhysicsRegistry;
    }
 
    public void saveRobotBeforePhysicsState()

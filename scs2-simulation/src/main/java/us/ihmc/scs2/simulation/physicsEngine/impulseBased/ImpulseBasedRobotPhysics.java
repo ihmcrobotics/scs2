@@ -61,7 +61,7 @@ public class ImpulseBasedRobotPhysics
 
    private final RobotPhysicsOutput physicsOutput;
 
-   public ImpulseBasedRobotPhysics(RobotInterface owner, YoRegistry physicsRegistry)
+   public ImpulseBasedRobotPhysics(RobotInterface owner, YoRegistry robotPhysicsRegistry)
    {
       this.owner = owner;
       inertialFrame = owner.getInertialFrame();
@@ -101,12 +101,15 @@ public class ImpulseBasedRobotPhysics
 
       integrator = new SingleRobotFirstOrderIntegrator();
 
-      physicsOutput = new RobotPhysicsOutput(forwardDynamicsCalculator.getAccelerationProvider(), rigidBodyDeltaTwistProvider, rigidBodyWrenchRegistry, rigidBodyImpulseRegistry);
+      physicsOutput = new RobotPhysicsOutput(forwardDynamicsCalculator.getAccelerationProvider(),
+                                             rigidBodyDeltaTwistProvider,
+                                             rigidBodyWrenchRegistry,
+                                             rigidBodyImpulseRegistry);
 
-      physicsRegistry.addChild(jointLimitConstraintCalculatorRegistry);
-      physicsRegistry.addChild(environmentContactCalculatorRegistry);
-      physicsRegistry.addChild(interRobotContactCalculatorRegistry);
-      physicsRegistry.addChild(selfContactCalculatorRegistry);
+      robotPhysicsRegistry.addChild(jointLimitConstraintCalculatorRegistry);
+      robotPhysicsRegistry.addChild(environmentContactCalculatorRegistry);
+      robotPhysicsRegistry.addChild(interRobotContactCalculatorRegistry);
+      robotPhysicsRegistry.addChild(selfContactCalculatorRegistry);
    }
 
    public void resetCalculators()
