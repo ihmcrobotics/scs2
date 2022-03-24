@@ -334,6 +334,9 @@ public class YoGraphicTools
       yoGroupFX.setVisible(definition.isVisible());
       for (YoGraphicDefinition child : definition.getChildren())
       {
+         if (child == null)
+            continue;
+
          YoGraphicFXItem yoGraphicFX = toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, child);
          if (yoGraphicFX != null)
             yoGroupFX.addYoGraphicFXItem(yoGraphicFX);

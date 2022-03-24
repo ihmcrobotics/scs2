@@ -30,9 +30,9 @@ mainDependencies {
       exclude(group="us.ihmc", module="euclid-shape")
       exclude(group="us.ihmc", module="euclid-frame")
    }
-   api("us.ihmc:euclid:0.17.1")
-   api("us.ihmc:euclid-shape:0.17.1")
-   api("us.ihmc:euclid-frame:0.17.1")
+   api("us.ihmc:euclid:0.17.2")
+   api("us.ihmc:euclid-shape:0.17.2")
+   api("us.ihmc:euclid-frame:0.17.2")
    api("us.ihmc:ihmc-graphics-description:0.19.4")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
    api("us.ihmc:svgloader:0.0")

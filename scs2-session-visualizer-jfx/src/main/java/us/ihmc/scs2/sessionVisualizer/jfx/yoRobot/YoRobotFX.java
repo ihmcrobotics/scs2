@@ -56,7 +56,7 @@ public class YoRobotFX
       LogTools.info("Loading robot: " + robotDefinition.getName());
 
       YoRegistry rootRegistry = new YoRegistry(SimulationSession.ROOT_REGISTRY_NAME);
-      Robot robot = new Robot(robotDefinition, referenceFrameManager.getWorldFrame());
+      Robot robot = new Robot(robotDefinition, referenceFrameManager.getWorldFrame(), false);
       robotRegistry = robot.getRegistry();
       rootRegistry.addChild(robotRegistry);
       rootBody = robot.getRootBody();

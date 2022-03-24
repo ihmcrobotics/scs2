@@ -13,36 +13,26 @@ import us.ihmc.scs2.definition.controller.ControllerOutput;
 import us.ihmc.scs2.definition.controller.interfaces.Controller;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
-import us.ihmc.yoVariables.providers.DoubleProvider;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class OneDoFJointDampingControllerDefinition implements ControllerDefinition
 {
    private String controllerName;
-   private DoubleProvider damping;
+   private String dampingVariableName;
+   private double dampingInitialValue;
    private List<String> namesOfJointsToControl;
-   private YoRegistry controllerRegistry;
 
    public OneDoFJointDampingControllerDefinition setControllerName(String name)
    {
       controllerName = name;
-      controllerRegistry = new YoRegistry(name);
-      return this;
-   }
-
-   public OneDoFJointDampingControllerDefinition setDamping(DoubleProvider damping)
-   {
-      this.damping = damping;
       return this;
    }
 
    public OneDoFJointDampingControllerDefinition createDampingVariable(String variableName, double initialValue)
    {
-      Objects.requireNonNull(controllerName);
-      YoDouble yoDamping = new YoDouble(variableName, controllerRegistry);
-      yoDamping.set(initialValue);
-      this.damping = yoDamping;
+      this.dampingVariableName = variableName;
+      this.dampingInitialValue = initialValue;
       return this;
    }
 
@@ -72,9 +62,13 @@ public class OneDoFJointDampingControllerDefinition implements ControllerDefinit
    public Controller newController(ControllerInput controllerInput, ControllerOutput controllerOutput)
    {
       Objects.requireNonNull(controllerName);
-      Objects.requireNonNull(damping);
+      Objects.requireNonNull(dampingInitialValue);
       Objects.requireNonNull(namesOfJointsToControl);
-      Objects.requireNonNull(controllerRegistry);
+
+      YoRegistry controllerRegistry = new YoRegistry(controllerName);
+      YoDouble dampingVariable = new YoDouble(dampingVariableName, controllerRegistry);
+      dampingVariable.set(dampingInitialValue);
+      controllerRegistry.addVariable(dampingVariable);
 
       Map<String, OneDoFJointReadOnly> nameToOneDoFJointMap = controllerInput.getInput().getAllJoints().stream().filter(OneDoFJointReadOnly.class::isInstance)
                                                                              .map(joint -> (OneDoFJointReadOnly) joint)
@@ -94,6 +88,6 @@ public class OneDoFJointDampingControllerDefinition implements ControllerDefinit
       }
 
       OneDoFJointStateBasics[] jointOutputs = controllerOutput.getOneDoFJointOutputs(jointsToControl);
-      return new OneDoFJointDampingController(controllerName, damping, jointsToControl, jointOutputs, controllerRegistry);
+      return new OneDoFJointDampingController(controllerName, dampingVariable, jointsToControl, jointOutputs, controllerRegistry);
    }
 }
