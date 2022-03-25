@@ -415,6 +415,7 @@ public abstract class Session
       rootRegistry.clear();
 
       executorService.shutdown();
+      inertialFrame.clearChildren();
    }
 
    private void scheduleSessionTask(SessionMode sessionMode)
