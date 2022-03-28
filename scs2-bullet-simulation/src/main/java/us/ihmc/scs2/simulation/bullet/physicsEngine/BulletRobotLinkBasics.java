@@ -82,8 +82,8 @@ public abstract class BulletRobotLinkBasics
       // Set collisionGroup and collisionGroupMask the same as the first shape in the CollisionShapeDefinitions.
       if (rigidBodyDefinition.getCollisionShapeDefinitions().size() > 0)
       {
-         setCollisionGroupMask((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
-         setCollisionGroup((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
+         setCollisionGroup((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
+         setCollisionGroupMask((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
       }
 
       return collisionSet = new BulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
