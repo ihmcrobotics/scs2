@@ -73,19 +73,45 @@ public class ReferenceFrameManager implements Manager
          if (!change.wasAdded())
             return;
 
+         ReferenceFrame newFrame = change.getTarget();
+
+         if (newFrame.getName().endsWith(Session.SCS2_INTERNAL_FRAME_SUFFIX))
+            return;
+
          backgroundExecutorManager.queueTaskToExecuteInBackground(this, () ->
          {
+            if (hasFrameBeenRemoved(newFrame))
+               return;
+
             try
             {
                // Adding some delay so if YoVariables are needed, they are first linked.
                Thread.sleep(100);
-               registerNewSessionFramesNow(ReferenceFrameTools.collectFramesInSubtree(change.getTarget()));
+
+               if (hasFrameBeenRemoved(newFrame))
+                  return;
+
+               registerNewSessionFramesNow(ReferenceFrameTools.collectFramesInSubtree(newFrame));
             }
             catch (InterruptedException e)
             {
             }
          });
       };
+   }
+
+   private static boolean hasFrameBeenRemoved(ReferenceFrame frame)
+   {
+      try
+      {
+         frame.getName();
+         return true;
+      }
+      catch (RuntimeException e)
+      {
+         // The session may have ended and the frame removed, we just abort.
+         return false;
+      }
    }
 
    @Override
