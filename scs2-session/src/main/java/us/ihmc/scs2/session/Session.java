@@ -45,6 +45,7 @@ public abstract class Session
    public static final String SESSION_INTERNAL_REGISTRY_NAME = Session.class.getSimpleName() + "InternalRegistry";
    public static final YoNamespace ROOT_NAMESPACE = new YoNamespace(ROOT_REGISTRY_NAME);
    public static final YoNamespace SESSION_INTERNAL_NAMESPACE = ROOT_NAMESPACE.append(SESSION_INTERNAL_REGISTRY_NAME);
+   public static final String SCS2_INTERNAL_FRAME_SUFFIX = "[SCS2Internal]";
 
    protected final ReferenceFrame inertialFrame;
 
@@ -415,6 +416,7 @@ public abstract class Session
       rootRegistry.clear();
 
       executorService.shutdown();
+      inertialFrame.removeListeners();
       inertialFrame.clearChildren();
    }
 
@@ -954,8 +956,8 @@ public abstract class Session
    /**
     * Override me to allow exporting robot states.
     * 
-    * @param initialState    when {@code true}, the state of the robot as of before performing the
-    *                        run-tick operations.
+    * @param initialState when {@code true}, the state of the robot as of before performing the
+    *                     run-tick operations.
     */
    public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
