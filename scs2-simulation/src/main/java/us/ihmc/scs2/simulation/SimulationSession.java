@@ -410,7 +410,7 @@ public class SimulationSession extends Session
                      return true;
                   }
                }
-               
+
                tickCounter++;
                boolean done = tickCounter >= numberOfTicks;
 
@@ -449,9 +449,9 @@ public class SimulationSession extends Session
       }
 
       @Override
-      public void removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+      public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
       {
-         terminalConditions.remove(externalTerminalCondition);
+         return terminalConditions.remove(externalTerminalCondition);
       }
 
       @Override
@@ -470,25 +470,37 @@ public class SimulationSession extends Session
       @Override
       public void setBufferInPointIndexToCurrent()
       {
-         submitBufferInPointIndexRequest(sharedBuffer.getProperties().getCurrentIndex());
+         submitBufferInPointIndexRequestAndWait(sharedBuffer.getProperties().getCurrentIndex());
       }
 
       @Override
       public void setBufferOutPointIndexToCurrent()
       {
-         submitBufferOutPointIndexRequest(sharedBuffer.getProperties().getCurrentIndex());
+         submitBufferOutPointIndexRequestAndWait(sharedBuffer.getProperties().getCurrentIndex());
       }
 
       @Override
       public void setBufferCurrentIndexToInPoint()
       {
-         submitBufferIndexRequest(sharedBuffer.getProperties().getInPoint());
+         submitBufferIndexRequestAndWait(sharedBuffer.getProperties().getInPoint());
       }
 
       @Override
       public void setBufferCurrentIndexToOutPoint()
       {
-         submitBufferIndexRequest(sharedBuffer.getProperties().getOutPoint());
+         submitBufferIndexRequestAndWait(sharedBuffer.getProperties().getOutPoint());
+      }
+
+      @Override
+      public void stepBufferIndexBackward(int stepSize)
+      {
+         submitDecrementBufferIndexRequestAndWait(stepSize);
+      }
+
+      @Override
+      public void stepBufferIndexForward(int stepSize)
+      {
+         submitIncrementBufferIndexRequestAndWait(stepSize);
       }
    }
 }

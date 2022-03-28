@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -83,6 +84,14 @@ public abstract class Session
     * </p>
     */
    private final AtomicLong sessionDTNanoseconds = new AtomicLong(Conversions.secondsToNanoseconds(1.0e-4));
+   /**
+    * Period for controlling the rate at which the GUI will be refreshed.
+    * <p>
+    * This is particularly useful for instance when reading a log, increasing this period allows to
+    * increase the speed at which we can read the log, also useful for the remote session to reduce the
+    * computational induced by the GUI while receiving a high-bandwidth stream of data.
+    * </p>
+    */
    private final AtomicLong desiredBufferPublishPeriod = new AtomicLong(-1L);
 
    // State listener to publish internal to outside world
@@ -99,15 +108,15 @@ public abstract class Session
    private final List<Consumer<Throwable>> playbackThrowableListeners = new ArrayList<>();
 
    // Fields for external requests on buffer.
-   private final AtomicReference<CropBufferRequest> pendingCropBufferRequest = new AtomicReference<>(null);
-   private final AtomicReference<FillBufferRequest> pendingFillBufferRequest = new AtomicReference<>(null);
-   private final AtomicReference<Integer> pendingBufferIndexRequest = new AtomicReference<>(null);
-   private final AtomicReference<Integer> pendingBufferInPointIndexRequest = new AtomicReference<>(null);
-   private final AtomicReference<Integer> pendingBufferOutPointIndexRequest = new AtomicReference<>(null);
-   private final AtomicReference<Integer> pendingIncrementBufferIndexRequest = new AtomicReference<>(null);
-   private final AtomicReference<Integer> pendingDecrementBufferIndexRequest = new AtomicReference<>(null);
-   private final AtomicReference<Integer> pendingBufferSizeRequest = new AtomicReference<>(null);
-   private final AtomicReference<SessionDataExportRequest> pendingDataExportRequest = new AtomicReference<>(null);
+   private final SessionUserField<CropBufferRequest> pendingCropBufferRequest = new SessionUserField<>();
+   private final SessionUserField<FillBufferRequest> pendingFillBufferRequest = new SessionUserField<>();
+   private final SessionUserField<Integer> pendingBufferIndexRequest = new SessionUserField<>();
+   private final SessionUserField<Integer> pendingBufferInPointIndexRequest = new SessionUserField<>();
+   private final SessionUserField<Integer> pendingBufferOutPointIndexRequest = new SessionUserField<>();
+   private final SessionUserField<Integer> pendingIncrementBufferIndexRequest = new SessionUserField<>();
+   private final SessionUserField<Integer> pendingDecrementBufferIndexRequest = new SessionUserField<>();
+   private final SessionUserField<Integer> pendingBufferSizeRequest = new SessionUserField<>();
+   private final SessionUserField<SessionDataExportRequest> pendingDataExportRequest = new SessionUserField<>();
 
    // Strictly internal fields
    private final List<SessionTopicListenerManager> sessionTopicListenerManagers = new ArrayList<>();
@@ -320,48 +329,94 @@ public abstract class Session
 
    public void submitCropBufferRequest(CropBufferRequest cropBufferRequest)
    {
-      pendingCropBufferRequest.set(cropBufferRequest);
+      pendingCropBufferRequest.submit(cropBufferRequest);
    }
 
    public void submitFillBufferRequest(FillBufferRequest fillBufferRequest)
    {
-      pendingFillBufferRequest.set(fillBufferRequest);
+      pendingFillBufferRequest.submit(fillBufferRequest);
    }
 
    public void submitBufferSizeRequest(Integer bufferSizeRequest)
    {
-      pendingBufferSizeRequest.set(bufferSizeRequest);
+      pendingBufferSizeRequest.submit(bufferSizeRequest);
       hasBufferSizeBeenInitialized = true;
    }
 
    public void submitBufferIndexRequest(Integer bufferIndexRequest)
    {
-      pendingBufferIndexRequest.set(bufferIndexRequest);
+      pendingBufferIndexRequest.submit(bufferIndexRequest);
    }
 
    public void submitIncrementBufferIndexRequest(Integer incrementBufferIndexRequest)
    {
-      pendingIncrementBufferIndexRequest.set(incrementBufferIndexRequest);
+      pendingIncrementBufferIndexRequest.submit(incrementBufferIndexRequest);
    }
 
    public void submitDecrementBufferIndexRequest(Integer incrementBufferIndexRequest)
    {
-      pendingDecrementBufferIndexRequest.set(incrementBufferIndexRequest);
+      pendingDecrementBufferIndexRequest.submit(incrementBufferIndexRequest);
    }
 
    public void submitBufferInPointIndexRequest(Integer bufferInPointIndexRequest)
    {
-      pendingBufferInPointIndexRequest.set(bufferInPointIndexRequest);
+      pendingBufferInPointIndexRequest.submit(bufferInPointIndexRequest);
    }
 
    public void submitBufferOutPointIndexRequest(Integer bufferOutPointIndexRequest)
    {
-      pendingBufferOutPointIndexRequest.set(bufferOutPointIndexRequest);
+      pendingBufferOutPointIndexRequest.submit(bufferOutPointIndexRequest);
    }
 
    public void submitSessionDataExportRequest(SessionDataExportRequest sessionDataExportRequest)
    {
-      pendingDataExportRequest.set(sessionDataExportRequest);
+      pendingDataExportRequest.submit(sessionDataExportRequest);
+   }
+
+   public void submitCropBufferRequestAndWait(CropBufferRequest cropBufferRequest)
+   {
+      pendingCropBufferRequest.submitAndWait(cropBufferRequest);
+   }
+
+   public void submitFillBufferRequestAndWait(FillBufferRequest fillBufferRequest)
+   {
+      pendingFillBufferRequest.submitAndWait(fillBufferRequest);
+   }
+
+   public void submitBufferSizeRequestAndWait(Integer bufferSizeRequest)
+   {
+      hasBufferSizeBeenInitialized = true;
+      pendingBufferSizeRequest.submitAndWait(bufferSizeRequest);
+   }
+
+   public void submitBufferIndexRequestAndWait(Integer bufferIndexRequest)
+   {
+      pendingBufferIndexRequest.submitAndWait(bufferIndexRequest);
+   }
+
+   public void submitIncrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
+   {
+      pendingIncrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
+   }
+
+   public void submitDecrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
+   {
+      pendingDecrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
+   }
+
+   public void submitBufferInPointIndexRequestAndWait(Integer bufferInPointIndexRequest)
+   {
+      pendingBufferInPointIndexRequest.submitAndWait(bufferInPointIndexRequest);
+   }
+
+   public void submitBufferOutPointIndexRequestAndWait(Integer bufferOutPointIndexRequest)
+   {
+      pendingBufferOutPointIndexRequest.submitAndWait(bufferOutPointIndexRequest);
+   }
+
+   public void submitSessionDataExportRequestAndWait(SessionDataExportRequest sessionDataExportRequest)
+   {
+      pendingDataExportRequest.submitAndWait(sessionDataExportRequest);
    }
 
    public void setSessionState(SessionState state)
@@ -797,9 +852,10 @@ public abstract class Session
    {
       boolean hasBufferBeenUpdated = false;
 
+      CropBufferRequest newCropRequest = pendingCropBufferRequest.poll();
+
       if (bufferChangesPermitted)
       {
-         CropBufferRequest newCropRequest = pendingCropBufferRequest.getAndSet(null);
          if (newCropRequest != null)
          {
             sharedBuffer.cropBuffer(newCropRequest);
@@ -808,48 +864,47 @@ public abstract class Session
          }
       }
 
+      Integer newIndex = pendingBufferIndexRequest.poll();
+      Integer newInPoint = pendingBufferInPointIndexRequest.poll();
+      Integer newOutPoint = pendingBufferOutPointIndexRequest.poll();
+      Integer incStepSize = pendingIncrementBufferIndexRequest.poll();
+      Integer decStepSize = pendingDecrementBufferIndexRequest.poll();
+      Integer newSize = pendingBufferSizeRequest.poll();
+      FillBufferRequest fillBufferRequest = pendingFillBufferRequest.poll();
+      SessionDataExportRequest dataExportRequest = pendingDataExportRequest.poll();
+
       if (bufferChangesPermitted)
       {
-         Integer newIndex = pendingBufferIndexRequest.getAndSet(null);
          if (newIndex != null)
             hasBufferBeenUpdated |= sharedBuffer.setCurrentIndex(newIndex.intValue());
 
-         Integer newInPoint = pendingBufferInPointIndexRequest.getAndSet(null);
          if (newInPoint != null)
             hasBufferBeenUpdated |= sharedBuffer.setInPoint(newInPoint.intValue());
 
-         Integer newOutPoint = pendingBufferOutPointIndexRequest.getAndSet(null);
          if (newOutPoint != null)
             hasBufferBeenUpdated |= sharedBuffer.setOutPoint(newOutPoint.intValue());
 
-         Integer stepSize = pendingIncrementBufferIndexRequest.getAndSet(null);
-         if (stepSize != null)
+         if (incStepSize != null)
          {
-            sharedBuffer.incrementBufferIndex(false, stepSize.intValue());
+            sharedBuffer.incrementBufferIndex(false, incStepSize.intValue());
             hasBufferBeenUpdated = true;
          }
 
-         stepSize = pendingDecrementBufferIndexRequest.getAndSet(null);
-         if (stepSize != null)
+         if (decStepSize != null)
          {
-            sharedBuffer.decrementBufferIndex(stepSize.intValue());
+            sharedBuffer.decrementBufferIndex(decStepSize.intValue());
             hasBufferBeenUpdated = true;
          }
 
-         Integer newSize = pendingBufferSizeRequest.getAndSet(null);
          if (newSize != null)
-         {
             hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize.intValue());
-         }
 
-         FillBufferRequest fillBufferRequest = pendingFillBufferRequest.getAndSet(null);
          if (fillBufferRequest != null)
          {
             sharedBuffer.fillBuffer(fillBufferRequest);
             hasBufferBeenUpdated = true;
          }
 
-         SessionDataExportRequest dataExportRequest = pendingDataExportRequest.getAndSet(null);
          if (dataExportRequest != null)
          {
             try
@@ -866,18 +921,10 @@ public abstract class Session
       }
       else
       {
-         Integer newSize = pendingBufferSizeRequest.getAndSet(null);
          if (newSize != null)
          {
             sharedBuffer.resizeBuffer(newSize.intValue());
          }
-
-         pendingBufferIndexRequest.set(null);
-         pendingIncrementBufferIndexRequest.set(null);
-         pendingDecrementBufferIndexRequest.set(null);
-         pendingBufferInPointIndexRequest.set(null);
-         pendingBufferOutPointIndexRequest.set(null);
-         pendingCropBufferRequest.set(null);
          return hasBufferBeenUpdated;
       }
    }
@@ -1216,6 +1263,87 @@ public abstract class Session
 
          isDone.set(true);
          doneLatch.countDown();
+      }
+   }
+
+   /**
+    * This class is designed to be used for the field of a {@code Session} that can be modified through
+    * the class API. This class offers to either submit a request to be handled asynchronously or
+    * synchronously by blocking the calling thread until the request has been processed.
+    */
+   protected class SessionUserField<T>
+   {
+      private final AtomicReference<T> nonBlockingRequest;
+      private final ConcurrentLinkedQueue<BlockingRequest> blockingRequests = new ConcurrentLinkedQueue<>();
+      private T currentValue;
+
+      public SessionUserField()
+      {
+         this(null);
+      }
+
+      public SessionUserField(T initialValue)
+      {
+         currentValue = initialValue;
+         nonBlockingRequest = new AtomicReference<>(initialValue);
+      }
+
+      public T getCurrentValue()
+      {
+         return currentValue;
+      }
+
+      public void submit(T newValue)
+      {
+         nonBlockingRequest.set(newValue);
+      }
+
+      public void submitAndWait(T newValue)
+      {
+         BlockingRequest blockingRequest = new BlockingRequest(newValue);
+         blockingRequests.add(blockingRequest);
+         try
+         {
+            blockingRequest.latch.await();
+         }
+         catch (InterruptedException e)
+         {
+         }
+      }
+
+      public T poll()
+      {
+         if (blockingRequests.isEmpty())
+         {
+            return nonBlockingRequest.getAndSet(null);
+         }
+         else
+         {
+            return blockingRequests.poll().process();
+         }
+      }
+
+      private class BlockingRequest
+      {
+         private final CountDownLatch latch = new CountDownLatch(1);
+         private final T requestedValue;
+
+         public BlockingRequest(T requestedValue)
+         {
+            this.requestedValue = requestedValue;
+         }
+
+         public T process()
+         {
+            try
+            {
+               return requestedValue;
+            }
+            finally
+            {
+               latch.countDown();
+            }
+         }
       }
    }
 }
