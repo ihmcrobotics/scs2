@@ -183,7 +183,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       btVector3 linkTorque = getBulletMultiBody().getLink(getBulletJointIndex()).getAppliedConstraintTorque();
       bulletLinkAppliedTorqueX.set(linkTorque.getX());
       bulletLinkAppliedTorqueY.set(linkTorque.getY());
-      bulletLinkAppliedTorqueX.set(linkTorque.getZ());
+      bulletLinkAppliedTorqueZ.set(linkTorque.getZ());
       
       ReferenceFrame bodyFrame = getSimRigidBody().getBodyFixedFrame();
       ReferenceFrame expressedInFrame = getSimRigidBody().getBodyFixedFrame(); //simRevoluteJoint.getFrameAfterJoint(); 
