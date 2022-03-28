@@ -4,13 +4,7 @@ import java.util.List;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
-import com.badlogic.gdx.physics.bullet.collision.btCapsuleShapeZ;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.collision.btCompoundShape;
-import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
-import com.badlogic.gdx.physics.bullet.collision.btCylinderShapeZ;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
+import com.badlogic.gdx.physics.bullet.collision.*;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
@@ -45,18 +39,21 @@ public class BulletRobotLinkCollisionShape
                                                                                                                new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
                                                                                                                                       collisionShapeToFrameAfterParentJoint.getTranslation()));
 
+      this.geometryDefinition = collisionShapeDefinition.getGeometryDefinition();
       // Just need to make sure the vertices for the libGDX shapes and the bullet shapes are the same
       //Color color = new Color(Color.WHITE);
       // TODO: Get to this later for the fingers
       if (collisionShapeDefinition.getGeometryDefinition() instanceof ModelFileGeometryDefinition)
       {
          ModelFileGeometryDefinition modelFileGeometryDefinition = (ModelFileGeometryDefinition) collisionShapeDefinition.getGeometryDefinition();
-         List<btConvexHullShape> shapes = BulletTools.loadConcaveHullShapeFromFile(modelFileGeometryDefinition.getFileName());
+//         List<btConvexHullShape> shapes = BulletTools.loadConvexHullShapeFromFile(modelFileGeometryDefinition.getFileName());
+//         List<btConvexPointCloudShape> shapes = BulletTools.loadConvexPointCloudShapesFromFile(modelFileGeometryDefinition.getFileName());
+         List<btConvexTriangleMeshShape> shapes = BulletTools.loadConvexTriangleMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
 
          btCompoundShape compoundShape = new btCompoundShape();
          Matrix4 identity = new Matrix4();
 
-         for (btConvexHullShape shape : shapes)
+         for (btCollisionShape shape : shapes)
          {
             shape.setMargin(0.01f);
             compoundShape.addChildShape(identity, shape);
@@ -64,8 +61,7 @@ public class BulletRobotLinkCollisionShape
 
          bulletCollisionShape = compoundShape;
       }
-      this.geometryDefinition = collisionShapeDefinition.getGeometryDefinition();
-      if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
       {
          Box3DDefinition boxGeometryDefinition = (Box3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btBoxShape boxShape = new btBoxShape(new Vector3((float) boxGeometryDefinition.getSizeX() / 2.0f,

@@ -2,22 +2,22 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine.modelLoader;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AIMesh;
 import org.lwjgl.assimp.AIPropertyStore;
 import org.lwjgl.assimp.AIScene;
-import org.lwjgl.assimp.AIVector3D;
 import org.lwjgl.assimp.Assimp;
 import org.lwjgl.system.MemoryUtil;
-
-import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
+import us.ihmc.euclid.tuple3D.Point3D32;
+import us.ihmc.euclid.tuple3D.Vector3D32;
 
 public class AssimpLoader
 {
-
-   public static List<FloatBuffer> loadVertices(String modelFilePath)
+   public static void iterateMeshes(String modelFilePath, Consumer<AIMesh> assimpMeshConsumer)
    {
       AssimpResourceImporter assimpResourceImporter = new AssimpResourceImporter();
 
@@ -25,40 +25,63 @@ public class AssimpLoader
 
       int postProcessingSteps = 0; // none
 
-      /** libGDX reads UVs flipped from assimp default */
+      // We read UVs flipped from assimp default.
       postProcessingSteps += Assimp.aiProcess_FlipUVs;
 
-      /** libGDX needs triangles */
+      // Force loading triangle primitives.
       postProcessingSteps += Assimp.aiProcess_Triangulate;
 
-      /**
-       * libGDX has limits in MeshBuilder. Not sure if there is a triangle limit.
-       */
-      Assimp.aiSetImportPropertyInteger(assimpPropertyStore, Assimp.AI_CONFIG_PP_SLM_VERTEX_LIMIT, MeshBuilder.MAX_VERTICES);
+      // Split the meshes into parts with no more than 65536 vertices so it can fit in a short.
+      // TODO: Necessary for Bullet?
+      Assimp.aiSetImportPropertyInteger(assimpPropertyStore, Assimp.AI_CONFIG_PP_SLM_VERTEX_LIMIT, 1 << 16);
       postProcessingSteps += Assimp.aiProcess_SplitLargeMeshes;
 
       AIScene assimpScene = assimpResourceImporter.importScene(modelFilePath, postProcessingSteps, assimpPropertyStore);
-      List<FloatBuffer> vertexBuffers = new ArrayList<>();
       PointerBuffer meshesPointerBuffer = assimpScene.mMeshes();
 
-      for (int i = 0; i < assimpScene.mNumMeshes(); i++)
+      int numberOfMeshes = assimpScene.mNumMeshes();
+      for (int i = 0; i < numberOfMeshes; i++)
       {
          AIMesh assimpMesh = new AIMesh(MemoryUtil.memByteBuffer(meshesPointerBuffer.get(i), AIMesh.SIZEOF));
-         AIVector3D.Buffer assimpVerticesVector3DS = assimpMesh.mVertices();
-         int vertexSize = 3;
-         FloatBuffer vertexHeapBuffer = FloatBuffer.allocate(assimpMesh.mNumVertices() * vertexSize);
-
-         for (int j = 0; j < assimpMesh.mNumVertices(); j++)
-         {
-            float x = assimpVerticesVector3DS.get(j).x();
-            float y = assimpVerticesVector3DS.get(j).y();
-            float z = assimpVerticesVector3DS.get(j).z();
-            vertexHeapBuffer.put(x);
-            vertexHeapBuffer.put(y);
-            vertexHeapBuffer.put(z);
-         }
+         assimpMeshConsumer.accept(assimpMesh);
       }
+   }
+
+   public static List<FloatBuffer> loadTriangleVertexPositionsAsFloatBuffer(String modelFilePath)
+   {
+      List<FloatBuffer> vertexBuffers = new ArrayList<>();
+      iterateMeshes(modelFilePath, assimpMesh ->
+      {
+         AssimpTriangleLoader assimpTriangleLoader = new AssimpTriangleLoader(assimpMesh);
+         FloatBuffer vetricesFloatBuffer = assimpTriangleLoader.loadVerticesAsFloatBuffer();
+         vertexBuffers.add(vetricesFloatBuffer);
+      });
 
       return vertexBuffers;
+   }
+
+   public static List<List<Point3D32>> loadTriangleVertexPositionsAsList(String modelFilePath)
+   {
+      List<List<Point3D32>> vertexLists = new ArrayList<>();
+      iterateMeshes(modelFilePath, assimpMesh ->
+      {
+         AssimpTriangleLoader assimpTriangleLoader = new AssimpTriangleLoader(assimpMesh);
+         List<Point3D32> vertexList = assimpTriangleLoader.loadVerticesAsList();
+         vertexLists.add(vertexList);
+      });
+
+      return vertexLists;
+   }
+
+   public static List<HashSet<Vector3D32>> loadUniqueVertexPositions(String modelFilePath)
+   {
+      List<HashSet<Vector3D32>> vertexSets = new ArrayList<>();
+      iterateMeshes(modelFilePath, assimpMesh ->
+      {
+         AssimpVertexLoader assimpVertexLoader = new AssimpVertexLoader(assimpMesh);
+         vertexSets.add(assimpVertexLoader.loadVertices());
+      });
+
+      return vertexSets;
    }
 }

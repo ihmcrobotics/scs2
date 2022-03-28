@@ -2,6 +2,7 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import com.badlogic.gdx.graphics.Color;
@@ -10,10 +11,7 @@ import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.collision.CollisionConstants;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
+import com.badlogic.gdx.physics.bullet.collision.*;
 import com.badlogic.gdx.physics.bullet.dynamics.InternalTickCallback;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
@@ -21,11 +19,15 @@ import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
 
+import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
+import com.badlogic.gdx.physics.bullet.linearmath.btVector3Array;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
+import us.ihmc.euclid.tuple3D.Point3D32;
+import us.ihmc.euclid.tuple3D.Vector3D32;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -199,14 +201,71 @@ public class BulletTools
       return new Color((float) javaFXColor.getRed(), (float) javaFXColor.getGreen(), (float) javaFXColor.getBlue(), (float) javaFXColor.getOpacity());
    }
 
-   public static List<btConvexHullShape> loadConcaveHullShapeFromFile(String modelFilePath)
+   public static List<btConvexPointCloudShape> loadConvexPointCloudShapesFromFile(String modelFilePath)
    {
-      List<FloatBuffer> vertexBuffers = AssimpLoader.loadVertices(modelFilePath);
+      List<HashSet<Vector3D32>> vertexSets = AssimpLoader.loadUniqueVertexPositions(modelFilePath);
+      List<btConvexPointCloudShape> shapes = new ArrayList<>();
+      for (HashSet<Vector3D32> vertexSet : vertexSets)
+      {
+         btVector3Array bulletVector3Array = new btVector3Array();
+
+         for (Vector3D32 vector3D32 : vertexSet)
+         {
+            bulletVector3Array.expand(new Vector3(vector3D32.getX32(), vector3D32.getY32(), vector3D32.getZ32()));
+         }
+         bulletVector3Array.releaseOwnership();
+
+         btVector3 points = new btVector3(bulletVector3Array.getCPointer(), bulletVector3Array.hasOwnership());
+         int numberOfPoints = vertexSet.size();
+         Vector3 localScaling = new Vector3(1.0f, 1.0f, 1.0f);
+         bulletVector3Array.releaseOwnership();
+         btConvexPointCloudShape bulletConvexPointCloudShape = new btConvexPointCloudShape(points, numberOfPoints, localScaling, true);
+         shapes.add(bulletConvexPointCloudShape);
+      }
+      return shapes;
+   }
+
+   public static List<btConvexHullShape> loadConvexHullShapeFromFile(String modelFilePath)
+   {
+      List<FloatBuffer> vertexBuffers = AssimpLoader.loadTriangleVertexPositionsAsFloatBuffer(modelFilePath);
       List<btConvexHullShape> shapes = new ArrayList<>();
 
       for (FloatBuffer vertexBuffer : vertexBuffers)
       {
-         shapes.add(createConcaveHullShapeFromMesh(vertexBuffer, vertexBuffer.limit() / 3, 3));
+         int bytesPerVertex = 3 * Float.BYTES;
+         int numberOfPoints = vertexBuffer.limit() / bytesPerVertex;
+         btConvexHullShape concaveHullShapeFromMesh = createConcaveHullShapeFromMesh(vertexBuffer, numberOfPoints, bytesPerVertex);
+         shapes.add(concaveHullShapeFromMesh);
+      }
+      return shapes;
+   }
+
+   public static List<btConvexTriangleMeshShape> loadConvexTriangleMeshShapeFromFile(String modelFilePath)
+   {
+      List<List<Point3D32>> vertexLists = AssimpLoader.loadTriangleVertexPositionsAsList(modelFilePath);
+      List<btConvexTriangleMeshShape> shapes = new ArrayList<>();
+
+      for (List<Point3D32> vertexList : vertexLists)
+      {
+         btTriangleMesh bulletTriangleMesh = new btTriangleMesh(false, false);
+
+         for (int i = 0; i < vertexList.size(); i += 3)
+         {
+            bulletTriangleMesh.addTriangle(new Vector3(vertexList.get(i).getX32(),
+                                                       vertexList.get(i).getY32(),
+                                                       vertexList.get(i).getZ32()),
+                                           new Vector3(vertexList.get(i + 1).getX32(),
+                                                       vertexList.get(i + 1).getY32(),
+                                                       vertexList.get(i + 1).getZ32()),
+                                           new Vector3(vertexList.get(i + 2).getX32(),
+                                                       vertexList.get(i + 2).getY32(),
+                                                       vertexList.get(i + 2).getZ32()));
+         }
+         bulletTriangleMesh.releaseOwnership();
+
+         btConvexTriangleMeshShape bulletConvexTriangleMeshShape = new btConvexTriangleMeshShape(bulletTriangleMesh);
+
+         shapes.add(bulletConvexTriangleMeshShape);
       }
       return shapes;
    }
