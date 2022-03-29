@@ -375,6 +375,13 @@ public class SDFTools
             visualPose.prependOrientation(childLinkPose.getRotation());
          }
 
+         // Correct collision transform
+         for (CollisionShapeDefinition collisionShapeDefinition : childDefinition.getCollisionShapeDefinitions())
+         {
+            YawPitchRollTransformDefinition originPose = collisionShapeDefinition.getOriginPose();
+            originPose.prependOrientation(childLinkPose.getRotation());
+         }
+
          for (SensorDefinition sensorDefinition : jointDefinition.getSensorDefinitions())
          {
             sensorDefinition.getTransformToJoint().prependOrientation(childLinkPose.getRotation());
