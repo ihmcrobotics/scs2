@@ -24,10 +24,10 @@ public class YoGroupFX implements YoGraphicFXItem
 {
    private final StringProperty nameProperty = new SimpleStringProperty(this, "name", null);
    private final ObjectProperty<YoGroupFX> parentGroupProperty;
-   private final ObservableSet<YoGroupFX> children = FXCollections.observableSet(new LinkedHashSet<>());
-   private final ObservableSet<YoGraphicFXItem> itemChildren = FXCollections.observableSet(new LinkedHashSet<>());
-   private final ObservableSet<YoGraphicFX2D> yoGraphicFX2DSet = FXCollections.observableSet(new LinkedHashSet<>());
-   private final ObservableSet<YoGraphicFX3D> yoGraphicFX3DSet = FXCollections.observableSet(new LinkedHashSet<>());
+   private final ObservableSet<YoGroupFX> children = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new LinkedHashSet<>()));
+   private final ObservableSet<YoGraphicFXItem> itemChildren = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new LinkedHashSet<>()));
+   private final ObservableSet<YoGraphicFX2D> yoGraphicFX2DSet = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new LinkedHashSet<>()));
+   private final ObservableSet<YoGraphicFX3D> yoGraphicFX3DSet = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new LinkedHashSet<>()));
 
    private final Group group2D = new Group();
    private final Group group3D = new Group();

@@ -48,11 +48,7 @@ public class ReferenceFrameManager implements Manager
    private final BackgroundExecutorManager backgroundExecutorManager;
    private List<Runnable> cleanupTasks = null;
    private List<Runnable> updateTasks = null;
-   private ReferenceFrameChangedListener frameChangedListener = change ->
-   {
-      if (change.wasAdded())
-         registerNewSessionFrames(ReferenceFrameTools.collectFramesInSubtree(change.getTarget()));
-   };
+   private ReferenceFrameChangedListener frameChangedListener;
 
    private final ObservedAnimationTimer taskRunner = new ObservedAnimationTimer(getClass().getSimpleName())
    {
@@ -71,6 +67,25 @@ public class ReferenceFrameManager implements Manager
    {
       this.yoManager = yoManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
+
+      frameChangedListener = change ->
+      {
+         if (!change.wasAdded())
+            return;
+
+         backgroundExecutorManager.queueTaskToExecuteInBackground(this, () ->
+         {
+            try
+            {
+               // Adding some delay so if YoVariables are needed, they are first linked.
+               Thread.sleep(100);
+               registerNewSessionFramesNow(ReferenceFrameTools.collectFramesInSubtree(change.getTarget()));
+            }
+            catch (InterruptedException e)
+            {
+            }
+         });
+      };
    }
 
    @Override
@@ -125,11 +140,6 @@ public class ReferenceFrameManager implements Manager
       if (updateTasks == null)
          updateTasks = new ArrayList<>();
       updateTasks.add(task);
-   }
-
-   private void registerNewSessionFrames(Collection<ReferenceFrame> sessionFrames)
-   {
-      backgroundExecutorManager.queueTaskToExecuteInBackground(this, () -> registerNewSessionFramesNow(sessionFrames));
    }
 
    private void registerNewSessionFramesNow(Collection<ReferenceFrame> sessionFrames)
