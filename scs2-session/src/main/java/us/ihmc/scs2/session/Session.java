@@ -557,7 +557,8 @@ public abstract class Session
          return;
 
       this.runAtRealTimeRate.set(runAtRealTimeRate);
-      scheduleSessionTask(getActiveMode());
+      if (getActiveMode() == SessionMode.RUNNING)
+         scheduleSessionTask(getActiveMode());
    }
 
    /**
@@ -575,7 +576,8 @@ public abstract class Session
          return;
 
       playbackRealTimeRate.set(Double.valueOf(realTimeRate));
-      scheduleSessionTask(getActiveMode());
+      if (getActiveMode() == SessionMode.PLAYBACK)
+         scheduleSessionTask(getActiveMode());
    }
 
    /**
