@@ -48,18 +48,35 @@ public class BulletRobotLinkCollisionShape
          ModelFileGeometryDefinition modelFileGeometryDefinition = (ModelFileGeometryDefinition) collisionShapeDefinition.getGeometryDefinition();
 //         List<btConvexHullShape> shapes = BulletTools.loadConvexHullShapeFromFile(modelFileGeometryDefinition.getFileName());
 //         List<btConvexPointCloudShape> shapes = BulletTools.loadConvexPointCloudShapesFromFile(modelFileGeometryDefinition.getFileName());
-         List<btConvexTriangleMeshShape> shapes = BulletTools.loadConvexTriangleMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
 
-         btCompoundShape compoundShape = new btCompoundShape();
          Matrix4 identity = new Matrix4();
-
-         for (btCollisionShape shape : shapes)
+         if (collisionShapeDefinition.isConcave())
          {
-            shape.setMargin(0.01f);
-            compoundShape.addChildShape(identity, shape);
-         }
+            List<btGImpactMeshShape> shapes = BulletTools.loadConcaveGImpactMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
+            btCompoundFromGimpactShape compoundFromGimpactShape = new btCompoundFromGimpactShape();
 
-         bulletCollisionShape = compoundShape;
+            for (btCollisionShape shape : shapes)
+            {
+               shape.setMargin(0.01f);
+               compoundFromGimpactShape.addChildShape(identity, shape);
+            }
+
+            bulletCollisionShape = compoundFromGimpactShape;
+         }
+         else
+         {
+            List<btConvexTriangleMeshShape> shapes = BulletTools.loadConvexTriangleMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
+
+            btCompoundShape compoundShape = new btCompoundShape();
+
+            for (btCollisionShape shape : shapes)
+            {
+               shape.setMargin(0.01f);
+               compoundShape.addChildShape(identity, shape);
+            }
+
+            bulletCollisionShape = compoundShape;
+         }
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
       {

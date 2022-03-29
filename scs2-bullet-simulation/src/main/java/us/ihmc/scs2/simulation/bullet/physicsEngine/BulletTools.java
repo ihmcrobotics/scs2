@@ -270,6 +270,37 @@ public class BulletTools
       return shapes;
    }
 
+   public static List<btGImpactMeshShape> loadConcaveGImpactMeshShapeFromFile(String modelFilePath)
+   {
+      List<List<Point3D32>> vertexLists = AssimpLoader.loadTriangleVertexPositionsAsList(modelFilePath);
+      List<btGImpactMeshShape> shapes = new ArrayList<>();
+
+      for (List<Point3D32> vertexList : vertexLists)
+      {
+         btTriangleMesh bulletTriangleMesh = new btTriangleMesh(false, false);
+
+         for (int i = 0; i < vertexList.size(); i += 3)
+         {
+            bulletTriangleMesh.addTriangle(new Vector3(vertexList.get(i).getX32(),
+                                                       vertexList.get(i).getY32(),
+                                                       vertexList.get(i).getZ32()),
+                                           new Vector3(vertexList.get(i + 1).getX32(),
+                                                       vertexList.get(i + 1).getY32(),
+                                                       vertexList.get(i + 1).getZ32()),
+                                           new Vector3(vertexList.get(i + 2).getX32(),
+                                                       vertexList.get(i + 2).getY32(),
+                                                       vertexList.get(i + 2).getZ32()));
+         }
+         bulletTriangleMesh.releaseOwnership();
+
+         btGImpactMeshShape bulletConvexTriangleMeshShape = new btGImpactMeshShape(bulletTriangleMesh);
+         bulletConvexTriangleMeshShape.updateBound();
+
+         shapes.add(bulletConvexTriangleMeshShape);
+      }
+      return shapes;
+   }
+
    public static btConvexHullShape createConcaveHullShapeFromMesh(FloatBuffer floatBuffer, int numberOfPoints, int stride)
    {
       floatBuffer.rewind();
