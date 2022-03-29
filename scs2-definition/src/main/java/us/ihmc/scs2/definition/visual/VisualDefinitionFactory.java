@@ -328,8 +328,9 @@ public class VisualDefinitionFactory
       double radius = 0.02 * length;
       double coneRadius = 2.0 * radius;
 
+      appendTranslation(0.0, 0.0, 0.5 * cylinderHeight);
       addCylinder(cylinderHeight, radius, baseMaterial);
-      appendTranslation(0.0, 0.0, cylinderHeight);
+      appendTranslation(0.0, 0.0, 0.5 * cylinderHeight);
       addCone(coneHeight, coneRadius, headMaterial);
       appendTranslation(0.0, 0.0, -cylinderHeight);
    }
