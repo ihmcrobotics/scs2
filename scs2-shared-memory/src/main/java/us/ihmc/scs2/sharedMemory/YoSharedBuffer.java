@@ -115,6 +115,15 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
       properties.setCurrentIndexUnsafe(0);
    }
 
+   /**
+    * Consumes a request for filling in the buffer with either zeros or the current value stored in
+    * each {@link YoVariable}.
+    * <p>
+    * Operation for the buffer manager only.
+    * </p>
+    * 
+    * @param request request defining the region of the buffer to fill in.
+    */
    public void fillBuffer(FillBufferRequest request)
    {
       if (isDisposed)

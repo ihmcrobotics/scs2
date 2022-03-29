@@ -39,44 +39,122 @@ import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoVariable;
 
+/**
+ * Base class for implementing a session, e.g. a simulation, log reading, or a remote session.
+ */
 public abstract class Session
 {
+   private static final int DEFAULT_INITIAL_BUFFER_SIZE = 8192;
+   private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = 1;
+   private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = false;
+   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = 2.0;
+   private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = -1L;
+
+   /** Name of the root registry for any session. */
    public static final String ROOT_REGISTRY_NAME = "root";
+   /** Name of the registry that will contains variables related to the internal state of SCS2. */
    public static final String SESSION_INTERNAL_REGISTRY_NAME = Session.class.getSimpleName() + "InternalRegistry";
+   /** Namespace of the root registry for any session. */
    public static final YoNamespace ROOT_NAMESPACE = new YoNamespace(ROOT_REGISTRY_NAME);
+   /** Namespace of the registry that will contains variables related to the internal state of SCS2. */
    public static final YoNamespace SESSION_INTERNAL_NAMESPACE = ROOT_NAMESPACE.append(SESSION_INTERNAL_REGISTRY_NAME);
+   /**
+    * Name suffix for any {@link ReferenceFrame} that only serve internal purpose as for instance
+    * helping with the physics engine's calculation.
+    */
    public static final String SCS2_INTERNAL_FRAME_SUFFIX = "[SCS2Internal]";
 
+   /**
+    * The inertial frame associated to this session. It is expected to be a root frame that is
+    * different to {@link ReferenceFrame#getWorldFrame()}.
+    */
    protected final ReferenceFrame inertialFrame;
 
+   /**
+    * The instance of the root registry of this session. Every {@link YoRegistry} and
+    * {@link YoVariable} that are to be buffered must be attached directly or indirectly to the root
+    * registry.
+    */
    protected final YoRegistry rootRegistry = new YoRegistry(ROOT_REGISTRY_NAME);
+   /**
+    * The instance of the registry that is used to register variables related to the internal state of
+    * SCS2.
+    */
    protected final YoRegistry sessionRegistry = new YoRegistry(SESSION_INTERNAL_REGISTRY_NAME);
+   /**
+    * Variable holding the current time (in seconds) for this session. It represents notably:
+    * <ul>
+    * <li>the amount of simulation time when working with a simulation session;
+    * <li>the amount of time since the start of a log file when working with a log session;
+    * <li>the time broadcasted by the server when working with a remote session.
+    * </ul>
+    */
    protected final YoDouble time = new YoDouble("time", rootRegistry);
+   /**
+    * JVM statistics for this session, allowing for instance to inspect garbage collection or other
+    * indicator for performance debugging.
+    */
    private final JVMStatisticsGenerator jvmStatisticsGenerator = new JVMStatisticsGenerator("SCS2Stats", sessionRegistry);
 
+   /** Registry gathering debug variables related to {@link #runTick()}. */
    protected final YoRegistry runRegistry = new YoRegistry("runStatistics");
+   /** Timer used to measured the time elapsed between 2 calls of {@link #runTick()}. */
    private final YoTimer runActualDT = new YoTimer("runActualDT", TimeUnit.MILLISECONDS, runRegistry);
+   /** Timer used to measured the total time spent in each call of {@link #runTick()}. */
    private final YoTimer runTimer = new YoTimer("runTimer", TimeUnit.MILLISECONDS, runRegistry);
+   /** Timer used to measured the total time spent in each call of {@link #initializeRunTick()}. */
    private final YoTimer runInitializeTimer = new YoTimer("runInitializeTimer", TimeUnit.MILLISECONDS, runRegistry);
+   /** Timer used to measured the total time spent in each call of {@link #doSpecificRunTick()}. */
    private final YoTimer runSpecificTimer = new YoTimer("runSpecificTimer", TimeUnit.MILLISECONDS, runRegistry);
+   /**
+    * Timer used to measured the total time spent in each call of {@link #finalizeRunTick(boolean)}.
+    */
    private final YoTimer runFinalizeTimer = new YoTimer("runFinalizeTimer", TimeUnit.MILLISECONDS, runRegistry);
 
+   /** Registry gathering debug variables related to {@link #playbackTick()}. */
    protected final YoRegistry playbackRegistry = new YoRegistry("playbackStatistics");
+   /** Timer used to measured the time elapsed between 2 calls of {@link #playbackTick()}. */
    private final YoTimer playbackActualDT = new YoTimer("playbackActualDT", TimeUnit.MILLISECONDS, playbackRegistry);
+   /** Timer used to measured the total time spent in each call of {@link #playbackTick()}. */
    private final YoTimer playbackTimer = new YoTimer("playbackTimer", TimeUnit.MILLISECONDS, playbackRegistry);
 
+   /** Registry gathering debug variables related to {@link #pauseTick()}. */
    protected final YoRegistry pauseRegistry = new YoRegistry("pauseStatistics");
+   /** Timer used to measured the time elapsed between 2 calls of {@link #pauseTick()}. */
    private final YoTimer pauseActualDT = new YoTimer("pauseActualDT", TimeUnit.MILLISECONDS, pauseRegistry);
+   /** Timer used to measured the total time spent in each call of {@link #pauseTick()}. */
    private final YoTimer pauseTimer = new YoTimer("pauseTimer", TimeUnit.MILLISECONDS, pauseRegistry);
 
-   protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, 8192);
-
+   /**
+    * Instance of the buffer used for this session. It is used to keep track of the history of every
+    * {@link YoVariable} registered as a descendant of the {@link #rootRegistry}.
+    */
+   protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, DEFAULT_INITIAL_BUFFER_SIZE);
+   /**
+    * The current mode this session is running, see {@link SessionMode}.
+    */
    private final AtomicReference<SessionMode> activeMode = new AtomicReference<>(SessionMode.PAUSE);
-   private final AtomicBoolean runAtRealTimeRate = new AtomicBoolean(false);
-   private final AtomicReference<Double> playbackRealTimeRate = new AtomicReference<>(2.0);
+   /**
+    * Whether the {@link SessionMode#RUNNING} mode should be capped to run no faster that real-time.
+    */
+   private final AtomicBoolean runAtRealTimeRate = new AtomicBoolean(DEFAULT_RUN_AT_REALTIME_RATE);
+   /** The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data. */
+   private final AtomicReference<Double> playbackRealTimeRate = new AtomicReference<>(DEFAULT_PLAYBACK_REALTIME_RATE);
+   /**
+    * The number of ticks to step while in playback mode. Allows to play back at faster rates by
+    * increasing the step size.
+    */
    private int stepSizePerPlaybackTick = 1;
-   private final AtomicInteger bufferRecordTickPeriod = new AtomicInteger(1);
+   /**
+    * The number of times {@link #runTick()} should be called before saving the {@link YoVariable} data
+    * into the buffer.
+    * <p>
+    * A larger value allows to store data over longer period of time.
+    * </p>
+    */
+   private final AtomicInteger bufferRecordTickPeriod = new AtomicInteger(DEFAULT_BUFFER_RECORD_TICK_PERIOD);
    /**
     * Map from one session tick to the time increment in the data.
     * <p>
@@ -92,11 +170,14 @@ public abstract class Session
     * computational induced by the GUI while receiving a high-bandwidth stream of data.
     * </p>
     */
-   private final AtomicLong desiredBufferPublishPeriod = new AtomicLong(-1L);
+   private final AtomicLong desiredBufferPublishPeriod = new AtomicLong(DEFAULT_BUFFER_PUBLISH_PERIOD);
 
    // State listener to publish internal to outside world
+   /** Period at which the current session properties are to be published. */
    private final long sessionPropertiesPublishPeriod = 500L;
+   /** To keep track of the last time the session properties were published. */
    private long lastSessionPropertiesPublishTimestamp = -1L;
+   // Listeners
    private final List<SessionModeChangeListener> sessionModeChangeListeners = new ArrayList<>();
    private final List<Consumer<SessionState>> sessionStateChangedListeners = new ArrayList<>();
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
@@ -165,6 +246,11 @@ public abstract class Session
       sessionModeToTaskMap.put(SessionMode.PAUSE, this::pauseTick);
    }
 
+   /**
+    * Attempts to retrieve the simple name of the main class calling this method.
+    * 
+    * @return the simple name of the main calling this method.
+    */
    public static String retrieveCallerName()
    {
       StackTraceElement[] stackTrace = new Throwable().getStackTrace();
@@ -172,6 +258,13 @@ public abstract class Session
       return className.substring(className.lastIndexOf(".") + 1);
    }
 
+   /**
+    * Configures this session to communicate with the given messager. The session will register
+    * listeners and publishers using the API defined in {@link YoSharedBufferMessagerAPI} and
+    * {@link SessionMessagerAPI}.
+    * 
+    * @param messager the messager to configure this session with.
+    */
    public void setupWithMessager(Messager messager)
    {
       for (SessionTopicListenerManager manager : sessionTopicListenerManagers)
@@ -183,6 +276,14 @@ public abstract class Session
       sessionTopicListenerManagers.add(new SessionTopicListenerManager(messager));
    }
 
+   /**
+    * Requests the change to a new session mode.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param sessionMode the target mode.
+    */
    public void setSessionMode(SessionMode sessionMode)
    {
       setSessionMode(sessionMode, null);
@@ -196,81 +297,195 @@ public abstract class Session
          scheduleSessionTask(sessionMode, transition);
    }
 
+   /**
+    * Adds a listener to be notified whenever this session changes mode.
+    * 
+    * @param listener the listener to add.
+    * @see SessionMode
+    */
    public void addSessionModeChangeListener(SessionModeChangeListener listener)
    {
       sessionModeChangeListeners.add(listener);
    }
 
-   public void removeSessionModeChangeListener(SessionModeChangeListener listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removeSessionModeChangeListener(SessionModeChangeListener listener)
    {
-      sessionModeChangeListeners.remove(listener);
+      return sessionModeChangeListeners.remove(listener);
    }
 
+   /**
+    * Adds a listener to be notified whenever this session changes state, i.e. active or inactive for
+    * when the session gets shutdown.
+    * 
+    * @param listener the listener to add.
+    * @see SessionState
+    */
    public void addSessionStateChangedListener(Consumer<SessionState> listener)
    {
       sessionStateChangedListeners.add(listener);
    }
 
-   public void removeSessionStateChangedListener(Consumer<SessionState> listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removeSessionStateChangedListener(Consumer<SessionState> listener)
    {
-      sessionStateChangedListeners.remove(listener);
+      return sessionStateChangedListeners.remove(listener);
    }
 
+   /**
+    * Adds a listener to be notified whenever this session is about to shutdown. This listener will be
+    * called before the session becomes inactive.
+    * 
+    * @param listener the listener to add.
+    */
    public void addShutdownListener(Runnable listener)
    {
       shutdownListeners.add(listener);
    }
 
-   public void removeShutdownListener(Runnable listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removeShutdownListener(Runnable listener)
    {
-      shutdownListeners.remove(listener);
+      return shutdownListeners.remove(listener);
    }
 
+   /**
+    * Adds a listener to be notified on a regular basis about this session's general parameters.
+    * 
+    * @param listener the listener to add.
+    * @see SessionProperties
+    */
    public void addSessionPropertiesListener(Consumer<SessionProperties> listener)
    {
       sessionPropertiesListeners.add(listener);
    }
 
-   public void removeSessionPropertiesListener(Consumer<SessionProperties> listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removeSessionPropertiesListener(Consumer<SessionProperties> listener)
    {
-      sessionPropertiesListeners.remove(listener);
+      return sessionPropertiesListeners.remove(listener);
    }
 
+   /**
+    * Adds a listener to be notified on a regular basis about this session's buffer properties.
+    * 
+    * @param listener the listener to add.
+    * @see YoBufferPropertiesReadOnly
+    */
    public void addCurrentBufferPropertiesListener(Consumer<YoBufferPropertiesReadOnly> listener)
    {
       currentBufferPropertiesListeners.add(listener);
    }
 
-   public void removeCurrentBufferPropertiesListener(Consumer<YoBufferPropertiesReadOnly> listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removeCurrentBufferPropertiesListener(Consumer<YoBufferPropertiesReadOnly> listener)
    {
-      currentBufferPropertiesListeners.remove(listener);
+      return currentBufferPropertiesListeners.remove(listener);
    }
 
+   /**
+    * Adds a listener to be notified if an exception is being thrown while this session is in running
+    * mode
+    * 
+    * @param listener the listener to add.
+    * @see SessionMode
+    */
    public void addRunThrowableListener(Consumer<Throwable> listener)
    {
       runThrowableListeners.add(listener);
    }
 
-   public void removeRunThrowableListener(Consumer<Throwable> listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removeRunThrowableListener(Consumer<Throwable> listener)
    {
-      runThrowableListeners.remove(listener);
+      return runThrowableListeners.remove(listener);
    }
 
+   /**
+    * Adds a listener to be notified if an exception is being thrown while this session is in playback
+    * mode
+    * 
+    * @param listener the listener to add.
+    * @see SessionMode
+    */
    public void addPlaybackThrowableListener(Consumer<Throwable> listener)
    {
       playbackThrowableListeners.add(listener);
    }
 
-   public void removePlaybackThrowableListener(Consumer<Throwable> listener)
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removePlaybackThrowableListener(Consumer<Throwable> listener)
    {
-      playbackThrowableListeners.remove(listener);
+      return playbackThrowableListeners.remove(listener);
    }
 
+   /**
+    * Sets the DT, i.e. time increment in seconds, corresponding to one tick of this session when in
+    * running mode.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param sessionDTSeconds the time increment in seconds per running tick.
+    * @see SessionMode
+    */
    public void setSessionDTSeconds(double sessionDTSeconds)
    {
       setSessionDTNanoseconds(Conversions.secondsToNanoseconds(sessionDTSeconds));
    }
 
+   /**
+    * Sets the DT, i.e. time increment in nanoseconds, corresponding to one tick of this session when
+    * in running mode.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param sessionDTSeconds the time increment in nanoseconds per running tick.
+    * @see SessionMode
+    */
    public void setSessionDTNanoseconds(long sessionDTNanoseconds)
    {
       if (this.sessionDTNanoseconds.get() == sessionDTNanoseconds)
@@ -280,6 +495,21 @@ public abstract class Session
       scheduleSessionTask(getActiveMode());
    }
 
+   /**
+    * Sets the initial size of this session's buffer.
+    * <p>
+    * Unlike {@link #submitBufferSizeRequest(Integer)} or
+    * {@link #submitBufferSizeRequestAndWait(Integer)}, this method will change the buffer size only
+    * the first time it is invoked. The subsequent calls will be ignored.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param bufferSize the initial size of the buffer. Default value
+    *                   {@value #DEFAULT_INITIAL_BUFFER_SIZE}.
+    * @return {@code true} if the request is going through, {@code false} if it is being ignored.
+    */
    public boolean initializeBufferSize(int bufferSize)
    {
       if (hasBufferSizeBeenInitialized)
@@ -288,6 +518,20 @@ public abstract class Session
       return true;
    }
 
+   /**
+    * Sets the initial record period in number of ticks for this session.
+    * <p>
+    * Unlike {@link #submitBufferRecordTickPeriod(int)}, this method will change the property only the
+    * first time it is invoked. The subsequent calls will be ignored.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
+    *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
+    * @return {@code true} if the request is going through, {@code false} if it is being ignored.
+    */
    public boolean initializeBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
       if (hasBufferRecordPeriodBeenInitialized)
@@ -296,6 +540,17 @@ public abstract class Session
       return true;
    }
 
+   /**
+    * Sets whether or not the {@link SessionMode#RUNNING} mode of this session should be capped to be
+    * running no faster than real-time.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param runAtRealTimeRate {@code true} to cap the running mode at real-time rate, {@code false} to
+    *                          let the running mode run as fast as possible. Default value
+    *                          {@value #DEFAULT_RUN_AT_REALTIME_RATE}.
+    */
    public void submitRunAtRealTimeRate(boolean runAtRealTimeRate)
    {
       if (this.runAtRealTimeRate.get() == runAtRealTimeRate)
@@ -305,6 +560,15 @@ public abstract class Session
       scheduleSessionTask(getActiveMode());
    }
 
+   /**
+    * Sets the speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param realTimeRate the real-time factor for playing back data in the buffer. Default value
+    *                     {@value #DEFAULT_PLAYBACK_REALTIME_RATE}.
+    */
    public void submitPlaybackRealTimeRate(double realTimeRate)
    {
       if (playbackRealTimeRate.get().doubleValue() == realTimeRate)
@@ -314,6 +578,18 @@ public abstract class Session
       scheduleSessionTask(getActiveMode());
    }
 
+   /**
+    * Sets the period, in number of ticks, at which data should be recorded into the buffer.
+    * <p>
+    * A larger value allows to store data over longer period of time.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and the change is applied immediately.
+    * </p>
+    * 
+    * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
+    *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
+    */
    public void submitBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
       hasBufferRecordPeriodBeenInitialized = true;
@@ -322,98 +598,365 @@ public abstract class Session
       this.bufferRecordTickPeriod.set(Math.max(1, bufferRecordTickPeriod));
    }
 
+   /**
+    * Sets the period used to control the rate at which the GUI will be refreshed.
+    * <p>
+    * This is particularly useful for instance when reading a log, increasing this period allows to
+    * increase the speed at which we can read the log, also useful for the remote session to reduce the
+    * computational induced by the GUI while receiving a high-bandwidth stream of data.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and the change is applied immediately.
+    * </p>
+    * 
+    * @param publishPeriod period in nanoseconds at which the buffer data is publish while in
+    *                      {@link SessionMode#RUNNING} mode. Default value
+    *                      {@value #DEFAULT_BUFFER_PUBLISH_PERIOD}.
+    */
    public void submitDesiredBufferPublishPeriod(long publishPeriod)
    {
       desiredBufferPublishPeriod.set(publishPeriod);
    }
 
+   /**
+    * Requests the buffer to be cropped.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise. This request will cancel any other requests submitted at the same time.
+    * </p>
+    * 
+    * @param cropBufferRequest the request.
+    * @see CropBufferRequest
+    */
    public void submitCropBufferRequest(CropBufferRequest cropBufferRequest)
    {
       pendingCropBufferRequest.submit(cropBufferRequest);
    }
 
+   /**
+    * Requests to fill in the buffer entirely or partially with zeros or the value stored in each
+    * {@link YoVariable}.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param fillBufferRequest the request.
+    */
    public void submitFillBufferRequest(FillBufferRequest fillBufferRequest)
    {
       pendingFillBufferRequest.submit(fillBufferRequest);
    }
 
+   /**
+    * Requests to change the size the of the buffer.
+    * <p>
+    * This is typically used to increased the buffer size. To decrease the buffer size, it is
+    * recommended to use a crop request that provides better control on the data being preserved.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferSizeRequest
+    * @see #submitCropBufferRequest(CropBufferRequest)
+    */
    public void submitBufferSizeRequest(Integer bufferSizeRequest)
    {
       pendingBufferSizeRequest.submit(bufferSizeRequest);
       hasBufferSizeBeenInitialized = true;
    }
 
+   /**
+    * Requests to move the current buffer index, i.e. reading/writing position.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferIndexRequest the current index to go to.
+    */
    public void submitBufferIndexRequest(Integer bufferIndexRequest)
    {
       pendingBufferIndexRequest.submit(bufferIndexRequest);
    }
 
+   /**
+    * Requests to increment the current buffer index, i.e. reading/writing position, by a given step
+    * size.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param incrementBufferIndexRequest the increment to apply to the current buffer index.
+    */
    public void submitIncrementBufferIndexRequest(Integer incrementBufferIndexRequest)
    {
       pendingIncrementBufferIndexRequest.submit(incrementBufferIndexRequest);
    }
 
-   public void submitDecrementBufferIndexRequest(Integer incrementBufferIndexRequest)
+   /**
+    * Requests to decrement the current buffer index, i.e. reading/writing position, by a given step
+    * size.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param decrementBufferIndexRequest the decrement to apply to the current buffer index.
+    */
+   public void submitDecrementBufferIndexRequest(Integer decrementBufferIndexRequest)
    {
-      pendingDecrementBufferIndexRequest.submit(incrementBufferIndexRequest);
+      pendingDecrementBufferIndexRequest.submit(decrementBufferIndexRequest);
    }
 
+   /**
+    * Requests to set the buffer in-point, i.e. the first index of the active part of the buffer.
+    * <p>
+    * The active part of the buffer is typically the sub-section that contains actual data. The active
+    * part of the buffer is delimited by an in-point index and an out-point index.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferInPointIndexRequest the new index for the in-point.
+    */
    public void submitBufferInPointIndexRequest(Integer bufferInPointIndexRequest)
    {
       pendingBufferInPointIndexRequest.submit(bufferInPointIndexRequest);
    }
 
+   /**
+    * Requests to set the buffer out-point, i.e. the last index of the active part of the buffer.
+    * <p>
+    * The active part of the buffer is typically the sub-section that contains actual data. The active
+    * part of the buffer is delimited by an in-point index and an out-point index.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferOutPointIndexRequest the new index for the out-point.
+    */
    public void submitBufferOutPointIndexRequest(Integer bufferOutPointIndexRequest)
    {
       pendingBufferOutPointIndexRequest.submit(bufferOutPointIndexRequest);
    }
 
+   /**
+    * Requests to export this session's data to file.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param sessionDataExportRequest the request.
+    * @see SessionDataExportRequest
+    */
    public void submitSessionDataExportRequest(SessionDataExportRequest sessionDataExportRequest)
    {
       pendingDataExportRequest.submit(sessionDataExportRequest);
    }
 
+   /**
+    * Requests the buffer to be cropped.
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise. This request will cancel any other requests submitted at the same time.
+    * </p>
+    * 
+    * @param cropBufferRequest the request.
+    * @see CropBufferRequest
+    */
    public void submitCropBufferRequestAndWait(CropBufferRequest cropBufferRequest)
    {
       pendingCropBufferRequest.submitAndWait(cropBufferRequest);
    }
 
+   /**
+    * Requests to fill in the buffer entirely or partially with zeros or the value stored in each
+    * {@link YoVariable}.
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param fillBufferRequest the request.
+    */
    public void submitFillBufferRequestAndWait(FillBufferRequest fillBufferRequest)
    {
       pendingFillBufferRequest.submitAndWait(fillBufferRequest);
    }
 
+   /**
+    * Requests to change the size the of the buffer.
+    * <p>
+    * This is typically used to increased the buffer size. To decrease the buffer size, it is
+    * recommended to use a crop request that provides better control on the data being preserved.
+    * </p>
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferSizeRequest
+    * @see #submitCropBufferRequest(CropBufferRequest)
+    */
    public void submitBufferSizeRequestAndWait(Integer bufferSizeRequest)
    {
       hasBufferSizeBeenInitialized = true;
       pendingBufferSizeRequest.submitAndWait(bufferSizeRequest);
    }
 
+   /**
+    * Requests to move the current buffer index, i.e. reading/writing position.
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferIndexRequest the current index to go to.
+    */
    public void submitBufferIndexRequestAndWait(Integer bufferIndexRequest)
    {
       pendingBufferIndexRequest.submitAndWait(bufferIndexRequest);
    }
 
+   /**
+    * Requests to increment the current buffer index, i.e. reading/writing position, by a given step
+    * size.
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param incrementBufferIndexRequest the increment to apply to the current buffer index.
+    */
    public void submitIncrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
    {
       pendingIncrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
    }
 
+   /**
+    * Requests to decrement the current buffer index, i.e. reading/writing position, by a given step
+    * size.
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param decrementBufferIndexRequest the decrement to apply to the current buffer index.
+    */
    public void submitDecrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
    {
       pendingDecrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
    }
 
+   /**
+    * Requests to set the buffer in-point, i.e. the first index of the active part of the buffer.
+    * <p>
+    * The active part of the buffer is typically the sub-section that contains actual data. The active
+    * part of the buffer is delimited by an in-point index and an out-point index.
+    * </p>
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferInPointIndexRequest the new index for the in-point.
+    */
    public void submitBufferInPointIndexRequestAndWait(Integer bufferInPointIndexRequest)
    {
       pendingBufferInPointIndexRequest.submitAndWait(bufferInPointIndexRequest);
    }
 
+   /**
+    * Requests to set the buffer out-point, i.e. the last index of the active part of the buffer.
+    * <p>
+    * The active part of the buffer is typically the sub-section that contains actual data. The active
+    * part of the buffer is delimited by an in-point index and an out-point index.
+    * </p>
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param bufferOutPointIndexRequest the new index for the out-point.
+    */
    public void submitBufferOutPointIndexRequestAndWait(Integer bufferOutPointIndexRequest)
    {
       pendingBufferOutPointIndexRequest.submitAndWait(bufferOutPointIndexRequest);
    }
 
+   /**
+    * Requests to export this session's data to file.
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * <p>
+    * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
+    * otherwise.
+    * </p>
+    * 
+    * @param sessionDataExportRequest the request.
+    * @see SessionDataExportRequest
+    */
    public void submitSessionDataExportRequestAndWait(SessionDataExportRequest sessionDataExportRequest)
    {
       pendingDataExportRequest.submitAndWait(sessionDataExportRequest);
@@ -896,9 +1439,6 @@ public abstract class Session
             hasBufferBeenUpdated = true;
          }
 
-         if (newSize != null)
-            hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize.intValue());
-
          if (fillBufferRequest != null)
          {
             sharedBuffer.fillBuffer(fillBufferRequest);
@@ -916,17 +1456,12 @@ public abstract class Session
                e.printStackTrace();
             }
          }
+      }
 
-         return hasBufferBeenUpdated;
-      }
-      else
-      {
-         if (newSize != null)
-         {
-            sharedBuffer.resizeBuffer(newSize.intValue());
-         }
-         return hasBufferBeenUpdated;
-      }
+      if (newSize != null)
+         hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize.intValue());
+
+      return hasBufferBeenUpdated;
    }
 
    public YoDouble getTime()
@@ -962,6 +1497,11 @@ public abstract class Session
    public int getBufferRecordTickPeriod()
    {
       return bufferRecordTickPeriod.get();
+   }
+
+   public double getBufferRecordTimePeriod()
+   {
+      return getBufferRecordTickPeriod() * getSessionDTSeconds();
    }
 
    public double getSessionDTSeconds()
