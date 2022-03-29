@@ -3,7 +3,6 @@
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXComboBox?>
 <?import com.jfoenix.controls.JFXSlider?>
-<?import com.jfoenix.controls.JFXTextField?>
 <?import com.jfoenix.controls.JFXToggleButton?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.Scene?>
@@ -37,32 +36,22 @@
                      <JFXSlider fx:id="currentBufferIndexSlider" />
                      <GridPane hgap="5.0" vgap="5.0">
                        <columnConstraints>
-                           <ColumnConstraints hgrow="SOMETIMES" />
                          <ColumnConstraints hgrow="SOMETIMES" />
                          <ColumnConstraints hgrow="SOMETIMES" />
                            <ColumnConstraints hgrow="SOMETIMES" />
                            <ColumnConstraints hgrow="SOMETIMES" />
                        </columnConstraints>
                        <rowConstraints>
-                         <RowConstraints vgrow="SOMETIMES" />
                            <RowConstraints vgrow="SOMETIMES" />
                            <RowConstraints vgrow="SOMETIMES" />
                        </rowConstraints>
                         <children>
-                           <Label maxWidth="1.7976931348623157E308" text="In-point:" GridPane.columnIndex="1" />
-                           <JFXTextField fx:id="inPointTextField" GridPane.columnIndex="2" />
-                           <Label maxWidth="1.7976931348623157E308" text="Out-point:" GridPane.columnIndex="3" />
-                           <JFXTextField fx:id="outPointTextField" GridPane.columnIndex="4" />
-                           <JFXButton buttonType="RAISED" onAction="#setInOutToCurrent" styleClass="set-indices-to-in-out-button" text="Set in/out to current">
-                              <GridPane.margin>
-                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                              </GridPane.margin></JFXButton>
-                           <JFXToggleButton fx:id="exportRobotDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                           <JFXToggleButton fx:id="exportTerrainDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Terrain" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                           <JFXToggleButton fx:id="exportYoGraphicsDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="YoGraphics" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                           <JFXToggleButton fx:id="exportRobotStateToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot state" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                           <JFXToggleButton fx:id="exportDataToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Data" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-                           <JFXComboBox fx:id="dataFormatComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                           <JFXToggleButton fx:id="exportRobotDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot" />
+                           <JFXToggleButton fx:id="exportTerrainDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Terrain" GridPane.columnIndex="1" />
+                           <JFXToggleButton fx:id="exportYoGraphicsDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="YoGraphics" GridPane.columnIndex="2" />
+                           <JFXToggleButton fx:id="exportRobotStateToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot state" GridPane.rowIndex="1" />
+                           <JFXToggleButton fx:id="exportDataToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Data" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                           <JFXComboBox fx:id="dataFormatComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                         </children>
                      </GridPane>
                      <HBox alignment="CENTER_RIGHT" spacing="15.0">
