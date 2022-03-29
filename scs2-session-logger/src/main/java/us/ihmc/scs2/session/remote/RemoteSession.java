@@ -49,7 +49,7 @@ public class RemoteSession extends Session
                         YoVariableHandshakeParser handshakeParser,
                         DebugRegistry debugRegistry)
    {
-      super(SessionMode.RUNNING);
+      super();
 
       this.yoVariableClientInterface = yoVariableClientInterface;
 
@@ -75,6 +75,7 @@ public class RemoteSession extends Session
          robotStateUpdater = null;
       }
 
+      setSessionMode(SessionMode.RUNNING);
       setSessionDTSeconds(handshakeParser.getDt());
       setSessionModeTask(SessionMode.RUNNING, () ->
       {

@@ -33,6 +33,7 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
+import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -179,7 +180,6 @@ public abstract class Session
    private long lastSessionPropertiesPublishTimestamp = -1L;
    // Listeners
    private final List<SessionModeChangeListener> sessionModeChangeListeners = new ArrayList<>();
-   private final List<Consumer<SessionState>> sessionStateChangedListeners = new ArrayList<>();
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
    private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
    private final List<Runnable> shutdownListeners = new ArrayList<>();
@@ -201,7 +201,7 @@ public abstract class Session
 
    // Strictly internal fields
    private final List<SessionTopicListenerManager> sessionTopicListenerManagers = new ArrayList<>();
-   private boolean sessionStarted = false;
+   private boolean sessionThreadStarted = false;
    private boolean sessionInitialized = false;
    private boolean isSessionShutdown = false;
    private long lastPublishedBufferTimestamp = -1L;
@@ -218,32 +218,21 @@ public abstract class Session
 
    public Session()
    {
-      this(SessionMode.PAUSE);
-   }
-
-   public Session(SessionMode initialMode)
-   {
-      this(ReferenceFrameTools.constructARootFrame("worldFrame"), initialMode);
+      this(ReferenceFrameTools.constructARootFrame("worldFrame"));
    }
 
    public Session(ReferenceFrame inertialFrame)
    {
-      this(inertialFrame, SessionMode.PAUSE);
-   }
-
-   public Session(ReferenceFrame inertialFrame, SessionMode initialMode)
-   {
       this.inertialFrame = inertialFrame;
 
-      activeMode.set(initialMode);
       rootRegistry.addChild(sessionRegistry);
       sessionRegistry.addChild(runRegistry);
       sessionRegistry.addChild(playbackRegistry);
       sessionRegistry.addChild(pauseRegistry);
 
-      sessionModeToTaskMap.put(SessionMode.RUNNING, this::runTick);
-      sessionModeToTaskMap.put(SessionMode.PLAYBACK, this::playbackTick);
-      sessionModeToTaskMap.put(SessionMode.PAUSE, this::pauseTick);
+      setSessionModeTask(SessionMode.RUNNING, this::runTick);
+      setSessionModeTask(SessionMode.PLAYBACK, this::playbackTick);
+      setSessionModeTask(SessionMode.PAUSE, this::pauseTick);
    }
 
    /**
@@ -289,6 +278,17 @@ public abstract class Session
       setSessionMode(sessionMode, null);
    }
 
+   /**
+    * Changes the current session mode and schedule a transition that will be used to determine when
+    * the newly triggered mode is done, and when it is done what is the next mode to run.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param sessionMode the new active session mode.
+    * @param transition  the transition to schedule termination of the given {@code sessionMode} and
+    *                    transition to the following mode.
+    */
    protected void setSessionMode(SessionMode sessionMode, SessionModeTransition transition)
    {
       SessionMode currentMode = activeMode.get();
@@ -321,32 +321,7 @@ public abstract class Session
    }
 
    /**
-    * Adds a listener to be notified whenever this session changes state, i.e. active or inactive for
-    * when the session gets shutdown.
-    * 
-    * @param listener the listener to add.
-    * @see SessionState
-    */
-   public void addSessionStateChangedListener(Consumer<SessionState> listener)
-   {
-      sessionStateChangedListeners.add(listener);
-   }
-
-   /**
-    * Removes a listener previously registered to this session.
-    * 
-    * @param listener the listener to remove.
-    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
-    */
-   public boolean removeSessionStateChangedListener(Consumer<SessionState> listener)
-   {
-      return sessionStateChangedListeners.remove(listener);
-   }
-
-   /**
-    * Adds a listener to be notified whenever this session is about to shutdown. This listener will be
-    * called before the session becomes inactive.
+    * Adds a listener to be notified whenever this session is about to shutdown.
     * 
     * @param listener the listener to add.
     */
@@ -964,34 +939,38 @@ public abstract class Session
       pendingDataExportRequest.submitAndWait(sessionDataExportRequest);
    }
 
-   public void setSessionState(SessionState state)
+   /**
+    * Starts the internal thread of this session running the current session mode.
+    * 
+    * @return {@code true} if the thread has started, {@code false} if it could not be started, e.g. it
+    *         was already started or the session was shutdown.
+    */
+   public boolean startSessionThread()
    {
-      if (state == SessionState.ACTIVE)
+      if (sessionThreadStarted)
       {
-         if (!sessionStarted)
-         {
-            LogTools.info("Starting session");
-            startSessionThread();
-            sessionStateChangedListeners.forEach(listener -> listener.accept(state));
-         }
+         LogTools.info("Session already started.");
+         return false;
       }
-      else
-      {
-         if (!isSessionShutdown)
-         {
-            shutdownSession();
-            sessionStateChangedListeners.forEach(listener -> listener.accept(state));
-         }
-      }
-   }
 
-   public void startSessionThread()
-   {
-      LogTools.info("Started session's thread");
-      sessionStarted = true;
+      if (isSessionShutdown)
+      {
+         LogTools.error("Session has been shutdown.");
+         return false;
+      }
+
+      LogTools.info("Starting session's thread");
+      sessionThreadStarted = true;
       scheduleSessionTask(getActiveMode());
+      return true;
    }
 
+   /**
+    * Shuts down this session permanently, it becomes unusable.
+    * <p>
+    * This method notifies the shutdown listeners and performs a memory cleanup.
+    * </p>
+    */
    public void shutdownSession()
    {
       if (isSessionShutdown)
@@ -1002,7 +981,7 @@ public abstract class Session
       shutdownListeners.forEach(Runnable::run);
 
       LogTools.info("Stopped session's thread");
-      sessionStarted = false;
+      sessionThreadStarted = false;
 
       if (activePeriodicTask != null)
       {
@@ -1027,7 +1006,7 @@ public abstract class Session
 
    private void scheduleSessionTask(SessionMode newMode, SessionModeTransition transition)
    {
-      if (!sessionStarted)
+      if (!sessionThreadStarted)
          return;
 
       SessionMode previousMode = activeMode.get();
@@ -1099,11 +1078,21 @@ public abstract class Session
       reportActiveMode();
    }
 
+   /**
+    * Overrides this method to implement any specific transition action to be executed right before the
+    * new mode starts running.
+    * 
+    * @param previousMode the previous mode. At this point, it is not longer running.
+    * @param newMode      the new mode to run next, it is not yet running.
+    */
    protected void schedulingSessionMode(SessionMode previousMode, SessionMode newMode)
    {
-
    }
 
+   /**
+    * Calculates the period in nanoseconds the periodic thread should be running at given the session
+    * mode.
+    */
    private long computeThreadPeriod(SessionMode mode)
    {
       switch (mode)
@@ -1119,17 +1108,30 @@ public abstract class Session
       }
    }
 
+   /**
+    * Overrides the task to run for a given mode.
+    * <p>
+    * Here are the default tasks:
+    * <ul>
+    * <li>{@link SessionMode#RUNNING}: the task is {@link #runTick()},
+    * <li>{@link SessionMode#PLAYBACK}: the task is {@link #playbackTick()},
+    * <li>{@link SessionMode#PAUSE}: the task is {@link #pauseTick()}.
+    * </ul>
+    * </p>
+    */
    protected void setSessionModeTask(SessionMode sessionMode, Runnable runnable)
    {
       sessionModeToTaskMap.put(sessionMode, runnable);
    }
 
+   /** Reports the current {@link SessionProperties} to the listeners. */
    private void reportActiveMode()
    {
       for (Consumer<SessionProperties> listener : sessionPropertiesListeners)
          listener.accept(getSessionProperties());
    }
 
+   /** Creates new {@link SessionProperties} with the current properties. */
    public SessionProperties getSessionProperties()
    {
       return new SessionProperties(activeMode.get(),
@@ -1146,6 +1148,10 @@ public abstract class Session
    {
    }
 
+   /**
+    * Calculates the period in nanoseconds the periodic thread should be running at for
+    * {@link SessionMode#RUNNING}.
+    */
    protected long computeRunTaskPeriod()
    {
       return runAtRealTimeRate.get() ? sessionDTNanoseconds.get() : 1L;
@@ -1175,8 +1181,30 @@ public abstract class Session
       }
    }
 
+   /**
+    * Counter used to keep track of when the data should be written into the buffer according to the
+    * user defined period {@link #bufferRecordTickPeriod}.
+    */
    protected int nextRunBufferRecordTickCounter = 0;
 
+   /**
+    * Performs a single tick for the session mode {@link SessionMode#RUNNING}.
+    * <p>
+    * In order, this method calls:
+    * <ol>
+    * <li>{@link #doGeneric(SessionMode)}: generic set of actions regardless of the current mode,
+    * <li>{@link #initializeRunTick()}: prepares the buffer doing actual computation,
+    * <li>{@link #doSpecificRunTick()}: performs the actual computation of the run tick, for instance
+    * runs a tick of the physics engine when working with a simulation session,
+    * <li>{@link #finalizeRunTick(boolean)}: performs buffer operations to finalize the tick, such as
+    * incrementing the current index in the buffer, and publishes data to listeners.
+    * </ol>
+    * </p>
+    * <p>
+    * If {@link #doSpecificRunTick()} results in an exception being thrown, the session mode will be
+    * automatically changed to {@link SessionMode#PAUSE}.
+    * </p>
+    */
    public void runTick()
    {
       runTimer.start();
@@ -1215,6 +1243,15 @@ public abstract class Session
          setSessionMode(SessionMode.PAUSE);
    }
 
+   /**
+    * Prepares the buffer before performing actual computation for the session mode
+    * {@link SessionMode#RUNNING}.
+    * <p>
+    * It is at this time that we are processing the changes requested by the user through
+    * {@link LinkedYoVariable}s or via the {@link Messager}. Some operations, such as cropping the
+    * buffer, are not allowed in this mode and will be ignored.
+    * </p>
+    */
    protected void initializeRunTick()
    {
       if (firstRunTick)
@@ -1232,12 +1269,25 @@ public abstract class Session
    }
 
    /**
-    * Performs action specific to the implementation of this session.
+    * Performs action specific to the implementation of this session when running
+    * {@link SessionMode#RUNNING}.
     *
     * @return the current time in seconds.
     */
    protected abstract double doSpecificRunTick();
 
+   /**
+    * Performs buffer operations to finalize a run tick, such as incrementing the current index and
+    * writing the {@link YoVariable} values into the buffer, and publishes data to the listeners.
+    * <p>
+    * The data contained in the {@code YoVariable}s is written in the buffer only every
+    * {@link #bufferRecordTickPeriod} ticks, unless the given flag {@code forceWriteBuffer} is set to
+    * {@code true}.
+    * </p>
+    * 
+    * @param forceWriteBuffer when {@code true} the buffer will be updated regardless of the
+    *                         {@code nextRunBufferRecordTickCounter} value.
+    */
    protected void finalizeRunTick(boolean forceWriteBuffer)
    {
       boolean writeBuffer = nextRunBufferRecordTickCounter <= 0;
@@ -1269,6 +1319,10 @@ public abstract class Session
       nextRunBufferRecordTickCounter--;
    }
 
+   /**
+    * Calculates the period in nanoseconds the periodic thread should be running at for
+    * {@link SessionMode#PLAYBACK}.
+    */
    protected long computePlaybackTaskPeriod()
    {
       long timeIncrement = sessionDTNanoseconds.get() * bufferRecordTickPeriod.get();
@@ -1285,6 +1339,25 @@ public abstract class Session
       }
    }
 
+   /**
+    * Performs a single tick for the session mode {@link SessionMode#PLAYBACK}.
+    * <p>
+    * In order, this method calls:
+    * <ol>
+    * <li>{@link #doGeneric(SessionMode)}: generic set of actions regardless of the current mode,
+    * <li>{@link #initializePlaybackTick()}: prepares the buffer and reads the buffer at the current
+    * index to update the {@link YoVariable} values,
+    * <li>{@link #doSpecificPlaybackTick()}: performs the actual computation of the playback tick,
+    * typically nothing happens here as we're only playing through the buffered data,
+    * <li>{@link #finalizePlaybackTick()}: performs buffer operations to finalize the tick and
+    * publishes data to listeners.
+    * </ol>
+    * </p>
+    * <p>
+    * If {@link #doSpecificPlaybackTick()} results in an exception being thrown, the session mode will
+    * be automatically changed to {@link SessionMode#PAUSE}.
+    * </p>
+    */
    public void playbackTick()
    {
       playbackTimer.start();
@@ -1315,17 +1388,29 @@ public abstract class Session
          setSessionMode(SessionMode.PAUSE);
    }
 
+   /**
+    * Ignores all {@link YoVariable} value changes submitted by the user via {@link LinkedYoVariable}s
+    * and reads the buffer data to update the {@link YoVariable} values.
+    */
    protected void initializePlaybackTick()
    {
       sharedBuffer.flushLinkedPushRequests();
       sharedBuffer.readBuffer();
    }
 
+   /**
+    * Override to performs specific operations during a playback tick. Typically nothing happens here
+    * as we are only reading through the buffer data.
+    */
    protected void doSpecificPlaybackTick()
    {
 
    }
 
+   /**
+    * Performs buffer operation to finalize a playback tick, such as incrementing the current index and
+    * publishes data to the listeners.
+    */
    protected void finalizePlaybackTick()
    {
       long currentTimestamp = System.nanoTime();
@@ -1341,11 +1426,29 @@ public abstract class Session
       publishBufferProperties(sharedBuffer.getProperties());
    }
 
+   /**
+    * Calculates the period in nanoseconds the periodic thread should be running at for
+    * {@link SessionMode#PAUSE}.
+    */
    protected long computePauseTaskPeriod()
    {
       return Conversions.secondsToNanoseconds(0.01);
    }
 
+   /**
+    * Performs a single tick for the session mode {@link SessionMode#PAUSE}.
+    * <p>
+    * In order, this method calls:
+    * <ol>
+    * <li>{@link #doGeneric(SessionMode)}: generic set of actions regardless of the current mode,
+    * <li>{@link #initializePauseTick()}: initialize the buffer, mostly about fetching the changes
+    * requested by the user,
+    * <li>{@link #doSpecificPauseTick()}: this should pretty much always do nothing,
+    * <li>{@link #finalizePauseTick()}: buffer operations to finalize the tick and publishes data to
+    * the listeners.
+    * </ol>
+    * </p>
+    */
    public void pauseTick()
    {
       pauseTimer.start();
@@ -1360,6 +1463,12 @@ public abstract class Session
       pauseTimer.stop();
    }
 
+   /**
+    * Prepares the buffer for a pause tick, this is mainly about fetching the user requested changes
+    * onto the buffer.
+    * 
+    * @return whether the buffer has been modified and should be read at the end of the pause tick.
+    */
    protected boolean initializePauseTick()
    {
       boolean shouldReadBuffer = firstPauseTick;
@@ -1372,11 +1481,26 @@ public abstract class Session
       return shouldReadBuffer;
    }
 
+   /**
+    * Should pretty much always do nothing.
+    * <p>
+    * But if you really want to, you can override this method to perform custom operations during a
+    * pause tick.
+    * </p>
+    * 
+    * @return whether the buffer has been modified and should be read at the end of the pause tick.
+    */
    protected boolean doSpecificPauseTick()
    {
       return false;
    }
 
+   /**
+    * Performs buffer operations to finalize a pause tick and publishes data to publisher.
+    * 
+    * @param shouldReadBuffer whether to read the buffer at the current index and update the
+    *                         {@link YoVariable} values.
+    */
    protected void finalizePauseTick(boolean shouldReadBuffer)
    {
       if (shouldReadBuffer)
@@ -1385,6 +1509,11 @@ public abstract class Session
       publishBufferProperties(sharedBuffer.getProperties());
    }
 
+   /**
+    * Submits the given buffer properties to all the listeners.
+    * 
+    * @param bufferProperties the properties to be submitted to the listeners.
+    */
    protected void publishBufferProperties(YoBufferPropertiesReadOnly bufferProperties)
    {
       for (Consumer<YoBufferPropertiesReadOnly> listener : currentBufferPropertiesListeners)
@@ -1393,6 +1522,20 @@ public abstract class Session
       }
    }
 
+   /**
+    * Handles user requests for modifying the buffer.
+    * <p>
+    * Operations handled here are: changing indices (current, in-point, out-point), resizing, cropping,
+    * filling.
+    * </p>
+    * 
+    * @param bufferChangesPermitted indicates whether all operations onto the buffer are permitted
+    *                               ({@code true)} or only a minimal subset is permitted
+    *                               ({@code false}). When in {@link SessionMode#RUNNING} or
+    *                               {@link SessionMode#PLAYBACK}, changing the indices is not allowed
+    *                               for instance.
+    * @return whether the buffer has been modified.
+    */
    protected boolean processBufferRequests(boolean bufferChangesPermitted)
    {
       boolean hasBufferBeenUpdated = false;
@@ -1466,72 +1609,177 @@ public abstract class Session
       return hasBufferBeenUpdated;
    }
 
+   /**
+    * Gets the variable holding the current time (in seconds) in this session.
+    * 
+    * @return the current time (in seconds) variable.
+    */
    public YoDouble getTime()
    {
       return time;
    }
 
+   /**
+    * Gets this session's root registry.
+    * 
+    * @return the root registry.
+    */
    public YoRegistry getRootRegistry()
    {
       return rootRegistry;
    }
 
+   /**
+    * Returns whether this session's thread has been started.
+    * 
+    * @return {@code true} if the session thread has been started.
+    */
    public boolean hasSessionStarted()
    {
-      return sessionStarted;
+      return sessionThreadStarted;
    }
 
+   /**
+    * Returns whether this session has been shutdown and is thus unusable.
+    * 
+    * @return {@code true} if this session has been shutdown.
+    */
+   public boolean isSessionShutdown()
+   {
+      return isSessionShutdown;
+   }
+
+   /**
+    * Gets the current mode of this session.
+    * 
+    * @return the active mode.
+    */
    public SessionMode getActiveMode()
    {
       return activeMode.get();
    }
 
+   /**
+    * Whether the {@link SessionMode#RUNNING} mode should be capped to run no faster that real-time.
+    * 
+    * @return {@code true} if the running mode is capped to run no faster than real-time.
+    */
    public boolean getRunAtRealTimeRate()
    {
       return runAtRealTimeRate.get();
    }
 
+   /**
+    * The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data.
+    * 
+    * @return real-time factor used for the playbakc.
+    */
    public double getPlaybackRealTimeRate()
    {
       return playbackRealTimeRate.get().doubleValue();
    }
 
+   /**
+    * The number of times {@link #runTick()} should be called before saving the {@link YoVariable} data
+    * into the buffer.
+    * 
+    * @return the period, in number of run ticks, at which the {@link YoVariable}s are saved into the
+    *         buffer.
+    */
    public int getBufferRecordTickPeriod()
    {
       return bufferRecordTickPeriod.get();
    }
 
+   /**
+    * The period in seconds at which data from the {@link YoVariable}s is written into the buffer.
+    * 
+    * @return the period, in seconds, at which the {@link YoVariable}s are saved into the buffer.
+    */
    public double getBufferRecordTimePeriod()
    {
       return getBufferRecordTickPeriod() * getSessionDTSeconds();
    }
 
+   /**
+    * The time increment in seconds corresponding to the execution of one run tick.
+    * 
+    * @return the time increment in seconds per running tick.
+    */
    public double getSessionDTSeconds()
    {
       return sessionDTNanoseconds.get() * 1.0e-9;
    }
 
+   /**
+    * The time increment in nanoseconds corresponding to the execution of one run tick.
+    * 
+    * @return the time increment in nanoseconds per running tick.
+    */
    public long getSessionDTNanoseconds()
    {
       return sessionDTNanoseconds.get();
    }
 
+   /**
+    * The period at which the buffer is published to the listeners. The is mainly to control the GUI
+    * refresh rate.
+    * 
+    * @return the buffer publish period in nanoseconds.
+    */
    public long getDesiredBufferPublishPeriod()
    {
       return desiredBufferPublishPeriod.get();
    }
 
+   /**
+    * Gets the session name.
+    * 
+    * @return the session name.
+    */
    public abstract String getSessionName();
 
+   /**
+    * The inertial frame. It is expected to be a root frame that is different to
+    * {@link ReferenceFrame#getWorldFrame()}.
+    * 
+    * @return this session inertial frame.
+    */
    public final ReferenceFrame getInertialFrame()
    {
       return inertialFrame;
    }
 
+   /**
+    * Gets the list of all the robot definitions this session is handling. The number of robot
+    * definitions is expected to be the same as the number of robots.
+    * <p>
+    * This list is notably used by the GUI to visualize the robots.
+    * </p>
+    * 
+    * @return the robot definition list.
+    */
    public abstract List<RobotDefinition> getRobotDefinitions();
 
+   /**
+    * Gets the list of the terrain definitions used to represent the static environment used during
+    * this session.
+    * <p>
+    * This list is notably used by the GUI to visualize the environment.
+    * </p>
+    * 
+    * @return the terrain object definition list.
+    */
    public abstract List<TerrainObjectDefinition> getTerrainObjectDefinitions();
 
+   /**
+    * Gets the list of yoGraphic to be visualized with this session.
+    * <p>
+    * This list is notably used by the GUI to instantiate yoGraphics.
+    * </p>
+    * 
+    * @return the yoGraphic definition list.
+    */
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return Collections.emptyList();
@@ -1553,16 +1801,37 @@ public abstract class Session
       return null;
    }
 
-   YoSharedBuffer getBuffer()
+   /**
+    * Gets the instance of this session's buffer.
+    * <p>
+    * It is not recommended to access and operate directly on the buffer, prefer using
+    * {@link #getLinkedYoVariableFactory()}.
+    * </p>
+    * 
+    * @return the internal buffer.
+    */
+   public YoSharedBuffer getBuffer()
    {
       return sharedBuffer;
    }
 
+   /**
+    * Gets the factory for creating {@link LinkedYoVariable}s that can be used to operate safely with
+    * this session buffer.
+    * 
+    * @return the linked yoVariable factory.
+    */
    public LinkedYoVariableFactory getLinkedYoVariableFactory()
    {
       return sharedBuffer;
    }
 
+   /**
+    * Convenience class used to hook up a session with a {@link Messager}.
+    * <p>
+    * For internal use only.
+    * </p>
+    */
    private class SessionTopicListenerManager
    {
       private final Messager messager;
@@ -1577,7 +1846,14 @@ public abstract class Session
       private final TopicListener<Integer> currentBufferSizeListener = Session.this::submitBufferSizeRequest;
       private final TopicListener<Integer> initializeBufferSizeListener = Session.this::initializeBufferSize;
 
-      private final TopicListener<SessionState> sessionCurrentStateListener = Session.this::setSessionState;
+      // TODO Look into removing the SessionState enum, seems unnecessary
+      private final TopicListener<SessionState> sessionCurrentStateListener = state ->
+      {
+         if (state == SessionState.ACTIVE)
+            startSessionThread();
+         else if (state == SessionState.INACTIVE)
+            shutdownSession();
+      };
       private final TopicListener<SessionMode> sessionCurrentModeListener = Session.this::setSessionMode;
       private final TopicListener<Long> sessionDTNanosecondsListener = Session.this::setSessionDTNanoseconds;
       private final TopicListener<Boolean> runAtRealTimeRateListener = Session.this::submitRunAtRealTimeRate;
@@ -1669,16 +1945,46 @@ public abstract class Session
       }
    }
 
+   /**
+    * Interface to to implement a conditional based transition from one session mode to the next.
+    * <p>
+    * For instance, this transition be used to schedule a simulation of a fixed amount of time at the
+    * end of which the pause mode should be entered.
+    * </p>
+    */
    public interface SessionModeTransition
    {
+      /**
+       * The next mode to switch to once {@link #isDone()} returns {@code true}.
+       * 
+       * @return the mode to transition to once the current mode is done.
+       */
       SessionMode getNextMode();
 
+      /**
+       * Tests whether the current mode is done.
+       * 
+       * @return {@code true} if the current mode is done and should be terminated.
+       */
       boolean isDone();
 
+      /**
+       * Overrides this method to be notified once the transition has been performed, i.e. the current
+       * mode is done and terminated and the transition to the next mode has been scheduled.
+       */
       default void notifyTransitionComplete()
       {
       }
 
+      /**
+       * Factory for a creating a condition based transition.
+       * 
+       * @param doneCondition the condition used to determine when the current mode is done and should be
+       *                      terminated.
+       * @param nextMode      the mode to switch to once the current mode is done.
+       * @return the transition that can be used with
+       *         {@link Session#setSessionMode(SessionMode, SessionModeTransition)}.
+       */
       static SessionModeTransition newTransition(BooleanSupplier doneCondition, SessionMode nextMode)
       {
          return new SessionModeTransition()
@@ -1698,18 +2004,43 @@ public abstract class Session
       }
    }
 
+   /**
+    * Interface for implementing a listener that is to be notified when a session changes modes.
+    *
+    * @see Session#addSessionModeChangeListener(SessionModeChangeListener)
+    */
    public interface SessionModeChangeListener
    {
+      /**
+       * Notification of a mode change.
+       * <p>
+       * This method is called right after the new mode has been scheduled with the executor.
+       * </p>
+       * 
+       * @param previousMode the mode that was running previously. It has been stopped at this time.
+       * @param newMode      the mode that is about to run. It has been schedule with the executor and may
+       *                     have started to run already.
+       */
       void onChange(SessionMode previousMode, SessionMode newMode);
    }
 
+   /**
+    * Implementation of {@code Runnable} that runs a task at a periodic rate.
+    * <p>
+    * This implementation provides an API that allows to synchronize with the internal task state.
+    * </p>
+    */
    public static class PeriodicTaskWrapper implements Runnable
    {
       private static final int ONE_MILLION = 1000000;
 
+      /** The task to run periodically. */
       private final Runnable task;
+      /** The period at which the task should be run. */
       private final long periodInNanos;
+      /** Whether the task is being run or not. */
       private final AtomicBoolean running = new AtomicBoolean(true);
+      /** Indicates whether the task is done running or not. */
       private final AtomicBoolean isDone = new AtomicBoolean(false);
       private final CountDownLatch startedLatch = new CountDownLatch(1);
       private final CountDownLatch doneLatch = new CountDownLatch(1);
