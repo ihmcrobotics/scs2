@@ -13,7 +13,12 @@ import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 
 public class ExampleExperimentalSimulationTools
 {
-   static RobotDefinition newSphereRobot(String name, double radius, double mass, double radiusOfGyrationPercent, ColorDefinition color, boolean addStripes,
+   static RobotDefinition newSphereRobot(String name,
+                                         double radius,
+                                         double mass,
+                                         double radiusOfGyrationPercent,
+                                         ColorDefinition color,
+                                         boolean addStripes,
                                          ColorDefinition stripesColor)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
@@ -25,8 +30,13 @@ public class ExampleExperimentalSimulationTools
       return robotDefinition;
    }
 
-   public static RigidBodyDefinition newSphereRigidBody(String name, double radius, double mass, double radiusOfGyrationPercent, ColorDefinition color,
-                                                        boolean addStripes, ColorDefinition stripesColor)
+   public static RigidBodyDefinition newSphereRigidBody(String name,
+                                                        double radius,
+                                                        double mass,
+                                                        double radiusOfGyrationPercent,
+                                                        ColorDefinition color,
+                                                        boolean addStripes,
+                                                        ColorDefinition stripesColor)
    {
       RigidBodyDefinition rigidBody = new RigidBodyDefinition(name);
       double radiusOfGyration = radiusOfGyrationPercent * radius;
@@ -34,22 +44,28 @@ public class ExampleExperimentalSimulationTools
       rigidBody.setMomentOfInertia(MomentOfInertiaFactory.fromMassAndRadiiOfGyration(mass, radiusOfGyration, radiusOfGyration, radiusOfGyration));
 
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
-      factory.addSphere(radius, new MaterialDefinition(color));
+      factory.addSphere(radius, color);
 
       if (addStripes)
       {
          double stripePercent = 0.05;
-         factory.addArcTorus(0.0, 2.0 * Math.PI, (1.01 - stripePercent) * radius, radius * stripePercent, new MaterialDefinition(stripesColor));
+         factory.addArcTorus(0.0, 2.0 * Math.PI, (1.01 - stripePercent) * radius, radius * stripePercent, stripesColor);
          factory.appendRotation(Math.PI / 2.0, Axis3D.X);
-         factory.addArcTorus(0.0, 2.0 * Math.PI, (1.01 - stripePercent) * radius, radius * stripePercent, new MaterialDefinition(stripesColor));
+         factory.addArcTorus(0.0, 2.0 * Math.PI, (1.01 - stripePercent) * radius, radius * stripePercent, stripesColor);
       }
 
       rigidBody.addVisualDefinitions(factory.getVisualDefinitions());
       return rigidBody;
    }
 
-   static RobotDefinition newCylinderRobot(String name, double radius, double height, double mass, double radiusOfGyrationPercent, ColorDefinition color,
-                                           boolean addStripes, ColorDefinition stripesColor)
+   static RobotDefinition newCylinderRobot(String name,
+                                           double radius,
+                                           double height,
+                                           double mass,
+                                           double radiusOfGyrationPercent,
+                                           ColorDefinition color,
+                                           boolean addStripes,
+                                           ColorDefinition stripesColor)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
 
@@ -64,15 +80,15 @@ public class ExampleExperimentalSimulationTools
                                                                                      radiusOfGyrationPercent * height));
 
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
-      factory.addCylinder(height, radius, new MaterialDefinition(color));
+      factory.addCylinder(height, radius, color);
 
       if (addStripes)
       {
          double stripePercent = 0.05;
          factory.appendTranslation(0.0, 0.0, -height * 0.01);
-         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height * 1.02, new MaterialDefinition(stripesColor));
+         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height * 1.02, stripesColor);
          factory.appendRotation(Math.PI / 2.0, Axis3D.Z);
-         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height * 1.02, new MaterialDefinition(stripesColor));
+         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height * 1.02, stripesColor);
       }
 
       rigidBody.addVisualDefinitions(factory.getVisualDefinitions());
@@ -82,8 +98,14 @@ public class ExampleExperimentalSimulationTools
       return robotDefinition;
    }
 
-   static RobotDefinition newCapsuleRobot(String name, double radius, double height, double mass, double radiusOfGyrationPercent, ColorDefinition color,
-                                          boolean addStripes, ColorDefinition stripesColor)
+   static RobotDefinition newCapsuleRobot(String name,
+                                          double radius,
+                                          double height,
+                                          double mass,
+                                          double radiusOfGyrationPercent,
+                                          ColorDefinition color,
+                                          boolean addStripes,
+                                          ColorDefinition stripesColor)
    {
       RobotDefinition robotDefinition = new RobotDefinition(name);
 
@@ -98,14 +120,14 @@ public class ExampleExperimentalSimulationTools
                                                                                      radiusOfGyrationPercent * height));
 
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
-      factory.addCapsule(height, radius, new MaterialDefinition(color));
+      factory.addCapsule(height, radius, color);
 
       if (addStripes)
       {
          double stripePercent = 0.05;
-         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height, new MaterialDefinition(stripesColor));
+         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height, stripesColor);
          factory.appendRotation(Math.PI / 2.0, Axis3D.Z);
-         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height, new MaterialDefinition(stripesColor));
+         factory.addBox(2.0 * radius * 1.01, radius * stripePercent, height, stripesColor);
       }
 
       rigidBody.addVisualDefinitions(factory.getVisualDefinitions());
@@ -133,26 +155,44 @@ public class ExampleExperimentalSimulationTools
       return robotDefinition;
    }
 
-   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName, Tuple3DReadOnly size, double mass, double radiusOfGyrationPercent,
+   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName,
+                                                     Tuple3DReadOnly size,
+                                                     double mass,
+                                                     double radiusOfGyrationPercent,
                                                      ColorDefinition color)
    {
       return newBoxRigidBody(rigidBodyName, size, mass, radiusOfGyrationPercent, null, color);
    }
 
-   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName, Tuple3DReadOnly size, double mass, double radiusOfGyrationPercent,
-                                                     Vector3DReadOnly offsetFromParent, ColorDefinition color)
+   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName,
+                                                     Tuple3DReadOnly size,
+                                                     double mass,
+                                                     double radiusOfGyrationPercent,
+                                                     Vector3DReadOnly offsetFromParent,
+                                                     ColorDefinition color)
    {
       return newBoxRigidBody(rigidBodyName, size.getX(), size.getY(), size.getZ(), mass, radiusOfGyrationPercent, offsetFromParent, color);
    }
 
-   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName, double sizeX, double sizeY, double sizeZ, double mass,
-                                                     double radiusOfGyrationPercent, ColorDefinition color)
+   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName,
+                                                     double sizeX,
+                                                     double sizeY,
+                                                     double sizeZ,
+                                                     double mass,
+                                                     double radiusOfGyrationPercent,
+                                                     ColorDefinition color)
    {
       return newBoxRigidBody(rigidBodyName, sizeX, sizeY, sizeZ, mass, radiusOfGyrationPercent, null, color);
    }
 
-   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName, double sizeX, double sizeY, double sizeZ, double mass,
-                                                     double radiusOfGyrationPercent, Vector3DReadOnly offsetFromParentJoint, ColorDefinition color)
+   public static RigidBodyDefinition newBoxRigidBody(String rigidBodyName,
+                                                     double sizeX,
+                                                     double sizeY,
+                                                     double sizeZ,
+                                                     double mass,
+                                                     double radiusOfGyrationPercent,
+                                                     Vector3DReadOnly offsetFromParentJoint,
+                                                     ColorDefinition color)
    {
       RigidBodyDefinition rigidBody = new RigidBodyDefinition(rigidBodyName);
       rigidBody.setMass(mass);
