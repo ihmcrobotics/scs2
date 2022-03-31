@@ -966,6 +966,37 @@ public abstract class Session
    }
 
    /**
+    * Stops the internal thread of this session without notifying any of the listeners.
+    * <p>
+    * After calling this method, this session stops operating but it can resume from it by calling
+    * {@link #startSessionThread()}.
+    * </p>
+    * <p>
+    * This is a blocking operation and will return only when done.
+    * </p>
+    * 
+    * @return {@code true} if the thread has stopped, {@code false} if it could not be stopped, e.g. it
+    *         was already stopped or the session was shutdown.
+    */
+   public boolean stopSessionThread()
+   {
+      if (!sessionThreadStarted)
+         return false;
+      if (isSessionShutdown)
+         return false;
+
+      if (activePeriodicTask != null)
+      {
+         activePeriodicTask.stopAndWait();
+         activePeriodicTask = null;
+      }
+
+      sessionThreadStarted = false;
+
+      return true;
+   }
+
+   /**
     * Shuts down this session permanently, it becomes unusable.
     * <p>
     * This method notifies the shutdown listeners and performs a memory cleanup.
@@ -1142,9 +1173,23 @@ public abstract class Session
    }
 
    /**
+    * Requests this session to be reinitialized as soon as possible.
+    * <p>
+    * This can be used to reinitialize the physics engine of a simulation for instance.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    */
+   public void reinitializeSession()
+   {
+      sessionInitialized = false;
+   }
+
+   /**
     * Called when starting this session regardless of the initial mode.
     */
-   public void initializeSession()
+   protected void initializeSession()
    {
    }
 
