@@ -113,7 +113,7 @@ public class SimulationSession extends Session
    }
 
    @Override
-   public void initializeSession()
+   protected void initializeSession()
    {
       hasSessionStarted = true;
       super.initializeSession();
