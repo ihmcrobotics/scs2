@@ -94,6 +94,8 @@ public class YoCompositeSearchManager implements Manager
    private final YoManager yoManager;
    private final BackgroundExecutorManager backgroundExecutorManager;
 
+   private volatile boolean isSessionActive = false;
+
    public YoCompositeSearchManager(JavaFXMessager messager,
                                    SessionVisualizerTopics topics,
                                    YoManager yoManager,
@@ -164,6 +166,7 @@ public class YoCompositeSearchManager implements Manager
    public void startSession(Session session)
    {
       LogTools.info("Searching default YoComposite.");
+      isSessionActive = true;
       typeToCompositePattern.values().forEach(this::searchYoCompositeNow);
       yoManager.getRootRegistry().addListener(rootRegistryChangeListener);
       LogTools.info("Initialized default YoComposite.");
@@ -172,6 +175,7 @@ public class YoCompositeSearchManager implements Manager
    @Override
    public void stopSession()
    {
+      isSessionActive = false;
       yoManager.getRootRegistry().removeListener(rootRegistryChangeListener);
       typeToCompositePattern.entrySet().removeIf(entry -> !defaultCompositePatterns.contains(entry.getValue()));
       typeToCompositeCollection.entrySet().removeIf(entry -> !typeToCompositePattern.containsKey(entry.getKey()));
@@ -213,7 +217,7 @@ public class YoCompositeSearchManager implements Manager
    {
       YoRegistry rootRegistry = yoManager.getRootRegistry();
 
-      if (rootRegistry == null)
+      if (!isSessionActive || rootRegistry == null)
          return; // Stopping the session
 
       Predicate<YoRegistry> registryFilter;
@@ -228,32 +232,59 @@ public class YoCompositeSearchManager implements Manager
 
       if (primitiveClass != null)
       {
-         YoCompositeCollection collection = new YoCompositeCollection(pattern,
-                                                                      collectPrimitiveYoComposites(pattern, primitiveClass, rootRegistry, registryFilter));
-         JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> typeToCompositeCollection.get(type).setValue(collection));
+         YoCompositeCollection collection;
+         try
+         {
+            collection = new YoCompositeCollection(pattern, collectPrimitiveYoComposites(pattern, primitiveClass, rootRegistry, registryFilter));
+         }
+         catch (Exception e)
+         {
+            if (isSessionActive)
+            {
+               // We can get some concurrent modifications while shutting down early, let's ignore exceptions when the session is going down.
+               e.printStackTrace();
+            }
+
+            return;
+         }
+         if (isSessionActive)
+            JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> typeToCompositeCollection.get(type).setValue(collection));
       }
       else
       {
-         List<YoComposite> result = searchYoComposites(pattern, rootRegistry, registryFilter);
+         List<YoComposite> result;
+         try
+         {
+            result = searchYoComposites(pattern, rootRegistry, registryFilter);
+         }
+         catch (Exception e)
+         {
+            if (isSessionActive)
+               e.printStackTrace();
+            return;
+         }
 
          if (result != null)
          {
             YoCompositeCollection collection = new YoCompositeCollection(pattern, result);
 
-            JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+            if (isSessionActive)
             {
-               Property<YoCompositeCollection> property = typeToCompositeCollection.get(type);
-
-               if (property == null)
+               JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
                {
-                  String propertyName = type + "CollectionProperty";
-                  property = new SimpleObjectProperty<>(this, propertyName, null);
-                  typeToCompositeCollection.put(type, property);
-                  typeToCompositePattern.put(type, pattern);
-               }
+                  Property<YoCompositeCollection> property = typeToCompositeCollection.get(type);
 
-               property.setValue(collection);
-            });
+                  if (property == null)
+                  {
+                     String propertyName = type + "CollectionProperty";
+                     property = new SimpleObjectProperty<>(this, propertyName, null);
+                     typeToCompositeCollection.put(type, property);
+                     typeToCompositePattern.put(type, pattern);
+                  }
+
+                  property.setValue(collection);
+               });
+            }
          }
       }
    }
