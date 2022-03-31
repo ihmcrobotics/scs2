@@ -98,7 +98,7 @@ public class ExampleExperimentalSimulationTools
                                                                                      radiusOfGyrationPercent * height));
 
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
-      factory.addCapsule(radius, height, new MaterialDefinition(color));
+      factory.addCapsule(height, radius, new MaterialDefinition(color));
 
       if (addStripes)
       {
