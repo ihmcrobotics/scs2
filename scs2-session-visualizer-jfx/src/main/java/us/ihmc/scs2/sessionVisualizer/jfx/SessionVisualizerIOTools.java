@@ -150,7 +150,7 @@ public class SessionVisualizerIOTools
    public static final URL LOG_SESSION_MANAGER_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "LogSessionManagerPane");
    public static final URL LOG_CROP_PROGRESS_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "LogCropProgressPane");
 
-   // Skybox
+   // Cloudy Crown Skybox
    public static final String SKYBOX_CLOUDY_FOLDER = "cloudy/";
    public static final Image SKYBOX_TOP_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Up.png"));
    public static final Image SKYBOX_BOTTOM_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Down.png"));
@@ -158,6 +158,15 @@ public class SessionVisualizerIOTools
    public static final Image SKYBOX_RIGHT_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Right.png"));
    public static final Image SKYBOX_FRONT_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Front.png"));
    public static final Image SKYBOX_BACK_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Back.png"));
+
+   // SCS 1 Skybox
+   public static final String SKYBOX_SCS1_FOLDER = "brightSky/";
+   public static final Image SCS1_SKYBOX_TOP_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "up.bmp"));
+   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "down.bmp"));
+   public static final Image SCS1_SKYBOX_LEFT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "west.bmp"));
+   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "east.bmp"));
+   public static final Image SCS1_SKYBOX_FRONT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "north.bmp"));
+   public static final Image SCS1_SKYBOX_BACK_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "south.bmp"));
 
    public static void addSCSIconToDialog(Dialog<?> dialog)
    {
