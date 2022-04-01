@@ -1554,7 +1554,7 @@ public class VisualDefinitionFactory
     */
    public VisualDefinition addCapsule(double length, double radius, ColorDefinition diffuseColor)
    {
-      return addCapsule(length, radius, diffuseColor);
+      return addCapsule(length, radius, new MaterialDefinition(diffuseColor));
    }
 
    /**
@@ -2351,7 +2351,7 @@ public class VisualDefinitionFactory
     */
    public VisualDefinition addPolygon2D(Point2DReadOnly[] polygonPoints, boolean counterClockwiseOrdered, ColorDefinition diffuseColor)
    {
-      return addPolygon2D(Arrays.asList(polygonPoints), counterClockwiseOrdered, diffuseColor);
+      return addPolygon2D(Arrays.asList(polygonPoints), counterClockwiseOrdered, new MaterialDefinition(diffuseColor));
    }
 
    /**
@@ -2532,7 +2532,7 @@ public class VisualDefinitionFactory
     */
    public VisualDefinition addPolygon3D(Point3DReadOnly[] polygonPoints, boolean counterClockwiseOrdered, ColorDefinition diffuseColor)
    {
-      return addPolygon3D(Arrays.asList(polygonPoints), counterClockwiseOrdered, diffuseColor);
+      return addPolygon3D(Arrays.asList(polygonPoints), counterClockwiseOrdered, new MaterialDefinition(diffuseColor));
    }
 
    /**
