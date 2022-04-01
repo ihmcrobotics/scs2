@@ -43,7 +43,12 @@ public class EnvironmentManager implements Manager
          return;
 
       skybox = new Skybox();
-      skybox.setupCloudyCrown();
+
+      if (Skybox.USE_CLOUDY_CROWN_SKY_BOX)
+         skybox.setupCloudyCrown();
+      else
+         skybox.setupSCS1Skybox();
+
       skybox.setupCamera(subScene.getCamera());
 
       backgroundExecutorManager.executeInBackground(() ->
