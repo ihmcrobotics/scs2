@@ -273,7 +273,8 @@ public class YoCompositeSearchManager implements Manager
             }
             catch (Exception e)
             {
-               e.printStackTrace();
+               if (isSessionActive)
+                  e.printStackTrace();
                return;
             }
 
