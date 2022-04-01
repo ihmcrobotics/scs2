@@ -35,6 +35,7 @@ import us.ihmc.mecano.spatial.interfaces.SpatialImpulseReadOnly;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorBasics;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorReadOnly;
 import us.ihmc.mecano.spatial.interfaces.TwistReadOnly;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionResult;
 import us.ihmc.scs2.simulation.collision.PhysicsEngineTools;
@@ -136,7 +137,7 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       rootA = rootBodyA;
       rootB = rootBodyB;
 
-      contactFrame = new ReferenceFrame("contactFrame", rootFrame, true, false)
+      contactFrame = new ReferenceFrame("contactFrame" + Session.SCS2_INTERNAL_FRAME_SUFFIX, rootFrame, true, false)
       {
          @Override
          protected void updateTransformToParent(RigidBodyTransform transformToParent)
