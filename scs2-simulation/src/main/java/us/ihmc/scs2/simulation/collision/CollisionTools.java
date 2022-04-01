@@ -31,6 +31,7 @@ import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
+import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
@@ -110,6 +111,8 @@ public class CollisionTools
          return toSTPCapsule3D(originPose, (STPCapsule3DDefinition) definition);
       else if (definition instanceof Capsule3DDefinition)
          return toCapsule3D(originPose, (Capsule3DDefinition) definition);
+      else if (definition instanceof ConvexPolytope3DDefinition)
+         return toConvexPolytope3D(originPose, (ConvexPolytope3DDefinition) definition);
       else if (definition instanceof Cone3DDefinition)
          return toConvexPolytope3D(originPose, (Cone3DDefinition) definition);
       else if (definition instanceof STPCylinder3DDefinition)
@@ -143,6 +146,8 @@ public class CollisionTools
          return new FrameSTPCapsule3D(referenceFrame, toSTPCapsule3D(originPose, (STPCapsule3DDefinition) definition));
       else if (definition instanceof Capsule3DDefinition)
          return new FrameCapsule3D(referenceFrame, toCapsule3D(originPose, (Capsule3DDefinition) definition));
+      else if (definition instanceof ConvexPolytope3DDefinition)
+         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, (ConvexPolytope3DDefinition) definition));
       else if (definition instanceof Cone3DDefinition)
          return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, (Cone3DDefinition) definition));
       else if (definition instanceof STPCylinder3DDefinition)
@@ -206,6 +211,14 @@ public class CollisionTools
       if (originPose != null)
          capsule3D.applyTransform(originPose);
       return capsule3D;
+   }
+
+   public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, ConvexPolytope3DDefinition definition)
+   {
+      ConvexPolytope3D cone3D = new ConvexPolytope3D(definition.getConvexPolytope());
+      if (originPose != null)
+         cone3D.applyTransform(originPose);
+      return cone3D;
    }
 
    public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, Cone3DDefinition definition)
