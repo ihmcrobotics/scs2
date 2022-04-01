@@ -18,6 +18,8 @@ import javafx.scene.transform.Translate;
 
 public class Skybox extends Group
 {
+   public static boolean USE_CLOUDY_CROWN_SKY_BOX = true;
+
    private final Translate translate = new Translate();
    private final DoubleProperty size = new SimpleDoubleProperty(this, "size", 100000.0);
 
@@ -142,6 +144,17 @@ public class Skybox extends Group
       Image rightImage = SessionVisualizerIOTools.SKYBOX_RIGHT_IMAGE;
       Image frontImage = SessionVisualizerIOTools.SKYBOX_FRONT_IMAGE;
       Image backImage = SessionVisualizerIOTools.SKYBOX_BACK_IMAGE;
+      setupSkybox(topImage, bottomImage, leftImage, rightImage, frontImage, backImage);
+   }
+
+   public void setupSCS1Skybox()
+   {
+      Image topImage = SessionVisualizerIOTools.SCS1_SKYBOX_TOP_IMAGE;
+      Image bottomImage = SessionVisualizerIOTools.SCS1_SKYBOX_BOTTOM_IMAGE;
+      Image leftImage = SessionVisualizerIOTools.SCS1_SKYBOX_LEFT_IMAGE;
+      Image rightImage = SessionVisualizerIOTools.SCS1_SKYBOX_RIGHT_IMAGE;
+      Image frontImage = SessionVisualizerIOTools.SCS1_SKYBOX_FRONT_IMAGE;
+      Image backImage = SessionVisualizerIOTools.SCS1_SKYBOX_BACK_IMAGE;
       setupSkybox(topImage, bottomImage, leftImage, rightImage, frontImage, backImage);
    }
 
