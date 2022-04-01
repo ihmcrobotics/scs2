@@ -9,6 +9,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,6 +17,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.javaFXToolkit.cameraControllers.CameraZoomCalculator;
@@ -106,14 +108,36 @@ public class SessionVisualizer
       view3DFactory.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
       mainWindowController.setupViewport3D(view3DFactory.getSubSceneWrappedInsidePane());
 
-      Scene mainScene = new Scene(mainPane, 1024, 768);
+      Scene mainScene = new Scene(mainPane);
       toolkit.getSnapshotManager().registerRecordable(mainScene);
       primaryStage.setScene(mainScene);
       multiSessionManager = new MultiSessionManager(toolkit, mainWindowController);
 
       mainWindowController.start();
       toolkit.start();
+      initializeStageWithPrimaryScreen();
       primaryStage.show();
+      // Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+      initializeStageWithPrimaryScreen();
+   }
+
+   public void initializeStageWithPrimaryScreen()
+   {
+      initializeStageWithScreen(0.75, Screen.getPrimary(), primaryStage);
+   }
+
+   public static void initializeStageWithScreen(double sizeRatio, Screen screen, Stage stage)
+   {
+      Rectangle2D bounds = screen.getVisualBounds();
+
+      double width = sizeRatio * bounds.getWidth();
+      double height = sizeRatio * bounds.getHeight();
+      stage.setWidth(width);
+      stage.setHeight(height);
+      double centerX = bounds.getMinX() + (bounds.getWidth() - width) * 0.5;
+      double centerY = bounds.getMinY() + (bounds.getHeight() - height) * 1.0 / 3.0;
+      stage.setX(centerX);
+      stage.setY(centerY);
    }
 
    public void startSession(Session session)
