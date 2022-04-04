@@ -8,7 +8,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 
 public class BulletExampleSimulationTools
 {
-   public static void startSessionVisualizerWithDebugDrawing(SimulationSession simulationSession)
+   public static SessionVisualizer startSessionVisualizerWithDebugDrawing(SimulationSession simulationSession)
    {
       BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine) simulationSession.getPhysicsEngine();
       BulletDebugDrawingNode bulletDebugDrawingNode = new BulletDebugDrawingNode(bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld());
@@ -23,5 +23,6 @@ public class BulletExampleSimulationTools
          bulletDebugDrawingNode.initializeWithJavaFX();
          sessionVisualizer.getToolkit().getEnvironmentManager().getRootNode().getChildren().add(bulletDebugDrawingNode);
       });
+      return sessionVisualizer;
    }
 }
