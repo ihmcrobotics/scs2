@@ -66,7 +66,10 @@ public class SingleBoxBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
 
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      //SessionVisualizer.startSessionVisualizer(simulationSession);
+      SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+      sessionVisualizer.getToolkit().getSession().runTick();
+      
    }
 
    public static void main(String[] args)
