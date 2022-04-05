@@ -1249,8 +1249,11 @@ public abstract class Session
     * If {@link #doSpecificRunTick()} results in an exception being thrown, the session mode will be
     * automatically changed to {@link SessionMode#PAUSE}.
     * </p>
+    * 
+    * @return {@code true} if the tick was run successfully, {@code false} if an exception was caught
+    *         in {@link #doSpecificRunTick()}, e.g. the simulation failed or the controller crashed.
     */
-   public void runTick()
+   public boolean runTick()
    {
       runTimer.start();
       runActualDT.update();
@@ -1286,6 +1289,8 @@ public abstract class Session
 
       if (caughtException)
          setSessionMode(SessionMode.PAUSE);
+
+      return !caughtException;
    }
 
    /**
