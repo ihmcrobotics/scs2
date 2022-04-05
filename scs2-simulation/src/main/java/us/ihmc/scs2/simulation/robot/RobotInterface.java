@@ -2,6 +2,8 @@ package us.ihmc.scs2.simulation.robot;
 
 import java.util.concurrent.TimeUnit;
 
+import us.ihmc.scs2.definition.controller.ControllerInput;
+import us.ihmc.scs2.definition.controller.ControllerOutput;
 import us.ihmc.scs2.definition.controller.interfaces.Controller;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -18,6 +20,28 @@ public interface RobotInterface extends SimMultiBodySystemBasics
    RobotDefinition getRobotDefinition();
 
    RobotControllerManager getControllerManager();
+
+   /**
+    * Gets the controller input which can be use notably to get the state of the robot in the
+    * controller.
+    * 
+    * @return the controller input.
+    */
+   default ControllerInput getControllerInput()
+   {
+      return getControllerManager().getControllerInput();
+   }
+
+   /**
+    * Gets the controller output which can be used to write the commands from the controller to be
+    * executed by the robot, such as joint efforts.
+    * 
+    * @return the controller output.
+    */
+   default ControllerOutput getControllerOutput()
+   {
+      return getControllerManager().getControllerOutput();
+   }
 
    /**
     * Adds a controller to be run with the robot owning this manager.
