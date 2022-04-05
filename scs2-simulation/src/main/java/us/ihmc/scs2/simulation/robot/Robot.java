@@ -43,6 +43,7 @@ import us.ihmc.scs2.definition.state.PlanarJointState;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.definition.state.SphericalJointState;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
+import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
 import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimCrossFourBarJoint;
@@ -85,11 +86,35 @@ public class Robot implements RobotInterface
 
    protected final RobotControllerManager controllerManager;
 
+   /**
+    * Creates a new robot than can be used for instance for a simulation.
+    * <p>
+    * For simulation, make sure to use the same inertial frame as the session. By default, a simulation
+    * session will use {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
+    * </p>
+    * 
+    * @param robotDefinition the template of the robot.
+    * @param inertialFrame   the global to use for this robot, typically is
+    *                        {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
+    */
    public Robot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
    {
       this(robotDefinition, inertialFrame, true);
    }
 
+   /**
+    * Creates a new robot than can be used for instance for a simulation.
+    * <p>
+    * For simulation, make sure to use the same inertial frame as the session. By default, a simulation
+    * session will use {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
+    * </p>
+    * 
+    * @param robotDefinition the template of the robot.
+    * @param inertialFrame   the global to use for this robot, typically is
+    *                        {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
+    * @param loadControllers whether the instantiate the {@link ControllerDefinition}s associated to
+    *                        the given {@code robotDefinion}. Typically equal to {@code true}.
+    */
    public Robot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame, boolean loadControllers)
    {
       this.robotDefinition = robotDefinition;
