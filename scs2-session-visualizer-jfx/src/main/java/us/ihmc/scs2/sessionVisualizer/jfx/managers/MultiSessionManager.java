@@ -16,6 +16,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
@@ -55,6 +56,8 @@ public class MultiSessionManager
             if (toolkit.hasActiveSession())
             {
                Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO);
+               toolkit.getMainWindow().addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e -> alert.close());
+
                SessionVisualizerIOTools.addSCSIconToDialog(alert);
                Optional<ButtonType> result = alert.showAndWait();
                stopSession(result.isPresent() && result.get() == ButtonType.YES);
