@@ -6,13 +6,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-
-import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -363,7 +360,7 @@ public class SimulationSession extends Session
             public boolean getAsBoolean()
             {
                tickCounter++;
-               return tickCounter >= numberOfTicks;
+               return tickCounter >= numberOfTicks || testTerminalConditions();
             }
          };
          setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
@@ -379,64 +376,47 @@ public class SimulationSession extends Session
       @Override
       public boolean simulateAndWait(long numberOfTicks)
       {
-         if (getActiveMode() == SessionMode.RUNNING)
-            setSessionMode(SessionMode.PAUSE);
+         boolean sessionStartedInitialValue = hasSessionStarted();
 
-         MutableBoolean success = new MutableBoolean(false);
-         CountDownLatch doneLatch = new CountDownLatch(1);
-
-         SessionModeChangeListener modeListener = (prevMode, newMode) ->
-         {
-            if (newMode != SessionMode.RUNNING)
-               doneLatch.countDown();
-         };
-
-         Runnable shutdownListener = doneLatch::countDown;
-
-         addSessionModeChangeListener(modeListener);
-         addShutdownListener(shutdownListener);
-
-         BooleanSupplier terminalCondition = new BooleanSupplier()
-         {
-            private int tickCounter = 0;
-
-            @Override
-            public boolean getAsBoolean()
-            {
-               for (int i = 0; i < terminalConditions.size(); i++)
-               {
-                  if (terminalConditions.get(i).getAsBoolean())
-                  {
-                     return true;
-                  }
-               }
-
-               tickCounter++;
-               boolean done = tickCounter >= numberOfTicks;
-
-               if (done)
-                  success.setTrue();
-               return done;
-            }
-         };
-
-         setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
+         if (sessionStartedInitialValue)
+            stopSessionThread();
 
          try
          {
-            doneLatch.await();
+            boolean success = true;
+
+            for (long tick = 0; tick < numberOfTicks; tick++)
+            {
+               success = runTick();
+
+               if (!success)
+                  break;
+
+               if (testTerminalConditions())
+                  break;
+            }
+
+            return success;
          }
-         catch (InterruptedException e)
+         finally
          {
-            e.printStackTrace();
+            // This ensures that the controller is being pause.
+            physicsEngine.pause();
+
+            if (sessionStartedInitialValue)
+               startSessionThread();
+         }
+      }
+
+      private boolean testTerminalConditions()
+      {
+         for (int i = 0; i < terminalConditions.size(); i++)
+         {
+            if (terminalConditions.get(i).getAsBoolean())
+               return true;
          }
 
-         removeSessionModeChangeListener(modeListener);
-         removeShutdownListener(shutdownListener);
-
-         activePeriodicTask.waitUntilFirstTickDone();
-
-         return success.isTrue();
+         return false;
       }
 
       @Override
