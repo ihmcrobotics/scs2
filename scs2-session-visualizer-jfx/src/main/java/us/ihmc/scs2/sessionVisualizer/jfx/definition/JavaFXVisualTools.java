@@ -93,13 +93,13 @@ public class JavaFXVisualTools
          }
       }
 
-      private MeshView[] newMeshViews()
+      private MeshView[] newMeshViews(Material overridingMaterial)
       {
          MeshView[] meshViews = new MeshView[meshes.length];
          for (int i = 0; i < meshes.length; i++)
          {
             MeshView meshView = new MeshView(meshes[i]);
-            meshView.setMaterial(materials[i]);
+            meshView.setMaterial(overridingMaterial == null ? materials[i] : overridingMaterial);
             meshView.getTransforms().setAll(transforms[i]);
             meshViews[i] = meshView;
          }
@@ -191,17 +191,11 @@ public class JavaFXVisualTools
       }
       else if (geometryDefinition instanceof ModelFileGeometryDefinition)
       {
-         Node[] nodes = importModel((ModelFileGeometryDefinition) geometryDefinition, resourceClassLoader);
+         Node[] nodes = importModel((ModelFileGeometryDefinition) geometryDefinition, materialDefinition, resourceClassLoader);
          if (nodes == null)
             return null;
-
-         //         if (materialDefinition != null)
-         //         {
-         //            Material material = toMaterial(materialDefinition);
-         //            for (Node node : nodes)
-         //               ((Shape3D) node).setMaterial(material);
-         //         }
-         return nodes.length == 1 ? nodes[0] : new Group(nodes);
+         else
+            return nodes.length == 1 ? nodes[0] : new Group(nodes);
       }
       else
       {
@@ -264,6 +258,11 @@ public class JavaFXVisualTools
 
    public static Node[] importModel(ModelFileGeometryDefinition geometryDefinition, ClassLoader resourceClassLoader)
    {
+      return importModel(geometryDefinition, null, resourceClassLoader);
+   }
+
+   public static Node[] importModel(ModelFileGeometryDefinition geometryDefinition, MaterialDefinition overridingMaterial, ClassLoader resourceClassLoader)
+   {
       if (geometryDefinition == null || geometryDefinition.getFileName() == null)
          return DEFAULT_MESH_VIEWS;
 
@@ -286,7 +285,12 @@ public class JavaFXVisualTools
          }
       }
 
-      Node[] importedModel = importModel(fileURL);
+      Material material;
+      if (overridingMaterial != null)
+         material = toMaterial(overridingMaterial, resourceClassLoader);
+      else
+         material = null;
+      Node[] importedModel = importModel(fileURL, material);
 
       Vector3D scale = geometryDefinition.getScale();
 
@@ -309,6 +313,11 @@ public class JavaFXVisualTools
 
    public static Node[] importModel(URL fileURL)
    {
+      return importModel(fileURL, null);
+   }
+
+   public static Node[] importModel(URL fileURL, Material overridingMaterial)
+   {
       try
       {
          String file = fileURL.getFile();
@@ -318,13 +327,13 @@ public class JavaFXVisualTools
          switch (fileExtension)
          {
             case "dae":
-               importedNodes = JavaFXVisualTools.importColladaModel(fileURL);
+               importedNodes = importColladaModel(fileURL, overridingMaterial);
                break;
             case "stl":
-               importedNodes = JavaFXVisualTools.importSTLModel(fileURL);
+               importedNodes = importSTLModel(fileURL, overridingMaterial);
                break;
             case "obj":
-               importedNodes = JavaFXVisualTools.importOBJModel(fileURL);
+               importedNodes = importOBJModel(fileURL, overridingMaterial);
                break;
             default:
                importedNodes = DEFAULT_MESH_VIEWS;
@@ -341,6 +350,11 @@ public class JavaFXVisualTools
    }
 
    public static Node[] importColladaModel(URL fileURL)
+   {
+      return importColladaModel(fileURL, null);
+   }
+
+   public static Node[] importColladaModel(URL fileURL, Material overridingMaterial)
    {
       MeshView[] importedModel;
       CachedImportedModel cachedImportedModel = cachedColladaModels.get(fileURL.toExternalForm());
@@ -364,10 +378,18 @@ public class JavaFXVisualTools
          cacheMaterials(importer, importedModel, cachedNamedColladaMaterials);
          cachedColladaModels.put(fileURL.toExternalForm(), new CachedImportedModel(importedModel));
          importer.close();
+
+         if (overridingMaterial != null)
+         {
+            for (MeshView meshView : importedModel)
+            {
+               meshView.setMaterial(overridingMaterial);
+            }
+         }
       }
       else
       {
-         importedModel = cachedImportedModel.newMeshViews();
+         importedModel = cachedImportedModel.newMeshViews(overridingMaterial);
       }
 
       return importedModel;
@@ -375,15 +397,27 @@ public class JavaFXVisualTools
 
    public static Node[] importSTLModel(URL fileURL)
    {
+      return importSTLModel(fileURL, null);
+   }
+
+   public static Node[] importSTLModel(URL fileURL, Material overridingMaterial)
+   {
       StlMeshImporter importer = new StlMeshImporter();
       importer.read(fileURL);
       MeshView meshView = new MeshView(importer.getImport());
       meshView.getTransforms().add(ROTATE_PI_X);
       importer.close();
+      if (overridingMaterial != null)
+         meshView.setMaterial(overridingMaterial);
       return new Node[] {meshView};
    }
 
    public static Node[] importOBJModel(URL fileURL) throws URISyntaxException, IOException
+   {
+      return importOBJModel(fileURL, null);
+   }
+
+   public static Node[] importOBJModel(URL fileURL, Material overridingMaterial) throws URISyntaxException, IOException
    {
       MeshView[] importedModel;
       String externalForm = fileURL.toExternalForm();
@@ -458,10 +492,18 @@ public class JavaFXVisualTools
          cachedOBJModels.put(fileURL.toExternalForm(), new CachedImportedModel(importedModel));
 
          importer.close();
+
+         if (overridingMaterial != null)
+         {
+            for (MeshView meshView : importedModel)
+            {
+               meshView.setMaterial(overridingMaterial);
+            }
+         }
       }
       else
       {
-         importedModel = cachedImportedModel.newMeshViews();
+         importedModel = cachedImportedModel.newMeshViews(overridingMaterial);
       }
 
       return importedModel;
