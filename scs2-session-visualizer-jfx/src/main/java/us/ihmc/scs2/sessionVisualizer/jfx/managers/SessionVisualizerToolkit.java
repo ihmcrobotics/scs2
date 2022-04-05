@@ -154,6 +154,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
       activeSessionProperty.set(null);
 
+      backgroundExecutorManager.stopSession();
       yoRobotFXManager.stopSession();
       chartDataManager.stopSession();
       chartRenderManager.stopSession();
@@ -162,7 +163,6 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoCompositeSearchManager.stopSession();
       environmentManager.stopSession();
       keyFrameManager.stopSession();
-      backgroundExecutorManager.stopSession();
       secondaryWindowManager.stopSession();
       cameraSensorsManager.stopSession();
       yoManager.stopSession();
