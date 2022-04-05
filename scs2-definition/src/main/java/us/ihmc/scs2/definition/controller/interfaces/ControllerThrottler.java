@@ -17,7 +17,7 @@ public class ControllerThrottler implements Controller
 
    private final Controller controller;
    private final YoDouble desiredControllerPeriod;
-   private final YoDouble lastControllerExecutionTime;
+   private final YoDouble nextControllerDoControlTime;
 
    private DoubleProvider timeProvider;
 
@@ -48,8 +48,7 @@ public class ControllerThrottler implements Controller
       registry = controllerRegistry;
 
       desiredControllerPeriod = new YoDouble("desiredControllerPeriod" + name, registry);
-      lastControllerExecutionTime = new YoDouble("lastControllerExecutionTime" + name, registry);
-      lastControllerExecutionTime.set(Double.NEGATIVE_INFINITY);
+      nextControllerDoControlTime = new YoDouble("nextControllerDoControlTime" + name, registry);
    }
 
    /**
@@ -122,19 +121,17 @@ public class ControllerThrottler implements Controller
    @Override
    public void initialize()
    {
-      lastControllerExecutionTime.set(Double.NEGATIVE_INFINITY);
+      nextControllerDoControlTime.set(timeProvider.getValue());
       controller.initialize();
    }
 
    @Override
    public void doControl()
    {
-      double nextTime = lastControllerExecutionTime.getValue() + desiredControllerPeriod.getValue();
-
-      if (timeProvider.getValue() < nextTime)
+      if (timeProvider.getValue() < nextControllerDoControlTime.getValue())
          return;
 
-      lastControllerExecutionTime.set(nextTime);
+      nextControllerDoControlTime.add(desiredControllerPeriod.getValue());
       controller.doControl();
    }
 
