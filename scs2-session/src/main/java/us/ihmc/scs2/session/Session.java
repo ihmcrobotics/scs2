@@ -51,7 +51,7 @@ public abstract class Session
    private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = 1;
    private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = false;
    private static final double DEFAULT_PLAYBACK_REALTIME_RATE = 2.0;
-   private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = -1L;
+   private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = (long) (1.0 / 30.0 * 1.0e9);
 
    /** Name of the root registry for any session. */
    public static final String ROOT_REGISTRY_NAME = "root";
@@ -1550,7 +1550,15 @@ public abstract class Session
    {
       if (shouldReadBuffer)
          sharedBuffer.readBuffer();
-      sharedBuffer.prepareLinkedBuffersForPull();
+
+      long currentTimestamp = System.nanoTime();
+
+      if (currentTimestamp - lastPublishedBufferTimestamp > desiredBufferPublishPeriod.get())
+      {
+         sharedBuffer.prepareLinkedBuffersForPull();
+         lastPublishedBufferTimestamp = currentTimestamp;
+      }
+
       publishBufferProperties(sharedBuffer.getProperties());
    }
 
