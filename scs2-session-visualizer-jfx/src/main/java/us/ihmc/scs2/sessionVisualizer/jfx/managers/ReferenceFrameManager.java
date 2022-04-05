@@ -195,6 +195,8 @@ public class ReferenceFrameManager implements Manager
          return null;
       if (getReferenceFrameFromFullname(sessionFrame.getNameId()) != null)
          return null; // The frame has already been registered
+      if (sessionFrame.getName().endsWith(Session.SCS2_INTERNAL_FRAME_SUFFIX))
+         return null;
 
       String frameName = sessionFrame.getName();
       ReferenceFrame sessionParentFrame = sessionFrame.getParent();
