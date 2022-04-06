@@ -300,31 +300,39 @@ public class SessionVisualizer
       public void setCameraOrientation(double latitude, double longitude, double roll)
       {
          checkVisualizerRunning();
-         cameraController.getRotationCalculator().setRotation(latitude, longitude, roll);
+         waitUntilFullyUp();
+         JavaFXMissingTools.runLater(getClass(), () -> cameraController.getRotationCalculator().setRotation(latitude, longitude, roll));
       }
 
       @Override
       public void setCameraPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
-         cameraController.changeCameraPosition(x, y, z);
+         waitUntilFullyUp();
+         JavaFXMissingTools.runLater(getClass(), () -> cameraController.changeCameraPosition(x, y, z));
       }
 
       @Override
       public void setCameraFocusPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
-         cameraController.changeFocusPosition(x, y, z, false);
+         waitUntilFullyUp();
+         JavaFXMissingTools.runLater(getClass(), () -> cameraController.changeFocusPosition(x, y, z, false));
       }
 
       @Override
       public void setCameraZoom(double distanceFromFocus)
       {
          checkVisualizerRunning();
-         CameraZoomCalculator zoomCalculator = cameraController.getZoomCalculator();
-         if (zoomCalculator.isInvertZoomDirection())
-            distanceFromFocus = -distanceFromFocus;
-         zoomCalculator.setZoom(distanceFromFocus);
+         waitUntilFullyUp();
+         JavaFXMissingTools.runLater(getClass(), () ->
+         {
+            CameraZoomCalculator zoomCalculator = cameraController.getZoomCalculator();
+            if (zoomCalculator.isInvertZoomDirection())
+               zoomCalculator.setZoom(-distanceFromFocus);
+            else
+               zoomCalculator.setZoom(distanceFromFocus);
+         });
       }
 
       @Override
@@ -339,6 +347,7 @@ public class SessionVisualizer
       public void addStaticVisual(VisualDefinition visualDefinition)
       {
          checkVisualizerRunning();
+         waitUntilFullyUp();
          toolkit.getEnvironmentManager().addStaticVisual(visualDefinition);
       }
 
