@@ -393,6 +393,9 @@ public class SimulationSession extends Session
 
             for (long tick = 0; tick < numberOfTicks; tick++)
             {
+               if (isSessionShutdown())
+                  return false;
+
                success = runTick();
 
                if (!success)
