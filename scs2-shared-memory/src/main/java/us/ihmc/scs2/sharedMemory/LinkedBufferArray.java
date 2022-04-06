@@ -54,9 +54,8 @@ public class LinkedBufferArray extends LinkedBuffer
       if (isDisposed)
          return false;
 
-      size++;
-      ensureCapacity(size);
-      linkedBuffers[size - 1] = e;
+      ensureCapacity(size + 1);
+      linkedBuffers[size++] = e;
       e.addPushRequestListener(listener);
       Change change = new Change(true, false, e);
       changeListeners.forEach(listener -> listener.onChange(change));
