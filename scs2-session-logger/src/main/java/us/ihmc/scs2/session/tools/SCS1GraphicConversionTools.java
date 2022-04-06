@@ -147,7 +147,7 @@ public class SCS1GraphicConversionTools
          definition = toYoGraphicDefinition((YoGraphicVector) yoGraphic);
       else
       {
-         LogTools.error("Unsupported YoGraphic type: " + yoGraphic);
+         LogTools.error("Unsupported YoGraphic type: [{}]={}", yoGraphic.getClass().getName(), yoGraphic);
          return null;
       }
 
