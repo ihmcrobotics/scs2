@@ -186,7 +186,7 @@ public class ReferenceFrameManager implements Manager
          }
          catch (Exception e)
          {
-            LogTools.error("Experienced problem setting up frame: {}", sessionFrame);
+            LogTools.error("Experienced problem setting up frame: {}.", sessionFrame.getNameId());
             e.printStackTrace();
             frame = null;
          }
