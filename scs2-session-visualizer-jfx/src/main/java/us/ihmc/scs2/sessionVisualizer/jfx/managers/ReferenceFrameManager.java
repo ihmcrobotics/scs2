@@ -178,7 +178,19 @@ public class ReferenceFrameManager implements Manager
 
       for (ReferenceFrame sessionFrame : sessionFrames)
       {
-         ReferenceFrame frame = duplicateReferenceFrame(sessionFrame);
+         ReferenceFrame frame;
+
+         try
+         {
+            frame = duplicateReferenceFrame(sessionFrame);
+         }
+         catch (Exception e)
+         {
+            LogTools.error("Experienced problem setting up frame: {}", sessionFrame);
+            e.printStackTrace();
+            frame = null;
+         }
+
          if (frame != null)
          {
             fullnameToReferenceFrameMap.put(frame.getNameId(), frame);
