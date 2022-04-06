@@ -367,19 +367,25 @@ public class SimulationSession extends Session
       }
 
       @Override
-      public boolean simulateAndWait(double duration)
+      public boolean simulateNow(double duration)
       {
          long numberOfTicks = Conversions.secondsToNanoseconds(duration) / getSessionDTNanoseconds();
-         return simulateAndWait(numberOfTicks);
+         return simulateNow(numberOfTicks);
       }
 
       @Override
-      public boolean simulateAndWait(long numberOfTicks)
+      public boolean simulateNow(long numberOfTicks)
       {
+         if (isSessionShutdown())
+            return false;
+
          boolean sessionStartedInitialValue = hasSessionStarted();
 
          if (sessionStartedInitialValue)
-            stopSessionThread();
+         {
+            if (!stopSessionThread())
+               return false; // Could not stop the thread, abort. 
+         }
 
          try
          {

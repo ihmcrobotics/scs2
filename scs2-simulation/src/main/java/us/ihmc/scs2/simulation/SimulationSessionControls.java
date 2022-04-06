@@ -57,7 +57,7 @@ public interface SimulationSessionControls
     *         of the addition external terminal conditions was fulfilled without any interruption. An
     *         interruption can be for instance an exception thrown by the simulation or a controller.
     */
-   boolean simulateAndWait(double duration);
+   boolean simulateNow(double duration);
 
    /**
     * Requests to simulate for a given number of simulation ticks. (synchronous)
@@ -72,7 +72,7 @@ public interface SimulationSessionControls
     *         An interruption can be for instance an exception thrown by the simulation or a
     *         controller.
     */
-   boolean simulateAndWait(long numberOfTicks);
+   boolean simulateNow(long numberOfTicks);
 
    /**
     * Adds a listener to be notified of any exception thrown during a simulation tick.
