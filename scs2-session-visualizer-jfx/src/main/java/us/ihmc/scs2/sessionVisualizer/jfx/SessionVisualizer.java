@@ -17,6 +17,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -106,7 +107,12 @@ public class SessionVisualizer
       scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
       mainWindowController.setupViewport3D(viewport3DManager.getPane());
 
-      Scene mainScene = new Scene(mainPane);
+      // This is workaround to get the lights working when doing snapshots.
+      Group clonedLightGroup = new Group();
+      Scene3DBuilder.setupLigthCloneList(clonedLightGroup.getChildren(), scene3DBuilder.getAllLights());
+      StackPane mainPaneWithLights = new StackPane(mainPane);
+      mainPaneWithLights.getChildren().add(clonedLightGroup);
+      Scene mainScene = new Scene(mainPaneWithLights);
       toolkit.getSnapshotManager().registerRecordable(mainScene);
       primaryStage.setScene(mainScene);
       multiSessionManager = new MultiSessionManager(toolkit, mainWindowController);
