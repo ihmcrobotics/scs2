@@ -27,8 +27,8 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.MainViewport3DManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
@@ -54,7 +54,7 @@ public class SessionVisualizer
    private final Group view3DRoot;
    private final Plotter2D plotter2D = new Plotter2D();
    private final MainWindowController mainWindowController;
-   private final MainViewport3DManager mainViewport3DManager;
+   private final MultiViewport3DManager viewport3DManager;
    private final BufferedJavaFXMessager messager;
    private final SessionVisualizerTopics topics;
    private final SessionVisualizerControlsImpl sessionVisualizerControls = new SessionVisualizerControlsImpl();
@@ -73,11 +73,13 @@ public class SessionVisualizer
       primaryStage.setTitle(NO_ACTIVE_SESSION_TITLE);
 
       Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
-      view3DRoot = scene3DBuilder.getRoot();
-      mainViewport3DManager = new MainViewport3DManager(view3DRoot);
       scene3DBuilder.addDefaultLighting();
+      view3DRoot = scene3DBuilder.getRoot();
+      viewport3DManager = new MultiViewport3DManager(view3DRoot);
+      viewport3DManager.createMainViewport();
+      viewport3DManager.addSecondaryViewport();
 
-      toolkit = new SessionVisualizerToolkit(primaryStage, mainViewport3DManager.getSubScene(), view3DRoot);
+      toolkit = new SessionVisualizerToolkit(primaryStage, viewport3DManager.getMainViewport().getSubScene(), view3DRoot);
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
@@ -92,17 +94,17 @@ public class SessionVisualizer
       messager.registerJavaFXSyncedTopicListener(topics.getCameraTrackObject(), request ->
       {
          if (request.getNode() != null)
-            mainViewport3DManager.setCameraNodeToTrack(request.getNode());
+            viewport3DManager.getMainViewport().setCameraNodeToTrack(request.getNode());
       });
 
       toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
-      toolkit.getEnvironmentManager().addSkybox(mainViewport3DManager.getCamera());
+      toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
       messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
 
       mainWindowController.setupPlotter2D(plotter2D);
 
       scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
-      mainWindowController.setupViewport3D(mainViewport3DManager.getPane());
+      mainWindowController.setupViewport3D(viewport3DManager.getPane());
 
       Scene mainScene = new Scene(mainPane);
       toolkit.getSnapshotManager().registerRecordable(mainScene);
@@ -180,7 +182,7 @@ public class SessionVisualizer
       LogTools.info("Simulation GUI is going down.");
       try
       {
-         mainViewport3DManager.dispose();
+         viewport3DManager.dispose();
          multiSessionManager.stopSession(saveConfiguration);
          multiSessionManager.shutdown();
          mainWindowController.stop();
@@ -297,7 +299,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilFullyUp();
-         mainViewport3DManager.setCameraOrientation(latitude, longitude, roll);
+         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, roll);
       }
 
       @Override
@@ -305,7 +307,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilFullyUp();
-         mainViewport3DManager.setCameraPosition(x, y, z);
+         viewport3DManager.getMainViewport().setCameraPosition(x, y, z);
       }
 
       @Override
@@ -313,7 +315,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilFullyUp();
-         mainViewport3DManager.setCameraFocusPosition(x, y, z);
+         viewport3DManager.getMainViewport().setCameraFocusPosition(x, y, z);
       }
 
       @Override
@@ -321,7 +323,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilFullyUp();
-         mainViewport3DManager.setCameraZoom(distanceFromFocus);
+         viewport3DManager.getMainViewport().setCameraZoom(distanceFromFocus);
       }
 
       @Override
