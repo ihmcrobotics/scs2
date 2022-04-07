@@ -3,6 +3,7 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
@@ -16,12 +17,14 @@ import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.session.YoTimer;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
@@ -56,6 +59,15 @@ public class BulletPhysicsEngine implements PhysicsEngine
    private final ReferenceFrame inertialFrame;
    private final YoRegistry rootRegistry;
    private final YoRegistry physicsEngineRegistry = new YoRegistry(getClass().getSimpleName());
+   private final YoDouble runTickExpectedTimeRate = new YoDouble("runTickExpectedTimeRate", physicsEngineRegistry);
+   private final YoTimer runBulletPhysicsEngineSimulateTimer = new YoTimer("runBulletPhysicsEngineSimulateTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer runBulletStepSimulateTimer = new YoTimer("runBulletStepSimulateTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer runControllerManagerTimer = new YoTimer("runControllerManagerTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer runCopyDataFromBulletToSCSTimer = new YoTimer("runCopyDataFromBulletToSCSTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer runCopyDataFromSCSToBulletTimer = new YoTimer("runCopyDataFromSCSToBulletTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer runUpdateFramesSensorsTimer = new YoTimer("runUpdateFramesSensorsTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoDouble bulletPhysicsEngineRealTimeRate = new YoDouble("bulletPhysicsEngineRealTimeRate", physicsEngineRegistry);
+   
    private final ArrayList<YoPoint3D> contactPoints = new ArrayList<>();
    {
       for (int i = 0; i < 100; i++)
@@ -112,29 +124,51 @@ public class BulletPhysicsEngine implements PhysicsEngine
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-   
+      runTickExpectedTimeRate.set(dt * 1000);
       if (initialize(gravity))
          return;
+
+      runBulletPhysicsEngineSimulateTimer.start();
       
+      runControllerManagerTimer.start();
       for (BulletRobot robot : robotList)
       {
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
+      }
+      runControllerManagerTimer.stop();
+      
+      runCopyDataFromSCSToBulletTimer.start();
+      for (BulletRobot robot : robotList)
+      {
          robot.saveRobotBeforePhysicsState();
       }
+      runCopyDataFromSCSToBulletTimer.stop();
       
       int maxSubSteps = 1; // With SCS, we want every tick to get a buffer entry and step through things one step at a time.
       float fixedTimeStep = (float) dt;  // SCS has a fixed timestep already so let's just use it
       float timePassedSinceThisWasCalledLast = fixedTimeStep; // We are essentially disabling interpolation here
+      runBulletStepSimulateTimer.start();
       multiBodyDynamicsWorld.stepSimulation(timePassedSinceThisWasCalledLast, maxSubSteps, fixedTimeStep);
+      runBulletStepSimulateTimer.stop();
 
+      runCopyDataFromBulletToSCSTimer.start();
       for (BulletRobot robot : robotList)
       {
          robot.updateFromBulletData(this, dt);
+      }
+      runCopyDataFromBulletToSCSTimer.stop();
+
+      runUpdateFramesSensorsTimer.start();
+      for (BulletRobot robot : robotList)
+      {
          robot.updateFrames(); 
          robot.updateSensors();
       }
+      runUpdateFramesSensorsTimer.stop();
+      runBulletPhysicsEngineSimulateTimer.stop();
+      bulletPhysicsEngineRealTimeRate.set(runTickExpectedTimeRate.getValue() / runBulletPhysicsEngineSimulateTimer.getTimer().getValue());
    }
 
    @Override
