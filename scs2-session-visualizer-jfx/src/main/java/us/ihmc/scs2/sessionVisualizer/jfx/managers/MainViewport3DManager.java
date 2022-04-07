@@ -14,13 +14,14 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXToolkit.cameraControllers.CameraZoomCalculator;
 import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
-public class MainViewport3DManager
+public class MainViewport3DManager implements SingleViewport3DManager
 {
    private final Pane container;
    private final SubScene subScene;
@@ -28,14 +29,18 @@ public class MainViewport3DManager
    private final PerspectiveCamera camera;
    private final FocusBasedCameraMouseEventHandler cameraController;
 
-   public MainViewport3DManager(Node mainView3DRoot)
+   public MainViewport3DManager(Group mainView3DRoot)
    {
-      this.rootNode3D = new Group(mainView3DRoot);
+      rootNode3D = mainView3DRoot;
 
       // Creating sub-scene
       subScene = new SubScene(rootNode3D, -1, -1, true, SceneAntialiasing.BALANCED);
+      subScene.sceneProperty().addListener((o, oldValue, newValue) ->
+      {
+         System.out.println();
+      });
       subScene.setFill(Color.GRAY);
-      subScene.setOnMouseClicked(event -> subScene.requestFocus());
+      subScene.setOnMousePressed(event -> subScene.requestFocus());
 
       // Embedding sub-scene in pane.
       container = new Pane(subScene);
@@ -52,10 +57,14 @@ public class MainViewport3DManager
       cameraController = new FocusBasedCameraMouseEventHandler(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
       cameraController.enableShiftClickFocusTranslation();
       subScene.addEventHandler(Event.ANY, cameraController);
-      rootNode3D.getChildren().add(cameraController.getFocusPointViz());
+
+      Sphere focusPointViz = cameraController.getFocusPointViz();
+      rootNode3D.getChildren().add(focusPointViz);
+      focusPointViz.visibleProperty().bind(subScene.focusedProperty());
       setupNodeTrackingContextMenu(cameraController, subScene);
    }
 
+   @Override
    public Pane getPane()
    {
       return container;
@@ -76,16 +85,19 @@ public class MainViewport3DManager
       return subScene;
    }
 
+   @Override
    public PerspectiveCamera getCamera()
    {
       return camera;
    }
 
+   @Override
    public FocusBasedCameraMouseEventHandler getCameraController()
    {
       return cameraController;
    }
 
+   @Override
    public void dispose()
    {
       cameraController.dispose();
@@ -125,19 +137,20 @@ public class MainViewport3DManager
       });
    }
 
-   private static void setupNodeTrackingContextMenu(FocusBasedCameraMouseEventHandler cameraController, SubScene ownerSubScene)
+   static void setupNodeTrackingContextMenu(FocusBasedCameraMouseEventHandler cameraController, Node viewport)
    {
-      setupNodeTrackingContextMenu(cameraController.getNodeTracker().nodeToTrackProperty(), ownerSubScene, node -> true);
+      setupNodeTrackingContextMenu(cameraController.getNodeTracker().nodeToTrackProperty(), viewport, node -> true);
    }
 
-   private static void setupNodeTrackingContextMenu(ObjectProperty<Node> nodeTrackedProperty, SubScene ownerSubScene, Predicate<Node> filter)
+   static void setupNodeTrackingContextMenu(ObjectProperty<Node> nodeTrackedProperty, Node viewport, Predicate<Node> filter)
    {
-      ContextMenuTools.setupContextMenu(ownerSubScene, (owner, event) ->
+      ContextMenuTools.setupContextMenu(viewport, (owner, event) ->
       {
 
          PickResult pickResult = event.getPickResult();
          Node intersectedNode = pickResult.getIntersectedNode();
-         if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == nodeTrackedProperty.get() || !filter.test(intersectedNode))
+         if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == viewport || intersectedNode == nodeTrackedProperty.get()
+               || !filter.test(intersectedNode))
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
          menuItem.setOnAction(e -> nodeTrackedProperty.set(intersectedNode));
