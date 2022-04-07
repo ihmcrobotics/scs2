@@ -78,7 +78,6 @@ public class SessionVisualizer
       view3DRoot = scene3DBuilder.getRoot();
       viewport3DManager = new MultiViewport3DManager(view3DRoot);
       viewport3DManager.createMainViewport();
-      viewport3DManager.addSecondaryViewport();
 
       toolkit = new SessionVisualizerToolkit(primaryStage, viewport3DManager.getMainViewport().getSubScene(), view3DRoot);
       messager = toolkit.getMessager();
