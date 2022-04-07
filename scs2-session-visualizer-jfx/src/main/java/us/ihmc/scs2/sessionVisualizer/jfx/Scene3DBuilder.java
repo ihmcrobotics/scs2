@@ -1,18 +1,96 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
+import java.util.Collections;
+import java.util.stream.Collectors;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
+import javafx.scene.LightBase;
 import javafx.scene.Node;
 import javafx.scene.PointLight;
 import javafx.scene.paint.Color;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
+import us.ihmc.log.LogTools;
 
 public class Scene3DBuilder
 {
    private final Group root = new Group();
+   private final ObservableList<LightBase> allLights = FXCollections.observableArrayList();
+
+   private class LightsChangedListener implements ListChangeListener<Node>
+   {
+      @Override
+      public void onChanged(Change<? extends Node> change)
+      {
+         while (change.next())
+         {
+            for (Node removedNode : change.getRemoved())
+            {
+               if (removedNode instanceof LightBase)
+               {
+                  allLights.remove((LightBase) removedNode);
+               }
+               else if (removedNode instanceof Group)
+               {
+                  Group removedGroup = (Group) removedNode;
+                  removeLightsRecursive(removedGroup);
+                  removedGroup.getChildren().removeListener(this);
+               }
+            }
+
+            for (Node addedNode : change.getAddedSubList())
+            {
+               if (addedNode instanceof LightBase)
+               {
+                  allLights.add((LightBase) addedNode);
+               }
+               else if (addedNode instanceof Group)
+               {
+                  Group addedGroup = (Group) addedNode;
+                  addLightsRecursive(addedGroup);
+                  addedGroup.getChildren().addListener(this);
+               }
+            }
+         }
+      }
+
+      private void addLightsRecursive(Node group)
+      {
+         for (Node child : ((Group) group).getChildren())
+         {
+            if (child instanceof LightBase)
+            {
+               allLights.add((LightBase) child);
+            }
+            else if (child instanceof Group)
+            {
+               addLightsRecursive(child);
+            }
+         }
+      }
+
+      private void removeLightsRecursive(Node group)
+      {
+         for (Node child : ((Group) group).getChildren())
+         {
+            if (child instanceof LightBase)
+            {
+               allLights.remove((LightBase) child);
+            }
+            else if (child instanceof Group)
+            {
+               removeLightsRecursive(child);
+            }
+         }
+      }
+   }
 
    public Scene3DBuilder()
    {
+      root.getChildren().addListener(new LightsChangedListener());
    }
 
    /**
@@ -106,11 +184,97 @@ public class Scene3DBuilder
       root.setMouseTransparent(value);
    }
 
+   public ObservableList<LightBase> getAllLights()
+   {
+      return allLights;
+   }
+
    /**
     * @return the root node of the scene in creation.
     */
    public Group getRoot()
    {
       return root;
+   }
+
+   public static ObservableList<LightBase> cloneAndBindLights(ObservableList<LightBase> original)
+   {
+      ObservableList<LightBase> clone = FXCollections.observableArrayList(original);
+      setupLigthCloneList(clone, original);
+      return clone;
+   }
+
+   public static ListChangeListener<LightBase> setupLigthCloneList(ObservableList<? super LightBase> listToBind, ObservableList<? extends LightBase> original)
+   {
+      listToBind.setAll(original.stream().map(l -> cloneAndBindLight(l)).collect(Collectors.toList()));
+      ListChangeListener<LightBase> listener = new ListChangeListener<LightBase>()
+      {
+         @Override
+         public void onChanged(Change<? extends LightBase> change)
+         {
+            while (change.next())
+            {
+               if (change.wasPermutated())
+               {
+                  for (int oldIndex = change.getFrom(); oldIndex < change.getTo(); oldIndex++)
+                  {
+                     int newIndex = change.getPermutation(oldIndex);
+                     Collections.swap(listToBind, oldIndex, newIndex);
+                  }
+               }
+               else if (change.wasUpdated())
+               {
+                  LogTools.error("wasUpdated is not handled!");
+               }
+               else if (change.wasReplaced())
+               {
+                  for (int i = change.getFrom(); i < change.getTo(); i++)
+                  {
+                     listToBind.set(i, cloneAndBindLight(change.getList().get(i)));
+                  }
+               }
+               else
+               {
+                  if (change.wasRemoved())
+                  {
+                     listToBind.remove(change.getFrom(), change.getTo());
+                  }
+
+                  if (change.wasAdded())
+                  {
+                     listToBind.addAll(change.getFrom(), change.getAddedSubList().stream().map(l -> cloneAndBindLight(l)).collect(Collectors.toList()));
+                  }
+               }
+            }
+         }
+      };
+      original.addListener(listener);
+      return listener;
+
+   }
+
+   @SuppressWarnings("unchecked")
+   public static <L extends LightBase> L cloneAndBindLight(L original)
+   {
+      if (original == null)
+         return null;
+
+      L clone;
+      if (original.getClass() == AmbientLight.class)
+         clone = (L) new AmbientLight();
+      else if (original.getClass() == PointLight.class)
+         clone = (L) new PointLight();
+      else
+         throw new UnsupportedOperationException("Unsupported light type: " + original);
+
+      clone.colorProperty().bindBidirectional(original.colorProperty());
+      clone.getTransforms().setAll(original.getTransforms());
+      clone.translateXProperty().bindBidirectional(original.translateXProperty());
+      clone.translateYProperty().bindBidirectional(original.translateYProperty());
+      clone.translateZProperty().bindBidirectional(original.translateZProperty());
+      clone.rotateProperty().bindBidirectional(original.rotateProperty());
+      clone.rotationAxisProperty().bind(original.rotationAxisProperty());
+
+      return clone;
    }
 }
