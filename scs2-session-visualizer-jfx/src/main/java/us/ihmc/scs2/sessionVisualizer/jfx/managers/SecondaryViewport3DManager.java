@@ -12,6 +12,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
+import us.ihmc.javaFXExtensions.raycast.CustomPickRayTools;
 import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
@@ -41,11 +42,10 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
 
       cameraView = new ImageView();
       cameraView.setPreserveRatio(true);
+      cameraView.setOnMousePressed(event -> cameraView.requestFocus());
 
       // Embedding the view in the pane
       container = new Pane(cameraView);
-      //      heightProperty().addListener((o, oldValue, newValue) -> cameraView.setFitHeight(newValue.doubleValue()));
-      //      widthProperty().addListener((o, oldValue, newValue) -> cameraView.setFitWidth(newValue.doubleValue()));
 
       // Creating camera
       camera = new PerspectiveCamera(true);
@@ -54,7 +54,12 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
 
       // Setting up the camera controller.
       cameraController = new FocusBasedCameraMouseEventHandler(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
-      cameraController.enableShiftClickFocusTranslation();
+      cameraController.enableShiftClickFocusTranslation(e -> CustomPickRayTools.pick(e.getX(),
+                                                                                     e.getY(),
+                                                                                     image.getWidth(),
+                                                                                     image.getHeight(),
+                                                                                     camera,
+                                                                                     rootNode3D));
       cameraView.addEventHandler(Event.ANY, cameraController);
 
       Sphere focusPointViz = cameraController.getFocusPointViz();
