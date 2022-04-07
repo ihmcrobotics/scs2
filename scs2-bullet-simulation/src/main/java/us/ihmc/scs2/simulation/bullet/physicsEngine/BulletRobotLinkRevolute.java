@@ -121,6 +121,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
                                                                           getBulletJointIndex(),
                                                                           (float) revoluteJointDefinition.getPositionLowerLimit(),
                                                                           (float) revoluteJointDefinition.getPositionUpperLimit());
+      multiBodyJointLimitConstraint.setMaxAppliedImpulse((float) revoluteJointDefinition.getEffortUpperLimit());
       bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(multiBodyJointLimitConstraint);
       bulletLink = getBulletMultiBody().getLink(getBulletJointIndex());
       
