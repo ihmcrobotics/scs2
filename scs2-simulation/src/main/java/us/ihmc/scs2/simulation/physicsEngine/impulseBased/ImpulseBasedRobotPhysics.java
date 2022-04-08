@@ -16,12 +16,12 @@ import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.interfaces.SpatialImpulseReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
-import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyDeltaTwistCalculator;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyImpulseRegistry;
@@ -159,12 +159,34 @@ public class ImpulseBasedRobotPhysics
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       forwardDynamicsCalculator.setGravitionalAcceleration(gravity);
+      forwardDynamicsCalculator.setLockJoints(joint ->
+      {
+         SimJointBasics simJoint = (SimJointBasics) joint;
+         if (simJoint.isPinned())
+         {
+            simJoint.setJointTwistToZero();
+            simJoint.setJointAccelerationToZero();
+         }
+         return simJoint.isPinned();
+      });
       forwardDynamicsCalculator.compute();
    }
 
    public void writeJointAccelerations()
    {
-      MultiBodySystemTools.insertJointsState(owner.getJointsToConsider(), JointStateType.ACCELERATION, forwardDynamicsCalculator.getJointAccelerationMatrix());
+      List<? extends SimJointBasics> joints = owner.getJointsToConsider();
+      DMatrixRMaj jointAccelerationMatrix = forwardDynamicsCalculator.getJointAccelerationMatrix();
+      DMatrixRMaj jointTauMatrix = forwardDynamicsCalculator.getJointTauMatrix();
+      int startIndex = 0;
+
+      for (int jointIndex = 0; jointIndex < joints.size(); jointIndex++)
+      {
+         SimJointBasics joint = joints.get(jointIndex);
+         if (!joint.isPinned())
+            startIndex = joint.setJointAcceleration(startIndex, jointAccelerationMatrix);
+         else
+            startIndex = joint.setJointTau(startIndex, jointTauMatrix);
+      }
    }
 
    public void writeJointDeltaVelocities()
