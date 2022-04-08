@@ -387,8 +387,12 @@ public class SimulationSession extends Session
                return false; // Could not stop the thread, abort. 
          }
 
+         SessionMode activeModeInitialValue = getActiveMode();
+
          try
          {
+            setSessionMode(SessionMode.RUNNING);
+
             boolean success = true;
 
             for (long tick = 0; tick < numberOfTicks; tick++)
@@ -414,6 +418,7 @@ public class SimulationSession extends Session
 
             if (sessionStartedInitialValue)
                startSessionThread();
+            setSessionMode(activeModeInitialValue);
          }
       }
 

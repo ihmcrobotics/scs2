@@ -1037,10 +1037,24 @@ public abstract class Session
 
    private void scheduleSessionTask(SessionMode newMode, SessionModeTransition transition)
    {
-      if (!sessionThreadStarted)
-         return;
-
       SessionMode previousMode = activeMode.get();
+
+      if (!sessionThreadStarted)
+      {
+         // This is to allow running simulation without using the internal session thread.
+
+         if (newMode != previousMode)
+         {
+            firstRunTick = true;
+            firstPauseTick = true;
+         }
+
+         activeMode.set(newMode);
+         sessionModeChangeListeners.forEach(listener -> listener.onChange(previousMode, newMode));
+         reportActiveMode();
+         return;
+      }
+
 
       if (activePeriodicTask != null)
       {
