@@ -111,6 +111,7 @@ public class SessionVisualizer
       Scene3DBuilder.setupLigthCloneList(clonedLightGroup.getChildren(), scene3DBuilder.getAllLights());
       StackPane mainPaneWithLights = new StackPane(mainPane);
       mainPaneWithLights.getChildren().add(clonedLightGroup);
+      mainPaneWithLights.getStylesheets().setAll(mainPane.getStylesheets());
       Scene mainScene = new Scene(mainPaneWithLights);
       toolkit.getSnapshotManager().registerRecordable(mainScene);
       primaryStage.setScene(mainScene);
