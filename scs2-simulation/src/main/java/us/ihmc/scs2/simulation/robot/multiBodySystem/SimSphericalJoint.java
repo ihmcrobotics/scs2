@@ -21,6 +21,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasics
 {
@@ -28,6 +29,7 @@ public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasic
    private final SimJointAuxiliaryData auxiliaryData;
    private final YoFrameVector3D jointAngularDeltaVelocity;
    private final TwistReadOnly jointDeltaTwist;
+   private final YoBoolean isPinned;
 
    public SimSphericalJoint(SphericalJointDefinition definition, SimRigidBodyBasics predecessor)
    {
@@ -49,6 +51,7 @@ public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasic
       String varName = !name.isEmpty() ? "_" + name + "_" : "_";
       jointAngularDeltaVelocity = new YoFrameVector3D("qd_delta" + varName + "w", afterJointFrame, registry);
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(afterJointFrame, beforeJointFrame, jointAngularDeltaVelocity, new FrameVector3D(afterJointFrame));
+      isPinned = new YoBoolean("is" + varName + "pinned", registry);
    }
 
    @Override
@@ -137,5 +140,17 @@ public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasic
    @Override
    public void setJointLinearDeltaVelocity(Vector3DReadOnly jointLinearDeltaVelocity)
    {
+   }
+
+   @Override
+   public void setPinned(boolean isPinned)
+   {
+      this.isPinned.set(isPinned);
+   }
+
+   @Override
+   public boolean isPinned()
+   {
+      return isPinned.getValue();
    }
 }

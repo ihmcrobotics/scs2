@@ -16,6 +16,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimFloatingJoint
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class SimPlanarJoint extends YoPlanarJoint implements SimJointBasics, SimFloatingJointBasics
@@ -23,6 +24,7 @@ public class SimPlanarJoint extends YoPlanarJoint implements SimJointBasics, Sim
    private final YoRegistry registry;
    private final SimJointAuxiliaryData auxiliaryData;
    private final FixedFrameTwistBasics jointDeltaTwist;
+   private final YoBoolean isPinned;
 
    public SimPlanarJoint(PlanarJointDefinition definition, SimRigidBodyBasics predecessor)
    {
@@ -42,14 +44,15 @@ public class SimPlanarJoint extends YoPlanarJoint implements SimJointBasics, Sim
 
       String varName = !name.isEmpty() ? "_" + name + "_" : "_";
       YoDouble angularDeltaVelocityY = new YoDouble("qd_delta" + varName + "wy", registry);
-      YoDouble linearDeltaVelocityX = new YoDouble( "qd_delta" + varName + "x", registry);
-      YoDouble linearDeltaVelocityZ = new YoDouble( "qd_delta" + varName + "z", registry);
+      YoDouble linearDeltaVelocityX = new YoDouble("qd_delta" + varName + "x", registry);
+      YoDouble linearDeltaVelocityZ = new YoDouble("qd_delta" + varName + "z", registry);
       jointDeltaTwist = YoMecanoFactories.newPlanarYoFixedFrameTwistBasics(angularDeltaVelocityY,
                                                                            linearDeltaVelocityX,
                                                                            linearDeltaVelocityZ,
                                                                            afterJointFrame,
                                                                            beforeJointFrame,
                                                                            afterJointFrame);
+      isPinned = new YoBoolean("is" + varName + "pinned", registry);
    }
 
    @Override
@@ -127,5 +130,17 @@ public class SimPlanarJoint extends YoPlanarJoint implements SimJointBasics, Sim
       getJointDeltaTwist().setAngularPartY(qdRot);
       getJointDeltaTwist().getLinearPart().set(xd, 0.0, zd);
       return rowStart + getDegreesOfFreedom();
+   }
+
+   @Override
+   public void setPinned(boolean isPinned)
+   {
+      this.isPinned.set(isPinned);
+   }
+
+   @Override
+   public boolean isPinned()
+   {
+      return isPinned.getValue();
    }
 }

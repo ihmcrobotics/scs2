@@ -14,6 +14,7 @@ import us.ihmc.scs2.simulation.robot.SimJointAuxiliaryData;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJointBasics
@@ -21,6 +22,7 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
    private final YoRegistry registry;
    private final SimJointAuxiliaryData auxiliaryData;
    private final YoDouble deltaQd;
+   private final YoBoolean isPinned;
 
    private final TwistReadOnly jointDeltaTwist;
 
@@ -44,6 +46,7 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
       auxiliaryData = new SimJointAuxiliaryData(this);
       deltaQd = new YoDouble("qd_delta_" + getName(), registry);
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(this::getDeltaQd, getUnitJointTwist());
+      isPinned = new YoBoolean("is_" + getName() + "_pinned", registry);
    }
 
    @Override
@@ -115,5 +118,17 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
    public TwistReadOnly getJointDeltaTwist()
    {
       return jointDeltaTwist;
+   }
+
+   @Override
+   public void setPinned(boolean isPinned)
+   {
+      this.isPinned.set(isPinned);
+   }
+
+   @Override
+   public boolean isPinned()
+   {
+      return isPinned.getValue();
    }
 }
