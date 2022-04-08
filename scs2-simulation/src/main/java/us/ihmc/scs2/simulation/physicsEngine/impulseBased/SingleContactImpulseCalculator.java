@@ -19,6 +19,7 @@ import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple4D.Quaternion;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.MultiBodyResponseCalculator;
 import us.ihmc.mecano.algorithms.interfaces.RigidBodyAccelerationProvider;
@@ -440,7 +441,10 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       }
 
       if (impulseA.getLinearPart().getZ() < 0.0)
-         throw new IllegalStateException("Malformed impulse");
+      {
+         LogTools.error("Malformed impulse: " + impulseA + ", z: " + impulseA.getLinearPartZ());
+         impulseA.setToZero();
+      }
 
       if (isFirstUpdate)
       {
