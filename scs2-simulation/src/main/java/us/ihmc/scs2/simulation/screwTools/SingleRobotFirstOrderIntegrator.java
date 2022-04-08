@@ -124,7 +124,8 @@ public class SingleRobotFirstOrderIntegrator
 
    public void integrateOneDoFJoint(double dt, SimOneDoFJointBasics joint)
    {
-      integrateOneDoFJoint(dt, joint, joint.getDeltaQd());
+      if (!joint.isPinned())
+         integrateOneDoFJoint(dt, joint, joint.getDeltaQd());
    }
 
    public void integrateOneDoFJoint(double dt, OneDoFJointBasics joint, double velocityChange)
@@ -139,7 +140,8 @@ public class SingleRobotFirstOrderIntegrator
 
    public void integrateSphericalJoint(double dt, SimSphericalJoint joint)
    {
-      integrateSphericalJoint(dt, joint, joint.getJointAngularDeltaVelocity());
+      if (!joint.isPinned())
+         integrateSphericalJoint(dt, joint, joint.getJointAngularDeltaVelocity());
    }
 
    public void integrateSphericalJoint(double dt, SphericalJointBasics joint, FrameVector3DReadOnly angularVelocityChange)
@@ -161,7 +163,8 @@ public class SingleRobotFirstOrderIntegrator
 
    public void integrateFloatingJoint(double dt, SimFloatingJointBasics joint)
    {
-      integrateFloatingJoint(dt, joint, joint.getJointDeltaTwist());
+      if (!joint.isPinned())
+         integrateFloatingJoint(dt, joint, joint.getJointDeltaTwist());
    }
 
    public void integrateFloatingJoint(double dt, FloatingJointBasics joint, SpatialVectorReadOnly spatialVelocityChange)
