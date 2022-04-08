@@ -23,6 +23,7 @@ public class SimRevoluteJoint extends YoRevoluteJoint implements SimOneDoFJointB
    private final SimJointAuxiliaryData auxiliaryData;
    private final YoDouble deltaQd;
    private final YoBoolean isPinned;
+   private final YoDouble damping;
 
    private final TwistReadOnly jointDeltaTwist;
 
@@ -32,6 +33,7 @@ public class SimRevoluteJoint extends YoRevoluteJoint implements SimOneDoFJointB
       setJointLimits(definition.getPositionLowerLimit(), definition.getPositionUpperLimit());
       setVelocityLimits(definition.getVelocityLowerLimit(), definition.getVelocityUpperLimit());
       setEffortLimits(definition.getEffortLowerLimit(), definition.getEffortUpperLimit());
+      setDamping(definition.getDamping());
    }
 
    public SimRevoluteJoint(String name, SimRigidBodyBasics predecessor, Vector3DReadOnly jointAxis)
@@ -52,6 +54,7 @@ public class SimRevoluteJoint extends YoRevoluteJoint implements SimOneDoFJointB
       deltaQd = new YoDouble("qd_delta_" + getName(), registry);
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(this::getDeltaQd, getUnitJointTwist());
       isPinned = new YoBoolean("is_" + getName() + "_pinned", registry);
+      damping = new YoDouble("damping_" + getName(), registry);
    }
 
    @Override
@@ -93,6 +96,18 @@ public class SimRevoluteJoint extends YoRevoluteJoint implements SimOneDoFJointB
       if (!Double.isFinite(q))
          throw new IllegalStateException("Invalid joint configuration: " + q);
       super.setQ(q);
+   }
+
+   @Override
+   public double getDamping()
+   {
+      return damping.getValue();
+   }
+
+   @Override
+   public void setDamping(double damping)
+   {
+      this.damping.set(damping);
    }
 
    @Override
