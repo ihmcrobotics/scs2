@@ -24,33 +24,20 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
    private final TwistReadOnly jointDeltaTwist;
    private final YoDouble deltaQd;
    private final YoBoolean isPinned;
+   private final YoDouble damping;
 
    public SimCrossFourBarJoint(CrossFourBarJointDefinition definition, SimRigidBodyBasics predecessor)
    {
-      this(definition.getName(),
-           predecessor,
-           definition.getJointNameA(),
-           definition.getJointNameB(),
-           definition.getJointNameC(),
-           definition.getJointNameD(),
-           definition.getBodyDA().getName(),
-           definition.getBodyBC().getName(),
-           definition.getTransformAToPredecessor(),
-           definition.getTransformBToPredecessor(),
-           definition.getTransformCToB(),
-           definition.getTransformDToA(),
-           definition.getBodyDA().getMomentOfInertia(),
-           definition.getBodyBC().getMomentOfInertia(),
-           definition.getBodyDA().getMass(),
-           definition.getBodyBC().getMass(),
-           definition.getBodyDA().getInertiaPose(),
-           definition.getBodyBC().getInertiaPose(),
-           definition.getActuatedJointIndex(),
-           definition.getLoopClosureJointIndex(),
-           definition.getAxis());
+      this(definition.getName(), predecessor, definition.getJointNameA(), definition.getJointNameB(), definition.getJointNameC(), definition.getJointNameD(),
+           definition.getBodyDA().getName(), definition.getBodyBC().getName(), definition.getTransformAToPredecessor(), definition.getTransformBToPredecessor(),
+           definition.getTransformCToB(), definition.getTransformDToA(), definition.getBodyDA().getMomentOfInertia(),
+           definition.getBodyBC().getMomentOfInertia(), definition.getBodyDA().getMass(), definition.getBodyBC().getMass(),
+           definition.getBodyDA().getInertiaPose(), definition.getBodyBC().getInertiaPose(), definition.getActuatedJointIndex(),
+           definition.getLoopClosureJointIndex(), definition.getAxis());
       setJointLimits(definition.getPositionLowerLimit(), definition.getPositionUpperLimit());
       setVelocityLimits(definition.getVelocityLowerLimit(), definition.getVelocityUpperLimit());
       setEffortLimits(definition.getEffortLowerLimit(), definition.getEffortUpperLimit());
+      setDamping(definition.getDamping());
    }
 
    public SimCrossFourBarJoint(String name,
@@ -75,34 +62,16 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
                                int loopClosureJointIndex,
                                Vector3DReadOnly jointAxis)
    {
-      super(name,
-            predecessor,
-            jointNameA,
-            jointNameB,
-            jointNameC,
-            jointNameD,
-            bodyNameDA,
-            bodyNameBC,
-            transformAToPredecessor,
-            transformBToPredecessor,
-            transformDToA,
-            transformCToB,
-            bodyInertiaDA,
-            bodyInertiaBC,
-            bodyMassDA,
-            bodyMassBC,
-            bodyInertiaPoseDA,
-            bodyInertiaPoseBC,
-            actuatedJointIndex,
-            loopClosureJointIndex,
-            jointAxis,
-            predecessor.getRegistry());
+      super(name, predecessor, jointNameA, jointNameB, jointNameC, jointNameD, bodyNameDA, bodyNameBC, transformAToPredecessor, transformBToPredecessor,
+            transformDToA, transformCToB, bodyInertiaDA, bodyInertiaBC, bodyMassDA, bodyMassBC, bodyInertiaPoseDA, bodyInertiaPoseBC, actuatedJointIndex,
+            loopClosureJointIndex, jointAxis, predecessor.getRegistry());
 
       this.registry = predecessor.getRegistry();
       auxiliaryData = new SimJointAuxiliaryData(this);
       deltaQd = new YoDouble("qd_delta_" + getName(), registry);
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(this::getDeltaQd, getUnitJointTwist());
       isPinned = new YoBoolean("is_" + getName() + "_pinned", registry);
+      damping = new YoDouble("damping_" + getName(), registry);
    }
 
    @Override
@@ -159,6 +128,18 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
          throw new IllegalStateException("Invalid joint configuration: " + actuatedJointQ);
 
       return actuatedJointQ;
+   }
+
+   @Override
+   public double getDamping()
+   {
+      return damping.getValue();
+   }
+
+   @Override
+   public void setDamping(double damping)
+   {
+      this.damping.set(damping);
    }
 
    @Override

@@ -23,6 +23,7 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
    private final SimJointAuxiliaryData auxiliaryData;
    private final YoDouble deltaQd;
    private final YoBoolean isPinned;
+   private final YoDouble damping;
 
    private final TwistReadOnly jointDeltaTwist;
 
@@ -32,6 +33,7 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
       setJointLimits(definition.getPositionLowerLimit(), definition.getPositionUpperLimit());
       setVelocityLimits(definition.getVelocityLowerLimit(), definition.getVelocityUpperLimit());
       setEffortLimits(definition.getEffortLowerLimit(), definition.getEffortUpperLimit());
+      setDamping(definition.getDamping());
    }
 
    public SimPrismaticJoint(String name, SimRigidBodyBasics predecessor, Tuple3DReadOnly jointOffset, Vector3DReadOnly jointAxis)
@@ -47,6 +49,7 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
       deltaQd = new YoDouble("qd_delta_" + getName(), registry);
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(this::getDeltaQd, getUnitJointTwist());
       isPinned = new YoBoolean("is_" + getName() + "_pinned", registry);
+      damping = new YoDouble("damping_" + getName(), registry);
    }
 
    @Override
@@ -89,6 +92,18 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
          throw new IllegalStateException("Invalid joint configuration: " + q);
 
       super.setQ(q);
+   }
+
+   @Override
+   public double getDamping()
+   {
+      return damping.getValue();
+   }
+
+   @Override
+   public void setDamping(double damping)
+   {
+      this.damping.set(damping);
    }
 
    @Override
