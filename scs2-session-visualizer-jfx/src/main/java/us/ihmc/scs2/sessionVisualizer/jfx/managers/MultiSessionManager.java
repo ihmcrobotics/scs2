@@ -16,7 +16,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
@@ -56,7 +55,11 @@ public class MultiSessionManager
             if (toolkit.hasActiveSession())
             {
                Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO);
-               toolkit.getMainWindow().addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e -> alert.close());
+               alert.initOwner(toolkit.getMainWindow());
+               JavaFXMissingTools.centerDialogInOwner(alert);
+               // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+               // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+               alert.setOnShown(e -> JavaFXMissingTools.runLater(getClass(), () -> JavaFXMissingTools.centerDialogInOwner(alert)));
 
                SessionVisualizerIOTools.addSCSIconToDialog(alert);
                Optional<ButtonType> result = alert.showAndWait();
