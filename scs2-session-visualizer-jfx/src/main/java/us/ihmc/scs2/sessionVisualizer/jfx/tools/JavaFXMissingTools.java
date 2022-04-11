@@ -13,6 +13,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
@@ -24,6 +25,7 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javafx.util.Duration;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
 import us.ihmc.euclid.transform.AffineTransform;
@@ -34,6 +36,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
 public class JavaFXMissingTools
@@ -229,6 +232,22 @@ public class JavaFXMissingTools
          runLater(application.getClass(), runnable);
       });
       PlatformImpl.setImplicitExit(false);
+   }
+
+   public static void centerDialogInOwner(Dialog<?> dialog)
+   {
+      Window owner = dialog.getOwner();
+
+      if (owner == null)
+      {
+         LogTools.error("This dialog has no owner set: {}", dialog);
+         return;
+      }
+
+      double x = owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth());
+      double y = owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight());
+      dialog.setX(x);
+      dialog.setY(y);
    }
 
    public static void toEuclid(javafx.scene.transform.Transform jfxTransform, AffineTransform euclidTransform)

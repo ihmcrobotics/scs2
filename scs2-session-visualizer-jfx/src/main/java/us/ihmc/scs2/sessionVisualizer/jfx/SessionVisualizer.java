@@ -20,6 +20,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.DefinitionIOTools;
@@ -121,7 +122,8 @@ public class SessionVisualizer
       toolkit.start();
       initializeStageWithPrimaryScreen();
       primaryStage.show();
-      // Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+      // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+      // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
       initializeStageWithPrimaryScreen();
    }
 
@@ -163,6 +165,11 @@ public class SessionVisualizer
       {
          Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
          SessionVisualizerIOTools.addSCSIconToDialog(alert);
+         alert.initOwner(primaryStage);
+         JavaFXMissingTools.centerDialogInOwner(alert);
+         // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+         // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+         alert.setOnShown(e -> JavaFXMissingTools.runLater(getClass(), () -> JavaFXMissingTools.centerDialogInOwner(alert)));
 
          Optional<ButtonType> result = alert.showAndWait();
          if (!result.isPresent() || result.get() == ButtonType.CANCEL)
@@ -298,6 +305,14 @@ public class SessionVisualizer
          {
             e.printStackTrace();
          }
+      }
+
+      @Override
+      public Window getPrimaryWindow()
+      {
+         checkVisualizerRunning();
+         waitUntilFullyUp();
+         return primaryStage;
       }
 
       @Override

@@ -3,11 +3,14 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 import java.io.File;
 import java.util.Collection;
 
+import javafx.stage.Window;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 
 public interface SessionVisualizerControls
 {
+   Window getPrimaryWindow();
+
    void setCameraOrientation(double latitude, double longitude, double roll);
 
    void setCameraPosition(double x, double y, double z);
