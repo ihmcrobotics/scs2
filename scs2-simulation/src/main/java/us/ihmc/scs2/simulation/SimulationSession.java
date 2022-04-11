@@ -395,18 +395,37 @@ public class SimulationSession extends Session
 
             boolean success = true;
 
-            for (long tick = 0; tick < numberOfTicks; tick++)
+            if (numberOfTicks == -1L)
             {
-               if (isSessionShutdown())
-                  return false;
+               while (true)
+               {
+                  if (isSessionShutdown())
+                     return false;
 
-               success = runTick();
+                  success = runTick();
 
-               if (!success)
-                  break;
+                  if (!success)
+                     break;
 
-               if (testTerminalConditions())
-                  break;
+                  if (testTerminalConditions())
+                     break;
+               }
+            }
+            else
+            {
+               for (long tick = 0; tick < numberOfTicks; tick++)
+               {
+                  if (isSessionShutdown())
+                     return false;
+
+                  success = runTick();
+
+                  if (!success)
+                     break;
+
+                  if (testTerminalConditions())
+                     break;
+               }
             }
 
             return success;
@@ -420,6 +439,12 @@ public class SimulationSession extends Session
                startSessionThread();
             setSessionMode(activeModeInitialValue);
          }
+      }
+
+      @Override
+      public boolean simulateNow()
+      {
+         return simulateNow(-1L);
       }
 
       private boolean testTerminalConditions()

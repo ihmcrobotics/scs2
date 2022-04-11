@@ -75,6 +75,25 @@ public interface SimulationSessionControls
    boolean simulateNow(long numberOfTicks);
 
    /**
+    * Requests to simulate for an infinite period of time. (synchronous)
+    * <p>
+    * WARNING: This will block the calling thread indefinitely. The caller needs to add an additional
+    * terminal condition beforehand to eventually stop the simulation.
+    * </p>
+    * <p>
+    * This is a blocking request which will return only when the operation has completed.
+    * </p>
+    * 
+    * @return whether the simulation was considered successful ({@code true}) or not ({@code false}).
+    *         The simulation is successful if the desired {@code numberOfTicks} were all executed or if
+    *         any of the addition external terminal conditions was fulfilled without any interruption.
+    *         An interruption can be for instance an exception thrown by the simulation or a
+    *         controller.
+    * @see #addExternalTerminalCondition(BooleanSupplier...)
+    */
+   boolean simulateNow();
+
+   /**
     * Adds a listener to be notified of any exception thrown during a simulation tick.
     * 
     * @param listener the consumer to use as a exception listener.
