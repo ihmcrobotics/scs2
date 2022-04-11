@@ -496,7 +496,7 @@ public abstract class Session
    /**
     * Sets the initial record period in number of ticks for this session.
     * <p>
-    * Unlike {@link #submitBufferRecordTickPeriod(int)}, this method will change the property only the
+    * Unlike {@link #setBufferRecordTickPeriod(int)}, this method will change the property only the
     * first time it is invoked. The subsequent calls will be ignored.
     * </p>
     * <p>
@@ -511,7 +511,7 @@ public abstract class Session
    {
       if (hasBufferRecordPeriodBeenInitialized)
          return false;
-      submitBufferRecordTickPeriod(bufferRecordTickPeriod);
+      setBufferRecordTickPeriod(bufferRecordTickPeriod);
       return true;
    }
 
@@ -560,14 +560,11 @@ public abstract class Session
     * <p>
     * A larger value allows to store data over longer period of time.
     * </p>
-    * <p>
-    * This is a non-blocking operation and the change is applied immediately.
-    * </p>
     * 
     * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
     *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     */
-   public void submitBufferRecordTickPeriod(int bufferRecordTickPeriod)
+   public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
       hasBufferRecordPeriodBeenInitialized = true;
       if (bufferRecordTickPeriod == this.bufferRecordTickPeriod.get())
@@ -582,15 +579,12 @@ public abstract class Session
     * increase the speed at which we can read the log, also useful for the remote session to reduce the
     * computational induced by the GUI while receiving a high-bandwidth stream of data.
     * </p>
-    * <p>
-    * This is a non-blocking operation and the change is applied immediately.
-    * </p>
     * 
     * @param publishPeriod period in nanoseconds at which the buffer data is publish while in
     *                      {@link SessionMode#RUNNING} mode. Default value
     *                      {@value #DEFAULT_BUFFER_PUBLISH_PERIOD}.
     */
-   public void submitDesiredBufferPublishPeriod(long publishPeriod)
+   public void setDesiredBufferPublishPeriod(long publishPeriod)
    {
       desiredBufferPublishPeriod.set(publishPeriod);
    }
@@ -770,7 +764,8 @@ public abstract class Session
    /**
     * Requests the buffer to be cropped.
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -782,14 +777,23 @@ public abstract class Session
     */
    public void submitCropBufferRequestAndWait(CropBufferRequest cropBufferRequest)
    {
-      pendingCropBufferRequest.submitAndWait(cropBufferRequest);
+      if (hasSessionStarted())
+      {
+         pendingCropBufferRequest.submitAndWait(cropBufferRequest);
+      }
+      else
+      {
+         pendingCropBufferRequest.submit(cropBufferRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
     * Requests to fill in the buffer entirely or partially with zeros or the value stored in each
     * {@link YoVariable}.
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -800,7 +804,15 @@ public abstract class Session
     */
    public void submitFillBufferRequestAndWait(FillBufferRequest fillBufferRequest)
    {
-      pendingFillBufferRequest.submitAndWait(fillBufferRequest);
+      if (hasSessionStarted())
+      {
+         pendingFillBufferRequest.submitAndWait(fillBufferRequest);
+      }
+      else
+      {
+         pendingFillBufferRequest.submit(fillBufferRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
@@ -810,7 +822,8 @@ public abstract class Session
     * recommended to use a crop request that provides better control on the data being preserved.
     * </p>
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -823,13 +836,22 @@ public abstract class Session
    public void submitBufferSizeRequestAndWait(Integer bufferSizeRequest)
    {
       hasBufferSizeBeenInitialized = true;
-      pendingBufferSizeRequest.submitAndWait(bufferSizeRequest);
+      if (hasSessionStarted())
+      {
+         pendingBufferSizeRequest.submitAndWait(bufferSizeRequest);
+      }
+      else
+      {
+         pendingBufferSizeRequest.submit(bufferSizeRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
     * Requests to move the current buffer index, i.e. reading/writing position.
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -840,14 +862,23 @@ public abstract class Session
     */
    public void submitBufferIndexRequestAndWait(Integer bufferIndexRequest)
    {
-      pendingBufferIndexRequest.submitAndWait(bufferIndexRequest);
+      if (hasSessionStarted())
+      {
+         pendingBufferIndexRequest.submitAndWait(bufferIndexRequest);
+      }
+      else
+      {
+         pendingBufferIndexRequest.submit(bufferIndexRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
     * Requests to increment the current buffer index, i.e. reading/writing position, by a given step
     * size.
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -858,14 +889,23 @@ public abstract class Session
     */
    public void submitIncrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
    {
-      pendingIncrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
+      if (hasSessionStarted())
+      {
+         pendingIncrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
+      }
+      else
+      {
+         pendingIncrementBufferIndexRequest.submit(incrementBufferIndexRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
     * Requests to decrement the current buffer index, i.e. reading/writing position, by a given step
     * size.
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -874,9 +914,17 @@ public abstract class Session
     * 
     * @param decrementBufferIndexRequest the decrement to apply to the current buffer index.
     */
-   public void submitDecrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
+   public void submitDecrementBufferIndexRequestAndWait(Integer decrementBufferIndexRequest)
    {
-      pendingDecrementBufferIndexRequest.submitAndWait(incrementBufferIndexRequest);
+      if (hasSessionStarted())
+      {
+         pendingDecrementBufferIndexRequest.submitAndWait(decrementBufferIndexRequest);
+      }
+      else
+      {
+         pendingDecrementBufferIndexRequest.submit(decrementBufferIndexRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
@@ -886,7 +934,8 @@ public abstract class Session
     * part of the buffer is delimited by an in-point index and an out-point index.
     * </p>
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -897,7 +946,15 @@ public abstract class Session
     */
    public void submitBufferInPointIndexRequestAndWait(Integer bufferInPointIndexRequest)
    {
-      pendingBufferInPointIndexRequest.submitAndWait(bufferInPointIndexRequest);
+      if (hasSessionStarted())
+      {
+         pendingBufferInPointIndexRequest.submitAndWait(bufferInPointIndexRequest);
+      }
+      else
+      {
+         pendingBufferInPointIndexRequest.submit(bufferInPointIndexRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
@@ -907,7 +964,8 @@ public abstract class Session
     * part of the buffer is delimited by an in-point index and an out-point index.
     * </p>
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -918,13 +976,22 @@ public abstract class Session
     */
    public void submitBufferOutPointIndexRequestAndWait(Integer bufferOutPointIndexRequest)
    {
-      pendingBufferOutPointIndexRequest.submitAndWait(bufferOutPointIndexRequest);
+      if (hasSessionStarted())
+      {
+         pendingBufferOutPointIndexRequest.submitAndWait(bufferOutPointIndexRequest);
+      }
+      else
+      {
+         pendingBufferOutPointIndexRequest.submit(bufferOutPointIndexRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
     * Requests to export this session's data to file.
     * <p>
-    * This is a blocking operation and will return only when done.
+    * This is a blocking operation and will return only when done. If the internal thread is not
+    * running, this operation is performed immediately.
     * </p>
     * <p>
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
@@ -936,7 +1003,15 @@ public abstract class Session
     */
    public void submitSessionDataExportRequestAndWait(SessionDataExportRequest sessionDataExportRequest)
    {
-      pendingDataExportRequest.submitAndWait(sessionDataExportRequest);
+      if (hasSessionStarted())
+      {
+         pendingDataExportRequest.submitAndWait(sessionDataExportRequest);
+      }
+      else
+      {
+         pendingDataExportRequest.submit(sessionDataExportRequest);
+         processBufferRequests(true);
+      }
    }
 
    /**
@@ -1054,7 +1129,6 @@ public abstract class Session
          reportActiveMode();
          return;
       }
-
 
       if (activePeriodicTask != null)
       {
@@ -1930,7 +2004,7 @@ public abstract class Session
       private final TopicListener<Long> sessionDTNanosecondsListener = Session.this::setSessionDTNanoseconds;
       private final TopicListener<Boolean> runAtRealTimeRateListener = Session.this::submitRunAtRealTimeRate;
       private final TopicListener<Double> playbackRealTimeRateListener = Session.this::submitPlaybackRealTimeRate;
-      private final TopicListener<Integer> bufferRecordTickPeriodListener = Session.this::submitBufferRecordTickPeriod;
+      private final TopicListener<Integer> bufferRecordTickPeriodListener = Session.this::setBufferRecordTickPeriod;
       private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
       private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
 
