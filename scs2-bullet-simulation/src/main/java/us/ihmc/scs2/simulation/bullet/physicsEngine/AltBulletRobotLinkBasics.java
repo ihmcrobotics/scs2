@@ -18,7 +18,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public abstract class BulletRobotLinkBasics
+public abstract class AltBulletRobotLinkBasics
 {
    private final RigidBodyDefinition rigidBodyDefinition;
    private SimRigidBodyBasics simRigidBody;
@@ -27,7 +27,7 @@ public abstract class BulletRobotLinkBasics
    private btMultiBodyLinkCollider bulletMultiBodyLinkCollider;
    private AltBulletRobotLinkCollisionSet collisionSet;
    private int bulletJointIndex;
-   private final ArrayList<BulletRobotLinkBasics> children = new ArrayList<>();
+   private final ArrayList<AltBulletRobotLinkBasics> children = new ArrayList<>();
    private btMultiBody bulletMultiBody;
    private ReferenceFrame frameAfterJoint;
    private final Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
@@ -35,7 +35,7 @@ public abstract class BulletRobotLinkBasics
    private int collisionGroup = 2; // Multi bodies need to be in a separate collision group
    private int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
 
-   public BulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
+   public AltBulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
                                 SimRigidBodyBasics simRigidBody,
                                 HashMap<String, Integer> jointNameToBulletJointIndexMap,
                                 RigidBodyWrenchRegistry rigidBodyWrenchRegistry)
@@ -59,7 +59,7 @@ public abstract class BulletRobotLinkBasics
                {
                   SimRevoluteJoint childSimRevoluteJoint = (SimRevoluteJoint) childJoint;
                   RevoluteJointDefinition childRevoluteJointDefinition = (RevoluteJointDefinition) childJointDefinition;
-                  getChildren().add(new BulletRobotLinkJoint(childRevoluteJointDefinition,
+                  getChildren().add(new AltBulletRobotLinkRevolute(childRevoluteJointDefinition,
                                                                 childSimRevoluteJoint,
                                                                 jointNameToBulletJointIndexMap,
                                                                 rigidBodyWrenchRegistry,
@@ -74,7 +74,7 @@ public abstract class BulletRobotLinkBasics
       }
    }
 
-   public abstract void setup(BulletPhysicsEngine bulletPhysicsEngine);
+   public abstract void setup(AltBulletPhysicsEngine bulletPhysicsEngine);
 
    public AltBulletRobotLinkCollisionSet createBulletCollisionShape()
    {
@@ -91,7 +91,7 @@ public abstract class BulletRobotLinkBasics
                                                             simRigidBody.getBodyFixedFrame());
    }
 
-   public void createBulletCollider(BulletPhysicsEngine bulletPhysicsManager)
+   public void createBulletCollider(AltBulletPhysicsEngine bulletPhysicsManager)
    {
       bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
       bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
@@ -121,7 +121,7 @@ public abstract class BulletRobotLinkBasics
       this.bulletMultiBody = bulletMultiBody;
    }
 
-   public ArrayList<BulletRobotLinkBasics> getChildren()
+   public ArrayList<AltBulletRobotLinkBasics> getChildren()
    {
       return children;
    }

@@ -21,7 +21,7 @@ import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
-public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
+public class AltBulletRobotLinkRevolute extends AltBulletRobotLinkBasics
 {
    private final RevoluteJointDefinition revoluteJointDefinition;
    private final SimRevoluteJoint simRevoluteJoint;
@@ -42,7 +42,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    private YoDouble bulletLinkAppliedTorqueZ;
    private btMultiBodyConstraint multiBodyJointLimitConstraint;
 
-   public BulletRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
+   public AltBulletRobotLinkRevolute(RevoluteJointDefinition revoluteJointDefinition,
                                   SimRevoluteJoint simRevoluteJoint,
                                   HashMap<String, Integer> jointNameToBulletJointIndexMap,
                                   RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
@@ -73,7 +73,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
    }
 
    @Override
-   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
+   public void setup(AltBulletPhysicsEngine bulletPhysicsEngine)
    {
       Quaternion rotationFromParentGDX = new Quaternion();
       us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent
@@ -100,7 +100,7 @@ public class BulletRobotLinkRevolute extends BulletRobotLinkBasics
       Vector3 baseInertiaDiagonal = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
                                                 (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
                                                 (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
-      BulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
+      AltBulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
       // TODO: Should we let Bullet compute this?
       // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(linkMass, baseInertiaDiagonal);
 
