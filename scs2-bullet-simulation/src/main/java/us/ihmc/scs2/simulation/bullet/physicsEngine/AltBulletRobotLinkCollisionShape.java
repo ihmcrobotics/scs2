@@ -18,7 +18,7 @@ import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 
-public class BulletRobotLinkCollisionShape
+public class AltBulletRobotLinkCollisionShape
 {
    private final YawPitchRollTransformDefinition collisionShapeToFrameAfterParentJoint;
    private final ReferenceFrame linkCenterOfMassFrame;
@@ -28,7 +28,7 @@ public class BulletRobotLinkCollisionShape
    private btCollisionShape bulletCollisionShape;
    private final GeometryDefinition geometryDefinition;
 
-   public BulletRobotLinkCollisionShape(CollisionShapeDefinition collisionShapeDefinition,
+   public AltBulletRobotLinkCollisionShape(CollisionShapeDefinition collisionShapeDefinition,
                                         ReferenceFrame frameAfterParentJoint,
                                         ReferenceFrame linkCenterOfMassFrame)
    {

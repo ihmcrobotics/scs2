@@ -7,12 +7,12 @@ import com.badlogic.gdx.physics.bullet.collision.btCompoundShape;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 
-public class BulletRobotLinkCollisionSet
+public class AltBulletRobotLinkCollisionSet
 {
    private final btCompoundShape bulletCompoundShape;
-   private final ArrayList<BulletRobotLinkCollisionShape> collisionShapes = new ArrayList<>();
+   private final ArrayList<AltBulletRobotLinkCollisionShape> collisionShapes = new ArrayList<>();
 
-   public BulletRobotLinkCollisionSet(List<CollisionShapeDefinition> collisionShapeDefinitions,
+   public AltBulletRobotLinkCollisionSet(List<CollisionShapeDefinition> collisionShapeDefinitions,
                                       ReferenceFrame frameAfterParentJoint,
                                       ReferenceFrame linkCenterOfMassFrame)
      {
@@ -20,7 +20,7 @@ public class BulletRobotLinkCollisionSet
         
         for (CollisionShapeDefinition shapeDefinition : collisionShapeDefinitions)
         {
-           BulletRobotLinkCollisionShape collisionShape = new BulletRobotLinkCollisionShape(shapeDefinition,
+           AltBulletRobotLinkCollisionShape collisionShape = new AltBulletRobotLinkCollisionShape(shapeDefinition,
                                                                                             frameAfterParentJoint,
                                                                                             linkCenterOfMassFrame);
            collisionShape.addToCompoundShape(bulletCompoundShape);
@@ -33,7 +33,7 @@ public class BulletRobotLinkCollisionSet
       return bulletCompoundShape;
    }
 
-   public ArrayList<BulletRobotLinkCollisionShape> getCollisionShapes()
+   public ArrayList<AltBulletRobotLinkCollisionShape> getCollisionShapes()
    {
       return collisionShapes;
    }

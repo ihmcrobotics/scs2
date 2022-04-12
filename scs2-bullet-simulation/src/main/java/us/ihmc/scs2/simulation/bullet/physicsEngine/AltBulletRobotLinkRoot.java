@@ -28,7 +28,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
-public class BulletRobotLinkRoot extends BulletRobotLinkBasics
+public class AltBulletRobotLinkRoot extends AltBulletRobotLinkBasics
 {
    private int linkCountingIndex = 0;
    private final int numberOfLinks;
@@ -41,7 +41,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
    private final YoFixedFrameTwist twistFD;
 
-   public BulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
+   public AltBulletRobotLinkRoot(SixDoFJointDefinition rootSixDoFJointDefinition,
                               SimFloatingRootJoint rootSimFloatingRootJoint,
                               HashMap<String, Integer> jointNameToBulletJointIndexMap,
                               RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
@@ -63,7 +63,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    }
 
    @Override
-   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
+   public void setup(AltBulletPhysicsEngine bulletPhysicsEngine)
    {
       boolean fixedBase = false;
       boolean canSleep = false;
