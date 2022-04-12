@@ -127,6 +127,7 @@ public class SimulationSession extends Session
       cleanupActions.forEach(Runnable::run);
       cleanupActions.clear();
       cameraBroadcastExecutor.shutdown();
+      physicsEngine.dispose();
    }
 
    @Override

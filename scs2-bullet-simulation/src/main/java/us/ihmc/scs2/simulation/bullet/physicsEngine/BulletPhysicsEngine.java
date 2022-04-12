@@ -190,7 +190,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
       robotList.add(bulletRobot);
    }
 
-   public void destroy()
+   @Override
+   public void dispose()
    {
       System.out.println("Destroy");
       for (btRigidBody rigidBody : rigidBodies)

@@ -47,4 +47,9 @@ public interface PhysicsEngine
    List<RobotStateDefinition> getBeforePhysicsRobotStateDefinitions();
 
    YoRegistry getPhysicsEngineRegistry();
+
+   default void dispose()
+   {
+      // Override to cleanup memory.
+   }
 }
