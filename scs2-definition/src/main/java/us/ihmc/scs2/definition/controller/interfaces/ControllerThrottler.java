@@ -37,8 +37,21 @@ public class ControllerThrottler implements Controller
       this.controller = controller;
 
       String controllerName = controller.getName();
-      if (controllerName == null)
-         controller.getClass().getSimpleName();
+
+      if (controllerName == null || controllerName.isEmpty())
+      {
+         Class<? extends Controller> controllerClass = controller.getClass();
+
+         if (!controllerClass.isAnonymousClass())
+         {
+            controllerName = controllerClass.getSimpleName();
+         }
+         else
+         {
+            String className = controllerClass.getName();
+            controllerName = className.substring(className.lastIndexOf('.') + 1).replace("$", "AnonymousController");
+         }
+      }
 
       YoRegistry controllerRegistry = controller.getYoRegistry();
       if (controllerRegistry == null)
