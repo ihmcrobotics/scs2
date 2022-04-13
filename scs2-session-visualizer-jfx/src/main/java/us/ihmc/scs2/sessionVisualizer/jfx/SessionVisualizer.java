@@ -389,7 +389,40 @@ public class SessionVisualizer
       public void exportVideo(SceneVideoRecordingRequest request)
       {
          checkVisualizerRunning();
+         checkSessionThreadRunning();
+
+         CountDownLatch latch = new CountDownLatch(1);
+         Runnable callback = request.getRecordingEndedCallback();
+         request.setRecordingEndedCallback(() ->
+         {
+            latch.countDown();
+            if (callback != null)
+               callback.run();
+         });
          messager.submitMessage(topics.getSceneVideoRecordingRequest(), request);
+
+         try
+         {
+            latch.await();
+         }
+         catch (InterruptedException e)
+         {
+            e.printStackTrace();
+         }
+      }
+
+      @Override
+      public void disableUserControls()
+      {
+         checkVisualizerRunning();
+         messager.submitMessage(topics.getDisableUserControls(), true);
+      }
+
+      @Override
+      public void enableUserControls()
+      {
+         checkVisualizerRunning();
+         messager.submitMessage(topics.getDisableUserControls(), false);
       }
 
       @Override
@@ -415,6 +448,14 @@ public class SessionVisualizer
       {
          if (hasTerminated)
             throw new IllegalOperationException("Unable to perform operation, visualizer has terminated.");
+      }
+
+      private void checkSessionThreadRunning()
+      {
+         if (toolkit.getSession() == null)
+            throw new IllegalOperationException("No active session.");
+         if (!toolkit.getSession().hasSessionStarted())
+            throw new IllegalOperationException("Session thread is not running.");
       }
    }
 }

@@ -2,21 +2,22 @@ package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javafx.animation.AnimationTimer;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Group;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
 import javafx.scene.image.WritableImage;
-import javafx.scene.transform.Scale;
+import javafx.scene.paint.Color;
 import us.ihmc.codecs.builder.H264Settings;
 import us.ihmc.codecs.builder.MP4H264MovieBuilder;
 import us.ihmc.codecs.generated.EProfileIdc;
 import us.ihmc.codecs.generated.EUsageType;
 import us.ihmc.commons.Conversions;
-import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
@@ -28,6 +29,7 @@ import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 public class VideoRecordingManager
 {
    private final SubScene scene;
+   private final Group mainView3DRoot;
    private final SessionVisualizerTopics topics;
    private final BufferedJavaFXMessager messager;
 
@@ -37,12 +39,19 @@ public class VideoRecordingManager
    private final AtomicReference<Integer> bufferRecordTickPeriod;
 
    private final AtomicReference<Recorder> activeRecorder = new AtomicReference<>(null);
+   private final BackgroundExecutorManager backgroundExecutorManager;
 
-   public VideoRecordingManager(SubScene scene, SessionVisualizerTopics topics, BufferedJavaFXMessager messager)
+   public VideoRecordingManager(SubScene scene,
+                                Group mainView3DRoot,
+                                SessionVisualizerTopics topics,
+                                BufferedJavaFXMessager messager,
+                                BackgroundExecutorManager backgroundExecutorManager)
    {
       this.scene = scene;
+      this.mainView3DRoot = mainView3DRoot;
       this.messager = messager;
       this.topics = topics;
+      this.backgroundExecutorManager = backgroundExecutorManager;
 
       currentBufferProperties = messager.createInput(topics.getYoBufferCurrentProperties());
       currentSessionMode = messager.createInput(topics.getSessionCurrentMode());
@@ -60,64 +69,40 @@ public class VideoRecordingManager
          activeRecorder.get().stop();
 
       SnapshotParameters params = new SnapshotParameters();
-
-      computeViewport(request.getWidth(), request.getHeight(), scene.getWidth(), scene.getHeight(), params);
-      computeTransform(request.getWidth(), request.getHeight(), scene.getWidth(), scene.getHeight(), params);
+      params.setCamera(scene.getCamera());
+      params.setViewport(new Rectangle2D(0, 0, request.getWidth(), request.getHeight()));
+      params.setDepthBuffer(true);
+      params.setFill(Color.GRAY);
 
       Recorder recorder = new Recorder(request, params, () ->
       {
          activeRecorder.set(null);
+         try
+         {
+            if (request.getRecordingEndedCallback() != null)
+               request.getRecordingEndedCallback().run();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
          messager.submitMessage(topics.getDisableUserControls(), false);
       });
       activeRecorder.set(recorder);
       messager.submitMessage(topics.getDisableUserControls(), true);
+
+      if (request.getRecordingStartedCallback() != null)
+         request.getRecordingStartedCallback().run();
+
       recorder.start();
-   }
-
-   private static SnapshotParameters computeViewport(double outputWidth, double outputHeight, double inputWidth, double inputHeight, SnapshotParameters params)
-   {
-      double inputRatio = inputWidth / inputHeight;
-      double outputRatio = outputWidth / outputHeight;
-
-      if (!EuclidCoreTools.epsilonEquals(inputRatio, outputRatio, 1.0e-6))
-      {
-         if (inputRatio > outputRatio)
-         { // Need to reduce the width
-            double adjustedWidth = inputHeight * outputRatio;
-            double minX = 0.5 * (inputWidth - adjustedWidth);
-            double minY = 0.0;
-            double width = adjustedWidth;
-            double height = inputHeight;
-            params.setViewport(new Rectangle2D(minX, minY, width, height));
-         }
-         else
-         { // Need to reduce the height
-            double adjustedHeight = inputWidth / outputRatio;
-            double minX = 0.0;
-            double minY = 0.5 * (inputHeight - adjustedHeight);
-            double width = inputWidth;
-            double height = adjustedHeight;
-            params.setViewport(new Rectangle2D(minX, minY, width, height));
-         }
-      }
-      return params;
-   }
-
-   private static SnapshotParameters computeTransform(double outputWidth, double outputHeight, double inputWidth, double inputHeight, SnapshotParameters params)
-   {
-      double widthScale = outputWidth / inputWidth;
-      double heightScale = outputHeight / inputHeight;
-      double scale = Math.max(widthScale, heightScale);
-      params.setTransform(new Scale(scale, scale));
-      return params;
    }
 
    private class Recorder extends AnimationTimer
    {
       private final SceneVideoRecordingRequest request;
 
-      private int bufferStart;
-      private int bufferEnd;
+      private int inPoint = -1;
+      private int outPoint = -1;
 
       private int currentRecordingBufferIndex;
       private int bufferIndexIncrement = -1;
@@ -125,40 +110,86 @@ public class VideoRecordingManager
 
       private int currentPhase = 0;
 
-      private MP4H264MovieBuilder movieBuilder;
-
       private final SnapshotParameters params;
 
       private final Runnable stopListener;
 
-      private BufferedImage bufferedImage;
-      private WritableImage jfxImage;
+      private boolean isDoneTakingJavaFXSnapshots = false;
+      private boolean isDoneExporting = false;
+      private final ConcurrentLinkedQueue<WritableImage> jfxImageQueue = new ConcurrentLinkedQueue<>();
 
       public Recorder(SceneVideoRecordingRequest request, SnapshotParameters params, Runnable stopListener)
       {
          this.request = request;
          this.params = params;
          this.stopListener = stopListener;
-         bufferStart = request.getBufferStart();
-         bufferEnd = request.getBufferEnd();
 
          H264Settings settings = new H264Settings();
          settings.setBitrate(request.getWidth() * request.getHeight() / 100);
          settings.setUsageType(EUsageType.CAMERA_VIDEO_REAL_TIME);
          settings.setProfileIdc(EProfileIdc.PRO_HIGH);
 
-         try
+         backgroundExecutorManager.executeInBackground(new Runnable()
          {
-            movieBuilder = new MP4H264MovieBuilder(request.getFile(), request.getWidth(), request.getHeight(), (int) request.getFrameRate(), settings);
-         }
-         catch (IOException e)
-         {
-            e.printStackTrace();
-            return;
-         }
+            MP4H264MovieBuilder movieBuilder;
+            BufferedImage bufferedImage = new BufferedImage(request.getWidth(), request.getHeight(), BufferedImage.TYPE_INT_ARGB);
 
-         bufferedImage = new BufferedImage(request.getWidth(), request.getHeight(), BufferedImage.TYPE_INT_ARGB);
-         jfxImage = new WritableImage(request.getWidth(), request.getHeight());
+            @Override
+            public void run()
+            {
+//               bufferedImage.createGraphics().setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+               try
+               {
+                  movieBuilder = new MP4H264MovieBuilder(request.getFile(), request.getWidth(), request.getHeight(), (int) request.getFrameRate(), settings);
+               }
+               catch (IOException e)
+               {
+                  e.printStackTrace();
+                  return;
+               }
+
+               while (true)
+               {
+                  if (isDoneTakingJavaFXSnapshots && jfxImageQueue.isEmpty())
+                     break;
+
+                  if (!jfxImageQueue.isEmpty())
+                     encodeNextFrame(jfxImageQueue.poll());
+               }
+
+               try
+               {
+                  movieBuilder.close();
+               }
+               catch (IOException e)
+               {
+                  e.printStackTrace();
+               }
+               finally
+               {
+                  isDoneExporting = true;
+               }
+            }
+
+            private void encodeNextFrame(WritableImage jfxImageToEncode)
+            {
+               if (jfxImageToEncode == null)
+                  return;
+
+               bufferedImage = SwingFXUtils.fromFXImage(jfxImageToEncode, bufferedImage);
+
+               try
+               {
+                  movieBuilder.encodeFrame(bufferedImage);
+               }
+               catch (IOException e)
+               {
+                  e.printStackTrace();
+                  stop();
+               }
+            }
+         });
       }
 
       @Override
@@ -188,32 +219,29 @@ public class VideoRecordingManager
                if (recordNextFrame(bufferProperties))
                   currentPhase++;
                return;
+            case 2:
+               isDoneTakingJavaFXSnapshots = true;
+               if (isDoneExporting)
+                  currentPhase++;
+               return;
             default:
-               try
-               {
-                  movieBuilder.close();
-                  stop();
-               }
-               catch (IOException e)
-               {
-                  e.printStackTrace();
-               }
+               stop();
          }
       }
 
       private boolean initialize(YoBufferPropertiesReadOnly bufferProperties)
       {
-         if (bufferStart < 0)
-            bufferStart = bufferProperties.getInPoint();
-         if (bufferEnd < 0)
-            bufferEnd = bufferProperties.getOutPoint();
+         if (inPoint < 0)
+            inPoint = bufferProperties.getInPoint();
+         if (outPoint < 0)
+            outPoint = bufferProperties.getOutPoint();
 
          double dt = Conversions.nanosecondsToSeconds(sessionDT.get()) * bufferRecordTickPeriod.get();
          double recordDT = request.getRealTimeRate() / request.getFrameRate();
          bufferIndexIncrement = (int) Math.ceil(recordDT / dt);
 
-         currentRecordingBufferIndex = bufferStart;
-         numberOfBufferTicks = SharedMemoryTools.computeSubLength(bufferStart, bufferEnd, bufferProperties.getSize());
+         currentRecordingBufferIndex = inPoint;
+         numberOfBufferTicks = SharedMemoryTools.computeSubLength(inPoint, outPoint, bufferProperties.getSize());
          messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), currentRecordingBufferIndex);
 
          return true;
@@ -224,7 +252,7 @@ public class VideoRecordingManager
          if (currentRecordingBufferIndex != bufferProperties.getCurrentIndex())
             return false;
 
-         encodeNextFrame(scene.snapshot(params, jfxImage));
+         jfxImageQueue.add(mainView3DRoot.snapshot(params, new WritableImage(request.getWidth(), request.getHeight())));
 
          numberOfBufferTicks -= bufferIndexIncrement;
 
@@ -235,24 +263,6 @@ public class VideoRecordingManager
          messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), currentRecordingBufferIndex);
 
          return false;
-      }
-
-      private void encodeNextFrame(WritableImage jfxImageToEncode)
-      {
-         if (jfxImageToEncode == null)
-            return;
-
-         bufferedImage = SwingFXUtils.fromFXImage(jfxImageToEncode, bufferedImage);
-
-         try
-         {
-            movieBuilder.encodeFrame(bufferedImage);
-         }
-         catch (IOException e)
-         {
-            e.printStackTrace();
-            stop();
-         }
       }
 
       @Override

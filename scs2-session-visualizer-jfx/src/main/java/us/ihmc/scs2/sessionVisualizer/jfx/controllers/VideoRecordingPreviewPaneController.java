@@ -1,55 +1,58 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Group;
+import javafx.scene.PerspectiveCamera;
+import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.SubScene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TextFormatter.Change;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.transform.Scale;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 public class VideoRecordingPreviewPaneController
 {
-   @FXML
-   private Stage stage;
    @FXML
    private VBox mainPane;
    @FXML
@@ -57,15 +60,11 @@ public class VideoRecordingPreviewPaneController
    @FXML
    private ImageView imageView;
    @FXML
-   private Rectangle viewportRectangle;
-   @FXML
    private Slider currentBufferIndexSlider;
    @FXML
    private ComboBox<String> resolutionComboBox;
    @FXML
    private TextField frameRateTextField, realTimeRateTextField;
-   @FXML
-   private TextField startIndexTextField, endIndexTextField;
 
    private enum Resolution
    {
@@ -110,28 +109,45 @@ public class VideoRecordingPreviewPaneController
       }
    }
 
+   private WritableImage image;
+
    private final IntegerProperty width = new SimpleIntegerProperty(this, "width", Resolution.FULL_HD_1920x1080.getWidth());
    private final IntegerProperty height = new SimpleIntegerProperty(this, "height", Resolution.FULL_HD_1920x1080.getHeight());
    private Property<Integer> frameRate;
    private Property<Double> realTimeRate;
-   private Property<Integer> startIndex, endIndex;
 
-   private final Property<SnapshotParameters> paramsProperty = new SimpleObjectProperty<>(this, "params", new SnapshotParameters());
    private final Property<SessionMode> currentSessionMode = new SimpleObjectProperty<>(this, "currentSessionMode", null);
-   private Property<YoBufferPropertiesReadOnly> bufferProperties;
+   private AtomicReference<YoBufferPropertiesReadOnly> bufferProperties;
 
    private Window owner;
 
-   private SubScene targetScene;
+   private Stage stage;
+   private Group rootNode3D;
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
 
-   public void initialize(Window owner, SubScene targetScene, JavaFXMessager messager, SessionVisualizerTopics topics)
+   private final List<Runnable> cleanupActions = new ArrayList<>();
+   private final SnapshotParameters snapshotParameters = new SnapshotParameters();
+
+   private final AnimationTimer refreshViewAnimation = new AnimationTimer()
+   {
+      @Override
+      public void handle(long now)
+      {
+         refreshView();
+      }
+   };
+
+   public void initialize(Window owner, Group mainView3DRoot, PerspectiveCamera targetCamera, JavaFXMessager messager, SessionVisualizerTopics topics)
    {
       this.owner = owner;
-      this.targetScene = targetScene;
+      this.rootNode3D = mainView3DRoot;
       this.messager = messager;
       this.topics = topics;
+
+      snapshotParameters.setDepthBuffer(true);
+      snapshotParameters.setCamera(targetCamera);
+      snapshotParameters.setFill(Color.GRAY);
 
       resolutionComboBox.setItems(FXCollections.observableArrayList(Resolution.allDescriptions));
       resolutionComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
@@ -146,59 +162,40 @@ public class VideoRecordingPreviewPaneController
 
       TextFormatter<Integer> frameRateFormatter = new TextFormatter<>(new IntegerConverter(), 60, new PositiveIntegerValueFilter());
       TextFormatter<Double> realTimeRateFormatter = new TextFormatter<>(new DoubleStringConverter(), 1.0);
-      TextFormatter<Integer> startFormatter = new TextFormatter<>(new IntegerConverter(), -1, createBufferIndexFilter());
-      TextFormatter<Integer> endFormatter = new TextFormatter<>(new IntegerConverter(), -1, createBufferIndexFilter());
       frameRateTextField.setTextFormatter(frameRateFormatter);
       realTimeRateTextField.setTextFormatter(realTimeRateFormatter);
-      startIndexTextField.setTextFormatter(startFormatter);
-      endIndexTextField.setTextFormatter(endFormatter);
 
       frameRate = frameRateFormatter.valueProperty();
       realTimeRate = realTimeRateFormatter.valueProperty();
-      startIndex = startFormatter.valueProperty();
-      endIndex = endFormatter.valueProperty();
-
-      width.addListener((o, oldValue, newValue) -> updatePreview());
-      height.addListener((o, oldValue, newValue) -> updatePreview());
-      frameRate.addListener((o, oldValue, newValue) -> updatePreview());
-      realTimeRate.addListener((o, oldValue, newValue) -> updatePreview());
-      stage.showingProperty().addListener((o, oldValue, newValue) -> updatePreview());
-      currentBufferIndexSlider.valueProperty().addListener((o, oldValue, newValue) -> updatePreview());
 
       messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
-      bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties());
+      bufferProperties = messager.createInput(topics.getYoBufferCurrentProperties());
+      cleanupActions.add(() -> messager.removeInput(topics.getYoBufferCurrentProperties(), bufferProperties));
 
-      currentSessionMode.addListener((o, oldValue, newValue) ->
+      ChangeListener<? super SessionMode> currentSessionModeListener = (o, oldValue, newValue) ->
       {
          if (newValue != SessionMode.PAUSE)
          {
             messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
          }
-         else if (bufferProperties.getValue() != null)
+         else if (bufferProperties.get() != null)
          {
-            currentBufferIndexSlider.setMax(bufferProperties.getValue().getSize());
-            if (startIndex.getValue() == -1)
-               startIndex.setValue(bufferProperties.getValue().getInPoint());
-            if (endIndex.getValue() == -1)
-               endIndex.setValue(bufferProperties.getValue().getOutPoint());
-
+            currentBufferIndexSlider.setMax(bufferProperties.get().getSize());
             updatingBufferIndex.setTrue();
-            currentBufferIndexSlider.setValue(bufferProperties.getValue().getCurrentIndex());
+            currentBufferIndexSlider.setValue(bufferProperties.get().getCurrentIndex());
             updatingBufferIndex.setFalse();
          }
-      });
+      };
+      currentSessionMode.addListener(currentSessionModeListener);
+      cleanupActions.add(() -> currentSessionMode.removeListener(currentSessionModeListener));
 
-      messager.registerJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), m ->
+      TopicListener<YoBufferPropertiesReadOnly> currentBufferPropertiesListener = m ->
       {
          if (currentSessionMode.getValue() != SessionMode.PAUSE)
             return;
 
          currentBufferIndexSlider.setMax(m.getSize());
-         if (startIndex.getValue() == -1)
-            startIndex.setValue(m.getInPoint());
-         if (endIndex.getValue() == -1)
-            endIndex.setValue(m.getOutPoint());
 
          if (updatingBufferIndex.isFalse())
          {
@@ -206,9 +203,11 @@ public class VideoRecordingPreviewPaneController
             currentBufferIndexSlider.setValue(m.getCurrentIndex());
             updatingBufferIndex.setFalse();
          }
-      });
+      };
+      messager.registerJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener);
+      cleanupActions.add(() -> messager.removeJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener));
 
-      currentBufferIndexSlider.valueProperty().addListener((o, oldValue, newValue) ->
+      ChangeListener<? super Number> currentBufferIndexSliderListener = (o, oldValue, newValue) ->
       {
          if (currentSessionMode.getValue() != SessionMode.PAUSE)
             return;
@@ -219,35 +218,24 @@ public class VideoRecordingPreviewPaneController
             messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), newValue.intValue());
             updatingBufferIndex.setFalse();
          }
-      });
+      };
+      currentBufferIndexSlider.valueProperty().addListener(currentBufferIndexSliderListener);
+      cleanupActions.add(() -> currentBufferIndexSlider.valueProperty().removeListener(currentBufferIndexSliderListener));
 
+      stage = new Stage(StageStyle.UTILITY);
       stage.setTitle("Video export preview and properties");
+      stage.setScene(new Scene(mainPane));
+      refreshViewAnimation.start();
+      stage.setOnCloseRequest(e -> close());
       owner.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e -> close());
    }
 
    public void close()
    {
+      cleanupActions.forEach(Runnable::run);
+      cleanupActions.clear();
+      refreshViewAnimation.stop();
       stage.close();
-   }
-
-   private UnaryOperator<Change> createBufferIndexFilter()
-   {
-      return change ->
-      {
-         try
-         {
-            int index = Integer.parseInt(change.getControlNewText());
-            if (index < -1)
-               return null;
-            if (index >= bufferProperties.getValue().getSize())
-               return null;
-            return change;
-         }
-         catch (NumberFormatException e)
-         {
-            return null;
-         }
-      };
    }
 
    public Stage getStage()
@@ -255,50 +243,20 @@ public class VideoRecordingPreviewPaneController
       return stage;
    }
 
-   private void updatePreview()
+   private void refreshView()
    {
-      double inputWidth = targetScene.getWidth();
-      double inputHeight = targetScene.getHeight();
-      double outputWidth;
-      double outputHeight;
+      int localWidth = width.get();
+      int localHeight = height.get();
 
-      if (imageView.getFitWidth() > 0)
+      if (image == null || localHeight != image.getHeight() || localWidth != image.getWidth())
       {
-         double scale = imageView.getFitWidth() / inputWidth;
-         outputWidth = scale * inputWidth;
-         outputHeight = scale * inputHeight;
-      }
-      else if (imageView.getFitHeight() > 0)
-      {
-         double scale = imageView.getFitHeight() / inputHeight;
-         outputWidth = scale * inputWidth;
-         outputHeight = scale * inputHeight;
-      }
-      else
-      {
-         outputWidth = inputWidth;
-         outputHeight = inputHeight;
-      }
-
-      double outputRatio = width.getValue().doubleValue() / height.getValue().doubleValue();
-      double inputRatio = inputWidth / inputHeight;
-
-      computeTransform(outputWidth, outputHeight, inputWidth, inputHeight, paramsProperty.getValue());
-
-      JavaFXMissingTools.runLaterIfNeeded(this.getClass(), () ->
-      {
-         WritableImage snapshot = targetScene.snapshot(paramsProperty.getValue(), null);
-         imageView.setImage(snapshot);
-         computeViewport(outputRatio, inputRatio, outputWidth, outputHeight, viewportRectangle);
+         snapshotParameters.setViewport(new Rectangle2D(0, 0, localWidth, localHeight));
+         image = new WritableImage(localWidth, localHeight);
+         imageView.setImage(image);
          stage.sizeToScene();
-      });
-   }
+      }
 
-   @FXML
-   private void setIndicesToInOut()
-   {
-      startIndex.setValue(bufferProperties.getValue().getInPoint());
-      endIndex.setValue(bufferProperties.getValue().getOutPoint());
+      rootNode3D.snapshot(snapshotParameters, image);
    }
 
    @FXML
@@ -321,55 +279,11 @@ public class VideoRecordingPreviewPaneController
       SessionVisualizerIOTools.setDefaultFilePath("video", result);
       SceneVideoRecordingRequest request = new SceneVideoRecordingRequest();
       request.setFile(result);
-      request.setBufferStart(startIndex.getValue());
-      request.setBufferEnd(endIndex.getValue());
       request.setFrameRate(frameRate.getValue());
       request.setRealTimeRate(realTimeRate.getValue());
       request.setWidth(width.get());
       request.setHeight(height.get());
       close();
       messager.submitMessage(topics.getSceneVideoRecordingRequest(), request);
-   }
-
-   private static void computeViewport(double outputRatio, double inputRatio, double imageWidth, double imageHeight, Rectangle rectangle)
-   {
-      double minX = 0.0;
-      double minY = 0.0;
-      double width = imageWidth;
-      double height = imageHeight;
-
-      if (!EuclidCoreTools.epsilonEquals(inputRatio, outputRatio, 1.0e-6))
-      {
-         if (inputRatio > outputRatio)
-         { // Need to reduce the width
-            double adjustedWidth = imageHeight * outputRatio;
-            minX = 0.5 * (imageWidth - adjustedWidth);
-            minY = 0.0;
-            width = adjustedWidth;
-            height = imageHeight;
-         }
-         else
-         { // Need to reduce the height
-            double adjustedHeight = imageWidth / outputRatio;
-            minX = 0.0;
-            minY = 0.5 * (imageHeight - adjustedHeight);
-            width = imageWidth;
-            height = adjustedHeight;
-         }
-      }
-
-      rectangle.setX(minX);
-      rectangle.setY(minY);
-      rectangle.setWidth(width);
-      rectangle.setHeight(height);
-   }
-
-   private static SnapshotParameters computeTransform(double outputWidth, double outputHeight, double inputWidth, double inputHeight, SnapshotParameters params)
-   {
-      double widthScale = outputWidth / inputWidth;
-      double heightScale = outputHeight / inputHeight;
-      double scale = Math.min(widthScale, heightScale);
-      params.setTransform(new Scale(scale, scale));
-      return params;
    }
 }
