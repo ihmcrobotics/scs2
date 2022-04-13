@@ -91,7 +91,7 @@ public class SessionDataExportRequest
    /**
     * [Optional] Provides a filter to downselect the {@link YoRegistry}s to be exported.
     * <p>
-    * A {@link YoRegistry} and its descendant is skipped if the predicate returns {@code false}.
+    * A {@link YoRegistry} and its descendants are skipped if the predicate returns {@code false}.
     * </p>
     * 
     * @param registryFilter the {@link YoRegistry} filter.
@@ -99,6 +99,18 @@ public class SessionDataExportRequest
    public void setRegistryFilter(Predicate<YoRegistry> registryFilter)
    {
       this.registryFilter = registryFilter;
+   }
+
+   /**
+    * Bundles the flags for exporting the robot, terrain, and yoGraphic definitions.
+    * 
+    * @param export whether to export the definitions or not.
+    */
+   public void setExportDefinitions(boolean export)
+   {
+      setExportRobotDefinitions(export);
+      setExportTerrainObjectDefinitions(export);
+      setExportSessionYoGraphicDefinitions(export);
    }
 
    /**
