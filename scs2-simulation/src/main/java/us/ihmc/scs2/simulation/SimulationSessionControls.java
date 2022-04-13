@@ -102,6 +102,15 @@ public interface SimulationSessionControls
 
    // Buffer controls:
    /**
+    * Requests cropping the buffer to only keep the active part of the buffer, i.e. between the
+    * in-point and out-point indices. (synchronous)
+    * <p>
+    * This is a blocking request which will return only when the operation has completed.
+    * </p>
+    */
+   void cropBuffer();
+
+   /**
     * Requests setting the in-point of the buffer to the current index. (synchronous)
     * <p>
     * This is a blocking request which will return only when the operation has completed.

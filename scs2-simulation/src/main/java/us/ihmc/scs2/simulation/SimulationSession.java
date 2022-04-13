@@ -26,7 +26,7 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
+import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -249,12 +249,6 @@ public class SimulationSession extends Session
       {
          addYoGraphicDefinition(yoGraphicDefinition);
       }
-   }
-
-   @Override
-   public LinkedYoVariableFactory getLinkedYoVariableFactory()
-   {
-      return sharedBuffer;
    }
 
    @Override
@@ -487,27 +481,33 @@ public class SimulationSession extends Session
 
       // Buffer controls
       @Override
+      public void cropBuffer()
+      {
+         submitCropBufferRequestAndWait(new CropBufferRequest(getBufferProperties().getInPoint(), getBufferProperties().getOutPoint()));
+      }
+
+      @Override
       public void setBufferInPointIndexToCurrent()
       {
-         submitBufferInPointIndexRequestAndWait(sharedBuffer.getProperties().getCurrentIndex());
+         submitBufferInPointIndexRequestAndWait(getBufferProperties().getCurrentIndex());
       }
 
       @Override
       public void setBufferOutPointIndexToCurrent()
       {
-         submitBufferOutPointIndexRequestAndWait(sharedBuffer.getProperties().getCurrentIndex());
+         submitBufferOutPointIndexRequestAndWait(getBufferProperties().getCurrentIndex());
       }
 
       @Override
       public void setBufferCurrentIndexToInPoint()
       {
-         submitBufferIndexRequestAndWait(sharedBuffer.getProperties().getInPoint());
+         submitBufferIndexRequestAndWait(getBufferProperties().getInPoint());
       }
 
       @Override
       public void setBufferCurrentIndexToOutPoint()
       {
-         submitBufferIndexRequestAndWait(sharedBuffer.getProperties().getOutPoint());
+         submitBufferIndexRequestAndWait(getBufferProperties().getOutPoint());
       }
 
       @Override
