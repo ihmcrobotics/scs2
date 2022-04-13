@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -26,9 +27,12 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
+import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SessionIOTools
 {
@@ -119,11 +123,8 @@ public class SessionIOTools
             if (file.list().length > 0)
             {
                // Clean up folder
-               String[] allExtensions = {infoFileExtension,
-                                         robotDefinitionFileExtension,
-                                         terrainObjectDefinitionFileExtension,
-                                         yoGraphicConfigurationFileExtension,
-                                         yoRegistryDefinitionFileExtension};
+               String[] allExtensions = {infoFileExtension, robotDefinitionFileExtension, terrainObjectDefinitionFileExtension,
+                     yoGraphicConfigurationFileExtension, yoRegistryDefinitionFileExtension};
                allExtensions = SharedMemoryTools.concatenate(allExtensions,
                                                              Arrays.stream(DataFormat.values()).map(DataFormat::getFileExtension).toArray(String[]::new));
 
@@ -242,14 +243,13 @@ public class SessionIOTools
          sessionInfo.setGraphicFileName(graphicFile.getName());
       }
 
+      Predicate<YoVariable> variableFilter = request.getVariableFilter();
+      Predicate<YoRegistry> registryFilter = request.getRegistryFilter();
       if (request.getExportSessionBufferRegistryDefinition())
       {
          File registryFile = new File(file, "variables" + yoRegistryDefinitionFileExtension);
          LogTools.info("Exporting session variable structure. File: {}", registryFile);
-         SharedMemoryIOTools.exportRegistry(session.getRootRegistry(),
-                                            new FileOutputStream(registryFile),
-                                            request.getVariableFilter(),
-                                            request.getRegistryFilter());
+         SharedMemoryIOTools.exportRegistry(session.getRootRegistry(), new FileOutputStream(registryFile), variableFilter, registryFilter);
          sessionInfo.setRegistryFileName(registryFile.getName());
       }
 
@@ -269,19 +269,17 @@ public class SessionIOTools
       {
          File dataFile = new File(file, "data" + request.getExportSessionBufferDataFormat().getFileExtension());
          LogTools.info("Exporting session data. File: {}", dataFile);
+         YoSharedBuffer buffer = session.getBuffer();
          switch (request.getExportSessionBufferDataFormat())
          {
             case ASCII:
-               SharedMemoryIOTools.exportDataASCII(session.getBuffer(),
-                                                   new FileOutputStream(dataFile),
-                                                   request.getVariableFilter(),
-                                                   request.getRegistryFilter());
+               buffer.exportDataASCII(new FileOutputStream(dataFile), variableFilter, registryFilter);
                break;
             case CSV:
-               SharedMemoryIOTools.exportDataCSV(session.getBuffer(), new FileOutputStream(dataFile), request.getVariableFilter(), request.getRegistryFilter());
+               buffer.exportDataCSV(new FileOutputStream(dataFile), variableFilter, registryFilter);
                break;
             case MATLAB:
-               SharedMemoryIOTools.exportDataMatlab(session.getBuffer(), dataFile, request.getVariableFilter(), request.getRegistryFilter());
+               buffer.exportDataMatlab(dataFile, variableFilter, registryFilter);
                break;
             default:
                LogTools.error("Unhandled data format: {}", request.getExportSessionBufferDataFormat());
