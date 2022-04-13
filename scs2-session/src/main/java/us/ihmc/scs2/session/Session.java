@@ -1962,6 +1962,16 @@ public abstract class Session
    }
 
    /**
+    * Gets the current buffer properties.
+    * 
+    * @return the read-only properties of the buffer.
+    */
+   public YoBufferPropertiesReadOnly getBufferProperties()
+   {
+      return sharedBuffer.getProperties();
+   }
+
+   /**
     * Gets the factory for creating {@link LinkedYoVariable}s that can be used to operate safely with
     * this session buffer.
     * 
