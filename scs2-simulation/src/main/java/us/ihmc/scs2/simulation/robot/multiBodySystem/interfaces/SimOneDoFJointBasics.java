@@ -16,7 +16,7 @@ public interface SimOneDoFJointBasics extends SimJointBasics, OneDoFJointBasics,
    @Override
    default void setJointDeltaTwistToZero()
    {
-      setQd(0.0);
+      setDeltaQd(0.0);
    }
 
    default void setJointDeltaTwist(JointReadOnly other)

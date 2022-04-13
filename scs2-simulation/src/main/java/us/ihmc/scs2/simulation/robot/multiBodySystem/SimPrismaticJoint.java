@@ -50,6 +50,12 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
       jointDeltaTwist = MecanoFactories.newTwistReadOnly(this::getDeltaQd, getUnitJointTwist());
       isPinned = new YoBoolean("is_" + getName() + "_pinned", registry);
       damping = new YoDouble("damping_" + getName(), registry);
+
+      getYoQ().addListener(v ->
+      {
+         if (!Double.isFinite(getQ()))
+            throw new IllegalStateException("Invalid joint configuration: " + getQ());
+      });
    }
 
    @Override
@@ -83,15 +89,6 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
    public SimRigidBodyBasics getSuccessor()
    {
       return (SimRigidBodyBasics) super.getSuccessor();
-   }
-
-   @Override
-   public void setQ(double q)
-   {
-      if (!Double.isFinite(q))
-         throw new IllegalStateException("Invalid joint configuration: " + q);
-
-      super.setQ(q);
    }
 
    @Override
