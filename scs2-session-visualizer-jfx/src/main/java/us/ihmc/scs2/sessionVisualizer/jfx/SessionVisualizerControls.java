@@ -30,9 +30,9 @@ public interface SessionVisualizerControls
    }
 
    void addStaticVisual(VisualDefinition visualDefinition);
-   
+
    void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition);
-   
+
    void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
    default void exportVideo(File file)
@@ -43,6 +43,10 @@ public interface SessionVisualizerControls
    }
 
    void exportVideo(SceneVideoRecordingRequest request);
+
+   void disableUserControls();
+
+   void enableUserControls();
 
    void shutdown();
 
