@@ -65,6 +65,12 @@ public class YoEnumBuffer<E extends Enum<E>> extends YoVariableBuffer<YoEnum<E>>
    }
 
    @Override
+   public double[] getAsDoubleBuffer()
+   {
+      return SharedMemoryTools.toDoubleArray(buffer);
+   }
+
+   @Override
    public void dispose()
    {
       buffer = null;
