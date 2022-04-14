@@ -60,11 +60,14 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 			contactPoints.add(new YoPoint3D("contactPoint" + i, physicsEngineRegistry));
 		}
 	}
+	private final YoBulletMultiBodyParameters globalMultiBodyParameters;
 	private boolean initialize = true;
 
 	public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry) {
 		this.inertialFrame = inertialFrame;
 		this.rootRegistry = rootRegistry;
+		
+		globalMultiBodyParameters = new YoBulletMultiBodyParameters("globalMultiBody", physicsEngineRegistry);
 
 		multiBodyDynamicsWorld = new BulletMultiBodyDynamicsWorld();
 	}
@@ -140,7 +143,9 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 	@Override
 	public void addRobot(Robot robot) {
 		inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
+		
 		BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, this);
+		BulletMultiBodyRobotFactory.newInstance(robot, globalMultiBodyParameters);
 		multiBodyDynamicsWorld.getMultiBodyDynamicsWorld().addMultiBody(bulletRobot.getBulletMultiBody());
 		rootRegistry.addChild(bulletRobot.getRegistry());
 		robotList.add(bulletRobot);
@@ -192,6 +197,11 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 	@Override
 	public YoRegistry getPhysicsEngineRegistry() {
 		return physicsEngineRegistry;
+	}
+	
+	public void setGlobalMultiBodyParameter(BulletMultiBodyParameters parameters)
+	{
+	   globalMultiBodyParameters.set(parameters);
 	}
 
 	public btMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld() {

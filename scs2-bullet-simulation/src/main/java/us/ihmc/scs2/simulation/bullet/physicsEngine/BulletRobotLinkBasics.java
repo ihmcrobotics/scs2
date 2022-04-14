@@ -51,12 +51,14 @@ public abstract class BulletRobotLinkBasics
    {
       for (JointBasics childJoint : simRigidBody.getChildrenJoints())
       {
+         System.out.println("prod child joint " + childJoint.getName());
          for (JointDefinition childJointDefinition : rigidBodyDefinition.getChildrenJoints())
          {
             if (childJoint.getName().equals(childJointDefinition.getName()))
             {
                if (childJoint instanceof SimRevoluteJoint)
                {
+                  System.out.println("prod joint Def: " + childJointDefinition.getName());
                   SimRevoluteJoint childSimRevoluteJoint = (SimRevoluteJoint) childJoint;
                   RevoluteJointDefinition childRevoluteJointDefinition = (RevoluteJointDefinition) childJointDefinition;
                   getChildren().add(new BulletRobotLinkJoint(childRevoluteJointDefinition,

@@ -10,13 +10,13 @@ public class BulletMultiBodyRobot
     public BulletMultiBodyRobot(int numberOfLinks,
     		float rootBodyMass,
     		Vector3 rootBodyIntertia,
-    		BulletContactParameters bulletContactParameters) 
+    		YoBulletMultiBodyParameters bulletMultiBodyParameters) 
     {
-		bulletMultiBodyRobot = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, bulletContactParameters.getFixedBase(), bulletContactParameters.getCanSleep());
+		bulletMultiBodyRobot = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, bulletMultiBodyParameters.getFixedBase(), bulletMultiBodyParameters.getCanSleep());
 		
-		bulletMultiBodyRobot.setHasSelfCollision(bulletContactParameters.getHasSelfCollision());
-		bulletMultiBodyRobot.setLinearDamping(bulletContactParameters.getLinearDamping());
-		bulletMultiBodyRobot.setAngularDamping(bulletContactParameters.getAngularDamping());
+		bulletMultiBodyRobot.setHasSelfCollision(bulletMultiBodyParameters.getHasSelfCollision());
+		bulletMultiBodyRobot.setLinearDamping(bulletMultiBodyParameters.getLinearDamping());
+		bulletMultiBodyRobot.setAngularDamping(bulletMultiBodyParameters.getAngularDamping());
 	}
 
 	public btMultiBody getBulletMultiBodyRobot() {
