@@ -194,9 +194,16 @@ public class CompositePropertyTools
    {
       if (field == null)
          return null;
+      if (!field.contains(ReferenceFrame.SEPARATOR))
+         return new SimpleObjectProperty<>(referenceFrameManager.getWorldFrame()); // We're looking for a root frame, we can use world.
+
       ReferenceFrame referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(field);
+
       if (referenceFrame != null)
          return new SimpleObjectProperty<>(referenceFrame);
+      LogTools.warn("Could not retrieve the frame {} using world instead (fullname: {})",
+                    field.substring(field.lastIndexOf(ReferenceFrame.SEPARATOR) + 1),
+                    field);
       return null;
    }
 
