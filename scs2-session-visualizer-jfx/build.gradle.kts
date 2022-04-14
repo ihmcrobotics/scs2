@@ -17,7 +17,7 @@ mainDependencies {
    api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer:source")
 
-   api("us.ihmc:ihmc-javafx-toolkit:0.20.0") {
+   api("us.ihmc:ihmc-javafx-toolkit:0.21.0") {
       exclude(group="us.ihmc", module="jassimp")
       exclude(group="us.ihmc", module="euclid")
       exclude(group="us.ihmc", module="euclid-shape")
