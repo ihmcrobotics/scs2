@@ -8,6 +8,7 @@ import org.ejml.data.DMatrixRMaj;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
+import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
 import us.ihmc.scs2.simulation.collision.Collidable;
@@ -100,7 +101,7 @@ public class ContactPointBasedRobotPhysics
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       forwardDynamicsCalculator.setGravitionalAcceleration(gravity);
-      forwardDynamicsCalculator.setLockJoints(joint ->
+      forwardDynamicsCalculator.setJointSourceModes(joint ->
       {
          SimJointBasics simJoint = (SimJointBasics) joint;
          if (simJoint.isPinned())
@@ -108,7 +109,7 @@ public class ContactPointBasedRobotPhysics
             simJoint.setJointTwistToZero();
             simJoint.setJointAccelerationToZero();
          }
-         return simJoint.isPinned();
+         return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
       });
       forwardDynamicsCalculator.compute();
    }

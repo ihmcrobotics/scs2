@@ -11,6 +11,7 @@ import org.ejml.dense.row.CommonOps_DDRM;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
+import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
 import us.ihmc.mecano.algorithms.interfaces.RigidBodyTwistProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
@@ -159,7 +160,7 @@ public class ImpulseBasedRobotPhysics
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       forwardDynamicsCalculator.setGravitionalAcceleration(gravity);
-      forwardDynamicsCalculator.setLockJoints(joint ->
+      forwardDynamicsCalculator.setJointSourceModes(joint ->
       {
          SimJointBasics simJoint = (SimJointBasics) joint;
          if (simJoint.isPinned())
@@ -167,7 +168,7 @@ public class ImpulseBasedRobotPhysics
             simJoint.setJointTwistToZero();
             simJoint.setJointAccelerationToZero();
          }
-         return simJoint.isPinned();
+         return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
       });
       forwardDynamicsCalculator.compute();
    }
