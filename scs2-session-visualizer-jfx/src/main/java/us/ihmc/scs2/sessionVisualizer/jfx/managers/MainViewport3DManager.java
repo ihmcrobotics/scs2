@@ -35,10 +35,6 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
       // Creating sub-scene
       subScene = new SubScene(rootNode3D, -1, -1, true, SceneAntialiasing.BALANCED);
-      subScene.sceneProperty().addListener((o, oldValue, newValue) ->
-      {
-         System.out.println();
-      });
       subScene.setFill(Color.GRAY);
       subScene.setOnMousePressed(event -> subScene.requestFocus());
 
