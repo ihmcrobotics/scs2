@@ -72,7 +72,7 @@ public class LogSession extends Session
          robotStateUpdater = null;
       }
 
-      submitDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
+      setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
       setSessionDTSeconds(parser.getDt());
       setSessionMode(SessionMode.PAUSE);
    }

@@ -1,31 +1,22 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx.yoGraphic;
 
 import javafx.scene.paint.Color;
-import us.ihmc.euclid.tools.RotationMatrixTools;
-import us.ihmc.euclid.tuple2D.Point2D;
+import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
+import us.ihmc.euclid.shape.convexPolytope.tools.EuclidPolytopeFactories;
 import us.ihmc.scs2.examples.sessionVisualizer.jfx.Simple3DViewer;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPolygonExtrudedFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoConvexPolytopeFX3D;
 
 public class YoPolygonExtrudedFX3DVisualizer
 {
    public static void main(String[] args)
    {
-      YoPolygonExtrudedFX3D yoPolygonExtrudedFX3D = new YoPolygonExtrudedFX3D();
+      YoConvexPolytopeFX3D yoPolygonExtrudedFX3D = new YoConvexPolytopeFX3D();
 
-      double radius = 0.3;
-      int numberOfVertices = 5;
+      ConvexPolytope3D polytope = EuclidPolytopeFactories.newIcosahedron(0.24);
+      polytope.getVertices().forEach(v -> yoPolygonExtrudedFX3D.addVertex(new Tuple3DProperty(v.getX(), v.getY(), v.getZ())));
+      yoPolygonExtrudedFX3D.setNumberOfVertices(polytope.getNumberOfVertices());
 
-      for (int i = 0; i < numberOfVertices; i++)
-      {
-         double theta = 2.0 * Math.PI * i / numberOfVertices;
-         Point2D vertex = new Point2D(radius, 0.0);
-         RotationMatrixTools.applyYawRotation(theta, vertex, vertex);
-         yoPolygonExtrudedFX3D.addVertex(new Tuple2DProperty(vertex.getX(), vertex.getY()));
-      }
-
-      yoPolygonExtrudedFX3D.setNumberOfVertices(numberOfVertices);
-      yoPolygonExtrudedFX3D.setThickness(0.15);
       yoPolygonExtrudedFX3D.setColor(Color.AQUAMARINE);
       yoPolygonExtrudedFX3D.render();
       yoPolygonExtrudedFX3D.computeBackground();

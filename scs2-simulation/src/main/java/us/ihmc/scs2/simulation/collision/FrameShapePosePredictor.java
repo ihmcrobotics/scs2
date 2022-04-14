@@ -12,6 +12,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.SpatialAcceleration;
 import us.ihmc.mecano.spatial.Twist;
 import us.ihmc.mecano.tools.MultiBodySystemStateIntegrator;
+import us.ihmc.scs2.session.Session;
 
 /**
  * This class predicts the pose of a frame shape by integrating the velocity and acceleration of the
@@ -65,7 +66,8 @@ public class FrameShapePosePredictor
 
       FrameShape3DBasics predictedShape = (FrameShape3DBasics) shape.copy();
       pose.get(transform);
-      predictedShape.setReferenceFrame(ReferenceFrameTools.constructFrameWithUnchangingTransformToParent(shapeFrame.getName() + "Predicted", shapeFrame.getRootFrame(), transform));
+      predictedShape.setReferenceFrame(ReferenceFrameTools.constructFrameWithUnchangingTransformToParent(shapeFrame.getName() + "Predicted"
+            + Session.SCS2_INTERNAL_FRAME_SUFFIX, shapeFrame.getRootFrame(), transform));
       return predictedShape;
    }
 }

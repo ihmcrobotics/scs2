@@ -2,12 +2,14 @@ package us.ihmc.scs2.simulation.robot.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.controller.ControllerOutput;
 import us.ihmc.scs2.definition.controller.interfaces.Controller;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
+import us.ihmc.scs2.definition.controller.interfaces.ControllerThrottler;
 import us.ihmc.scs2.definition.state.interfaces.JointStateBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimMultiBodySystemBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -38,6 +40,14 @@ public class RobotControllerManager
       return controllerOutput;
    }
 
+   /**
+    * Adds a controller to be run with the robot owning this manager.
+    * <p>
+    * The controller will be updated every session run tick, e.g. simulation tick.
+    * </p>
+    * 
+    * @param controller the new controller.
+    */
    public void addController(Controller controller)
    {
       if (controllers.add(controller))
@@ -46,9 +56,77 @@ public class RobotControllerManager
       }
    }
 
+   /**
+    * Adds a controller to be run with the robot owning this manager and specifies the desired period
+    * at which it should be updated.
+    * 
+    * @param controller      the new controller.
+    * @param periodInSeconds the update period in seconds. Be mindful that this period should be a
+    *                        multiple of the session period (e.g. simulation DT) or the update rate
+    *                        will be inaccurate.
+    */
+   public void addThrottledController(Controller controller, double periodInSeconds)
+   {
+      ControllerThrottler controllerThrottler = new ControllerThrottler(controller, periodInSeconds);
+      controllerThrottler.setTimeProvider(() -> controllerInput.getTime());
+      addController(controllerThrottler);
+   }
+
+   /**
+    * Adds a controller to be run with the robot owning this manager and specifies the desired period
+    * at which it should be updated.
+    * 
+    * @param controller the new controller.
+    * @param period     the update period. Be mindful that this period should be a multiple of the
+    *                   session period (e.g. simulation DT) or the update rate will be inaccurate.
+    * @param timeUnit   the unit of time for the period.
+    */
+   public void addThrottledController(Controller controller, long period, TimeUnit timeUnit)
+   {
+      ControllerThrottler controllerThrottler = new ControllerThrottler(controller, period, timeUnit);
+      controllerThrottler.setTimeProvider(() -> controllerInput.getTime());
+      addController(controllerThrottler);
+   }
+
+   /**
+    * Adds a controller to be run with the robot owning this manager.
+    * <p>
+    * The controller will be updated every session run tick, e.g. simulation tick.
+    * </p>
+    * 
+    * @param controller the new controller.
+    */
    public void addController(ControllerDefinition controllerDefinition)
    {
       addController(controllerDefinition.newController(controllerInput, controllerOutput));
+   }
+
+   /**
+    * Adds a controller to be run with the robot owning this manager and specifies the desired period
+    * at which it should be updated.
+    * 
+    * @param controller      the new controller.
+    * @param periodInSeconds the update period in seconds. Be mindful that this period should be a
+    *                        multiple of the session period (e.g. simulation DT) or the update rate
+    *                        will be inaccurate.
+    */
+   public void addThrottledController(ControllerDefinition controllerDefinition, double periodInSeconds)
+   {
+      addThrottledController(controllerDefinition.newController(controllerInput, controllerOutput), periodInSeconds);
+   }
+
+   /**
+    * Adds a controller to be run with the robot owning this manager and specifies the desired period
+    * at which it should be updated.
+    * 
+    * @param controller the new controller.
+    * @param period     the update period. Be mindful that this period should be a multiple of the
+    *                   session period (e.g. simulation DT) or the update rate will be inaccurate.
+    * @param timeUnit   the unit of time for the period.
+    */
+   public void addThrottledController(ControllerDefinition controllerDefinition, long period, TimeUnit timeUnit)
+   {
+      addThrottledController(controllerDefinition.newController(controllerInput, controllerOutput), period, timeUnit);
    }
 
    public void initializeControllers()

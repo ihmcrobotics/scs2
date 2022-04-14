@@ -7,6 +7,8 @@ import us.ihmc.mecano.spatial.interfaces.TwistBasics;
 
 public interface SimOneDoFJointReadOnly extends SimJointReadOnly, OneDoFJointReadOnly
 {
+   double getDamping();
+
    double getDeltaQd();
 
    @Override

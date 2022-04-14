@@ -57,19 +57,12 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.AffineTransformDefinition;
-import us.ihmc.scs2.definition.geometry.ArcTorus3DDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.geometry.HemiEllipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
-import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
-import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
+import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
@@ -100,13 +93,13 @@ public class JavaFXVisualTools
          }
       }
 
-      private MeshView[] newMeshViews()
+      private MeshView[] newMeshViews(Material overridingMaterial)
       {
          MeshView[] meshViews = new MeshView[meshes.length];
          for (int i = 0; i < meshes.length; i++)
          {
             MeshView meshView = new MeshView(meshes[i]);
-            meshView.setMaterial(materials[i]);
+            meshView.setMaterial(overridingMaterial == null ? materials[i] : overridingMaterial);
             meshView.getTransforms().setAll(transforms[i]);
             meshViews[i] = meshView;
          }
@@ -136,8 +129,17 @@ public class JavaFXVisualTools
 
    public static Node collectNodes(List<VisualDefinition> visualDefinitions, ClassLoader resourceClassLoader)
    {
-      List<Node> nodes = visualDefinitions.stream().map(definition -> toNode(definition, resourceClassLoader)).filter(node -> node != null)
-                                          .collect(Collectors.toList());
+      List<Node> nodes = new ArrayList<>();
+
+      for (VisualDefinition visualDefinition : visualDefinitions)
+      {
+         Node node = toNode(visualDefinition, resourceClassLoader);
+
+         if (node != null)
+         {
+            nodes.add(node);
+         }
+      }
 
       if (nodes.isEmpty())
          return null;
@@ -169,29 +171,11 @@ public class JavaFXVisualTools
       {
          return DEFAULT_GEOMETRY;
       }
-      else if (geometryDefinition instanceof ArcTorus3DDefinition)
-      {
-         MeshView arcTorus = toArcTorus((ArcTorus3DDefinition) geometryDefinition);
-         arcTorus.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return arcTorus;
-      }
       else if (geometryDefinition instanceof Box3DDefinition)
       {
          Box box = toBox((Box3DDefinition) geometryDefinition);
          box.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
          return box;
-      }
-      else if (geometryDefinition instanceof Capsule3DDefinition)
-      {
-         MeshView capsule = toCapsule((Capsule3DDefinition) geometryDefinition);
-         capsule.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return capsule;
-      }
-      else if (geometryDefinition instanceof Cone3DDefinition)
-      {
-         MeshView cone = toCone((Cone3DDefinition) geometryDefinition);
-         cone.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return cone;
       }
       else if (geometryDefinition instanceof Cylinder3DDefinition)
       {
@@ -199,68 +183,44 @@ public class JavaFXVisualTools
          cylinder.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
          return cylinder;
       }
-      else if (geometryDefinition instanceof Ellipsoid3DDefinition)
-      {
-         MeshView ellipsoid = toEllipsoid((Ellipsoid3DDefinition) geometryDefinition);
-         ellipsoid.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return ellipsoid;
-      }
-      else if (geometryDefinition instanceof TruncatedCone3DDefinition)
-      {
-         MeshView genTruncatedCone = toGenTruncatedCone((TruncatedCone3DDefinition) geometryDefinition);
-         genTruncatedCone.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return genTruncatedCone;
-      }
-      else if (geometryDefinition instanceof HemiEllipsoid3DDefinition)
-      {
-         MeshView hemiEllipsoid = toHemiEllipsoid((HemiEllipsoid3DDefinition) geometryDefinition);
-         hemiEllipsoid.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return hemiEllipsoid;
-      }
       else if (geometryDefinition instanceof Sphere3DDefinition)
       {
          Sphere sphere = toSphere((Sphere3DDefinition) geometryDefinition);
          sphere.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
          return sphere;
       }
-      else if (geometryDefinition instanceof Torus3DDefinition)
-      {
-         MeshView torus = toTorus((Torus3DDefinition) geometryDefinition);
-         torus.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return torus;
-      }
-      else if (geometryDefinition instanceof Ramp3DDefinition)
-      {
-         MeshView ramp = toRamp((Ramp3DDefinition) geometryDefinition);
-         ramp.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
-         return ramp;
-      }
       else if (geometryDefinition instanceof ModelFileGeometryDefinition)
       {
-         Node[] nodes = importModel((ModelFileGeometryDefinition) geometryDefinition, resourceClassLoader);
+         Node[] nodes = importModel((ModelFileGeometryDefinition) geometryDefinition, materialDefinition, resourceClassLoader);
          if (nodes == null)
             return null;
-
-         //         if (materialDefinition != null)
-         //         {
-         //            Material material = toMaterial(materialDefinition);
-         //            for (Node node : nodes)
-         //               ((Shape3D) node).setMaterial(material);
-         //         }
-         return nodes.length == 1 ? nodes[0] : new Group(nodes);
+         else
+            return nodes.length == 1 ? nodes[0] : new Group(nodes);
       }
       else
       {
-         return DEFAULT_GEOMETRY;
+         MeshView meshView = toMeshView(geometryDefinition);
+         if (meshView != null)
+         {
+            meshView.setMaterial(toMaterial(materialDefinition, resourceClassLoader));
+            return meshView;
+         }
       }
+
+      return DEFAULT_GEOMETRY;
    }
 
-   public static MeshView toArcTorus(ArcTorus3DDefinition geometryDefinition)
+   public static MeshView toMeshView(GeometryDefinition geometryDefinition)
    {
       if (geometryDefinition == null)
          return null;
 
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(TriangleMesh3DFactories.TriangleMesh(geometryDefinition));
+      TriangleMesh3DDefinition triangleMesh3D = TriangleMesh3DFactories.TriangleMesh(geometryDefinition);
+
+      if (triangleMesh3D == null)
+         return null;
+
+      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(triangleMesh3D);
       MeshView meshView = new MeshView(mesh);
       return meshView;
    }
@@ -278,26 +238,6 @@ public class JavaFXVisualTools
       return box;
    }
 
-   public static MeshView toCapsule(Capsule3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
-   public static MeshView toCone(Cone3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
    public static Shape3D toCylinder(Cylinder3DDefinition geometryDefinition)
    {
       if (geometryDefinition == null)
@@ -308,36 +248,6 @@ public class JavaFXVisualTools
       return cylinder;
    }
 
-   public static MeshView toEllipsoid(Ellipsoid3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
-   public static MeshView toGenTruncatedCone(TruncatedCone3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
-   public static MeshView toHemiEllipsoid(HemiEllipsoid3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
    public static Sphere toSphere(Sphere3DDefinition geometryDefinition)
    {
       if (geometryDefinition == null)
@@ -346,27 +256,12 @@ public class JavaFXVisualTools
       return new Sphere(geometryDefinition.getRadius());
    }
 
-   public static MeshView toTorus(Torus3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
-   public static MeshView toRamp(Ramp3DDefinition geometryDefinition)
-   {
-      if (geometryDefinition == null)
-         return null;
-
-      TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(geometryDefinition);
-      MeshView meshView = new MeshView(mesh);
-      return meshView;
-   }
-
    public static Node[] importModel(ModelFileGeometryDefinition geometryDefinition, ClassLoader resourceClassLoader)
+   {
+      return importModel(geometryDefinition, null, resourceClassLoader);
+   }
+
+   public static Node[] importModel(ModelFileGeometryDefinition geometryDefinition, MaterialDefinition overridingMaterial, ClassLoader resourceClassLoader)
    {
       if (geometryDefinition == null || geometryDefinition.getFileName() == null)
          return DEFAULT_MESH_VIEWS;
@@ -390,7 +285,12 @@ public class JavaFXVisualTools
          }
       }
 
-      Node[] importedModel = importModel(fileURL);
+      Material material;
+      if (overridingMaterial != null)
+         material = toMaterial(overridingMaterial, resourceClassLoader);
+      else
+         material = null;
+      Node[] importedModel = importModel(fileURL, material);
 
       Vector3D scale = geometryDefinition.getScale();
 
@@ -413,6 +313,11 @@ public class JavaFXVisualTools
 
    public static Node[] importModel(URL fileURL)
    {
+      return importModel(fileURL, null);
+   }
+
+   public static Node[] importModel(URL fileURL, Material overridingMaterial)
+   {
       try
       {
          String file = fileURL.getFile();
@@ -422,13 +327,13 @@ public class JavaFXVisualTools
          switch (fileExtension)
          {
             case "dae":
-               importedNodes = JavaFXVisualTools.importColladaModel(fileURL);
+               importedNodes = importColladaModel(fileURL, overridingMaterial);
                break;
             case "stl":
-               importedNodes = JavaFXVisualTools.importSTLModel(fileURL);
+               importedNodes = importSTLModel(fileURL, overridingMaterial);
                break;
             case "obj":
-               importedNodes = JavaFXVisualTools.importOBJModel(fileURL);
+               importedNodes = importOBJModel(fileURL, overridingMaterial);
                break;
             default:
                importedNodes = DEFAULT_MESH_VIEWS;
@@ -445,6 +350,11 @@ public class JavaFXVisualTools
    }
 
    public static Node[] importColladaModel(URL fileURL)
+   {
+      return importColladaModel(fileURL, null);
+   }
+
+   public static Node[] importColladaModel(URL fileURL, Material overridingMaterial)
    {
       MeshView[] importedModel;
       CachedImportedModel cachedImportedModel = cachedColladaModels.get(fileURL.toExternalForm());
@@ -468,10 +378,18 @@ public class JavaFXVisualTools
          cacheMaterials(importer, importedModel, cachedNamedColladaMaterials);
          cachedColladaModels.put(fileURL.toExternalForm(), new CachedImportedModel(importedModel));
          importer.close();
+
+         if (overridingMaterial != null)
+         {
+            for (MeshView meshView : importedModel)
+            {
+               meshView.setMaterial(overridingMaterial);
+            }
+         }
       }
       else
       {
-         importedModel = cachedImportedModel.newMeshViews();
+         importedModel = cachedImportedModel.newMeshViews(overridingMaterial);
       }
 
       return importedModel;
@@ -479,15 +397,27 @@ public class JavaFXVisualTools
 
    public static Node[] importSTLModel(URL fileURL)
    {
+      return importSTLModel(fileURL, null);
+   }
+
+   public static Node[] importSTLModel(URL fileURL, Material overridingMaterial)
+   {
       StlMeshImporter importer = new StlMeshImporter();
       importer.read(fileURL);
       MeshView meshView = new MeshView(importer.getImport());
       meshView.getTransforms().add(ROTATE_PI_X);
       importer.close();
+      if (overridingMaterial != null)
+         meshView.setMaterial(overridingMaterial);
       return new Node[] {meshView};
    }
 
    public static Node[] importOBJModel(URL fileURL) throws URISyntaxException, IOException
+   {
+      return importOBJModel(fileURL, null);
+   }
+
+   public static Node[] importOBJModel(URL fileURL, Material overridingMaterial) throws URISyntaxException, IOException
    {
       MeshView[] importedModel;
       String externalForm = fileURL.toExternalForm();
@@ -562,10 +492,18 @@ public class JavaFXVisualTools
          cachedOBJModels.put(fileURL.toExternalForm(), new CachedImportedModel(importedModel));
 
          importer.close();
+
+         if (overridingMaterial != null)
+         {
+            for (MeshView meshView : importedModel)
+            {
+               meshView.setMaterial(overridingMaterial);
+            }
+         }
       }
       else
       {
-         importedModel = cachedImportedModel.newMeshViews();
+         importedModel = cachedImportedModel.newMeshViews(overridingMaterial);
       }
 
       return importedModel;

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
 
 public class LinkedBufferArray extends LinkedBuffer
@@ -35,7 +36,11 @@ public class LinkedBufferArray extends LinkedBuffer
 
          if (linkedBuffer == null)
          {
-            LogTools.error("Unexpected null pointer");
+            LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
+                                         i,
+                                         size,
+                                         EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
+                                         EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
             continue;
          }
 
@@ -49,9 +54,8 @@ public class LinkedBufferArray extends LinkedBuffer
       if (isDisposed)
          return false;
 
-      size++;
-      ensureCapacity(size);
-      linkedBuffers[size - 1] = e;
+      ensureCapacity(size + 1);
+      linkedBuffers[size++] = e;
       e.addPushRequestListener(listener);
       Change change = new Change(true, false, e);
       changeListeners.forEach(listener -> listener.onChange(change));
@@ -76,9 +80,8 @@ public class LinkedBufferArray extends LinkedBuffer
          return null;
 
       LinkedBuffer removedLinkedBuffer = linkedBuffers[index];
-      linkedBuffers[index].removePushRequestListener(listener);
-      linkedBuffers[index] = linkedBuffers[size - 1];
-      size--;
+      removedLinkedBuffer.removePushRequestListener(listener);
+      linkedBuffers[index] = linkedBuffers[--size];
       linkedBuffers[size] = null;
       Change change = new Change(false, true, removedLinkedBuffer);
       changeListeners.forEach(listener -> listener.onChange(change));
@@ -131,7 +134,14 @@ public class LinkedBufferArray extends LinkedBuffer
          for (int i = 0; i < size; i++)
          {
             if (linkedBuffers[i] == null)
+            {
+               LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
+                                            i,
+                                            size,
+                                            EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
+                                            EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
                break;
+            }
 
             hasPulledSomething |= linkedBuffers[i].pull();
          }
@@ -181,7 +191,11 @@ public class LinkedBufferArray extends LinkedBuffer
 
          if (linkedBuffer == null)
          {
-            LogTools.error("Unexpected null pointer");
+            LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
+                                         i,
+                                         size,
+                                         EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
+                                         EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
             continue;
          }
 
@@ -201,7 +215,11 @@ public class LinkedBufferArray extends LinkedBuffer
 
          if (linkedBuffer == null)
          {
-            LogTools.error("Unexpected null pointer");
+            LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
+                                         i,
+                                         size,
+                                         EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
+                                         EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
             continue;
          }
 
@@ -221,7 +239,11 @@ public class LinkedBufferArray extends LinkedBuffer
 
          if (linkedBuffer == null)
          {
-            LogTools.error("Unexpected null pointer");
+            LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
+                                         i,
+                                         size,
+                                         EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
+                                         EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
             continue;
          }
 
