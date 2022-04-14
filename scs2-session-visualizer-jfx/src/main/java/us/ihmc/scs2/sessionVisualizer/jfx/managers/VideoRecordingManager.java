@@ -137,8 +137,6 @@ public class VideoRecordingManager
             @Override
             public void run()
             {
-//               bufferedImage.createGraphics().setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                try
                {
                   movieBuilder = new MP4H264MovieBuilder(request.getFile(), request.getWidth(), request.getHeight(), (int) request.getFrameRate(), settings);
