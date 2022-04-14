@@ -368,14 +368,18 @@ public class SessionVisualizer
       {
          String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
          if (subNames == null || subNames.length == 0)
-            addYoGraphic(yoGraphicDefinition);
-
-         for (int i = subNames.length - 1; i >= 0; i--)
          {
-            yoGraphicDefinition = new YoGraphicGroupDefinition(subNames[i], yoGraphicDefinition);
+            addYoGraphic(yoGraphicDefinition);
          }
-
-         addYoGraphic(yoGraphicDefinition);
+         else
+         {
+            for (int i = subNames.length - 1; i >= 0; i--)
+            {
+               yoGraphicDefinition = new YoGraphicGroupDefinition(subNames[i], yoGraphicDefinition);
+            }
+            
+            addYoGraphic(yoGraphicDefinition);
+         }
       }
 
       @Override
