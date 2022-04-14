@@ -28,12 +28,27 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
 
    public SimCrossFourBarJoint(CrossFourBarJointDefinition definition, SimRigidBodyBasics predecessor)
    {
-      this(definition.getName(), predecessor, definition.getJointNameA(), definition.getJointNameB(), definition.getJointNameC(), definition.getJointNameD(),
-           definition.getBodyDA().getName(), definition.getBodyBC().getName(), definition.getTransformAToPredecessor(), definition.getTransformBToPredecessor(),
-           definition.getTransformCToB(), definition.getTransformDToA(), definition.getBodyDA().getMomentOfInertia(),
-           definition.getBodyBC().getMomentOfInertia(), definition.getBodyDA().getMass(), definition.getBodyBC().getMass(),
-           definition.getBodyDA().getInertiaPose(), definition.getBodyBC().getInertiaPose(), definition.getActuatedJointIndex(),
-           definition.getLoopClosureJointIndex(), definition.getAxis());
+      this(definition.getName(),
+           predecessor,
+           definition.getJointNameA(),
+           definition.getJointNameB(),
+           definition.getJointNameC(),
+           definition.getJointNameD(),
+           definition.getBodyDA().getName(),
+           definition.getBodyBC().getName(),
+           definition.getTransformAToPredecessor(),
+           definition.getTransformBToPredecessor(),
+           definition.getTransformCToB(),
+           definition.getTransformDToA(),
+           definition.getBodyDA().getMomentOfInertia(),
+           definition.getBodyBC().getMomentOfInertia(),
+           definition.getBodyDA().getMass(),
+           definition.getBodyBC().getMass(),
+           definition.getBodyDA().getInertiaPose(),
+           definition.getBodyBC().getInertiaPose(),
+           definition.getActuatedJointIndex(),
+           definition.getLoopClosureJointIndex(),
+           definition.getAxis());
       setJointLimits(definition.getPositionLowerLimit(), definition.getPositionUpperLimit());
       setVelocityLimits(definition.getVelocityLowerLimit(), definition.getVelocityUpperLimit());
       setEffortLimits(definition.getEffortLowerLimit(), definition.getEffortUpperLimit());
@@ -62,9 +77,28 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
                                int loopClosureJointIndex,
                                Vector3DReadOnly jointAxis)
    {
-      super(name, predecessor, jointNameA, jointNameB, jointNameC, jointNameD, bodyNameDA, bodyNameBC, transformAToPredecessor, transformBToPredecessor,
-            transformDToA, transformCToB, bodyInertiaDA, bodyInertiaBC, bodyMassDA, bodyMassBC, bodyInertiaPoseDA, bodyInertiaPoseBC, actuatedJointIndex,
-            loopClosureJointIndex, jointAxis, predecessor.getRegistry());
+      super(name,
+            predecessor,
+            jointNameA,
+            jointNameB,
+            jointNameC,
+            jointNameD,
+            bodyNameDA,
+            bodyNameBC,
+            transformAToPredecessor,
+            transformBToPredecessor,
+            transformDToA,
+            transformCToB,
+            bodyInertiaDA,
+            bodyInertiaBC,
+            bodyMassDA,
+            bodyMassBC,
+            bodyInertiaPoseDA,
+            bodyInertiaPoseBC,
+            actuatedJointIndex,
+            loopClosureJointIndex,
+            jointAxis,
+            predecessor.getRegistry());
 
       this.registry = predecessor.getRegistry();
       auxiliaryData = new SimJointAuxiliaryData(this);
