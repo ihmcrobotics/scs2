@@ -210,8 +210,6 @@ public class MainWindowController extends ObservedAnimationTimer
          transition.play();
       });
 
-      toolDrawer.open();
-
       return hBox;
    }
 
