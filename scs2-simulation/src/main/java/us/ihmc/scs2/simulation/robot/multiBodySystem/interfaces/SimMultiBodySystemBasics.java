@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.mecano.multiBodySystem.interfaces.FloatingJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
@@ -36,13 +35,13 @@ public interface SimMultiBodySystemBasics extends MultiBodySystemBasics, SimMult
     * 
     * @return the floating root joint or {@code null} if such joint could not be found.
     */
-   default FloatingJointBasics getFloatingRootJoint()
+   default SimFloatingJointBasics getFloatingRootJoint()
    {
       if (getRootBody() == null || getRootBody().getChildrenJoints().isEmpty())
          return null;
       JointBasics rootJoint = getRootBody().getChildrenJoints().get(0);
-      if (rootJoint instanceof FloatingJointBasics)
-         return (FloatingJointBasics) rootJoint;
+      if (rootJoint instanceof SimFloatingJointBasics)
+         return (SimFloatingJointBasics) rootJoint;
       else
          return null;
    }

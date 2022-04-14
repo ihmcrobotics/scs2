@@ -62,11 +62,11 @@ public class NewtonsCradleExperimentalSimulation
 
          VisualDefinitionFactory factory = new VisualDefinitionFactory();
          factory.appendTranslation(0.0, 0.0, -0.5 * stringLength);
-         factory.addCylinder(stringLength, stringRadius, new MaterialDefinition(ColorDefinitions.Yellow()));
+         factory.addCylinder(stringLength, stringRadius, ColorDefinitions.Yellow());
          ColorDefinition aliceBlue = ColorDefinitions.Red();
          aliceBlue.setAlpha(0.4);
          factory.appendTranslation(0, 0, -0.5 * stringLength);
-         factory.addSphere(ballRadius, new MaterialDefinition(aliceBlue));
+         factory.addSphere(ballRadius, aliceBlue);
          rigidBody.addVisualDefinitions(factory.getVisualDefinitions());
 
          rigidBody.addCollisionShapeDefinition(new CollisionShapeDefinition(new RigidBodyTransform(new Quaternion(), new Vector3D(0.0, 0.0, -stringLength)),

@@ -191,7 +191,7 @@ public class PyramidBox3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return EuclidCoreIOTools.getStringOf("Wedge: [name: " + getName()
+      return EuclidCoreIOTools.getStringOf("Pyramid-box: [name: " + getName()
             + ", box size: (", "), pryamid height: " + pyramidHeight + "]", ", ", boxSizeX, boxSizeY, boxSizeZ);
    }
 }

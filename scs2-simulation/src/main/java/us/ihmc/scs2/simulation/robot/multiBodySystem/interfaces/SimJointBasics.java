@@ -21,6 +21,8 @@ import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 
 public interface SimJointBasics extends JointBasics, SimJointReadOnly
 {
+   void setPinned(boolean isPinned);
+
    @Override
    SimRigidBodyBasics getPredecessor();
 

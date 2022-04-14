@@ -18,12 +18,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -93,6 +95,10 @@ public class YoCompositeSearchManager implements Manager
    private final Property<Boolean> includeSCS2YoVariables;
    private final YoManager yoManager;
    private final BackgroundExecutorManager backgroundExecutorManager;
+   /** Using this map as a set to keep track of the ongoing searches. */
+   private final ConcurrentHashMap<YoCompositePattern, Object> activeSearches = new ConcurrentHashMap<>();
+
+   private volatile boolean isSessionActive = false;
 
    public YoCompositeSearchManager(JavaFXMessager messager,
                                    SessionVisualizerTopics topics,
@@ -164,6 +170,7 @@ public class YoCompositeSearchManager implements Manager
    public void startSession(Session session)
    {
       LogTools.info("Searching default YoComposite.");
+      isSessionActive = true;
       typeToCompositePattern.values().forEach(this::searchYoCompositeNow);
       yoManager.getRootRegistry().addListener(rootRegistryChangeListener);
       LogTools.info("Initialized default YoComposite.");
@@ -172,6 +179,7 @@ public class YoCompositeSearchManager implements Manager
    @Override
    public void stopSession()
    {
+      isSessionActive = false;
       yoManager.getRootRegistry().removeListener(rootRegistryChangeListener);
       typeToCompositePattern.entrySet().removeIf(entry -> !defaultCompositePatterns.contains(entry.getValue()));
       typeToCompositeCollection.entrySet().removeIf(entry -> !typeToCompositePattern.containsKey(entry.getKey()));
@@ -199,11 +207,6 @@ public class YoCompositeSearchManager implements Manager
       typeToCompositePattern.values().forEach(this::searchYoCompositeInBackground);
    }
 
-   public void refreshYoCompositesNow()
-   {
-      typeToCompositePattern.values().forEach(this::searchYoCompositeNow);
-   }
-
    public void searchYoCompositeInBackground(YoCompositePattern pattern)
    {
       backgroundExecutorManager.queueTaskToExecuteInBackground(this, () -> searchYoCompositeNow(pattern));
@@ -211,50 +214,97 @@ public class YoCompositeSearchManager implements Manager
 
    public void searchYoCompositeNow(YoCompositePattern pattern)
    {
-      YoRegistry rootRegistry = yoManager.getRootRegistry();
-
-      if (rootRegistry == null)
-         return; // Stopping the session
-
-      Predicate<YoRegistry> registryFilter;
-
-      if (includeSCS2YoVariables.getValue())
-         registryFilter = reg -> true;
-      else
-         registryFilter = reg -> !reg.getNamespace().equals(Session.SESSION_INTERNAL_NAMESPACE);
-
-      Class<? extends YoVariable> primitiveClass = primitivePatternToClass.get(pattern);
-      String type = pattern.getType();
-
-      if (primitiveClass != null)
-      {
-         YoCompositeCollection collection = new YoCompositeCollection(pattern,
-                                                                      collectPrimitiveYoComposites(pattern, primitiveClass, rootRegistry, registryFilter));
-         JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> typeToCompositeCollection.get(type).setValue(collection));
+      if (activeSearches.containsKey(pattern))
+      { // We have an active search, let's reschedule this search.
+         searchYoCompositeInBackground(pattern);
+         return;
       }
-      else
+
+      activeSearches.put(pattern, Object.class);
+      try
       {
-         List<YoComposite> result = searchYoComposites(pattern, rootRegistry, registryFilter);
+         YoRegistry rootRegistry = yoManager.getRootRegistry();
 
-         if (result != null)
+         if (!isSessionActive || rootRegistry == null)
+            return; // Stopping the session
+
+         Predicate<YoRegistry> registryFilter;
+
+         if (includeSCS2YoVariables.getValue())
+            registryFilter = reg -> true;
+         else
+            registryFilter = reg -> !reg.getNamespace().equals(Session.SESSION_INTERNAL_NAMESPACE);
+
+         Class<? extends YoVariable> primitiveClass = primitivePatternToClass.get(pattern);
+         String type = pattern.getType();
+
+         if (primitiveClass != null)
          {
-            YoCompositeCollection collection = new YoCompositeCollection(pattern, result);
-
-            JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+            YoCompositeCollection collection;
+            try
             {
-               Property<YoCompositeCollection> property = typeToCompositeCollection.get(type);
+               collection = new YoCompositeCollection(pattern, collectPrimitiveYoComposites(pattern, primitiveClass, rootRegistry, registryFilter));
+            }
+            catch (ConcurrentModificationException e)
+            {
+               // If we have a concurrent modification, then it means we have another search scheduled waiting. Let's return.
+               return;
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+               return;
+            }
 
-               if (property == null)
-               {
-                  String propertyName = type + "CollectionProperty";
-                  property = new SimpleObjectProperty<>(this, propertyName, null);
-                  typeToCompositeCollection.put(type, property);
-                  typeToCompositePattern.put(type, pattern);
-               }
-
-               property.setValue(collection);
-            });
+            if (isSessionActive)
+               JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> typeToCompositeCollection.get(type).setValue(collection));
          }
+         else
+         {
+            List<YoComposite> result;
+            try
+            {
+               result = searchYoComposites(pattern, rootRegistry, registryFilter);
+            }
+            catch (ConcurrentModificationException e)
+            {
+               // If we have a concurrent modification, then it means we have another search scheduled waiting. Let's return.
+               return;
+            }
+            catch (Exception e)
+            {
+               if (isSessionActive)
+                  e.printStackTrace();
+               return;
+            }
+
+            if (result != null)
+            {
+               YoCompositeCollection collection = new YoCompositeCollection(pattern, result);
+
+               if (isSessionActive)
+               {
+                  JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+                  {
+                     Property<YoCompositeCollection> property = typeToCompositeCollection.get(type);
+
+                     if (property == null)
+                     {
+                        String propertyName = type + "CollectionProperty";
+                        property = new SimpleObjectProperty<>(this, propertyName, null);
+                        typeToCompositeCollection.put(type, property);
+                        typeToCompositePattern.put(type, pattern);
+                     }
+
+                     property.setValue(collection);
+                  });
+               }
+            }
+         }
+      }
+      finally
+      {
+         activeSearches.remove(pattern);
       }
    }
 

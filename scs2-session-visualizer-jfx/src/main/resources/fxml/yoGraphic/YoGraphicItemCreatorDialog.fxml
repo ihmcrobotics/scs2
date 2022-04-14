@@ -129,7 +129,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoCoordinateSystemFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Coordinate System" GridPane.rowIndex="1">
+                        <ToggleButton fx:id="yoCoordinateSystemFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Coordinate System" GridPane.columnIndex="1" GridPane.rowIndex="1">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -138,7 +138,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoCylinderFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Cylinder" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                        <ToggleButton fx:id="yoCylinderFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Cylinder" GridPane.columnIndex="2" GridPane.rowIndex="1">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -147,7 +147,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoEllipsoidFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Ellipsoid" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                        <ToggleButton fx:id="yoEllipsoidFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Ellipsoid" GridPane.columnIndex="3" GridPane.rowIndex="1">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -156,7 +156,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoPointcloudFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Pointcloud" GridPane.columnIndex="3" GridPane.rowIndex="1">
+                        <ToggleButton fx:id="yoPointcloudFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Pointcloud" GridPane.rowIndex="2">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -165,7 +165,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoPointFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Point" GridPane.rowIndex="2">
+                        <ToggleButton fx:id="yoPointFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Point" GridPane.columnIndex="1" GridPane.rowIndex="2">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -174,7 +174,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoPolygonExtrudedFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polygon Extruded" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                        <ToggleButton fx:id="yoPolygonExtrudedFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polygon Extruded" GridPane.columnIndex="2" GridPane.rowIndex="2">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -183,7 +183,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoPolynomialFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polynomial" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                        <ToggleButton fx:id="yoPolynomialFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polynomial" GridPane.columnIndex="3" GridPane.rowIndex="2">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -192,7 +192,7 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoRampFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Ramp" GridPane.columnIndex="3" GridPane.rowIndex="2">
+                        <ToggleButton fx:id="yoRampFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Ramp" GridPane.rowIndex="3">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
@@ -201,11 +201,20 @@
                               </ImageView>
                            </graphic>
                         </ToggleButton>
-                        <ToggleButton fx:id="yoSTPBoxFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="STP Box" GridPane.rowIndex="3">
+                        <ToggleButton fx:id="yoSTPBoxFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="STP Box" GridPane.columnIndex="1" GridPane.rowIndex="3">
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
                                     <Image url="@../../icons/yoGraphic/YoSTPBoxFX3D.png" />
+                                 </image>
+                              </ImageView>
+                           </graphic>
+                        </ToggleButton>
+                        <ToggleButton fx:id="yoConvexPolytopeFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Convex Polytope" GridPane.rowIndex="1">
+                           <graphic>
+                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
+                                 <image>
+                                    <Image url="@../../icons/yoGraphic/YoConvexPolytope3D.png" />
                                  </image>
                               </ImageView>
                            </graphic>

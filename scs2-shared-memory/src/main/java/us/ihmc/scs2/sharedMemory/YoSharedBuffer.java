@@ -1,10 +1,15 @@
 package us.ihmc.scs2.sharedMemory;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -115,6 +120,15 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
       properties.setCurrentIndexUnsafe(0);
    }
 
+   /**
+    * Consumes a request for filling in the buffer with either zeros or the current value stored in
+    * each {@link YoVariable}.
+    * <p>
+    * Operation for the buffer manager only.
+    * </p>
+    * 
+    * @param request request defining the region of the buffer to fill in.
+    */
    public void fillBuffer(FillBufferRequest request)
    {
       if (isDisposed)
@@ -506,6 +520,90 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    public YoRegistryBuffer getRegistryBuffer()
    {
       return registryBuffer;
+   }
+
+   /**
+    * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
+    * where each variable is stored as on line.
+    * 
+    * @param outputStream the stream to write to.
+    */
+   public void exportDataASCII(OutputStream outputStream)
+   {
+      exportDataASCII(outputStream, null, null);
+   }
+
+   /**
+    * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
+    * where each variable is stored as one line.
+    * 
+    * @param outputStream   the stream to write to.
+    * @param variableFilter a filter to downselect the {@link YoVariable}s to be exported. A
+    *                       {@link YoVariable} is exported if the given predicate returns {@code true}.
+    *                       Can be {@code null}, if so all variable are exported.
+    * @param registryFilter a filter to downselect the {@link YoRegistry}s to be exported. A
+    *                       {@link YoRegistry} and its descendants are skipped if the predicate returns
+    *                       {@code false}.
+    */
+   public void exportDataASCII(OutputStream outputStream, Predicate<YoVariable> variableFilter, Predicate<YoRegistry> registryFilter)
+   {
+      SharedMemoryIOTools.exportDataASCII(this, outputStream, variableFilter, registryFilter);
+   }
+
+   /**
+    * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
+    * where each variable is stored as one column and columns are separated by a comma.
+    * 
+    * @param outputStream the stream to write to.
+    */
+   public void exportDataCSV(OutputStream outputStream)
+   {
+      exportDataCSV(outputStream, null, null);
+   }
+
+   /**
+    * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
+    * where each variable is stored as one column and columns are separated by a comma.
+    * 
+    * @param outputStream   the stream to write to.
+    * @param variableFilter a filter to downselect the {@link YoVariable}s to be exported. A
+    *                       {@link YoVariable} is exported if the given predicate returns {@code true}.
+    *                       Can be {@code null}, if so all variable are exported.
+    * @param registryFilter a filter to downselect the {@link YoRegistry}s to be exported. A
+    *                       {@link YoRegistry} and its descendants are skipped if the predicate returns
+    *                       {@code false}.
+    */
+   public void exportDataCSV(OutputStream outputStream, Predicate<YoVariable> variableFilter, Predicate<YoRegistry> registryFilter)
+   {
+      SharedMemoryIOTools.exportDataCSV(this, outputStream, variableFilter, registryFilter);
+   }
+
+   /**
+    * Writes all the yoVariable buffers to the given {@code file} using Matlab data structure and file
+    * format.
+    * 
+    * @param file the file to write to.
+    */
+   public void exportDataMatlab(File file) throws IOException
+   {
+      exportDataMatlab(file, null, null);
+   }
+
+   /**
+    * Writes all the yoVariable buffers to the given {@code file} using Matlab data structure and file
+    * format.
+    * 
+    * @param file           the file to write to.
+    * @param variableFilter a filter to downselect the {@link YoVariable}s to be exported. A
+    *                       {@link YoVariable} is exported if the given predicate returns {@code true}.
+    *                       Can be {@code null}, if so all variable are exported.
+    * @param registryFilter a filter to downselect the {@link YoRegistry}s to be exported. A
+    *                       {@link YoRegistry} and its descendants are skipped if the predicate returns
+    *                       {@code false}.
+    */
+   public void exportDataMatlab(File file, Predicate<YoVariable> variableFilter, Predicate<YoRegistry> registryFilter) throws IOException
+   {
+      SharedMemoryIOTools.exportDataMatlab(this, file, variableFilter, registryFilter);
    }
 
    public void dispose()

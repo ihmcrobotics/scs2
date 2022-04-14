@@ -28,6 +28,7 @@ import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
+import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.ExtrudedPolygon2DDefinition;
@@ -46,6 +47,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicBox3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCapsule3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCone3DDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCoordinateSystem3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCylinder3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
@@ -286,6 +288,8 @@ public class YoGraphicTools
             return toYoCoordinateSystemFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicCoordinateSystem3DDefinition) definition);
          else if (definition instanceof YoGraphicPolygonExtruded3DDefinition)
             return toYoPolygonExtrudedFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicPolygonExtruded3DDefinition) definition);
+         else if (definition instanceof YoGraphicConvexPolytope3DDefinition)
+            return toYoConvexPolytopeFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicConvexPolytope3DDefinition) definition);
          else if (definition instanceof YoGraphicBox3DDefinition)
             return toYoBoxFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicBox3DDefinition) definition);
          else if (definition instanceof YoGraphicSTPBox3DDefinition)
@@ -683,6 +687,29 @@ public class YoGraphicTools
       yoGraphicFXToPack.setThickness(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getThickness()));
    }
 
+   public static YoConvexPolytopeFX3D toYoConvexPolytopeFX3D(YoVariableDatabase yoVariableDatabase,
+                                                               YoGraphicFXResourceManager resourceManager,
+                                                               ReferenceFrameManager referenceFrameManager,
+                                                               YoGraphicConvexPolytope3DDefinition definition)
+   {
+      YoConvexPolytopeFX3D yoGraphicFX = new YoConvexPolytopeFX3D();
+      toYoConvexPolytopeFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFX);
+      return yoGraphicFX;
+   }
+
+   public static void toYoConvexPolytopeFX3D(YoVariableDatabase yoVariableDatabase,
+                                              YoGraphicFXResourceManager resourceManager,
+                                              ReferenceFrameManager referenceFrameManager,
+                                              YoGraphicConvexPolytope3DDefinition definition,
+                                              YoConvexPolytopeFX3D yoGraphicFXToPack)
+   {
+      toYoGraphicFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
+      yoGraphicFXToPack.setPosition(CompositePropertyTools.toTuple3DProperty(yoVariableDatabase, referenceFrameManager, definition.getPosition()));
+      yoGraphicFXToPack.setOrientation(CompositePropertyTools.toOrientation3DProperty(yoVariableDatabase, referenceFrameManager, definition.getOrientation()));
+      yoGraphicFXToPack.setVertices(CompositePropertyTools.toTuple3DPropertyList(yoVariableDatabase, referenceFrameManager, definition.getVertices()));
+      yoGraphicFXToPack.setNumberOfVertices(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfVertices()));
+   }
+
    public static YoBoxFX3D toYoBoxFX3D(YoVariableDatabase yoVariableDatabase,
                                        YoGraphicFXResourceManager resourceManager,
                                        ReferenceFrameManager referenceFrameManager,
@@ -909,6 +936,8 @@ public class YoGraphicTools
          return convertCylinder3DDefinition(referenceFrame, originPose, (Cylinder3DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof ExtrudedPolygon2DDefinition)
          return convertExtrudedPolygon2DDefinition(referenceFrame, originPose, (ExtrudedPolygon2DDefinition) geometryDefinition);
+      else if (geometryDefinition instanceof ConvexPolytope3DDefinition)
+         return convertConvexPolytope3DDefinition(referenceFrame, originPose, (ConvexPolytope3DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof Point3DDefinition)
          return convertPoint3DDefinition(referenceFrame, originPose, (Point3DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof Ramp3DDefinition)
@@ -1102,6 +1131,21 @@ public class YoGraphicTools
       return yoGraphicFX;
    }
 
+   public static YoConvexPolytopeFX3D convertConvexPolytope3DDefinition(ReferenceFrame referenceFrame,
+                                                                        RigidBodyTransformReadOnly originPose,
+                                                                        ConvexPolytope3DDefinition geometryDefinition)
+   {
+      YoConvexPolytopeFX3D yoGraphicFX = new YoConvexPolytopeFX3D();
+      Tuple3DReadOnly position = originPose.getTranslation();
+      yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
+      Quaternion orientation = new Quaternion(originPose.getRotation());
+      yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
+      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope().getVertices().stream()
+                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).collect(Collectors.toList()));
+      yoGraphicFX.setNumberOfVertices(geometryDefinition.getConvexPolytope().getNumberOfVertices());
+      return yoGraphicFX;
+   }
+
    public static YoPointFX3D convertPoint3DDefinition(ReferenceFrame referenceFrame,
                                                       RigidBodyTransformReadOnly originPose,
                                                       Point3DDefinition geometryDefinition)
@@ -1170,6 +1214,8 @@ public class YoGraphicTools
          return toYoGraphicCoordinateSystem3DDefinition((YoCoordinateSystemFX3D) yoGraphicFX);
       else if (yoGraphicFX instanceof YoPolygonExtrudedFX3D)
          return toYoGraphicPolygonExtruded3DDefinition((YoPolygonExtrudedFX3D) yoGraphicFX);
+      else if (yoGraphicFX instanceof YoConvexPolytopeFX3D)
+         return toYoGraphicConvexPolytope3DDefinition((YoConvexPolytopeFX3D) yoGraphicFX);
       else if (yoGraphicFX instanceof YoBoxFX3D)
          return toYoGraphicBox3DDefinition((YoBoxFX3D) yoGraphicFX);
       else if (yoGraphicFX instanceof YoSTPBoxFX3D)
@@ -1434,6 +1480,24 @@ public class YoGraphicTools
       definition.setVertices(yoGraphicFX.getVertices().stream().map(CompositePropertyTools::toYoTuple2DDefinition).collect(Collectors.toList()));
       definition.setNumberOfVertices(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfVertices()));
       definition.setThickness(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getThickness()));
+      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+
+      return definition;
+   }
+
+   public static YoGraphicConvexPolytope3DDefinition toYoGraphicConvexPolytope3DDefinition(YoConvexPolytopeFX3D yoGraphicFX)
+   {
+      if (yoGraphicFX == null)
+         return null;
+
+      YoGraphicConvexPolytope3DDefinition definition = new YoGraphicConvexPolytope3DDefinition();
+
+      definition.setName(yoGraphicFX.getName());
+      definition.setVisible(yoGraphicFX.isVisible());
+      definition.setPosition(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getPosition()));
+      definition.setOrientation(CompositePropertyTools.toYoOrientation3DDefinition(yoGraphicFX.getOrientation()));
+      definition.setVertices(yoGraphicFX.getVertices().stream().map(CompositePropertyTools::toYoTuple3DDefinition).collect(Collectors.toList()));
+      definition.setNumberOfVertices(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfVertices()));
       definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
 
       return definition;
