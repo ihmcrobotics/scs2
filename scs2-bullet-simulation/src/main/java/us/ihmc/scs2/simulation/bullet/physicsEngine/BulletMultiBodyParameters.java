@@ -1,6 +1,6 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-public class BulletContactParameters
+public class BulletMultiBodyParameters
 {
    private boolean fixedBase;
    private boolean canSleep;
@@ -9,9 +9,9 @@ public class BulletContactParameters
    private float angularDamping;
    private float jointFriction;
 
-   public static BulletContactParameters defaultBulletContactParameters()
+   public static BulletMultiBodyParameters defaultBulletMultiBodyParameters()
    {
-      BulletContactParameters bulletContactParameters = new BulletContactParameters();
+      BulletMultiBodyParameters bulletContactParameters = new BulletMultiBodyParameters();
       bulletContactParameters.setFixedBase(false);
       bulletContactParameters.setCanSleep(false);
       bulletContactParameters.setHasSelfCollision(true);
@@ -21,11 +21,11 @@ public class BulletContactParameters
       return bulletContactParameters;
    }
 
-   public BulletContactParameters()
+   public BulletMultiBodyParameters()
    {
    }
 
-   public BulletContactParameters(boolean fixedBase, boolean canSleep, boolean hasSelfCollision, float linearDamping, float angularDamping)
+   public BulletMultiBodyParameters(boolean fixedBase, boolean canSleep, boolean hasSelfCollision, float linearDamping, float angularDamping)
    {
       this.fixedBase = fixedBase;
       this.canSleep = canSleep;
