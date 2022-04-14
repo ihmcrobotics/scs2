@@ -105,12 +105,12 @@ public class ReferenceFrameManager implements Manager
       try
       {
          frame.getName();
-         return true;
+         return false;
       }
       catch (RuntimeException e)
       {
          // The session may have ended and the frame removed, we just abort.
-         return false;
+         return true;
       }
    }
 
