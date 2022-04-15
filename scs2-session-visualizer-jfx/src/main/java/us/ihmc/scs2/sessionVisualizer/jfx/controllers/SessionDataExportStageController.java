@@ -6,7 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.controlsfx.control.CheckTreeView;
@@ -14,7 +13,6 @@ import org.controlsfx.control.CheckTreeView;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXSlider;
-import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXToggleButton;
 
 import javafx.beans.property.Property;
@@ -26,8 +24,6 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TextFormatter.Change;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.HBox;
@@ -44,7 +40,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
@@ -64,8 +59,6 @@ public class SessionDataExportStageController
    @FXML
    private JFXSlider currentBufferIndexSlider;
    @FXML
-   private JFXTextField inPointTextField, outPointTextField;
-   @FXML
    private JFXToggleButton exportRobotDefinitionToggleButton;
    @FXML
    private JFXToggleButton exportTerrainDefinitionToggleButton;
@@ -77,8 +70,6 @@ public class SessionDataExportStageController
    private JFXToggleButton exportDataToggleButton;
    @FXML
    private JFXComboBox<DataFormat> dataFormatComboBox;
-
-   private Property<Integer> inPointIndex, outPointIndex;
 
    private final Property<SessionMode> currentSessionMode = new SimpleObjectProperty<>(this, "currentSessionMode", null);
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
@@ -108,14 +99,6 @@ public class SessionDataExportStageController
          currentSessionMode.removeListener(currentSessionModeBinding);
       });
 
-      TextFormatter<Integer> inPointFormatter = new TextFormatter<>(new IntegerConverter(), -1, createBufferIndexFilter());
-      TextFormatter<Integer> outPointFormatter = new TextFormatter<>(new IntegerConverter(), -1, createBufferIndexFilter());
-      inPointTextField.setTextFormatter(inPointFormatter);
-      outPointTextField.setTextFormatter(outPointFormatter);
-
-      inPointIndex = inPointFormatter.valueProperty();
-      outPointIndex = outPointFormatter.valueProperty();
-
       messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
       TopicListener<YoBufferPropertiesReadOnly> bufferPropertiesBinding = messager.bindPropertyToTopic(topics.getYoBufferCurrentProperties(), bufferProperties);
@@ -130,11 +113,6 @@ public class SessionDataExportStageController
          else if (bufferProperties.getValue() != null)
          {
             currentBufferIndexSlider.setMax(bufferProperties.getValue().getSize());
-            if (inPointIndex.getValue() == -1)
-               inPointIndex.setValue(bufferProperties.getValue().getInPoint());
-            if (outPointIndex.getValue() == -1)
-               outPointIndex.setValue(bufferProperties.getValue().getOutPoint());
-
             updatingBufferIndex.setTrue();
             currentBufferIndexSlider.setValue(bufferProperties.getValue().getCurrentIndex());
             updatingBufferIndex.setFalse();
@@ -149,10 +127,6 @@ public class SessionDataExportStageController
             return;
 
          currentBufferIndexSlider.setMax(m.getSize());
-         if (inPointIndex.getValue() == -1)
-            inPointIndex.setValue(m.getInPoint());
-         if (outPointIndex.getValue() == -1)
-            outPointIndex.setValue(m.getOutPoint());
 
          if (updatingBufferIndex.isFalse())
          {
@@ -225,26 +199,6 @@ public class SessionDataExportStageController
       stage.setOnCloseRequest(e -> close());
    }
 
-   private UnaryOperator<Change> createBufferIndexFilter()
-   {
-      return change ->
-      {
-         try
-         {
-            int index = Integer.parseInt(change.getControlNewText());
-            if (index < -1)
-               return null;
-            if (index >= bufferProperties.getValue().getSize())
-               return null;
-            return change;
-         }
-         catch (NumberFormatException e)
-         {
-            return null;
-         }
-      };
-   }
-
    private void refreshTreeView()
    {
       rootItem = new CheckBoxTreeItem<Object>(yoManager.getRootRegistry());
@@ -293,13 +247,6 @@ public class SessionDataExportStageController
    }
 
    @FXML
-   void setInOutToCurrent()
-   {
-      inPointIndex.setValue(bufferProperties.getValue().getInPoint());
-      outPointIndex.setValue(bufferProperties.getValue().getOutPoint());
-   }
-
-   @FXML
    void cancel(ActionEvent event)
    {
       close();
@@ -319,10 +266,6 @@ public class SessionDataExportStageController
       SessionDataExportRequest request = new SessionDataExportRequest();
       request.setFile(result);
       request.setOverwrite(true);
-      request.setInPoint(inPointIndex.getValue());
-      request.setOutPoint(outPointIndex.getValue());
-      // TODO
-      //      request.setRecordPeriod(???);
       request.setVariableFilter(buildVariableFilter());
       request.setRegistryFilter(buildRegistryFilter());
       request.setExportRobotDefinitions(exportRobotDefinitionToggleButton.isSelected());

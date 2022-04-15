@@ -2,9 +2,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import java.util.List;
 
+import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.SubScene;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
@@ -37,14 +37,19 @@ public class EnvironmentManager implements Manager
       });
    }
 
-   public void addSkybox(SubScene subScene)
+   public void addSkybox(Camera mainCamera)
    {
       if (skybox != null)
          return;
 
       skybox = new Skybox();
-      skybox.setupCloudyCrown();
-      skybox.setupCamera(subScene.getCamera());
+
+      if (Skybox.USE_CLOUDY_CROWN_SKY_BOX)
+         skybox.setupCloudyCrown();
+      else
+         skybox.setupSCS1Skybox();
+
+      skybox.setupCamera(mainCamera);
 
       backgroundExecutorManager.executeInBackground(() ->
       {

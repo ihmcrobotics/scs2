@@ -19,6 +19,7 @@ import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple4D.Quaternion;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.MultiBodyResponseCalculator;
 import us.ihmc.mecano.algorithms.interfaces.RigidBodyAccelerationProvider;
@@ -35,6 +36,7 @@ import us.ihmc.mecano.spatial.interfaces.SpatialImpulseReadOnly;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorBasics;
 import us.ihmc.mecano.spatial.interfaces.SpatialVectorReadOnly;
 import us.ihmc.mecano.spatial.interfaces.TwistReadOnly;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionResult;
 import us.ihmc.scs2.simulation.collision.PhysicsEngineTools;
@@ -136,7 +138,7 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       rootA = rootBodyA;
       rootB = rootBodyB;
 
-      contactFrame = new ReferenceFrame("contactFrame", rootFrame, true, false)
+      contactFrame = new ReferenceFrame("contactFrame" + Session.SCS2_INTERNAL_FRAME_SUFFIX, rootFrame, true, false)
       {
          @Override
          protected void updateTransformToParent(RigidBodyTransform transformToParent)
@@ -439,7 +441,10 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       }
 
       if (impulseA.getLinearPart().getZ() < 0.0)
-         throw new IllegalStateException("Malformed impulse");
+      {
+         LogTools.error("Malformed impulse: " + impulseA + ", z: " + impulseA.getLinearPartZ());
+         impulseA.setToZero();
+      }
 
       if (isFirstUpdate)
       {

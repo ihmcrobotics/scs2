@@ -23,20 +23,40 @@ public interface Controller
    {
    }
 
+   /**
+    * The registry used to store all the {@code YoVariable}s for the controller.
+    * 
+    * @return the controller's registry or {@code null} if the controller doesn't use
+    *         {@code YoVariable}s
+    */
    default YoRegistry getYoRegistry()
    {
       return null;
    }
 
+   /**
+    * The name of this controller.
+    * <p>
+    * The default implementation returns the simple name of the controller class.
+    * </p>
+    * 
+    * @return the controller name.
+    */
    default String getName()
    {
       return getClass().getSimpleName();
    }
 
+   /**
+    * Creates a controller that does nothing.
+    * 
+    * @return an empty controller.
+    */
    public static Controller emptyController()
    {
       return () ->
       {
-         /* Do nothing */ };
+         /* Do nothing */
+      };
    }
 }

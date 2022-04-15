@@ -9,12 +9,14 @@ import us.ihmc.mecano.tools.MecanoTools;
 
 public interface SimOneDoFJointBasics extends SimJointBasics, OneDoFJointBasics, SimOneDoFJointReadOnly
 {
+   void setDamping(double damping);
+
    void setDeltaQd(double deltaQd);
 
    @Override
    default void setJointDeltaTwistToZero()
    {
-      setQd(0.0);
+      setDeltaQd(0.0);
    }
 
    default void setJointDeltaTwist(JointReadOnly other)

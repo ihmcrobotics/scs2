@@ -132,7 +132,7 @@ public class TriangleMesh3DFactories
       else if (description instanceof Polygon2DDefinition)
          mesh = Polygon((Polygon2DDefinition) description);
       else if (description instanceof Polygon3DDefinition)
-         mesh = Polygon((Polygon2DDefinition) description);
+         mesh = Polygon((Polygon3DDefinition) description);
       else if (description instanceof PyramidBox3DDefinition)
          mesh = PyramidBox((PyramidBox3DDefinition) description);
       else if (description instanceof Sphere3DDefinition)
