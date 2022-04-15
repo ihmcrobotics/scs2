@@ -55,27 +55,27 @@ public class BulletMultiBodyDynamicsWorld {
 
 	public void dispose() {
 		System.out.println("Destroy");
-		for (btRigidBody rigidBody : rigidBodies) {
-			multiBodyDynamicsWorld.removeRigidBody(rigidBody);
-			rigidBody.dispose();
-		}
-
-		for (BulletMultiBodyRobot multiBody : multiBodies) {
-			multiBodyDynamicsWorld.removeMultiBody(multiBody.getBulletMultiBody());
-			multiBody.getBulletMultiBody().dispose();
-		}
-
-		for (btCollisionObject shape : collisionObjects) {
-			multiBodyDynamicsWorld.removeCollisionObject(shape);
-			shape.dispose();
-		}
-		collisionObjects.clear();
-
-		multiBodyDynamicsWorld.dispose();
-		collisionConfiguration.dispose();
-		collisionDispatcher.dispose();
-		broadphaseInterface.dispose();
-		solver.dispose();
+//		for (btRigidBody rigidBody : rigidBodies) {
+//			multiBodyDynamicsWorld.removeRigidBody(rigidBody);
+//			rigidBody.dispose();
+//		}
+//
+//		for (BulletMultiBodyRobot multiBody : multiBodies) {
+//			multiBodyDynamicsWorld.removeMultiBody(multiBody.getBulletMultiBody());
+//			multiBody.getBulletMultiBody().dispose();
+//		}
+//
+//		for (btCollisionObject shape : collisionObjects) {
+//			multiBodyDynamicsWorld.removeCollisionObject(shape);
+//			shape.dispose();
+//		}
+//		collisionObjects.clear();
+//
+//		multiBodyDynamicsWorld.dispose();
+//		collisionConfiguration.dispose();
+//		collisionDispatcher.dispose();
+//		broadphaseInterface.dispose();
+//		solver.dispose();
 	}
 
 	public void addMultiBody(BulletMultiBodyRobot bulletMultiBody) 

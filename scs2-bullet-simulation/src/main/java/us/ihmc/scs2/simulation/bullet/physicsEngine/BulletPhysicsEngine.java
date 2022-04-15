@@ -147,7 +147,6 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 		BulletMultiBodyRobot bulletMultiBodyRobot = BulletMultiBodyRobotFactory.newInstance(robot, globalMultiBodyParameters);
 		BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, bulletMultiBodyRobot);
 		multiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot);
-		//multiBodyDynamicsWorld.getMultiBodyDynamicsWorld().addMultiBody(bulletRobot.getBulletMultiBody());
 		rootRegistry.addChild(bulletRobot.getRegistry());
 		robotList.add(bulletRobot);
 	}

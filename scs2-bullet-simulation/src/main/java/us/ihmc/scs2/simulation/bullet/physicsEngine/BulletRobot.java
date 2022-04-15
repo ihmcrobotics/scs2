@@ -62,7 +62,6 @@ public class BulletRobot extends RobotExtension
          link.setBulletMultiBody(bulletMultiBodyRobot.getBulletMultiBody());
 //         link.setup(bulletPhysicsEngine);
       }
-      //rootLink.getBulletMultiBody().finalizeMultiDof();
    }
    
    private void initializeLinkLists(BulletRobotLinkBasics link, boolean isRootLink)
@@ -97,10 +96,10 @@ public class BulletRobot extends RobotExtension
    {
       link.copyDataFromSCSToBullet();
 
-//      for (BulletRobotLinkBasics child : link.getChildren())
-//      {
-//         copyDataFromSCSToBullet(child);
-//      }
+      for (BulletRobotLinkBasics child : link.getChildren())
+      {
+         copyDataFromSCSToBullet(child);
+      }
    }
    
    public void updateFromBulletData(BulletPhysicsEngine bulletPhysicsEngine, double dt)
