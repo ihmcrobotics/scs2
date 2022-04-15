@@ -17,6 +17,8 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.examples.simulations.ExampleExperimentalSimulationTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.AltBulletPhysicsEngine;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 
 public class SingleBoxBulletSimulation
@@ -35,7 +37,13 @@ public class SingleBoxBulletSimulation
       double groundWidth = 1.0;
       double groundLength = 1.0;
 
-      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletPhysicsEngine(frame, rootRegistry));
+      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> 
+      {
+     	 BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
+     	 BulletMultiBodyParameters bulletMultiBodyParameters =  BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
+     	 physicsEngine.setGlobalMultiBodyParameter(bulletMultiBodyParameters);
+     	 return physicsEngine;
+      });
 
       RobotDefinition boxRobot = ExampleExperimentalSimulationTools.newBoxRobot("box",
                                                                                 boxXLength,
@@ -68,7 +76,7 @@ public class SingleBoxBulletSimulation
 
       //SessionVisualizer.startSessionVisualizer(simulationSession);
       SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-      sessionVisualizer.getToolkit().getSession().runTick();
+      //sessionVisualizer.getToolkit().getSession().runTick();
       
    }
 

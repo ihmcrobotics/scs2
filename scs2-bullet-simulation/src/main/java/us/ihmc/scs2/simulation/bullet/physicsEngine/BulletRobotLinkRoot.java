@@ -5,6 +5,8 @@ import java.util.HashMap;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
+
 import us.ihmc.euclid.geometry.Pose3D;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.referenceFrame.interfaces.FixedFrameVector3DBasics;
@@ -30,8 +32,8 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 {
-   private int linkCountingIndex = 0;
-   private final int numberOfLinks;
+//   private int linkCountingIndex = 0;
+//   private final int numberOfLinks;
    private final SimFloatingRootJoint rootSimFloatingRootJoint;
    private final RigidBodyTransform bulletSixDoFJointTransformToWorldEuclid = new RigidBodyTransform();
    private final Vector3D bulletBaseLinearVelocityEuclid = new Vector3D();
@@ -45,13 +47,14 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                               SimFloatingRootJoint rootSimFloatingRootJoint,
                               HashMap<String, Integer> jointNameToBulletJointIndexMap,
                               RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
-                              YoRegistry yoRegistry)
+                              YoRegistry yoRegistry,
+                              BulletMultiBodyRobot bulletMultiBodyRobot)
    {
-      super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap, rigidBodyWrenchRegistry);
+      super(rootSixDoFJointDefinition.getSuccessor(), rootSimFloatingRootJoint.getSuccessor(), jointNameToBulletJointIndexMap, rigidBodyWrenchRegistry, bulletMultiBodyRobot.getBulletMultiBody().getBaseCollider());
       this.rootSimFloatingRootJoint = rootSimFloatingRootJoint;
 
       setBulletJointIndex(-1);
-      numberOfLinks = countJoints(rootSimFloatingRootJoint) - 1; // which is also number of joints in this case
+//      numberOfLinks = countJoints(rootSimFloatingRootJoint) - 1; // which is also number of joints in this case
 
       twistFD = new YoFixedFrameTwist("testTwistFD",
                                       rootSimFloatingRootJoint.getFrameAfterJoint(),
@@ -59,32 +62,32 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                                       rootSimFloatingRootJoint.getFrameAfterJoint(),
                                       yoRegistry);
 
-      addChildLinks(yoRegistry);
+      addChildLinks(yoRegistry, bulletMultiBodyRobot);
    }
 
-   @Override
-   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
-   {
-      boolean fixedBase = false;
-      boolean canSleep = false;
-
-      float rootBodyMass = (float) getRigidBodyDefinition().getMass();
-      Vector3 rootBodyIntertia = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
-                                             (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
-                                             (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
-      AltBulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
-      // TODO: Should we let Bullet compute this?
-      // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(rootBodyMass, rootBodyIntertia);
-
-      btMultiBody bulletMultiBody = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
-      bulletMultiBody.setHasSelfCollision(true);
-      bulletMultiBody.setLinearDamping(0.0f);
-      bulletMultiBody.setAngularDamping(0.0f);
-      setBulletMultiBody(bulletMultiBody);
-
-      createBulletCollider(bulletPhysicsEngine);
-      getBulletMultiBody().setBaseCollider(getBulletMultiBodyLinkCollider());
-   }
+//   @Override
+//   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
+//   {
+//      boolean fixedBase = false;
+//      boolean canSleep = false;
+//
+//      float rootBodyMass = (float) getRigidBodyDefinition().getMass();
+//      Vector3 rootBodyIntertia = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
+//                                             (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
+//                                             (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
+//      AltBulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
+//      // TODO: Should we let Bullet compute this?
+//      // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(rootBodyMass, rootBodyIntertia);
+//
+//      btMultiBody bulletMultiBody = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
+//      bulletMultiBody.setHasSelfCollision(true);
+//      bulletMultiBody.setLinearDamping(0.0f);
+//      bulletMultiBody.setAngularDamping(0.0f);
+//      setBulletMultiBody(bulletMultiBody);
+//
+//      createBulletCollider(bulletPhysicsEngine);
+//      getBulletMultiBody().setBaseCollider(getBulletMultiBodyLinkCollider());
+//   }
 
    private final RigidBodyTransform rootJointSuccessorBodyFixedFrameToWorldEuclid = new RigidBodyTransform();
    private final Matrix4 rootJointSuccessorBodyFixedFrameToWorldBullet = new Matrix4();
@@ -160,17 +163,17 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                                      rootSimFloatingRootJoint.getJointAcceleration());
    }
 
-   private int countJoints(JointBasics joint)
-   {
-      getJointNameToBulletJointIndexMap().put(joint.getName(), linkCountingIndex - 1);
-      ++linkCountingIndex;
-      int numberOfJoints = 1;
-      for (JointBasics childrenJoint : joint.getSuccessor().getChildrenJoints())
-      {
-         numberOfJoints += countJoints(childrenJoint);
-      }
-      return numberOfJoints;
-   }
+//   private int countJoints(JointBasics joint)
+//   {
+//      getJointNameToBulletJointIndexMap().put(joint.getName(), linkCountingIndex - 1);
+//      ++linkCountingIndex;
+//      int numberOfJoints = 1;
+//      for (JointBasics childrenJoint : joint.getSuccessor().getChildrenJoints())
+//      {
+//         numberOfJoints += countJoints(childrenJoint);
+//      }
+//      return numberOfJoints;
+//   }
 
    public static void computeSixDoFJointTwist(double dt, Pose3DReadOnly previousPose, Pose3DReadOnly currentPose, FixedFrameTwistBasics twistToPack)
    {

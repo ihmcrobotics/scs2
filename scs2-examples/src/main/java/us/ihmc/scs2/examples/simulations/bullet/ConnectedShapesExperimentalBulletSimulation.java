@@ -27,6 +27,7 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletDebugDrawingNode;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 import us.ihmc.yoVariables.variable.YoBoolean;
 
@@ -46,8 +47,13 @@ public class ConnectedShapesExperimentalBulletSimulation
       double groundWidth = 5.0;
       double groundLength = 5.0;
 
-      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletPhysicsEngine(frame, rootRegistry));
-      
+      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> 
+      {
+     	 BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
+     	 BulletMultiBodyParameters bulletMultiBodyParameters =  BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
+     	 physicsEngine.setGlobalMultiBodyParameter(bulletMultiBodyParameters);
+     	 return physicsEngine;
+      });      
       Vector3D connectionOffset = new Vector3D(0.9, 0.0, 0.0);
 
       RobotDefinition robotDefinition = new RobotDefinition("ConnectedShapes");
@@ -95,7 +101,11 @@ public class ConnectedShapesExperimentalBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
 
-      BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+      SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+      
+      sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);
+      sessionVisualizer.getSessionVisualizerControls().setCameraPosition(7.0, 4.0, 3.0);
+      sessionVisualizer.getToolkit().getSession().runTick();
    }
    
    public static void main(String[] args)

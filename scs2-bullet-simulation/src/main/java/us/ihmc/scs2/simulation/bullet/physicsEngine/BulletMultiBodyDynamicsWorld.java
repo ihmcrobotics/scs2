@@ -10,9 +10,12 @@ import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
+
+import us.ihmc.scs2.definition.robot.JointDefinition;
 
 public class BulletMultiBodyDynamicsWorld {
 	private btCollisionConfiguration collisionConfiguration;
@@ -21,7 +24,7 @@ public class BulletMultiBodyDynamicsWorld {
 	private btMultiBodyConstraintSolver solver;
 	private btMultiBodyDynamicsWorld multiBodyDynamicsWorld;
 	private final ArrayList<btRigidBody> rigidBodies = new ArrayList<>();
-	private final ArrayList<btMultiBody> multiBodies = new ArrayList<>();
+	private final ArrayList<BulletMultiBodyRobot> multiBodies = new ArrayList<>();
 	private final ArrayList<btCollisionObject> collisionObjects = new ArrayList<>();
 	// private final ArrayList<BulletTerrainObject> terrainObjects = new
 	// ArrayList<>();
@@ -57,9 +60,9 @@ public class BulletMultiBodyDynamicsWorld {
 			rigidBody.dispose();
 		}
 
-		for (btMultiBody multiBody : multiBodies) {
-			multiBodyDynamicsWorld.removeMultiBody(multiBody);
-			multiBody.dispose();
+		for (BulletMultiBodyRobot multiBody : multiBodies) {
+			multiBodyDynamicsWorld.removeMultiBody(multiBody.getBulletMultiBody());
+			multiBody.getBulletMultiBody().dispose();
 		}
 
 		for (btCollisionObject shape : collisionObjects) {
@@ -73,5 +76,21 @@ public class BulletMultiBodyDynamicsWorld {
 		collisionDispatcher.dispose();
 		broadphaseInterface.dispose();
 		solver.dispose();
+	}
+
+	public void addMultiBody(BulletMultiBodyRobot bulletMultiBody) 
+	{
+		multiBodies.add(bulletMultiBody);
+        for (BulletMultiBodyLinkCollider linkCollider : bulletMultiBody.getBulletMultiBodyLinkColliderArray())
+        {
+        	multiBodyDynamicsWorld.addCollisionObject(linkCollider.getMultiBodyLinkCollider(), linkCollider.getCollisionGroup(),
+        			linkCollider.getCollisionGroupMask());
+        }
+        for (btMultiBodyConstraint constraint : bulletMultiBody.getBulletMultiBodyConstrantArray())
+        {
+        	multiBodyDynamicsWorld.addMultiBodyConstraint(constraint);
+        }
+        bulletMultiBody.finalizeMultiDof();
+		multiBodyDynamicsWorld.addMultiBody(bulletMultiBody.getBulletMultiBody());
 	}
 }
