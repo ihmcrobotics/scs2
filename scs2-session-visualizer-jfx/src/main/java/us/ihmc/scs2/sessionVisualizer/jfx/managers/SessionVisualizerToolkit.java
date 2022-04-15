@@ -48,6 +48,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
    private final Stage mainWindow;
    private final SubScene mainScene3D;
+   private final Group mainView3DRoot;
 
    private final ObjectProperty<Session> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
    private final ObservableList<RobotDefinition> sessionRobotDefinitions = FXCollections.observableArrayList();
@@ -57,6 +58,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    {
       this.mainWindow = mainWindow;
       this.mainScene3D = mainScene3D;
+      this.mainView3DRoot = mainView3DRoot;
 
       MessagerAPIFactory apiFactory = new MessagerAPIFactory();
       apiFactory.createRootCategory("SCS2");
@@ -67,7 +69,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       messager.startMessager();
 
       snapshotManager = new SnapshotManager(mainWindow, messager, topics);
-      videoRecordingManager = new VideoRecordingManager(mainScene3D, topics, messager);
+      videoRecordingManager = new VideoRecordingManager(mainScene3D, mainView3DRoot, topics, messager, backgroundExecutorManager);
       chartDataManager = new ChartDataManager(messager, topics, yoManager, backgroundExecutorManager);
       yoGraphicFXManager = new YoGraphicFXManager(messager, topics, yoManager, backgroundExecutorManager, referenceFrameManager);
       yoCompositeSearchManager = new YoCompositeSearchManager(messager, topics, yoManager, backgroundExecutorManager);
@@ -154,6 +156,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
       activeSessionProperty.set(null);
 
+      backgroundExecutorManager.stopSession();
       yoRobotFXManager.stopSession();
       chartDataManager.stopSession();
       chartRenderManager.stopSession();
@@ -162,7 +165,6 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoCompositeSearchManager.stopSession();
       environmentManager.stopSession();
       keyFrameManager.stopSession();
-      backgroundExecutorManager.stopSession();
       secondaryWindowManager.stopSession();
       cameraSensorsManager.stopSession();
       yoManager.stopSession();
@@ -217,6 +219,11 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public SubScene getMainScene3D()
    {
       return mainScene3D;
+   }
+
+   public Group getMainView3DRoot()
+   {
+      return mainView3DRoot;
    }
 
    public YoManager getYoManager()

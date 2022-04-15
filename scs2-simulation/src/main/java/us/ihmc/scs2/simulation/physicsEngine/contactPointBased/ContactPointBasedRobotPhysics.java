@@ -3,18 +3,20 @@ package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.ejml.data.DMatrixRMaj;
+
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
+import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
-import us.ihmc.mecano.tools.JointStateType;
-import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.controller.RobotOneDoFJointDampingCalculator;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.scs2.simulation.screwTools.SingleRobotFirstOrderIntegrator;
@@ -99,12 +101,34 @@ public class ContactPointBasedRobotPhysics
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       forwardDynamicsCalculator.setGravitionalAcceleration(gravity);
+      forwardDynamicsCalculator.setJointSourceModes(joint ->
+      {
+         SimJointBasics simJoint = (SimJointBasics) joint;
+         if (simJoint.isPinned())
+         {
+            simJoint.setJointTwistToZero();
+            simJoint.setJointAccelerationToZero();
+         }
+         return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
+      });
       forwardDynamicsCalculator.compute();
    }
 
    public void writeJointAccelerations()
    {
-      MultiBodySystemTools.insertJointsState(owner.getJointsToConsider(), JointStateType.ACCELERATION, forwardDynamicsCalculator.getJointAccelerationMatrix());
+      List<? extends SimJointBasics> joints = owner.getJointsToConsider();
+      DMatrixRMaj jointAccelerationMatrix = forwardDynamicsCalculator.getJointAccelerationMatrix();
+      DMatrixRMaj jointTauMatrix = forwardDynamicsCalculator.getJointTauMatrix();
+      int startIndex = 0;
+
+      for (int jointIndex = 0; jointIndex < joints.size(); jointIndex++)
+      {
+         SimJointBasics joint = joints.get(jointIndex);
+         if (!joint.isPinned())
+            startIndex = joint.setJointAcceleration(startIndex, jointAccelerationMatrix);
+         else
+            startIndex = joint.setJointTau(startIndex, jointTauMatrix);
+      }
    }
 
    public void integrateState(double dt)

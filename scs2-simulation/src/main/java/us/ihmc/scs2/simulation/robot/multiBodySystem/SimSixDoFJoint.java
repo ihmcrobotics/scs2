@@ -17,12 +17,14 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, SimFloatingJointBasics
 {
    private final YoRegistry registry;
    private final SimJointAuxiliaryData auxiliaryData;
    private final FixedFrameTwistBasics jointDeltaTwist;
+   private final YoBoolean isPinned;
 
    public SimSixDoFJoint(SixDoFJointDefinition definition, SimRigidBodyBasics predecessor)
    {
@@ -45,6 +47,7 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
                                               beforeJointFrame,
                                               new YoFrameVector3D("qd_delta" + varName + "w", afterJointFrame, registry),
                                               new YoFrameVector3D("qd_delta" + varName, afterJointFrame, registry));
+      isPinned = new YoBoolean("is" + varName + "pinned", registry);
    }
 
    @Override
@@ -114,5 +117,17 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
    {
       getJointDeltaTwist().set(rowStart, matrix);
       return rowStart + getDegreesOfFreedom();
+   }
+
+   @Override
+   public void setPinned(boolean isPinned)
+   {
+      this.isPinned.set(isPinned);
+   }
+
+   @Override
+   public boolean isPinned()
+   {
+      return isPinned.getValue();
    }
 }

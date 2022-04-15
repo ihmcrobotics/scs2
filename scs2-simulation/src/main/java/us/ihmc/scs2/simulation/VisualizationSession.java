@@ -15,7 +15,6 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
@@ -44,7 +43,7 @@ public class VisualizationSession extends Session
          // Do Nothing, the user is responsible for invoking runTick();
       });
       setSessionMode(SessionMode.RUNNING);
-      setSessionState(SessionState.ACTIVE);
+      startSessionThread();
    }
 
    @Override

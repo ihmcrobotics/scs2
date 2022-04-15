@@ -13,16 +13,30 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javafx.util.Duration;
+import us.ihmc.euclid.exceptions.SingularMatrixException;
+import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
 public class JavaFXMissingTools
@@ -218,5 +232,200 @@ public class JavaFXMissingTools
          runLater(application.getClass(), runnable);
       });
       PlatformImpl.setImplicitExit(false);
+   }
+
+   public static void centerDialogInOwner(Dialog<?> dialog)
+   {
+      Window owner = dialog.getOwner();
+
+      if (owner == null)
+      {
+         LogTools.error("This dialog has no owner set: {}", dialog);
+         return;
+      }
+
+      double x = owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth());
+      double y = owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight());
+      dialog.setX(x);
+      dialog.setY(y);
+   }
+
+   public static void toEuclid(javafx.scene.transform.Transform jfxTransform, AffineTransform euclidTransform)
+   {
+      euclidTransform.set(jfxTransform.getMxx(),
+                          jfxTransform.getMxy(),
+                          jfxTransform.getMxz(),
+                          jfxTransform.getTx(),
+                          jfxTransform.getMyx(),
+                          jfxTransform.getMyy(),
+                          jfxTransform.getMyz(),
+                          jfxTransform.getTy(),
+                          jfxTransform.getMzx(),
+                          jfxTransform.getMzy(),
+                          jfxTransform.getMzz(),
+                          jfxTransform.getTz());
+   }
+
+   public static javafx.geometry.Point3D toJavaFX(Tuple3DReadOnly euclidInput)
+   {
+      if (euclidInput == null)
+         return null;
+      else
+         return new javafx.geometry.Point3D(euclidInput.getX(), euclidInput.getY(), euclidInput.getZ());
+   }
+
+   public static void transform(Transform transform, Point3DBasics pointToTransform)
+   {
+      transform(transform, pointToTransform, pointToTransform);
+   }
+
+   public static void transform(Transform transform, Point3DReadOnly pointOriginal, Tuple3DBasics pointTransformed)
+   {
+      transform(transform, pointOriginal, pointTransformed, true);
+   }
+
+   public static void transform(Transform transform, Vector3DBasics vectorToTransform)
+   {
+      transform(transform, vectorToTransform, vectorToTransform, false);
+   }
+
+   public static void transform(Transform transform, Vector3DReadOnly vectorOriginal, Tuple3DBasics vectorTransformed)
+   {
+      transform(transform, vectorOriginal, vectorTransformed, false);
+   }
+
+   public static void transform(Transform transform, Tuple3DReadOnly tupleOriginal, Tuple3DBasics tupleTransformed, boolean applyTranslation)
+   {
+      double x_in = tupleOriginal.getX();
+      double y_in = tupleOriginal.getY();
+      double z_in = tupleOriginal.getZ();
+      double x_out = transform.getMxx() * x_in + transform.getMxy() * y_in + transform.getMxz() * z_in;
+      double y_out = transform.getMyx() * x_in + transform.getMyy() * y_in + transform.getMyz() * z_in;
+      double z_out = transform.getMzx() * x_in + transform.getMzy() * y_in + transform.getMzz() * z_in;
+
+      if (applyTranslation)
+      {
+         x_out += transform.getTx();
+         y_out += transform.getTy();
+         z_out += transform.getTz();
+      }
+
+      tupleTransformed.set(x_out, y_out, z_out);
+   }
+
+   public static void inverseTransform(Transform transform, Point3DBasics pointToTransform)
+   {
+      inverseTransform(transform, pointToTransform, pointToTransform);
+   }
+
+   public static void inverseTransform(Transform transform, Point3DReadOnly pointOriginal, Tuple3DBasics pointTransformed)
+   {
+      inverseTransform(transform, pointOriginal, pointTransformed, true);
+   }
+
+   public static void inverseTransform(Transform transform, Vector3DBasics vectorToTransform)
+   {
+      inverseTransform(transform, vectorToTransform, vectorToTransform, false);
+   }
+
+   public static void inverseTransform(Transform transform, Vector3DReadOnly vectorOriginal, Tuple3DBasics vectorTransformed)
+   {
+      inverseTransform(transform, vectorOriginal, vectorTransformed, false);
+   }
+
+   public static void inverseTransform(Transform transform, Tuple3DReadOnly tupleOriginal, Tuple3DBasics tupleTransformed, boolean applyTranslation)
+   {
+      double x_in = tupleOriginal.getX();
+      double y_in = tupleOriginal.getY();
+      double z_in = tupleOriginal.getZ();
+      double x_out, y_out, z_out;
+
+      if (transform instanceof Rotate)
+      {
+         double m00 = transform.getMxx();
+         double m11 = transform.getMyy();
+         double m21 = transform.getMzy();
+         double m20 = transform.getMzx();
+         double m10 = transform.getMyx();
+         double m01 = transform.getMxy();
+         double m12 = transform.getMyz();
+         double m22 = transform.getMzz();
+         double m02 = transform.getMxz();
+
+         x_out = m00 * x_in + m10 * y_in + m20 * z_in;
+         y_out = m01 * x_in + m11 * y_in + m21 * z_in;
+         z_out = m02 * x_in + m12 * y_in + m22 * z_in;
+      }
+      else if (transform instanceof Translate)
+      {
+         if (applyTranslation)
+         {
+            x_out = x_in - transform.getTx();
+            y_out = y_in - transform.getTy();
+            z_out = z_in - transform.getTz();
+         }
+         else
+         {
+            x_out = x_in;
+            y_out = y_in;
+            z_out = z_in;
+         }
+      }
+      else if (transform instanceof Scale)
+      {
+         Scale scale = ((Scale) transform);
+         x_out = x_in / scale.getX();
+         y_out = y_in / scale.getY();
+         z_out = z_in / scale.getZ();
+      }
+      else
+      {
+         double det = transform.determinant();
+         if (det == 0.0) // To be consistent with JavaFX.
+            throw new SingularMatrixException("Determinant is 0");
+
+         double m00 = transform.getMxx();
+         double m11 = transform.getMyy();
+         double m21 = transform.getMzy();
+         double m20 = transform.getMzx();
+         double m10 = transform.getMyx();
+         double m01 = transform.getMxy();
+         double m12 = transform.getMyz();
+         double m22 = transform.getMzz();
+         double m02 = transform.getMxz();
+
+         det = 1.0 / det;
+         double invM00 = (m11 * m22 - m21 * m12) * det;
+         double invM01 = -(m01 * m22 - m21 * m02) * det;
+         double invM02 = (m01 * m12 - m11 * m02) * det;
+         double invM10 = -(m10 * m22 - m20 * m12) * det;
+         double invM11 = (m00 * m22 - m20 * m02) * det;
+         double invM12 = -(m00 * m12 - m10 * m02) * det;
+         double invM20 = (m10 * m21 - m20 * m11) * det;
+         double invM21 = -(m00 * m21 - m20 * m01) * det;
+         double invM22 = (m00 * m11 - m10 * m01) * det;
+
+         double x_tem = x_in;
+         double y_tem = y_in;
+         double z_tem = z_in;
+
+         if (applyTranslation)
+         {
+            x_tem = x_in - transform.getTx();
+            y_tem = y_in - transform.getTy();
+            z_tem = z_in - transform.getTz();
+         }
+         else
+         {
+            x_tem = x_in;
+            y_tem = y_in;
+            z_tem = z_in;
+         }
+         x_out = invM00 * x_tem + invM01 * y_tem + invM02 * z_tem;
+         y_out = invM10 * x_tem + invM11 * y_tem + invM12 * z_tem;
+         z_out = invM20 * x_tem + invM21 * y_tem + invM22 * z_tem;
+      }
+
+      tupleTransformed.set(x_out, y_out, z_out);
    }
 }

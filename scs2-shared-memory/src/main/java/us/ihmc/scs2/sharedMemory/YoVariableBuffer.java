@@ -71,5 +71,7 @@ public abstract class YoVariableBuffer<T extends YoVariable>
 
    public abstract Object getBuffer();
 
+   public abstract double[] getAsDoubleBuffer();
+
    public abstract void dispose();
 }

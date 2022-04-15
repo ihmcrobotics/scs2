@@ -45,6 +45,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoArrowFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoBoxFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoCapsuleFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoConeFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoConvexPolytopeFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoCoordinateSystemFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoCylinderFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoEllipsoidFX3D;
@@ -73,7 +74,7 @@ public class YoGraphicItemCreatorDialogController
    @FXML
    private ToggleButton yoArrowFX3DToggleButton, yoBoxFX3DToggleButton, yoCapsuleFX3DToggleButton, yoConeFX3DToggleButton, yoCoordinateSystemFX3DToggleButton,
          yoCylinderFX3DToggleButton, yoEllipsoidFX3DToggleButton, yoPointcloudFX3DToggleButton, yoPointFX3DToggleButton, yoPolygonExtrudedFX3DToggleButton,
-         yoPolynomialFX3DToggleButton, yoRampFX3DToggleButton, yoSTPBoxFX3DToggleButton;
+         yoConvexPolytopeFX3DToggleButton, yoPolynomialFX3DToggleButton, yoRampFX3DToggleButton, yoSTPBoxFX3DToggleButton;
    @FXML
    private GridPane miscPane;
    @FXML
@@ -138,6 +139,7 @@ public class YoGraphicItemCreatorDialogController
       buttonToTypeMap.put(yoPointcloudFX3DToggleButton, YoPointcloudFX3D.class);
       buttonToTypeMap.put(yoPointFX3DToggleButton, YoPointFX3D.class);
       buttonToTypeMap.put(yoPolygonExtrudedFX3DToggleButton, YoPolygonExtrudedFX3D.class);
+      buttonToTypeMap.put(yoConvexPolytopeFX3DToggleButton, YoConvexPolytopeFX3D.class);
       buttonToTypeMap.put(yoPolynomialFX3DToggleButton, YoPolynomialFX3D.class);
       buttonToTypeMap.put(yoRampFX3DToggleButton, YoRampFX3D.class);
       buttonToTypeMap.put(yoSTPBoxFX3DToggleButton, YoSTPBoxFX3D.class);
@@ -161,6 +163,7 @@ public class YoGraphicItemCreatorDialogController
       typeToDefaultNameMap.put(YoPointcloudFX3D.class, "Pointcloud 3D");
       typeToDefaultNameMap.put(YoPointFX3D.class, "Point 3D");
       typeToDefaultNameMap.put(YoPolygonExtrudedFX3D.class, "Polygon Extruded 3D");
+      typeToDefaultNameMap.put(YoConvexPolytopeFX3D.class, "Convex Polytope 3D");
       typeToDefaultNameMap.put(YoPolynomialFX3D.class, "Polynomial 3D");
       typeToDefaultNameMap.put(YoRampFX3D.class, "Ramp 3D");
       typeToDefaultNameMap.put(YoSTPBoxFX3D.class, "STP Box 3D");

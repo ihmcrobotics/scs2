@@ -65,6 +65,12 @@ public class YoDoubleBuffer extends YoVariableBuffer<YoDouble>
    }
 
    @Override
+   public double[] getAsDoubleBuffer()
+   {
+      return buffer;
+   }
+
+   @Override
    public void dispose()
    {
       buffer = null;
