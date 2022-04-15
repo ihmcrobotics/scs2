@@ -72,7 +72,8 @@ public abstract class BulletRobotLinkBasics
                                                                 jointNameToBulletJointIndexMap,
                                                                 rigidBodyWrenchRegistry,
                                                                 yoRegistry, 
-                                                                bulletMultiBodyRobot.getBulletMultiBody().getLinkCollider(bulletJointIndex)));
+                                                                bulletMultiBodyRobot.getBulletMultiBody().getLinkCollider(bulletJointIndex),
+                                                                bulletMultiBodyRobot));
                }
                else
                {
