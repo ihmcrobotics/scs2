@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyJointLimitConstraint;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -46,9 +47,10 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
                                   SimRevoluteJoint simRevoluteJoint,
                                   HashMap<String, Integer> jointNameToBulletJointIndexMap,
                                   RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
-                                  YoRegistry yoRegistry)
+                                  YoRegistry yoRegistry,
+                                  btMultiBodyLinkCollider bulletMultiBodyLinkCollider)
    {
-      super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap, rigidBodyWrenchRegistry);
+      super(revoluteJointDefinition.getSuccessor(), simRevoluteJoint.getSuccessor(), jointNameToBulletJointIndexMap, rigidBodyWrenchRegistry, bulletMultiBodyLinkCollider);
       this.revoluteJointDefinition = revoluteJointDefinition;
       this.simRevoluteJoint = simRevoluteJoint;
       this.rigidBodyWrenchRegistry = rigidBodyWrenchRegistry;
@@ -56,7 +58,7 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
       setBulletJointIndex(jointNameToBulletJointIndexMap.get(revoluteJointDefinition.getName()));
       parentBulletJointIndex = jointNameToBulletJointIndexMap.get(revoluteJointDefinition.getParentJoint().getName());
 
-      addChildLinks(yoRegistry);
+//      addChildLinks(yoRegistry);
 
       damping = new YoDouble(simRevoluteJoint.getName() + "_damping", yoRegistry);
       bulletJointPosition = new YoDouble(simRevoluteJoint.getName() + "_q", yoRegistry);
@@ -72,85 +74,85 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
       bulletLinkAppliedTorqueZ = new YoDouble(simRevoluteJoint.getName() + "_btAppliedTorqueZ", yoRegistry);
    }
 
-   @Override
-   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
-   {
-      Quaternion rotationFromParentGDX = new Quaternion();
-      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent
-            = new us.ihmc.euclid.tuple4D.Quaternion(revoluteJointDefinition.getTransformToParent().getRotation());
-      euclidRotationFromParent.invert();
-      BulletTools.toBullet(euclidRotationFromParent, rotationFromParentGDX);
-
-      RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
-      simRevoluteJoint.getPredecessor().getBodyFixedFrame().getTransformToDesiredFrame(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid,
-                                                                                       simRevoluteJoint.getFrameBeforeJoint());
-      parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.invert();
-      Vector3 parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX = new Vector3();
-      BulletTools.toBullet(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.getTranslation(),
-                           parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX);
-
-      RigidBodyTransform parentJointAfterFrameToLinkCenterOfMassTransformEuclid = new RigidBodyTransform();
-      simRevoluteJoint.getFrameAfterJoint().getTransformToDesiredFrame(parentJointAfterFrameToLinkCenterOfMassTransformEuclid,
-                                                                             getSimRigidBody().getBodyFixedFrame());
-      parentJointAfterFrameToLinkCenterOfMassTransformEuclid.invert();
-      Vector3 parentJointAfterFrameToLinkCenterOfMassTranslationGDX = new Vector3();
-      BulletTools.toBullet(parentJointAfterFrameToLinkCenterOfMassTransformEuclid.getTranslation(), parentJointAfterFrameToLinkCenterOfMassTranslationGDX);
-
-      float linkMass = (float) getRigidBodyDefinition().getMass();
-      Vector3 baseInertiaDiagonal = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
-                                                (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
-                                                (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
-      AltBulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
-      // TODO: Should we let Bullet compute this?
-      // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(linkMass, baseInertiaDiagonal);
-
-      Vector3 jointAxis = new Vector3();
-      BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
-      boolean disableParentCollision = true;
-      getBulletMultiBody().setupRevolute(getBulletJointIndex(),
-                                         linkMass,
-                                         baseInertiaDiagonal,
-                                         parentBulletJointIndex,
-                                         rotationFromParentGDX,
-                                         jointAxis,
-                                         parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX,
-                                         parentJointAfterFrameToLinkCenterOfMassTranslationGDX,
-                                         disableParentCollision);
-
-      multiBodyJointLimitConstraint = new btMultiBodyJointLimitConstraint(getBulletMultiBody(),
-                                                                          getBulletJointIndex(),
-                                                                          (float) revoluteJointDefinition.getPositionLowerLimit(),
-                                                                          (float) revoluteJointDefinition.getPositionUpperLimit());
-      multiBodyJointLimitConstraint.setMaxAppliedImpulse((float) revoluteJointDefinition.getEffortUpperLimit());
-      bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(multiBodyJointLimitConstraint);
-      bulletLink = getBulletMultiBody().getLink(getBulletJointIndex());
-      
-//      TODO: test if adding a multibodyJointMotor can be added to set max velocity and max force?      
-//      m_motor = new btMultiBodyJointMotor(pMultiBody, link, targetVelocity, maxForce);
-//      m_dynamicsWorld->addMultiBodyConstraint(m_motor);
-
-//       btMultiBodyJointMotor::btMultiBodyJointMotor (  btMultiBody *  body,
-//                                                       int   link,
-//                                                       btScalar    desiredVelocity,
-//                                                       btScalar    maxMotorImpulse 
-//                                                    )  
-      
-      //The setJoint methods below do nothing -- see notes from documentation lines 147 - 152
-//      147         btScalar m_jointDamping; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual damping.
-//      148         btScalar m_jointFriction; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual friction using a velocity motor.
-//      149         btScalar m_jointLowerLimit; //todo: implement this internally. It is unused for now, it is set by a URDF loader. 
-//      150         btScalar m_jointUpperLimit; //todo: implement this internally. It is unused for now, it is set by a URDF loader.
-//      151         btScalar m_jointMaxForce; //todo: implement this internally. It is unused for now, it is set by a URDF loader. 
-//      152         btScalar m_jointMaxVelocity;//todo: implement this internally. It is unused for now, it is set by a URDF loader.
-//      bulletLink.setJointDamping((float) revoluteJointDefinition.getDamping()); // Doesn't seem to do anything though
-//      bulletLink.setJointLowerLimit((float) revoluteJointDefinition.getPositionLowerLimit());
-//      bulletLink.setJointUpperLimit((float) revoluteJointDefinition.getPositionUpperLimit());
-//      bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
-//      bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
-
-      createBulletCollider(bulletPhysicsEngine);
-      bulletLink.setCollider(getBulletMultiBodyLinkCollider());
-   }
+//   @Override
+//   public void setup(BulletPhysicsEngine bulletPhysicsEngine)
+//   {
+//      Quaternion rotationFromParentGDX = new Quaternion();
+//      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent
+//            = new us.ihmc.euclid.tuple4D.Quaternion(revoluteJointDefinition.getTransformToParent().getRotation());
+//      euclidRotationFromParent.invert();
+//      BulletTools.toBullet(euclidRotationFromParent, rotationFromParentGDX);
+//
+//      RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
+//      simRevoluteJoint.getPredecessor().getBodyFixedFrame().getTransformToDesiredFrame(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid,
+//                                                                                       simRevoluteJoint.getFrameBeforeJoint());
+//      parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.invert();
+//      Vector3 parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX = new Vector3();
+//      BulletTools.toBullet(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.getTranslation(),
+//                           parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX);
+//
+//      RigidBodyTransform parentJointAfterFrameToLinkCenterOfMassTransformEuclid = new RigidBodyTransform();
+//      simRevoluteJoint.getFrameAfterJoint().getTransformToDesiredFrame(parentJointAfterFrameToLinkCenterOfMassTransformEuclid,
+//                                                                             getSimRigidBody().getBodyFixedFrame());
+//      parentJointAfterFrameToLinkCenterOfMassTransformEuclid.invert();
+//      Vector3 parentJointAfterFrameToLinkCenterOfMassTranslationGDX = new Vector3();
+//      BulletTools.toBullet(parentJointAfterFrameToLinkCenterOfMassTransformEuclid.getTranslation(), parentJointAfterFrameToLinkCenterOfMassTranslationGDX);
+//
+//      float linkMass = (float) getRigidBodyDefinition().getMass();
+//      Vector3 baseInertiaDiagonal = new Vector3((float) getRigidBodyDefinition().getMomentOfInertia().getM00(),
+//                                                (float) getRigidBodyDefinition().getMomentOfInertia().getM11(),
+//                                                (float) getRigidBodyDefinition().getMomentOfInertia().getM22());
+//      AltBulletRobotLinkCollisionSet bulletCollisionSet = createBulletCollisionShape();
+//      // TODO: Should we let Bullet compute this?
+//      // bulletCollisionSet.getBulletCompoundShape().calculateLocalInertia(linkMass, baseInertiaDiagonal);
+//
+//      Vector3 jointAxis = new Vector3();
+//      BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
+//      boolean disableParentCollision = true;
+//      getBulletMultiBody().setupRevolute(getBulletJointIndex(),
+//                                         linkMass,
+//                                         baseInertiaDiagonal,
+//                                         parentBulletJointIndex,
+//                                         rotationFromParentGDX,
+//                                         jointAxis,
+//                                         parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationGDX,
+//                                         parentJointAfterFrameToLinkCenterOfMassTranslationGDX,
+//                                         disableParentCollision);
+//
+//      multiBodyJointLimitConstraint = new btMultiBodyJointLimitConstraint(getBulletMultiBody(),
+//                                                                          getBulletJointIndex(),
+//                                                                          (float) revoluteJointDefinition.getPositionLowerLimit(),
+//                                                                          (float) revoluteJointDefinition.getPositionUpperLimit());
+//      multiBodyJointLimitConstraint.setMaxAppliedImpulse((float) revoluteJointDefinition.getEffortUpperLimit());
+//      bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().addMultiBodyConstraint(multiBodyJointLimitConstraint);
+//      bulletLink = getBulletMultiBody().getLink(getBulletJointIndex());
+//      
+////      TODO: test if adding a multibodyJointMotor can be added to set max velocity and max force?      
+////      m_motor = new btMultiBodyJointMotor(pMultiBody, link, targetVelocity, maxForce);
+////      m_dynamicsWorld->addMultiBodyConstraint(m_motor);
+//
+////       btMultiBodyJointMotor::btMultiBodyJointMotor (  btMultiBody *  body,
+////                                                       int   link,
+////                                                       btScalar    desiredVelocity,
+////                                                       btScalar    maxMotorImpulse 
+////                                                    )  
+//      
+//      //The setJoint methods below do nothing -- see notes from documentation lines 147 - 152
+////      147         btScalar m_jointDamping; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual damping.
+////      148         btScalar m_jointFriction; //todo: implement this internally. It is unused for now, it is set by a URDF loader. User can apply manual friction using a velocity motor.
+////      149         btScalar m_jointLowerLimit; //todo: implement this internally. It is unused for now, it is set by a URDF loader. 
+////      150         btScalar m_jointUpperLimit; //todo: implement this internally. It is unused for now, it is set by a URDF loader.
+////      151         btScalar m_jointMaxForce; //todo: implement this internally. It is unused for now, it is set by a URDF loader. 
+////      152         btScalar m_jointMaxVelocity;//todo: implement this internally. It is unused for now, it is set by a URDF loader.
+////      bulletLink.setJointDamping((float) revoluteJointDefinition.getDamping()); // Doesn't seem to do anything though
+////      bulletLink.setJointLowerLimit((float) revoluteJointDefinition.getPositionLowerLimit());
+////      bulletLink.setJointUpperLimit((float) revoluteJointDefinition.getPositionUpperLimit());
+////      bulletLink.setJointMaxForce((float) revoluteJointDefinition.getEffortUpperLimit());
+////      bulletLink.setJointMaxVelocity((float) revoluteJointDefinition.getVelocityUpperLimit());
+//
+//      createBulletCollider(bulletPhysicsEngine);
+//      bulletLink.setCollider(getBulletMultiBodyLinkCollider());
+//   }
 
    public void copyDataFromSCSToBullet()
    {
@@ -192,15 +194,15 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
       rigidBodyWrenchRegistry.addWrench(getSimRigidBody(), new Wrench(bodyFrame, expressedInFrame, torque, force));
    }
 
-   public boolean isSameLink(RigidBodyDefinition rigidBodyDefinition)
-   {
-      return this.getRigidBodyDefinition().getName().equals(rigidBodyDefinition.getName());
-   }
-
-   public boolean isSameLink(RigidBodyBasics rigidBodyBasics)
-   {
-      return this.getRigidBodyDefinition().getName().equals(rigidBodyBasics.getName());
-   }
+//   public boolean isSameLink(RigidBodyDefinition rigidBodyDefinition)
+//   {
+//      return this.getRigidBodyDefinition().getName().equals(rigidBodyDefinition.getName());
+//   }
+//
+//   public boolean isSameLink(RigidBodyBasics rigidBodyBasics)
+//   {
+//      return this.getRigidBodyDefinition().getName().equals(rigidBodyBasics.getName());
+//   }
 
    public YoDouble getDamping()
    {

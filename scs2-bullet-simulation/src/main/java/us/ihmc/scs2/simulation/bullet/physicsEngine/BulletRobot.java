@@ -21,18 +21,20 @@ public class BulletRobot extends RobotExtension
    private final SimRigidBodyBasics rootSimRigidBodyBasics;
    private final SimFloatingRootJoint rootSimFloatingRootJoint;
    private final BulletRobotLinkRoot rootLink;
-   private final HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<>();
+   private final BulletMultiBodyRobot bulletMultiBodyRobot;
+//   private final HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<>();
    private final ArrayList<BulletRobotLinkBasics> allLinks = new ArrayList<>();
    private final ArrayList<BulletRobotLinkJoint> afterRootLinks = new ArrayList<>();
    private final YoRegistry yoRegistry;
 
-   public BulletRobot(Robot robot, YoRegistry physicsRegistry, BulletPhysicsEngine bulletPhysicsEngine)
+   public BulletRobot(Robot robot, YoRegistry physicsRegistry, BulletMultiBodyRobot bulletMultiBodyRobot)
    {
       super(robot, physicsRegistry);
       robotPhysics = new BulletRobotPhysics(this);
 
       yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
       robot.getRegistry().addChild(yoRegistry);
+      this.bulletMultiBodyRobot = bulletMultiBodyRobot;
 
       rootBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition();
       JointDefinition rootJointDefinition = rootBodyDefinition.getChildrenJoints().get(0);
@@ -47,19 +49,20 @@ public class BulletRobot extends RobotExtension
       rootSimFloatingRootJoint = (SimFloatingRootJoint) rootJoint;
       rootLink = new BulletRobotLinkRoot(rootSixDoFJointDefinition,
                                          rootSimFloatingRootJoint,
-                                         jointNameToBulletJointIndexMap,
+                                         bulletMultiBodyRobot.getJointNameToBulletJointIndexMap(),
                                          robotPhysics.getRigidBodyWrenchRegistry(),
-                                         yoRegistry);
+                                         yoRegistry,
+                                         bulletMultiBodyRobot);
       initializeLinkLists(rootLink, true);
 
-      rootLink.setup(bulletPhysicsEngine);
+//      rootLink.setup(bulletPhysicsEngine);
 
       for (BulletRobotLinkJoint link : afterRootLinks)
       {
-         link.setBulletMultiBody(rootLink.getBulletMultiBody());
-         link.setup(bulletPhysicsEngine);
+         link.setBulletMultiBody(bulletMultiBodyRobot.getBulletMultiBody());
+//         link.setup(bulletPhysicsEngine);
       }
-      rootLink.getBulletMultiBody().finalizeMultiDof();
+      //rootLink.getBulletMultiBody().finalizeMultiDof();
    }
    
    private void initializeLinkLists(BulletRobotLinkBasics link, boolean isRootLink)
@@ -94,10 +97,10 @@ public class BulletRobot extends RobotExtension
    {
       link.copyDataFromSCSToBullet();
 
-      for (BulletRobotLinkBasics child : link.getChildren())
-      {
-         copyDataFromSCSToBullet(child);
-      }
+//      for (BulletRobotLinkBasics child : link.getChildren())
+//      {
+//         copyDataFromSCSToBullet(child);
+//      }
    }
    
    public void updateFromBulletData(BulletPhysicsEngine bulletPhysicsEngine, double dt)
@@ -111,14 +114,14 @@ public class BulletRobot extends RobotExtension
       robotPhysics.update();
    }
 
-   public BulletRobotLinkRoot getRootLink()
-   {
-      return rootLink;
-   }
-
+//   public BulletRobotLinkRoot getRootLink()
+//   {
+//      return rootLink;
+//   }
+//
    public btMultiBody getBulletMultiBody()
    {
-      return rootLink.getBulletMultiBody();
+      return bulletMultiBodyRobot.getBulletMultiBody();
    }
 
    public ArrayList<BulletRobotLinkJoint> getAfterRootLinks()

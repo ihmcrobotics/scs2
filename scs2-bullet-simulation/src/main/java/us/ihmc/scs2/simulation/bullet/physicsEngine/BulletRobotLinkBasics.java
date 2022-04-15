@@ -18,54 +18,61 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public abstract class BulletRobotLinkBasics
+public abstract class BulletRobotLinkBasics 
 {
    private final RigidBodyDefinition rigidBodyDefinition;
    private SimRigidBodyBasics simRigidBody;
    private final HashMap<String, Integer> jointNameToBulletJointIndexMap;
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry;
    private btMultiBodyLinkCollider bulletMultiBodyLinkCollider;
-   private AltBulletRobotLinkCollisionSet collisionSet;
+//   private AltBulletRobotLinkCollisionSet collisionSet;
    private int bulletJointIndex;
    private final ArrayList<BulletRobotLinkBasics> children = new ArrayList<>();
    private btMultiBody bulletMultiBody;
-   private ReferenceFrame frameAfterJoint;
+//   private ReferenceFrame frameAfterJoint;
    private final Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
    private final RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
-   private int collisionGroup = 2; // Multi bodies need to be in a separate collision group
-   private int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
+//   private int collisionGroup = 2; // Multi bodies need to be in a separate collision group
+//   private int collisionGroupMask = 1 + 2; // But allowed to interact with group 1, which is rigid and static bodies
 
    public BulletRobotLinkBasics(RigidBodyDefinition rigidBodyDefinition,
                                 SimRigidBodyBasics simRigidBody,
                                 HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                                RigidBodyWrenchRegistry rigidBodyWrenchRegistry)
+                                RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
+                                btMultiBodyLinkCollider bulletMultiBodyLinkCollider)
    {
       this.rigidBodyDefinition = rigidBodyDefinition;
       this.simRigidBody = simRigidBody;
       this.jointNameToBulletJointIndexMap = jointNameToBulletJointIndexMap;
       this.rigidBodyWrenchRegistry = rigidBodyWrenchRegistry;
-      frameAfterJoint = simRigidBody.getParentJoint().getFrameAfterJoint();
+      this.bulletMultiBodyLinkCollider = bulletMultiBodyLinkCollider;
+
+//      frameAfterJoint = simRigidBody.getParentJoint().getFrameAfterJoint();
    }
 
-   public void addChildLinks(YoRegistry yoRegistry)
+   public 
+   void addChildLinks(YoRegistry yoRegistry, BulletMultiBodyRobot bulletMultiBodyRobot)
    {
+	  setBulletMultiBody(bulletMultiBodyRobot.getBulletMultiBody());
       for (JointBasics childJoint : simRigidBody.getChildrenJoints())
       {
-         System.out.println("prod child joint " + childJoint.getName());
          for (JointDefinition childJointDefinition : rigidBodyDefinition.getChildrenJoints())
          {
             if (childJoint.getName().equals(childJointDefinition.getName()))
             {
                if (childJoint instanceof SimRevoluteJoint)
                {
-                  System.out.println("prod joint Def: " + childJointDefinition.getName());
+
+            	  int bulletJointIndex =  bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(childJoint.getName());
+            	  btMultiBodyLinkCollider test = bulletMultiBodyRobot.getBulletMultiBody().getLinkCollider(bulletJointIndex);
                   SimRevoluteJoint childSimRevoluteJoint = (SimRevoluteJoint) childJoint;
                   RevoluteJointDefinition childRevoluteJointDefinition = (RevoluteJointDefinition) childJointDefinition;
                   getChildren().add(new BulletRobotLinkJoint(childRevoluteJointDefinition,
                                                                 childSimRevoluteJoint,
                                                                 jointNameToBulletJointIndexMap,
                                                                 rigidBodyWrenchRegistry,
-                                                                yoRegistry));
+                                                                yoRegistry, 
+                                                                bulletMultiBodyRobot.getBulletMultiBody().getLinkCollider(bulletJointIndex)));
                }
                else
                {
@@ -76,31 +83,31 @@ public abstract class BulletRobotLinkBasics
       }
    }
 
-   public abstract void setup(BulletPhysicsEngine bulletPhysicsEngine);
+//   public abstract void setup(BulletPhysicsEngine bulletPhysicsEngine);
 
-   public AltBulletRobotLinkCollisionSet createBulletCollisionShape()
-   {
+//   public AltBulletRobotLinkCollisionSet createBulletCollisionShape()
+//   {
+//
+//      // Set collisionGroup and collisionGroupMask the same as the first shape in the CollisionShapeDefinitions.
+//      if (rigidBodyDefinition.getCollisionShapeDefinitions().size() > 0)
+//      {
+//         setCollisionGroupMask((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
+//         setCollisionGroup((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
+//      }
+//
+//      return collisionSet = new AltBulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
+//                                                            frameAfterJoint,
+//                                                            simRigidBody.getBodyFixedFrame());
+//   }
 
-      // Set collisionGroup and collisionGroupMask the same as the first shape in the CollisionShapeDefinitions.
-      if (rigidBodyDefinition.getCollisionShapeDefinitions().size() > 0)
-      {
-         setCollisionGroupMask((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionGroup());
-         setCollisionGroup((int) rigidBodyDefinition.getCollisionShapeDefinitions().get(0).getCollisionMask());
-      }
-
-      return collisionSet = new AltBulletRobotLinkCollisionSet(rigidBodyDefinition.getCollisionShapeDefinitions(),
-                                                            frameAfterJoint,
-                                                            simRigidBody.getBodyFixedFrame());
-   }
-
-   public void createBulletCollider(BulletPhysicsEngine bulletPhysicsManager)
-   {
-      bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
-      bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
-      bulletMultiBodyLinkCollider.setFriction(0.7f);
-
-      bulletPhysicsManager.addMultiBodyCollisionShape(bulletMultiBodyLinkCollider, collisionGroup, collisionGroupMask);
-   }
+//   public void createBulletCollider(BulletPhysicsEngine bulletPhysicsManager)
+//   {
+//      bulletMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultiBody, bulletJointIndex);
+//      bulletMultiBodyLinkCollider.setCollisionShape(collisionSet.getBulletCompoundShape());
+//      bulletMultiBodyLinkCollider.setFriction(0.7f);
+//
+//      bulletPhysicsManager.addMultiBodyCollisionShape(bulletMultiBodyLinkCollider, collisionGroup, collisionGroupMask);
+//   }
 
    public void updateBulletLinkColliderTransformFromMecanoRigidBody()
    {
@@ -128,10 +135,10 @@ public abstract class BulletRobotLinkBasics
       return children;
    }
 
-   public HashMap<String, Integer> getJointNameToBulletJointIndexMap()
-   {
-      return jointNameToBulletJointIndexMap;
-   }
+//   public HashMap<String, Integer> getJointNameToBulletJointIndexMap()
+//   {
+//      return jointNameToBulletJointIndexMap;
+//   }
 
    public btMultiBody getBulletMultiBody()
    {
@@ -163,23 +170,23 @@ public abstract class BulletRobotLinkBasics
       return bulletColliderCenterOfMassTransformToWorldEuclid;
    }
 
-   public void setCollisionGroup(int collisionGroup)
-   {
-      this.collisionGroup = collisionGroup;
-   }
-
-   public void setCollisionGroupMask(int collisionGroupMask)
-   {
-      this.collisionGroupMask = collisionGroupMask;
-   }
-
-   public int getCollisionGroup()
-   {
-      return collisionGroup;
-   }
-
-   public int getCollisionGroupMask()
-   {
-      return collisionGroupMask;
-   }
+//   public void setCollisionGroup(int collisionGroup)
+//   {
+//      this.collisionGroup = collisionGroup;
+//   }
+//
+//   public void setCollisionGroupMask(int collisionGroupMask)
+//   {
+//      this.collisionGroupMask = collisionGroupMask;
+//   }
+//
+//   public int getCollisionGroup()
+//   {
+//      return collisionGroup;
+//   }
+//
+//   public int getCollisionGroupMask()
+//   {
+//      return collisionGroupMask;
+//   }
 }
