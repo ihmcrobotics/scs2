@@ -31,12 +31,11 @@ public class BulletTerrainObject
       }
    };
    private final btRigidBody bulletRigidBody;
-   private final btMultiBodyDynamicsWorld multiBodyDynamicsWorld;
+   int collisionGroup = 1; // group 1 is rigid and static bodies
+   int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
 
-   public BulletTerrainObject(TerrainObjectDefinition terrainObjectDefinition, btMultiBodyDynamicsWorld multiBodyDynamicsWorld)
+   public BulletTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
-      this.multiBodyDynamicsWorld = multiBodyDynamicsWorld;
-
       btCompoundShape bulletCompoundCollisionShape = new btCompoundShape();
 
       for (CollisionShapeDefinition collisionShapeDefinition : terrainObjectDefinition.getCollisionShapeDefinitions())
@@ -76,12 +75,25 @@ public class BulletTerrainObject
          BulletTools.toBullet(collisionShapeDefinitionTransformToWorld, bulletTransformToWorld);
          bulletCompoundCollisionShape.addChildShape(bulletTransformToWorld, bulletCollisionShape);
       }
-
-      bulletRigidBody = BulletTools.addStaticObjectToBulletWorld(multiBodyDynamicsWorld, bulletCompoundCollisionShape, bulletMotionState);
+      
+      Vector3 localInertia = new Vector3();
+      bulletCompoundCollisionShape.calculateLocalInertia(0.0f, localInertia);
+      bulletRigidBody = new btRigidBody(0.0f, bulletMotionState, bulletCompoundCollisionShape, localInertia);
    }
 
    public btRigidBody getBulletRigidBody()
    {
       return bulletRigidBody;
    }
+   
+   public int getCollisionGroup()
+   {
+      return collisionGroup;
+   }
+
+   public int getCollisionGroupMask()
+   {
+      return collisionGroupMask;
+   }
+
 }

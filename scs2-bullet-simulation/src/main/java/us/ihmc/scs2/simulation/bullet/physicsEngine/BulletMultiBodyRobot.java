@@ -32,10 +32,15 @@ public class BulletMultiBodyRobot
 		return bulletMultiBodyRobot;
 	}
 	
-	public ArrayList<BulletMultiBodyLinkCollider> getBulletMultiBodyLinkColliderArray ()
+	public ArrayList<BulletMultiBodyLinkCollider> getBulletMultiBodyLinkColliderArray()
 	{
 		return allLinks;
 	}
+	
+	  public BulletMultiBodyLinkCollider getBulletMultiBodyLinkCollider (int index)
+	   {
+	     return allLinks.get(index);
+	   }
 	
 	public ArrayList<btMultiBodyConstraint> getBulletMultiBodyConstrantArray ()
 	{

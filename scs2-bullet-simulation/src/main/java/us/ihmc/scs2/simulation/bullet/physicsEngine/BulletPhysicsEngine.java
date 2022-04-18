@@ -4,12 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
@@ -34,7 +31,6 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 	private BulletMultiBodyDynamicsWorld multiBodyDynamicsWorld;
 	private final ReferenceFrame inertialFrame;
 	private final List<BulletRobot> robotList = new ArrayList<>();
-	private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
 	private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
 	private final YoRegistry rootRegistry;
@@ -104,12 +100,13 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 			robot.getControllerManager().updateControllers(currentTime);
 			robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
 			robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
+			robot.saveRobotBeforePhysicsState();
 		}
 		runControllerManagerTimer.stop();
 
 		runCopyDataFromSCSToBulletTimer.start();
 		for (BulletRobot robot : robotList) {
-			robot.saveRobotBeforePhysicsState();
+			robot.copyDataFromSCSToBullet();
 		}
 		runCopyDataFromSCSToBulletTimer.stop();
 
@@ -159,13 +156,7 @@ public class BulletPhysicsEngine implements PhysicsEngine {
 	@Override
 	public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition) {
 		terrainObjectDefinitions.add(terrainObjectDefinition);
-		terrainObjects.add(new BulletTerrainObject(terrainObjectDefinition, multiBodyDynamicsWorld.getMultiBodyDynamicsWorld()));
-	}
-
-	public void addMultiBodyCollisionShape(btMultiBodyLinkCollider collisionShape, int collisionGroup,
-			int collisionGroupMask) {
-		multiBodyDynamicsWorld.getMultiBodyDynamicsWorld().addCollisionObject(collisionShape, collisionGroup,
-				collisionGroupMask);
+		multiBodyDynamicsWorld.addTerrian(new BulletTerrainObject(terrainObjectDefinition));
 	}
 
 	@Override
