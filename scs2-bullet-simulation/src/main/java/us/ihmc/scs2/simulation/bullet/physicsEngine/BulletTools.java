@@ -15,10 +15,7 @@ import com.badlogic.gdx.physics.bullet.collision.*;
 import com.badlogic.gdx.physics.bullet.dynamics.InternalTickCallback;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
-import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
-
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3Array;
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
@@ -37,8 +34,6 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.modelLoader.AssimpLoader;
 
 public class BulletTools
 {
-   private static final float STATIC_OBJECT_MASS = 10000.0f;
-
    private static boolean bulletInitialized = false;
 
    public static void ensureBulletInitialized()
@@ -305,34 +300,6 @@ public class BulletTools
    {
       floatBuffer.rewind();
       return new btConvexHullShape(floatBuffer, numberOfPoints, stride);
-   }
-
-   public static void setKinematicObject(btRigidBody btRigidBody, boolean isKinematicObject)
-   {
-      if (isKinematicObject)
-      {
-         btRigidBody.setCollisionFlags(btRigidBody.getCollisionFlags() | btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
-         btRigidBody.setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
-      }
-      else
-      {
-         btRigidBody.setCollisionFlags(btRigidBody.getCollisionFlags() & ~btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
-         btRigidBody.setActivationState(CollisionConstants.WANTS_DEACTIVATION);
-      }
-   }
-
-   public static btRigidBody addStaticObjectToBulletWorld(btMultiBodyDynamicsWorld multiBodyDynamicsWorld,
-                                                          btCollisionShape collisionShape,
-                                                          btMotionState motionState)
-   {
-      Vector3 localInertia = new Vector3();
-      collisionShape.calculateLocalInertia(STATIC_OBJECT_MASS, localInertia);
-      btRigidBody bulletRigidBody = new btRigidBody(STATIC_OBJECT_MASS, motionState, collisionShape, localInertia);
-      int collisionGroup = 1; // group 1 is rigid and static bodies
-      int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
-      multiBodyDynamicsWorld.addRigidBody(bulletRigidBody, collisionGroup, collisionGroupMask);
-      setKinematicObject(bulletRigidBody, true);
-      return bulletRigidBody;
    }
 
    public static void setupPostTickCallback(btMultiBodyDynamicsWorld multiBodyDynamicsWorld, ArrayList<Runnable> postTickCallbacks)

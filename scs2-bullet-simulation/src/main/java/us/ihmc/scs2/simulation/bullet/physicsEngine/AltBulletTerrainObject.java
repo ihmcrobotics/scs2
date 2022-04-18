@@ -32,6 +32,7 @@ public class AltBulletTerrainObject
    };
    private final btRigidBody bulletRigidBody;
    private final btMultiBodyDynamicsWorld multiBodyDynamicsWorld;
+   private static final float STATIC_OBJECT_MASS = 10000.0f;
 
    public AltBulletTerrainObject(TerrainObjectDefinition terrainObjectDefinition, btMultiBodyDynamicsWorld multiBodyDynamicsWorld)
    {
@@ -77,11 +78,39 @@ public class AltBulletTerrainObject
          bulletCompoundCollisionShape.addChildShape(bulletTransformToWorld, bulletCollisionShape);
       }
 
-      bulletRigidBody = BulletTools.addStaticObjectToBulletWorld(multiBodyDynamicsWorld, bulletCompoundCollisionShape, bulletMotionState);
+      bulletRigidBody = addStaticObjectToBulletWorld(multiBodyDynamicsWorld, bulletCompoundCollisionShape, bulletMotionState);
    }
 
    public btRigidBody getBulletRigidBody()
    {
+      return bulletRigidBody;
+   }
+   
+   public static void setKinematicObject(btRigidBody btRigidBody, boolean isKinematicObject)
+   {
+      if (isKinematicObject)
+      {
+         btRigidBody.setCollisionFlags(btRigidBody.getCollisionFlags() | btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
+         btRigidBody.setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
+      }
+      else
+      {
+         btRigidBody.setCollisionFlags(btRigidBody.getCollisionFlags() & ~btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
+         btRigidBody.setActivationState(CollisionConstants.WANTS_DEACTIVATION);
+      }
+   }
+
+   public static btRigidBody addStaticObjectToBulletWorld(btMultiBodyDynamicsWorld multiBodyDynamicsWorld,
+                                                          btCollisionShape collisionShape,
+                                                          btMotionState motionState)
+   {
+      Vector3 localInertia = new Vector3();
+      collisionShape.calculateLocalInertia(STATIC_OBJECT_MASS, localInertia);
+      btRigidBody bulletRigidBody = new btRigidBody(STATIC_OBJECT_MASS, motionState, collisionShape, localInertia);
+      int collisionGroup = 1; // group 1 is rigid and static bodies
+      int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
+      multiBodyDynamicsWorld.addRigidBody(bulletRigidBody, collisionGroup, collisionGroupMask);
+      setKinematicObject(bulletRigidBody, true);
       return bulletRigidBody;
    }
 }
