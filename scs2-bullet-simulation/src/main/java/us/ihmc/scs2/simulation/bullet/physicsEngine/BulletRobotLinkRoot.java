@@ -26,11 +26,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 {
    private final SimFloatingRootJoint rootSimFloatingRootJoint;
-   private final RigidBodyTransform bulletSixDoFJointTransformToWorldEuclid = new RigidBodyTransform();
-   private final Vector3D bulletBaseLinearVelocityEuclid = new Vector3D();
-   private final Vector3D bulletBaseAngularVelocityEuclid = new Vector3D();
-   private final Pose3D previousBasePose = new Pose3D();
-   private final Twist previousBaseTwist = new Twist();
+   private final RigidBodyTransform bulletJointTransformToWorldEuclid = new RigidBodyTransform();
 
    private final YoFixedFrameTwist twistFD;
 
@@ -50,7 +46,6 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
    }
 
-   private final RigidBodyTransform rootJointSuccessorBodyFixedFrameToWorldEuclid = new RigidBodyTransform();
    private final Matrix4 rootJointSuccessorBodyFixedFrameToWorldBullet = new Matrix4();
 
    @Override
@@ -59,7 +54,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       updateBulletLinkColliderTransformFromMecanoRigidBody();
       
       BulletTools.toBullet(getbulletColliderCenterOfMassTransformToWorldEuclid(), rootJointSuccessorBodyFixedFrameToWorldBullet);
-       getBulletMultiBodyLinkCollider().getMultiBody().setBaseWorldTransform(rootJointSuccessorBodyFixedFrameToWorldBullet);
+      getBulletMultiBody().setBaseWorldTransform(rootJointSuccessorBodyFixedFrameToWorldBullet);
       
       MovingReferenceFrame bodyFixedFrame = rootSimFloatingRootJoint.getSuccessor().getBodyFixedFrame();
       
@@ -67,18 +62,23 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       bodyFixedFrame.transformFromThisToDesiredFrame(bodyFixedFrame.getRootFrame(), linearVelocity);
       Vector3 linearVelocityBullet = new Vector3();
       BulletTools.toBullet(linearVelocity, linearVelocityBullet);
-      getBulletMultiBodyLinkCollider().getMultiBody().setBaseVel(linearVelocityBullet);
+      getBulletMultiBody().setBaseVel(linearVelocityBullet);
       
       Vector3D angularVelocity = new Vector3D(bodyFixedFrame.getTwistOfFrame().getAngularPart());
       bodyFixedFrame.transformFromThisToDesiredFrame(bodyFixedFrame.getRootFrame(), angularVelocity);
       Vector3 angularVelocityBullet = new Vector3();
       BulletTools.toBullet(angularVelocity, angularVelocityBullet);
-      getBulletMultiBodyLinkCollider().getMultiBody().setBaseOmega(angularVelocityBullet);
+      getBulletMultiBody().setBaseOmega(angularVelocityBullet);
    }
 
+   private final RigidBodyTransform rootJointSuccessorBodyFixedFrameToWorldEuclid = new RigidBodyTransform();
    private final RigidBodyTransform frameAfterJointToBodyFixedFrameTransform = new RigidBodyTransform();
    private final RigidBodyTransform frameBodyFixedFrameTransformToFrameAfterTransfer = new RigidBodyTransform();
    private final Point3D point = new Point3D();
+   private final Vector3D bulletBaseLinearVelocityEuclid = new Vector3D();
+   private final Vector3D bulletBaseAngularVelocityEuclid = new Vector3D();
+   private final Pose3D previousBasePose = new Pose3D();
+   private final Twist previousBaseTwist = new Twist();
 
    @Override
    public void copyBulletJointDataToSCS(double dt)
@@ -92,20 +92,20 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                                                                                rootSimFloatingRootJoint.getSuccessor().getBodyFixedFrame());
 
       // T_FAJ^W = T_BFF^W * T_FAJ^BFF
-      bulletSixDoFJointTransformToWorldEuclid.set(rootJointSuccessorBodyFixedFrameToWorldEuclid);
-      bulletSixDoFJointTransformToWorldEuclid.multiply(frameAfterJointToBodyFixedFrameTransform);
+      bulletJointTransformToWorldEuclid.set(rootJointSuccessorBodyFixedFrameToWorldEuclid);
+      bulletJointTransformToWorldEuclid.multiply(frameAfterJointToBodyFixedFrameTransform);
 
-      BulletTools.toEuclid(getBulletMultiBodyLinkCollider().getMultiBody().getBaseVel(), bulletBaseLinearVelocityEuclid); // bullet linear velocity of BFF is in world
-      BulletTools.toEuclid(getBulletMultiBodyLinkCollider().getMultiBody().getBaseOmega(), bulletBaseAngularVelocityEuclid); // bullet angular velocity of BFF is in world
+      BulletTools.toEuclid(getBulletMultiBody().getBaseVel(), bulletBaseLinearVelocityEuclid); // bullet linear velocity of BFF is in world
+      BulletTools.toEuclid(getBulletMultiBody().getBaseOmega(), bulletBaseAngularVelocityEuclid); // bullet angular velocity of BFF is in world
 
-      bulletSixDoFJointTransformToWorldEuclid.inverseTransform(bulletBaseLinearVelocityEuclid);
-      bulletSixDoFJointTransformToWorldEuclid.inverseTransform(bulletBaseAngularVelocityEuclid);
+      bulletJointTransformToWorldEuclid.inverseTransform(bulletBaseLinearVelocityEuclid);
+      bulletJointTransformToWorldEuclid.inverseTransform(bulletBaseAngularVelocityEuclid);
       
       previousBasePose.set(rootSimFloatingRootJoint.getJointPose());
       previousBaseTwist.setIncludingFrame(rootSimFloatingRootJoint.getJointTwist());
       
-      rootSimFloatingRootJoint.setJointPosition(bulletSixDoFJointTransformToWorldEuclid.getTranslation());
-      rootSimFloatingRootJoint.setJointOrientation(bulletSixDoFJointTransformToWorldEuclid.getRotation());
+      rootSimFloatingRootJoint.setJointPosition(bulletJointTransformToWorldEuclid.getTranslation());
+      rootSimFloatingRootJoint.setJointOrientation(bulletJointTransformToWorldEuclid.getRotation());
 
       // SCS2 Linear velocity - of FAJ - expressed in FAJ
       frameBodyFixedFrameTransformToFrameAfterTransfer.set(frameAfterJointToBodyFixedFrameTransform.getRotation(), frameAfterJointToBodyFixedFrameTransform.getTranslation());
@@ -115,8 +115,8 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       point.set(frameBodyFixedFrameTransformToFrameAfterTransfer.getTranslation().getX(), frameBodyFixedFrameTransformToFrameAfterTransfer.getTranslation().getY(), frameBodyFixedFrameTransformToFrameAfterTransfer.getTranslation().getZ());
       rootSimFloatingRootJoint.getJointTwist().set(bulletBaseAngularVelocityEuclid, bulletBaseLinearVelocityEuclid, point);
 
-      computeSixDoFJointTwist(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), twistFD);
-      computeSixDoFJointAcceleration(dt,
+      computeJointTwist(dt, previousBasePose, rootSimFloatingRootJoint.getJointPose(), twistFD);
+      computeJointAcceleration(dt,
                                      previousBasePose,
                                      rootSimFloatingRootJoint.getJointPose(),
                                      previousBaseTwist,
@@ -124,7 +124,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                                      rootSimFloatingRootJoint.getJointAcceleration());
    }
 
-   public static void computeSixDoFJointTwist(double dt, Pose3DReadOnly previousPose, Pose3DReadOnly currentPose, FixedFrameTwistBasics twistToPack)
+   public static void computeJointTwist(double dt, Pose3DReadOnly previousPose, Pose3DReadOnly currentPose, FixedFrameTwistBasics twistToPack)
    {
       twistToPack.getLinearPart().sub(currentPose.getPosition(), previousPose.getPosition());
       twistToPack.getLinearPart().scale(1.0 / dt);
@@ -136,7 +136,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       computeAngularVelocityInBodyFixedFrame(currentPose.getOrientation(), qDot, twistToPack.getAngularPart());
    }
 
-   public static void computeSixDoFJointAcceleration(double dt,
+   public static void computeJointAcceleration(double dt,
                                                      Pose3DReadOnly previousPose,
                                                      Pose3DReadOnly currentPose,
                                                      TwistReadOnly previousTwist,

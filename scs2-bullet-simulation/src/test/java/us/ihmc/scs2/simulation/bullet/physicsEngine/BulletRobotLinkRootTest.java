@@ -55,7 +55,7 @@ class BulletRobotLinkRootTest
          integrator.doubleIntegrate(finalAcceleration, finalTwist, finalPose);
          joint.updateFrame();
 
-         BulletRobotLinkRoot.computeSixDoFJointAcceleration(dt, initialPose, finalPose, initialTwist, finalTwist, estimatedAcceleration);
+         BulletRobotLinkRoot.computeJointAcceleration(dt, initialPose, finalPose, initialTwist, finalTwist, estimatedAcceleration);
          MecanoTestTools.assertSpatialAccelerationEquals("Iteration: " + i, finalAcceleration, estimatedAcceleration, epsilon);
       }
    }

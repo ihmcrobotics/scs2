@@ -31,7 +31,7 @@ public class YoBulletMultiBodyParameters
          bulletRobotHasSelfCollision = "bulletRobotHasSelfCollision";
          bulletRobotAngularDamping = "bulletRobotAngularDamping";
          bulletRobotLinearDamping = "bulletRobotLinearDamping";
-         bulletRobotLointFriction = "bulletRobotLointFriction";
+         bulletRobotLointFriction = "bulletRobotJointFriction";
       }
       else
       {
@@ -40,7 +40,7 @@ public class YoBulletMultiBodyParameters
          bulletRobotHasSelfCollision = prefix + "bulletRobotHasSelfCollision";
          bulletRobotAngularDamping = prefix + "bulletRobotAngularDamping";
          bulletRobotLinearDamping = prefix + "bulletRobotLinearDamping";
-         bulletRobotLointFriction = prefix + "bulletRobotLointFriction";
+         bulletRobotLointFriction = prefix + "bulletRobotJointFriction";
       }
 
       fixedBase = new YoBoolean(bulletRobotIsFixedBase, registry);

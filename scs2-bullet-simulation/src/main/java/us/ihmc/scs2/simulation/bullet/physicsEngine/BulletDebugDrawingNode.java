@@ -17,7 +17,7 @@ public class BulletDebugDrawingNode extends Group
 {
    private final com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw btIDebugDraw;
    private int debugMode = com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw.DebugDrawModes.DBG_DrawWireframe; // TODO: Provide options in combo box
-   private final btMultiBodyDynamicsWorld multiBodyDynamicsWorld;
+   private final BulletMultiBodyDynamicsWorld multiBodyDynamicsWorld;
    private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
    private PrivateAnimationTimer animationTimer;
    private int lineDraws;
@@ -30,7 +30,7 @@ public class BulletDebugDrawingNode extends Group
    private final Point3D toEuclid = new Point3D();
    private final Point3D pointOnEuclid = new Point3D();
 
-   public BulletDebugDrawingNode(btMultiBodyDynamicsWorld multiBodyDynamicsWorld)
+   public BulletDebugDrawingNode(BulletMultiBodyDynamicsWorld multiBodyDynamicsWorld)
    {
       this.multiBodyDynamicsWorld = multiBodyDynamicsWorld;
 
@@ -108,6 +108,7 @@ public class BulletDebugDrawingNode extends Group
 
    public void update(long now)
    {
+
       if (!showDebugDrawings.getBooleanValue())
       {
          getChildren().clear();
