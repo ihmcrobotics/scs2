@@ -20,6 +20,7 @@ import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.AltBulletPhysicsEngine;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class SingleBoxBulletSimulation
 {
@@ -36,14 +37,6 @@ public class SingleBoxBulletSimulation
 
       double groundWidth = 1.0;
       double groundLength = 1.0;
-
-      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> 
-      {
-     	 BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
-     	 BulletMultiBodyParameters bulletMultiBodyParameters =  BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
-     	 physicsEngine.setGlobalMultiBodyParameter(bulletMultiBodyParameters);
-     	 return physicsEngine;
-      });
 
       RobotDefinition boxRobot = ExampleExperimentalSimulationTools.newBoxRobot("box",
                                                                                 boxXLength,
@@ -63,6 +56,8 @@ public class SingleBoxBulletSimulation
       SixDoFJointState initialJointState = new SixDoFJointState(boxRobotTransform.getRotation(), boxRobotTransform.getTranslation());
       initialJointState.setVelocity(null, new Vector3D(initialVelocity, 0, 0));
       boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialJointState);
+
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
 
       simulationSession.addRobot(boxRobot);
 

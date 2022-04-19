@@ -1,14 +1,12 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
-import java.util.Map.Entry;
-
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class BulletRobot extends RobotExtension
@@ -33,23 +31,23 @@ public class BulletRobot extends RobotExtension
       {
          int bulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(bulletLinkCollider.getJointName());
       
-         JointBasics childJoint = robot.getJoint(bulletLinkCollider.getJointName());
+         JointBasics joint = robot.getJoint(bulletLinkCollider.getJointName());
          
          if (bulletJointIndex == -1)
          {
-            if (!(childJoint instanceof SimFloatingRootJoint))
-               throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + childJoint.getClass().getSimpleName());
+            if (!(joint instanceof SimFloatingRootJoint))
+               throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + joint.getClass().getSimpleName());
             
-            rootSimFloatingRootJoint = (SimFloatingRootJoint) childJoint;
+            rootSimFloatingRootJoint = (SimFloatingRootJoint) joint;
             rootLink = new BulletRobotLinkRoot(rootSimFloatingRootJoint,
                                                robotPhysics.getRigidBodyWrenchRegistry(),
                                                yoRegistry,
                                                bulletLinkCollider);
          } else { 
-            if (childJoint instanceof SimRevoluteJoint)
+            if (joint instanceof SimOneDoFJointBasics)
             {
-               SimRevoluteJoint childSimRevoluteJoint = (SimRevoluteJoint) childJoint;
-               afterRootLinks.add(new BulletRobotLinkJoint(childSimRevoluteJoint,
+               SimOneDoFJointBasics childSimOneDoFJoint = (SimOneDoFJointBasics) joint;
+               afterRootLinks.add(new BulletRobotLinkJoint(childSimOneDoFJoint,
                                                            bulletJointIndex,
                                                            robotPhysics.getRigidBodyWrenchRegistry(),
                                                            yoRegistry,

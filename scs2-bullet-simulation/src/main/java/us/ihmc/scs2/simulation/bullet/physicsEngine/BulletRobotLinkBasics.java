@@ -1,6 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.scs2.simulation.SimulationSession;
@@ -48,6 +49,11 @@ public abstract class BulletRobotLinkBasics
    public btMultiBodyLinkCollider getBulletMultiBodyLinkCollider()
    {
       return bulletMultiBodyLinkCollider.getMultiBodyLinkCollider();
+   }
+   
+   public btMultiBody getBulletMultiBody()
+   {
+      return bulletMultiBodyLinkCollider.getMultiBodyLinkCollider().getMultiBody();
    }
 
    public RigidBodyTransform getbulletColliderCenterOfMassTransformToWorldEuclid()
