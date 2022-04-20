@@ -1,12 +1,10 @@
 package us.ihmc.scs2.examples.simulations.bullet;
 
-import javafx.application.Platform;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple4D.Quaternion;
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
@@ -23,16 +21,9 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.examples.simulations.ExampleExperimentalSimulationTools;
-import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletDebugDrawingNode;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
-import us.ihmc.yoVariables.variable.YoBoolean;
-
 public class ConnectedShapesExperimentalBulletSimulation
 {
    public ConnectedShapesExperimentalBulletSimulation()
@@ -48,7 +39,6 @@ public class ConnectedShapesExperimentalBulletSimulation
       
       double groundWidth = 5.0;
       double groundLength = 5.0;
-
    
       Vector3D connectionOffset = new Vector3D(0.9, 0.0, 0.0);
 
@@ -99,6 +89,7 @@ public class ConnectedShapesExperimentalBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
 
+ //     SessionVisualizer.startSessionVisualizer(simulationSession);
       SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
       
       sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);

@@ -38,14 +38,9 @@ public class BulletMultiBodyDynamicsWorld
       multiBodyDynamicsWorld.setGravity(gravity);
    }
 
-   public int stepSimulation(double dt)
+   public int stepSimulation(float timeStep, int maxSubSteps, float fixedTimeStep)
    {
-      int maxSubSteps = 1; // With SCS, we want every tick to get a buffer entry and step through things
-      // one step at a time.
-      float fixedTimeStep = (float) dt; // SCS has a fixed timestep already so let's just use it
-      float timePassedSinceThisWasCalledLast = fixedTimeStep; // We are essentially disabling interpolation here
-
-      return getMultiBodyDynamicsWorld().stepSimulation(timePassedSinceThisWasCalledLast, maxSubSteps, fixedTimeStep);
+      return getMultiBodyDynamicsWorld().stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
    }
 
    public btMultiBodyDynamicsWorld getMultiBodyDynamicsWorld()

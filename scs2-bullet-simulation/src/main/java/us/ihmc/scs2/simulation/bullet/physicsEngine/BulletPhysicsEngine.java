@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -21,6 +20,7 @@ import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class BulletPhysicsEngine implements PhysicsEngine
@@ -53,15 +53,22 @@ public class BulletPhysicsEngine implements PhysicsEngine
       }
    }
    private final YoBulletMultiBodyParameters globalMultiBodyParameters;
+   private final YoBoolean hasGlobalSimulationParameters;
+   private final YoBulletSimulationParameters globalSimulationParameters;
    private boolean initialize = true;
 
-   public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
+   public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry, BulletMultiBodyParameters multiBodyParameters)
    {
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
 
-      globalMultiBodyParameters = new YoBulletMultiBodyParameters("globalMultiBody", rootRegistry);
-
+      globalMultiBodyParameters = new YoBulletMultiBodyParameters("globalMultiBody", physicsEngineRegistry);
+      hasGlobalSimulationParameters = new YoBoolean("hasGlobalSimulationParameters", physicsEngineRegistry);
+      globalSimulationParameters = new YoBulletSimulationParameters("globalSimulation", physicsEngineRegistry);
+      setGlobalMultiBodyParameters(multiBodyParameters);
+      
+      hasGlobalSimulationParameters.set(false);
+      
       multiBodyDynamicsWorld = new BulletMultiBodyDynamicsWorld();
    }
 
@@ -71,14 +78,13 @@ public class BulletPhysicsEngine implements PhysicsEngine
       if (!initialize)
          return false;
 
-      rootRegistry.addChild(physicsEngineRegistry);
-
       for (BulletRobot robot : robotList)
       {
          robot.initializeState();
          robot.updateSensors();
          robot.getControllerManager().initializeControllers();
       }
+      
       initialize = false;
       return true;
    }
@@ -86,12 +92,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-
-      //set yoVariable Tick Expected Time Rate in milliseconds
-      runTickExpectedTimeRate.set(dt * 1000);
-
       if (initialize(gravity))
          return;
+      
+      //set yoVariable Tick Expected Time Rate in milliseconds
+      runTickExpectedTimeRate.set(dt * 1000);
       
       multiBodyDynamicsWorld.updateAllMultiBodyParameters(globalMultiBodyParameters);
 
@@ -115,7 +120,12 @@ public class BulletPhysicsEngine implements PhysicsEngine
       runCopyDataFromSCSToBulletTimer.stop();
       
       runBulletStepSimulateTimer.start();
-      multiBodyDynamicsWorld.stepSimulation(dt);
+      
+      if(hasGlobalSimulationParameters.getValue())
+         multiBodyDynamicsWorld.stepSimulation((float)globalSimulationParameters.getTimeStamp(), globalSimulationParameters.getMaxSubSteps(), (float)globalSimulationParameters.getFixedTimeStep());
+      else
+         multiBodyDynamicsWorld.stepSimulation((float)dt, 1, (float)dt);
+      
       runBulletStepSimulateTimer.stop();
 
       runCopyDataFromBulletToSCSTimer.start();
@@ -151,8 +161,9 @@ public class BulletPhysicsEngine implements PhysicsEngine
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
 
       BulletMultiBodyRobot bulletMultiBodyRobot = BulletMultiBodyRobotFactory.newInstance(robot, globalMultiBodyParameters);
-      BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, bulletMultiBodyRobot);
       multiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot);
+      
+      BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, bulletMultiBodyRobot);
       rootRegistry.addChild(bulletRobot.getRegistry());
       robotList.add(bulletRobot);
    }
@@ -206,9 +217,15 @@ public class BulletPhysicsEngine implements PhysicsEngine
       return physicsEngineRegistry;
    }
 
-   public void setGlobalMultiBodyParameter(BulletMultiBodyParameters parameters)
+   public void setGlobalMultiBodyParameters(BulletMultiBodyParameters multiBodyParameters)
    {
-      globalMultiBodyParameters.set(parameters);
+      globalMultiBodyParameters.set(multiBodyParameters);
+   }
+   
+   public void setGlobalSimulationParameters(BulletSimulationParameters simulationParameters)
+   {
+      globalSimulationParameters.set(simulationParameters);
+      hasGlobalSimulationParameters.set(true);
    }
 
    public BulletMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
