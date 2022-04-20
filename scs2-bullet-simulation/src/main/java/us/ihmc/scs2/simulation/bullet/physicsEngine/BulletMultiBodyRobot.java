@@ -72,13 +72,18 @@ public class BulletMultiBodyRobot
    public void setMultiBodyParameters(YoBulletMultiBodyParameters bulletMultiBodyParameters)
    {
       bulletMultiBodyRobot.setHasSelfCollision(bulletMultiBodyParameters.getHasSelfCollision());
-      bulletMultiBodyRobot.setLinearDamping(bulletMultiBodyParameters.getLinearDamping());
-      bulletMultiBodyRobot.setAngularDamping(bulletMultiBodyParameters.getAngularDamping());
       bulletMultiBodyRobot.setCanSleep(bulletMultiBodyParameters.getCanSleep());
-
+      bulletMultiBodyRobot.setUseGyroTerm(bulletMultiBodyParameters.getUseGyroTerm());
+      bulletMultiBodyRobot.useGlobalVelocities(bulletMultiBodyParameters.getUseGlobalVelocities());
+      bulletMultiBodyRobot.useRK4Integration(bulletMultiBodyParameters.getUseRK4Integration());
+      bulletMultiBodyRobot.setLinearDamping((float)bulletMultiBodyParameters.getLinearDamping());
+      bulletMultiBodyRobot.setAngularDamping((float)bulletMultiBodyParameters.getAngularDamping());
+      bulletMultiBodyRobot.setMaxAppliedImpulse((float)bulletMultiBodyParameters.getMaxAppliedImpulse());
+      bulletMultiBodyRobot.setMaxCoordinateVelocity((float)bulletMultiBodyParameters.getMaxCoordinateVelocity());
+      
       for (int i = 0; i < bulletMultiBodyRobot.getNumLinks(); i++)
       {
-         bulletMultiBodyRobot.getLink(0).setJointFriction(bulletMultiBodyParameters.getJointFriction());
+         bulletMultiBodyRobot.getLink(0).setJointFriction((float)bulletMultiBodyParameters.getJointFriction());
       }
 
    }

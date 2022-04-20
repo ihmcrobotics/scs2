@@ -23,6 +23,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletDebugDrawingNode;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 
 public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
@@ -69,7 +70,7 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
                                                                                                  collisionShapePoseRoll);
 
 
-      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletPhysicsEngine(frame, rootRegistry));
+      SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new BulletPhysicsEngine(frame, rootRegistry, BulletMultiBodyParameters.defaultBulletMultiBodyParameters()));
 
       String name = "box";
       RobotDefinition boxRobot = new RobotDefinition(name);

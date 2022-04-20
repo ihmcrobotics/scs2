@@ -38,17 +38,20 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 
 public class BulletMultiBodyRobotFactory
 {
-   private static HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
-   private static int linkCountingIndex = 0;
+   private static HashMap<String, Integer> jointNameToBulletJointIndexMap;
+   private static int linkCountingIndex;
 
    public static BulletMultiBodyRobot newInstance(Robot robot, YoBulletMultiBodyParameters bulletMultiBodyParameters)
    {
+      jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
+      linkCountingIndex = 0;
+
       JointBasics rootJoint = robot.getRootBody().getChildrenJoints().get(0);
       if (!(rootJoint instanceof SimFloatingRootJoint))
          throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + rootJoint.getClass().getSimpleName());
-      
+
       int numberOfLinks = countJointsAndCreateIndexMap(rootJoint) - 1;
-      
+
       RigidBodyDefinition rigidBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition().getChildrenJoints().get(0).getSuccessor();
       float rootBodyMass = (float) rigidBodyDefinition.getMass();
       Vector3 rootBodyIntertia = new Vector3((float) rigidBodyDefinition.getMomentOfInertia().getM00(),
@@ -73,9 +76,7 @@ public class BulletMultiBodyRobotFactory
                                                                 rootJoint.getName()));
 
       //Create LinkColliders for each robot joint 
-      createLinkColliders(bulletMultiBodyRobot,
-                          robot,
-                          rootJoint);
+      createLinkColliders(bulletMultiBodyRobot, robot, rootJoint);
 
       bulletMultiBodyRobot.finalizeMultiDof();
 
@@ -102,11 +103,13 @@ public class BulletMultiBodyRobotFactory
       }
    }
 
-   private static btMultibodyLink setupLinkType(BulletMultiBodyRobot bulletMultiBodyRobot, JointBasics joint, JointDefinition jointDefinition, int bulletJointIndex)
+   private static btMultibodyLink setupLinkType(BulletMultiBodyRobot bulletMultiBodyRobot,
+                                                JointBasics joint,
+                                                JointDefinition jointDefinition,
+                                                int bulletJointIndex)
    {
       Quaternion rotationFromParentGDX = new Quaternion();
-      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent 
-            = new us.ihmc.euclid.tuple4D.Quaternion(jointDefinition.getTransformToParent().getRotation());
+      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion(jointDefinition.getTransformToParent().getRotation());
       euclidRotationFromParent.invert();
       BulletTools.toBullet(euclidRotationFromParent, rotationFromParentGDX);
 
@@ -167,7 +170,9 @@ public class BulletMultiBodyRobotFactory
                                                                int bulletJointIndex,
                                                                String jointName)
    {
-      BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider = new BulletMultiBodyLinkCollider(bulletMultiBodyRobot.getBulletMultiBody(), bulletJointIndex, jointName);
+      BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider = new BulletMultiBodyLinkCollider(bulletMultiBodyRobot.getBulletMultiBody(),
+                                                                                                bulletJointIndex,
+                                                                                                jointName);
 
       btCompoundShape bulletCompoundShape = new btCompoundShape();
       int collisionGroup = 2;
@@ -195,18 +200,16 @@ public class BulletMultiBodyRobotFactory
       return bulletMultiBodyLinkCollider.getMultiBodyLinkCollider();
    }
 
-   private static ReferenceFrame collisionShapeDefinitionFrame;
+   private static Matrix4 bulletCollisionShapeLocalTransform = new Matrix4();
    private static RigidBodyTransform collisionShapeDefinitionToCenterOfMassFrameTransformEuclid = new RigidBodyTransform();
 
    private static Matrix4 bulletCollisionShapeLocalTransform(YawPitchRollTransformDefinition collisionShapeToFrameAfterParentJoint,
-                                                                ReferenceFrame frameAfterParentJoint,
-                                                                ReferenceFrame linkCenterOfMassFrame)
+                                                             ReferenceFrame frameAfterParentJoint,
+                                                             ReferenceFrame linkCenterOfMassFrame)
    {
-      Matrix4 bulletCollisionShapeLocalTransform = new Matrix4();
-
-      collisionShapeDefinitionFrame = ReferenceFrameMissingTools.constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
-                                                                                                               new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
-                                                                                                                                      collisionShapeToFrameAfterParentJoint.getTranslation()));
+      ReferenceFrame collisionShapeDefinitionFrame = ReferenceFrameMissingTools.constructFrameWithUnchangingTransformToParent(frameAfterParentJoint,
+                                                                                                                              new RigidBodyTransform(collisionShapeToFrameAfterParentJoint.getRotation(),
+                                                                                                                                                     collisionShapeToFrameAfterParentJoint.getTranslation()));
 
       collisionShapeDefinitionFrame.getTransformToDesiredFrame(collisionShapeDefinitionToCenterOfMassFrameTransformEuclid, linkCenterOfMassFrame);
       BulletTools.toBullet(collisionShapeDefinitionToCenterOfMassFrameTransformEuclid, bulletCollisionShapeLocalTransform);

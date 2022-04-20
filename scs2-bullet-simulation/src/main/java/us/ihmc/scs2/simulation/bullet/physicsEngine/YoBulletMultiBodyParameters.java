@@ -9,46 +9,69 @@ public class YoBulletMultiBodyParameters
    private YoBoolean fixedBase;
    private YoBoolean canSleep;
    private YoBoolean hasSelfCollision;
+   private YoBoolean useGyroTerm;
+   private YoBoolean useGlobalVelocities;
+   private YoBoolean useRK4Intergration;
    private YoDouble linearDamping;
    private YoDouble angularDamping;
    private YoDouble jointFriction;
-
+   private YoDouble maxAppliedImpulse;
+   private YoDouble maxCoordinateVelocity;
 
    public YoBulletMultiBodyParameters(String prefix, YoRegistry registry)
    {
-
       String bulletRobotIsFixedBase;
       String bulletRobotCanSleep;
       String bulletRobotHasSelfCollision;
+      String bulletRobotUseGyroTerm;
+      String bulletRobotUseGlobalVelocities;
       String bulletRobotAngularDamping;
       String bulletRobotLinearDamping;
-      String bulletRobotLointFriction;
+      String bulletRobotJointFriction;
+      String bulletRobotMaxAppliedImpulse;
+      String bulletRobotMaxCoordinateVelocity;
+      String bulletRobotUseRK4Intergration;
 
       if (prefix == null || prefix.isEmpty())
       {
-         bulletRobotIsFixedBase = "bulletRobotIsFixedBase";
-         bulletRobotCanSleep = "bulletRobotCanSleep";
-         bulletRobotHasSelfCollision = "bulletRobotHasSelfCollision";
-         bulletRobotAngularDamping = "bulletRobotAngularDamping";
-         bulletRobotLinearDamping = "bulletRobotLinearDamping";
-         bulletRobotLointFriction = "bulletRobotJointFriction";
+         bulletRobotIsFixedBase = "IsFixedBase";
+         bulletRobotCanSleep = "CanSleep";
+         bulletRobotHasSelfCollision = "HasSelfCollision";
+         bulletRobotUseGyroTerm = "UseGyroTerm";
+         bulletRobotUseGlobalVelocities = "UseGlobalVelocities";
+         bulletRobotUseRK4Intergration = "UseGlobalRK4Integation";
+         bulletRobotAngularDamping = "AngularDamping";
+         bulletRobotLinearDamping = "LinearDamping";
+         bulletRobotJointFriction = "JointFriction";
+         bulletRobotMaxAppliedImpulse = "MaxAppliedImpulse";
+         bulletRobotMaxCoordinateVelocity = "MaxCoordinateVelocity";
       }
       else
       {
-         bulletRobotIsFixedBase = prefix + "bulletRobotIsFixedBase";
-         bulletRobotCanSleep = prefix + "bulletRobotCanSleep";
-         bulletRobotHasSelfCollision = prefix + "bulletRobotHasSelfCollision";
-         bulletRobotAngularDamping = prefix + "bulletRobotAngularDamping";
-         bulletRobotLinearDamping = prefix + "bulletRobotLinearDamping";
-         bulletRobotLointFriction = prefix + "bulletRobotJointFriction";
+         bulletRobotIsFixedBase = prefix + "IsFixedBase";
+         bulletRobotCanSleep = prefix + "CanSleep";
+         bulletRobotHasSelfCollision = prefix + "HasSelfCollision";
+         bulletRobotUseGyroTerm = prefix + "UseGyroTerm";
+         bulletRobotUseGlobalVelocities = prefix + "UseGlobalVelocities";
+         bulletRobotUseRK4Intergration = prefix + "UseGlobalRK4Integation";
+         bulletRobotAngularDamping = prefix + "AngularDamping";
+         bulletRobotLinearDamping = prefix + "LinearDamping";
+         bulletRobotJointFriction = prefix + "JointFriction";
+         bulletRobotMaxAppliedImpulse = prefix + "MaxAppliedImpulse";
+         bulletRobotMaxCoordinateVelocity = prefix + "MaxCoordinateVelocity";
       }
 
       fixedBase = new YoBoolean(bulletRobotIsFixedBase, registry);
       canSleep = new YoBoolean(bulletRobotCanSleep, registry);
       hasSelfCollision = new YoBoolean(bulletRobotHasSelfCollision, registry);
+      useGyroTerm = new YoBoolean(bulletRobotUseGyroTerm, registry);
+      useGlobalVelocities = new YoBoolean(bulletRobotUseGlobalVelocities, registry);
+      useRK4Intergration = new YoBoolean(bulletRobotUseRK4Intergration, registry);
       angularDamping = new YoDouble(bulletRobotAngularDamping, registry);
       linearDamping = new YoDouble(bulletRobotLinearDamping, registry);
-      jointFriction = new YoDouble(bulletRobotLointFriction, registry);
+      jointFriction = new YoDouble(bulletRobotJointFriction, registry);
+      maxAppliedImpulse = new YoDouble(bulletRobotMaxAppliedImpulse, registry);
+      maxCoordinateVelocity = new YoDouble(bulletRobotMaxCoordinateVelocity, registry);
    }
    
    public void set(BulletMultiBodyParameters parameters)
@@ -56,9 +79,14 @@ public class YoBulletMultiBodyParameters
       setFixedBase(parameters.getFixedBase());
       setCanSleep(parameters.getCanSleep());
       setHasSelfCollision(parameters.getHasSelfCollision());
+      setUseGyroTerm(parameters.getUseGyroTerm());
+      setUseGlobalVelocities(parameters.getUseGlobalVelocities());
+      setUseRK4Integration(parameters.getUseRK4Integration());
       setAngularDamping(parameters.getAngularDamping());
       setLinearDamping(parameters.getLinearDamping());
       setJointFriction(parameters.getJointFriction());
+      setMaxAppliedImpulse(parameters.getMaxAppliedImpulse());
+      setMaxCoordinateVelocity(parameters.getMaxCoordinateVelocity());
    }
 
    public void setFixedBase(boolean fixedBase)
@@ -76,20 +104,45 @@ public class YoBulletMultiBodyParameters
       this.hasSelfCollision.set(hasSelfCollision);
    }
 
-   public void setLinearDamping(float linearDamping)
+   public void setUseGyroTerm(boolean useGyroTerm)
+   {
+      this.useGyroTerm.set(useGyroTerm);
+   }
+   
+   public void setUseRK4Integration(boolean useRK4Integration)
+   {
+      this.useRK4Intergration.set(useRK4Integration);
+   }
+   
+   public void setUseGlobalVelocities(boolean useGlobalVelocities)
+   {
+      this.useGlobalVelocities.set(useGlobalVelocities);
+   }
+   
+   public void setLinearDamping(double linearDamping)
    {
       this.linearDamping.set(linearDamping);
    }
 
-   public void setAngularDamping(float angularDamping)
+   public void setAngularDamping(double angularDamping)
    {
       this.angularDamping.set(angularDamping);
    }  
    
-   public void setJointFriction(float jointFriction)
+   public void setJointFriction(double jointFriction)
    {
       this.jointFriction.set(jointFriction);
-   }  
+   }
+   
+   public void setMaxAppliedImpulse(double maxAppliedImpulse)
+   {
+      this.maxAppliedImpulse.set(maxAppliedImpulse);
+   }
+   
+   public void setMaxCoordinateVelocity(double maxCoordinateVelocity)
+   {
+      this.maxCoordinateVelocity.set(maxCoordinateVelocity);
+   }
    
    public boolean getFixedBase()
    {
@@ -105,19 +158,44 @@ public class YoBulletMultiBodyParameters
    {
       return hasSelfCollision.getValue();
    }
-
-   public float getLinearDamping()
+   
+   public boolean getUseGyroTerm()
    {
-      return (float)linearDamping.getValue();
+      return useGyroTerm.getValue();
    }
    
-   public float getAngularDamping()
+   public boolean getUseGlobalVelocities()
    {
-      return (float)angularDamping.getValue();
+      return useGlobalVelocities.getValue();
+   }
+   
+   public boolean getUseRK4Integration()
+   {
+      return useRK4Intergration.getValue();
+   }
+
+   public double getLinearDamping()
+   {
+      return linearDamping.getValue();
+   }
+   
+   public double getAngularDamping()
+   {
+      return angularDamping.getValue();
    }   
    
-   public float getJointFriction()
+   public double getJointFriction()
    {
-      return (float)jointFriction.getValue();
-   }   
+      return jointFriction.getValue();
+   } 
+   
+   public double getMaxAppliedImpulse()
+   {
+      return maxAppliedImpulse.getValue();
+   }
+
+   public double getMaxCoordinateVelocity()
+   {
+      return maxCoordinateVelocity.getValue();
+   }
 }
