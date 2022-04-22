@@ -37,10 +37,35 @@ public class BulletMultiBodyLinkCollider
 		multiBodyLinkCollider.setCollisionShape(shape);
 	}
 	
-	public void setFriction(float frict)
+	public void setFriction(double friction)
 	{
-		multiBodyLinkCollider.setFriction(frict);
+		multiBodyLinkCollider.setFriction((float)friction);
 	}
+	
+	public void setRestitution (double restitution)
+	{
+	   multiBodyLinkCollider.setRestitution((float)restitution);
+	}
+	
+   public void setHitFraction(double hitFraction)
+   {
+      multiBodyLinkCollider.setHitFraction((float) hitFraction);
+   }
+   
+   public void setRollingFriction(double rollingFriction)
+   {
+      multiBodyLinkCollider.setRollingFriction((float) rollingFriction);
+   }
+   
+   public void setSpinningFriction(double spinningFriction)
+   {
+      multiBodyLinkCollider.setSpinningFriction((float) spinningFriction);
+   }
+   
+   public void setContactProcessingThreshold(double contactProcessingThreshold)
+   {
+      multiBodyLinkCollider.setContactProcessingThreshold((float) contactProcessingThreshold);
+   }
 	
 	public btMultiBodyLinkCollider getMultiBodyLinkCollider()
 	{

@@ -14,7 +14,6 @@ public class YoBulletMultiBodyParameters
    private YoBoolean useRK4Intergration;
    private YoDouble linearDamping;
    private YoDouble angularDamping;
-   private YoDouble jointFriction;
    private YoDouble maxAppliedImpulse;
    private YoDouble maxCoordinateVelocity;
 
@@ -27,7 +26,6 @@ public class YoBulletMultiBodyParameters
       String bulletRobotUseGlobalVelocities;
       String bulletRobotAngularDamping;
       String bulletRobotLinearDamping;
-      String bulletRobotJointFriction;
       String bulletRobotMaxAppliedImpulse;
       String bulletRobotMaxCoordinateVelocity;
       String bulletRobotUseRK4Intergration;
@@ -42,7 +40,6 @@ public class YoBulletMultiBodyParameters
          bulletRobotUseRK4Intergration = "UseGlobalRK4Integation";
          bulletRobotAngularDamping = "AngularDamping";
          bulletRobotLinearDamping = "LinearDamping";
-         bulletRobotJointFriction = "JointFriction";
          bulletRobotMaxAppliedImpulse = "MaxAppliedImpulse";
          bulletRobotMaxCoordinateVelocity = "MaxCoordinateVelocity";
       }
@@ -56,7 +53,6 @@ public class YoBulletMultiBodyParameters
          bulletRobotUseRK4Intergration = prefix + "UseGlobalRK4Integation";
          bulletRobotAngularDamping = prefix + "AngularDamping";
          bulletRobotLinearDamping = prefix + "LinearDamping";
-         bulletRobotJointFriction = prefix + "JointFriction";
          bulletRobotMaxAppliedImpulse = prefix + "MaxAppliedImpulse";
          bulletRobotMaxCoordinateVelocity = prefix + "MaxCoordinateVelocity";
       }
@@ -69,7 +65,6 @@ public class YoBulletMultiBodyParameters
       useRK4Intergration = new YoBoolean(bulletRobotUseRK4Intergration, registry);
       angularDamping = new YoDouble(bulletRobotAngularDamping, registry);
       linearDamping = new YoDouble(bulletRobotLinearDamping, registry);
-      jointFriction = new YoDouble(bulletRobotJointFriction, registry);
       maxAppliedImpulse = new YoDouble(bulletRobotMaxAppliedImpulse, registry);
       maxCoordinateVelocity = new YoDouble(bulletRobotMaxCoordinateVelocity, registry);
    }
@@ -84,7 +79,6 @@ public class YoBulletMultiBodyParameters
       setUseRK4Integration(parameters.getUseRK4Integration());
       setAngularDamping(parameters.getAngularDamping());
       setLinearDamping(parameters.getLinearDamping());
-      setJointFriction(parameters.getJointFriction());
       setMaxAppliedImpulse(parameters.getMaxAppliedImpulse());
       setMaxCoordinateVelocity(parameters.getMaxCoordinateVelocity());
    }
@@ -128,11 +122,6 @@ public class YoBulletMultiBodyParameters
    {
       this.angularDamping.set(angularDamping);
    }  
-   
-   public void setJointFriction(double jointFriction)
-   {
-      this.jointFriction.set(jointFriction);
-   }
    
    public void setMaxAppliedImpulse(double maxAppliedImpulse)
    {
@@ -183,11 +172,6 @@ public class YoBulletMultiBodyParameters
    {
       return angularDamping.getValue();
    }   
-   
-   public double getJointFriction()
-   {
-      return jointFriction.getValue();
-   } 
    
    public double getMaxAppliedImpulse()
    {

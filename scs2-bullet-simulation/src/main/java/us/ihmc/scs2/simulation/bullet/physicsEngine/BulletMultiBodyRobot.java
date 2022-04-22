@@ -16,17 +16,17 @@ public class BulletMultiBodyRobot
    public BulletMultiBodyRobot(int numberOfLinks,
                                float rootBodyMass,
                                Vector3 rootBodyIntertia,
-                               HashMap<String, Integer> jointNameToBulletJointIndexMap,
-                               YoBulletMultiBodyParameters bulletMultiBodyParameters)
+                               boolean fixedBase,
+                               boolean canSleep,
+                               HashMap<String, Integer> jointNameToBulletJointIndexMap)
    {
       bulletMultiBodyRobot = new btMultiBody(numberOfLinks,
                                              rootBodyMass,
                                              rootBodyIntertia,
-                                             bulletMultiBodyParameters.getFixedBase(),
-                                             bulletMultiBodyParameters.getCanSleep());
+                                             fixedBase,
+                                             canSleep);
+      
       this.jointNameToBulletJointIndexMap = jointNameToBulletJointIndexMap;
-
-      setMultiBodyParameters(bulletMultiBodyParameters);
    }
 
    public btMultiBody getBulletMultiBody()
@@ -64,8 +64,11 @@ public class BulletMultiBodyRobot
       allConstraints.add(bulletMultiBodyConstraint);
    }
 
-   public void finalizeMultiDof()
+   public void finalizeMultiDof(YoBulletMultiBodyParameters bulletMultiBodyParameters, YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
    {
+      setMultiBodyParameters(bulletMultiBodyParameters);
+      setMultiBodyJointParameters(bulletMultiBodyJointParameters);
+      
       bulletMultiBodyRobot.finalizeMultiDof();
    }
 
@@ -80,12 +83,19 @@ public class BulletMultiBodyRobot
       bulletMultiBodyRobot.setAngularDamping((float)bulletMultiBodyParameters.getAngularDamping());
       bulletMultiBodyRobot.setMaxAppliedImpulse((float)bulletMultiBodyParameters.getMaxAppliedImpulse());
       bulletMultiBodyRobot.setMaxCoordinateVelocity((float)bulletMultiBodyParameters.getMaxCoordinateVelocity());
-      
-      for (int i = 0; i < bulletMultiBodyRobot.getNumLinks(); i++)
+   }
+   
+   public void setMultiBodyJointParameters(YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
+   {
+      for (BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider : allLinks)
       {
-         bulletMultiBodyRobot.getLink(0).setJointFriction((float)bulletMultiBodyParameters.getJointFriction());
+         bulletMultiBodyLinkCollider.setFriction(bulletMultiBodyJointParameters.getJointFriction());
+         bulletMultiBodyLinkCollider.setRestitution(bulletMultiBodyJointParameters.getJointRestitution());
+         bulletMultiBodyLinkCollider.setHitFraction(bulletMultiBodyJointParameters.getJointHitFraction());
+         bulletMultiBodyLinkCollider.setRollingFriction(bulletMultiBodyJointParameters.getJointRollingFriction());
+         bulletMultiBodyLinkCollider.setSpinningFriction(bulletMultiBodyJointParameters.getJointSpinningFriction());
+         bulletMultiBodyLinkCollider.setContactProcessingThreshold(bulletMultiBodyJointParameters.getJointContactProcessingThreshold());
       }
-
    }
 
 }

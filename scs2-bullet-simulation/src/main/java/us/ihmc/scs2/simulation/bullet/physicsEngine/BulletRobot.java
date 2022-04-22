@@ -61,6 +61,7 @@ public class BulletRobot extends RobotExtension
    {
       robotPhysics.reset();
 
+      if (rootLink != null)
       rootLink.copyDataFromSCSToBullet();
 
       for (BulletRobotLinkJoint afterRootLink : afterRootLinks)
@@ -71,6 +72,7 @@ public class BulletRobot extends RobotExtension
 
    public void updateFromBulletData(BulletPhysicsEngine bulletPhysicsEngine, double dt)
    {
+      if (rootLink != null)
       rootLink.copyBulletJointDataToSCS(dt);
 
       for (BulletRobotLinkJoint afterRootLink : afterRootLinks)

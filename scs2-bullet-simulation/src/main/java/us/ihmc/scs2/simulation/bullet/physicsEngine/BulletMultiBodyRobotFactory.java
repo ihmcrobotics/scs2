@@ -21,7 +21,6 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
@@ -40,17 +39,20 @@ public class BulletMultiBodyRobotFactory
 {
    private static HashMap<String, Integer> jointNameToBulletJointIndexMap;
    private static int linkCountingIndex;
+   private static int numberOfLinks;
 
-   public static BulletMultiBodyRobot newInstance(Robot robot, YoBulletMultiBodyParameters bulletMultiBodyParameters)
+   public static BulletMultiBodyRobot newInstance(Robot robot, YoBulletMultiBodyParameters bulletMultiBodyParameters, YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
    {
-      jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
-      linkCountingIndex = 0;
-
       JointBasics rootJoint = robot.getRootBody().getChildrenJoints().get(0);
-      if (!(rootJoint instanceof SimFloatingRootJoint))
-         throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + rootJoint.getClass().getSimpleName());
+      boolean hasBaseCollider = rootJoint instanceof SimFloatingRootJoint && robot.getRootBody().getChildrenJoints().size()==1;
 
-      int numberOfLinks = countJointsAndCreateIndexMap(rootJoint) - 1;
+      jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
+      linkCountingIndex = hasBaseCollider ? 0 : 1;
+      numberOfLinks = 0;
+      for (JointBasics joint : robot.getRootBody().getChildrenJoints())
+      {
+         numberOfLinks += countJointsAndCreateIndexMap(joint) - (hasBaseCollider ? 1 : 0);
+      }
 
       RigidBodyDefinition rigidBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition().getChildrenJoints().get(0).getSuccessor();
       float rootBodyMass = (float) rigidBodyDefinition.getMass();
@@ -61,24 +63,45 @@ public class BulletMultiBodyRobotFactory
       BulletMultiBodyRobot bulletMultiBodyRobot = new BulletMultiBodyRobot(numberOfLinks,
                                                                            rootBodyMass,
                                                                            rootBodyIntertia,
-                                                                           jointNameToBulletJointIndexMap,
-                                                                           bulletMultiBodyParameters);
+                                                                           bulletMultiBodyParameters.getFixedBase(),
+                                                                           bulletMultiBodyParameters.getCanSleep(),
+                                                                           jointNameToBulletJointIndexMap);
 
-      RigidBodyBasics rigidBody = rootJoint.getSuccessor();
+      
 
       //Create BaseCollider
-      bulletMultiBodyRobot.getBulletMultiBody()
-                          .setBaseCollider(createBulletCollider(bulletMultiBodyRobot,
-                                                                rigidBodyDefinition.getCollisionShapeDefinitions(),
-                                                                rootJoint.getFrameAfterJoint(),
-                                                                rigidBody.getBodyFixedFrame(),
-                                                                -1,
-                                                                rootJoint.getName()));
+      if (hasBaseCollider)
+      {
+         bulletMultiBodyRobot.getBulletMultiBody()
+                             .setBaseCollider(createBulletCollider(bulletMultiBodyRobot,
+                                                                   rigidBodyDefinition.getCollisionShapeDefinitions(),
+                                                                   rootJoint.getFrameAfterJoint(),
+                                                                   rootJoint.getSuccessor().getBodyFixedFrame(),
+                                                                   -1,
+                                                                   rootJoint.getName()));
+         //Create LinkColliders for each robot joint 
+         createLinkColliders(bulletMultiBodyRobot, robot, rootJoint);
+         
+      } else
+      {
+         for (JointBasics joint : robot.getRootBody().getChildrenJoints())
+         {
+            int linkIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(joint.getName());
+            JointDefinition rootJointDefinition = robot.getRobotDefinition().getJointDefinition(joint.getName());
+            btMultibodyLink bulletLink = setupLinkType(bulletMultiBodyRobot, joint, rootJointDefinition, linkIndex);
+            bulletLink.setCollider(createBulletCollider(bulletMultiBodyRobot,
+                                                        rootJointDefinition.getSuccessor().getCollisionShapeDefinitions(),
+                                                        joint.getFrameAfterJoint(),
+                                                        joint.getSuccessor().getBodyFixedFrame(),
+                                                        linkIndex,
+                                                        joint.getName()));
+            
+            //Create LinkColliders for each root joint 
+            createLinkColliders(bulletMultiBodyRobot, robot, joint);
+         }
+      }
 
-      //Create LinkColliders for each robot joint 
-      createLinkColliders(bulletMultiBodyRobot, robot, rootJoint);
-
-      bulletMultiBodyRobot.finalizeMultiDof();
+      bulletMultiBodyRobot.finalizeMultiDof(bulletMultiBodyParameters, bulletMultiBodyJointParameters);
 
       return bulletMultiBodyRobot;
    }
@@ -136,7 +159,11 @@ public class BulletMultiBodyRobotFactory
       {
          RevoluteJointDefinition revoluteJointDefinition = (RevoluteJointDefinition) jointDefinition;
 
-         int parentBulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(revoluteJointDefinition.getParentJoint().getName());
+         int parentBulletJointIndex;
+         if (revoluteJointDefinition.getParentJoint() == null)
+            parentBulletJointIndex = -1;
+         else
+            parentBulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(revoluteJointDefinition.getParentJoint().getName());
 
          Vector3 jointAxis = new Vector3();
          BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
@@ -155,11 +182,12 @@ public class BulletMultiBodyRobotFactory
                                                                                                              bulletJointIndex,
                                                                                                              (float) revoluteJointDefinition.getPositionLowerLimit(),
                                                                                                              (float) revoluteJointDefinition.getPositionUpperLimit());
+         
          //multiBodyJointLimitConstraint.setMaxAppliedImpulse((float) revoluteJointDefinition.getEffortUpperLimit());
 
          bulletMultiBodyRobot.addMultiBodyConstraint(multiBodyJointLimitConstraint);
       }
-
+      
       return bulletMultiBodyRobot.getBulletMultiBody().getLink(bulletJointIndex);
    }
 
@@ -173,7 +201,7 @@ public class BulletMultiBodyRobotFactory
       BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider = new BulletMultiBodyLinkCollider(bulletMultiBodyRobot.getBulletMultiBody(),
                                                                                                 bulletJointIndex,
                                                                                                 jointName);
-
+      
       btCompoundShape bulletCompoundShape = new btCompoundShape();
       int collisionGroup = 2;
       int collisionGroupMask = 1 + 2;

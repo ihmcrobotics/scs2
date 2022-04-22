@@ -9,6 +9,7 @@ import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.controller.implementations.ControllerCollectionDefinition;
 import us.ihmc.scs2.definition.controller.implementations.OneDoFJointDampingControllerDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
@@ -41,23 +42,23 @@ public class MobileBulletDefinition extends RobotDefinition
 
    private static final double DAMP1 = 0.06, DAMP2 = 0.006, DAMP3 = 0.003;
 
-   private final OneDoFJointDampingControllerDefinition jointLvl1DampingControllerDefinition = new OneDoFJointDampingControllerDefinition();
-   private final OneDoFJointDampingControllerDefinition jointLvl2DampingControllerDefinition = new OneDoFJointDampingControllerDefinition();
-   private final OneDoFJointDampingControllerDefinition jointLvl3DampingControllerDefinition = new OneDoFJointDampingControllerDefinition();
+//   private final OneDoFJointDampingControllerDefinition jointLvl1DampingControllerDefinition = new OneDoFJointDampingControllerDefinition();
+//   private final OneDoFJointDampingControllerDefinition jointLvl2DampingControllerDefinition = new OneDoFJointDampingControllerDefinition();
+//   private final OneDoFJointDampingControllerDefinition jointLvl3DampingControllerDefinition = new OneDoFJointDampingControllerDefinition();
 
    public MobileBulletDefinition()
    {
       super(MOBILE);
 
-      jointLvl1DampingControllerDefinition.setControllerName("DampLevel1").createDampingVariable("damp1", DAMP1);
-      jointLvl2DampingControllerDefinition.setControllerName("DampLevel2").createDampingVariable("damp2", DAMP2);
-      jointLvl3DampingControllerDefinition.setControllerName("DampLevel3").createDampingVariable("damp3", DAMP3);
+//      jointLvl1DampingControllerDefinition.setControllerName("DampLevel1").createDampingVariable("damp1", DAMP1);
+//      jointLvl2DampingControllerDefinition.setControllerName("DampLevel2").createDampingVariable("damp2", DAMP2);
+//      jointLvl3DampingControllerDefinition.setControllerName("DampLevel3").createDampingVariable("damp3", DAMP3);
 
       RigidBodyDefinition elevator = new RigidBodyDefinition("elevator");
       setRootBodyDefinition(elevator);
       OneDoFJointDefinition[] jointsLevel1 = createGimbal("jointLvl1", elevator, new Vector3D(0.0, 0.0, 1.0));
       RigidBodyDefinition crossBarLvl1 = createCrossBar("crossBarLvl1", jointsLevel1[2], M1, L1, R1, Ixx1, Iyy1, Izz1);
-      jointLvl1DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel1).map(JointDefinition::getName).toArray(String[]::new));
+//      jointLvl1DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel1).map(JointDefinition::getName).toArray(String[]::new));
 
       RigidBodyDefinition crossBarLvl2;
 
@@ -77,7 +78,7 @@ public class MobileBulletDefinition extends RobotDefinition
 
          OneDoFJointDefinition[] jointsLevel2 = createGimbal("jointLvl2_" + i, crossBarLvl1, new Vector3D(xOffset, yOffset, -L1 / 2.0));
          crossBarLvl2 = createCrossBar("crossBarLvl2_" + i, jointsLevel2[2], M2, L2, R2, Ixx2, Iyy2, Izz2);
-         jointLvl2DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel2).map(JointDefinition::getName).toArray(String[]::new));
+//         jointLvl2DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel2).map(JointDefinition::getName).toArray(String[]::new));
 
          for (int j = 0; j < 4; j++)
          {
@@ -95,14 +96,14 @@ public class MobileBulletDefinition extends RobotDefinition
 
             OneDoFJointDefinition[] jointsLevel3 = createGimbal("jointLvl3_" + i + "" + j, crossBarLvl2, new Vector3D(xOffset, yOffset, -L2 / 2.0));
             createRandomShape("toy_" + i + "" + j, jointsLevel3[2]);
-            jointLvl3DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel3).map(JointDefinition::getName).toArray(String[]::new));
+//            jointLvl3DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel3).map(JointDefinition::getName).toArray(String[]::new));
          }
       }
 
-      addControllerDefinition(new ControllerCollectionDefinition().setControllerName("mobileController").addControllerOutputReset()
-                                                                  .addControllerDefinitions(jointLvl1DampingControllerDefinition,
-                                                                                            jointLvl2DampingControllerDefinition,
-                                                                                            jointLvl3DampingControllerDefinition));
+//      addControllerDefinition(new ControllerCollectionDefinition().setControllerName("mobileController").addControllerOutputReset()
+//                                                                  .addControllerDefinitions(jointLvl1DampingControllerDefinition,
+//                                                                                            jointLvl2DampingControllerDefinition,
+//                                                                                            jointLvl3DampingControllerDefinition));
    }
 
    private OneDoFJointDefinition[] createGimbal(String name, RigidBodyDefinition predecessor, Tuple3DReadOnly jointOffset)
@@ -179,7 +180,23 @@ public class MobileBulletDefinition extends RobotDefinition
       crossBar.addVisualDefinition(new VisualDefinition(crossBarTip2, sphere2, redMaterial));
       crossBar.addVisualDefinition(new VisualDefinition(crossBarTip3, sphere2, redMaterial));
       crossBar.addVisualDefinition(new VisualDefinition(crossBarTip4, sphere2, redMaterial));
-
+      
+      CollisionShapeDefinition collisionShapeSphere1 = new CollisionShapeDefinition(crossBar.getInertiaPose(), sphere1);
+      crossBar.addCollisionShapeDefinition(collisionShapeSphere1);
+      CollisionShapeDefinition collisionShapeVericalBarPose = new CollisionShapeDefinition(verticalBarPose, cylinder1);
+      crossBar.addCollisionShapeDefinition(collisionShapeVericalBarPose);
+      CollisionShapeDefinition collisionShapeCrossBarCenter1 = new CollisionShapeDefinition(crossBarCenter1, cylinder2);
+      crossBar.addCollisionShapeDefinition(collisionShapeCrossBarCenter1);
+      CollisionShapeDefinition collisionShapeCrossBarCenter2 = new CollisionShapeDefinition(crossBarCenter2, cylinder2);
+      crossBar.addCollisionShapeDefinition(collisionShapeCrossBarCenter2);
+      CollisionShapeDefinition collisionShapeCrossBarTip1 = new CollisionShapeDefinition(crossBarTip1, sphere2);
+      crossBar.addCollisionShapeDefinition(collisionShapeCrossBarTip1);
+      CollisionShapeDefinition collisionShapeCrossBarTip2 = new CollisionShapeDefinition(crossBarTip2, sphere2);
+      crossBar.addCollisionShapeDefinition(collisionShapeCrossBarTip2);
+      CollisionShapeDefinition collisionShapeCrossBarTip3 = new CollisionShapeDefinition(crossBarTip3, sphere2);
+      crossBar.addCollisionShapeDefinition(collisionShapeCrossBarTip3);
+      CollisionShapeDefinition collisionShapeCrossBarTip4 = new CollisionShapeDefinition(crossBarTip4, sphere2);
+      crossBar.addCollisionShapeDefinition(collisionShapeCrossBarTip4);
       return crossBar;
    }
 
@@ -216,17 +233,21 @@ public class MobileBulletDefinition extends RobotDefinition
             toyGeometryDefinition = new Box3DDefinition(TOY_L, TOY_W, TOY_H);
             break;
          case 3:
-            toyGeometryDefinition = new Cone3DDefinition(TOY_H, TOY_R);
+            toyGeometryDefinition = new Cylinder3DDefinition(TOY_H, TOY_R);
+//            toyGeometryDefinition = new Cone3DDefinition(TOY_H, TOY_R);
             break;
          case 4:
-            toyGeometryDefinition = new Ellipsoid3DDefinition(TOY_L, TOY_W, TOY_H);
+            toyGeometryDefinition = new Box3DDefinition(TOY_L, TOY_W, TOY_H);
+//            toyGeometryDefinition = new Ellipsoid3DDefinition(TOY_L, TOY_W, TOY_H);
             break;
          case 5:
-            toyGeometryDefinition = new HemiEllipsoid3DDefinition(TOY_L, TOY_W, TOY_H);
+            toyGeometryDefinition = new Box3DDefinition(TOY_L, TOY_W, TOY_H);
+            //toyGeometryDefinition = new HemiEllipsoid3DDefinition(TOY_L, TOY_W, TOY_H);
             break;
          case 6:
          default:
-            toyGeometryDefinition = new TruncatedCone3DDefinition(TOY_H, TOY_L, TOY_W, TOY_W, TOY_L);
+            toyGeometryDefinition = new Box3DDefinition(TOY_L, TOY_W, TOY_H);
+            //toyGeometryDefinition = new TruncatedCone3DDefinition(TOY_H, TOY_L, TOY_W, TOY_W, TOY_L);
             break;
       }
 
@@ -234,6 +255,9 @@ public class MobileBulletDefinition extends RobotDefinition
       toyVisualPose.getTranslation().setZ(-stringLength);
       MaterialDefinition toyMaterialDefinition = new MaterialDefinition(ColorDefinition.rgb(new Random().nextInt()));
       toyRigidbody.addVisualDefinition(new VisualDefinition(toyVisualPose, toyGeometryDefinition, toyMaterialDefinition));
+      
+      CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(toyVisualPose, toyGeometryDefinition);
+      toyRigidbody.addCollisionShapeDefinition(collisionShapeDefinition);
 
       return toyRigidbody;
    }
