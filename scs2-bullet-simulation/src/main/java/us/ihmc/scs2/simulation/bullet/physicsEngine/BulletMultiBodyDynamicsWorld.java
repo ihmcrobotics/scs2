@@ -143,6 +143,14 @@ public class BulletMultiBodyDynamicsWorld
       }
    }
    
+   public void updateAllMultiBodyJointParameters (YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
+   {
+      for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodies)
+      {
+         bulletMultiBodyRobot.setMultiBodyJointParameters(bulletMultiBodyJointParameters);
+      }
+   }
+   
    public void setDebugDrawer(btIDebugDraw iDebugDraw)
    {
       if (!multiBodyDynamicsWorld.isDisposed())

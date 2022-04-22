@@ -10,7 +10,6 @@ public class BulletMultiBodyParameters
    private boolean useRK4Intergration;
    private double linearDamping;
    private double angularDamping;
-   private double jointFriction;
    private double maxAppliedImpulse;
    private double maxCoordinateVelocity;
 
@@ -24,7 +23,6 @@ public class BulletMultiBodyParameters
       bulletMultiBodyParameters.setUseRK4Intergration(false);
       bulletMultiBodyParameters.setLinearDamping(0.1);
       bulletMultiBodyParameters.setAngularDamping(0.9);
-      bulletMultiBodyParameters.setJointFriction(0.7);
       bulletMultiBodyParameters.setMaxAppliedImpulse(1000);
       bulletMultiBodyParameters.setMaxCoordinateVelocity(100);
       return bulletMultiBodyParameters;
@@ -42,7 +40,6 @@ public class BulletMultiBodyParameters
                                     boolean useRK4Integration,
                                     double linearDamping,
                                     double angularDamping,
-                                    double jointFriction,
                                     double maxAppliedImpulse,
                                     double maxCoordinatedVelocity)
    {
@@ -54,7 +51,6 @@ public class BulletMultiBodyParameters
       this.useRK4Intergration = useRK4Integration;
       this.linearDamping = linearDamping;
       this.angularDamping = angularDamping;
-      this.jointFriction = jointFriction;
       this.maxAppliedImpulse = maxAppliedImpulse;
       this.maxCoordinateVelocity = maxCoordinatedVelocity;
    }
@@ -109,11 +105,6 @@ public class BulletMultiBodyParameters
       this.maxCoordinateVelocity = maxCoordinateVelocity;
    }
 
-   public void setJointFriction(double jointFriction)
-   {
-      this.jointFriction = jointFriction;
-   }
-
    public boolean getFixedBase()
    {
       return fixedBase;
@@ -152,11 +143,6 @@ public class BulletMultiBodyParameters
    public double getAngularDamping()
    {
       return angularDamping;
-   }
-
-   public double getJointFriction()
-   {
-      return jointFriction;
    }
 
    public double getMaxAppliedImpulse()

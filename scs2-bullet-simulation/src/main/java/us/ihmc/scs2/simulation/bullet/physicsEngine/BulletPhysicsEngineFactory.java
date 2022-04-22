@@ -13,16 +13,16 @@ public interface BulletPhysicsEngineFactory
    {
       return (frame, rootRegistry) ->
       {
-         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry, BulletMultiBodyParameters.defaultBulletMultiBodyParameters());
+         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry, BulletMultiBodyParameters.defaultBulletMultiBodyParameters(), BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
          return physicsEngine;
       };
    }
 
-   static PhysicsEngineFactory newBulletPhysicsEngineFactory(BulletMultiBodyParameters bulletMultiBodyParameters)
+   static PhysicsEngineFactory newBulletPhysicsEngineFactory(BulletMultiBodyParameters bulletMultiBodyParameters, BulletMultiBodyJointParameters bulletMultiBodyJointParameters)
    {
       return (frame, rootRegistry) ->
       {
-         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry, bulletMultiBodyParameters);
+         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry, bulletMultiBodyParameters, bulletMultiBodyJointParameters);
          return physicsEngine;
       };
    }
