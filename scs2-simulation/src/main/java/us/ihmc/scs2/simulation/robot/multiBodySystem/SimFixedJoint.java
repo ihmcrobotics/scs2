@@ -109,4 +109,15 @@ public class SimFixedJoint extends FixedJoint implements SimJointBasics
    public void setJointLinearDeltaVelocity(Vector3DReadOnly jointLinearDeltaVelocity)
    {
    }
+
+   @Override
+   public void setPinned(boolean isPinned)
+   {
+   }
+
+   @Override
+   public boolean isPinned()
+   {
+      return false;
+   };
 }

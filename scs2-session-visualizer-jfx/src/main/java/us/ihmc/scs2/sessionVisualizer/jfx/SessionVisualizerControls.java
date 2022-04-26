@@ -3,11 +3,14 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 import java.io.File;
 import java.util.Collection;
 
+import javafx.stage.Window;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 
 public interface SessionVisualizerControls
 {
+   Window getPrimaryWindow();
+
    void setCameraOrientation(double latitude, double longitude, double roll);
 
    void setCameraPosition(double x, double y, double z);
@@ -27,9 +30,9 @@ public interface SessionVisualizerControls
    }
 
    void addStaticVisual(VisualDefinition visualDefinition);
-   
+
    void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition);
-   
+
    void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
    default void exportVideo(File file)
@@ -40,6 +43,10 @@ public interface SessionVisualizerControls
    }
 
    void exportVideo(SceneVideoRecordingRequest request);
+
+   void disableUserControls();
+
+   void enableUserControls();
 
    void shutdown();
 

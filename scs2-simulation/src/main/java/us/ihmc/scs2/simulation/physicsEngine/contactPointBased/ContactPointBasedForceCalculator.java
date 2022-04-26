@@ -28,6 +28,8 @@ public class ContactPointBasedForceCalculator
 
    private final ReferenceFrame inertialFrame;
 
+   private boolean hasPrintedErrorMessageAboutMultipleCollisions = false; 
+
    public ContactPointBasedForceCalculator(ReferenceFrame inertialFrame, YoRegistry parentRegistry)
    {
       this.inertialFrame = inertialFrame;
@@ -80,7 +82,13 @@ public class ContactPointBasedForceCalculator
             }
 
             if (activeCollidables.size() > 1)
-               LogTools.error("Cannot handle collision to more than one collidable");
+            {
+               if (!hasPrintedErrorMessageAboutMultipleCollisions)
+               {
+                  LogTools.error("Cannot handle collision to more than one collidable. (Reporting error only once)");
+                  hasPrintedErrorMessageAboutMultipleCollisions = true;
+               }
+            }
 
             Collidable collidable = activeCollidables.get(0);
 

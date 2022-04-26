@@ -13,6 +13,7 @@ public abstract class YoGraphicDefinition
 
    public YoGraphicDefinition(String name)
    {
+      setName(name);
    }
 
    @XmlAttribute

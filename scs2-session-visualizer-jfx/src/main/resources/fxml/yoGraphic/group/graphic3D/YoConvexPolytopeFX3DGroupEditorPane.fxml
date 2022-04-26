@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.graphic3D.YoConvexPolytopeFX3DGroupEditorController">
+   <children>
+      <fx:include fx:id="styleEditor" source="../../editor/YoGraphic3DStyleEditorPane.fxml" />
+      <Separator prefWidth="200.0" />
+      <fx:include fx:id="nameEditor" source="../../editor/YoGraphicNameEditorPane.fxml" GridPane.columnSpan="2147483647" GridPane.rowIndex="8" />
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</VBox>

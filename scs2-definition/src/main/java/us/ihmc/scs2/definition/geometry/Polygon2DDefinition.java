@@ -60,7 +60,7 @@ public class Polygon2DDefinition extends GeometryDefinition
       return tuple2DCollection.stream().map(Point2DDefinition::new).collect(Collectors.toList());
    }
 
-   public static List<Point2DDefinition> toPoint3DDefinitionList(Tuple2DReadOnly... tuple2Ds)
+   public static List<Point2DDefinition> toPoint2DDefinitionList(Tuple2DReadOnly... tuple2Ds)
    {
       return toPoint2DDefinitionList(Arrays.asList(tuple2Ds));
    }
