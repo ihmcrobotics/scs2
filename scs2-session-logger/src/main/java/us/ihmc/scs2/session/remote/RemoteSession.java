@@ -49,7 +49,7 @@ public class RemoteSession extends Session
                         YoVariableHandshakeParser handshakeParser,
                         DebugRegistry debugRegistry)
    {
-      super(SessionMode.RUNNING);
+      super();
 
       this.yoVariableClientInterface = yoVariableClientInterface;
 
@@ -75,6 +75,7 @@ public class RemoteSession extends Session
          robotStateUpdater = null;
       }
 
+      setSessionMode(SessionMode.RUNNING);
       setSessionDTSeconds(handshakeParser.getDt());
       setSessionModeTask(SessionMode.RUNNING, () ->
       {
@@ -89,7 +90,7 @@ public class RemoteSession extends Session
          else
             disconnect();
       });
-      submitDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 60.0));
+      setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 60.0));
    }
 
    public long getDelay()
@@ -112,9 +113,9 @@ public class RemoteSession extends Session
        * without temporarily setting the Session.bufferRecordTickPeriod.
        */
       int superBufferRecordTickPeriod = super.getBufferRecordTickPeriod();
-      super.submitBufferRecordTickPeriod(bufferRecordTickPeriod);
+      super.setBufferRecordTickPeriod(bufferRecordTickPeriod);
       long playbackTaskPeriod = super.computePlaybackTaskPeriod();
-      super.submitBufferRecordTickPeriod(superBufferRecordTickPeriod);
+      super.setBufferRecordTickPeriod(superBufferRecordTickPeriod);
       return playbackTaskPeriod;
    }
 
@@ -219,7 +220,7 @@ public class RemoteSession extends Session
    }
 
    @Override
-   public void submitBufferRecordTickPeriod(int bufferRecordTickPeriod)
+   public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
       if (bufferRecordTickPeriod == this.bufferRecordTickPeriod)
          return;

@@ -10,6 +10,8 @@ import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Group;
+import javafx.scene.PerspectiveCamera;
 import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -49,6 +51,7 @@ public class FileMenuController
    private Property<VideoRecordingPreviewPaneController> videoExportController = new SimpleObjectProperty<>(this, "videoExportController", null);
    private Property<SessionDataExportStageController> dataExportController = new SimpleObjectProperty<>(this, "dataExportController", null);
    private SubScene mainScene3D;
+   private Group mainView3DRoot;
    private SessionVisualizerWindowToolkit toolkit;
 
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -58,6 +61,7 @@ public class FileMenuController
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       mainScene3D = toolkit.getGlobalToolkit().getMainScene3D();
+      mainView3DRoot = toolkit.getGlobalToolkit().getMainView3DRoot();
 
       messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable ->
       {
@@ -132,7 +136,7 @@ public class FileMenuController
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.VIDEO_PREVIEW_PANE_URL);
          loader.load();
          VideoRecordingPreviewPaneController controller = loader.getController();
-         controller.initialize(owner, mainScene3D, messager, topics);
+         controller.initialize(owner, mainView3DRoot, (PerspectiveCamera) mainScene3D.getCamera(), messager, topics);
          controller.getStage().show();
       }
       catch (IOException e)

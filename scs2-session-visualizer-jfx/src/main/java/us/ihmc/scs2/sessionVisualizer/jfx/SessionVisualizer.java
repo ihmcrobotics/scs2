@@ -9,6 +9,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,11 +17,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import us.ihmc.javaFXToolkit.cameraControllers.CameraZoomCalculator;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
@@ -29,11 +30,11 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.CameraTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
@@ -55,7 +56,7 @@ public class SessionVisualizer
    private final Group view3DRoot;
    private final Plotter2D plotter2D = new Plotter2D();
    private final MainWindowController mainWindowController;
-   private final FocusBasedCameraMouseEventHandler cameraController;
+   private final MultiViewport3DManager viewport3DManager;
    private final BufferedJavaFXMessager messager;
    private final SessionVisualizerTopics topics;
    private final SessionVisualizerControlsImpl sessionVisualizerControls = new SessionVisualizerControlsImpl();
@@ -73,11 +74,13 @@ public class SessionVisualizer
       SessionVisualizerIOTools.addSCSIconToWindow(primaryStage);
       primaryStage.setTitle(NO_ACTIVE_SESSION_TITLE);
 
-      View3DFactory view3DFactory = View3DFactory.createSubscene();
-      view3DRoot = view3DFactory.getRoot();
-      view3DFactory.addDefaultLighting();
+      Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
+      scene3DBuilder.addDefaultLighting();
+      view3DRoot = scene3DBuilder.getRoot();
+      viewport3DManager = new MultiViewport3DManager(view3DRoot);
+      viewport3DManager.createMainViewport();
 
-      toolkit = new SessionVisualizerToolkit(primaryStage, view3DFactory.getSubScene(), view3DRoot);
+      toolkit = new SessionVisualizerToolkit(primaryStage, viewport3DManager.getMainViewport().getSubScene(), view3DRoot);
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
@@ -86,34 +89,61 @@ public class SessionVisualizer
       mainWindowController = loader.getController();
       mainWindowController.initialize(new SessionVisualizerWindowToolkit(primaryStage, toolkit));
 
-      view3DFactory.addNodeToView(toolkit.getYoRobotFXManager().getRootNode());
-      view3DFactory.addNodeToView(toolkit.getEnvironmentManager().getRootNode());
-      cameraController = view3DFactory.addCameraController(0.05, 2.0e5, true);
-      CameraTools.setupNodeTrackingContextMenu(cameraController, view3DFactory.getSubScene());
+      scene3DBuilder.addNodeToView(toolkit.getYoRobotFXManager().getRootNode());
+      scene3DBuilder.addNodeToView(toolkit.getEnvironmentManager().getRootNode());
 
       messager.registerJavaFXSyncedTopicListener(topics.getCameraTrackObject(), request ->
       {
          if (request.getNode() != null)
-            cameraController.getNodeTracker().setNodeToTrack(request.getNode());
+            viewport3DManager.getMainViewport().setCameraNodeToTrack(request.getNode());
       });
 
       toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
-      toolkit.getEnvironmentManager().addSkybox(view3DFactory.getSubScene());
+      toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
       messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
 
       mainWindowController.setupPlotter2D(plotter2D);
 
-      view3DFactory.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
-      mainWindowController.setupViewport3D(view3DFactory.getSubSceneWrappedInsidePane());
+      scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
+      mainWindowController.setupViewport3D(viewport3DManager.getPane());
 
-      Scene mainScene = new Scene(mainPane, 1024, 768);
+      // This is workaround to get the lights working when doing snapshots.
+      Group clonedLightGroup = new Group();
+      Scene3DBuilder.setupLigthCloneList(clonedLightGroup.getChildren(), scene3DBuilder.getAllLights());
+      StackPane mainPaneWithLights = new StackPane(mainPane);
+      mainPaneWithLights.getChildren().add(clonedLightGroup);
+      mainPaneWithLights.getStylesheets().setAll(mainPane.getStylesheets());
+      Scene mainScene = new Scene(mainPaneWithLights);
       toolkit.getSnapshotManager().registerRecordable(mainScene);
       primaryStage.setScene(mainScene);
       multiSessionManager = new MultiSessionManager(toolkit, mainWindowController);
 
       mainWindowController.start();
       toolkit.start();
+      initializeStageWithPrimaryScreen();
       primaryStage.show();
+      // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+      // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+      initializeStageWithPrimaryScreen();
+   }
+
+   public void initializeStageWithPrimaryScreen()
+   {
+      initializeStageWithScreen(0.75, Screen.getPrimary(), primaryStage);
+   }
+
+   public static void initializeStageWithScreen(double sizeRatio, Screen screen, Stage stage)
+   {
+      Rectangle2D bounds = screen.getVisualBounds();
+
+      double width = sizeRatio * bounds.getWidth();
+      double height = sizeRatio * bounds.getHeight();
+      stage.setWidth(width);
+      stage.setHeight(height);
+      double centerX = bounds.getMinX() + (bounds.getWidth() - width) * 0.5;
+      double centerY = bounds.getMinY() + (bounds.getHeight() - height) * 1.0 / 3.0;
+      stage.setX(centerX);
+      stage.setY(centerY);
    }
 
    public void startSession(Session session)
@@ -135,6 +165,11 @@ public class SessionVisualizer
       {
          Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
          SessionVisualizerIOTools.addSCSIconToDialog(alert);
+         alert.initOwner(primaryStage);
+         JavaFXMissingTools.centerDialogInOwner(alert);
+         // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+         // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+         alert.setOnShown(e -> JavaFXMissingTools.runLater(getClass(), () -> JavaFXMissingTools.centerDialogInOwner(alert)));
 
          Optional<ButtonType> result = alert.showAndWait();
          if (!result.isPresent() || result.get() == ButtonType.CANCEL)
@@ -160,7 +195,7 @@ public class SessionVisualizer
       LogTools.info("Simulation GUI is going down.");
       try
       {
-         cameraController.dispose();
+         viewport3DManager.dispose();
          multiSessionManager.stopSession(saveConfiguration);
          multiSessionManager.shutdown();
          mainWindowController.stop();
@@ -273,34 +308,43 @@ public class SessionVisualizer
       }
 
       @Override
+      public Window getPrimaryWindow()
+      {
+         checkVisualizerRunning();
+         waitUntilFullyUp();
+         return primaryStage;
+      }
+
+      @Override
       public void setCameraOrientation(double latitude, double longitude, double roll)
       {
          checkVisualizerRunning();
-         cameraController.getRotationCalculator().setRotation(latitude, longitude, roll);
+         waitUntilFullyUp();
+         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, roll);
       }
 
       @Override
       public void setCameraPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
-         cameraController.changeCameraPosition(x, y, z);
+         waitUntilFullyUp();
+         viewport3DManager.getMainViewport().setCameraPosition(x, y, z);
       }
 
       @Override
       public void setCameraFocusPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
-         cameraController.changeFocusPosition(x, y, z, false);
+         waitUntilFullyUp();
+         viewport3DManager.getMainViewport().setCameraFocusPosition(x, y, z);
       }
 
       @Override
       public void setCameraZoom(double distanceFromFocus)
       {
          checkVisualizerRunning();
-         CameraZoomCalculator zoomCalculator = cameraController.getZoomCalculator();
-         if (zoomCalculator.isInvertZoomDirection())
-            distanceFromFocus = -distanceFromFocus;
-         zoomCalculator.setZoom(distanceFromFocus);
+         waitUntilFullyUp();
+         viewport3DManager.getMainViewport().setCameraZoom(distanceFromFocus);
       }
 
       @Override
@@ -315,6 +359,7 @@ public class SessionVisualizer
       public void addStaticVisual(VisualDefinition visualDefinition)
       {
          checkVisualizerRunning();
+         waitUntilFullyUp();
          toolkit.getEnvironmentManager().addStaticVisual(visualDefinition);
       }
 
@@ -323,14 +368,18 @@ public class SessionVisualizer
       {
          String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
          if (subNames == null || subNames.length == 0)
-            addYoGraphic(yoGraphicDefinition);
-
-         for (int i = subNames.length - 1; i >= 0; i--)
          {
-            yoGraphicDefinition = new YoGraphicGroupDefinition(subNames[i], yoGraphicDefinition);
+            addYoGraphic(yoGraphicDefinition);
          }
-
-         addYoGraphic(yoGraphicDefinition);
+         else
+         {
+            for (int i = subNames.length - 1; i >= 0; i--)
+            {
+               yoGraphicDefinition = new YoGraphicGroupDefinition(subNames[i], yoGraphicDefinition);
+            }
+            
+            addYoGraphic(yoGraphicDefinition);
+         }
       }
 
       @Override
@@ -344,7 +393,40 @@ public class SessionVisualizer
       public void exportVideo(SceneVideoRecordingRequest request)
       {
          checkVisualizerRunning();
+         checkSessionThreadRunning();
+
+         CountDownLatch latch = new CountDownLatch(1);
+         Runnable callback = request.getRecordingEndedCallback();
+         request.setRecordingEndedCallback(() ->
+         {
+            latch.countDown();
+            if (callback != null)
+               callback.run();
+         });
          messager.submitMessage(topics.getSceneVideoRecordingRequest(), request);
+
+         try
+         {
+            latch.await();
+         }
+         catch (InterruptedException e)
+         {
+            e.printStackTrace();
+         }
+      }
+
+      @Override
+      public void disableUserControls()
+      {
+         checkVisualizerRunning();
+         messager.submitMessage(topics.getDisableUserControls(), true);
+      }
+
+      @Override
+      public void enableUserControls()
+      {
+         checkVisualizerRunning();
+         messager.submitMessage(topics.getDisableUserControls(), false);
       }
 
       @Override
@@ -370,6 +452,14 @@ public class SessionVisualizer
       {
          if (hasTerminated)
             throw new IllegalOperationException("Unable to perform operation, visualizer has terminated.");
+      }
+
+      private void checkSessionThreadRunning()
+      {
+         if (toolkit.getSession() == null)
+            throw new IllegalOperationException("No active session.");
+         if (!toolkit.getSession().hasSessionStarted())
+            throw new IllegalOperationException("Session thread is not running.");
       }
    }
 }

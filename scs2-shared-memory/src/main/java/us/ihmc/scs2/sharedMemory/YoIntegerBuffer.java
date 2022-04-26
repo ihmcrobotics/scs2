@@ -65,6 +65,12 @@ public class YoIntegerBuffer extends YoVariableBuffer<YoInteger>
    }
 
    @Override
+   public double[] getAsDoubleBuffer()
+   {
+      return SharedMemoryTools.toDoubleArray(buffer);
+   }
+
+   @Override
    public void dispose()
    {
       buffer = null;

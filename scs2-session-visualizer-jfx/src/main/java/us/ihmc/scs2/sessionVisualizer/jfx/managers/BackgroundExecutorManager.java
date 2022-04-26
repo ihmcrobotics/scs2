@@ -24,6 +24,8 @@ public class BackgroundExecutorManager
 
    private final List<Future<?>> futures = new ArrayList<>();
 
+   private volatile boolean isStoppingSession = false;
+
    public BackgroundExecutorManager(int numberOfThreads)
    {
       backgroundExecutor = Executors.newScheduledThreadPool(numberOfThreads, new DaemonThreadFactory(getClass().getSimpleName(), Thread.NORM_PRIORITY));
@@ -31,7 +33,7 @@ public class BackgroundExecutorManager
 
    public void scheduleInBackgroundWithCondition(BooleanSupplier condition, Runnable task)
    {
-      if (backgroundExecutor.isShutdown())
+      if (isStoppingSession || backgroundExecutor.isShutdown())
          return;
 
       Runnable taskLocal = toPrintExceptionRunnable(task);
@@ -54,7 +56,7 @@ public class BackgroundExecutorManager
 
    public void queueTaskToExecuteInBackground(Object owner, Runnable task)
    {
-      if (backgroundExecutor.isShutdown())
+      if (isStoppingSession || backgroundExecutor.isShutdown())
          return;
       ConcurrentLinkedQueue<Runnable> taskQueue = taskQueues.get(owner);
       if (taskQueue == null)
@@ -86,44 +88,52 @@ public class BackgroundExecutorManager
 
    public Future<?> executeInBackground(Runnable task)
    {
-      if (backgroundExecutor.isShutdown())
+      if (isStoppingSession || backgroundExecutor.isShutdown())
          return null;
       return backgroundExecutor.submit(toPrintExceptionRunnable(task));
    }
 
    public <V> Future<V> executeInBackground(Callable<V> task)
    {
-      if (backgroundExecutor.isShutdown())
+      if (isStoppingSession || backgroundExecutor.isShutdown())
          return null;
       return backgroundExecutor.submit(toPrintExceptionCallable(task));
    }
 
-   private static Runnable toPrintExceptionRunnable(Runnable runnable)
+   private Runnable toPrintExceptionRunnable(Runnable runnable)
    {
       return () ->
       {
+         if (isStoppingSession)
+            return;
+
          try
          {
             runnable.run();
          }
          catch (Exception e)
          {
-            e.printStackTrace();
+            if (!isStoppingSession)
+               e.printStackTrace();
          }
       };
    }
 
-   private static <V> Callable<V> toPrintExceptionCallable(Callable<V> callable)
+   private <V> Callable<V> toPrintExceptionCallable(Callable<V> callable)
    {
       return () ->
       {
+         if (isStoppingSession)
+            return null;
+
          try
          {
             return callable.call();
          }
          catch (Exception e)
          {
-            e.printStackTrace();
+            if (!isStoppingSession)
+               e.printStackTrace();
             return null;
          }
       };
@@ -138,12 +148,16 @@ public class BackgroundExecutorManager
 
    public void stopSession()
    {
+      isStoppingSession = true;
+
       futures.forEach(future ->
       {
          if (!future.isDone())
             future.cancel(false);
       });
       futures.clear();
+
+      isStoppingSession = false;
    }
 
    public void shutdown()

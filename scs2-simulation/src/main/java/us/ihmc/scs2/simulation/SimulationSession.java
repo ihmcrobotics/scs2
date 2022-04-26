@@ -6,13 +6,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-
-import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -29,7 +26,7 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
+import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -113,7 +110,7 @@ public class SimulationSession extends Session
    }
 
    @Override
-   public void initializeSession()
+   protected void initializeSession()
    {
       hasSessionStarted = true;
       super.initializeSession();
@@ -255,12 +252,6 @@ public class SimulationSession extends Session
    }
 
    @Override
-   public LinkedYoVariableFactory getLinkedYoVariableFactory()
-   {
-      return sharedBuffer;
-   }
-
-   @Override
    public String getSessionName()
    {
       return simulationName;
@@ -363,80 +354,102 @@ public class SimulationSession extends Session
             public boolean getAsBoolean()
             {
                tickCounter++;
-               return tickCounter >= numberOfTicks;
+               return tickCounter >= numberOfTicks || testTerminalConditions();
             }
          };
          setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
       }
 
       @Override
-      public boolean simulateAndWait(double duration)
+      public boolean simulateNow(double duration)
       {
          long numberOfTicks = Conversions.secondsToNanoseconds(duration) / getSessionDTNanoseconds();
-         return simulateAndWait(numberOfTicks);
+         return simulateNow(numberOfTicks);
       }
 
       @Override
-      public boolean simulateAndWait(long numberOfTicks)
+      public boolean simulateNow(long numberOfTicks)
       {
-         if (getActiveMode() == SessionMode.RUNNING)
-            setSessionMode(SessionMode.PAUSE);
+         if (isSessionShutdown())
+            return false;
 
-         MutableBoolean success = new MutableBoolean(false);
-         CountDownLatch doneLatch = new CountDownLatch(1);
+         boolean sessionStartedInitialValue = hasSessionStarted();
 
-         SessionModeChangeListener modeListener = (prevMode, newMode) ->
+         if (sessionStartedInitialValue)
          {
-            if (newMode != SessionMode.RUNNING)
-               doneLatch.countDown();
-         };
+            if (!stopSessionThread())
+               return false; // Could not stop the thread, abort. 
+         }
 
-         Runnable shutdownListener = doneLatch::countDown;
-
-         addSessionModeChangeListener(modeListener);
-         addShutdownListener(shutdownListener);
-
-         BooleanSupplier terminalCondition = new BooleanSupplier()
-         {
-            private int tickCounter = 0;
-
-            @Override
-            public boolean getAsBoolean()
-            {
-               for (int i = 0; i < terminalConditions.size(); i++)
-               {
-                  if (terminalConditions.get(i).getAsBoolean())
-                  {
-                     return true;
-                  }
-               }
-               
-               tickCounter++;
-               boolean done = tickCounter >= numberOfTicks;
-
-               if (done)
-                  success.setTrue();
-               return done;
-            }
-         };
-
-         setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
+         SessionMode activeModeInitialValue = getActiveMode();
 
          try
          {
-            doneLatch.await();
+            setSessionMode(SessionMode.RUNNING);
+
+            boolean success = true;
+
+            if (numberOfTicks == -1L)
+            {
+               while (true)
+               {
+                  if (isSessionShutdown())
+                     return false;
+
+                  success = runTick();
+
+                  if (!success)
+                     break;
+
+                  if (testTerminalConditions())
+                     break;
+               }
+            }
+            else
+            {
+               for (long tick = 0; tick < numberOfTicks; tick++)
+               {
+                  if (isSessionShutdown())
+                     return false;
+
+                  success = runTick();
+
+                  if (!success)
+                     break;
+
+                  if (testTerminalConditions())
+                     break;
+               }
+            }
+
+            return success;
          }
-         catch (InterruptedException e)
+         finally
          {
-            e.printStackTrace();
+            // This ensures that the controller is being pause.
+            physicsEngine.pause();
+
+            if (sessionStartedInitialValue)
+               startSessionThread();
+            setSessionMode(activeModeInitialValue);
+         }
+      }
+
+      @Override
+      public boolean simulateNow()
+      {
+         return simulateNow(-1L);
+      }
+
+      private boolean testTerminalConditions()
+      {
+         for (int i = 0; i < terminalConditions.size(); i++)
+         {
+            if (terminalConditions.get(i).getAsBoolean())
+               return true;
          }
 
-         removeSessionModeChangeListener(modeListener);
-         removeShutdownListener(shutdownListener);
-
-         activePeriodicTask.waitUntilFirstTickDone();
-
-         return success.isTrue();
+         return false;
       }
 
       @Override
@@ -449,9 +462,9 @@ public class SimulationSession extends Session
       }
 
       @Override
-      public void removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+      public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
       {
-         terminalConditions.remove(externalTerminalCondition);
+         return terminalConditions.remove(externalTerminalCondition);
       }
 
       @Override
@@ -468,27 +481,45 @@ public class SimulationSession extends Session
 
       // Buffer controls
       @Override
+      public void cropBuffer()
+      {
+         submitCropBufferRequestAndWait(new CropBufferRequest(getBufferProperties().getInPoint(), getBufferProperties().getOutPoint()));
+      }
+
+      @Override
       public void setBufferInPointIndexToCurrent()
       {
-         submitBufferInPointIndexRequest(sharedBuffer.getProperties().getCurrentIndex());
+         submitBufferInPointIndexRequestAndWait(getBufferProperties().getCurrentIndex());
       }
 
       @Override
       public void setBufferOutPointIndexToCurrent()
       {
-         submitBufferOutPointIndexRequest(sharedBuffer.getProperties().getCurrentIndex());
+         submitBufferOutPointIndexRequestAndWait(getBufferProperties().getCurrentIndex());
       }
 
       @Override
       public void setBufferCurrentIndexToInPoint()
       {
-         submitBufferIndexRequest(sharedBuffer.getProperties().getInPoint());
+         submitBufferIndexRequestAndWait(getBufferProperties().getInPoint());
       }
 
       @Override
       public void setBufferCurrentIndexToOutPoint()
       {
-         submitBufferIndexRequest(sharedBuffer.getProperties().getOutPoint());
+         submitBufferIndexRequestAndWait(getBufferProperties().getOutPoint());
+      }
+
+      @Override
+      public void stepBufferIndexBackward(int stepSize)
+      {
+         submitDecrementBufferIndexRequestAndWait(stepSize);
+      }
+
+      @Override
+      public void stepBufferIndexForward(int stepSize)
+      {
+         submitIncrementBufferIndexRequestAndWait(stepSize);
       }
    }
 }

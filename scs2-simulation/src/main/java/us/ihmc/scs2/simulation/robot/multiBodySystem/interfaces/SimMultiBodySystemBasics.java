@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.MultiBodySystemBasics;
@@ -24,6 +25,26 @@ public interface SimMultiBodySystemBasics extends MultiBodySystemBasics, SimMult
    /** {@inheritDoc} */
    @Override
    SimRigidBodyBasics getRootBody();
+
+   /**
+    * Attempts to find and return the floating root joint for this multi-body system.
+    * <p>
+    * The floating root joint is typically the only child of {@link #getRootBody()} and connects the
+    * robot first rigid-body to the world. It is typically a unactuated 6-DoF joint.
+    * </p>
+    * 
+    * @return the floating root joint or {@code null} if such joint could not be found.
+    */
+   default SimFloatingJointBasics getFloatingRootJoint()
+   {
+      if (getRootBody() == null || getRootBody().getChildrenJoints().isEmpty())
+         return null;
+      JointBasics rootJoint = getRootBody().getChildrenJoints().get(0);
+      if (rootJoint instanceof SimFloatingJointBasics)
+         return (SimFloatingJointBasics) rootJoint;
+      else
+         return null;
+   }
 
    /** {@inheritDoc} */
    @Override

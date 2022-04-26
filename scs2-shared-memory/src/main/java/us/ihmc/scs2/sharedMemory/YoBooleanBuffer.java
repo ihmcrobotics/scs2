@@ -65,6 +65,12 @@ public class YoBooleanBuffer extends YoVariableBuffer<YoBoolean>
    }
 
    @Override
+   public double[] getAsDoubleBuffer()
+   {
+      return SharedMemoryTools.toDoubleArray(buffer);
+   }
+
+   @Override
    public void dispose()
    {
       buffer = null;

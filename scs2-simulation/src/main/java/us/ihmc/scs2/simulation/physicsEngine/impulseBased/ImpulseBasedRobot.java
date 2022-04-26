@@ -24,13 +24,13 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
    public ImpulseBasedRobot(Robot robot, YoRegistry physicsRegistry)
    {
       super(robot, physicsRegistry);
-      robotPhysics = new ImpulseBasedRobotPhysics(this, physicsRegistry);
+      robotPhysics = new ImpulseBasedRobotPhysics(this, getRobotPhysicsRegistry());
    }
 
    public ImpulseBasedRobot(RobotDefinition robotDefinition, ReferenceFrame inertialFrame, YoRegistry physicsRegistry)
    {
       super(robotDefinition, inertialFrame, physicsRegistry);
-      robotPhysics = new ImpulseBasedRobotPhysics(this, physicsRegistry);
+      robotPhysics = new ImpulseBasedRobotPhysics(this, getRobotPhysicsRegistry());
    }
 
    public void resetCalculators()
@@ -95,7 +95,7 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
 
    public void updateSensors()
    {
-      for (SimJointBasics joint : getRootBody().childrenSubtreeIterable())
+      for (SimJointBasics joint : getJointsToConsider())
       {
          joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
       }

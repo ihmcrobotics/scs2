@@ -60,7 +60,7 @@ public class ConnectedShapesExperimentalSimulation
       VisualDefinitionFactory factory2 = new VisualDefinitionFactory();
       factory2.appendTranslation(0.5 * connectionOffset.getX(), 0, 0);
       factory2.appendRotation(0.5 * Math.PI, Axis3D.Y);
-      factory2.addCylinder(connectionOffset.getX(), 0.02, new MaterialDefinition(ColorDefinitions.Chocolate()));
+      factory2.addCylinder(connectionOffset.getX(), 0.02, ColorDefinitions.Chocolate());
       rigidBody2.getVisualDefinitions().forEach(visual -> visual.getOriginPose().prependTranslation(connectionOffset));
       rigidBody2.addVisualDefinitions(factory2.getVisualDefinitions());
       pinJoint.setSuccessor(rigidBody2);

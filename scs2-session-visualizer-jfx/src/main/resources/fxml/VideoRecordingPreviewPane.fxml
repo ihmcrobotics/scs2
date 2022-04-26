@@ -14,66 +14,49 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.shape.Rectangle?>
 <?import javafx.stage.Stage?>
 
-<Stage fx:id="stage" resizable="false" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.VideoRecordingPreviewPaneController">
-   <scene>
-      <Scene fx:id="scene">
-         <root>
-            <VBox fx:id="mainPane" spacing="10.0" stylesheets="@../css/GeneralStylesheet.css">
-               <children>
-                  <AnchorPane fx:id="imageViewContainer" VBox.vgrow="ALWAYS">
-                     <children>
-                        <ImageView fx:id="imageView" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                        <Rectangle fx:id="viewportRectangle" arcHeight="10.0" arcWidth="10.0" fill="#ffffff00" height="200.0" stroke="BLACK" strokeType="INSIDE" width="200.0" />
-                     </children>
-                  </AnchorPane>
-                  <JFXSlider fx:id="currentBufferIndexSlider" />
-                  <GridPane hgap="15.0" vgap="5.0">
-                     <columnConstraints>
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                     </columnConstraints>
-                     <rowConstraints>
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                     </rowConstraints>
-                     <children>
-                        <Label maxWidth="1.7976931348623157E308" text="Resolution:" GridPane.columnIndex="1" />
-                        <JFXComboBox fx:id="resolutionComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" />
-                        <Label maxWidth="1.7976931348623157E308" text="Frame rate:" GridPane.columnIndex="3" />
-                        <JFXTextField fx:id="frameRateTextField" alignment="CENTER_RIGHT" prefWidth="60.0" text="60" GridPane.columnIndex="4" />
-                        <Label maxWidth="1.7976931348623157E308" text="Real-time rate:" GridPane.columnIndex="5" />
-                        <JFXTextField fx:id="realTimeRateTextField" alignment="CENTER_RIGHT" prefWidth="50.0" text="1.0" GridPane.columnIndex="6" />
-                        <Label maxWidth="1.7976931348623157E308" text="Start:" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                        <JFXTextField fx:id="startIndexTextField" alignment="CENTER_RIGHT" prefWidth="50.0" text="-1" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                        <Label maxWidth="1.7976931348623157E308" text="End:" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-                        <JFXTextField fx:id="endIndexTextField" alignment="CENTER_RIGHT" prefWidth="50.0" text="-1" GridPane.columnIndex="6" GridPane.rowIndex="1" />
-                        <JFXButton buttonType="RAISED" onAction="#setIndicesToInOut" styleClass="set-indices-to-in-out-button" text="Set to in/out" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-                     </children>
-                  </GridPane>
-                  <HBox alignment="CENTER_RIGHT" spacing="15.0">
-                     <children>
-                        <JFXButton onAction="#exportVideo" styleClass="save-changes-button" text="Export..." />
-                        <JFXButton onAction="#cancel" styleClass="graphic-editor-cancel-button" text="Cancel" />
-                     </children>
-                     <padding>
-                        <Insets top="15.0" />
-                     </padding>
-                  </HBox>
-               </children>
-               <padding>
-                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
-               </padding>
-            </VBox>
-         </root>
-      </Scene>
-   </scene>
-</Stage>
+<VBox fx:id="mainPane" spacing="10.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" stylesheets="@../css/GeneralStylesheet.css"
+   fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.VideoRecordingPreviewPaneController">
+   <children>
+      <AnchorPane fx:id="imageViewContainer" VBox.vgrow="ALWAYS">
+         <children>
+            <ImageView fx:id="imageView" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+         </children>
+      </AnchorPane>
+      <JFXSlider fx:id="currentBufferIndexSlider" />
+      <GridPane hgap="15.0" vgap="5.0">
+         <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+         </rowConstraints>
+         <children>
+            <Label maxWidth="1.7976931348623157E308" text="Resolution:" />
+            <JFXComboBox fx:id="resolutionComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="SOMETIMES" />
+            <Label maxWidth="1.7976931348623157E308" text="Frame rate:" GridPane.columnIndex="2" />
+            <JFXTextField fx:id="frameRateTextField" alignment="CENTER_RIGHT" prefWidth="60.0" text="60" GridPane.columnIndex="3" />
+            <Label maxWidth="1.7976931348623157E308" text="Real-time rate:" GridPane.columnIndex="4" />
+            <JFXTextField fx:id="realTimeRateTextField" alignment="CENTER_RIGHT" prefWidth="50.0" text="1.0" GridPane.columnIndex="5" />
+         </children>
+      </GridPane>
+      <HBox alignment="CENTER_RIGHT" spacing="15.0">
+         <children>
+            <JFXButton onAction="#exportVideo" styleClass="save-changes-button" text="Export..." />
+            <JFXButton onAction="#cancel" styleClass="graphic-editor-cancel-button" text="Cancel" />
+         </children>
+         <padding>
+            <Insets top="15.0" />
+         </padding>
+      </HBox>
+   </children>
+   <padding>
+      <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+   </padding>
+</VBox>

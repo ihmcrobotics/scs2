@@ -17,6 +17,8 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 
 public interface SimJointReadOnly extends JointReadOnly
 {
+   boolean isPinned();
+
    YoRegistry getRegistry();
 
    @Override

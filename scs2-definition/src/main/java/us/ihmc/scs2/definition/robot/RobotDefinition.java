@@ -72,6 +72,10 @@ public class RobotDefinition
       this.rootBodyDefinition = rootBodyDefinition;
    }
 
+   /**
+    * Specifies that the robot should not be simulated. This is particularly useful for controlling the
+    * robot state from outside the session, for instance for visualizing some output as robot state.
+    */
    public void ignoreAllJoints()
    {
       for (JointDefinition jointDefinition : collectSubtreeJointDefinitions(rootBodyDefinition))
