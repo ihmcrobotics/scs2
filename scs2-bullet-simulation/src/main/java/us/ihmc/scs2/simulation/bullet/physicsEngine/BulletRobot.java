@@ -70,7 +70,7 @@ public class BulletRobot extends RobotExtension
       }
    }
 
-   public void updateFromBulletData(BulletPhysicsEngine bulletPhysicsEngine, double dt)
+   public void updateFromBulletData(double dt)
    {
       if (rootLink != null)
       rootLink.copyBulletJointDataToSCS(dt);

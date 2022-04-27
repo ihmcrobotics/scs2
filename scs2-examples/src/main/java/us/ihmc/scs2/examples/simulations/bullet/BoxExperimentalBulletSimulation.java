@@ -3,34 +3,26 @@ package us.ihmc.scs2.examples.simulations.bullet;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
-import us.ihmc.mecano.tools.MomentOfInertiaFactory;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
-import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
-import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.examples.simulations.ExampleExperimentalSimulationTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
-public class BoxExperimentalSimulation
+public class BoxExperimentalBulletSimulation
 {
 
-   public BoxExperimentalSimulation()
+   public BoxExperimentalBulletSimulation()
    {
       double boxXLength = 0.2;
       double boxYWidth = 0.12;
@@ -44,11 +36,7 @@ public class BoxExperimentalSimulation
       double groundWidth = 1.0;
       double groundLength = 1.0;
 
-      SimulationSession simulationSession = new SimulationSession((frame,
-                                                                   rootRegistry) -> new BulletPhysicsEngine(frame,
-                                                                                                            rootRegistry,
-                                                                                                            BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
-                                                                                                            BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters()));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
 
       RobotDefinition boxRobot = ExampleExperimentalSimulationTools.newBoxRobot("box",
                                                                                 boxXLength,
@@ -104,6 +92,6 @@ public class BoxExperimentalSimulation
 
    public static void main(String[] args)
    {
-      new BoxExperimentalSimulation();
+      new BoxExperimentalBulletSimulation();
    }
 }

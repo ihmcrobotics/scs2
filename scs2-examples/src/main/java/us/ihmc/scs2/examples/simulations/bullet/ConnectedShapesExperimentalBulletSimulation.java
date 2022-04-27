@@ -24,8 +24,11 @@ import us.ihmc.scs2.examples.simulations.ExampleExperimentalSimulationTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
+
 public class ConnectedShapesExperimentalBulletSimulation
 {
+   private static final boolean DEBUG = false;
+   
    public ConnectedShapesExperimentalBulletSimulation()
    {  
       Vector3D boxSize1 = new Vector3D(0.5, 0.3, 0.3);
@@ -60,7 +63,6 @@ public class ConnectedShapesExperimentalBulletSimulation
       factory2.addCylinder(connectionOffset.getX(), 0.02, new MaterialDefinition(ColorDefinitions.Chocolate()));
       rigidBody2.getVisualDefinitions().forEach(visual -> visual.getOriginPose().prependTranslation(connectionOffset));
       rigidBody2.addVisualDefinitions(factory2.getVisualDefinitions());
-      //rigidBody2.getInertiaPose().getTranslation().add(-0.02, 0.01, -0.03);
       pinJointDefinition.setSuccessor(rigidBody2);
       rigidBody1.addChildJoint(pinJointDefinition);
       
@@ -89,12 +91,16 @@ public class ConnectedShapesExperimentalBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
 
- //     SessionVisualizer.startSessionVisualizer(simulationSession);
-      SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+      if (!DEBUG)
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      else
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
       
-      sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);
-      sessionVisualizer.getSessionVisualizerControls().setCameraPosition(7.0, 4.0, 3.0);
-      sessionVisualizer.getToolkit().getSession().runTick();
+         sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);
+         sessionVisualizer.getSessionVisualizerControls().setCameraPosition(7.0, 4.0, 3.0);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
    }
    
    public static void main(String[] args)

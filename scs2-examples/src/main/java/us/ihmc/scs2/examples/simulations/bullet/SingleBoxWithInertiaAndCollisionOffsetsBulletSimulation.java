@@ -1,6 +1,5 @@
 package us.ihmc.scs2.examples.simulations.bullet;
 
-import javafx.application.Platform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -22,13 +21,13 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletDebugDrawingNode;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
 {
+   
+   private static final boolean DEBUG = false;
+   
    public SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation()
    {
       double boxXLength = 0.2;
@@ -70,11 +69,7 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
                                                                                                collisionShapePosePitch,
                                                                                                collisionShapePoseRoll);
 
-      SimulationSession simulationSession = new SimulationSession((frame,
-                                                                   rootRegistry) -> new BulletPhysicsEngine(frame,
-                                                                                                            rootRegistry,
-                                                                                                            BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
-                                                                                                            BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters()));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
 
       String name = "box";
       RobotDefinition boxRobot = new RobotDefinition(name);
@@ -117,7 +112,10 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
       simulationSession.addTerrainObject(terrain);
 
       simulationSession.initializeBufferSize(24000);
-      BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+      if (!DEBUG)
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      else
+         BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
    }
 
    public static void main(String[] args)

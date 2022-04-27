@@ -1,7 +1,6 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;

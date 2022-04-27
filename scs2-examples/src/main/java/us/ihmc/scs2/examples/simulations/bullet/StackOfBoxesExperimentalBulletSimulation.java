@@ -23,12 +23,12 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class StackOfBoxesExperimentalBulletSimulation
 {
+   private static final boolean DEBUG = false;
+   
    public StackOfBoxesExperimentalBulletSimulation()
    {
       double groundWidth = 5.0;
@@ -112,21 +112,20 @@ public class StackOfBoxesExperimentalBulletSimulation
                                                                                          new MaterialDefinition(ColorDefinitions.DarkKhaki())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
-      SimulationSession simulationSession = new SimulationSession((frame,
-                                                                   rootRegistry) -> new BulletPhysicsEngine(frame,
-                                                                                                            rootRegistry,
-                                                                                                            BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
-                                                                                                            BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters()));
-      //SimulationSession simulationSession = new SimulationSession((frame, rootRegistry) -> new AltBulletPhysicsEngine(frame, rootRegistry));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addTerrainObject(terrain);
       robotDefinitions.forEach(simulationSession::addRobot);
 
-      //SessionVisualizer.startSessionVisualizer(simulationSession);
-      SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-
-      sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);
-      sessionVisualizer.getSessionVisualizerControls().setCameraPosition(7.0, 4.0, 3.0);
-      sessionVisualizer.getToolkit().getSession().runTick();
+      if (!DEBUG)
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      else
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+   
+         sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);
+         sessionVisualizer.getSessionVisualizerControls().setCameraPosition(7.0, 4.0, 3.0);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
    }
    
    public static void main(String[] args)
