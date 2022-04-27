@@ -13,6 +13,7 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.state.OneDoFJointState;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
+import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
@@ -23,6 +24,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 public class NewtonsCradleExperimentalBulletSimulation
 {
    private static final String NEWTONS_CRADLE = "NewtonsCradle";
+   private static final boolean DEBUG = false;
    private final int numberOfBalls = 6;
    private final double ballRadius = 0.05;
 
@@ -39,6 +41,9 @@ public class NewtonsCradleExperimentalBulletSimulation
 
       RigidBodyDefinition rootBody = new RigidBodyDefinition("rootBody");
       robotDefinition.setRootBodyDefinition(rootBody);
+      
+      MaterialDefinition ballMaterial = new MaterialDefinition(ColorDefinitions.LightGrey(), ColorDefinitions.Silver(), ColorDefinitions.LightBlue(), ColorDefinitions.AntiqueWhite(), 30);
+
 
       for (int i = 0; i < numberOfBalls; i++)
       {
@@ -57,9 +62,9 @@ public class NewtonsCradleExperimentalBulletSimulation
 
          VisualDefinitionFactory factory = new VisualDefinitionFactory();
          factory.appendTranslation(0.0, 0.0, -0.5 * stringLength);
-         factory.addCylinder(stringLength, stringRadius, ColorDefinitions.Yellow());
+         factory.addCylinder(stringLength, stringRadius, ColorDefinitions.DarkSlateGray());
          factory.appendTranslation(0, 0, -0.5 * stringLength);
-         factory.addSphere(ballRadius, ColorDefinitions.Red());
+         factory.addSphere(ballRadius, ballMaterial);
          rigidBody.addVisualDefinitions(factory.getVisualDefinitions());
 
          rigidBody.addCollisionShapeDefinition(new CollisionShapeDefinition(new RigidBodyTransform(new Quaternion(), new Vector3D(0.0, 0.0, -stringLength)),
@@ -83,11 +88,14 @@ public class NewtonsCradleExperimentalBulletSimulation
       jointParameters.setJointResitution(0.93);
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
       simulationSession.addRobot(robotDefinition);
-      //SessionVisualizer.startSessionVisualizer(simulationSession);
       
-      SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-      
-      //sessionVisualizer.getToolkit().getSession().runTick();
+      if (!DEBUG)
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      else
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
    }
 
    private String getBallBodyName(int i)

@@ -13,7 +13,7 @@ public interface BulletPhysicsEngineFactory
    {
       return (frame, rootRegistry) ->
       {
-         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry, BulletMultiBodyParameters.defaultBulletMultiBodyParameters(), BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
+         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
          return physicsEngine;
       };
    }
@@ -22,7 +22,9 @@ public interface BulletPhysicsEngineFactory
    {
       return (frame, rootRegistry) ->
       {
-         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry, bulletMultiBodyParameters, bulletMultiBodyJointParameters);
+         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
+         physicsEngine.setGlobalMultiBodyParameters(bulletMultiBodyParameters);
+         physicsEngine.setGlobalMultiBodyJointParameters(bulletMultiBodyJointParameters);
          return physicsEngine;
       };
    }

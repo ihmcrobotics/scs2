@@ -1,7 +1,5 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import us.ihmc.yoVariables.variable.YoDouble;
-
 public class BulletMultiBodyJointParameters
 {
    private double jointFriction;

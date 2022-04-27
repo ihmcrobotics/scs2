@@ -17,13 +17,12 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.examples.simulations.ExampleExperimentalSimulationTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.AltBulletPhysicsEngine;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class SingleBoxBulletSimulation
 {
+   private static final boolean DEBUG = false;
+   
    public SingleBoxBulletSimulation()
    {
       double boxXLength = 0.2;
@@ -69,10 +68,13 @@ public class SingleBoxBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
 
-      //SessionVisualizer.startSessionVisualizer(simulationSession);
-      SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-      //sessionVisualizer.getToolkit().getSession().runTick();
-      
+      if (!DEBUG)
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      else
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
    }
 
    public static void main(String[] args)

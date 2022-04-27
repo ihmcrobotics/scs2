@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import com.badlogic.gdx.physics.bullet.Bullet;
+import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -59,8 +60,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
    private final YoBoolean hasGlobalSimulationParameters;
    private final YoBulletSimulationParameters globalSimulationParameters;
    private boolean initialize = true;
-
-   public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry, BulletMultiBodyParameters multiBodyParameters, BulletMultiBodyJointParameters multiBodyJointParameters)
+   
+   public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
@@ -71,8 +72,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
       globalMultiBodyJointParameters = new YoBulletMultiBodyJointParameters("globalMultiBodyJoint", physicsEngineRegistry);
       hasGlobalSimulationParameters = new YoBoolean("hasGlobalSimulationParameters", physicsEngineRegistry);
       globalSimulationParameters = new YoBulletSimulationParameters("globalSimulation", physicsEngineRegistry);
-      setGlobalMultiBodyParameters(multiBodyParameters);
-      setGlobalMultiBodyJointParameters(multiBodyJointParameters);
+      setGlobalMultiBodyParameters(BulletMultiBodyParameters.defaultBulletMultiBodyParameters());
+      setGlobalMultiBodyJointParameters(BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
       
       hasGlobalSimulationParameters.set(false);
       
@@ -147,7 +148,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       runCopyDataFromBulletToSCSTimer.start();
       for (BulletRobot robot : robotList)
       {
-         robot.updateFromBulletData(this, dt);
+         robot.updateFromBulletData(dt);
       }
       runCopyDataFromBulletToSCSTimer.stop();
 
@@ -249,9 +250,15 @@ public class BulletPhysicsEngine implements PhysicsEngine
       hasGlobalSimulationParameters.set(true);
    }
 
-   public BulletMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
+   //TODO: remove this method after all the GDX references are updated
+   public btMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
+   {
+      return multiBodyDynamicsWorld.getMultiBodyDynamicsWorld();
+   }
+
+   public BulletMultiBodyDynamicsWorld getMultiBodyDynamicsWorld()
    {
       return multiBodyDynamicsWorld;
    }
-
+   
 }

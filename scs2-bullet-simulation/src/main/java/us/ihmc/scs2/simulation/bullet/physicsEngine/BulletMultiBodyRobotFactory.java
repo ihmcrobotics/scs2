@@ -10,6 +10,7 @@ import com.badlogic.gdx.physics.bullet.collision.btCapsuleShapeZ;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btCompoundFromGimpactShape;
 import com.badlogic.gdx.physics.bullet.collision.btCompoundShape;
+import com.badlogic.gdx.physics.bullet.collision.btConeShapeZ;
 import com.badlogic.gdx.physics.bullet.collision.btConvexTriangleMeshShape;
 import com.badlogic.gdx.physics.bullet.collision.btCylinderShapeZ;
 import com.badlogic.gdx.physics.bullet.collision.btGImpactMeshShape;
@@ -25,14 +26,17 @@ import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
+import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
+import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 
 public class BulletMultiBodyRobotFactory
@@ -160,10 +164,10 @@ public class BulletMultiBodyRobotFactory
          RevoluteJointDefinition revoluteJointDefinition = (RevoluteJointDefinition) jointDefinition;
 
          int parentBulletJointIndex;
-         if (revoluteJointDefinition.getParentJoint() == null)
+         if (joint.getPredecessor().getParentJoint() == null)
             parentBulletJointIndex = -1;
          else
-            parentBulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(revoluteJointDefinition.getParentJoint().getName());
+            parentBulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(joint.getPredecessor().getParentJoint().getName());
 
          Vector3 jointAxis = new Vector3();
          BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
@@ -177,7 +181,7 @@ public class BulletMultiBodyRobotFactory
                                                                  parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet,
                                                                  parentJointAfterFrameToLinkCenterOfMassTranslationBullet,
                                                                  disableParentCollision);
-
+         
          btMultiBodyJointLimitConstraint multiBodyJointLimitConstraint = new btMultiBodyJointLimitConstraint(bulletMultiBodyRobot.getBulletMultiBody(),
                                                                                                              bulletJointIndex,
                                                                                                              (float) revoluteJointDefinition.getPositionLowerLimit(),
@@ -185,6 +189,38 @@ public class BulletMultiBodyRobotFactory
          
          //multiBodyJointLimitConstraint.setMaxAppliedImpulse((float) revoluteJointDefinition.getEffortUpperLimit());
 
+         bulletMultiBodyRobot.addMultiBodyConstraint(multiBodyJointLimitConstraint);
+      }
+      
+      if (joint instanceof SimPrismaticJoint)
+      {
+         PrismaticJointDefinition PrimaticJointDefinition = (PrismaticJointDefinition) jointDefinition;
+
+         int parentBulletJointIndex;
+         if (joint.getPredecessor().getParentJoint() == null)
+            parentBulletJointIndex = -1;
+         else
+            parentBulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(joint.getPredecessor().getParentJoint().getName());
+
+         Vector3 jointAxis = new Vector3();
+         BulletTools.toBullet(PrimaticJointDefinition.getAxis(), jointAxis);
+         boolean disableParentCollision = true;
+         bulletMultiBodyRobot.getBulletMultiBody().setupPrismatic(bulletJointIndex,
+                                                                 linkMass,
+                                                                 baseInertiaDiagonal,
+                                                                 parentBulletJointIndex,
+                                                                 rotationFromParentGDX,
+                                                                 jointAxis,
+                                                                 parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet,
+                                                                 parentJointAfterFrameToLinkCenterOfMassTranslationBullet,
+                                                                 disableParentCollision);
+                  
+         btMultiBodyJointLimitConstraint multiBodyJointLimitConstraint = new btMultiBodyJointLimitConstraint(bulletMultiBodyRobot.getBulletMultiBody(),
+                                                                                                             bulletJointIndex,
+                                                                                                             (float) PrimaticJointDefinition.getPositionLowerLimit(),
+                                                                                                             (float) PrimaticJointDefinition.getPositionUpperLimit());
+
+         
          bulletMultiBodyRobot.addMultiBodyConstraint(multiBodyJointLimitConstraint);
       }
       
@@ -304,6 +340,12 @@ public class BulletMultiBodyRobotFactory
                                                                            (float) cylinderGeometryDefinition.getRadius(),
                                                                            (float) cylinderGeometryDefinition.getLength() / 2.0f));
          bulletCollisionShape = cylinderShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cone3DDefinition)
+      {
+         Cone3DDefinition coneGeometryDefinition = (Cone3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+         btConeShapeZ coneShape = new btConeShapeZ((float) coneGeometryDefinition.getRadius(), (float)coneGeometryDefinition.getHeight());
+         bulletCollisionShape = coneShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Capsule3DDefinition)
       {
