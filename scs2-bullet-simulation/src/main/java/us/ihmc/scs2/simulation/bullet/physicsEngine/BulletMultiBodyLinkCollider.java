@@ -13,6 +13,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 public class BulletMultiBodyLinkCollider
 {
    btMultiBodyLinkCollider bulletMultiBodyLinkCollider;
+   private final btMultiBody bulletMultiBody;
    String jointName;
    int linkColliderIndex;
    int collisionGroup;
@@ -26,8 +27,10 @@ public class BulletMultiBodyLinkCollider
    {
       createBulletMultiBodyLinkCollider(bulletMultibody, index, jointName, 2, 1 + 2);
       
-      linkForce = bulletMultiBodyLinkCollider.getMultiBody().getLink(linkColliderIndex).getAppliedConstraintForce();
-      linkTorque = bulletMultiBodyLinkCollider.getMultiBody().getLink(linkColliderIndex).getAppliedConstraintTorque();
+      bulletMultiBody = bulletMultiBodyLinkCollider.getMultiBody();
+      
+      linkForce = bulletMultiBody.getLink(linkColliderIndex).getAppliedConstraintForce();
+      linkTorque = bulletMultiBody.getLink(linkColliderIndex).getAppliedConstraintTorque();
    }
 
    public void createBulletMultiBodyLinkCollider(btMultiBody bulletMultibody, int index, String jointName, int collisionGroup, int collisionGroupMask)
@@ -117,27 +120,27 @@ public class BulletMultiBodyLinkCollider
 
    public void setJointPos(double jointPosition)
    {
-      bulletMultiBodyLinkCollider.getMultiBody().setJointPos(linkColliderIndex, (float) jointPosition);
+      bulletMultiBody.setJointPos(linkColliderIndex, (float) jointPosition);
    }
 
    public void setJointVel(double jointVelocity)
    {
-      bulletMultiBodyLinkCollider.getMultiBody().setJointVel(linkColliderIndex, (float) jointVelocity);
+      bulletMultiBody.setJointVel(linkColliderIndex, (float) jointVelocity);
    }
 
    public void addJointTorque(double jointTau)
    {
-      bulletMultiBodyLinkCollider.getMultiBody().addJointTorque(linkColliderIndex, (float) jointTau);
+      bulletMultiBody.addJointTorque(linkColliderIndex, (float) jointTau);
    }
 
    public float getJointPos()
    {
-      return bulletMultiBodyLinkCollider.getMultiBody().getJointPos(linkColliderIndex);
+      return bulletMultiBody.getJointPos(linkColliderIndex);
    }
 
    public float getJointVel()
    {
-      return bulletMultiBodyLinkCollider.getMultiBody().getJointVel(linkColliderIndex);
+      return bulletMultiBody.getJointVel(linkColliderIndex);
    }
 
    public void getAppliedConstraintForce(Vector3D force)
@@ -154,22 +157,22 @@ public class BulletMultiBodyLinkCollider
    public void setBaseVel(Vector3DReadOnly linearVelocityEuclid)
    {
       BulletTools.toBullet(linearVelocityEuclid, bulletTempConversionVector3);
-      bulletMultiBodyLinkCollider.getMultiBody().setBaseVel(bulletTempConversionVector3);
+      bulletMultiBody.setBaseVel(bulletTempConversionVector3);
    }
 
    public void setBaseOmega(Vector3DReadOnly angularVelocityBulletEuclid)
    {
       BulletTools.toBullet(angularVelocityBulletEuclid, bulletTempConversionVector3);
-      bulletMultiBodyLinkCollider.getMultiBody().setBaseOmega(bulletTempConversionVector3);
+      bulletMultiBody.setBaseOmega(bulletTempConversionVector3);
    }
    
    public void getBaseVel(Vector3D bulletBaseLinearVelocityEuclid)
    {
-      BulletTools.toEuclid(bulletMultiBodyLinkCollider.getMultiBody().getBaseVel(), bulletBaseLinearVelocityEuclid);
+      BulletTools.toEuclid(bulletMultiBody.getBaseVel(), bulletBaseLinearVelocityEuclid);
    }
    
    public void getBaseOmega(Vector3D bulletBaseAngularVelocityEuclid)
    {
-      BulletTools.toEuclid(bulletMultiBodyLinkCollider.getMultiBody().getBaseOmega(), bulletBaseAngularVelocityEuclid);
+      BulletTools.toEuclid(bulletMultiBody.getBaseOmega(), bulletBaseAngularVelocityEuclid);
    }
 }

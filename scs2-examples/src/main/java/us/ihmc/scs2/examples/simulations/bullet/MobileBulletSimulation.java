@@ -20,7 +20,6 @@ public class MobileBulletSimulation
       BulletMultiBodyJointParameters jointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
 
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
-      simulationSession.setSessionDTSeconds(0.00035);
       simulationSession.addRobot(definition);
       
       if (VISUALIZE_WITH_DEBUG_DRAWING)
