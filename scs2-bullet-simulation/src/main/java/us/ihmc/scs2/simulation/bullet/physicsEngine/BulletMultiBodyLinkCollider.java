@@ -19,10 +19,15 @@ public class BulletMultiBodyLinkCollider
    int collisionGroupMask;
    private final Matrix4 bulletTempConversionMatrix4 = new Matrix4();
    private final Vector3 bulletTempConversionVector3 = new Vector3();
+   private final btVector3 linkForce;
+   private final btVector3 linkTorque;
 
    public BulletMultiBodyLinkCollider(btMultiBody bulletMultibody, int index, String jointName)
    {
       createBulletMultiBodyLinkCollider(bulletMultibody, index, jointName, 2, 1 + 2);
+      
+      linkForce = bulletMultiBodyLinkCollider.getMultiBody().getLink(linkColliderIndex).getAppliedConstraintForce();
+      linkTorque = bulletMultiBodyLinkCollider.getMultiBody().getLink(linkColliderIndex).getAppliedConstraintTorque();
    }
 
    public void createBulletMultiBodyLinkCollider(btMultiBody bulletMultibody, int index, String jointName, int collisionGroup, int collisionGroupMask)
@@ -137,13 +142,12 @@ public class BulletMultiBodyLinkCollider
 
    public void getAppliedConstraintForce(Vector3D force)
    {
-      btVector3 linkForce = bulletMultiBodyLinkCollider.getMultiBody().getLink(linkColliderIndex).getAppliedConstraintForce();
+      
       force.set((double) linkForce.getX(), (double) linkForce.getY(), (double) linkForce.getZ());
    }
 
    public void getAppliedConstraintTorque(Vector3D torque)
    {
-      btVector3 linkTorque = bulletMultiBodyLinkCollider.getMultiBody().getLink(linkColliderIndex).getAppliedConstraintTorque();
       torque.set((double) linkTorque.getX(), (double) linkTorque.getY(), (double) linkTorque.getZ());
    }
 
