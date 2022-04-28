@@ -10,15 +10,15 @@ public class BulletInternalTickCallbackRegistry
 {
    private final ArrayList<Runnable> postTickRunnables = new ArrayList<>();
 
-   public BulletInternalTickCallbackRegistry(btMultiBodyDynamicsWorld multiBodyDynamicsWorld)
+   public BulletInternalTickCallbackRegistry(btMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld)
    {
       // Note: Apparently you can't have both pre and post tick callbacks, so we'll just do with post
-      new InternalTickCallback(multiBodyDynamicsWorld, false)
+      new InternalTickCallback(bulletMultiBodyDynamicsWorld, false)
       {
          @Override
-         public void onInternalTick(btDynamicsWorld dynamicsWorld, float timeStep)
+         public void onInternalTick(btDynamicsWorld bulletDynamicsWorld, float timeStep)
          {
-            super.onInternalTick(dynamicsWorld, timeStep);
+            super.onInternalTick(bulletDynamicsWorld, timeStep);
             for (Runnable postTickRunnable : postTickRunnables)
             {
                postTickRunnable.run();

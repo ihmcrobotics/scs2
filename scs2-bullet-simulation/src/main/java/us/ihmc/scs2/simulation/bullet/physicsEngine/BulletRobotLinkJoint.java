@@ -1,9 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
@@ -12,7 +10,10 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 public class BulletRobotLinkJoint extends BulletRobotLinkBasics
 {
-   private final SimOneDoFJointBasics simRevoluteJoint;
+   private final SimOneDoFJointBasics simOneDofJoint;
+   private final Vector3D force = new Vector3D();
+   private final Vector3D torque = new Vector3D();
+   
    private YoDouble bulletLinkAppliedForceX;
    private YoDouble bulletLinkAppliedForceY;
    private YoDouble bulletLinkAppliedForceZ;
@@ -27,7 +28,7 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
                                BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider)
    {
       super(simOneDoFJoint.getSuccessor(), rigidBodyWrenchRegistry, bulletMultiBodyLinkCollider);
-      this.simRevoluteJoint = simOneDoFJoint;
+      this.simOneDofJoint = simOneDoFJoint;
 
       bulletLinkAppliedForceX = new YoDouble(simOneDoFJoint.getName() + "_btAppliedForceX", yoRegistry);
       bulletLinkAppliedForceY = new YoDouble(simOneDoFJoint.getName() + "_btAppliedForceY", yoRegistry);
@@ -41,32 +42,31 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
    {
       updateBulletLinkColliderTransformFromMecanoRigidBody();
 
-      getBulletMultiBody().setJointPos(getBulletJointIndex(), (float) simRevoluteJoint.getQ());
-      getBulletMultiBody().setJointVel(getBulletJointIndex(), (float) simRevoluteJoint.getQd());
-      getBulletMultiBody().addJointTorque(getBulletJointIndex(), (float) simRevoluteJoint.getTau());
+      getBulletMultiBodyLinkCollider().setJointPos(simOneDofJoint.getQ());
+      getBulletMultiBodyLinkCollider().setJointVel(simOneDofJoint.getQd());
+      getBulletMultiBodyLinkCollider().addJointTorque(simOneDofJoint.getTau());
    }
 
    public void copyBulletJointDataToSCS(double dt)
    {
-      float jointPosition = getBulletMultiBody().getJointPos(getBulletJointIndex());
-      simRevoluteJoint.setQ(jointPosition);
-      float jointPVel = getBulletMultiBody().getJointVel(getBulletJointIndex());
-      simRevoluteJoint.setQdd((jointPVel - simRevoluteJoint.getQd()) / dt);
-      simRevoluteJoint.setQd(jointPVel);
+      float jointPosition = getBulletMultiBodyLinkCollider().getJointPos();
+      simOneDofJoint.setQ(jointPosition);
+      float jointPVel = getBulletMultiBodyLinkCollider().getJointVel();
+      simOneDofJoint.setQdd((jointPVel - simOneDofJoint.getQd()) / dt);
+      simOneDofJoint.setQd(jointPVel);
 
-      btVector3 linkForce = getBulletMultiBody().getLink(getBulletJointIndex()).getAppliedConstraintForce();
-      bulletLinkAppliedForceX.set(linkForce.getX());
-      bulletLinkAppliedForceY.set(linkForce.getY());
-      bulletLinkAppliedForceZ.set(linkForce.getZ());
-      btVector3 linkTorque = getBulletMultiBody().getLink(getBulletJointIndex()).getAppliedConstraintTorque();
-      bulletLinkAppliedTorqueX.set(linkTorque.getX());
-      bulletLinkAppliedTorqueY.set(linkTorque.getY());
-      bulletLinkAppliedTorqueZ.set(linkTorque.getZ());
+      getBulletMultiBodyLinkCollider().getAppliedConstraintForce(force);
+      bulletLinkAppliedForceX.set(force.getX());
+      bulletLinkAppliedForceY.set(force.getY());
+      bulletLinkAppliedForceZ.set(force.getZ());
+      
+      getBulletMultiBodyLinkCollider().getAppliedConstraintTorque(torque);
+      bulletLinkAppliedTorqueX.set(torque.getX());
+      bulletLinkAppliedTorqueY.set(torque.getY());
+      bulletLinkAppliedTorqueZ.set(torque.getZ());
 
       ReferenceFrame bodyFrame = getSimRigidBody().getBodyFixedFrame();
       ReferenceFrame expressedInFrame = getSimRigidBody().getBodyFixedFrame();
-      Vector3DReadOnly torque = new Vector3D((double) linkTorque.getX(), (double) linkTorque.getY(), (double) linkTorque.getZ());
-      Vector3DReadOnly force = new Vector3D((double) linkForce.getX(), (double) linkForce.getY(), (double) linkForce.getZ());
       getRigidBodyWrenchRegistry().addWrench(getSimRigidBody(), new Wrench(bodyFrame, expressedInFrame, torque, force));
    }
 

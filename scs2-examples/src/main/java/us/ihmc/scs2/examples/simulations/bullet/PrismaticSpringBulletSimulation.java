@@ -20,23 +20,21 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
-public class SpringPendulumBulletSimulation
+public class PrismaticSpringBulletSimulation
 {
    private static final String SPRING_PENDULUM = "SpringPendulum";
-   private static final boolean DEBUG = false;
+   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
    
    private final double ballRadius = 0.04;
    private final double stringLength = 0.4;
    private final double stringRadius = 0.005;
    private final double ballMass = 0.3;
 
-   public SpringPendulumBulletSimulation()
+   public PrismaticSpringBulletSimulation()
    {
       RobotDefinition robotDefinition = new RobotDefinition(SPRING_PENDULUM);
       double ballRadiusOfGyration = ballRadius * 0.6;
@@ -107,28 +105,23 @@ public class SpringPendulumBulletSimulation
             return registry;
          }
       });
-      
-      BulletMultiBodyParameters parameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
-      parameters.setFixedBase(true);
-      parameters.setLinearDamping(0.04);
-      parameters.setAngularDamping(0.04);
-      BulletMultiBodyJointParameters jointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-      jointParameters.setJointFriction(0.04);
 
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addRobot(robotDefinition);
 
-      if (!DEBUG)
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      else
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
          sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
       }
    }
 
    public static void main(String[] args)
    {
-      new SpringPendulumBulletSimulation();
+      new PrismaticSpringBulletSimulation();
    }
 }

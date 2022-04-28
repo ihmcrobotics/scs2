@@ -53,6 +53,10 @@ public class BulletRobot extends RobotExtension
                                                            yoRegistry,
                                                            bulletLinkCollider));
             }
+            else
+            {
+               throw new RuntimeException("Expecting a SimOneDoFJointBasics, not a " + joint.getClass().getSimpleName());
+            }
          }
       }
    }

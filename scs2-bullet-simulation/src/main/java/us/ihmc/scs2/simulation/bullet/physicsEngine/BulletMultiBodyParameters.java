@@ -2,7 +2,6 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 public class BulletMultiBodyParameters
 {
-   private boolean fixedBase;
    private boolean canSleep;
    private boolean hasSelfCollision;
    private boolean useGyroTerm;
@@ -16,15 +15,15 @@ public class BulletMultiBodyParameters
    public static BulletMultiBodyParameters defaultBulletMultiBodyParameters()
    {
       BulletMultiBodyParameters bulletMultiBodyParameters = new BulletMultiBodyParameters();
-      bulletMultiBodyParameters.setFixedBase(false);
       bulletMultiBodyParameters.setCanSleep(false);
       bulletMultiBodyParameters.setHasSelfCollision(true);
       bulletMultiBodyParameters.setUseGyroTerm(true);
+      bulletMultiBodyParameters.setUseGlobalVelocities(false);
       bulletMultiBodyParameters.setUseRK4Intergration(false);
-      bulletMultiBodyParameters.setLinearDamping(0.1);
-      bulletMultiBodyParameters.setAngularDamping(0.9);
-      bulletMultiBodyParameters.setMaxAppliedImpulse(1000);
-      bulletMultiBodyParameters.setMaxCoordinateVelocity(100);
+      bulletMultiBodyParameters.setLinearDamping(0.04);
+      bulletMultiBodyParameters.setAngularDamping(0.04);
+      bulletMultiBodyParameters.setMaxAppliedImpulse(1000.0);
+      bulletMultiBodyParameters.setMaxCoordinateVelocity(100.0);
       return bulletMultiBodyParameters;
    }
 
@@ -32,8 +31,7 @@ public class BulletMultiBodyParameters
    {
    }
 
-   public BulletMultiBodyParameters(boolean fixedBase,
-                                    boolean canSleep,
+   public BulletMultiBodyParameters(boolean canSleep,
                                     boolean hasSelfCollision,
                                     boolean useGyroTerm,
                                     boolean useGlobalVelocities,
@@ -43,7 +41,6 @@ public class BulletMultiBodyParameters
                                     double maxAppliedImpulse,
                                     double maxCoordinatedVelocity)
    {
-      this.fixedBase = fixedBase;
       this.canSleep = canSleep;
       this.hasSelfCollision = hasSelfCollision;
       this.useGyroTerm = useGyroTerm;
@@ -53,11 +50,6 @@ public class BulletMultiBodyParameters
       this.angularDamping = angularDamping;
       this.maxAppliedImpulse = maxAppliedImpulse;
       this.maxCoordinateVelocity = maxCoordinatedVelocity;
-   }
-
-   public void setFixedBase(boolean fixedBase)
-   {
-      this.fixedBase = fixedBase;
    }
 
    public void setCanSleep(boolean canSleep)
@@ -103,11 +95,6 @@ public class BulletMultiBodyParameters
    public void setMaxCoordinateVelocity(double maxCoordinateVelocity)
    {
       this.maxCoordinateVelocity = maxCoordinateVelocity;
-   }
-
-   public boolean getFixedBase()
-   {
-      return fixedBase;
    }
 
    public boolean getCanSleep()

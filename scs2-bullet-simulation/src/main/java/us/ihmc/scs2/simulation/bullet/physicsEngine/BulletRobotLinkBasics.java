@@ -1,8 +1,5 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
@@ -13,7 +10,6 @@ public abstract class BulletRobotLinkBasics
    private SimRigidBodyBasics simRigidBody;
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry;
    private BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider;
-   private final Matrix4 bulletColliderCenterOfMassTransformToWorldBullet = new Matrix4();
    private final RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
 
    public BulletRobotLinkBasics(SimRigidBodyBasics simRigidBody,
@@ -28,8 +24,7 @@ public abstract class BulletRobotLinkBasics
    public void updateBulletLinkColliderTransformFromMecanoRigidBody()
    {
       simRigidBody.getBodyFixedFrame().getTransformToDesiredFrame(bulletColliderCenterOfMassTransformToWorldEuclid, SimulationSession.DEFAULT_INERTIAL_FRAME);
-      BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletColliderCenterOfMassTransformToWorldBullet);
-      bulletMultiBodyLinkCollider.getMultiBodyLinkCollider().setWorldTransform(bulletColliderCenterOfMassTransformToWorldBullet);
+      bulletMultiBodyLinkCollider.setWorldTransform(bulletColliderCenterOfMassTransformToWorldEuclid);
    }
 
    public abstract void copyDataFromSCSToBullet();
@@ -41,19 +36,9 @@ public abstract class BulletRobotLinkBasics
       return simRigidBody;
    }
 
-   public int getBulletJointIndex()
+   public BulletMultiBodyLinkCollider getBulletMultiBodyLinkCollider()
    {
-      return bulletMultiBodyLinkCollider.getLinkColliderIndex();
-   }
-
-   public btMultiBodyLinkCollider getBulletMultiBodyLinkCollider()
-   {
-      return bulletMultiBodyLinkCollider.getMultiBodyLinkCollider();
-   }
-   
-   public btMultiBody getBulletMultiBody()
-   {
-      return bulletMultiBodyLinkCollider.getMultiBodyLinkCollider().getMultiBody();
+      return bulletMultiBodyLinkCollider;
    }
 
    public RigidBodyTransform getbulletColliderCenterOfMassTransformToWorldEuclid()

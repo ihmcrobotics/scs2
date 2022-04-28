@@ -23,8 +23,8 @@ public interface BulletPhysicsEngineFactory
       return (frame, rootRegistry) ->
       {
          BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
-         physicsEngine.setGlobalMultiBodyParameters(bulletMultiBodyParameters);
-         physicsEngine.setGlobalMultiBodyJointParameters(bulletMultiBodyJointParameters);
+         physicsEngine.setGlobalBulletMultiBodyParameters(bulletMultiBodyParameters);
+         physicsEngine.setGlobalBulletMultiBodyJointParameters(bulletMultiBodyJointParameters);
          return physicsEngine;
       };
    }

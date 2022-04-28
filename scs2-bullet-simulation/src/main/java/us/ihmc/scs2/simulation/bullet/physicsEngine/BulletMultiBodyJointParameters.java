@@ -2,6 +2,7 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 public class BulletMultiBodyJointParameters
 {
+   private boolean jointDisableParentCollision;
    private double jointFriction;
    private double jointRestitution;
    private double jointHitFraction;
@@ -12,16 +13,17 @@ public class BulletMultiBodyJointParameters
    public static BulletMultiBodyJointParameters defaultBulletMultiBodyJointParameters()
    {
       BulletMultiBodyJointParameters bulletMultiBodyJointParameters = new BulletMultiBodyJointParameters();
-      bulletMultiBodyJointParameters.setJointFriction(0.7);
-      bulletMultiBodyJointParameters.setJointResitution(0);
-      bulletMultiBodyJointParameters.setJointHitFraction(1);
-      bulletMultiBodyJointParameters.setJointRollingFriction(0);
-      bulletMultiBodyJointParameters.setJointSpinningFriction(0);
+      bulletMultiBodyJointParameters.setJointDisableParentCollision(true);
+      bulletMultiBodyJointParameters.setJointFriction(0.5);
+      bulletMultiBodyJointParameters.setJointResitution(0.0);
+      bulletMultiBodyJointParameters.setJointHitFraction(1.0);
+      bulletMultiBodyJointParameters.setJointRollingFriction(0.0);
+      bulletMultiBodyJointParameters.setJointSpinningFriction(0.0);
       
       //The constraint solver can discard solving contacts, if the distance is above this threshold. 0 by default.
       //Note: that using contacts with positive distance can improve stability. It increases, however, the chance of colliding with degerate contacts, such as 'interior' triangle edges
       //Note: when this parameter is set to zero, the simulation doesn't work well - need to investigate further what this should be defaulted as
-      bulletMultiBodyJointParameters.setJointContactProcessingThreshold(0.00001);
+      bulletMultiBodyJointParameters.setJointContactProcessingThreshold(9.9999998E17);
       return bulletMultiBodyJointParameters;
    }
 
@@ -29,13 +31,15 @@ public class BulletMultiBodyJointParameters
    {
    }
 
-   public BulletMultiBodyJointParameters(double jointFriction, 
+   public BulletMultiBodyJointParameters(boolean jointDisableParentCollision, 
+                                         double jointFriction, 
                                          double jointRestitution,
                                          double jointHitFration,
                                          double jointRollingFriction,
                                          double jointSpinningFriction,
                                          double jointContactProcessingThreshold)
    {
+      this.jointDisableParentCollision = jointDisableParentCollision;
       this.jointFriction = jointFriction;
       this.jointRestitution = jointRestitution;
       this.jointHitFraction = jointHitFration;
@@ -44,6 +48,11 @@ public class BulletMultiBodyJointParameters
       this.jointContactProcessingThreshold = jointContactProcessingThreshold;
    }
 
+   public void setJointDisableParentCollision(boolean jointDisableParentCollision)
+   {
+      this.jointDisableParentCollision = jointDisableParentCollision;
+   }
+   
    public void setJointFriction(double jointFriction)
    {
       this.jointFriction = jointFriction;
@@ -72,6 +81,11 @@ public class BulletMultiBodyJointParameters
    public void setJointContactProcessingThreshold(double jointContactProcessingThreshold)
    {
       this.jointContactProcessingThreshold = jointContactProcessingThreshold;
+   }
+   
+   public boolean getJointDisableParentCollision()
+   {
+      return jointDisableParentCollision;
    }
 
    public double getJointFriction()

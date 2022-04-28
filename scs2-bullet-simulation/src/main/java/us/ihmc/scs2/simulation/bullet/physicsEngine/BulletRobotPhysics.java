@@ -7,7 +7,6 @@ import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 
-// FIXME: Not sure if we need this class.
 public class BulletRobotPhysics
 {
    private final RobotInterface owner;
@@ -25,7 +24,7 @@ public class BulletRobotPhysics
       SimRigidBodyBasics rootBody = owner.getRootBody();
 
       spatialAccelerationCalculator = new SpatialAccelerationCalculator(rootBody, inertialFrame, false);
-      spatialAccelerationCalculator.setGravitionalAcceleration(-9.81); // FIXME This should be set wherever we set it for Bullet
+      spatialAccelerationCalculator.setGravitionalAcceleration(-9.81);
       physicsOutput = new RobotPhysicsOutput(spatialAccelerationCalculator, null, rigidBodyWrenchRegistry, null);
    }
 
