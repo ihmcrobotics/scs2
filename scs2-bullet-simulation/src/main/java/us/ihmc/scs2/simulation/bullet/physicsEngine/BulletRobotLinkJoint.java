@@ -13,6 +13,7 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
    private final SimOneDoFJointBasics simOneDofJoint;
    private final Vector3D force = new Vector3D();
    private final Vector3D torque = new Vector3D();
+   private final Wrench wrenchToAdd;
    
    private YoDouble bulletLinkAppliedForceX;
    private YoDouble bulletLinkAppliedForceY;
@@ -29,6 +30,10 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
    {
       super(simOneDoFJoint.getSuccessor(), rigidBodyWrenchRegistry, bulletMultiBodyLinkCollider);
       this.simOneDofJoint = simOneDoFJoint;
+      
+      ReferenceFrame bodyFrame = getSimRigidBody().getBodyFixedFrame();
+      ReferenceFrame expressedInFrame = getSimRigidBody().getBodyFixedFrame();
+      wrenchToAdd = new Wrench(bodyFrame, expressedInFrame);
 
       bulletLinkAppliedForceX = new YoDouble(simOneDoFJoint.getName() + "_btAppliedForceX", yoRegistry);
       bulletLinkAppliedForceY = new YoDouble(simOneDoFJoint.getName() + "_btAppliedForceY", yoRegistry);
@@ -65,9 +70,8 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
       bulletLinkAppliedTorqueY.set(torque.getY());
       bulletLinkAppliedTorqueZ.set(torque.getZ());
 
-      ReferenceFrame bodyFrame = getSimRigidBody().getBodyFixedFrame();
-      ReferenceFrame expressedInFrame = getSimRigidBody().getBodyFixedFrame();
-      getRigidBodyWrenchRegistry().addWrench(getSimRigidBody(), new Wrench(bodyFrame, expressedInFrame, torque, force));
+      wrenchToAdd.set(torque, force);
+      getRigidBodyWrenchRegistry().addWrench(getSimRigidBody(), wrenchToAdd);
    }
 
    public YoDouble getBulletLinkAppliedForceX()
