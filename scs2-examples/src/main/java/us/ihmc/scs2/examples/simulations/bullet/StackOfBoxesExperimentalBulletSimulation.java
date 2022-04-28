@@ -3,6 +3,8 @@ package us.ihmc.scs2.examples.simulations.bullet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import us.ihmc.commons.RandomNumbers;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
@@ -27,8 +29,8 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class StackOfBoxesExperimentalBulletSimulation
 {
-   private static final boolean DEBUG = false;
-   
+   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
+
    public StackOfBoxesExperimentalBulletSimulation()
    {
       double groundWidth = 5.0;
@@ -97,8 +99,8 @@ public class StackOfBoxesExperimentalBulletSimulation
          double z = boxSizeZ * 2.1 * (i + 1.0);
 
          double yaw = 0.0;
-         double pitch = 0.0; //RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
-         double roll = 0.0; //RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
+         double pitch = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
+         double roll = RandomNumbers.nextDouble(random, -Math.PI / 90.0, Math.PI / 90.0);
 
          boxRobot.getRootJointDefinitions().get(0).setInitialJointState(new SixDoFJointState(new YawPitchRoll(yaw, pitch, roll), new Point3D(x, y, z)));
 
@@ -116,18 +118,17 @@ public class StackOfBoxesExperimentalBulletSimulation
       simulationSession.addTerrainObject(terrain);
       robotDefinitions.forEach(simulationSession::addRobot);
 
-      if (!DEBUG)
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      else
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-   
-         sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.3, 0.0, 1.0);
-         sessionVisualizer.getSessionVisualizerControls().setCameraPosition(7.0, 4.0, 3.0);
          sessionVisualizer.getToolkit().getSession().runTick();
       }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
    }
-   
+
    public static void main(String[] args)
    {
       new StackOfBoxesExperimentalBulletSimulation();

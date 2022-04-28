@@ -1,12 +1,14 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
+import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoBulletMultiBodyParameters
 {
-   private YoBoolean fixedBase;
+   private boolean updateGlobalMultiBodyParameters;
    private YoBoolean canSleep;
    private YoBoolean hasSelfCollision;
    private YoBoolean useGyroTerm;
@@ -16,10 +18,9 @@ public class YoBulletMultiBodyParameters
    private YoDouble angularDamping;
    private YoDouble maxAppliedImpulse;
    private YoDouble maxCoordinateVelocity;
-
+   
    public YoBulletMultiBodyParameters(String prefix, YoRegistry registry)
    {
-      String bulletRobotIsFixedBase;
       String bulletRobotCanSleep;
       String bulletRobotHasSelfCollision;
       String bulletRobotUseGyroTerm;
@@ -32,7 +33,6 @@ public class YoBulletMultiBodyParameters
 
       if (prefix == null || prefix.isEmpty())
       {
-         bulletRobotIsFixedBase = "IsFixedBase";
          bulletRobotCanSleep = "CanSleep";
          bulletRobotHasSelfCollision = "HasSelfCollision";
          bulletRobotUseGyroTerm = "UseGyroTerm";
@@ -45,7 +45,6 @@ public class YoBulletMultiBodyParameters
       }
       else
       {
-         bulletRobotIsFixedBase = prefix + "IsFixedBase";
          bulletRobotCanSleep = prefix + "CanSleep";
          bulletRobotHasSelfCollision = prefix + "HasSelfCollision";
          bulletRobotUseGyroTerm = prefix + "UseGyroTerm";
@@ -57,7 +56,6 @@ public class YoBulletMultiBodyParameters
          bulletRobotMaxCoordinateVelocity = prefix + "MaxCoordinateVelocity";
       }
 
-      fixedBase = new YoBoolean(bulletRobotIsFixedBase, registry);
       canSleep = new YoBoolean(bulletRobotCanSleep, registry);
       hasSelfCollision = new YoBoolean(bulletRobotHasSelfCollision, registry);
       useGyroTerm = new YoBoolean(bulletRobotUseGyroTerm, registry);
@@ -67,11 +65,83 @@ public class YoBulletMultiBodyParameters
       linearDamping = new YoDouble(bulletRobotLinearDamping, registry);
       maxAppliedImpulse = new YoDouble(bulletRobotMaxAppliedImpulse, registry);
       maxCoordinateVelocity = new YoDouble(bulletRobotMaxCoordinateVelocity, registry);
+      updateGlobalMultiBodyParameters = false; 
+      
+      canSleep.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      hasSelfCollision.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      useGyroTerm.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      useGlobalVelocities.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      useRK4Intergration.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      angularDamping.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      linearDamping.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      maxAppliedImpulse.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
+      
+      maxCoordinateVelocity.addListener(new YoVariableChangedListener()
+      {
+         @Override public void changed(YoVariable v)
+         {
+            updateGlobalMultiBodyParameters = true;
+         }
+      });
    }
    
    public void set(BulletMultiBodyParameters parameters)
    {
-      setFixedBase(parameters.getFixedBase());
       setCanSleep(parameters.getCanSleep());
       setHasSelfCollision(parameters.getHasSelfCollision());
       setUseGyroTerm(parameters.getUseGyroTerm());
@@ -81,11 +151,12 @@ public class YoBulletMultiBodyParameters
       setLinearDamping(parameters.getLinearDamping());
       setMaxAppliedImpulse(parameters.getMaxAppliedImpulse());
       setMaxCoordinateVelocity(parameters.getMaxCoordinateVelocity());
+      setUpdateGlobalMultiBodyParameters(false);
    }
 
-   public void setFixedBase(boolean fixedBase)
+   public void setUpdateGlobalMultiBodyParameters(boolean updateGlobalMultiBodyParameters)
    {
-      this.fixedBase.set(fixedBase);
+      this.updateGlobalMultiBodyParameters = updateGlobalMultiBodyParameters;
    }
 
    public void setCanSleep(boolean canSleep)
@@ -133,9 +204,9 @@ public class YoBulletMultiBodyParameters
       this.maxCoordinateVelocity.set(maxCoordinateVelocity);
    }
    
-   public boolean getFixedBase()
+   public boolean getUpdateGlobalMultiBodyParameters()
    {
-      return fixedBase.getValue();
+      return updateGlobalMultiBodyParameters;
    }
 
    public boolean getCanSleep()

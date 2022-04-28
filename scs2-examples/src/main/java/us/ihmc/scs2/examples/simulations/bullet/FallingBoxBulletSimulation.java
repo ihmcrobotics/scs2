@@ -11,7 +11,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class FallingBoxBulletSimulation
 {
-   private static final boolean DEBUG = false;
+   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
    
    public static void main(String[] args)
    {
@@ -25,12 +25,14 @@ public class FallingBoxBulletSimulation
       simulationSession.addRobot(definition);
       simulationSession.addTerrainObject(new SlopeGroundDefinition(Math.toRadians(0.0)));
 
-      if (!DEBUG)
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      else
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
          sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
       }
    }
 }

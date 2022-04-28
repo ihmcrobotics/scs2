@@ -8,10 +8,10 @@ import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
 
 public class BulletMultiBodyRobot
 {
-   private btMultiBody bulletMultiBodyRobot;
+   private btMultiBody bulletMultiBody;
    private HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
-   private final ArrayList<BulletMultiBodyLinkCollider> allLinks = new ArrayList<>();
-   private final ArrayList<btMultiBodyConstraint> allConstraints = new ArrayList<>();
+   private final ArrayList<BulletMultiBodyLinkCollider> allBulletMultiBodyLinkColliders = new ArrayList<>();
+   private final ArrayList<btMultiBodyConstraint> allBulletMultiBodyConstraints = new ArrayList<>();
 
    public BulletMultiBodyRobot(int numberOfLinks,
                                float rootBodyMass,
@@ -20,7 +20,7 @@ public class BulletMultiBodyRobot
                                boolean canSleep,
                                HashMap<String, Integer> jointNameToBulletJointIndexMap)
    {
-      bulletMultiBodyRobot = new btMultiBody(numberOfLinks,
+      bulletMultiBody = new btMultiBody(numberOfLinks,
                                              rootBodyMass,
                                              rootBodyIntertia,
                                              fixedBase,
@@ -31,22 +31,22 @@ public class BulletMultiBodyRobot
 
    public btMultiBody getBulletMultiBody()
    {
-      return bulletMultiBodyRobot;
+      return bulletMultiBody;
    }
 
    public ArrayList<BulletMultiBodyLinkCollider> getBulletMultiBodyLinkColliderArray()
    {
-      return allLinks;
+      return allBulletMultiBodyLinkColliders;
    }
 
    public BulletMultiBodyLinkCollider getBulletMultiBodyLinkCollider(int index)
    {
-      return allLinks.get(index);
+      return allBulletMultiBodyLinkColliders.get(index);
    }
 
    public ArrayList<btMultiBodyConstraint> getBulletMultiBodyConstrantArray()
    {
-      return allConstraints;
+      return allBulletMultiBodyConstraints;
    }
 
    public HashMap<String, Integer> getJointNameToBulletJointIndexMap()
@@ -56,12 +56,12 @@ public class BulletMultiBodyRobot
 
    public void addBulletMuliBodyLinkCollider(BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider)
    {
-      allLinks.add(bulletMultiBodyLinkCollider);
+      allBulletMultiBodyLinkColliders.add(bulletMultiBodyLinkCollider);
    }
 
    public void addMultiBodyConstraint(btMultiBodyConstraint bulletMultiBodyConstraint)
    {
-      allConstraints.add(bulletMultiBodyConstraint);
+      allBulletMultiBodyConstraints.add(bulletMultiBodyConstraint);
    }
 
    public void finalizeMultiDof(YoBulletMultiBodyParameters bulletMultiBodyParameters, YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
@@ -69,25 +69,25 @@ public class BulletMultiBodyRobot
       setMultiBodyParameters(bulletMultiBodyParameters);
       setMultiBodyJointParameters(bulletMultiBodyJointParameters);
       
-      bulletMultiBodyRobot.finalizeMultiDof();
+      bulletMultiBody.finalizeMultiDof();
    }
 
    public void setMultiBodyParameters(YoBulletMultiBodyParameters bulletMultiBodyParameters)
    {
-      bulletMultiBodyRobot.setHasSelfCollision(bulletMultiBodyParameters.getHasSelfCollision());
-      bulletMultiBodyRobot.setCanSleep(bulletMultiBodyParameters.getCanSleep());
-      bulletMultiBodyRobot.setUseGyroTerm(bulletMultiBodyParameters.getUseGyroTerm());
-      bulletMultiBodyRobot.useGlobalVelocities(bulletMultiBodyParameters.getUseGlobalVelocities());
-      bulletMultiBodyRobot.useRK4Integration(bulletMultiBodyParameters.getUseRK4Integration());
-      bulletMultiBodyRobot.setLinearDamping((float)bulletMultiBodyParameters.getLinearDamping());
-      bulletMultiBodyRobot.setAngularDamping((float)bulletMultiBodyParameters.getAngularDamping());
-      bulletMultiBodyRobot.setMaxAppliedImpulse((float)bulletMultiBodyParameters.getMaxAppliedImpulse());
-      bulletMultiBodyRobot.setMaxCoordinateVelocity((float)bulletMultiBodyParameters.getMaxCoordinateVelocity());
+      bulletMultiBody.setHasSelfCollision(bulletMultiBodyParameters.getHasSelfCollision());
+      bulletMultiBody.setCanSleep(bulletMultiBodyParameters.getCanSleep());
+      bulletMultiBody.setUseGyroTerm(bulletMultiBodyParameters.getUseGyroTerm());
+      bulletMultiBody.useGlobalVelocities(bulletMultiBodyParameters.getUseGlobalVelocities());
+      bulletMultiBody.useRK4Integration(bulletMultiBodyParameters.getUseRK4Integration());
+      bulletMultiBody.setLinearDamping((float)bulletMultiBodyParameters.getLinearDamping());
+      bulletMultiBody.setAngularDamping((float)bulletMultiBodyParameters.getAngularDamping());
+      bulletMultiBody.setMaxAppliedImpulse((float)bulletMultiBodyParameters.getMaxAppliedImpulse());
+      bulletMultiBody.setMaxCoordinateVelocity((float)bulletMultiBodyParameters.getMaxCoordinateVelocity());
    }
    
    public void setMultiBodyJointParameters(YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
    {
-      for (BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider : allLinks)
+      for (BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider : allBulletMultiBodyLinkColliders)
       {
          bulletMultiBodyLinkCollider.setFriction(bulletMultiBodyJointParameters.getJointFriction());
          bulletMultiBodyLinkCollider.setRestitution(bulletMultiBodyJointParameters.getJointRestitution());

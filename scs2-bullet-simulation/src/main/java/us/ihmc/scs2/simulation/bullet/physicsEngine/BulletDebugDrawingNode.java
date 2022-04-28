@@ -14,9 +14,9 @@ import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class BulletDebugDrawingNode extends Group
 {
-   private final com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw btIDebugDraw;
+   private final com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw bulletIDebugDraw;
    private int debugMode = com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw.DebugDrawModes.DBG_DrawWireframe; // TODO: Provide options in combo box
-   private final BulletMultiBodyDynamicsWorld multiBodyDynamicsWorld;
+   private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
    private PrivateAnimationTimer animationTimer;
    private int lineDraws;
@@ -31,12 +31,12 @@ public class BulletDebugDrawingNode extends Group
 
    public BulletDebugDrawingNode(BulletMultiBodyDynamicsWorld multiBodyDynamicsWorld)
    {
-      this.multiBodyDynamicsWorld = multiBodyDynamicsWorld;
+      this.bulletMultiBodyDynamicsWorld = multiBodyDynamicsWorld;
 
       updateDebugDrawings.set(true);
       showDebugDrawings.set(true);
 
-      btIDebugDraw = new btIDebugDraw()
+      bulletIDebugDraw = new btIDebugDraw()
       {
          @Override
          public void drawLine(Vector3 from, Vector3 to, Vector3 color)
@@ -96,7 +96,7 @@ public class BulletDebugDrawingNode extends Group
             return debugMode;
          }
       };
-      multiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
+      multiBodyDynamicsWorld.setDebugDrawer(bulletIDebugDraw);
    }
 
    public void initializeWithJavaFX()
@@ -118,7 +118,7 @@ public class BulletDebugDrawingNode extends Group
       {
          getChildren().clear();
          lineDraws = 0;
-         multiBodyDynamicsWorld.debugDrawWorld();
+         bulletMultiBodyDynamicsWorld.debugDrawWorld();
          nextModel();
       }
    }

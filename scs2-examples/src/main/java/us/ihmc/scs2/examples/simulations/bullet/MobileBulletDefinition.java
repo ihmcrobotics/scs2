@@ -217,7 +217,6 @@ public class MobileBulletDefinition extends RobotDefinition
       GeometryDefinition barGeometryDefinition = new Cylinder3DDefinition(stringLength, R3);
       toyRigidbody.addVisualDefinition(new VisualDefinition(barVisualPose, barGeometryDefinition, new MaterialDefinition(ColorDefinitions.Black())));
 
-      //int toySelection = (int) (Math.random() * 7.0);
       int toySelection = (int) (Math.random() * 5.0);
       GeometryDefinition toyGeometryDefinition;
 
@@ -235,13 +234,6 @@ public class MobileBulletDefinition extends RobotDefinition
          case 3:
             toyGeometryDefinition = new Cone3DDefinition(TOY_H, TOY_R);
             break;
-//         case 4:
-//            toyGeometryDefinition = new Ellipsoid3DDefinition(TOY_L, TOY_W, TOY_H);
-//            break;
-//         case 5:
-//            toyGeometryDefinition = new HemiEllipsoid3DDefinition(TOY_L, TOY_W, TOY_H);
-//            break;
-//         case 6:
          default:
             toyGeometryDefinition = new Capsule3DDefinition(TOY_L, TOY_R);
             break;
