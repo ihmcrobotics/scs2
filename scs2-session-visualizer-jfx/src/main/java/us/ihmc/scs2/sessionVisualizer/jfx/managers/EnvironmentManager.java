@@ -1,6 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javafx.scene.Camera;
 import javafx.scene.Group;
@@ -18,6 +20,7 @@ public class EnvironmentManager implements Manager
    private final Group rootNode = new Group();
    private final Group terrainObjectGraphics = new Group();
    private Group staticVisualsRoot;
+   private Map<VisualDefinition, Node> staticVisualDefinitionToNodeMap;
    private Skybox skybox;
 
    private final BackgroundExecutorManager backgroundExecutorManager;
@@ -59,14 +62,22 @@ public class EnvironmentManager implements Manager
 
    public void addStaticVisual(VisualDefinition visualDefinition)
    {
-      Node node = JavaFXVisualTools.toNode(visualDefinition, null);
+      Node nodeToAdd = JavaFXVisualTools.toNode(visualDefinition, null);
+
+      if (staticVisualDefinitionToNodeMap == null)
+      {
+         staticVisualDefinitionToNodeMap = new HashMap<>();
+         if (staticVisualDefinitionToNodeMap.put(visualDefinition, nodeToAdd) != null)
+            return; // This visual was already added
+      }
 
       if (staticVisualsRoot == null)
       {
          staticVisualsRoot = new Group();
+
          JavaFXMissingTools.runLater(getClass(), () ->
          {
-            staticVisualsRoot.getChildren().add(node);
+            staticVisualsRoot.getChildren().add(nodeToAdd);
             rootNode.getChildren().add(staticVisualsRoot);
          });
       }
@@ -74,9 +85,25 @@ public class EnvironmentManager implements Manager
       {
          JavaFXMissingTools.runLater(getClass(), () ->
          {
-            staticVisualsRoot.getChildren().add(node);
+            staticVisualsRoot.getChildren().add(nodeToAdd);
          });
       }
+   }
+
+   public void removeStaticVisual(VisualDefinition visualDefinition)
+   {
+      if (staticVisualDefinitionToNodeMap == null)
+         return;
+
+      if (staticVisualsRoot == null)
+         return;
+
+      Node nodeToRemove = staticVisualDefinitionToNodeMap.remove(visualDefinition);
+
+      JavaFXMissingTools.runLater(getClass(), () ->
+      {
+         staticVisualsRoot.getChildren().add(nodeToRemove);
+      });
    }
 
    @Override
