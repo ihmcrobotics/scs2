@@ -18,7 +18,8 @@ public interface BulletPhysicsEngineFactory
       };
    }
 
-   static PhysicsEngineFactory newBulletPhysicsEngineFactory(BulletMultiBodyParameters bulletMultiBodyParameters, BulletMultiBodyJointParameters bulletMultiBodyJointParameters)
+   static PhysicsEngineFactory newBulletPhysicsEngineFactory(BulletMultiBodyParameters bulletMultiBodyParameters,
+                                                             BulletMultiBodyJointParameters bulletMultiBodyJointParameters)
    {
       return (frame, rootRegistry) ->
       {

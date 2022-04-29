@@ -5,14 +5,12 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class BulletRobot extends RobotExtension
 {
    private final BulletRobotPhysics robotPhysics;
-   private SimFloatingRootJoint rootSimFloatingRootJoint;
    private final BulletMultiBodyRobot bulletMultiBodyRobot;
    private BulletRobotLinkRoot rootLink;
    private final ArrayList<BulletRobotLinkJoint> afterRootLinks = new ArrayList<>();
@@ -26,28 +24,25 @@ public class BulletRobot extends RobotExtension
       yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
       robot.getRegistry().addChild(yoRegistry);
       this.bulletMultiBodyRobot = bulletMultiBodyRobot;
-      
+
       for (BulletMultiBodyLinkCollider bulletLinkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
       {
          int bulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(bulletLinkCollider.getJointName());
-      
+
          JointBasics joint = robot.getJoint(bulletLinkCollider.getJointName());
-         
+
          if (bulletJointIndex == -1)
          {
             if (!(joint instanceof SimFloatingRootJoint))
                throw new RuntimeException("Expecting a SimFloatingRootJoint, not a " + joint.getClass().getSimpleName());
-            
-            rootSimFloatingRootJoint = (SimFloatingRootJoint) joint;
-            rootLink = new BulletRobotLinkRoot(rootSimFloatingRootJoint,
-                                               robotPhysics.getRigidBodyWrenchRegistry(),
-                                               yoRegistry,
-                                               bulletLinkCollider);
-         } else { 
+
+            rootLink = new BulletRobotLinkRoot((SimFloatingRootJoint) joint, robotPhysics.getRigidBodyWrenchRegistry(), yoRegistry, bulletLinkCollider);
+         }
+         else
+         {
             if (joint instanceof SimOneDoFJointBasics)
             {
-               SimOneDoFJointBasics childSimOneDoFJoint = (SimOneDoFJointBasics) joint;
-               afterRootLinks.add(new BulletRobotLinkJoint(childSimOneDoFJoint,
+               afterRootLinks.add(new BulletRobotLinkJoint((SimOneDoFJointBasics) joint,
                                                            bulletJointIndex,
                                                            robotPhysics.getRigidBodyWrenchRegistry(),
                                                            yoRegistry,
@@ -61,31 +56,31 @@ public class BulletRobot extends RobotExtension
       }
    }
 
-   public void copyDataFromSCSToBullet()
+   public void pushStateToBullet()
    {
       robotPhysics.reset();
 
       if (rootLink != null)
-      rootLink.copyDataFromSCSToBullet();
+         rootLink.pushStateToBullet();
 
       for (BulletRobotLinkJoint afterRootLink : afterRootLinks)
       {
-         afterRootLink.copyDataFromSCSToBullet();
+         afterRootLink.pushStateToBullet();
       }
    }
 
-   public void updateFromBulletData(double dt)
+   public void pullStateFromBullet(double dt)
    {
       if (rootLink != null)
-      rootLink.copyBulletJointDataToSCS(dt);
+         rootLink.pullStateFromBullet(dt);
 
       for (BulletRobotLinkJoint afterRootLink : afterRootLinks)
       {
-         afterRootLink.copyBulletJointDataToSCS(dt);
+         afterRootLink.pullStateFromBullet(dt);
       }
       robotPhysics.update();
    }
-   
+
    public BulletMultiBodyRobot getBulletMultiBodyRobot()
    {
       return bulletMultiBodyRobot;

@@ -56,58 +56,65 @@ public class YoBulletMultiBodyJointParameters
       jointSpinningFriction = new YoDouble(bulletRobotJointSpinningFriction, registry);
       jointContactProcessingThreshold = new YoDouble(bulletRobotJointContactProcessingThreshold, registry);
       updateGlobalMultiBodyJointParameters = false;
-      
+
       jointDisableParentCollision.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
       });
-      
+
       jointFriction.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
       });
-      
+
       jointRestitution.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
       });
-      
+
       jointHitFraction.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
       });
-      
+
       jointRollingFriction.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
       });
-      
+
       jointSpinningFriction.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
       });
-      
+
       jointContactProcessingThreshold.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyJointParameters = true;
          }
@@ -125,12 +132,12 @@ public class YoBulletMultiBodyJointParameters
       setJointContactProcessingThreshold(parameters.getJointContactProcessingThreshold());
       setUpdateGlobalMultiBodyJointParameters(false);
    }
-   
+
    public void setUpdateGlobalMultiBodyJointParameters(boolean updateGlobalMultiBodyJointParameters)
    {
       this.updateGlobalMultiBodyJointParameters = updateGlobalMultiBodyJointParameters;
    }
-   
+
    public void setJointDisableParentCollision(boolean jointDisableParentCollision)
    {
       this.jointDisableParentCollision.set(jointDisableParentCollision);
@@ -170,12 +177,12 @@ public class YoBulletMultiBodyJointParameters
    {
       return updateGlobalMultiBodyJointParameters;
    }
-   
+
    public boolean getJointDisableParentCollision()
    {
       return jointDisableParentCollision.getValue();
    }
-   
+
    public double getJointFriction()
    {
       return jointFriction.getValue();

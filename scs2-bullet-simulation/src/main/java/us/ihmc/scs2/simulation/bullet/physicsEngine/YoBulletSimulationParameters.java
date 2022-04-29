@@ -33,39 +33,39 @@ public class YoBulletSimulationParameters
       maxSubSteps = new YoInteger(simulateMaxSubSteps, registry);
       fixedTimeStep = new YoDouble(simulateFixedTimeStep, registry);
    }
-   
+
    public void set(BulletSimulationParameters parameters)
    {
       setTimeStamp(parameters.getTimeStep());
       setMaxSubSteps(parameters.getMaxSubSteps());
       setFixedTimeStep(parameters.getFixedTimeStep());
    }
-   
+
    public void setTimeStamp(Double timeStamp)
    {
       this.timeStamp.set(timeStamp);
    }
-   
+
    public void setMaxSubSteps(int maxSubSteps)
    {
       this.maxSubSteps.set(maxSubSteps);
    }
-   
+
    public void setFixedTimeStep(double fixedTimeStep)
    {
       this.fixedTimeStep.set(fixedTimeStep);
    }
-   
+
    public double getTimeStamp()
    {
       return timeStamp.getValue();
    }
-   
+
    public int getMaxSubSteps()
    {
       return maxSubSteps.getValue();
    }
-   
+
    public double getFixedTimeStep()
    {
       return fixedTimeStep.getValue();

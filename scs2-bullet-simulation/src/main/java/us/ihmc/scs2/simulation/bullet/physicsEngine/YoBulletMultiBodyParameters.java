@@ -18,7 +18,7 @@ public class YoBulletMultiBodyParameters
    private YoDouble angularDamping;
    private YoDouble maxAppliedImpulse;
    private YoDouble maxCoordinateVelocity;
-   
+
    public YoBulletMultiBodyParameters(String prefix, YoRegistry registry)
    {
       String bulletRobotCanSleep;
@@ -65,81 +65,90 @@ public class YoBulletMultiBodyParameters
       linearDamping = new YoDouble(bulletRobotLinearDamping, registry);
       maxAppliedImpulse = new YoDouble(bulletRobotMaxAppliedImpulse, registry);
       maxCoordinateVelocity = new YoDouble(bulletRobotMaxCoordinateVelocity, registry);
-      updateGlobalMultiBodyParameters = false; 
-      
+      updateGlobalMultiBodyParameters = false;
+
       canSleep.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       hasSelfCollision.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       useGyroTerm.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       useGlobalVelocities.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       useRK4Intergration.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       angularDamping.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       linearDamping.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       maxAppliedImpulse.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
-      
+
       maxCoordinateVelocity.addListener(new YoVariableChangedListener()
       {
-         @Override public void changed(YoVariable v)
+         @Override
+         public void changed(YoVariable v)
          {
             updateGlobalMultiBodyParameters = true;
          }
       });
    }
-   
+
    public void set(BulletMultiBodyParameters parameters)
    {
       setCanSleep(parameters.getCanSleep());
@@ -173,17 +182,17 @@ public class YoBulletMultiBodyParameters
    {
       this.useGyroTerm.set(useGyroTerm);
    }
-   
+
    public void setUseRK4Integration(boolean useRK4Integration)
    {
       this.useRK4Intergration.set(useRK4Integration);
    }
-   
+
    public void setUseGlobalVelocities(boolean useGlobalVelocities)
    {
       this.useGlobalVelocities.set(useGlobalVelocities);
    }
-   
+
    public void setLinearDamping(double linearDamping)
    {
       this.linearDamping.set(linearDamping);
@@ -192,18 +201,18 @@ public class YoBulletMultiBodyParameters
    public void setAngularDamping(double angularDamping)
    {
       this.angularDamping.set(angularDamping);
-   }  
-   
+   }
+
    public void setMaxAppliedImpulse(double maxAppliedImpulse)
    {
       this.maxAppliedImpulse.set(maxAppliedImpulse);
    }
-   
+
    public void setMaxCoordinateVelocity(double maxCoordinateVelocity)
    {
       this.maxCoordinateVelocity.set(maxCoordinateVelocity);
    }
-   
+
    public boolean getUpdateGlobalMultiBodyParameters()
    {
       return updateGlobalMultiBodyParameters;
@@ -218,17 +227,17 @@ public class YoBulletMultiBodyParameters
    {
       return hasSelfCollision.getValue();
    }
-   
+
    public boolean getUseGyroTerm()
    {
       return useGyroTerm.getValue();
    }
-   
+
    public boolean getUseGlobalVelocities()
    {
       return useGlobalVelocities.getValue();
    }
-   
+
    public boolean getUseRK4Integration()
    {
       return useRK4Intergration.getValue();
@@ -238,12 +247,12 @@ public class YoBulletMultiBodyParameters
    {
       return linearDamping.getValue();
    }
-   
+
    public double getAngularDamping()
    {
       return angularDamping.getValue();
-   }   
-   
+   }
+
    public double getMaxAppliedImpulse()
    {
       return maxAppliedImpulse.getValue();

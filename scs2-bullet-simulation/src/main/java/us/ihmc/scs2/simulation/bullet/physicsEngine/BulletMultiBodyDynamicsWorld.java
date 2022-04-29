@@ -17,149 +17,152 @@ import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
 
 public class BulletMultiBodyDynamicsWorld
 {
-   private btCollisionConfiguration bulletCollisionConfiguration;
-   private btCollisionDispatcher bulletCollisionDispatcher;
-   private btBroadphaseInterface bulletBroadphaseInterface;
-   private btMultiBodyConstraintSolver bulletMultiBodyConstraintSolver;
-   private btMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
-   private btIDebugDraw bulletIDebugDraw;
-   private final ArrayList<BulletTerrainObject> bulletTerrainObjects = new ArrayList<>();
-   private final ArrayList<BulletMultiBodyRobot> bulletMultiBodyRobots = new ArrayList<>();
+   private final btCollisionConfiguration btCollisionConfiguration;
+   private final btCollisionDispatcher btCollisionDispatcher;
+   private final btBroadphaseInterface btBroadphaseInterface;
+   private final btMultiBodyConstraintSolver btMultiBodyConstraintSolver;
+   private final btMultiBodyDynamicsWorld btMultiBodyDynamicsWorld;
+   private btIDebugDraw btIDebugDraw;
+   private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
+   private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
 
    public BulletMultiBodyDynamicsWorld()
    {
-      bulletCollisionConfiguration = new btDefaultCollisionConfiguration();
-      bulletCollisionDispatcher = new btCollisionDispatcher(bulletCollisionConfiguration);
-      bulletBroadphaseInterface = new btDbvtBroadphase();
-      bulletMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
-      bulletIDebugDraw = null;
-      bulletMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(bulletCollisionDispatcher, bulletBroadphaseInterface, bulletMultiBodyConstraintSolver, bulletCollisionConfiguration);
+      btCollisionConfiguration = new btDefaultCollisionConfiguration();
+      btCollisionDispatcher = new btCollisionDispatcher(btCollisionConfiguration);
+      btBroadphaseInterface = new btDbvtBroadphase();
+      btMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
+      btIDebugDraw = null;
+      btMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(btCollisionDispatcher,
+                                                              btBroadphaseInterface,
+                                                              btMultiBodyConstraintSolver,
+                                                              btCollisionConfiguration);
       Vector3 gravity = new Vector3(0.0f, 0.0f, -9.81f);
-      bulletMultiBodyDynamicsWorld.setGravity(gravity);
+      btMultiBodyDynamicsWorld.setGravity(gravity);
    }
 
    public int stepSimulation(float timeStep, int maxSubSteps, float fixedTimeStep)
    {
-      return bulletMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
+      return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
    }
 
-   public btMultiBodyDynamicsWorld getMultiBodyDynamicsWorld()
+   public btMultiBodyDynamicsWorld getBtMultiBodyDynamicsWorld()
    {
-      return bulletMultiBodyDynamicsWorld;
+      return btMultiBodyDynamicsWorld;
    }
 
    public void dispose()
    {
-      if (!bulletMultiBodyDynamicsWorld.isDisposed())
+      if (!btMultiBodyDynamicsWorld.isDisposed())
       {
-         for (BulletTerrainObject bulletTerrainObject : bulletTerrainObjects)
+         for (BulletTerrainObject bulletTerrainObject : terrainObjects)
          {
-            bulletTerrainObject.getBulletRigidBody().getCollisionShape().dispose();
-            bulletTerrainObject.getBulletRigidBody().getMotionState().dispose();
-            bulletMultiBodyDynamicsWorld.removeRigidBody(bulletTerrainObject.getBulletRigidBody());
-            bulletTerrainObject.getBulletRigidBody().dispose();
+            bulletTerrainObject.getBtRigidBody().getCollisionShape().dispose();
+            bulletTerrainObject.getBtRigidBody().getMotionState().dispose();
+            btMultiBodyDynamicsWorld.removeRigidBody(bulletTerrainObject.getBtRigidBody());
+            bulletTerrainObject.getBtRigidBody().dispose();
          }
 
-         for (BulletMultiBodyRobot bulletMultiBodyRobot : bulletMultiBodyRobots)
+         for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
          {
-            for (int i = 0; i < bulletMultiBodyDynamicsWorld.getNumConstraints(); i++)
+            for (int i = 0; i < btMultiBodyDynamicsWorld.getNumConstraints(); i++)
             {
-               bulletMultiBodyDynamicsWorld.removeConstraint(bulletMultiBodyDynamicsWorld.getConstraint(i));
+               btMultiBodyDynamicsWorld.removeConstraint(btMultiBodyDynamicsWorld.getConstraint(i));
             }
 
-            for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBulletMultiBodyConstrantArray())
+            for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBtMultiBodyConstrantArray())
             {
-               bulletMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
+               btMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
                bulletMultiBodyConstraint.dispose();
             }
 
-            bulletMultiBodyDynamicsWorld.removeMultiBody(bulletMultiBodyRobot.getBulletMultiBody());
+            btMultiBodyDynamicsWorld.removeMultiBody(bulletMultiBodyRobot.getBtMultiBody());
             for (BulletMultiBodyLinkCollider multiBodyLinkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
             {
-               bulletMultiBodyDynamicsWorld.removeCollisionObject(multiBodyLinkCollider.getBulletMultiBodyLinkCollider());
-               multiBodyLinkCollider.getBulletMultiBodyLinkCollider().getCollisionShape().dispose();
-               multiBodyLinkCollider.getBulletMultiBodyLinkCollider().dispose();
+               btMultiBodyDynamicsWorld.removeCollisionObject(multiBodyLinkCollider.getBtMultiBodyLinkCollider());
+               multiBodyLinkCollider.getBtMultiBodyLinkCollider().getCollisionShape().dispose();
+               multiBodyLinkCollider.getBtMultiBodyLinkCollider().dispose();
             }
-            for (int i = 0; bulletMultiBodyRobot.getBulletMultiBody().getNumLinks() < i; i++)
+            for (int i = 0; bulletMultiBodyRobot.getBtMultiBody().getNumLinks() < i; i++)
             {
-               bulletMultiBodyRobot.getBulletMultiBody().getLink(i).dispose();
+               bulletMultiBodyRobot.getBtMultiBody().getLink(i).dispose();
             }
-            bulletMultiBodyRobot.getBulletMultiBody().dispose();
+            bulletMultiBodyRobot.getBtMultiBody().dispose();
          }
-         
-         if (bulletIDebugDraw != null)
+
+         if (btIDebugDraw != null)
          {
-            bulletIDebugDraw.dispose();
+            btIDebugDraw.dispose();
          }
-         
-         bulletMultiBodyDynamicsWorld.dispose();
-         bulletMultiBodyConstraintSolver.dispose();
-         bulletBroadphaseInterface.dispose();
-         bulletCollisionDispatcher.dispose();
-         bulletCollisionConfiguration.dispose();
+
+         btMultiBodyDynamicsWorld.dispose();
+         btMultiBodyConstraintSolver.dispose();
+         btBroadphaseInterface.dispose();
+         btCollisionDispatcher.dispose();
+         btCollisionConfiguration.dispose();
       }
    }
 
-   public void addMultiBody(BulletMultiBodyRobot bulletMultiBody)
+   public void addBulletMultiBodyRobot(BulletMultiBodyRobot bulletMultiBodyRobot)
    {
       //add Bullet Multibody to array
-      bulletMultiBodyRobots.add(bulletMultiBody);
-      
+      multiBodyRobots.add(bulletMultiBodyRobot);
+
       //add Bullet Multibody collisionObjects to multiBodyDynamicsWorld
-      for (BulletMultiBodyLinkCollider linkCollider : bulletMultiBody.getBulletMultiBodyLinkColliderArray())
+      for (BulletMultiBodyLinkCollider linkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
       {
-         bulletMultiBodyDynamicsWorld.addCollisionObject(linkCollider.getBulletMultiBodyLinkCollider(),
-                                                   linkCollider.getCollisionGroup(),
-                                                   linkCollider.getCollisionGroupMask());
+         btMultiBodyDynamicsWorld.addCollisionObject(linkCollider.getBtMultiBodyLinkCollider(),
+                                                     linkCollider.getCollisionGroup(),
+                                                     linkCollider.getCollisionGroupMask());
       }
-      
+
       //add Bullet Multibody constraints to multiBodyDynamicsWorld
-      for (btMultiBodyConstraint constraint : bulletMultiBody.getBulletMultiBodyConstrantArray())
+      for (btMultiBodyConstraint constraint : bulletMultiBodyRobot.getBtMultiBodyConstrantArray())
       {
-         bulletMultiBodyDynamicsWorld.addMultiBodyConstraint(constraint);
+         btMultiBodyDynamicsWorld.addMultiBodyConstraint(constraint);
       }
 
       //add Bullet Multibody to multiBodyDynamicsWorld
-      bulletMultiBodyDynamicsWorld.addMultiBody(bulletMultiBody.getBulletMultiBody());
+      btMultiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot.getBtMultiBody());
    }
 
-   public void addTerrian(BulletTerrainObject bulletTerrainObject)
+   public void addTerrain(BulletTerrainObject bulletTerrainObject)
    {
-      bulletTerrainObjects.add(bulletTerrainObject);
-      bulletMultiBodyDynamicsWorld.addRigidBody(bulletTerrainObject.getBulletRigidBody(),
-                                          bulletTerrainObject.getCollisionGroup(),
-                                          bulletTerrainObject.getCollisionGroupMask());
-      bulletTerrainObject.getBulletRigidBody().setCollisionFlags(bulletTerrainObject.getBulletRigidBody().getCollisionFlags()
-            | btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
-      bulletTerrainObject.getBulletRigidBody().setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
+      terrainObjects.add(bulletTerrainObject);
+      btMultiBodyDynamicsWorld.addRigidBody(bulletTerrainObject.getBtRigidBody(),
+                                            bulletTerrainObject.getCollisionGroup(),
+                                            bulletTerrainObject.getCollisionGroupMask());
+      bulletTerrainObject.getBtRigidBody()
+                         .setCollisionFlags(bulletTerrainObject.getBtRigidBody().getCollisionFlags() | btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
+      bulletTerrainObject.getBtRigidBody().setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
    }
-   
-   
-   public void updateAllMultiBodyParameters (YoBulletMultiBodyParameters bulletMultiBodyParameters)
+
+   public void updateAllMultiBodyParameters(YoBulletMultiBodyParameters multiBodyParameters)
    {
-      for (BulletMultiBodyRobot bulletMultiBodyRobot : bulletMultiBodyRobots)
+      for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
       {
-         bulletMultiBodyRobot.setMultiBodyParameters(bulletMultiBodyParameters);
+         bulletMultiBodyRobot.setMultiBodyParameters(multiBodyParameters);
       }
    }
-   
-   public void updateAllMultiBodyJointParameters (YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
+
+   public void updateAllMultiBodyJointParameters(YoBulletMultiBodyJointParameters multiBodyJointParameters)
    {
-      for (BulletMultiBodyRobot bulletMultiBodyRobot : bulletMultiBodyRobots)
+      for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
       {
-         bulletMultiBodyRobot.setMultiBodyJointParameters(bulletMultiBodyJointParameters);
+         bulletMultiBodyRobot.setMultiBodyJointParameters(multiBodyJointParameters);
       }
    }
-   
-   public void setDebugDrawer(btIDebugDraw iDebugDraw)
+
+   public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
    {
-      if (!bulletMultiBodyDynamicsWorld.isDisposed())
-         bulletMultiBodyDynamicsWorld.setDebugDrawer(iDebugDraw);
-      this.bulletIDebugDraw = iDebugDraw;
+      if (!btMultiBodyDynamicsWorld.isDisposed())
+         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
+      this.btIDebugDraw = btIDebugDraw;
    }
+
    public void debugDrawWorld()
    {
-      if (!bulletMultiBodyDynamicsWorld.isDisposed())
-         bulletMultiBodyDynamicsWorld.debugDrawWorld();
+      if (!btMultiBodyDynamicsWorld.isDisposed())
+         btMultiBodyDynamicsWorld.debugDrawWorld();
    }
 }
