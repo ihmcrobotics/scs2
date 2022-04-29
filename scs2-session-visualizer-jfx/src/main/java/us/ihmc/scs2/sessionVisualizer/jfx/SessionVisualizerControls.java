@@ -30,6 +30,8 @@ public interface SessionVisualizerControls
    }
 
    void addStaticVisual(VisualDefinition visualDefinition);
+   
+   void removeStaticVisual(VisualDefinition visualDefinition);
 
    void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition);
 
