@@ -19,9 +19,7 @@ public class BulletSimulationParameters
    {
    }
 
-   public BulletSimulationParameters(double timeStep,
-                                   int maxSubSteps,
-                                   double fixedTimeStep)
+   public BulletSimulationParameters(double timeStep, int maxSubSteps, double fixedTimeStep)
    {
       this.timeStep = timeStep;
       this.maxSubSteps = maxSubSteps;
@@ -43,7 +41,6 @@ public class BulletSimulationParameters
       this.fixedTimeStep = fixedTimeStep;
    }
 
- 
    public double getTimeStep()
    {
       return timeStep;

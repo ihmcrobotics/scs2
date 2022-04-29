@@ -14,17 +14,17 @@ public class BulletMultiBodyParameters
 
    public static BulletMultiBodyParameters defaultBulletMultiBodyParameters()
    {
-      BulletMultiBodyParameters bulletMultiBodyParameters = new BulletMultiBodyParameters();
-      bulletMultiBodyParameters.setCanSleep(false);
-      bulletMultiBodyParameters.setHasSelfCollision(true);
-      bulletMultiBodyParameters.setUseGyroTerm(true);
-      bulletMultiBodyParameters.setUseGlobalVelocities(false);
-      bulletMultiBodyParameters.setUseRK4Intergration(false);
-      bulletMultiBodyParameters.setLinearDamping(0.04);
-      bulletMultiBodyParameters.setAngularDamping(0.04);
-      bulletMultiBodyParameters.setMaxAppliedImpulse(1000.0);
-      bulletMultiBodyParameters.setMaxCoordinateVelocity(100.0);
-      return bulletMultiBodyParameters;
+      BulletMultiBodyParameters multiBodyParameters = new BulletMultiBodyParameters();
+      multiBodyParameters.setCanSleep(false);
+      multiBodyParameters.setHasSelfCollision(true);
+      multiBodyParameters.setUseGyroTerm(true);
+      multiBodyParameters.setUseGlobalVelocities(false);
+      multiBodyParameters.setUseRK4Intergration(false);
+      multiBodyParameters.setLinearDamping(0.04);
+      multiBodyParameters.setAngularDamping(0.04);
+      multiBodyParameters.setMaxAppliedImpulse(1000.0);
+      multiBodyParameters.setMaxCoordinateVelocity(100.0);
+      return multiBodyParameters;
    }
 
    public BulletMultiBodyParameters()
@@ -66,12 +66,12 @@ public class BulletMultiBodyParameters
    {
       this.useGyroTerm = useGyroTerm;
    }
-   
+
    public void setUseGlobalVelocities(boolean useGlobalVelocities)
    {
       this.useGlobalVelocities = useGlobalVelocities;
    }
-   
+
    public void setUseRK4Intergration(boolean useRK4Intergration)
    {
       this.useRK4Intergration = useRK4Intergration;
@@ -111,12 +111,12 @@ public class BulletMultiBodyParameters
    {
       return useGyroTerm;
    }
-   
+
    public boolean getUseGlobalVelocities()
    {
       return useGlobalVelocities;
    }
-   
+
    public boolean getUseRK4Integration()
    {
       return useRK4Intergration;

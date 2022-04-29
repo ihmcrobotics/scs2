@@ -30,9 +30,9 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    public BulletRobotLinkRoot(SimFloatingRootJoint rootSimFloatingRootJoint,
                               RigidBodyWrenchRegistry rigidBodyWrenchRegistry,
                               YoRegistry yoRegistry,
-                              BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider)
+                              BulletMultiBodyLinkCollider multiBodyLinkCollider)
    {
-      super(rootSimFloatingRootJoint.getSuccessor(), rigidBodyWrenchRegistry, bulletMultiBodyLinkCollider);
+      super(rootSimFloatingRootJoint.getSuccessor(), rigidBodyWrenchRegistry, multiBodyLinkCollider);
       this.rootSimFloatingRootJoint = rootSimFloatingRootJoint;
 
       twistFD = new YoFixedFrameTwist("testTwistFD",
@@ -44,7 +44,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    }
 
    @Override
-   public void copyDataFromSCSToBullet()
+   public void pushStateToBullet()
    {
       updateBulletLinkColliderTransformFromMecanoRigidBody();
 
@@ -69,7 +69,7 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
    private final Twist previousBaseTwist = new Twist();
 
    @Override
-   public void copyBulletJointDataToSCS(double dt)
+   public void pullStateFromBullet(double dt)
    {
       // T_BFF^W
       getBulletMultiBodyLinkCollider().getWorldTransform(rootJointSuccessorBodyFixedFrameToWorldEuclid);

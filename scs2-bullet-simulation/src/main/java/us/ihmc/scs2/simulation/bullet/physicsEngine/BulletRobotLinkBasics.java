@@ -5,11 +5,11 @@ import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 
-public abstract class BulletRobotLinkBasics 
+public abstract class BulletRobotLinkBasics
 {
-   private SimRigidBodyBasics simRigidBody;
+   private final SimRigidBodyBasics simRigidBody;
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry;
-   private BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider;
+   private final BulletMultiBodyLinkCollider bulletMultiBodyLinkCollider;
    private final RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid = new RigidBodyTransform();
 
    public BulletRobotLinkBasics(SimRigidBodyBasics simRigidBody,
@@ -27,9 +27,9 @@ public abstract class BulletRobotLinkBasics
       bulletMultiBodyLinkCollider.setWorldTransform(bulletColliderCenterOfMassTransformToWorldEuclid);
    }
 
-   public abstract void copyDataFromSCSToBullet();
+   public abstract void pushStateToBullet();
 
-   public abstract void copyBulletJointDataToSCS(double dt);
+   public abstract void pullStateFromBullet(double dt);
 
    public SimRigidBodyBasics getSimRigidBody()
    {
@@ -41,10 +41,6 @@ public abstract class BulletRobotLinkBasics
       return bulletMultiBodyLinkCollider;
    }
 
-   public RigidBodyTransform getbulletColliderCenterOfMassTransformToWorldEuclid()
-   {
-      return bulletColliderCenterOfMassTransformToWorldEuclid;
-   }
    public RigidBodyWrenchRegistry getRigidBodyWrenchRegistry()
    {
       return rigidBodyWrenchRegistry;

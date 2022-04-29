@@ -15,7 +15,7 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 
 public class BulletTerrainObject
 {
-   private final btMotionState bulletMotionState = new btMotionState()
+   private final btMotionState btMotionState = new btMotionState()
    {
       @Override
       public void setWorldTransform(Matrix4 transformToWorld)
@@ -29,9 +29,9 @@ public class BulletTerrainObject
          // Should be always 0, the child shapes are statically placed
       }
    };
-   private final btRigidBody bulletRigidBody;
-   int collisionGroup = 1; // group 1 is rigid and static bodies
-   int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
+   private final btRigidBody btRigidBody;
+   private final int collisionGroup = 1; // group 1 is rigid and static bodies
+   private final int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
 
    public BulletTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
@@ -68,23 +68,22 @@ public class BulletTerrainObject
          }
 
          Matrix4 bulletTransformToWorld = new Matrix4();
-         RigidBodyTransform collisionShapeDefinitionTransformToWorld
-               = new RigidBodyTransform(collisionShapeDefinition.getOriginPose().getRotation(),
-                                        collisionShapeDefinition.getOriginPose().getTranslation());
+         RigidBodyTransform collisionShapeDefinitionTransformToWorld = new RigidBodyTransform(collisionShapeDefinition.getOriginPose().getRotation(),
+                                                                                              collisionShapeDefinition.getOriginPose().getTranslation());
          BulletTools.toBullet(collisionShapeDefinitionTransformToWorld, bulletTransformToWorld);
          bulletCompoundCollisionShape.addChildShape(bulletTransformToWorld, bulletCollisionShape);
       }
-      
+
       Vector3 localInertia = new Vector3();
       bulletCompoundCollisionShape.calculateLocalInertia(0.0f, localInertia);
-      bulletRigidBody = new btRigidBody(0.0f, bulletMotionState, bulletCompoundCollisionShape, localInertia);
+      btRigidBody = new btRigidBody(0.0f, btMotionState, bulletCompoundCollisionShape, localInertia);
    }
 
-   public btRigidBody getBulletRigidBody()
+   public btRigidBody getBtRigidBody()
    {
-      return bulletRigidBody;
+      return btRigidBody;
    }
-   
+
    public int getCollisionGroup()
    {
       return collisionGroup;
