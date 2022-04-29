@@ -18,6 +18,7 @@ import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
 import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
 import us.ihmc.scs2.definition.robot.KinematicPointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
+import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 
 public interface SimJointBasics extends JointBasics, SimJointReadOnly
 {
@@ -108,4 +109,15 @@ public interface SimJointBasics extends JointBasics, SimJointReadOnly
    {
       return subtreeStream().toArray(SimJointBasics[]::new);
    }
+   
+   default void updateAuxiliaryDataRecursively(RobotPhysicsOutput physicsOutput)
+   {
+      getAuxialiryData().update(physicsOutput);
+
+      if (getSuccessor() != null)
+      {
+         getSuccessor().updateAuxiliaryDataRecursively(physicsOutput);
+      }
+   }
+   
 }

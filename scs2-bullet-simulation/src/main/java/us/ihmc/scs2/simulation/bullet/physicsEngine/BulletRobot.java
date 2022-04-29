@@ -93,9 +93,6 @@ public class BulletRobot extends RobotExtension
 
    public void updateSensors()
    {
-      for (SimJointBasics joint : getRootBody().childrenSubtreeIterable())
-      {
-         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
-      }
+      getRootBody().updateAuxiliaryDataRecursively(robotPhysics.getPhysicsOutput());
    }
 }
