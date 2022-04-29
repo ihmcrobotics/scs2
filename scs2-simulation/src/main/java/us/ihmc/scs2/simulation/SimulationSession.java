@@ -326,7 +326,18 @@ public class SimulationSession extends Session
       @Override
       public void simulate()
       {
-         setSessionMode(SessionMode.RUNNING);
+         if (terminalConditions.isEmpty())
+         {
+            setSessionMode(SessionMode.RUNNING);
+         }
+         else
+         {
+            if (getActiveMode() == SessionMode.RUNNING)
+               setSessionMode(SessionMode.PAUSE);
+
+            BooleanSupplier terminalCondition = () -> testTerminalConditions();
+            setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
+         }
       }
 
       @Override
@@ -336,7 +347,7 @@ public class SimulationSession extends Session
             setSessionMode(SessionMode.PAUSE);
 
          double startTime = time.getValue();
-         BooleanSupplier terminalCondition = () -> time.getValue() - startTime >= duration;
+         BooleanSupplier terminalCondition = () -> time.getValue() - startTime >= duration || testTerminalConditions();
          setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
       }
 
