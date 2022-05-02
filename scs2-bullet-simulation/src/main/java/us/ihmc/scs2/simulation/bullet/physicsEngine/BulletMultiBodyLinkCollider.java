@@ -12,34 +12,29 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 
 public class BulletMultiBodyLinkCollider
 {
-   btMultiBodyLinkCollider btMultiBodyLinkCollider;
+   private final btMultiBodyLinkCollider btMultiBodyLinkCollider;
    private final btMultiBody btMultiBody;
-   String jointName;
-   int linkColliderIndex;
-   int collisionGroup;
-   int collisionGroupMask;
+   private final String jointName;
+   private final int linkColliderIndex;
    private final Matrix4 bulletTempConversionMatrix4 = new Matrix4();
    private final Vector3 bulletTempConversionVector3 = new Vector3();
    private final btVector3 linkForce;
    private final btVector3 linkTorque;
-
-   public BulletMultiBodyLinkCollider(btMultiBody multibody, int index, String jointName)
+   private int collisionGroup;
+   private int collisionGroupMask;
+   
+   public BulletMultiBodyLinkCollider(btMultiBody btMultibody, int index, String jointName)
    {
-      createBulletMultiBodyLinkCollider(multibody, index, jointName, 2, 1 + 2);
+      btMultiBodyLinkCollider = new btMultiBodyLinkCollider(btMultibody, index);
+      this.linkColliderIndex = index;
+      this.jointName = jointName;
+      this.collisionGroup = 2;
+      this.collisionGroupMask = 1 + 2;
 
       btMultiBody = btMultiBodyLinkCollider.getMultiBody();
 
       linkForce = btMultiBody.getLink(linkColliderIndex).getAppliedConstraintForce();
       linkTorque = btMultiBody.getLink(linkColliderIndex).getAppliedConstraintTorque();
-   }
-
-   public void createBulletMultiBodyLinkCollider(btMultiBody bulletMultibody, int index, String jointName, int collisionGroup, int collisionGroupMask)
-   {
-      btMultiBodyLinkCollider = new btMultiBodyLinkCollider(bulletMultibody, index);
-      this.linkColliderIndex = index;
-      this.jointName = jointName;
-      this.collisionGroup = collisionGroup;
-      this.collisionGroupMask = collisionGroupMask;
    }
 
    public void setCollisionGroupMask(int collisionGroup, int collisionGroupMask)
@@ -115,7 +110,7 @@ public class BulletMultiBodyLinkCollider
       btMultiBodyLinkCollider.setWorldTransform(bulletTempConversionMatrix4);
 
       if (linkColliderIndex == -1)
-         btMultiBodyLinkCollider.getMultiBody().setBaseWorldTransform(bulletTempConversionMatrix4);
+         btMultiBody.setBaseWorldTransform(bulletTempConversionMatrix4);
    }
 
    public void setJointPos(double jointPosition)
