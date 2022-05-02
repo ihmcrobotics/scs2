@@ -126,7 +126,7 @@ public class BulletMultiBodyDynamicsWorld
       btMultiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot.getBtMultiBody());
    }
 
-   public void addTerrain(BulletTerrainObject bulletTerrainObject)
+   public void addBulletTerrainObject(BulletTerrainObject bulletTerrainObject)
    {
       terrainObjects.add(bulletTerrainObject);
       btMultiBodyDynamicsWorld.addRigidBody(bulletTerrainObject.getBtRigidBody(),
