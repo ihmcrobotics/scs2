@@ -8,7 +8,7 @@ import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
 
 public class BulletMultiBodyRobot
 {
-   private btMultiBody btMultiBody;
+   private final btMultiBody btMultiBody;
    private HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
    private final ArrayList<BulletMultiBodyLinkCollider> allBulletMultiBodyLinkColliders = new ArrayList<>();
    private final ArrayList<btMultiBodyConstraint> allBtMultiBodyConstraints = new ArrayList<>();
