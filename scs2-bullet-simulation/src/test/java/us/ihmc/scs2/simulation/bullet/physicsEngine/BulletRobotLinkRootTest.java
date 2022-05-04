@@ -1,9 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.Random;
-
 import org.junit.jupiter.api.Test;
-
 import us.ihmc.euclid.geometry.Pose3D;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryRandomTools;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -19,14 +17,14 @@ import us.ihmc.mecano.tools.MultiBodySystemStateIntegrator;
 
 class BulletRobotLinkRootTest
 {
-
    private static final int ITERATIONS = 1000;
+   private static final double EPSILON = 1e-5;
 
    @Test
    public void testAccelerationCalculation()
    {
-      double epsilon = 1.0e-5;
       Random random = new Random(4354353);
+
       RigidBody rootBody = new RigidBody("root", ReferenceFrame.getWorldFrame());
       SixDoFJoint joint = MultiBodySystemRandomTools.nextSixDoFJoint(random, "joint", rootBody);
       MovingReferenceFrame frameAfter = joint.getFrameAfterJoint();
@@ -56,7 +54,7 @@ class BulletRobotLinkRootTest
          joint.updateFrame();
 
          BulletRobotLinkRoot.computeJointAcceleration(dt, initialPose, finalPose, initialTwist, finalTwist, estimatedAcceleration);
-         MecanoTestTools.assertSpatialAccelerationEquals("Iteration: " + i, finalAcceleration, estimatedAcceleration, epsilon);
+         MecanoTestTools.assertSpatialAccelerationEquals("Iteration: " + i, finalAcceleration, estimatedAcceleration, EPSILON);
       }
    }
 
