@@ -6,7 +6,7 @@ public class BulletMultiBodyParameters
    private boolean hasSelfCollision;
    private boolean useGyroTerm;
    private boolean useGlobalVelocities;
-   private boolean useRK4Intergration;
+   private boolean useRK4Integration;
    private double linearDamping;
    private double angularDamping;
    private double maxAppliedImpulse;
@@ -19,7 +19,7 @@ public class BulletMultiBodyParameters
       multiBodyParameters.setHasSelfCollision(true);
       multiBodyParameters.setUseGyroTerm(true);
       multiBodyParameters.setUseGlobalVelocities(false);
-      multiBodyParameters.setUseRK4Intergration(false);
+      multiBodyParameters.setUseRK4Integration(false);
       multiBodyParameters.setLinearDamping(0.04);
       multiBodyParameters.setAngularDamping(0.04);
       multiBodyParameters.setMaxAppliedImpulse(1000.0);
@@ -45,7 +45,7 @@ public class BulletMultiBodyParameters
       this.hasSelfCollision = hasSelfCollision;
       this.useGyroTerm = useGyroTerm;
       this.useGlobalVelocities = useGlobalVelocities;
-      this.useRK4Intergration = useRK4Integration;
+      this.useRK4Integration = useRK4Integration;
       this.linearDamping = linearDamping;
       this.angularDamping = angularDamping;
       this.maxAppliedImpulse = maxAppliedImpulse;
@@ -72,9 +72,9 @@ public class BulletMultiBodyParameters
       this.useGlobalVelocities = useGlobalVelocities;
    }
 
-   public void setUseRK4Intergration(boolean useRK4Intergration)
+   public void setUseRK4Integration(boolean useRK4Integration)
    {
-      this.useRK4Intergration = useRK4Intergration;
+      this.useRK4Integration = useRK4Integration;
    }
 
    public void setLinearDamping(double linearDamping)
@@ -119,7 +119,7 @@ public class BulletMultiBodyParameters
 
    public boolean getUseRK4Integration()
    {
-      return useRK4Intergration;
+      return useRK4Integration;
    }
 
    public double getLinearDamping()
