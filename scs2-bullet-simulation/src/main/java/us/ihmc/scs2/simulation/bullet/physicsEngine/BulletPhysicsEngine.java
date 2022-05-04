@@ -242,10 +242,25 @@ public class BulletPhysicsEngine implements PhysicsEngine
       globalMultiBodyJointParameters.set(bulletMultiBodyJointParameters);
    }
 
+   public YoBulletMultiBodyParameters getGlobalBulletMultiBodyParameters()
+   {
+      return globalMultiBodyParameters;
+   }
+   
+   public YoBulletMultiBodyJointParameters getGlobalBulletMultiBodyJointParameters()
+   {
+      return globalMultiBodyJointParameters;
+   }
+
    public void setGlobalSimulationParameters(BulletSimulationParameters bulletSimulationParameters)
    {
       globalBulletSimulationParameters.set(bulletSimulationParameters);
       hasGlobalBulletSimulationParameters.set(true);
+   }
+   
+   public YoBulletSimulationParameters getGlobalSimulationParameters()
+   {
+      return globalBulletSimulationParameters;
    }
 
    public BulletMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
