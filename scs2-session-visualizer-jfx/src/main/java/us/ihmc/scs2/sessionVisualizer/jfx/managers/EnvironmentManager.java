@@ -62,14 +62,15 @@ public class EnvironmentManager implements Manager
 
    public void addStaticVisual(VisualDefinition visualDefinition)
    {
-      Node nodeToAdd = JavaFXVisualTools.toNode(visualDefinition, null);
-
       if (staticVisualDefinitionToNodeMap == null)
       {
          staticVisualDefinitionToNodeMap = new HashMap<>();
-         if (staticVisualDefinitionToNodeMap.put(visualDefinition, nodeToAdd) != null)
+         if (staticVisualDefinitionToNodeMap.containsKey(visualDefinition))
             return; // This visual was already added
       }
+
+      Node nodeToAdd = JavaFXVisualTools.toNode(visualDefinition, null);
+      staticVisualDefinitionToNodeMap.put(visualDefinition, nodeToAdd);
 
       if (staticVisualsRoot == null)
       {
@@ -100,9 +101,12 @@ public class EnvironmentManager implements Manager
 
       Node nodeToRemove = staticVisualDefinitionToNodeMap.remove(visualDefinition);
 
+      if (nodeToRemove == null)
+         return;
+
       JavaFXMissingTools.runLater(getClass(), () ->
       {
-         staticVisualsRoot.getChildren().add(nodeToRemove);
+         staticVisualsRoot.getChildren().remove(nodeToRemove);
       });
    }
 
