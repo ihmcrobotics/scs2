@@ -33,6 +33,11 @@ public class BulletMultiBodyRobotFactory
                                                   YoBulletMultiBodyParameters bulletMultiBodyParameters,
                                                   YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
    {
+      if (robot.getRootBody().getChildrenJoints().size() == 0)
+      {
+         throw new UnsupportedOperationException("Robot must have at least one joint: " + robot.getClass().getSimpleName());
+      }
+      
       JointBasics rootJoint = robot.getRootBody().getChildrenJoints().get(0);
       boolean hasBaseCollider = rootJoint instanceof SimFloatingRootJoint;
 
@@ -123,10 +128,10 @@ public class BulletMultiBodyRobotFactory
                                                        int bulletJointIndex,
                                                        boolean disableParentCollision)
    {
-      Quaternion rotationFromParentGDX = new Quaternion();
+      Quaternion rotationFromParentBullet = new Quaternion();
       us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion(jointDefinition.getTransformToParent().getRotation());
       euclidRotationFromParent.invert();
-      BulletTools.toBullet(euclidRotationFromParent, rotationFromParentGDX);
+      BulletTools.toBullet(euclidRotationFromParent, rotationFromParentBullet);
 
       RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
       joint.getPredecessor().getBodyFixedFrame().getTransformToDesiredFrame(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid,
@@ -159,12 +164,12 @@ public class BulletMultiBodyRobotFactory
 
          Vector3 jointAxis = new Vector3();
          BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
-
+ 
          bulletMultiBodyRobot.getBtMultiBody().setupRevolute(bulletJointIndex,
                                                              linkMass,
                                                              baseInertiaDiagonal,
                                                              parentBulletJointIndex,
-                                                             rotationFromParentGDX,
+                                                             rotationFromParentBullet,
                                                              jointAxis,
                                                              parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet,
                                                              parentJointAfterFrameToLinkCenterOfMassTranslationBullet,
@@ -194,7 +199,7 @@ public class BulletMultiBodyRobotFactory
                                                               linkMass,
                                                               baseInertiaDiagonal,
                                                               parentBulletJointIndex,
-                                                              rotationFromParentGDX,
+                                                              rotationFromParentBullet,
                                                               jointAxis,
                                                               parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet,
                                                               parentJointAfterFrameToLinkCenterOfMassTranslationBullet,
