@@ -70,7 +70,7 @@ public class BulletMultiBodyDynamicsWorld
                btMultiBodyDynamicsWorld.removeConstraint(btMultiBodyDynamicsWorld.getConstraint(i));
             }
 
-            for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBtMultiBodyConstrantArray())
+            for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
             {
                btMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
                bulletMultiBodyConstraint.dispose();
@@ -117,7 +117,7 @@ public class BulletMultiBodyDynamicsWorld
       }
 
       //add Bullet Multibody constraints to multiBodyDynamicsWorld
-      for (btMultiBodyConstraint constraint : bulletMultiBodyRobot.getBtMultiBodyConstrantArray())
+      for (btMultiBodyConstraint constraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
       {
          btMultiBodyDynamicsWorld.addMultiBodyConstraint(constraint);
       }

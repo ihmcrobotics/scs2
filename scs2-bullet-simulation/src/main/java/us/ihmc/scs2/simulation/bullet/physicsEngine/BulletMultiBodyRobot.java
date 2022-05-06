@@ -40,7 +40,7 @@ public class BulletMultiBodyRobot
       return allBulletMultiBodyLinkColliders.get(index);
    }
 
-   public ArrayList<btMultiBodyConstraint> getBtMultiBodyConstrantArray()
+   public ArrayList<btMultiBodyConstraint> getBtMultiBodyConstraintArray()
    {
       return allBtMultiBodyConstraints;
    }

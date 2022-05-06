@@ -87,19 +87,19 @@ public class BulletToolsTest
 
       for (int i = 0; i < ITERATIONS; i++)
       {
-         vector1.x = random.nextFloat() - 1.0f;
-         vector1.y = random.nextFloat() - 1.0f;
-         vector1.z = random.nextFloat() - 1.0f;
+         vector1.x = random.nextFloat();
+         vector1.y = random.nextFloat();
+         vector1.z = random.nextFloat();
 
-         vector2.x = random.nextFloat() - 1.0f;
-         vector2.y = random.nextFloat() - 1.0f;
-         vector2.z = random.nextFloat() - 1.0f;
+         vector2.x = random.nextFloat();
+         vector2.y = random.nextFloat();
+         vector2.z = random.nextFloat();
 
          bulletAffine.setToRotation(vector1, vector2);
 
-         translation.x = random.nextFloat() - 1.0f;
-         translation.y = random.nextFloat() - 1.0f;
-         translation.z = random.nextFloat() - 1.0f;
+         translation.x = random.nextFloat();
+         translation.y = random.nextFloat();
+         translation.z = random.nextFloat();
          bulletAffine.setTranslation(translation);
 
          BulletTools.toEuclid(bulletAffine, rigidBodyTransformToPack);
