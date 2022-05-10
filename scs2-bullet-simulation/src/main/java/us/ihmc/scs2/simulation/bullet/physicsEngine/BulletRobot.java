@@ -78,7 +78,7 @@ public class BulletRobot extends RobotExtension
       {
          afterRootLink.pullStateFromBullet(dt);
       }
-      robotPhysics.update();
+      robotPhysics.update(dt);
    }
 
    public BulletMultiBodyRobot getBulletMultiBodyRobot()
