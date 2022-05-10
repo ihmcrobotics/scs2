@@ -108,7 +108,7 @@ public class BulletRobot extends RobotExtension
       {
          afterRootLink.copyBulletJointDataToSCS(dt);
       }
-      robotPhysics.update();
+      robotPhysics.update(dt);
    }
 
    public BulletRobotLinkRoot getRootLink()
