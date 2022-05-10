@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
@@ -407,6 +408,9 @@ public class SimulationSession extends Session
                   if (isSessionShutdown())
                      return false;
 
+                  if (!handleVisualizerSessionModeRequests())
+                     break;
+
                   success = runTick();
 
                   if (!success)
@@ -422,6 +426,9 @@ public class SimulationSession extends Session
                {
                   if (isSessionShutdown())
                      return false;
+
+                  if (!handleVisualizerSessionModeRequests())
+                     break;
 
                   success = runTick();
 
@@ -444,6 +451,50 @@ public class SimulationSession extends Session
                startSessionThread();
             setSessionMode(activeModeInitialValue);
          }
+      }
+
+      private boolean handleVisualizerSessionModeRequests()
+      {
+         if (getActiveMode() == SessionMode.RUNNING)
+            return true;
+
+         if (!hasWrittenBufferInLastRunTick())
+            return true; // Make sure we stop running when the buffer was just updated.
+
+         // The GUI requested a mode change, we pause the simulation until the GUI request RUNNING again.
+         CountDownLatch latch = new CountDownLatch(1);
+
+         SessionModeChangeListener listener = (prevMode, newMode) ->
+         {
+            if (newMode != prevMode && newMode == SessionMode.RUNNING)
+            {
+               stopSessionThread();
+               if (getBufferProperties().getCurrentIndex() != getBufferProperties().getOutPoint())
+               { // We make sure to go back to the  
+                  setBufferCurrentIndexToOutPoint();
+                  finalizePauseTick(true);
+               }
+               latch.countDown();
+            }
+         };
+         addPreSessionModeChangeListener(listener);
+
+         startSessionThread();
+
+         try
+         {
+            latch.await();
+         }
+         catch (InterruptedException e)
+         {
+            return false;
+         }
+         finally
+         {
+            removePreSessionModeChangeListener(listener);
+         }
+
+         return true;
       }
 
       @Override
