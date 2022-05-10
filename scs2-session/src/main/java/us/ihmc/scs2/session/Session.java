@@ -179,7 +179,10 @@ public abstract class Session
    /** To keep track of the last time the session properties were published. */
    private long lastSessionPropertiesPublishTimestamp = -1L;
    // Listeners
+   /** Listeners that get notified right after the session mode has changed. */
    private final List<SessionModeChangeListener> sessionModeChangeListeners = new ArrayList<>();
+   /** Listeners that get notified right before the session mode has changed. */
+   private final List<SessionModeChangeListener> preSessionModeChangeListeners = new ArrayList<>();
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
    private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
    private final List<Runnable> shutdownListeners = new ArrayList<>();
@@ -298,7 +301,7 @@ public abstract class Session
    }
 
    /**
-    * Adds a listener to be notified whenever this session changes mode.
+    * Adds a listener to be notified whenever this session just changed mode.
     * 
     * @param listener the listener to add.
     * @see SessionMode
@@ -318,6 +321,29 @@ public abstract class Session
    public boolean removeSessionModeChangeListener(SessionModeChangeListener listener)
    {
       return sessionModeChangeListeners.remove(listener);
+   }
+
+   /**
+    * Adds a listener to be notified whenever this session is about to change mode.
+    * 
+    * @param listener the listener to add.
+    * @see SessionMode
+    */
+   public void addPreSessionModeChangeListener(SessionModeChangeListener listener)
+   {
+      preSessionModeChangeListeners.add(listener);
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
+    *         found.
+    */
+   public boolean removePreSessionModeChangeListener(SessionModeChangeListener listener)
+   {
+      return preSessionModeChangeListeners.remove(listener);
    }
 
    /**
@@ -1114,6 +1140,8 @@ public abstract class Session
    {
       SessionMode previousMode = activeMode.get();
 
+      preSessionModeChangeListeners.forEach(listener -> listener.onChange(previousMode, newMode));
+
       if (!sessionThreadStarted)
       {
          // This is to allow running simulation without using the internal session thread.
@@ -1455,6 +1483,17 @@ public abstract class Session
       }
 
       nextRunBufferRecordTickCounter--;
+   }
+
+   /**
+    * Indicates whether the last call of {@link #runTick()} has resulted in writing the
+    * {@code YoVariable}s into the buffer.
+    * 
+    * @return {@code true} if the buffer was updated, {@code false} otherwise.
+    */
+   public boolean hasWrittenBufferInLastRunTick()
+   {
+      return nextRunBufferRecordTickCounter == Math.max(1, bufferRecordTickPeriod.get()) - 1;
    }
 
    /**
