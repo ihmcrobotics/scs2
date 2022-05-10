@@ -34,9 +34,10 @@ public class BulletRobotPhysics
       rigidBodyWrenchRegistry.reset();
    }
 
-   public void update()
+   public void update(double dt)
    {
       spatialAccelerationCalculator.reset();
+      physicsOutput.setDT(dt);
    }
 
    public RobotPhysicsOutput getPhysicsOutput()
