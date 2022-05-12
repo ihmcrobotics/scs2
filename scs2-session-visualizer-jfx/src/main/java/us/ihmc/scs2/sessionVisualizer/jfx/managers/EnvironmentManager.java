@@ -7,6 +7,9 @@ import java.util.Map;
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.shape.Mesh;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
@@ -17,6 +20,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class EnvironmentManager implements Manager
 {
+   private static final int LARGE_TRIANGLE_MESH_THRESHOLD = 1000000;
+
    private final Group rootNode = new Group();
    private final Group terrainObjectGraphics = new Group();
    private Group staticVisualsRoot;
@@ -70,6 +75,18 @@ public class EnvironmentManager implements Manager
       }
 
       Node nodeToAdd = JavaFXVisualTools.toNode(visualDefinition, null);
+
+      // Test if the new mesh is a large triangle mesh, if so, we make mouse transparent to improve performance.
+      if (nodeToAdd instanceof MeshView)
+      {
+         Mesh mesh = ((MeshView) nodeToAdd).getMesh();
+         if (mesh instanceof TriangleMesh)
+         {
+            if (((TriangleMesh) mesh).getPoints().size() > LARGE_TRIANGLE_MESH_THRESHOLD)
+               nodeToAdd.setMouseTransparent(true);
+         }
+      }
+
       staticVisualDefinitionToNodeMap.put(visualDefinition, nodeToAdd);
 
       if (staticVisualsRoot == null)
