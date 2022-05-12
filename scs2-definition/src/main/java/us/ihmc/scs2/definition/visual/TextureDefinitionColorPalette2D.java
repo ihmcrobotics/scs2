@@ -209,7 +209,7 @@ public class TextureDefinitionColorPalette2D implements TextureDefinitionColorPa
       else
          brightness = brightnessConstant;
 
-      return ColorDefinitions.hsb(hue, saturation, brightness).toRGB();
+      return ColorDefinitions.hsb(hue, saturation, brightness).toARGB();
    }
 
    @Override

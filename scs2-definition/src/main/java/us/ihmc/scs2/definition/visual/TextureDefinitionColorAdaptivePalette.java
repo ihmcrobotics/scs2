@@ -185,11 +185,12 @@ public class TextureDefinitionColorAdaptivePalette implements TextureDefinitionC
       int width = colorPalette.getWidth();
       int xStart = Math.floorMod(pixelIndex * pixelSize, width);
       int yStart = Math.floorDiv(pixelIndex * pixelSize, width) * pixelSize;
+
       for (int x = xStart; x < xStart + pixelSize; x++)
       {
          for (int y = yStart; y < yStart + pixelSize; y++)
          {
-            colorPalette.setRGB(x, y, color.toRGB());
+            colorPalette.setRGB(x, y, color.toARGB());
          }
       }
    }
