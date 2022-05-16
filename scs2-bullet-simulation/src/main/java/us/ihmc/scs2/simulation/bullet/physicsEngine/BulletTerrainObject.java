@@ -6,10 +6,13 @@ import com.badlogic.gdx.physics.bullet.collision.*;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
+import us.ihmc.euclid.shape.convexPolytope.interfaces.Face3DReadOnly;
+import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
+import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -63,6 +66,19 @@ public class BulletTerrainObject
                                                                               (float) cylinderGeometryDefinition.getRadius(),
                                                                               (float) cylinderGeometryDefinition.getLength() / 2.0f));
             bulletCollisionShape = cylinderShape;
+         }
+         else if (collisionShapeDefinition.getGeometryDefinition() instanceof ConvexPolytope3DDefinition)
+         {
+            ConvexPolytope3DDefinition convexPolytopeDefinition = (ConvexPolytope3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+            btConvexHullShape convexHullShape = new btConvexHullShape();
+            for (Face3DReadOnly face : convexPolytopeDefinition.getConvexPolytope().getFaces())
+            {
+               for (Vertex3DReadOnly vertex : face.getVertices())
+               {
+                  convexHullShape.addPoint(new Vector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
+               }
+            }
+            bulletCollisionShape = convexHullShape;
          }
          else
          {
