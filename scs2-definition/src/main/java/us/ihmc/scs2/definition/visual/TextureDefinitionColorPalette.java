@@ -22,7 +22,9 @@ public interface TextureDefinitionColorPalette
    Point2D32 getTextureLocation(ColorDefinition color);
 
    /**
-    * @return the image to use with the texture coordinates computed.
+    * Creates the texture that contains the colors for this palette.
+    * 
+    * @return the texture.
     */
    TextureDefinition getTextureDefinition();
 }

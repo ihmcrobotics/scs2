@@ -24,9 +24,18 @@ import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 
-// TODO This class needs to be cleaned up
+/**
+ * This class provides a simple way of combining several shapes/meshes into a single mesh. It can be
+ * used as a one-time tool or can be recycled by using the method {@link #clear()} every time a new
+ * mesh is to be created.
+ * 
+ * @author Sylvain Bertrand
+ */
 public class TriangleMesh3DBuilder
 {
+   /**
+    * Internal data structure representing the mesh being built.
+    */
    private final MutableTriangleMesh3DData triangleMesh = new MutableTriangleMesh3DData();
 
    /**
@@ -124,6 +133,12 @@ public class TriangleMesh3DBuilder
 
    /**
     * Add a box centered at (0, 0, 0) to this builder.
+    * <p>
+    * Expected result for {@code addBox(0.1, 0.2, 0.3)}:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Box.png"
+    * height=250px/>
+    * </p>
     * 
     * @param sizeX box size along the x-axis.
     * @param sizeY box size along the y-axis.
@@ -163,6 +178,12 @@ public class TriangleMesh3DBuilder
 
    /**
     * Add a capsule centered at (0, 0, 0) to this builder.
+    * <p>
+    * Expected result for {@code addCapsule(0.2, 0.05)}:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Capsule.png"
+    * height=250px/>
+    * </p>
     * 
     * @param length the capsule's length or height. Distance separating the center of the two half
     *               spheres.
@@ -203,6 +224,12 @@ public class TriangleMesh3DBuilder
    /**
     * Add a cone to this builder. Its axis is aligned with the z-axis and its top is the vertex with
     * the highest z value.
+    * <p>
+    * Expected result for {@code addCone(0.2, 0.1)}:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Cone.png"
+    * height=250px/>
+    * </p>
     * 
     * @param height height along z of the cone.
     * @param radius radius of the cone's base.
@@ -241,6 +268,12 @@ public class TriangleMesh3DBuilder
 
    /**
     * Add a cylinder to this builder. Its axis is aligned with the z-axis.
+    * <p>
+    * Expected result for {@code addCylinder(0.2, 0.05)}:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Cylinder.png"
+    * height=250px/>
+    * </p>
     * 
     * @param height height along z of the cylinder.
     * @param radius the cylinder's radius.
@@ -380,6 +413,12 @@ public class TriangleMesh3DBuilder
    /**
     * Add a polygon to this builder, given its 2D vertex coordinates and its transform to world. No
     * check is performed on the ordering of the vertices.
+    * <p>
+    * Expected result for a polygon 2D:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Polygon2D.png"
+    * height=250px/>
+    * </p>
     * 
     * @param polygonPose the pose of the polygon. Can be {@code null}. Not modified.
     * @param polygon     the polygon's 2D vertices. Not modified.
@@ -391,6 +430,12 @@ public class TriangleMesh3DBuilder
 
    /**
     * Add a 2D polygon to this builder.
+    * <p>
+    * Expected result for a polygon 2D:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Polygon2D.png"
+    * height=250px/>
+    * </p>
     * 
     * @param polygonPose the pose of the polygon. Can be {@code null}. Not modified.
     * @param polygon     the polygon to render.
@@ -402,6 +447,12 @@ public class TriangleMesh3DBuilder
 
    /**
     * Add a sphere centered at (0, 0, 0) to this builder.
+    * <p>
+    * Expected result for {@code addSphere(0.15)}:<br>
+    * <img src=
+    * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/VisualDefinitionFactoryJavadoc/Sphere.png"
+    * height=250px/>
+    * </p>
     * 
     * @param radius the sphere radius.
     */
@@ -465,8 +516,9 @@ public class TriangleMesh3DBuilder
    }
 
    /**
-    * @return the resulting mesh as an immutable mesh ready to be interpreted by the adequate mesh data
-    *         interpreter.
+    * Generates the triangle mesh containing all the shapes/meshes previously added.
+    * 
+    * @return the resulting mesh.
     */
    public TriangleMesh3DDefinition generateTriangleMesh3D()
    {
@@ -503,7 +555,7 @@ public class TriangleMesh3DBuilder
       }
 
       /**
-       * Creates an immutable triangle mesh definition that can be integrated to the main data structure.
+       * Creates a triangle mesh definition that can be integrated to the main data structure.
        * 
        * @return the immutable mesh data holder.
        * @see TriangleMesh3DDefinition
