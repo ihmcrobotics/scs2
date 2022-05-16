@@ -7,16 +7,13 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.*;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.shape.convexPolytope.interfaces.Face3DReadOnly;
+import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
 
 public class BulletRobotLinkCollisionShape
 {
@@ -109,6 +106,19 @@ public class BulletRobotLinkCollisionShape
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
          btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
          bulletCollisionShape = capsuleShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof ConvexPolytope3DDefinition)
+      {
+         ConvexPolytope3DDefinition convexPolytopeDefinition = (ConvexPolytope3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+         btConvexHullShape convexHullShape = new btConvexHullShape();
+         for (Face3DReadOnly face : convexPolytopeDefinition.getConvexPolytope().getFaces())
+         {
+            for (Vertex3DReadOnly vertex : face.getVertices())
+            {
+               convexHullShape.addPoint(new Vector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
+            }
+         }
+         bulletCollisionShape = convexHullShape;
       }
       else
       {
