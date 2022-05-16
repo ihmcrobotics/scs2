@@ -23,10 +23,21 @@ import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 
-// TODO This class needs major cleanup
+/**
+ * Extension of {@link TriangleMesh3DBuilder} that allows to combine multiple shapes/meshes into a
+ * single mesh as well as defining colors for individual shapes/meshes being combined. This is
+ * achieved by building a texture that is then used to map regions of the mesh to desired colors.
+ * 
+ * @author Sylvain Bertrand
+ */
 public class MultiColorTriangleMesh3DBuilder
 {
+   /** Internally using a regular mesh builder to compute the mesh. */
    private final TriangleMesh3DBuilder meshBuilder = new TriangleMesh3DBuilder();
+   /**
+    * Data structure used to build a texture that represents color palette which can be used to color
+    * parts of the mesh as desired.
+    */
    private TextureDefinitionColorPalette colorPalette;
 
    /**
@@ -491,21 +502,42 @@ public class MultiColorTriangleMesh3DBuilder
       meshBuilder.clear();
    }
 
+   /**
+    * Creates the texture that contains the color palette to use with this builder's mesh.
+    * 
+    * @return the texture.
+    */
    public TextureDefinition generateTexture()
    {
       return colorPalette.getTextureDefinition();
    }
 
+   /**
+    * Convenience method that creates a new material with the color palette set as the diffuse map.
+    * 
+    * @return the material to use with this builder's mesh.
+    */
    public MaterialDefinition generateMaterial()
    {
       return new MaterialDefinition(generateTexture());
    }
 
+   /**
+    * Generates the triangle mesh containing all the shapes/meshes previously added.
+    * 
+    * @return the resulting mesh.
+    */
    public TriangleMesh3DDefinition generateTriangleMesh3D()
    {
       return meshBuilder.generateTriangleMesh3D();
    }
 
+   /**
+    * Creates a new visual ready to use. The visual contains the generated mesh and the proper texture
+    * to color the mesh as desired.
+    * 
+    * @return the resulting visual.
+    */
    public VisualDefinition generateVisual()
    {
       return new VisualDefinition(generateTriangleMesh3D(), generateMaterial());
