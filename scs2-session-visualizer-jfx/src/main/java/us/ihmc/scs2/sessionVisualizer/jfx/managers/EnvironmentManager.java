@@ -1,10 +1,15 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.shape.Mesh;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
@@ -15,9 +20,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class EnvironmentManager implements Manager
 {
+   private static final int LARGE_TRIANGLE_MESH_THRESHOLD = 1000000;
+
    private final Group rootNode = new Group();
    private final Group terrainObjectGraphics = new Group();
    private Group staticVisualsRoot;
+   private Map<VisualDefinition, Node> staticVisualDefinitionToNodeMap;
    private Skybox skybox;
 
    private final BackgroundExecutorManager backgroundExecutorManager;
@@ -59,14 +67,35 @@ public class EnvironmentManager implements Manager
 
    public void addStaticVisual(VisualDefinition visualDefinition)
    {
-      Node node = JavaFXVisualTools.toNode(visualDefinition, null);
+      if (staticVisualDefinitionToNodeMap == null)
+      {
+         staticVisualDefinitionToNodeMap = new HashMap<>();
+         if (staticVisualDefinitionToNodeMap.containsKey(visualDefinition))
+            return; // This visual was already added
+      }
+
+      Node nodeToAdd = JavaFXVisualTools.toNode(visualDefinition, null);
+
+      // Test if the new mesh is a large triangle mesh, if so, we make mouse transparent to improve performance.
+      if (nodeToAdd instanceof MeshView)
+      {
+         Mesh mesh = ((MeshView) nodeToAdd).getMesh();
+         if (mesh instanceof TriangleMesh)
+         {
+            if (((TriangleMesh) mesh).getPoints().size() > LARGE_TRIANGLE_MESH_THRESHOLD)
+               nodeToAdd.setMouseTransparent(true);
+         }
+      }
+
+      staticVisualDefinitionToNodeMap.put(visualDefinition, nodeToAdd);
 
       if (staticVisualsRoot == null)
       {
          staticVisualsRoot = new Group();
+
          JavaFXMissingTools.runLater(getClass(), () ->
          {
-            staticVisualsRoot.getChildren().add(node);
+            staticVisualsRoot.getChildren().add(nodeToAdd);
             rootNode.getChildren().add(staticVisualsRoot);
          });
       }
@@ -74,9 +103,28 @@ public class EnvironmentManager implements Manager
       {
          JavaFXMissingTools.runLater(getClass(), () ->
          {
-            staticVisualsRoot.getChildren().add(node);
+            staticVisualsRoot.getChildren().add(nodeToAdd);
          });
       }
+   }
+
+   public void removeStaticVisual(VisualDefinition visualDefinition)
+   {
+      if (staticVisualDefinitionToNodeMap == null)
+         return;
+
+      if (staticVisualsRoot == null)
+         return;
+
+      Node nodeToRemove = staticVisualDefinitionToNodeMap.remove(visualDefinition);
+
+      if (nodeToRemove == null)
+         return;
+
+      JavaFXMissingTools.runLater(getClass(), () ->
+      {
+         staticVisualsRoot.getChildren().remove(nodeToRemove);
+      });
    }
 
    @Override
