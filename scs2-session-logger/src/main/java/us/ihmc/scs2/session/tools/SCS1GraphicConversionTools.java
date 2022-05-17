@@ -151,19 +151,16 @@ public class SCS1GraphicConversionTools
          return null;
       }
 
-      definition.setName(yoGraphic.getName());
-      definition.setVisible(yoGraphic.isGraphicObjectShowing());
+      if (definition != null)
+      {
+         definition.setName(yoGraphic.getName());
+         definition.setVisible(yoGraphic.isGraphicObjectShowing());
+      }
       return definition;
    }
 
    public static YoGraphicDefinition toYoGraphicDefinition(YoGraphicPolygon yoGraphicPolygon)
    {
-      //      if (yoGraphicPolygon.isUsingYawPitchRoll())
-      //      {
-      //         LogTools.error("Yaw-pitch-roll is not yet supported: " + yoGraphicPolygon.getName());
-      //         return null;
-      //      }
-
       YoGraphicPolygonExtruded3DDefinition definition = new YoGraphicPolygonExtruded3DDefinition();
       definition.setName(yoGraphicPolygon.getName());
       YoVariable[] yoVariables = yoGraphicPolygon.getVariables();
@@ -210,19 +207,31 @@ public class SCS1GraphicConversionTools
 
    public static YoGraphicDefinition toYoGraphicDefinition(YoGraphicShape yoGraphicShape)
    {
+      if (yoGraphicShape == null)
+         return null;
+
       // TODO Unsupported for now, need to convert Graphics3DObject
+      LogTools.warn("Unsupported YoGraphic type: {}, yoGraphic: {}", yoGraphicShape.getClass().getSimpleName(), yoGraphicShape);
       return null;
    }
 
    public static YoGraphicDefinition toYoGraphicDefinition(YoGraphicText yoGraphicText)
    {
+      if (yoGraphicText == null)
+         return null;
+
       // TODO Unsupported for now
+      LogTools.warn("Unsupported YoGraphic type: {}, yoGraphic: {}", yoGraphicText.getClass().getSimpleName(), yoGraphicText);
       return null;
    }
 
    public static YoGraphicDefinition toYoGraphicDefinition(YoGraphicText3D yoGraphicText3D)
    {
+      if (yoGraphicText3D == null)
+         return null;
+
       // TODO Unsupported for now
+      LogTools.warn("Unsupported YoGraphic type: {}, yoGraphic: {}", yoGraphicText3D.getClass().getSimpleName(), yoGraphicText3D);
       return null;
    }
 

@@ -25,7 +25,7 @@ import us.ihmc.javaFXToolkit.scenes.View3DFactory;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 
 public class TriangleMesh3DFactoriesVisualizer
 {

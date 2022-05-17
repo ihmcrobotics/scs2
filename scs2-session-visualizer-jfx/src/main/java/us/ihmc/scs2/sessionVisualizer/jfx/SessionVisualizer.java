@@ -364,6 +364,14 @@ public class SessionVisualizer
       }
 
       @Override
+      public void removeStaticVisual(VisualDefinition visualDefinition)
+      {
+         checkVisualizerRunning();
+         waitUntilFullyUp();
+         toolkit.getEnvironmentManager().removeStaticVisual(visualDefinition);
+      }
+
+      @Override
       public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
       {
          String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);

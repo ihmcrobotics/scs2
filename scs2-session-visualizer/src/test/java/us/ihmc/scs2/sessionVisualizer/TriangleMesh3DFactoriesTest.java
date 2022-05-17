@@ -2,9 +2,9 @@ package us.ihmc.scs2.sessionVisualizer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories.Box;
-import static us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories.Sphere;
-import static us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories.Torus;
+import static us.ihmc.scs2.definition.visual.TriangleMesh3DFactories.Box;
+import static us.ihmc.scs2.definition.visual.TriangleMesh3DFactories.Sphere;
+import static us.ihmc.scs2.definition.visual.TriangleMesh3DFactories.Torus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +16,7 @@ import us.ihmc.euclid.tuple2D.Point2D32;
 import us.ihmc.euclid.tuple3D.Point3D32;
 import us.ihmc.euclid.tuple3D.Vector3D32;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 
 public class TriangleMesh3DFactoriesTest
 {

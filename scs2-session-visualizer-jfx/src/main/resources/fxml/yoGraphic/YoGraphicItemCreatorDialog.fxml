@@ -56,7 +56,7 @@
                            <graphic>
                               <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
                                  <image>
-                                    <Image url="@../../icons/yoGraphic/YoPointFX23D.png" />
+                                    <Image url="@../../icons/yoGraphic/YoPointFX2D.png" />
                                  </image>
                               </ImageView>
                            </graphic>

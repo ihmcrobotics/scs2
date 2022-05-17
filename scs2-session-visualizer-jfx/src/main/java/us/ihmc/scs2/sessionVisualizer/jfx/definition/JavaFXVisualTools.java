@@ -66,8 +66,8 @@ import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories;
 
 public class JavaFXVisualTools
 {

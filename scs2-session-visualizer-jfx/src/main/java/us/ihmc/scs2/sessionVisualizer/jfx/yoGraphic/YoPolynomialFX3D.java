@@ -19,7 +19,7 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.scs2.sessionVisualizer.SegmentedLine3DTriangleMeshFactory;
+import us.ihmc.scs2.definition.visual.SegmentedLine3DTriangleMeshFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
 
 public class YoPolynomialFX3D extends YoGraphicFX3D
