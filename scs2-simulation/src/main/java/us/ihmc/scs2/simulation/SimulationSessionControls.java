@@ -50,6 +50,13 @@ public interface SimulationSessionControls
     * <p>
     * This is a blocking request which will return only when the operation has completed.
     * </p>
+    * <p>
+    * In the case the user request to pause the simulation from the visualizer, the simulation will be
+    * paused and the thread will be blocked until the user request to run the simulation from the
+    * visualizer. When running the simulation is requested, the current buffer index is first moved to
+    * the out-point where the {@code YoVariable}s are reloaded before resuming the simulation. This
+    * allows to resume the simulation as if the user had never paused.
+    * </p>
     * 
     * @param duration the simulation duration in seconds.
     * @return whether the simulation was considered successful ({@code true}) or not ({@code false}).
@@ -63,6 +70,13 @@ public interface SimulationSessionControls
     * Requests to simulate for a given number of simulation ticks. (synchronous)
     * <p>
     * This is a blocking request which will return only when the operation has completed.
+    * </p>
+    * <p>
+    * In the case the user request to pause the simulation from the visualizer, the simulation will be
+    * paused and the thread will be blocked until the user request to run the simulation from the
+    * visualizer. When running the simulation is requested, the current buffer index is first moved to
+    * the out-point where the {@code YoVariable}s are reloaded before resuming the simulation. This
+    * allows to resume the simulation as if the user had never paused.
     * </p>
     * 
     * @param duration the simulation duration in seconds.
@@ -82,6 +96,13 @@ public interface SimulationSessionControls
     * </p>
     * <p>
     * This is a blocking request which will return only when the operation has completed.
+    * </p>
+    * <p>
+    * In the case the user request to pause the simulation from the visualizer, the simulation will be
+    * paused and the thread will be blocked until the user request to run the simulation from the
+    * visualizer. When running the simulation is requested, the current buffer index is first moved to
+    * the out-point where the {@code YoVariable}s are reloaded before resuming the simulation. This
+    * allows to resume the simulation as if the user had never paused.
     * </p>
     * 
     * @return whether the simulation was considered successful ({@code true}) or not ({@code false}).

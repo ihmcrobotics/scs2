@@ -17,7 +17,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 
 /**
  * This class an automated interpretation of {@link TriangleMesh3DDefinition} into JavaFX

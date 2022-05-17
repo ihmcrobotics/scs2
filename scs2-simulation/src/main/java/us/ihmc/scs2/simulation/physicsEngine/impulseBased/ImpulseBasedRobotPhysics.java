@@ -72,7 +72,8 @@ public class ImpulseBasedRobotPhysics
       rigidBodyDeltaTwistProvider = rigidBodyDeltaTwistCalculator.getDeltaTwistProvider();
 
       SimRigidBodyBasics rootBody = owner.getRootBody();
-      collidables = rootBody.subtreeStream().flatMap(body -> body.getCollidables().stream()).collect(Collectors.toList());
+      collidables = rootBody.subtreeStream().filter(body -> owner.getJointsToConsider().contains(body.getParentJoint()))
+                            .flatMap(body -> body.getCollidables().stream()).collect(Collectors.toList());
 
       forwardDynamicsCalculator = new ForwardDynamicsCalculator(owner);
       FrameShapePosePredictor frameShapePosePredictor = new FrameShapePosePredictor(forwardDynamicsCalculator);
