@@ -373,7 +373,16 @@ public class ReferenceFrameManager implements Manager
 
    public ReferenceFrame getReferenceFrameFromFullname(String fullname)
    {
-      return fullnameToReferenceFrameMap.get(fullname);
+      ReferenceFrame result = fullnameToReferenceFrameMap.get(fullname);
+      if (result != null)
+         return result;
+
+      if (fullname.startsWith(ReferenceFrame.getWorldFrame().getName()))
+      {
+         fullname = fullname.replaceFirst(ReferenceFrame.getWorldFrame().getName(), WORLD_FRAME);
+         return fullnameToReferenceFrameMap.get(fullname);
+      }
+      return null;
    }
 
    public String getUniqueName(ReferenceFrame referenceFrame)

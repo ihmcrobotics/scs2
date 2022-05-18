@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer;
+package us.ihmc.scs2.definition.visual;
 
 import us.ihmc.commons.Epsilons;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;

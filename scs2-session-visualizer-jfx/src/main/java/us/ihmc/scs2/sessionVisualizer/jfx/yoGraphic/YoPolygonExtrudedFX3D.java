@@ -19,7 +19,7 @@ import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.euclid.tuple2D.interfaces.Point2DReadOnly;
 import us.ihmc.javaFXToolkit.JavaFXTools;
-import us.ihmc.scs2.sessionVisualizer.TriangleMesh3DFactories;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
