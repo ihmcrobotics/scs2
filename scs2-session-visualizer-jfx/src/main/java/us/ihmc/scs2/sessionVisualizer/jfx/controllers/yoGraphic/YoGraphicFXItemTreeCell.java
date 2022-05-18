@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic;
 
+import java.io.InputStream;
 import java.util.List;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -8,20 +9,24 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.cell.CheckBoxTreeCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
 public class YoGraphicFXItemTreeCell extends CheckBoxTreeCell<YoGraphicFXItem>
 {
+   private static final boolean ADD_YO_GRAPHIC_ICONS = false;
+
    // TODO Make the cell editable so the user can change the name of the item.
    private final YoGroupFX rootGroup;
 
@@ -57,20 +62,27 @@ public class YoGraphicFXItemTreeCell extends CheckBoxTreeCell<YoGraphicFXItem>
          {
             graphic = new FontAwesomeIconView(FontAwesomeIcon.FOLDER_OPEN_ALT);
          }
-         else if (item instanceof YoGraphicFX2D)
+         else if (item instanceof YoGraphicFXItem)
          {
-            Label icon = new Label("2D");
-            icon.setFont(Font.font("Century Schoolbook", 10.0));
-            icon.setTextFill(Color.DARKGREEN);
-            graphic = icon;
+            boolean is2D = item instanceof YoGraphicFX2D;
+            Label iconLabel = new Label(is2D ? "2D" : "3D");
+            iconLabel.setFont(Font.font("Century Schoolbook", 10.0));
+            iconLabel.setTextFill(is2D ? Color.DARKGREEN : Color.DARKRED);
+
+            if (ADD_YO_GRAPHIC_ICONS)
+            {
+               InputStream resource = SessionVisualizerIOTools.getYoGraphicFXIconResource(item.getClass());
+               ImageView iconImage = new ImageView(new Image(resource, 0, 25, true, true));
+               iconImage.setPreserveRatio(true);
+               iconImage.setFitHeight(20.0);
+               graphic = new HBox(5, iconLabel, iconImage);
+            }
+            else
+            {
+               graphic = iconLabel;
+            }
          }
-         else if (item instanceof YoGraphicFX3D)
-         {
-            Label icon = new Label("3D");
-            icon.setFont(Font.font("Century Schoolbook", 10.0));
-            icon.setTextFill(Color.DARKRED);
-            graphic = icon;
-         }
+
          if (getGraphic() != null)
          {
             HBox container = new HBox(5, getGraphic(), graphic);

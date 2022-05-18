@@ -196,6 +196,14 @@ public class SessionVisualizerIOTools
       return classLoader.getResource(FXML_FOLDER + location + filename + ".fxml");
    }
 
+   public static InputStream getYoGraphicFXIconResource(Class<? extends YoGraphicFXItem> yoGraphicFXType)
+   {
+      if (yoGraphicFXType == null)
+         return null;
+
+      return getIconResource(YO_GRAPHIC_FOLDER + yoGraphicFXType.getSimpleName() + ".png");
+   }
+
    public static FXMLLoader getYoGraphicFXEditorFXMLLoader(Class<? extends YoGraphicFXItem> yoGraphicFXType)
    {
       String location = null;
