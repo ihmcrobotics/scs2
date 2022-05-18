@@ -58,7 +58,7 @@ public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
 
    public SimRigidBody(RigidBodyDefinition definition, ReferenceFrame parentStationaryFrame, YoRegistry registry)
    {
-      super(definition.getName(), definition.getInertiaPose(), parentStationaryFrame);
+      super(definition.getName(), parentStationaryFrame);
       this.registry = registry;
       collidables.addAll(CollisionTools.toCollidableRigidBody(definition, this));
    }

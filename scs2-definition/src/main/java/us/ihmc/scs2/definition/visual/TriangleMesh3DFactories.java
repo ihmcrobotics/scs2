@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer;
+package us.ihmc.scs2.definition.visual;
 
 import java.util.ArrayList;
 import java.util.Arrays;
