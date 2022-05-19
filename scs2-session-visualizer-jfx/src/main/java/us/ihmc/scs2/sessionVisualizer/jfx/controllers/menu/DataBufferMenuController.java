@@ -109,6 +109,18 @@ public class DataBufferMenuController
 
       IntegerSpinnerValueFactory numberPrecisionSpinnerValueFactory = new IntegerSpinnerValueFactory(1, 30, 3, 1);
       numberPrecisionSpinner.setValueFactory(numberPrecisionSpinnerValueFactory);
+      if (numberPrecisionSpinner.isEditable())
+      {
+         numberPrecisionSpinner.focusedProperty().addListener((o, oldValue, newValue) ->
+         {
+            if (!newValue)
+            { // Losing focus
+              // Workaround: manually reset to the current value 
+               numberPrecisionSpinner.getEditor()
+                                     .setText(numberPrecisionSpinnerValueFactory.getConverter().toString(numberPrecisionSpinnerValueFactory.getValue()));
+            }
+         });
+      }
       messager.bindBidirectional(topics.getControlsNumberPrecision(), numberPrecisionSpinnerValueFactory.valueProperty(), false);
 
       messager.bindBidirectional(topics.getShowSCS2YoVariables(), showSCS2YoVariablesMenuItem.selectedProperty(), false);
