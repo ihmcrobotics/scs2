@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
+import java.util.ConcurrentModificationException;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 
@@ -215,9 +216,17 @@ public class YoGroupFX implements YoGraphicFXItem
    @Override
    public void computeBackground()
    {
-      yoGraphicFX2DSet.forEach(YoGraphicFX2D::computeBackground);
-      yoGraphicFX3DSet.forEach(YoGraphicFX3D::computeBackground);
-      children.forEach(YoGroupFX::computeBackground);
+      try
+      {
+         yoGraphicFX2DSet.forEach(YoGraphicFX2D::computeBackground);
+         yoGraphicFX3DSet.forEach(YoGraphicFX3D::computeBackground);
+         children.forEach(YoGroupFX::computeBackground);
+      }
+      catch (ConcurrentModificationException e)
+      {
+         // Can happen when removing lots of YoGraphicFX at once from the GUI.
+         // That's ok, this tick can fail, the next tick will finish the update.
+      }
    }
 
    @Override
