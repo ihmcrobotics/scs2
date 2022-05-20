@@ -26,7 +26,13 @@ import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.scs2.simulation.robot.SimJointAuxiliaryData;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
+import us.ihmc.scs2.simulation.robot.sensors.SimSensor;
+import us.ihmc.scs2.simulation.robot.trackers.KinematicPoint;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoRobotFX
@@ -36,7 +42,7 @@ public class YoRobotFX
    private final YoManager yoManager;
    private final ReferenceFrameManager referenceFrameManager;
 
-   private RigidBodyBasics rootBody;
+   private SimRigidBodyBasics rootBody;
    private YoRegistry robotRegistry;
    private ObservableMap<String, FrameNode> rigidBodyFrameNodeMap = FXCollections.observableMap(new ConcurrentHashMap<>(64));
 
@@ -106,6 +112,43 @@ public class YoRobotFX
             linkYoVariable.addUser(this);
          }
       });
+
+      for (SimRigidBodyBasics rigidBody : rootBody.subtreeIterable())
+      {
+         if (rigidBody.isRootBody())
+            continue;
+
+         SimJointAuxiliaryData auxialiryData = rigidBody.getParentJoint().getAuxialiryData();
+
+         auxialiryData.getKinematicPoints().forEach(this::linkKinematicPointFrame);
+         auxialiryData.getExternalWrenchPoints().forEach(this::linkKinematicPointFrame);
+         auxialiryData.getGroundContactPoints().forEach(this::linkKinematicPointFrame);
+
+         auxialiryData.getIMUSensors().forEach(this::linkSensorFrame);
+         auxialiryData.getWrenchSensors().forEach(this::linkSensorFrame);
+         auxialiryData.getCameraSensors().forEach(this::linkSensorFrame);
+      }
+   }
+
+   private void linkKinematicPointFrame(KinematicPoint kp)
+   {
+      linkYoFrameOffset(kp.getOffset());
+   }
+
+   private void linkSensorFrame(SimSensor sensor)
+   {
+      linkYoFrameOffset(sensor.getOffset());
+   }
+
+   private void linkYoFrameOffset(YoFramePoseUsingYawPitchRoll offset)
+   {
+      YoDouble[] offsetVariables = {offset.getYoX(), offset.getYoY(), offset.getYoZ(), offset.getYoYaw(), offset.getYoPitch(), offset.getYoRoll()};
+
+      for (YoDouble variable : offsetVariables)
+      {
+         LinkedYoVariable<YoDouble> linkYoVariable = robotLinkedYoRegistry.linkYoVariable(variable);
+         linkYoVariable.addUser(this);
+      }
    }
 
    public void render()

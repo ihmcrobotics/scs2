@@ -34,6 +34,17 @@ public class SimJointAuxiliaryData
       this.joint = joint;
    }
 
+   public void updateFrames()
+   {
+      kinematicPoints.forEach(kp -> kp.getFrame().update());
+      externalWrenchPoints.forEach(ewp -> ewp.getFrame().update());
+      groundContactPoints.forEach(gcp -> gcp.getFrame().update());
+
+      imuSensors.forEach(imu -> imu.getFrame().update());
+      wrenchSensors.forEach(wrench -> wrench.getFrame().update());
+      cameraSensors.forEach(camera -> camera.getFrame().update());
+   }
+
    public void update(RobotPhysicsOutput physicsOutput)
    {
       kinematicPoints.forEach(kp -> kp.update());

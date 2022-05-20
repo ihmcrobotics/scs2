@@ -86,6 +86,13 @@ public interface SimJointBasics extends JointBasics, SimJointReadOnly
    }
 
    @Override
+   default void updateFrame()
+   {
+      JointBasics.super.updateFrame();
+      getAuxialiryData().updateFrames();
+   }
+
+   @Override
    default Iterable<? extends SimJointBasics> subtreeIterable()
    {
       return new JointIterable<>(SimJointBasics.class, null, this);
