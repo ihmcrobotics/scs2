@@ -199,6 +199,8 @@ public class MainWindowController extends ObservedAnimationTimer
 
       HamburgerSlideCloseTransition transition = new HamburgerSlideCloseTransition(hamburger);
 
+      toolDrawer.addEventHandler(JFXDrawerEvent.OPENED, e -> sidePaneController.getYoSearchTabPaneController().requestFocusForActiveSearchBox());
+
       toolDrawer.addEventHandler(JFXDrawerEvent.CLOSING, e ->
       {
          transition.setRate(-0.5);

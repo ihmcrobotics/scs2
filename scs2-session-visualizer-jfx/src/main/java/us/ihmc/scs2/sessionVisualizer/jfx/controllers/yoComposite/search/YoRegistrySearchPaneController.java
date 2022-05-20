@@ -118,6 +118,11 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       scs2InternalRegistryFilter = reg -> showSCS2YoVariables.getValue() || !reg.getNamespace().equals(Session.SESSION_INTERNAL_NAMESPACE);
    }
 
+   public void requestFocusForSearchBox()
+   {
+      searchTextField.requestFocus();
+   }
+
    public void setRegistryViewRequestConsumer(Consumer<YoRegistry> consumer)
    {
       this.registryViewRequestConsumer = consumer;

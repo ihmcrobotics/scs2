@@ -194,6 +194,11 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       });
    }
 
+   public void requestFocusForSearchBox()
+   {
+      searchTextField.requestFocus();
+   }
+
    public void setRegistryViewRequestConsumer(Consumer<YoNamespace> consumer)
    {
       registryViewRequestConsumer = consumer;
