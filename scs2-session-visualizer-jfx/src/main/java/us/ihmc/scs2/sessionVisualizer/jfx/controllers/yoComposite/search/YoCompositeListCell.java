@@ -188,11 +188,11 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       spinner.focusedProperty().addListener((o, oldValue, newValue) ->
       {
          valueFactory.setConverter(newValue ? rawDoubleStringConverter : scientificDoubleStringConverter);
-         if (!newValue)
-         { // Losing focus
-            // Workaround: manually reset to the current value 
-            spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
-         }
+
+         // When gaining focus: we want to update the text to reflect the change of the converter.
+         // When losing focus: the text may be inconsistent with the actual value: reset the text. 
+         spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
+
       });
       yoDoubleProperty.bindDoubleProperty(spinner.getValueFactory().valueProperty());
 
@@ -235,7 +235,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       {
          if (!newValue)
          { // Losing focus
-            // Workaround: manually reset to the current value 
+           // Workaround: manually reset to the current value 
             spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
          }
       });
@@ -263,7 +263,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       {
          if (!newValue)
          { // Losing focus
-            // Workaround: manually reset to the current value 
+           // Workaround: manually reset to the current value 
             spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
          }
       });
