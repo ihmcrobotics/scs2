@@ -149,7 +149,7 @@ public class YoEntryListViewController
       String fullname = yoCompositeSelected.get().get(1);
       YoComposite yoComposite = yoCompositeSearchManager.getYoComposite(type, fullname);
 
-      if (yoComposite != null)
+      if (yoComposite != null && !yoEntryListView.getItems().contains(yoComposite))
       {
          yoEntryListView.getItems().add(yoComposite);
          messager.submitMessage(yoCompositeSelectedTopic, null);
@@ -200,8 +200,13 @@ public class YoEntryListViewController
 
       if (yoComposites != null)
       {
-         yoEntryListView.getItems().addAll(yoComposites);
-         success = true;
+         for (YoComposite yoComposite : yoComposites)
+         {
+            if (yoEntryListView.getItems().contains(yoComposite))
+               continue;
+            yoEntryListView.getItems().add(yoComposite);
+            success = true;
+         }
       }
 
       event.setDropCompleted(success);
@@ -213,8 +218,11 @@ public class YoEntryListViewController
       if (event.getGestureSource() == yoEntryListView)
          return false;
 
-      Dragboard dragboard = event.getDragboard();
-      return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, yoCompositeSearchManager) != null;
+      Dragboard db = event.getDragboard();
+      List<YoComposite> yoComposites = DragAndDropTools.retrieveYoCompositesFromDragBoard(db, yoCompositeSearchManager);
+      if (yoComposites == null)
+         return false;
+      return !yoEntryListView.getItems().containsAll(yoComposites);
    }
 
    public void setSelectionHighlight(boolean isSelected)
