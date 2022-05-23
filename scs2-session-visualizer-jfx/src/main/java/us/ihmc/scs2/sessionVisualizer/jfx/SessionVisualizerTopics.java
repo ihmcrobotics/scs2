@@ -17,6 +17,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -32,7 +33,7 @@ public class SessionVisualizerTopics
    private Topic<Object> forgetRecordable;
    private Topic<Boolean> showAdvancedControls;
    private Topic<Boolean> showOverheadPlotter;
-   private Topic<Pair<String, Object>> openWindowRequest;
+   private Topic<NewWindowRequest> openWindowRequest;
    private Topic<Boolean> sessionVisualizerCloseRequest;
 
    private Topic<Object> toggleKeyFrame, requestCurrentKeyFrames;
@@ -209,7 +210,7 @@ public class SessionVisualizerTopics
       return showOverheadPlotter;
    }
 
-   public Topic<Pair<String, Object>> getOpenWindowRequest()
+   public Topic<NewWindowRequest> getOpenWindowRequest()
    {
       return openWindowRequest;
    }

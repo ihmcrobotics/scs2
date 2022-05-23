@@ -22,13 +22,12 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
@@ -85,7 +84,7 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
             if (selectedRegistry == null)
                return;
             messager.submitMessage(topics.getOpenWindowRequest(),
-                                   new Pair<>(SecondaryWindowManager.REGISTRY_STATISTICS_WINDOW_TYPE, selectedRegistry.getValue().getNamespace().toString()));
+                                   NewWindowRequest.registryStatisticWindow(toolkit.getMainWindow(), selectedRegistry.getValue()));
          });
          return openStatisticsMenuItem;
       });

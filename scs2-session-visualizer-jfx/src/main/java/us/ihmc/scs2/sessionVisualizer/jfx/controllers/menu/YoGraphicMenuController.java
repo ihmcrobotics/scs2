@@ -5,11 +5,10 @@ import java.io.File;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
 import javafx.stage.Stage;
-import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
 public class YoGraphicMenuController
@@ -49,6 +48,6 @@ public class YoGraphicMenuController
    @FXML
    private void openYoGraphicEditor()
    {
-      messager.submitMessage(topics.getOpenWindowRequest(), new Pair<>(SecondaryWindowManager.GRAPHIC_EDITOR_WINDOW_TYPE, null));
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.graphicEditorWindow(owner));
    }
 }
