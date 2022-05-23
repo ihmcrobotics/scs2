@@ -4,36 +4,35 @@ import java.io.File;
 
 import javafx.fxml.FXML;
 import javafx.stage.Stage;
-import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
 public class YoCompositeMenuController
 {
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
-   private Stage mainWindow;
+   private Stage owner;
 
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
-      mainWindow = toolkit.getWindow();
+      owner = toolkit.getWindow();
    }
 
    @FXML
    public void openYoCompositePatternEditor()
    {
-      messager.submitMessage(topics.getOpenWindowRequest(), new Pair<>(SecondaryWindowManager.COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE, null));
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.compositePatternEditorWindow(owner));
    }
 
    @FXML
    public void loadYoCompositePattern()
    {
-      File result = SessionVisualizerIOTools.yoCompositeConfigurationOpenFileDialog(mainWindow);
+      File result = SessionVisualizerIOTools.yoCompositeConfigurationOpenFileDialog(owner);
       if (result != null)
          messager.submitMessage(topics.getYoCompositePatternLoadRequest(), result);
    }
@@ -41,7 +40,7 @@ public class YoCompositeMenuController
    @FXML
    public void saveYoCompositePattern()
    {
-      File result = SessionVisualizerIOTools.yoCompositeConfigurationSaveFileDialog(mainWindow);
+      File result = SessionVisualizerIOTools.yoCompositeConfigurationSaveFileDialog(owner);
       if (result != null)
          messager.submitMessage(topics.getYoCompositePatternSaveRequest(), result);
    }

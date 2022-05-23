@@ -172,4 +172,9 @@ public class YoRegistryStatisticsPaneController
       timeline.getKeyFrames().add(key);
       timeline.play();
    }
+
+   public Stage getWindow()
+   {
+      return window;
+   }
 }

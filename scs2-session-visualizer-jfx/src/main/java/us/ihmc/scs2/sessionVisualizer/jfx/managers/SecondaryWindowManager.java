@@ -11,6 +11,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
@@ -31,11 +32,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class SecondaryWindowManager implements Manager
 {
-   public static final String SECONDARY_CHART_WINDOW_TYPE = "SecondaryChartWindow";
-   public static final String COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE = "YoCompositeEditorWindow";
-   public static final String GRAPHIC_EDITOR_WINDOW_TYPE = "YoGraphicEditorWindow";
-   public static final String BCF2000_SLIDERBOARD_WINDOW_TYPE = "BC2000EditorWindow";
-   public static final String REGISTRY_STATISTICS_WINDOW_TYPE = "YoRegistryStatisticsWindow";
+   private static final double SECONDARY_WINDOW_POSITION_OFFSET = 30.0;
 
    private final SessionVisualizerToolkit toolkit;
 
@@ -79,7 +76,7 @@ public class SecondaryWindowManager implements Manager
             for (int i = 0; i < configuration.getNumberOfSecondaryYoChartGroupConfigurations(); i++)
             {
                WindowConfigurationDefinition secondaryWindowConfiguration = secondaryWindowConfigurations.get(i);
-               Stage stage = newChartWindow(secondaryWindowConfiguration);
+               Stage stage = newChartWindow(null, secondaryWindowConfiguration);
                messager.submitMessage(topics.getYoChartGroupLoadConfiguration(), new Pair<>(stage, configuration.getSecondaryYoChartGroupConfigurationFile(i)));
             }
          }
@@ -131,38 +128,33 @@ public class SecondaryWindowManager implements Manager
       secondaryWindowControllers.clear();
    }
 
-   public void openWindow(Pair<String, Object> request)
+   public void openWindow(NewWindowRequest request)
    {
       if (request == null)
          return;
 
-      String windowType = request.getKey();
-
-      if (windowType == null || windowType.isEmpty())
-         return;
-
-      switch (windowType)
+      switch (request.windowType)
       {
-         case COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE:
-            openYoCompositePatternEditor();
+         case NewWindowRequest.COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE:
+            openYoCompositePatternEditor(request.requestSource);
             break;
-         case SECONDARY_CHART_WINDOW_TYPE:
-            newChartWindow();
+         case NewWindowRequest.SECONDARY_CHART_WINDOW_TYPE:
+            newChartWindow(request.requestSource);
             break;
-         case GRAPHIC_EDITOR_WINDOW_TYPE:
-            openYoGraphicEditor();
+         case NewWindowRequest.GRAPHIC_EDITOR_WINDOW_TYPE:
+            openYoGraphicEditor(request.requestSource);
             break;
-         case BCF2000_SLIDERBOARD_WINDOW_TYPE:
-            openBCF2000SliderboardWindow();
+         case NewWindowRequest.BCF2000_SLIDERBOARD_WINDOW_TYPE:
+            openBCF2000SliderboardWindow(request.requestSource);
             return;
-         case REGISTRY_STATISTICS_WINDOW_TYPE:
-            openRegistryStatisticsWindow((String) request.getValue());
+         case NewWindowRequest.REGISTRY_STATISTICS_WINDOW_TYPE:
+            openRegistryStatisticsWindow(request.requestSource, (String) request.additionalData);
          default:
-            LogTools.error("Unexpected value: " + windowType);
+            LogTools.error("Unexpected value: " + request.windowType);
       }
    }
 
-   public void openYoCompositePatternEditor()
+   public void openYoCompositePatternEditor(Window requestSource)
    {
       if (yoCompositeEditor.getValue() != null)
       {
@@ -177,6 +169,7 @@ public class SecondaryWindowManager implements Manager
          YoCompositePatternPropertyWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          yoCompositeEditor.setValue(controller);
+         initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }
       catch (IOException e)
@@ -185,14 +178,14 @@ public class SecondaryWindowManager implements Manager
       }
    }
 
-   public Stage newChartWindow()
+   public Stage newChartWindow(Window requestSource)
    {
-      return newChartWindow(null);
+      return newChartWindow(requestSource, null);
    }
 
-   public Stage newChartWindow(WindowConfigurationDefinition windowConfigurationDefinition)
+   public Stage newChartWindow(Window requestSource, WindowConfigurationDefinition windowConfigurationDefinition)
    {
-      Stage stage = newStage(windowConfigurationDefinition);
+      Stage stage = newStage(requestSource, windowConfigurationDefinition);
 
       try
       {
@@ -220,7 +213,7 @@ public class SecondaryWindowManager implements Manager
       }
    }
 
-   private Stage newStage(WindowConfigurationDefinition definition)
+   private Stage newStage(Window requestSource, WindowConfigurationDefinition definition)
    {
       Stage stage = new Stage();
 
@@ -267,6 +260,10 @@ public class SecondaryWindowManager implements Manager
             stage.setHeight(height);
          }
       }
+      else
+      {
+         initializeSecondaryWindowWithOwner(requestSource, stage);
+      }
 
       secondaryWindows.add(stage);
       return stage;
@@ -294,7 +291,7 @@ public class SecondaryWindowManager implements Manager
       return definition;
    }
 
-   private void openYoGraphicEditor()
+   private void openYoGraphicEditor(Window requestSource)
    {
       if (yoGraphicEditor.getValue() != null)
       {
@@ -309,6 +306,7 @@ public class SecondaryWindowManager implements Manager
          YoGraphicPropertyWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          yoGraphicEditor.setValue(controller);
+         initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }
       catch (IOException e)
@@ -317,7 +315,7 @@ public class SecondaryWindowManager implements Manager
       }
    }
 
-   public void openBCF2000SliderboardWindow()
+   public void openBCF2000SliderboardWindow(Window requestSource)
    {
       if (bcf2000Sliderboard.getValue() != null)
       {
@@ -332,6 +330,7 @@ public class SecondaryWindowManager implements Manager
          YoBCF2000SliderboardWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          bcf2000Sliderboard.setValue(controller);
+         initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }
       catch (IOException e)
@@ -340,7 +339,7 @@ public class SecondaryWindowManager implements Manager
       }
    }
 
-   public void openRegistryStatisticsWindow(String registryFullname)
+   public void openRegistryStatisticsWindow(Window requestSource, String registryFullname)
    {
       YoRegistry registry = toolkit.getYoManager().getRootRegistry().findRegistry(new YoNamespace(registryFullname));
 
@@ -365,12 +364,71 @@ public class SecondaryWindowManager implements Manager
             controller.initialize(toolkit);
             controller.setInput(registry);
             yoRegistryStatistics.setValue(controller);
+            initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
             controller.showWindow();
          }
          catch (IOException e)
          {
             e.printStackTrace();
          }
+      }
+   }
+
+   public static void initializeSecondaryWindowWithOwner(Window owner, Stage secondary)
+   {
+      if (owner == null)
+         return;
+      secondary.setX(owner.getX() + SECONDARY_WINDOW_POSITION_OFFSET);
+      secondary.setY(owner.getY() + 30.0);
+   }
+
+   public static class NewWindowRequest
+   {
+      public static final String REGISTRY_STATISTICS_WINDOW_TYPE = "YoRegistryStatisticsWindow";
+      public static final String BCF2000_SLIDERBOARD_WINDOW_TYPE = "BC2000EditorWindow";
+      public static final String GRAPHIC_EDITOR_WINDOW_TYPE = "YoGraphicEditorWindow";
+      public static final String COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE = "YoCompositeEditorWindow";
+      public static final String SECONDARY_CHART_WINDOW_TYPE = "SecondaryChartWindow";
+
+      private final String windowType;
+      private final Window requestSource;
+      private final Object additionalData;
+
+      public NewWindowRequest(String windowType, Window requestSource)
+      {
+         this(windowType, requestSource, null);
+      }
+
+      public NewWindowRequest(String windowType, Window requestSource, Object additionalData)
+      {
+         this.windowType = windowType;
+         this.requestSource = requestSource;
+         this.additionalData = additionalData;
+      }
+
+      public static NewWindowRequest registryStatisticWindow(Window requestSource, YoRegistry registry)
+      {
+         return new NewWindowRequest(REGISTRY_STATISTICS_WINDOW_TYPE, requestSource, registry.getNamespace().toString());
+      }
+
+      public static NewWindowRequest bcf2000SliderboardWindow(Window requestSource)
+      {
+         return new NewWindowRequest(BCF2000_SLIDERBOARD_WINDOW_TYPE, requestSource);
+      }
+
+      public static NewWindowRequest graphicEditorWindow(Window requestSource)
+      {
+         return new NewWindowRequest(GRAPHIC_EDITOR_WINDOW_TYPE, requestSource);
+      }
+
+      public static NewWindowRequest compositePatternEditorWindow(Window requestSource)
+      {
+         return new NewWindowRequest(COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE, requestSource);
+      }
+
+      public static NewWindowRequest chartWindow(Window requestSource)
+      {
+         return new NewWindowRequest(SECONDARY_CHART_WINDOW_TYPE, requestSource);
       }
    }
 }
