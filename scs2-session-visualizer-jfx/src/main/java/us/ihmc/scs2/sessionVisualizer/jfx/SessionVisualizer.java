@@ -23,10 +23,9 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
@@ -37,7 +36,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 public class SessionVisualizer
@@ -348,14 +346,6 @@ public class SessionVisualizer
       }
 
       @Override
-      public void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
-      {
-         checkVisualizerRunning();
-         waitUntilFullyUp();
-         messager.submitMessage(topics.getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
-      }
-
-      @Override
       public void addStaticVisual(VisualDefinition visualDefinition)
       {
          checkVisualizerRunning();
@@ -369,32 +359,6 @@ public class SessionVisualizer
          checkVisualizerRunning();
          waitUntilFullyUp();
          toolkit.getEnvironmentManager().removeStaticVisual(visualDefinition);
-      }
-
-      @Override
-      public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
-      {
-         String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
-         if (subNames == null || subNames.length == 0)
-         {
-            addYoGraphic(yoGraphicDefinition);
-         }
-         else
-         {
-            for (int i = subNames.length - 1; i >= 0; i--)
-            {
-               yoGraphicDefinition = new YoGraphicGroupDefinition(subNames[i], yoGraphicDefinition);
-            }
-            
-            addYoGraphic(yoGraphicDefinition);
-         }
-      }
-
-      @Override
-      public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
-      {
-         checkVisualizerRunning();
-         messager.submitMessage(topics.getAddYoGraphicRequest(), yoGraphicDefinition);
       }
 
       @Override
@@ -424,17 +388,16 @@ public class SessionVisualizer
       }
 
       @Override
-      public void disableUserControls()
+      public SessionVisualizerTopics getTopics()
       {
-         checkVisualizerRunning();
-         messager.submitMessage(topics.getDisableUserControls(), true);
+         return topics;
       }
 
       @Override
-      public void enableUserControls()
+      public <T> void submitMessage(Topic<T> topic, T messageContent)
       {
          checkVisualizerRunning();
-         messager.submitMessage(topics.getDisableUserControls(), false);
+         messager.submitMessage(topic, messageContent);
       }
 
       @Override

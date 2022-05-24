@@ -8,6 +8,7 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
@@ -59,6 +60,8 @@ public class SessionVisualizerTopics
    private Topic<Pair<Window, File>> yoChartGroupSaveConfiguration;
    private Topic<Pair<Window, File>> yoChartGroupLoadConfiguration;
    private Topic<Pair<Window, String>> yoChartGroupName;
+
+   private Topic<YoEntryListDefinition> yoEntryListAdd;
 
    private Topic<File> yoSliderboardSaveConfiguration;
    private Topic<File> yoSliderboardLoadConfiguration;
@@ -132,6 +135,8 @@ public class SessionVisualizerTopics
       yoChartGroupSaveConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupSaveConfiguration;
       yoChartGroupLoadConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupLoadConfiguration;
       yoChartGroupName = SessionVisualizerMessagerAPI.YoChart.YoChartGroupName;
+
+      yoEntryListAdd = SessionVisualizerMessagerAPI.YoEntry.YoEntryListAdd;
 
       yoSliderboardSaveConfiguration = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSaveConfiguration;
       yoSliderboardLoadConfiguration = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardLoadConfiguration;
@@ -274,7 +279,7 @@ public class SessionVisualizerTopics
    {
       return yoCompositeRefreshAll;
    }
-   
+
    public Topic<Boolean> getShowSCS2YoVariables()
    {
       return showSCS2YoVariables;
@@ -328,6 +333,11 @@ public class SessionVisualizerTopics
    public Topic<Pair<Window, File>> getYoChartGroupSaveConfiguration()
    {
       return yoChartGroupSaveConfiguration;
+   }
+
+   public Topic<YoEntryListDefinition> getYoEntryListAdd()
+   {
+      return yoEntryListAdd;
    }
 
    public Topic<File> getYoSliderboardLoadConfiguration()
