@@ -82,15 +82,26 @@ public class YoEntryListViewController
 
       yoEntryListView.getItems().clear();
 
-      if (input.getYoEntries() == null)
+      addYoEntries(input.getYoEntries());
+   }
+
+   public void addYoEntries(List<YoEntryDefinition> yoEntries)
+   {
+      if (yoEntries == null)
          return;
 
-      for (YoEntryDefinition entry : input.getYoEntries())
+      for (YoEntryDefinition entry : yoEntries)
       {
          String type = entry.getCompositeType();
          String fullname = entry.getCompositeFullname();
 
-         YoCompositeCollection collection = yoCompositeSearchManager.getCollectionFromType(type);
+         YoCompositeCollection collection;
+
+         if (type == null)
+            collection = yoCompositeSearchManager.getYoVariableCollection();
+         else
+            collection = yoCompositeSearchManager.getCollectionFromType(type);
+
          if (collection != null)
          {
             YoComposite yoComposite = collection.getYoCompositeFromFullname(fullname);
