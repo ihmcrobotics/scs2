@@ -92,7 +92,7 @@ public abstract class Session
     * <li>the time broadcasted by the server when working with a remote session.
     * </ul>
     */
-   protected final YoDouble time = new YoDouble("time", rootRegistry);
+   protected final YoDouble time = new YoDouble("time[sec]", rootRegistry);
    /**
     * JVM statistics for this session, allowing for instance to inspect garbage collection or other
     * indicator for performance debugging.
