@@ -1,14 +1,22 @@
 package us.ihmc.scs2;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.session.SessionDataExportRequest;
+import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
+import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.SimulationSessionControls;
@@ -20,6 +28,7 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.physicsEngine.contactPointBased.ContactPointBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.impulseBased.ImpulseBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
@@ -141,6 +150,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       return getPhysicsEngine().getRobots();
    }
 
+   public Robot addRobot(RobotDefinition robotDefinition)
+   {
+      return simulationSession.addRobot(robotDefinition);
+   }
+
+   public void addRobot(Robot robot)
+   {
+      simulationSession.addRobot(robot);
+   }
+
    public void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
    {
       simulationSession.addBeforePhysicsCallback(beforePhysicsCallback);
@@ -201,13 +220,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       return simulationSession.getPlaybackRealTimeRate();
    }
 
-   public void addSaticVisual(VisualDefinition visualDefinition)
+   public void addStaticVisual(VisualDefinition visualDefinition)
    {
       if (visualizerControls != null)
          visualizerControls.addStaticVisual(visualDefinition);
    }
 
-   public void addSaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
+   public void addStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
    {
       if (visualizerControls != null)
          visualizerControls.addStaticVisuals(visualDefinitions);
@@ -223,6 +242,18 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    {
       if (visualizerControls != null)
          visualizerControls.removeStaticVisuals(visualDefinitions);
+   }
+
+   public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoGraphic(yoGraphicDefinition);
+   }
+
+   public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoGraphic(namespace, yoGraphicDefinition);
    }
 
    public void setCameraRigidBodyTracking(String robotName, String rigidBodyName)
@@ -260,7 +291,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       simulationSession.addShutdownListener(listener);
    }
 
-   public void start()
+   public void startSimulationThread()
    {
       simulationSession.startSessionThread();
 
@@ -269,6 +300,11 @@ public class SimulationConstructionSet2 implements YoVariableHolder
          visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
          visualizerControls.addVisualizerShutdownListener(this::destroy);
       }
+   }
+
+   public void stopSimulationThread()
+   {
+      simulationSession.stopSessionThread();
    }
 
    private boolean hasBeenDestroyed;
@@ -307,11 +343,190 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    public void setupEntryBox(String varName)
    {
-      visualizerControls.addYoEntry(varName);
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(varName);
    }
 
    public void setupEntryBox(String[] varNames)
    {
-      visualizerControls.addYoEntry(Arrays.asList(varNames));
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(Arrays.asList(varNames));
    }
+
+   public void setupEntryBoxGroup(String name, String[] varNames)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(name, Arrays.asList(varNames));
+   }
+
+   // TODO Missing setupGraph, setupGraphGroup
+
+   public void disableGUIComponents()
+   {
+      if (visualizerControls != null)
+         visualizerControls.disableUserControls();
+   }
+
+   public void enableGUIComponents()
+   {
+      if (visualizerControls != null)
+         visualizerControls.enableUserControls();
+   }
+
+   public void setSimulateNoFasterThanRealTime(boolean simulateNoFasterThanRealTime)
+   {
+      simulationSession.submitRunAtRealTimeRate(simulateNoFasterThanRealTime);
+   }
+
+   public boolean getSimulateNoFasterThanRealTime()
+   {
+      return simulationSession.getRunAtRealTimeRate();
+   }
+
+   public void stop()
+   {
+      getSimulationControls().pause();
+   }
+
+   public boolean isSimulationThreadRunning()
+   {
+      return simulationSession.hasSessionStarted();
+   }
+
+   public boolean isSimulating()
+   {
+      return simulationSession.getActiveMode() == SessionMode.RUNNING;
+   }
+
+   public boolean isPlaying()
+   {
+      return simulationSession.getActiveMode() == SessionMode.PLAYBACK;
+   }
+
+   public void play()
+   {
+      simulationSession.setSessionMode(SessionMode.PLAYBACK);
+   }
+
+   public void simulate()
+   {
+      getSimulationControls().simulate();
+   }
+
+   public void simulate(double duration)
+   {
+      getSimulationControls().simulate(duration);
+   }
+
+   public void simulate(int numberOfTicks)
+   {
+      getSimulationControls().simulate(numberOfTicks);
+   }
+
+   public boolean simulateNow(double duration)
+   {
+      return getSimulationControls().simulateNow(duration);
+   }
+
+   public boolean simulateNow(long numberOfTicks)
+   {
+      return getSimulationControls().simulateNow(numberOfTicks);
+   }
+
+   public boolean simulateNow()
+   {
+      return getSimulationControls().simulateNow();
+   }
+
+   public void addSimulationThrowableListener(Consumer<Throwable> listener)
+   {
+      getSimulationControls().addSimulationThrowableListener(listener);
+   }
+
+   public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
+   {
+      getSimulationControls().addExternalTerminalCondition(externalTerminalConditions);
+   }
+
+   public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+   {
+      return getSimulationControls().removeExternalTerminalCondition(externalTerminalCondition);
+   }
+
+   public void clearExternalTerminalConditions()
+   {
+      getSimulationControls().clearExternalTerminalConditions();
+   }
+
+   public void setCurrentIndex(int bufferIndexRequest)
+   {
+      simulationSession.submitBufferIndexRequestAndWait(bufferIndexRequest);
+   }
+
+   public void gotoInPoint()
+   {
+      getSimulationControls().setBufferCurrentIndexToInPoint();
+   }
+
+   public void gotoOutPoint()
+   {
+      getSimulationControls().setBufferCurrentIndexToOutPoint();
+   }
+
+   public int getInPoint()
+   {
+      return getBufferProperties().getInPoint();
+   }
+
+   public int getOutPoint()
+   {
+      return getBufferProperties().getOutPoint();
+   }
+
+   public void setInPoint()
+   {
+      getSimulationControls().setBufferInPointIndexToCurrent();
+   }
+
+   public void setOutPoint()
+   {
+      getSimulationControls().setBufferOutPointIndexToCurrent();
+   }
+
+   public int getBufferSize()
+   {
+      return getBufferProperties().getSize();
+   }
+
+   public void cropBuffer()
+   {
+      getSimulationControls().cropBuffer();
+   }
+
+   public void changeBufferSize(int bufferSize)
+   {
+      simulationSession.submitBufferSizeRequestAndWait(bufferSize);
+   }
+
+   public void exportData(SessionDataExportRequest request)
+   {
+      simulationSession.submitSessionDataExportRequestAndWait(request);
+   }
+
+   public void exportVideo(File file)
+   {
+      if (visualizerControls != null)
+         visualizerControls.exportVideo(file);
+   }
+
+   public YoSharedBuffer getBuffer()
+   {
+      return simulationSession.getBuffer();
+   }
+
+   public void applyBufferProcessor(YoBufferProcessor processor)
+   {
+      getBuffer().applyProcessor(processor);
+   }
+
 }
