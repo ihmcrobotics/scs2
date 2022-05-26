@@ -314,11 +314,11 @@ public class SessionVisualizer
       }
 
       @Override
-      public void setCameraOrientation(double latitude, double longitude, double roll)
+      public void setCameraOrientation(double latitude, double longitude)
       {
          checkVisualizerRunning();
          waitUntilFullyUp();
-         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, roll);
+         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, 0);
       }
 
       @Override
