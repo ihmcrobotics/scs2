@@ -30,10 +30,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.YoCompositeListCell;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoEntryListViewController
 {
@@ -42,6 +44,7 @@ public class YoEntryListViewController
 
    private final BooleanProperty showUniqueNamesProperty = new SimpleBooleanProperty(this, "showUniqueNames", false);
    private final StringProperty nameProperty = new SimpleStringProperty(this, "name", null);
+   private YoManager yoManager;
    private YoCompositeSearchManager yoCompositeSearchManager;
    private JavaFXMessager messager;
    private Topic<List<String>> yoCompositeSelectedTopic;
@@ -53,6 +56,7 @@ public class YoEntryListViewController
       SessionVisualizerTopics topics = toolkit.getTopics();
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
 
+      yoManager = toolkit.getYoManager();
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
       yoEntryListView.setCellFactory(param -> new YoCompositeListCell(toolkit.getYoManager(), showUniqueNamesProperty, numberPrecision, param));
       yoEntryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -102,18 +106,41 @@ public class YoEntryListViewController
          else
             collection = yoCompositeSearchManager.getCollectionFromType(type);
 
-         if (collection != null)
-         {
-            YoComposite yoComposite = collection.getYoCompositeFromFullname(fullname);
-            if (yoComposite != null)
-               yoEntryListView.getItems().add(yoComposite);
-            else
-               LogTools.warn("Could not find composite: " + fullname);
-         }
-         else
+         if (collection == null)
          {
             LogTools.warn("Could not find composite type: " + type);
+            continue;
          }
+
+         YoComposite yoComposite = collection.getYoCompositeFromFullname(fullname);
+
+         if (yoComposite != null)
+         {
+            yoEntryListView.getItems().add(yoComposite);
+            continue;
+         }
+
+         yoComposite = collection.getYoCompositeFromUniqueName(fullname);
+         if (yoComposite != null)
+         {
+            yoEntryListView.getItems().add(yoComposite);
+            continue;
+         }
+
+         if (collection.getPattern().getComponentIdentifiers().length == 1)
+         {
+            YoVariable variable = yoManager.getRootRegistry().findVariable(fullname);
+            if (variable != null)
+            {
+               yoComposite = collection.getYoCompositeFromFullname(variable.getFullNameString());
+               if (yoComposite != null)
+               {
+                  yoEntryListView.getItems().add(yoComposite);
+                  continue;
+               }
+            }
+         }
+         LogTools.warn("Could not find composite: " + fullname);
       }
    }
 

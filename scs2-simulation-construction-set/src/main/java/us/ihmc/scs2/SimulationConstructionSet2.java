@@ -262,10 +262,10 @@ public class SimulationConstructionSet2 implements YoVariableHolder
          visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName);
    }
 
-   public void setCameraOrientation(double latitude, double longitude, double roll)
+   public void setCameraOrientation(double latitude, double longitude)
    {
       if (visualizerControls != null)
-         visualizerControls.setCameraOrientation(latitude, longitude, roll);
+         visualizerControls.setCameraOrientation(latitude, longitude);
    }
 
    public void setCameraPosition(double x, double y, double z)
