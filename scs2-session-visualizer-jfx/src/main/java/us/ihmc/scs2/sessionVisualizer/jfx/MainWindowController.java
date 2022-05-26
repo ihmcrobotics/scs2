@@ -1,12 +1,12 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import java.io.IOException;
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import com.jfoenix.controls.JFXDrawer;
+import com.jfoenix.controls.JFXDrawer.DrawerDirection;
 import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.controls.events.JFXDrawerEvent;
-import com.jfoenix.transitions.hamburger.HamburgerSlideCloseTransition;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
@@ -29,6 +29,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import us.ihmc.commons.Conversions;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
@@ -36,20 +37,21 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarCont
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 public class MainWindowController extends ObservedAnimationTimer
 {
    @FXML
-   private AnchorPane mainPane;
+   private AnchorPane rootPane;
+   @FXML
+   private SplitPane mainGUIPane;
    @FXML
    private AnchorPane sceneAnchorPane;
    @FXML
    private SplitPane mainViewSplitPane;
    @FXML
-   private JFXHamburger hamburger;
-   @FXML
-   private JFXDrawer toolDrawer;
+   private JFXHamburger leftDrawerBurger, rightDrawerBurger;
    @FXML
    private Label fpsLabel;
    @FXML
@@ -61,6 +63,10 @@ public class MainWindowController extends ObservedAnimationTimer
    @FXML
    private YoChartGroupPanelController yoChartGroupPanelController;
 
+   /** The drawer used to hold onto the tools for searching yoVariables. */
+   private JFXDrawer leftDrawer = new JFXDrawer();
+   /** The drawer used to hold onto custom GUI controls. */
+   private JFXDrawer rightDrawer = new JFXDrawer();
    private SidePaneController sidePaneController;
 
    private SessionVisualizerToolkit globalToolkit;
@@ -80,10 +86,20 @@ public class MainWindowController extends ObservedAnimationTimer
       sessionAdvancedControlsController.initialize(windowToolkit);
       yoChartGroupPanelController.initialize(windowToolkit);
 
+      rootPane.getChildren().set(1, leftDrawer);
+      JavaFXMissingTools.setAnchorConstraints(leftDrawer, 25, 0, 0, 0);
+      leftDrawer.getChildren().add(rightDrawer);
+      leftDrawer.setDefaultDrawerSize(300);
+      leftDrawer.setDirection(DrawerDirection.LEFT);
+
+      rightDrawer.getChildren().add(mainGUIPane);
+      rightDrawer.setDirection(DrawerDirection.RIGHT);
+      rightDrawer.setDefaultDrawerSize(300);
+
       try
       {
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SIDE_PANE_URL);
-         Pane sidePane = setupDrawer(loader.load());
+         Pane sidePane = setupLeftDrawer(loader.load());
          messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> sidePane.setDisable(disable));
          sidePaneController = loader.getController();
          sidePaneController.initialize(toolkit.getGlobalToolkit());
@@ -93,6 +109,8 @@ public class MainWindowController extends ObservedAnimationTimer
          e.printStackTrace();
       }
 
+      // TODO Need to give access the side-pane
+      setupRightDrawer(new HBox());
    }
 
    public void setupViewport3D(Pane viewportPane)
@@ -134,89 +152,151 @@ public class MainWindowController extends ObservedAnimationTimer
       return showOverheadPlotterProperty;
    }
 
-   public Pane setupDrawer(Pane sidePane)
+   public Pane setupLeftDrawer(Pane sidePane)
    {
-      // Workaround for the drawer resizing:
-      // Here we make an edge similar to a SplitPane separator on which the cursor will change
-      StackPane edge = new StackPane();
-      edge.setStyle("-fx-background-color:white;-fx-effect:innershadow(three-pass-box, #A9A9A9, 2.5, 0.0, -1.0, 0.0)");
-      edge.setPrefWidth(5.0);
-      edge.setMinWidth(5.0);
-      edge.setCursor(Cursor.E_RESIZE);
-      HBox hBox = new HBox(sidePane, edge);
-      toolDrawer.setSidePane(hBox);
-      HBox.setHgrow(sidePane, Priority.ALWAYS);
-      HBox.setHgrow(edge, Priority.NEVER);
-      // The edge passes on the MouseEvents used for resizing the drawer to the inner StackPane.
-      edge.addEventHandler(MouseEvent.MOUSE_PRESSED, hBox.getParent()::fireEvent);
-      edge.addEventHandler(MouseEvent.MOUSE_DRAGGED, hBox.getParent()::fireEvent);
-      edge.addEventHandler(MouseEvent.MOUSE_RELEASED, hBox.getParent()::fireEvent);
+      Pane drawerSidePane = configureDrawer(sidePane, leftDrawer, leftDrawerBurger);
+      HamburgerAnimationTransition transition = new HamburgerAnimationTransition(leftDrawerBurger, FrameType.BURGER, FrameType.LEFT_CLOSE);
 
-      Node remove = toolDrawer.getChildren().remove(toolDrawer.getChildren().size() - 1);
-      mainPane.addEventHandler(KeyEvent.KEY_PRESSED, (EventHandler<? super KeyEvent>) e ->
+      leftDrawer.addEventHandler(JFXDrawerEvent.ANY, e ->
       {
-         if (e.getCode() == KeyCode.ESCAPE && toolDrawer.isOpened())
+         if (e.getTarget() != leftDrawer)
+            return;
+
+         if (e.getEventType() == JFXDrawerEvent.OPENED)
          {
-            toolDrawer.close();
+            sidePaneController.getYoSearchTabPaneController().requestFocusForActiveSearchBox();
+         }
+         else if (e.getEventType() == JFXDrawerEvent.CLOSING)
+         {
+            transition.setRate(-1);
+            transition.play();
+         }
+         else if (e.getEventType() == JFXDrawerEvent.OPENING)
+         {
+            transition.setRate(1);
+            transition.play();
+         }
+      });
+
+      return drawerSidePane;
+   }
+
+   public Pane setupRightDrawer(Pane sidePane)
+   {
+      Pane drawerSidePane = configureDrawer(sidePane, rightDrawer, rightDrawerBurger);
+      HamburgerAnimationTransition transition = new HamburgerAnimationTransition(rightDrawerBurger, FrameType.LEFT_ANGLE, FrameType.RIGHT_CLOSE);
+
+      rightDrawer.addEventHandler(JFXDrawerEvent.ANY, e ->
+      {
+         if (e.getTarget() != rightDrawer)
+            return;
+
+         if (e.getEventType() == JFXDrawerEvent.OPENED)
+         {
+            // TODO
+         }
+         else if (e.getEventType() == JFXDrawerEvent.CLOSING)
+         {
+            transition.setRate(-1);
+            transition.play();
+         }
+         else if (e.getEventType() == JFXDrawerEvent.OPENING)
+         {
+            transition.setRate(1);
+            transition.play();
+         }
+      });
+
+      return drawerSidePane;
+   }
+
+   public Pane configureDrawer(Pane sidePane, JFXDrawer drawer, Node openCloseControl)
+   {
+      Pane drawerSidePane = addEdgeToSidePane(sidePane, drawer.getDirection());
+      drawer.setSidePane(drawerSidePane);
+
+      Node remove = drawer.getChildren().remove(drawer.getChildren().size() - 1);
+      rootPane.addEventHandler(KeyEvent.KEY_PRESSED, (EventHandler<? super KeyEvent>) e ->
+      {
+         if (e.getCode() == KeyCode.ESCAPE && drawer.isOpened())
+         {
+            drawer.close();
             e.consume();
          }
       });
-      toolDrawer.setResizeContent(true);
-      toolDrawer.setResizableOnDrag(true);
-      toolDrawer.setContent(remove);
+      drawer.setResizeContent(true);
+      drawer.setResizableOnDrag(true);
+      drawer.setOverLayVisible(false);
+      drawer.setContent(remove);
 
       // By disabling the side pane, we unlink YoVariables (in search tabs) reducing the cost of a run tick for the Session
-      hBox.setVisible(toolDrawer.isOpened());
-      hBox.setDisable(!toolDrawer.isOpened());
-      toolDrawer.addEventHandler(JFXDrawerEvent.ANY, e ->
+      drawerSidePane.setVisible(drawer.isOpened());
+      drawerSidePane.setDisable(!drawer.isOpened());
+      drawer.addEventHandler(JFXDrawerEvent.ANY, e ->
       {
          if (e.getEventType() == JFXDrawerEvent.CLOSED)
          {
-            hBox.setVisible(false);
-            hBox.setDisable(true);
+            drawerSidePane.setVisible(false);
+            drawerSidePane.setDisable(true);
          }
          if (e.getEventType() == JFXDrawerEvent.OPENING || e.getEventType() == JFXDrawerEvent.OPENED)
          {
-            hBox.setVisible(true);
-            hBox.setDisable(false);
+            drawerSidePane.setVisible(true);
+            drawerSidePane.setDisable(false);
          }
       });
 
-      hamburger.setOnMouseClicked(e ->
+      openCloseControl.setOnMouseClicked(e ->
       {
-         if (toolDrawer.isClosed() || toolDrawer.isClosing())
+         if (drawer.isClosed() || drawer.isClosing())
          {
-            toolDrawer.open();
+            drawer.open();
             // The event handler is not clean visually, need something that kicks in earlier.
-            hBox.setVisible(true);
-            hBox.setDisable(false);
+            drawerSidePane.setVisible(true);
+            drawerSidePane.setDisable(false);
          }
          else
          {
-            toolDrawer.close();
+            drawer.close();
          }
       });
 
-      HamburgerSlideCloseTransition transition = new HamburgerSlideCloseTransition(hamburger);
+      return drawerSidePane;
+   }
 
-      toolDrawer.addEventHandler(JFXDrawerEvent.OPENED, e -> sidePaneController.getYoSearchTabPaneController().requestFocusForActiveSearchBox());
-
-      toolDrawer.addEventHandler(JFXDrawerEvent.CLOSING, e ->
+   public Pane addEdgeToSidePane(Pane sidePane, DrawerDirection contentSide)
+   {
+      if (contentSide == DrawerDirection.LEFT || contentSide == DrawerDirection.RIGHT)
       {
-         transition.setRate(-0.5);
-         transition.play();
-      });
-      toolDrawer.addEventFilter(JFXDrawerEvent.OPENING, e ->
-      {
-         transition.setRate(0.5);
-         transition.play();
-      });
+         // Workaround for the drawer resizing:
+         // Here we make an edge similar to a SplitPane separator on which the cursor will change
+         StackPane edge = new StackPane();
+         edge.setStyle("-fx-background-color:white;-fx-effect:innershadow(three-pass-box, #A9A9A9, 2.5, 0.0, -1.0, 0.0)");
+         edge.setPrefWidth(5.0);
+         edge.setMinWidth(5.0);
+         edge.setCursor(Cursor.E_RESIZE);
+         HBox drawerSidePane;
+         if (contentSide == DrawerDirection.LEFT)
+            drawerSidePane = new HBox(sidePane, edge);
+         else
+            drawerSidePane = new HBox(edge, sidePane);
 
-      return hBox;
+         // The edge passes on the MouseEvents used for resizing the drawer to the inner StackPane.
+         edge.addEventHandler(MouseEvent.ANY, event ->
+         {
+            if (drawerSidePane.getParent() != null)
+               drawerSidePane.getParent().fireEvent(event);
+         });
+         HBox.setHgrow(sidePane, Priority.ALWAYS);
+         HBox.setHgrow(edge, Priority.NEVER);
+         return drawerSidePane;
+      }
+
+      throw new UnsupportedOperationException("Not implemented for: " + contentSide);
    }
 
    private long timeLast = -1;
-   private long timeIntervalBetweenUpdates = Duration.ofMillis(500).toNanos();
+   private long timeIntervalBetweenUpdates = TimeUnit.MILLISECONDS.toNanos(500);
    private int frameCounter = 0;
    private double goodFPSLowerThreshold = 40.0;
    private double mediumFPSLowerThreshold = 20.0;
@@ -281,7 +361,7 @@ public class MainWindowController extends ObservedAnimationTimer
 
    public AnchorPane getMainPane()
    {
-      return mainPane;
+      return rootPane;
    }
 
    public AnchorPane getSceneAnchorPane()
