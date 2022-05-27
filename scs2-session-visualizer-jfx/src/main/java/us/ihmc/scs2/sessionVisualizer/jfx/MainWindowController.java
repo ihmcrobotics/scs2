@@ -32,6 +32,7 @@ import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -40,7 +41,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
-public class MainWindowController extends ObservedAnimationTimer
+public class MainWindowController extends ObservedAnimationTimer implements VisualizerController
 {
    @FXML
    private AnchorPane rootPane;
@@ -74,10 +75,11 @@ public class MainWindowController extends ObservedAnimationTimer
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       windowToolkit = toolkit;
-      this.globalToolkit = toolkit.getGlobalToolkit();
+      globalToolkit = toolkit.getGlobalToolkit();
       topics = toolkit.getTopics();
       messager = toolkit.getMessager();
 

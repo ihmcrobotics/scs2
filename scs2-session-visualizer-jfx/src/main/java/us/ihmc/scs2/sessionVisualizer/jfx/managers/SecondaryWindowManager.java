@@ -193,7 +193,7 @@ public class SecondaryWindowManager implements Manager
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SECONDARY_WINDOW_URL);
          loader.load();
          SecondaryWindowController controller = loader.getController();
-         controller.initialize(toolkit, stage);
+         controller.initialize(new SessionVisualizerWindowToolkit(stage, toolkit));
          controller.setupChartGroup();
          secondaryWindowControllers.add(controller);
          stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e ->

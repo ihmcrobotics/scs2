@@ -22,7 +22,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
-public class SessionAdvancedControlsController
+public class SessionAdvancedControlsController implements VisualizerController
 {
    public static final String INACTIVE_MODE = "session-controls-inactive-mode";
    public static final String ACTIVE_MODE = "session-controls-active-mode";
@@ -46,6 +46,7 @@ public class SessionAdvancedControlsController
    {
    }
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       owner = toolkit.getWindow();

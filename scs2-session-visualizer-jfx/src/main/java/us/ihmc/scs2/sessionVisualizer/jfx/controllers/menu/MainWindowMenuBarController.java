@@ -1,9 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import javafx.fxml.FXML;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
-public class MainWindowMenuBarController
+public class MainWindowMenuBarController implements VisualizerController
 {
    @FXML
    private FileMenuController fileMenuController;
@@ -22,6 +23,7 @@ public class MainWindowMenuBarController
    @FXML
    private YoSliderboardMenuController yoSliderboardMenuController;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       fileMenuController.initialize(toolkit);

@@ -24,10 +24,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionDataExportStageController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VideoRecordingPreviewPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.simulation.SimulationDataSession;
 
-public class FileMenuController
+public class FileMenuController implements VisualizerController
 {
    @FXML
    private MenuItem takeSnapshotMenuItem;
@@ -54,6 +55,7 @@ public class FileMenuController
    private Group mainView3DRoot;
    private SessionVisualizerWindowToolkit toolkit;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       this.toolkit = toolkit;
