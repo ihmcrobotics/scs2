@@ -82,6 +82,13 @@ public interface SessionVisualizerControls
    }
 
    /**
+    * Adds a static graphic to the 3D scene.
+    * 
+    * @param visualDefinition the visual to be added to the 3D scene.
+    */
+   void addStaticVisual(VisualDefinition visualDefinition);
+
+   /**
     * Adds a collection of static graphic to the 3D scene.
     * 
     * @param visualDefinitions the collection of visuals to be added to the 3D scene.
@@ -95,11 +102,12 @@ public interface SessionVisualizerControls
    }
 
    /**
-    * Adds a static graphic to the 3D scene.
+    * Removes a static graphic that was previously added via
+    * {@link #addStaticVisual(VisualDefinition)}.
     * 
-    * @param visualDefinition the visual to be added to the 3D scene.
+    * @param visualDefinition the visual to remove from the 3D scene.
     */
-   void addStaticVisual(VisualDefinition visualDefinition);
+   void removeStaticVisual(VisualDefinition visualDefinition);
 
    /**
     * Removes a collection of static graphics that were previously added via
@@ -116,12 +124,14 @@ public interface SessionVisualizerControls
    }
 
    /**
-    * Removes a static graphic that was previously added via
-    * {@link #addStaticVisual(VisualDefinition)}.
+    * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
     * 
-    * @param visualDefinition the visual to remove from the 3D scene.
+    * @param yoGraphicDefinition the definition of the graphic to be added.
     */
-   void removeStaticVisual(VisualDefinition visualDefinition);
+   default void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
+   {
+      submitMessage(getTopics().getAddYoGraphicRequest(), yoGraphicDefinition);
+   }
 
    /**
     * Adds a dynamic graphic to the 3D scene.
@@ -146,16 +156,6 @@ public interface SessionVisualizerControls
 
          addYoGraphic(yoGraphicDefinition);
       }
-   }
-
-   /**
-    * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
-    * 
-    * @param yoGraphicDefinition the definition of the graphic to be added.
-    */
-   default void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
-   {
-      submitMessage(getTopics().getAddYoGraphicRequest(), yoGraphicDefinition);
    }
 
    /**
