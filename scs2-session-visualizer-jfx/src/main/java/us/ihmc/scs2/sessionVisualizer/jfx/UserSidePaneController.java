@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -28,6 +30,7 @@ public class UserSidePaneController implements VisualizerController
    @FXML
    private FlowPane userCustomControlsPane;
 
+   private DoubleProperty computedPrefWidth = new SimpleDoubleProperty(this, "computedPrefWidth", -1);
    private SessionVisualizerWindowToolkit toolkit;
 
    @Override
@@ -35,6 +38,12 @@ public class UserSidePaneController implements VisualizerController
    {
       this.toolkit = toolkit;
       accordion.setExpandedPane(userCustomControlsTitledPane);
+      computePrefWidth();
+   }
+
+   private void computePrefWidth()
+   {
+      JavaFXMissingTools.runLater(getClass(), () -> computedPrefWidth.set(userMainSidePane.prefWidth(-1)));
    }
 
    public void addControl(Node control)
@@ -44,17 +53,21 @@ public class UserSidePaneController implements VisualizerController
 
    public void addControl(Node control, VisualizerController controller)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      JavaFXMissingTools.runAndWait(getClass(), () ->
       {
          if (controller != null)
             controller.initialize(toolkit);
          userCustomControlsPane.getChildren().add(control);
+         computePrefWidth();
       });
    }
 
    public boolean removeControl(Node control)
    {
-      return JavaFXMissingTools.runAndWait(getClass(), () -> userCustomControlsPane.getChildren().remove(control));
+      boolean result = JavaFXMissingTools.runAndWait(getClass(), () -> userCustomControlsPane.getChildren().remove(control));
+      if (result)
+         computePrefWidth();
+      return result;
    }
 
    public void loadCustomPane(String name, URL fxmlResource)
@@ -100,12 +113,21 @@ public class UserSidePaneController implements VisualizerController
          TitledPane titledPane = new TitledPane(name, pane);
          accordion.getPanes().add(titledPane);
          accordion.setExpandedPane(titledPane);
+         computePrefWidth();
       });
    }
 
    public boolean removeCustomPane(String name)
    {
-      return accordion.getPanes().removeIf(pane -> Objects.equals(pane.getText(), name));
+      boolean result = JavaFXMissingTools.runAndWait(getClass(), () -> accordion.getPanes().removeIf(pane -> Objects.equals(pane.getText(), name)));
+      if (result)
+         computePrefWidth();
+      return result;
+   }
+
+   public DoubleProperty computedPrefWidthProperty()
+   {
+      return computedPrefWidth;
    }
 
    public AnchorPane getUserMainSidePane()
