@@ -283,7 +283,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       return drawerSidePane;
    }
 
-   public Pane addEdgeToSidePane(Pane sidePane, DrawerDirection contentSide)
+   private Pane addEdgeToSidePane(Pane sidePane, DrawerDirection contentSide)
    {
       if (contentSide == DrawerDirection.LEFT || contentSide == DrawerDirection.RIGHT)
       {
@@ -401,6 +401,11 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    public SidePaneController getSidePaneController()
    {
       return sidePaneController;
+   }
+
+   public UserSidePaneController getUserSidePaneController()
+   {
+      return userSidePaneController;
    }
 
    public Property<Boolean> showOverheadPlotterProperty()
