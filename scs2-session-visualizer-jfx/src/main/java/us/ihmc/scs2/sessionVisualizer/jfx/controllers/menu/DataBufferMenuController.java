@@ -8,13 +8,14 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.util.converter.IntegerStringConverter;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
@@ -22,7 +23,7 @@ import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 
-public class DataBufferMenuController
+public class DataBufferMenuController implements VisualizerController
 {
    @FXML
    private Menu menu;
@@ -43,9 +44,10 @@ public class DataBufferMenuController
    private boolean initializeBufferSizeTextField = true;
    private Property<YoBufferPropertiesReadOnly> bufferProperties;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
-      this.messager = toolkit.getMessager();
+      messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties(), null);
       messager.registerTopicListener(topics.getSessionCurrentState(), m ->
@@ -98,7 +100,7 @@ public class DataBufferMenuController
          }
       });
 
-      TextFormatter<Integer> recordPeriodFormatter = new TextFormatter<Integer>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
+      TextFormatter<Integer> recordPeriodFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
       bufferRecordTickPeriodTextField.setTextFormatter(recordPeriodFormatter);
 
       bufferRecordTickPeriodTextField.setOnAction(e ->
@@ -115,7 +117,7 @@ public class DataBufferMenuController
          {
             if (!newValue)
             { // Losing focus
-              // Workaround: manually reset to the current value 
+              // Workaround: manually reset to the current value
                numberPrecisionSpinner.getEditor()
                                      .setText(numberPrecisionSpinnerValueFactory.getConverter().toString(numberPrecisionSpinnerValueFactory.getValue()));
             }
