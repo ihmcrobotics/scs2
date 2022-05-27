@@ -91,11 +91,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       simulationSession = new SimulationSession(inertialFrame, simulationName, physicsEngineFactory);
    }
 
-   public YoBufferPropertiesReadOnly getBufferProperties()
-   {
-      return simulationSession.getBufferProperties();
-   }
-
    public PhysicsEngine getPhysicsEngine()
    {
       return simulationSession.getPhysicsEngine();
@@ -124,31 +119,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    public void setDT(double dt)
    {
       simulationSession.setSessionDTSeconds(dt);
-   }
-
-   public void setRecordFrequency(int recordFrequency)
-   {
-      simulationSession.setBufferRecordTickPeriod(recordFrequency);
-   }
-
-   public void setRecordDT(double recordDT)
-   {
-      simulationSession.setBufferRecordTickPeriod((int) (recordDT / getDT()));
-   }
-
-   public double getRecordDT()
-   {
-      return simulationSession.getBufferRecordTimePeriod();
-   }
-
-   public int getRecordFrequency()
-   {
-      return simulationSession.getBufferRecordTickPeriod();
-   }
-
-   public int getCurrentIndex()
-   {
-      return getBufferProperties().getCurrentIndex();
    }
 
    public List<? extends Robot> getRobots()
@@ -260,27 +230,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       // TODO Destroy stuff!
    }
 
-   public void tickAndUpdate()
-   {
-      simulationSession.stopSessionThread();
-      simulationSession.submitIncrementBufferIndexRequestAndWait(1);
-      simulationSession.getBuffer().writeBuffer();
-      simulationSession.startSessionThread();
-   }
-
-   public void updateAndTick()
-   {
-      simulationSession.stopSessionThread();
-      simulationSession.getBuffer().writeBuffer();
-      simulationSession.submitIncrementBufferIndexRequestAndWait(1);
-      simulationSession.startSessionThread();
-   }
-
-   public void tick()
-   {
-      simulationSession.submitIncrementBufferIndexRequest(1);
-   }
-
    public void setSimulateNoFasterThanRealTime(boolean simulateNoFasterThanRealTime)
    {
       simulationSession.submitRunAtRealTimeRate(simulateNoFasterThanRealTime);
@@ -366,6 +315,71 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       getSimulationControls().clearExternalTerminalConditions();
    }
 
+   public void exportData(SessionDataExportRequest request)
+   {
+      simulationSession.submitSessionDataExportRequestAndWait(request);
+   }
+
+   // ------------------------------------------------------------------------------- //
+   // ----------------------------- Buffer API -------------------------------------- //
+   // ------------------------------------------------------------------------------- //
+
+   public YoBufferPropertiesReadOnly getBufferProperties()
+   {
+      return simulationSession.getBufferProperties();
+   }
+
+   public YoSharedBuffer getBuffer()
+   {
+      return simulationSession.getBuffer();
+   }
+
+   public void setRecordFrequency(int recordFrequency)
+   {
+      simulationSession.setBufferRecordTickPeriod(recordFrequency);
+   }
+
+   public void setRecordDT(double recordDT)
+   {
+      simulationSession.setBufferRecordTickPeriod((int) (recordDT / getDT()));
+   }
+
+   public double getRecordDT()
+   {
+      return simulationSession.getBufferRecordTimePeriod();
+   }
+
+   public int getRecordFrequency()
+   {
+      return simulationSession.getBufferRecordTickPeriod();
+   }
+
+   public int getCurrentIndex()
+   {
+      return getBufferProperties().getCurrentIndex();
+   }
+
+   public void tickAndUpdate()
+   {
+      simulationSession.stopSessionThread();
+      simulationSession.submitIncrementBufferIndexRequestAndWait(1);
+      simulationSession.getBuffer().writeBuffer();
+      simulationSession.startSessionThread();
+   }
+
+   public void updateAndTick()
+   {
+      simulationSession.stopSessionThread();
+      simulationSession.getBuffer().writeBuffer();
+      simulationSession.submitIncrementBufferIndexRequestAndWait(1);
+      simulationSession.startSessionThread();
+   }
+
+   public void tick()
+   {
+      simulationSession.submitIncrementBufferIndexRequest(1);
+   }
+
    public void setCurrentIndex(int bufferIndexRequest)
    {
       simulationSession.submitBufferIndexRequestAndWait(bufferIndexRequest);
@@ -414,16 +428,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    public void changeBufferSize(int bufferSize)
    {
       simulationSession.submitBufferSizeRequestAndWait(bufferSize);
-   }
-
-   public void exportData(SessionDataExportRequest request)
-   {
-      simulationSession.submitSessionDataExportRequestAndWait(request);
-   }
-
-   public YoSharedBuffer getBuffer()
-   {
-      return simulationSession.getBuffer();
    }
 
    public void applyBufferProcessor(YoBufferProcessor processor)
