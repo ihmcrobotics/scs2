@@ -2,7 +2,6 @@ package us.ihmc.scs2;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -18,8 +17,11 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
@@ -224,72 +226,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       return simulationSession.getPlaybackRealTimeRate();
    }
 
-   public void addStaticVisual(VisualDefinition visualDefinition)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addStaticVisual(visualDefinition);
-   }
-
-   public void addStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addStaticVisuals(visualDefinitions);
-   }
-
-   public void removeStaticVisual(VisualDefinition visualDefinition)
-   {
-      if (visualizerControls != null)
-         visualizerControls.removeStaticVisual(visualDefinition);
-   }
-
-   public void removeStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
-   {
-      if (visualizerControls != null)
-         visualizerControls.removeStaticVisuals(visualDefinitions);
-   }
-
-   public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoGraphic(yoGraphicDefinition);
-   }
-
-   public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoGraphic(namespace, yoGraphicDefinition);
-   }
-
-   public void setCameraRigidBodyTracking(String robotName, String rigidBodyName)
-   {
-      if (visualizerControls != null)
-         visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName);
-   }
-
-   public void setCameraOrientation(double latitude, double longitude)
-   {
-      if (visualizerControls != null)
-         visualizerControls.setCameraOrientation(latitude, longitude);
-   }
-
-   public void setCameraPosition(double x, double y, double z)
-   {
-      if (visualizerControls != null)
-         visualizerControls.setCameraPosition(x, y, z);
-   }
-
-   public void setCameraFocusPosition(double x, double y, double z)
-   {
-      if (visualizerControls != null)
-         visualizerControls.setCameraFocusPosition(x, y, z);
-   }
-
-   public void setCameraZoom(double distanceFromFocus)
-   {
-      if (visualizerControls != null)
-         visualizerControls.setCameraZoom(distanceFromFocus);
-   }
-
    public void addShutdownListener(Runnable listener)
    {
       simulationSession.addShutdownListener(listener);
@@ -343,103 +279,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    public void tick()
    {
       simulationSession.submitIncrementBufferIndexRequest(1);
-   }
-
-   public void setupEntryBox(String varName)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(varName);
-   }
-
-   public void setupEntryBox(String[] varNames)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(Arrays.asList(varNames));
-   }
-
-   public void setupEntryBoxGroup(String name, String[] varNames)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(name, Arrays.asList(varNames));
-   }
-
-   // TODO Missing setupGraph, setupGraphGroup
-
-   public void disableGUIComponents()
-   {
-      if (visualizerControls != null)
-         visualizerControls.disableUserControls();
-   }
-
-   public void enableGUIComponents()
-   {
-      if (visualizerControls != null)
-         visualizerControls.enableUserControls();
-   }
-
-   /**
-    * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
-    * panel on the right side of the main window.
-    * 
-    * @param control the custom control to add.
-    */
-   public void addCustomControl(Node control)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addCustomControl(control);
-   }
-
-   /**
-    * Removes a custom JavaFX control that was previously added via {@link #addCustomControl(Node)}.
-    * 
-    * @param control the control to be removed.
-    * @return whether the control was found and removed successfully.
-    */
-   public boolean removeCustomControl(Node control)
-   {
-      if (visualizerControls != null)
-         return visualizerControls.removeCustomControl(control);
-      else
-         return false;
-   }
-
-   /**
-    * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
-    * right side of the main window.
-    * 
-    * @param name         the title of the new pane.
-    * @param fxmlResource the locator to the FXML resource.
-    */
-   public void loadCustomPane(String name, URL fxmlResource)
-   {
-      if (visualizerControls != null)
-         visualizerControls.loadCustomPane(name, fxmlResource);
-   }
-
-   /**
-    * Adds a mini-GUI to the user side panel on the right side of the main window.
-    * 
-    * @param name the title of the new pane.
-    * @param pane the pane to be added.
-    */
-   public void addCustomPane(String name, Pane pane)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addCustomPane(name, pane);
-   }
-
-   /**
-    * Removes a pane previously added via {@link #loadCustomPane(String, URL)} or
-    * {@link #addCustomPane(String, Pane)}.
-    * 
-    * @param name the title of the pane to remove.
-    */
-   public boolean removeCustomPane(String name)
-   {
-      if (visualizerControls != null)
-         return visualizerControls.removeCustomPane(name);
-      else
-         return false;
    }
 
    public void setSimulateNoFasterThanRealTime(boolean simulateNoFasterThanRealTime)
@@ -582,12 +421,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       simulationSession.submitSessionDataExportRequestAndWait(request);
    }
 
-   public void exportVideo(File file)
-   {
-      if (visualizerControls != null)
-         visualizerControls.exportVideo(file);
-   }
-
    public YoSharedBuffer getBuffer()
    {
       return simulationSession.getBuffer();
@@ -597,5 +430,337 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    {
       getBuffer().applyProcessor(processor);
    }
+
+   // ------------------------------------------------------------------------------- //
+   // --------------------------- Visualizer API ------------------------------------ //
+   // ------------------------------------------------------------------------------- //
+
+   /**
+    * Sets the camera's orbit with respect to the focus point.
+    * <p>
+    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
+    * rotate around that target.
+    * </p>
+    * 
+    * @param latitude  controls the look up/down angle while keeping the focus point unchanged.
+    * @param longitude controls the look left/right angle while keeping the focus point unchanged.
+    */
+   public void setCameraOrientation(double latitude, double longitude)
+   {
+      if (visualizerControls != null)
+         visualizerControls.setCameraOrientation(latitude, longitude);
+   }
+
+   /**
+    * Sets the camera position without moving the focus point.
+    * <p>
+    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
+    * rotate around that target.
+    * </p>
+    * 
+    * @param x the new x-coordinate for the camera position.
+    * @param y the new y-coordinate for the camera position.
+    * @param z the new z-coordinate for the camera position.
+    */
+   public void setCameraPosition(double x, double y, double z)
+   {
+      if (visualizerControls != null)
+         visualizerControls.setCameraPosition(x, y, z);
+   }
+
+   /**
+    * Sets the position of the focus point, i.e. what the camera is looking at.
+    * <p>
+    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
+    * rotate around that target.
+    * </p>
+    * 
+    * @param x the new x-coordinate for the focus point.
+    * @param y the new y-coordinate for the focus point.
+    * @param z the new z-coordinate for the focus point.
+    */
+   public void setCameraFocusPosition(double x, double y, double z)
+   {
+      if (visualizerControls != null)
+         visualizerControls.setCameraFocusPosition(x, y, z);
+   }
+
+   /**
+    * Sets the distance between the camera and focus point by moving the camera only.
+    * <p>
+    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
+    * rotate around that target.
+    * </p>
+    * 
+    * @param distanceFromFocus the new distance between the camera and the focus point.
+    */
+   public void setCameraZoom(double distanceFromFocus)
+   {
+      if (visualizerControls != null)
+         visualizerControls.setCameraZoom(distanceFromFocus);
+   }
+
+   /**
+    * Requests the camera to track the rigid-body of a robot.
+    * 
+    * @param robotName     the name of the robot to track.
+    * @param rigidBodyName the name of the body to track.
+    */
+   public void setCameraRigidBodyTracking(String robotName, String rigidBodyName)
+   {
+      if (visualizerControls != null)
+         visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName);
+   }
+
+   /**
+    * Adds a static graphic to the 3D scene.
+    * 
+    * @param visualDefinition the visual to be added to the 3D scene.
+    */
+   public void addStaticVisual(VisualDefinition visualDefinition)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addStaticVisual(visualDefinition);
+   }
+
+   /**
+    * Adds a collection of static graphic to the 3D scene.
+    * 
+    * @param visualDefinitions the collection of visuals to be added to the 3D scene.
+    */
+   public void addStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addStaticVisuals(visualDefinitions);
+   }
+
+   /**
+    * Removes a static graphic that was previously added via
+    * {@link #addStaticVisual(VisualDefinition)}.
+    * 
+    * @param visualDefinition the visual to remove from the 3D scene.
+    */
+   public void removeStaticVisual(VisualDefinition visualDefinition)
+   {
+      if (visualizerControls != null)
+         visualizerControls.removeStaticVisual(visualDefinition);
+   }
+
+   /**
+    * Removes a collection of static graphics that were previously added via
+    * {@link #addStaticVisual(VisualDefinition)}.
+    * 
+    * @param visualDefinitions the visuals to remove from the 3D scene.
+    */
+   public void removeStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
+   {
+      if (visualizerControls != null)
+         visualizerControls.removeStaticVisuals(visualDefinitions);
+   }
+
+   /**
+    * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
+    * 
+    * @param yoGraphicDefinition the definition of the graphic to be added.
+    */
+   public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoGraphic(yoGraphicDefinition);
+   }
+
+   /**
+    * Adds a dynamic graphic to the 3D scene.
+    * 
+    * @param namespace           the desired namespace for the new graphic. The separator used is
+    *                            {@value YoGraphicTools#SEPARATOR}.
+    * @param yoGraphicDefinition the definition of the graphic to be added.
+    */
+   public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoGraphic(namespace, yoGraphicDefinition);
+   }
+
+   /**
+    * Adds a variable entry to the default entry tab.
+    * 
+    * @param variableName the name of the variable to add. The variable will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   public void addYoEntry(String variableName)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(variableName);
+   }
+
+   /**
+    * Adds variable entries to the default entry tab.
+    * 
+    * @param variableNames the name of the variables to add. The variables will be looked up using
+    *                      {@link YoRegistry#findVariable(String)}.
+    */
+   public void addYoEntry(Collection<String> variableNames)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(variableNames);
+   }
+
+   /**
+    * Adds a variable entry to the entry tab named {@code groupName}. The tab will be created if it
+    * doesn't exist yet.
+    * 
+    * @param groupName    the name of the tab.
+    * @param variableName the name of the variable to add. The variable will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   public void addYoEntry(String groupName, String variableName)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(groupName, variableName);
+   }
+
+   /**
+    * Adds variable entries to the entry tab named {@code groupName}. The tab will be created if it
+    * doesn't exist yet.
+    * 
+    * @param groupName    the name of the tab.
+    * @param variableName the name of the variables to add. The variables will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   public void addYoEntry(String groupName, Collection<String> variableNames)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addYoEntry(groupName, variableNames);
+   }
+
+   /**
+    * Captures a video of the 3D scene from the playback data.
+    * <p>
+    * The file extension should be {@value SessionVisualizerIOTools#videoFileExtension}.
+    * </p>
+    * 
+    * @param file the target file where the video is to be written.
+    */
+   public void exportVideo(File file)
+   {
+      if (visualizerControls != null)
+         visualizerControls.exportVideo(file);
+   }
+
+   /**
+    * Captures a video of the 3D scene from the playback data.
+    * 
+    * @param request the request.
+    */
+   public void exportVideo(SceneVideoRecordingRequest request)
+   {
+      if (visualizerControls != null)
+         visualizerControls.exportVideo(request);
+   }
+
+   /**
+    * Disables GUI controls. Can be used to prevent the user from interfering with a background process
+    * temporarily.
+    */
+   public void disableGUIComponents()
+   {
+      if (visualizerControls != null)
+         visualizerControls.disableUserControls();
+   }
+
+   /**
+    * Enables GUI controls.
+    */
+   public void enableGUIComponents()
+   {
+      if (visualizerControls != null)
+         visualizerControls.enableUserControls();
+   }
+
+   /**
+    * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
+    * panel on the right side of the main window.
+    * 
+    * @param control the custom control to add.
+    */
+   public void addCustomControl(Node control)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addCustomControl(control);
+   }
+
+   /**
+    * Removes a custom JavaFX control that was previously added via {@link #addCustomControl(Node)}.
+    * 
+    * @param control the control to be removed.
+    * @return whether the control was found and removed successfully.
+    */
+   public boolean removeCustomControl(Node control)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.removeCustomControl(control);
+      else
+         return false;
+   }
+
+   /**
+    * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
+    * right side of the main window.
+    * 
+    * @param name         the title of the new pane.
+    * @param fxmlResource the locator to the FXML resource.
+    */
+   public void loadCustomPane(String name, URL fxmlResource)
+   {
+      if (visualizerControls != null)
+         visualizerControls.loadCustomPane(name, fxmlResource);
+   }
+
+   /**
+    * Adds a mini-GUI to the user side panel on the right side of the main window.
+    * 
+    * @param name the title of the new pane.
+    * @param pane the pane to be added.
+    */
+   public void addCustomPane(String name, Pane pane)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addCustomPane(name, pane);
+   }
+
+   /**
+    * Removes a pane previously added via {@link #loadCustomPane(String, URL)} or
+    * {@link #addCustomPane(String, Pane)}.
+    * 
+    * @param name the title of the pane to remove.
+    */
+   public boolean removeCustomPane(String name)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.removeCustomPane(name);
+      else
+         return false;
+   }
+
+   /**
+    * Causes the caller's thread to pause until the visualizer is fully operational.
+    */
+   public void waitUntilVisualizerIsFullyUp()
+   {
+      if (visualizerControls != null)
+         visualizerControls.waitUntilFullyUp();
+   }
+
+   /**
+    * Causes the caller's thread to pause until the visualizer is fully operational.
+    */
+   public void waitUntilVisualizerIsDown()
+   {
+      if (visualizerControls != null)
+         visualizerControls.waitUntilDown();
+   }
+
+   // TODO Missing setupGraph, setupGraphGroup
 
 }
