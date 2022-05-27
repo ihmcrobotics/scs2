@@ -123,6 +123,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> sidePane.setDisable(disable));
          userSidePaneController = loader.getController();
          userSidePaneController.initialize(toolkit);
+         userSidePaneController.computedPrefWidthProperty().addListener((o, oldValue, newValue) -> rightDrawer.setDefaultDrawerSize(newValue.doubleValue()));
       }
       catch (IOException e)
       {
@@ -249,21 +250,21 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       drawer.setContent(remove);
 
       // By disabling the side pane, we unlink YoVariables (in search tabs) reducing the cost of a run tick for the Session
-      drawerSidePane.setVisible(drawer.isOpened());
-      drawerSidePane.setDisable(!drawer.isOpened());
-      drawer.addEventHandler(Event.ANY, e ->
-      {
-         if (e.getEventType() == JFXDrawerEvent.CLOSED)
-         {
-            drawerSidePane.setVisible(false);
-            drawerSidePane.setDisable(true);
-         }
-         if (e.getEventType() == JFXDrawerEvent.OPENING || e.getEventType() == JFXDrawerEvent.OPENED)
-         {
-            drawerSidePane.setVisible(true);
-            drawerSidePane.setDisable(false);
-         }
-      });
+//      drawerSidePane.setVisible(drawer.isOpened());
+//      drawerSidePane.setDisable(!drawer.isOpened());
+//      drawer.addEventHandler(Event.ANY, e ->
+//      {
+//         if (e.getEventType() == JFXDrawerEvent.CLOSED)
+//         {
+//            drawerSidePane.setVisible(false);
+//            drawerSidePane.setDisable(true);
+//         }
+//         if (e.getEventType() == JFXDrawerEvent.OPENING || e.getEventType() == JFXDrawerEvent.OPENED)
+//         {
+//            drawerSidePane.setVisible(true);
+//            drawerSidePane.setDisable(false);
+//         }
+//      });
 
       openCloseControl.setOnMouseClicked(e ->
       {
