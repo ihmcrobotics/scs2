@@ -115,6 +115,13 @@ public interface SimulationSessionControls
    void shutdownSession();
 
    /**
+    * Adds a listener to be notified whenever this session is about to shutdown.
+    * 
+    * @param listener the listener to add.
+    */
+   void addSessionShutdownListener(Runnable listener);
+
+   /**
     * Sets whether or not the simulation should be capped to be running no faster than real-time.
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
@@ -372,6 +379,22 @@ public interface SimulationSessionControls
    // ------------------------------------------------------------------------------- //
    // --------------------------- Buffer Controls ----------------------------------- //
    // ------------------------------------------------------------------------------- //
+
+   /**
+    * Sets the initial record period in number of ticks for this session.
+    * <p>
+    * Unlike {@link #setBufferRecordTickPeriod(int)}, this method will change the property only the
+    * first time it is invoked. The subsequent calls will be ignored.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
+    *                               buffer.
+    * @return {@code true} if the request is going through, {@code false} if it is being ignored.
+    */
+   boolean initializeBufferRecordTickPeriod(int bufferRecordTickPeriod);
 
    /**
     * Sets the period, in number of ticks, at which simulation data should be recorded into the buffer.
@@ -663,6 +686,21 @@ public interface SimulationSessionControls
    void cropBuffer(CropBufferRequest request);
 
    /**
+    * Sets the initial size of this session's buffer.
+    * <p>
+    * Unlike {@link #changeBufferSize(int)}, this method will change the buffer size only the first
+    * time it is invoked. The subsequent calls will be ignored.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param bufferSize the initial size of the buffer.
+    * @return {@code true} if the request is going through, {@code false} if it is being ignored.
+    */
+   boolean initializeBufferSize(int bufferSize);
+
+   /**
     * Requests to change the size the of the buffer. (synchronous)
     * <p>
     * This is typically used to increased the buffer size. To decrease the buffer size, it is
@@ -675,7 +713,7 @@ public interface SimulationSessionControls
     * This request is only processed if the simulation is paused, it will be ignored otherwise.
     * </p>
     * 
-    * @param bufferSizeRequest
+    * @param bufferSize the new buffer size.
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
    void changeBufferSize(int bufferSize);
@@ -698,6 +736,13 @@ public interface SimulationSessionControls
    // ------------------------------------------------------------------------------- //
 
    /**
+    * Gets the name of this simulation session.
+    * 
+    * @return this session name.
+    */
+   String getSimulationName();
+
+   /**
     * Requests to export this simulation's data to file.
     * <p>
     * This is a blocking operation and will return only when done. If the internal thread is not
@@ -711,4 +756,36 @@ public interface SimulationSessionControls
     * @see SessionDataExportRequest
     */
    void exportData(SessionDataExportRequest request);
+
+   /**
+    * Adds a time consumer to be invoked every simulation tick right before the physics engine is
+    * invoked.
+    * 
+    * @param beforePhysicsCallback the time consumer to be invoked every tick.
+    */
+   void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback);
+
+   /**
+    * Removes a time consumer previously added.
+    * 
+    * @param beforePhysicsCallback the time consumer to be removed.
+    * @return {@code true} if the time consumer was successfully found and removed.
+    */
+   boolean removeBeforePhysicsCallback(TimeConsumer beforePhysicsCallback);
+
+   /**
+    * Adds a time consumer to be invoked every simulation tick right after the physics engine is
+    * invoked.
+    * 
+    * @param afterPhysicsCallback the time consumer to be invoked every tick.
+    */
+   void addAfterPhysicsCallback(TimeConsumer afterPhysicsCallback);
+
+   /**
+    * Removes a time consumer previously added.
+    * 
+    * @param afterPhysicsCallback the time consumer to be removed.
+    * @return {@code true} if the time consumer was successfully found and removed.
+    */
+   boolean removeAfterPhysicsCallback(TimeConsumer afterPhysicsCallback);
 }

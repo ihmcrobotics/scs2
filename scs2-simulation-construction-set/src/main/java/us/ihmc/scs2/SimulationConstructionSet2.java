@@ -1,26 +1,25 @@
 package us.ihmc.scs2;
 
-import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
+import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
+import javafx.stage.Window;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -32,7 +31,6 @@ import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.physicsEngine.contactPointBased.ContactPointBasedPhysicsEngine;
-import us.ihmc.scs2.simulation.physicsEngine.impulseBased.ImpulseBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoNamespace;
@@ -40,7 +38,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class SimulationConstructionSet2 implements YoVariableHolder, SimulationSessionControls
+public class SimulationConstructionSet2 implements YoVariableHolder, SimulationSessionControls, SessionVisualizerControls
 {
    public static final ReferenceFrame inertialFrame = SimulationSession.DEFAULT_INERTIAL_FRAME;
 
@@ -49,7 +47,12 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    private SimulationSessionControls simulationSessionControls;
    private SessionVisualizerControls visualizerControls;
 
-   private boolean guiEnabled;
+   private boolean visualizerEnabled;
+   /**
+    * This is initialized to {@code null} such that the JavaFX flag is not set by default, allowing the
+    * user to set it from outside.
+    */
+   private Boolean javaFXThreadImplicitExit = null;
 
    public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory()
    {
@@ -74,13 +77,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    public static PhysicsEngineFactory impulseBasedPhysicsEngineFactory(ContactParametersReadOnly contactParameters)
    {
-      return (inertialFrame, rootRegistry) ->
-      {
-         ImpulseBasedPhysicsEngine physicsEngine = new ImpulseBasedPhysicsEngine(inertialFrame, rootRegistry);
-         if (contactParameters != null)
-            physicsEngine.setGlobalContactParameters(contactParameters);
-         return physicsEngine;
-      };
+      return PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters);
    }
 
    public SimulationConstructionSet2(String simulationName)
@@ -94,19 +91,83 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       simulationSessionControls = simulationSession.getSimulationSessionControls();
    }
 
+   public SimulationSession getSimulationSession()
+   {
+      return simulationSession;
+   }
+
    public PhysicsEngine getPhysicsEngine()
    {
       return simulationSession.getPhysicsEngine();
    }
 
-   public void setGUIEnabled(boolean guiEnabled)
+   /**
+    * Sets whether the visualizer should be created.
+    *
+    * @param visualizerEnabled whether to create the visualizer or not.
+    */
+   public void setVisualizerEnabled(boolean visualizerEnabled)
    {
-      this.guiEnabled = guiEnabled;
+      this.visualizerEnabled = visualizerEnabled;
    }
 
-   public boolean isGUIEnabled()
+   /**
+    * Gets whether the visualizer is to be created or not.
+    *
+    * @return {@code true} if the visualizer is to be created.
+    */
+   public boolean isVisualizerEnabled()
    {
-      return guiEnabled;
+      return visualizerEnabled;
+   }
+
+   /**
+    * Sets the JavaFX implicit exit flag.
+    * <p>
+    * If {@code true}, the main JavaFX thread will terminate when closing the last window. Once the
+    * JavaFX thread is terminated, it is not possible to restart it. Sets this to false to make
+    * possible to start a new session with the same JVM.
+    * </p>
+    * <p>
+    * If {@code false}, the main JavaFX thread will only terminate when explicitly requested via
+    * {@link Platform#exit()} for instance. This will cause the JVM to not terminate even after
+    * shutting down this simulation.
+    * </p>
+    * <p>
+    * If {@code null}, the JavaFX implicit exit flag is not modified.
+    * </p>
+    *
+    * @param javaFXThreadImplicitExit a flag indicating whether or not to implicitly exit when the last
+    *                                 window is closed.
+    * @see Platform#setImplicitExit(boolean)
+    */
+   public void setJavaFXThreadImplicitExit(Boolean javaFXThreadImplicitExit)
+   {
+      this.javaFXThreadImplicitExit = javaFXThreadImplicitExit;
+   }
+
+   /**
+    * Gets the JavaFX implicit exit flag value.
+    * <p>
+    * If {@code true}, the main JavaFX thread will terminate when closing the last window. Once the
+    * JavaFX thread is terminated, it is not possible to restart it. Sets this to false to make
+    * possible to start a new session with the same JVM.
+    * </p>
+    * <p>
+    * If {@code false}, the main JavaFX thread will only terminate when explicitly requested via
+    * {@link Platform#exit()} for instance. This will cause the JVM to not terminate even after
+    * shutting down this simulation.
+    * </p>
+    * <p>
+    * If {@code null}, the JavaFX implicit exit flag is not modified.
+    * </p>
+    *
+    * @return
+    * @see Platform#setImplicitExit(boolean)
+    */
+   public Boolean isJavaFXThreadImplicitExit()
+   {
+      return javaFXThreadImplicitExit;
    }
 
    public List<? extends Robot> getRobots()
@@ -124,15 +185,35 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       simulationSession.addRobot(robot);
    }
 
-   public void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
+   public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
-      simulationSession.addBeforePhysicsCallback(beforePhysicsCallback);
+      simulationSession.addTerrainObject(terrainObjectDefinition);
    }
 
-   public void addAfterPhysicsCallback(TimeConsumer afterPhysicsCallback)
+   public void addYoGraphicDefinition(YoGraphicDefinition yoGraphicDefinition)
    {
-      simulationSession.addAfterPhysicsCallback(afterPhysicsCallback);
+      simulationSession.addYoGraphicDefinition(yoGraphicDefinition);
    }
+
+   public void addYoGraphicDefinitions(YoGraphicDefinition... yoGraphicDefinitions)
+   {
+      for (YoGraphicDefinition yoGraphicDefinition : yoGraphicDefinitions)
+      {
+         addYoGraphicDefinition(yoGraphicDefinition);
+      }
+   }
+
+   public void addYoGraphicDefinitions(Iterable<? extends YoGraphicDefinition> yoGraphicDefinitions)
+   {
+      for (YoGraphicDefinition yoGraphicDefinition : yoGraphicDefinitions)
+      {
+         addYoGraphicDefinition(yoGraphicDefinition);
+      }
+   }
+
+   // ------------------------------------------------------------------------------- //
+   // ----------------------------- YoVariables ------------------------------------- //
+   // ------------------------------------------------------------------------------- //
 
    public YoRegistry getRootRegistry()
    {
@@ -182,11 +263,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public double getPlaybackRealTimeRate()
    {
       return simulationSession.getPlaybackRealTimeRate();
-   }
-
-   public void addShutdownListener(Runnable listener)
-   {
-      simulationSession.addShutdownListener(listener);
    }
 
    // ------------------------------------------------------------------------------- //
@@ -242,13 +318,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       return simulationSessionControls.isPaused();
    }
 
-   /** {@inheritDoc} */
-   @Override
-   public boolean isSessionShutdown()
-   {
-      return simulationSessionControls.isSessionShutdown();
-   }
-
    // ------------------------------------------------------------------------------- //
    // ------------------------- Simulation Controls --------------------------------- //
    // ------------------------------------------------------------------------------- //
@@ -259,16 +328,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * Starts the visualizer thread as well when called for the first and if the visualizer is enabled.
     * </p>
     *
-    * @see #setGUIEnabled(boolean)
+    * @see #setVisualizerEnabled(boolean)
     */
    @Override
    public boolean startSimulationThread()
    {
       boolean started = simulationSession.startSessionThread();
 
-      if (guiEnabled && visualizerControls == null)
+      if (visualizerEnabled && visualizerControls == null)
       {
-         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
+         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, javaFXThreadImplicitExit);
          visualizerControls.addVisualizerShutdownListener(this::shutdownSession);
       }
       return started;
@@ -279,23 +348,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public boolean stopSimulationThread()
    {
       return simulationSessionControls.stopSimulationThread();
-   }
-
-   private boolean hasBeenDestroyed;
-
-   /** {@inheritDoc} */
-   @Override
-   public void shutdownSession()
-   {
-      if (hasBeenDestroyed)
-         return;
-
-      LogTools.info("Destroying simulation");
-      hasBeenDestroyed = true;
-
-      simulationSessionControls.shutdownSession();
-
-      // TODO Destroy stuff!
    }
 
    /** {@inheritDoc} */
@@ -399,6 +451,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public boolean initializeBufferRecordTickPeriod(int bufferRecordTickPeriod)
+   {
+      return simulationSessionControls.initializeBufferRecordTickPeriod(bufferRecordTickPeriod);
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
       simulationSessionControls.setBufferRecordTickPeriod(bufferRecordTickPeriod);
@@ -448,6 +507,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public boolean initializeBufferSize(int bufferSize)
+   {
+      return simulationSessionControls.initializeBufferSize(bufferSize);
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void changeBufferSize(int bufferSize)
    {
       simulationSessionControls.changeBufferSize(bufferSize);
@@ -466,341 +532,265 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public String getSimulationName()
+   {
+      return simulationSessionControls.getSimulationName();
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void exportData(SessionDataExportRequest request)
    {
       simulationSessionControls.exportData(request);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
+   {
+      simulationSessionControls.addBeforePhysicsCallback(beforePhysicsCallback);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean removeBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
+   {
+      return simulationSessionControls.removeBeforePhysicsCallback(beforePhysicsCallback);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void addAfterPhysicsCallback(TimeConsumer afterPhysicsCallback)
+   {
+      simulationSessionControls.addAfterPhysicsCallback(afterPhysicsCallback);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean removeAfterPhysicsCallback(TimeConsumer afterPhysicsCallback)
+   {
+      return simulationSessionControls.removeAfterPhysicsCallback(afterPhysicsCallback);
    }
 
    // ------------------------------------------------------------------------------- //
    // ------------------------- Visualizer Controls --------------------------------- //
    // ------------------------------------------------------------------------------- //
 
-   /**
-    * Sets the camera's orbit with respect to the focus point.
-    * <p>
-    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
-    * rotate around that target.
-    * </p>
-    *
-    * @param latitude  controls the look up/down angle while keeping the focus point unchanged.
-    * @param longitude controls the look left/right angle while keeping the focus point unchanged.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void setCameraOrientation(double latitude, double longitude)
    {
       if (visualizerControls != null)
          visualizerControls.setCameraOrientation(latitude, longitude);
    }
 
-   /**
-    * Sets the camera position without moving the focus point.
-    * <p>
-    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
-    * rotate around that target.
-    * </p>
-    *
-    * @param x the new x-coordinate for the camera position.
-    * @param y the new y-coordinate for the camera position.
-    * @param z the new z-coordinate for the camera position.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void setCameraPosition(double x, double y, double z)
    {
       if (visualizerControls != null)
          visualizerControls.setCameraPosition(x, y, z);
    }
 
-   /**
-    * Sets the position of the focus point, i.e. what the camera is looking at.
-    * <p>
-    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
-    * rotate around that target.
-    * </p>
-    *
-    * @param x the new x-coordinate for the focus point.
-    * @param y the new y-coordinate for the focus point.
-    * @param z the new z-coordinate for the focus point.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void setCameraFocusPosition(double x, double y, double z)
    {
       if (visualizerControls != null)
          visualizerControls.setCameraFocusPosition(x, y, z);
    }
 
-   /**
-    * Sets the distance between the camera and focus point by moving the camera only.
-    * <p>
-    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
-    * rotate around that target.
-    * </p>
-    *
-    * @param distanceFromFocus the new distance between the camera and the focus point.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void setCameraZoom(double distanceFromFocus)
    {
       if (visualizerControls != null)
          visualizerControls.setCameraZoom(distanceFromFocus);
    }
 
-   /**
-    * Requests the camera to track the rigid-body of a robot.
-    *
-    * @param robotName     the name of the robot to track.
-    * @param rigidBodyName the name of the body to track.
-    */
-   public void setCameraRigidBodyTracking(String robotName, String rigidBodyName)
+   /** {@inheritDoc} */
+   @Override
+   public void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
    {
       if (visualizerControls != null)
          visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName);
    }
 
-   /**
-    * Adds a static graphic to the 3D scene.
-    *
-    * @param visualDefinition the visual to be added to the 3D scene.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void addStaticVisual(VisualDefinition visualDefinition)
    {
       if (visualizerControls != null)
          visualizerControls.addStaticVisual(visualDefinition);
    }
 
-   /**
-    * Adds a collection of static graphic to the 3D scene.
-    *
-    * @param visualDefinitions the collection of visuals to be added to the 3D scene.
-    */
-   public void addStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addStaticVisuals(visualDefinitions);
-   }
-
-   /**
-    * Removes a static graphic that was previously added via
-    * {@link #addStaticVisual(VisualDefinition)}.
-    *
-    * @param visualDefinition the visual to remove from the 3D scene.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void removeStaticVisual(VisualDefinition visualDefinition)
    {
       if (visualizerControls != null)
          visualizerControls.removeStaticVisual(visualDefinition);
    }
 
-   /**
-    * Removes a collection of static graphics that were previously added via
-    * {@link #addStaticVisual(VisualDefinition)}.
-    *
-    * @param visualDefinitions the visuals to remove from the 3D scene.
-    */
-   public void removeStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
-   {
-      if (visualizerControls != null)
-         visualizerControls.removeStaticVisuals(visualDefinitions);
-   }
-
-   /**
-    * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
-    *
-    * @param yoGraphicDefinition the definition of the graphic to be added.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
    {
       if (visualizerControls != null)
          visualizerControls.addYoGraphic(yoGraphicDefinition);
    }
 
-   /**
-    * Adds a dynamic graphic to the 3D scene.
-    *
-    * @param namespace           the desired namespace for the new graphic. The separator used is
-    *                            {@value YoGraphicTools#SEPARATOR}.
-    * @param yoGraphicDefinition the definition of the graphic to be added.
-    */
-   public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoGraphic(namespace, yoGraphicDefinition);
-   }
-
-   /**
-    * Adds a variable entry to the default entry tab.
-    *
-    * @param variableName the name of the variable to add. The variable will be looked up using
-    *                     {@link YoRegistry#findVariable(String)}.
-    */
-   public void addYoEntry(String variableName)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(variableName);
-   }
-
-   /**
-    * Adds variable entries to the default entry tab.
-    *
-    * @param variableNames the name of the variables to add. The variables will be looked up using
-    *                      {@link YoRegistry#findVariable(String)}.
-    */
-   public void addYoEntry(Collection<String> variableNames)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(variableNames);
-   }
-
-   /**
-    * Adds a variable entry to the entry tab named {@code groupName}. The tab will be created if it
-    * doesn't exist yet.
-    *
-    * @param groupName    the name of the tab.
-    * @param variableName the name of the variable to add. The variable will be looked up using
-    *                     {@link YoRegistry#findVariable(String)}.
-    */
-   public void addYoEntry(String groupName, String variableName)
-   {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(groupName, variableName);
-   }
-
-   /**
-    * Adds variable entries to the entry tab named {@code groupName}. The tab will be created if it
-    * doesn't exist yet.
-    *
-    * @param groupName    the name of the tab.
-    * @param variableName the name of the variables to add. The variables will be looked up using
-    *                     {@link YoRegistry#findVariable(String)}.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       if (visualizerControls != null)
          visualizerControls.addYoEntry(groupName, variableNames);
    }
 
-   /**
-    * Captures a video of the 3D scene from the playback data.
-    * <p>
-    * The file extension should be {@value SessionVisualizerIOTools#videoFileExtension}.
-    * </p>
-    *
-    * @param file the target file where the video is to be written.
-    */
-   public void exportVideo(File file)
-   {
-      if (visualizerControls != null)
-         visualizerControls.exportVideo(file);
-   }
-
-   /**
-    * Captures a video of the 3D scene from the playback data.
-    *
-    * @param request the request.
-    */
+   /** {@inheritDoc} */
+   @Override
    public void exportVideo(SceneVideoRecordingRequest request)
    {
       if (visualizerControls != null)
          visualizerControls.exportVideo(request);
    }
 
-   /**
-    * Disables GUI controls. Can be used to prevent the user from interfering with a background process
-    * temporarily.
-    */
-   public void disableGUIComponents()
+   /** {@inheritDoc} */
+   @Override
+   public void disableGUIControls()
    {
       if (visualizerControls != null)
-         visualizerControls.disableUserControls();
+         visualizerControls.disableGUIControls();
    }
 
-   /**
-    * Enables GUI controls.
-    */
-   public void enableGUIComponents()
+   /** {@inheritDoc} */
+   @Override
+   public void enableGUIControls()
    {
       if (visualizerControls != null)
-         visualizerControls.enableUserControls();
+         visualizerControls.enableGUIControls();
    }
 
-   /**
-    * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
-    * panel on the right side of the main window.
-    *
-    * @param control the custom control to add.
-    */
-   public void addCustomControl(Node control)
+   /** {@inheritDoc} */
+   @Override
+   public Window getPrimaryGUIWindow()
    {
-      if (visualizerControls != null)
-         visualizerControls.addCustomControl(control);
+      return visualizerControls == null ? null : visualizerControls.getPrimaryGUIWindow();
    }
 
-   /**
-    * Removes a custom JavaFX control that was previously added via {@link #addCustomControl(Node)}.
-    *
-    * @param control the control to be removed.
-    * @return whether the control was found and removed successfully.
-    */
-   public boolean removeCustomControl(Node control)
+   /** {@inheritDoc} */
+   @Override
+   public void addCustomGUIControl(Node control)
    {
       if (visualizerControls != null)
-         return visualizerControls.removeCustomControl(control);
+         visualizerControls.addCustomGUIControl(control);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean removeCustomGUIControl(Node control)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.removeCustomGUIControl(control);
       else
          return false;
    }
 
-   /**
-    * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
-    * right side of the main window.
-    *
-    * @param name         the title of the new pane.
-    * @param fxmlResource the locator to the FXML resource.
-    */
-   public void loadCustomPane(String name, URL fxmlResource)
+   /** {@inheritDoc} */
+   @Override
+   public void loadCustomGUIPane(String name, URL fxmlResource)
    {
       if (visualizerControls != null)
-         visualizerControls.loadCustomPane(name, fxmlResource);
+         visualizerControls.loadCustomGUIPane(name, fxmlResource);
    }
 
-   /**
-    * Adds a mini-GUI to the user side panel on the right side of the main window.
-    *
-    * @param name the title of the new pane.
-    * @param pane the pane to be added.
-    */
-   public void addCustomPane(String name, Pane pane)
+   /** {@inheritDoc} */
+   @Override
+   public void addCustomGUIPane(String name, Pane pane)
    {
       if (visualizerControls != null)
-         visualizerControls.addCustomPane(name, pane);
+         visualizerControls.addCustomGUIPane(name, pane);
    }
 
-   /**
-    * Removes a pane previously added via {@link #loadCustomPane(String, URL)} or
-    * {@link #addCustomPane(String, Pane)}.
-    *
-    * @param name the title of the pane to remove.
-    */
-   public boolean removeCustomPane(String name)
+   /** {@inheritDoc} */
+   @Override
+   public boolean removeCustomGUIPane(String name)
    {
       if (visualizerControls != null)
-         return visualizerControls.removeCustomPane(name);
+         return visualizerControls.removeCustomGUIPane(name);
       else
          return false;
    }
 
-   /**
-    * Causes the caller's thread to pause until the visualizer is fully operational.
-    */
-   public void waitUntilVisualizerIsFullyUp()
+   /** {@inheritDoc} */
+   @Override
+   public void waitUntilVisualizerFullyUp()
    {
       if (visualizerControls != null)
-         visualizerControls.waitUntilFullyUp();
+         visualizerControls.waitUntilVisualizerFullyUp();
    }
 
-   /**
-    * Causes the caller's thread to pause until the visualizer is fully operational.
-    */
-   public void waitUntilVisualizerIsDown()
+   /** {@inheritDoc} */
+   @Override
+   public void waitUntilVisualizerDown()
    {
       if (visualizerControls != null)
-         visualizerControls.waitUntilDown();
+         visualizerControls.waitUntilVisualizerDown();
    }
 
    // TODO Missing setupGraph, setupGraphGroup
+
+   // ------------------------------------------------------------------------------- //
+   // -------------------------- Shutdown Controls ---------------------------------- //
+   // ------------------------------------------------------------------------------- //
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isSessionShutdown()
+   {
+      return simulationSessionControls.isSessionShutdown();
+   }
+
+   private boolean hasBeenDestroyed;
+
+   /** {@inheritDoc} */
+   @Override
+   public void shutdownSession()
+   {
+      if (hasBeenDestroyed)
+         return;
+
+      LogTools.info("Destroying simulation");
+      hasBeenDestroyed = true;
+
+      if (visualizerControls != null)
+         visualizerControls.shutdownSession();
+
+      // The visualizer will shutdown the session, just being extra cautious here.
+      simulationSessionControls.shutdownSession();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestVisualizerShutdown()
+   {
+      if (visualizerControls != null)
+         visualizerControls.requestVisualizerShutdown();
+   }
+
+   @Override
+   public void addSessionShutdownListener(Runnable listener)
+   {
+      simulationSessionControls.addSessionShutdownListener(listener);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void addVisualizerShutdownListener(Runnable listener)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addVisualizerShutdownListener(listener);
+   }
 
 }

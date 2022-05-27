@@ -362,6 +362,13 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
+      public double getPlaybackRealTimeRate()
+      {
+         return SimulationSession.this.getPlaybackRealTimeRate();
+      }
+
+      /** {@inheritDoc} */
+      @Override
       public boolean isSimulating()
       {
          return getActiveMode() == SessionMode.RUNNING;
@@ -411,6 +418,13 @@ public class SimulationSession extends Session
       public void shutdownSession()
       {
          SimulationSession.this.shutdownSession();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void addSessionShutdownListener(Runnable listener)
+      {
+         addShutdownListener(listener);
       }
 
       /** {@inheritDoc} */
@@ -673,6 +687,13 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
+      public boolean initializeBufferRecordTickPeriod(int bufferRecordTickPeriod)
+      {
+         return SimulationSession.this.initializeBufferRecordTickPeriod(bufferRecordTickPeriod);
+      }
+
+      /** {@inheritDoc} */
+      @Override
       public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
       {
          SimulationSession.this.setBufferRecordTickPeriod(bufferRecordTickPeriod);
@@ -722,9 +743,16 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
+      public boolean initializeBufferSize(int bufferSize)
+      {
+         return SimulationSession.this.initializeBufferSize(bufferSize);
+      }
+
+      /** {@inheritDoc} */
+      @Override
       public void changeBufferSize(int bufferSize)
       {
-         SimulationSession.this.submitBufferSizeRequestAndWait(bufferSize);
+         submitBufferSizeRequestAndWait(bufferSize);
       }
 
       /** {@inheritDoc} */
@@ -752,9 +780,44 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
+      public String getSimulationName()
+      {
+         return SimulationSession.this.getSessionName();
+      }
+
+      /** {@inheritDoc} */
+      @Override
       public void exportData(SessionDataExportRequest request)
       {
          submitSessionDataExportRequestAndWait(request);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
+      {
+         SimulationSession.this.addBeforePhysicsCallback(beforePhysicsCallback);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean removeBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
+      {
+         return SimulationSession.this.removeBeforePhysicsCallback(beforePhysicsCallback);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void addAfterPhysicsCallback(TimeConsumer afterPhysicsCallback)
+      {
+         SimulationSession.this.addAfterPhysicsCallback(afterPhysicsCallback);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean removeAfterPhysicsCallback(TimeConsumer afterPhysicsCallback)
+      {
+         return SimulationSession.this.removeAfterPhysicsCallback(afterPhysicsCallback);
       }
    }
 }

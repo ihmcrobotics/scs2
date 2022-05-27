@@ -9,10 +9,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
-import us.ihmc.messager.Messager;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
@@ -75,11 +72,7 @@ public interface SessionVisualizerControls
     * @param robotName     the name of the robot to track.
     * @param rigidBodyName the name of the body to track.
     */
-   default void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
-   {
-      waitUntilFullyUp();
-      submitMessage(getTopics().getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
-   }
+   void requestCameraRigidBodyTracking(String robotName, String rigidBodyName);
 
    /**
     * Adds a static graphic to the 3D scene.
@@ -128,10 +121,7 @@ public interface SessionVisualizerControls
     * 
     * @param yoGraphicDefinition the definition of the graphic to be added.
     */
-   default void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
-   {
-      submitMessage(getTopics().getAddYoGraphicRequest(), yoGraphicDefinition);
-   }
+   void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
    /**
     * Adds a dynamic graphic to the 3D scene.
@@ -201,10 +191,7 @@ public interface SessionVisualizerControls
     * @param variableName the name of the variables to add. The variables will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
     */
-   default void addYoEntry(String groupName, Collection<String> variableNames)
-   {
-      submitMessage(getTopics().getYoEntryListAdd(), YoEntryListDefinition.newYoVariableEntryList(groupName, variableNames));
-   }
+   void addYoEntry(String groupName, Collection<String> variableNames);
 
    /**
     * Captures a video of the 3D scene from the playback data.
@@ -232,44 +219,19 @@ public interface SessionVisualizerControls
     * Disables GUI controls. Can be used to prevent the user from interfering with a background process
     * temporarily.
     */
-   default void disableUserControls()
-   {
-      submitMessage(getTopics().getDisableUserControls(), true);
-   }
+   void disableGUIControls();
 
    /**
     * Enables GUI controls.
     */
-   default void enableUserControls()
-   {
-      submitMessage(getTopics().getDisableUserControls(), false);
-   }
-
-   /**
-    * Gets the messager's topics.
-    * <p>
-    * The visualizer relies on the {@link Messager} framework to communicate requests.
-    * </p>
-    * 
-    * @return the topics this visualizer uses.
-    */
-   SessionVisualizerTopics getTopics();
-
-   /**
-    * Submits a message.
-    * 
-    * @param <T>            the type of the message content imposed by the selected topic.
-    * @param topic          the topic to with the message is to be submitted.
-    * @param messageContent the content of the message.
-    */
-   <T> void submitMessage(Topic<T> topic, T messageContent);
+   void enableGUIControls();
 
    /**
     * Gets the main window's instance.
     * 
     * @return the main window.
     */
-   Window getPrimaryWindow();
+   Window getPrimaryGUIWindow();
 
    /**
     * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
@@ -277,15 +239,15 @@ public interface SessionVisualizerControls
     * 
     * @param control the custom control to add.
     */
-   void addCustomControl(Node control);
+   void addCustomGUIControl(Node control);
 
    /**
-    * Removes a custom JavaFX control that was previously added via {@link #addCustomControl(Node)}.
+    * Removes a custom JavaFX control that was previously added via {@link #addCustomGUIControl(Node)}.
     * 
     * @param control the control to be removed.
     * @return whether the control was found and removed successfully.
     */
-   boolean removeCustomControl(Node control);
+   boolean removeCustomGUIControl(Node control);
 
    /**
     * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
@@ -294,7 +256,7 @@ public interface SessionVisualizerControls
     * @param name         the title of the new pane.
     * @param fxmlResource the locator to the FXML resource.
     */
-   void loadCustomPane(String name, URL fxmlResource);
+   void loadCustomGUIPane(String name, URL fxmlResource);
 
    /**
     * Adds a mini-GUI to the user side panel on the right side of the main window.
@@ -302,15 +264,15 @@ public interface SessionVisualizerControls
     * @param name the title of the new pane.
     * @param pane the pane to be added.
     */
-   void addCustomPane(String name, Pane pane);
+   void addCustomGUIPane(String name, Pane pane);
 
    /**
-    * Removes a pane previously added via {@link #loadCustomPane(String, URL)} or
-    * {@link #addCustomPane(String, Pane)}.
+    * Removes a pane previously added via {@link #loadCustomGUIPane(String, URL)} or
+    * {@link #addCustomGUIPane(String, Pane)}.
     * 
     * @param name the title of the pane to remove.
     */
-   boolean removeCustomPane(String name);
+   boolean removeCustomGUIPane(String name);
 
    /**
     * Requests to "gently" shutdown the visualizer and the session.
@@ -321,7 +283,7 @@ public interface SessionVisualizerControls
     * After shutdown, the visualizer and the session become useless.
     * </p>
     */
-   void shutdown();
+   void requestVisualizerShutdown();
 
    /**
     * Requests an immediate shutdown of the visualizer and the session.
@@ -332,7 +294,7 @@ public interface SessionVisualizerControls
     * After shutdown, the visualizer and the session become useless.
     * </p>
     */
-   void shutdownNow();
+   void shutdownSession();
 
    /**
     * Adds a listener to be notified when the visualizer just shutdown.
@@ -344,10 +306,10 @@ public interface SessionVisualizerControls
    /**
     * Causes the caller's thread to pause until the visualizer is fully operational.
     */
-   void waitUntilFullyUp();
+   void waitUntilVisualizerFullyUp();
 
    /**
     * Causes the caller's thread to pause until the visualizer gets shutdown.
     */
-   void waitUntilDown();
+   void waitUntilVisualizerDown();
 }
