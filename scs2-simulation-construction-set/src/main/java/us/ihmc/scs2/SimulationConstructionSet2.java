@@ -16,12 +16,12 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionDataExportRequest;
-import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
+import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
@@ -40,11 +40,13 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class SimulationConstructionSet2 implements YoVariableHolder
+public class SimulationConstructionSet2 implements YoVariableHolder, SimulationSessionControls
 {
    public static final ReferenceFrame inertialFrame = SimulationSession.DEFAULT_INERTIAL_FRAME;
 
    private SimulationSession simulationSession;
+
+   private SimulationSessionControls simulationSessionControls;
    private SessionVisualizerControls visualizerControls;
 
    private boolean guiEnabled;
@@ -89,16 +91,12 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    public SimulationConstructionSet2(String simulationName, PhysicsEngineFactory physicsEngineFactory)
    {
       simulationSession = new SimulationSession(inertialFrame, simulationName, physicsEngineFactory);
+      simulationSessionControls = simulationSession.getSimulationSessionControls();
    }
 
    public PhysicsEngine getPhysicsEngine()
    {
       return simulationSession.getPhysicsEngine();
-   }
-
-   public SimulationSessionControls getSimulationControls()
-   {
-      return simulationSession.getSimulationSessionControls();
    }
 
    public void setGUIEnabled(boolean guiEnabled)
@@ -109,16 +107,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    public boolean isGUIEnabled()
    {
       return guiEnabled;
-   }
-
-   public double getDT()
-   {
-      return simulationSession.getSessionDTSeconds();
-   }
-
-   public void setDT(double dt)
-   {
-      simulationSession.setSessionDTSeconds(dt);
    }
 
    public List<? extends Robot> getRobots()
@@ -201,25 +189,103 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       simulationSession.addShutdownListener(listener);
    }
 
-   public void startSimulationThread()
-   {
-      simulationSession.startSessionThread();
+   // ------------------------------------------------------------------------------- //
+   // ------------------------ Simulation Properties -------------------------------- //
+   // ------------------------------------------------------------------------------- //
 
-      if (guiEnabled)
-      {
-         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
-         visualizerControls.addVisualizerShutdownListener(this::destroy);
-      }
+   /** {@inheritDoc} */
+   @Override
+   public double getDT()
+   {
+      return simulationSessionControls.getDT();
    }
 
-   public void stopSimulationThread()
+   /** {@inheritDoc} */
+   @Override
+   public void setDT(double dt)
    {
-      simulationSession.stopSessionThread();
+      simulationSessionControls.setDT(dt);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isSimulationThreadRunning()
+   {
+      return simulationSessionControls.isSimulationThreadRunning();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isRealTimeRateSimulation()
+   {
+      return simulationSessionControls.isRealTimeRateSimulation();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isSimulating()
+   {
+      return simulationSessionControls.isSimulating();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isPlaying()
+   {
+      return simulationSessionControls.isPlaying();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isPaused()
+   {
+      return simulationSessionControls.isPaused();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isSessionShutdown()
+   {
+      return simulationSessionControls.isSessionShutdown();
+   }
+
+   // ------------------------------------------------------------------------------- //
+   // ------------------------- Simulation Controls --------------------------------- //
+   // ------------------------------------------------------------------------------- //
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * Starts the visualizer thread as well when called for the first and if the visualizer is enabled.
+    * </p>
+    *
+    * @see #setGUIEnabled(boolean)
+    */
+   @Override
+   public boolean startSimulationThread()
+   {
+      boolean started = simulationSession.startSessionThread();
+
+      if (guiEnabled && visualizerControls == null)
+      {
+         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
+         visualizerControls.addVisualizerShutdownListener(this::shutdownSession);
+      }
+      return started;
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean stopSimulationThread()
+   {
+      return simulationSessionControls.stopSimulationThread();
    }
 
    private boolean hasBeenDestroyed;
 
-   public void destroy()
+   /** {@inheritDoc} */
+   @Override
+   public void shutdownSession()
    {
       if (hasBeenDestroyed)
          return;
@@ -227,216 +293,186 @@ public class SimulationConstructionSet2 implements YoVariableHolder
       LogTools.info("Destroying simulation");
       hasBeenDestroyed = true;
 
+      simulationSessionControls.shutdownSession();
+
       // TODO Destroy stuff!
    }
 
-   public void setSimulateNoFasterThanRealTime(boolean simulateNoFasterThanRealTime)
+   /** {@inheritDoc} */
+   @Override
+   public void setRealTimeRateSimulation(boolean enableRealTimeRate)
    {
-      simulationSession.submitRunAtRealTimeRate(simulateNoFasterThanRealTime);
+      simulationSessionControls.setRealTimeRateSimulation(enableRealTimeRate);
    }
 
-   public boolean getSimulateNoFasterThanRealTime()
-   {
-      return simulationSession.getRunAtRealTimeRate();
-   }
-
-   public void stop()
-   {
-      getSimulationControls().pause();
-   }
-
-   public boolean isSimulationThreadRunning()
-   {
-      return simulationSession.hasSessionStarted();
-   }
-
-   public boolean isSimulating()
-   {
-      return simulationSession.getActiveMode() == SessionMode.RUNNING;
-   }
-
-   public boolean isPlaying()
-   {
-      return simulationSession.getActiveMode() == SessionMode.PLAYBACK;
-   }
-
-   public void play()
-   {
-      simulationSession.setSessionMode(SessionMode.PLAYBACK);
-   }
-
-   public void simulate()
-   {
-      getSimulationControls().simulate();
-   }
-
+   /** {@inheritDoc} */
+   @Override
    public void simulate(double duration)
    {
-      getSimulationControls().simulate(duration);
+      simulationSessionControls.simulate(duration);
    }
 
+   /** {@inheritDoc} */
+   @Override
    public void simulate(int numberOfTicks)
    {
-      getSimulationControls().simulate(numberOfTicks);
+      simulationSessionControls.simulate(numberOfTicks);
    }
 
-   public boolean simulateNow(double duration)
-   {
-      return getSimulationControls().simulateNow(duration);
-   }
-
+   /** {@inheritDoc} */
+   @Override
    public boolean simulateNow(long numberOfTicks)
    {
-      return getSimulationControls().simulateNow(numberOfTicks);
+      return simulationSessionControls.simulateNow(numberOfTicks);
    }
 
-   public boolean simulateNow()
-   {
-      return getSimulationControls().simulateNow();
-   }
-
+   /** {@inheritDoc} */
+   @Override
    public void addSimulationThrowableListener(Consumer<Throwable> listener)
    {
-      getSimulationControls().addSimulationThrowableListener(listener);
+      simulationSessionControls.addSimulationThrowableListener(listener);
    }
 
+   /** {@inheritDoc} */
+   @Override
    public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
    {
-      getSimulationControls().addExternalTerminalCondition(externalTerminalConditions);
+      simulationSessionControls.addExternalTerminalCondition(externalTerminalConditions);
    }
 
+   /** {@inheritDoc} */
+   @Override
    public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
    {
-      return getSimulationControls().removeExternalTerminalCondition(externalTerminalCondition);
+      return simulationSessionControls.removeExternalTerminalCondition(externalTerminalCondition);
    }
 
+   /** {@inheritDoc} */
+   @Override
    public void clearExternalTerminalConditions()
    {
-      getSimulationControls().clearExternalTerminalConditions();
+      simulationSessionControls.clearExternalTerminalConditions();
    }
 
-   public void exportData(SessionDataExportRequest request)
+   /** {@inheritDoc} */
+   @Override
+   public void play()
    {
-      simulationSession.submitSessionDataExportRequestAndWait(request);
+      simulationSessionControls.play();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void pause()
+   {
+      simulationSessionControls.pause();
    }
 
    // ------------------------------------------------------------------------------- //
-   // ----------------------------- Buffer API -------------------------------------- //
+   // -------------------------- Buffer Properties ---------------------------------- //
    // ------------------------------------------------------------------------------- //
 
+   /** {@inheritDoc} */
+   @Override
    public YoBufferPropertiesReadOnly getBufferProperties()
    {
-      return simulationSession.getBufferProperties();
+      return simulationSessionControls.getBufferProperties();
    }
 
+   /** {@inheritDoc} */
+   @Override
+   public int getBufferRecordTickPeriod()
+   {
+      return simulationSessionControls.getBufferRecordTickPeriod();
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public YoSharedBuffer getBuffer()
    {
-      return simulationSession.getBuffer();
-   }
-
-   public void setRecordFrequency(int recordFrequency)
-   {
-      simulationSession.setBufferRecordTickPeriod(recordFrequency);
-   }
-
-   public void setRecordDT(double recordDT)
-   {
-      simulationSession.setBufferRecordTickPeriod((int) (recordDT / getDT()));
-   }
-
-   public double getRecordDT()
-   {
-      return simulationSession.getBufferRecordTimePeriod();
-   }
-
-   public int getRecordFrequency()
-   {
-      return simulationSession.getBufferRecordTickPeriod();
-   }
-
-   public int getCurrentIndex()
-   {
-      return getBufferProperties().getCurrentIndex();
-   }
-
-   public void tickAndUpdate()
-   {
-      simulationSession.stopSessionThread();
-      simulationSession.submitIncrementBufferIndexRequestAndWait(1);
-      simulationSession.getBuffer().writeBuffer();
-      simulationSession.startSessionThread();
-   }
-
-   public void updateAndTick()
-   {
-      simulationSession.stopSessionThread();
-      simulationSession.getBuffer().writeBuffer();
-      simulationSession.submitIncrementBufferIndexRequestAndWait(1);
-      simulationSession.startSessionThread();
-   }
-
-   public void tick()
-   {
-      simulationSession.submitIncrementBufferIndexRequest(1);
-   }
-
-   public void setCurrentIndex(int bufferIndexRequest)
-   {
-      simulationSession.submitBufferIndexRequestAndWait(bufferIndexRequest);
-   }
-
-   public void gotoInPoint()
-   {
-      getSimulationControls().setBufferCurrentIndexToInPoint();
-   }
-
-   public void gotoOutPoint()
-   {
-      getSimulationControls().setBufferCurrentIndexToOutPoint();
-   }
-
-   public int getInPoint()
-   {
-      return getBufferProperties().getInPoint();
-   }
-
-   public int getOutPoint()
-   {
-      return getBufferProperties().getOutPoint();
-   }
-
-   public void setInPoint()
-   {
-      getSimulationControls().setBufferInPointIndexToCurrent();
-   }
-
-   public void setOutPoint()
-   {
-      getSimulationControls().setBufferOutPointIndexToCurrent();
-   }
-
-   public int getBufferSize()
-   {
-      return getBufferProperties().getSize();
-   }
-
-   public void cropBuffer()
-   {
-      getSimulationControls().cropBuffer();
-   }
-
-   public void changeBufferSize(int bufferSize)
-   {
-      simulationSession.submitBufferSizeRequestAndWait(bufferSize);
-   }
-
-   public void applyBufferProcessor(YoBufferProcessor processor)
-   {
-      getBuffer().applyProcessor(processor);
+      return simulationSessionControls.getBuffer();
    }
 
    // ------------------------------------------------------------------------------- //
-   // --------------------------- Visualizer API ------------------------------------ //
+   // --------------------------- Buffer Controls ----------------------------------- //
+   // ------------------------------------------------------------------------------- //
+
+   /** {@inheritDoc} */
+   @Override
+   public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
+   {
+      simulationSessionControls.setBufferRecordTickPeriod(bufferRecordTickPeriod);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void gotoBufferIndex(int bufferIndexRequest)
+   {
+      simulationSessionControls.gotoBufferIndex(bufferIndexRequest);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void setBufferInPoint(int index)
+   {
+      simulationSessionControls.setBufferInPoint(index);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void setBufferOutPoint(int index)
+   {
+      simulationSessionControls.setBufferOutPoint(index);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void stepBufferIndexBackward(int stepSize)
+   {
+      stepBufferIndexBackward(stepSize);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void stepBufferIndexForward(int stepSize)
+   {
+      simulationSessionControls.stepBufferIndexForward(stepSize);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void cropBuffer(CropBufferRequest request)
+   {
+      simulationSessionControls.cropBuffer(request);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void changeBufferSize(int bufferSize)
+   {
+      simulationSessionControls.changeBufferSize(bufferSize);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void applyBufferProcessor(YoBufferProcessor processor)
+   {
+      simulationSessionControls.applyBufferProcessor(processor);
+   }
+
+   // ------------------------------------------------------------------------------- //
+   // ---------------------------- Misc Controls ------------------------------------ //
+   // ------------------------------------------------------------------------------- //
+
+   /** {@inheritDoc} */
+   @Override
+   public void exportData(SessionDataExportRequest request)
+   {
+      simulationSessionControls.exportData(request);
+   }
+
+   // ------------------------------------------------------------------------------- //
+   // ------------------------- Visualizer Controls --------------------------------- //
    // ------------------------------------------------------------------------------- //
 
    /**
@@ -445,7 +481,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param latitude  controls the look up/down angle while keeping the focus point unchanged.
     * @param longitude controls the look left/right angle while keeping the focus point unchanged.
     */
@@ -461,7 +497,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param x the new x-coordinate for the camera position.
     * @param y the new y-coordinate for the camera position.
     * @param z the new z-coordinate for the camera position.
@@ -478,7 +514,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param x the new x-coordinate for the focus point.
     * @param y the new y-coordinate for the focus point.
     * @param z the new z-coordinate for the focus point.
@@ -495,7 +531,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param distanceFromFocus the new distance between the camera and the focus point.
     */
    public void setCameraZoom(double distanceFromFocus)
@@ -506,7 +542,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Requests the camera to track the rigid-body of a robot.
-    * 
+    *
     * @param robotName     the name of the robot to track.
     * @param rigidBodyName the name of the body to track.
     */
@@ -518,7 +554,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds a static graphic to the 3D scene.
-    * 
+    *
     * @param visualDefinition the visual to be added to the 3D scene.
     */
    public void addStaticVisual(VisualDefinition visualDefinition)
@@ -529,7 +565,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds a collection of static graphic to the 3D scene.
-    * 
+    *
     * @param visualDefinitions the collection of visuals to be added to the 3D scene.
     */
    public void addStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
@@ -541,7 +577,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Removes a static graphic that was previously added via
     * {@link #addStaticVisual(VisualDefinition)}.
-    * 
+    *
     * @param visualDefinition the visual to remove from the 3D scene.
     */
    public void removeStaticVisual(VisualDefinition visualDefinition)
@@ -553,7 +589,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Removes a collection of static graphics that were previously added via
     * {@link #addStaticVisual(VisualDefinition)}.
-    * 
+    *
     * @param visualDefinitions the visuals to remove from the 3D scene.
     */
    public void removeStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
@@ -564,7 +600,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
-    * 
+    *
     * @param yoGraphicDefinition the definition of the graphic to be added.
     */
    public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
@@ -575,7 +611,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds a dynamic graphic to the 3D scene.
-    * 
+    *
     * @param namespace           the desired namespace for the new graphic. The separator used is
     *                            {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
@@ -588,7 +624,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds a variable entry to the default entry tab.
-    * 
+    *
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
     */
@@ -600,7 +636,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds variable entries to the default entry tab.
-    * 
+    *
     * @param variableNames the name of the variables to add. The variables will be looked up using
     *                      {@link YoRegistry#findVariable(String)}.
     */
@@ -613,7 +649,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Adds a variable entry to the entry tab named {@code groupName}. The tab will be created if it
     * doesn't exist yet.
-    * 
+    *
     * @param groupName    the name of the tab.
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
@@ -627,7 +663,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Adds variable entries to the entry tab named {@code groupName}. The tab will be created if it
     * doesn't exist yet.
-    * 
+    *
     * @param groupName    the name of the tab.
     * @param variableName the name of the variables to add. The variables will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
@@ -643,7 +679,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
     * <p>
     * The file extension should be {@value SessionVisualizerIOTools#videoFileExtension}.
     * </p>
-    * 
+    *
     * @param file the target file where the video is to be written.
     */
    public void exportVideo(File file)
@@ -654,7 +690,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Captures a video of the 3D scene from the playback data.
-    * 
+    *
     * @param request the request.
     */
    public void exportVideo(SceneVideoRecordingRequest request)
@@ -685,7 +721,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
     * panel on the right side of the main window.
-    * 
+    *
     * @param control the custom control to add.
     */
    public void addCustomControl(Node control)
@@ -696,7 +732,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Removes a custom JavaFX control that was previously added via {@link #addCustomControl(Node)}.
-    * 
+    *
     * @param control the control to be removed.
     * @return whether the control was found and removed successfully.
     */
@@ -711,7 +747,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
     * right side of the main window.
-    * 
+    *
     * @param name         the title of the new pane.
     * @param fxmlResource the locator to the FXML resource.
     */
@@ -723,7 +759,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
 
    /**
     * Adds a mini-GUI to the user side panel on the right side of the main window.
-    * 
+    *
     * @param name the title of the new pane.
     * @param pane the pane to be added.
     */
@@ -736,7 +772,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder
    /**
     * Removes a pane previously added via {@link #loadCustomPane(String, URL)} or
     * {@link #addCustomPane(String, Pane)}.
-    * 
+    *
     * @param name the title of the pane to remove.
     */
    public boolean removeCustomPane(String name)

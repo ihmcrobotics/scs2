@@ -1845,7 +1845,7 @@ public abstract class Session
    }
 
    /**
-    * Whether the {@link SessionMode#RUNNING} mode should be capped to run no faster that real-time.
+    * Whether the {@link SessionMode#RUNNING} mode is capped to run no faster that real-time.
     * 
     * @return {@code true} if the running mode is capped to run no faster than real-time.
     */
