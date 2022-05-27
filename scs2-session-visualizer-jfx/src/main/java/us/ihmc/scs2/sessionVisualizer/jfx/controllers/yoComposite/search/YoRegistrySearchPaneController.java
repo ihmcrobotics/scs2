@@ -264,7 +264,10 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       {
          TreeItem<YoRegistry> child = parent.getChildren().get(i);
 
-         if (child.isLeaf() && !registriesToKeep.contains(child.getValue()))
+         if (!child.isLeaf() || child.getValue() == null)
+            continue;
+
+         if (!registriesToKeep.contains(child.getValue()))
             parent.getChildren().remove(i);
       }
    }
