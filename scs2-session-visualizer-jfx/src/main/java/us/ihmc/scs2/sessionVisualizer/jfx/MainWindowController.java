@@ -10,6 +10,7 @@ import com.jfoenix.controls.events.JFXDrawerEvent;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -65,10 +66,14 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    private YoChartGroupPanelController yoChartGroupPanelController;
 
    /** The drawer used to hold onto the tools for searching yoVariables. */
-   private JFXDrawer leftDrawer = new JFXDrawer();
+   private final JFXDrawer leftDrawer = new JFXDrawer();
    /** The drawer used to hold onto custom GUI controls. */
-   private JFXDrawer rightDrawer = new JFXDrawer();
+   private final JFXDrawer rightDrawer = new JFXDrawer();
+
+   /** Controller for the left pane where variable search and entries are displayed. */
    private SidePaneController sidePaneController;
+   /** Controller for the right pane where custom user controls are displayed. */
+   private UserSidePaneController userSidePaneController;
 
    private SessionVisualizerToolkit globalToolkit;
    private SessionVisualizerWindowToolkit windowToolkit;
@@ -111,8 +116,18 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          e.printStackTrace();
       }
 
-      // TODO Need to give access the side-pane
-      setupRightDrawer(new HBox());
+      try
+      {
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.USER_SIDE_PANE_URL);
+         Pane sidePane = setupRightDrawer(loader.load());
+         messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> sidePane.setDisable(disable));
+         userSidePaneController = loader.getController();
+         userSidePaneController.initialize(toolkit);
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
    }
 
    public void setupViewport3D(Pane viewportPane)
@@ -159,7 +174,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       Pane drawerSidePane = configureDrawer(sidePane, leftDrawer, leftDrawerBurger);
       HamburgerAnimationTransition transition = new HamburgerAnimationTransition(leftDrawerBurger, FrameType.BURGER, FrameType.LEFT_CLOSE);
 
-      leftDrawer.addEventHandler(JFXDrawerEvent.ANY, e ->
+      leftDrawer.addEventHandler(Event.ANY, e ->
       {
          if (e.getTarget() != leftDrawer)
             return;
@@ -188,7 +203,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       Pane drawerSidePane = configureDrawer(sidePane, rightDrawer, rightDrawerBurger);
       HamburgerAnimationTransition transition = new HamburgerAnimationTransition(rightDrawerBurger, FrameType.LEFT_ANGLE, FrameType.RIGHT_CLOSE);
 
-      rightDrawer.addEventHandler(JFXDrawerEvent.ANY, e ->
+      rightDrawer.addEventHandler(Event.ANY, e ->
       {
          if (e.getTarget() != rightDrawer)
             return;
@@ -220,6 +235,8 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       Node remove = drawer.getChildren().remove(drawer.getChildren().size() - 1);
       rootPane.addEventHandler(KeyEvent.KEY_PRESSED, (EventHandler<? super KeyEvent>) e ->
       {
+         if (e.isConsumed())
+            return;
          if (e.getCode() == KeyCode.ESCAPE && drawer.isOpened())
          {
             drawer.close();
@@ -234,7 +251,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       // By disabling the side pane, we unlink YoVariables (in search tabs) reducing the cost of a run tick for the Session
       drawerSidePane.setVisible(drawer.isOpened());
       drawerSidePane.setDisable(!drawer.isOpened());
-      drawer.addEventHandler(JFXDrawerEvent.ANY, e ->
+      drawer.addEventHandler(Event.ANY, e ->
       {
          if (e.getEventType() == JFXDrawerEvent.CLOSED)
          {
