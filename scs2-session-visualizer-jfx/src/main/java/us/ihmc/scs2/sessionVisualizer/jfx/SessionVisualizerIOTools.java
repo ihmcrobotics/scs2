@@ -129,6 +129,7 @@ public class SessionVisualizerIOTools
    public static final URL SECONDARY_WINDOW_URL = getFXMLResource("SecondaryWindow");
 
    public static final URL SIDE_PANE_URL = getFXMLResource("SidePane");
+   public static final URL USER_SIDE_PANE_URL = getFXMLResource("UserSidePane");
    public static final URL VIDEO_PREVIEW_PANE_URL = getFXMLResource("VideoRecordingPreviewPane");
    public static final URL SESSION_DATA_EXPORT_STAGE_URL = getFXMLResource("SessionDataExportStage");
 
