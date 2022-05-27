@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,12 +12,14 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -306,14 +309,6 @@ public class SessionVisualizer
       }
 
       @Override
-      public Window getPrimaryWindow()
-      {
-         checkVisualizerRunning();
-         waitUntilFullyUp();
-         return primaryStage;
-      }
-
-      @Override
       public void setCameraOrientation(double latitude, double longitude)
       {
          checkVisualizerRunning();
@@ -398,6 +393,49 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          messager.submitMessage(topic, messageContent);
+      }
+
+      @Override
+      public Window getPrimaryWindow()
+      {
+         checkVisualizerRunning();
+         waitUntilFullyUp();
+         return primaryStage;
+      }
+
+      @Override
+      public void addCustomControl(Node control)
+      {
+         checkVisualizerRunning();
+         mainWindowController.getUserSidePaneController().addControl(control);
+      }
+
+      @Override
+      public boolean removeCustomControl(Node control)
+      {
+         checkVisualizerRunning();
+         return mainWindowController.getUserSidePaneController().removeControl(control);
+      }
+
+      @Override
+      public void loadCustomPane(String name, URL fxmlResource)
+      {
+         checkVisualizerRunning();
+         mainWindowController.getUserSidePaneController().loadCustomPane(name, fxmlResource);
+      }
+
+      @Override
+      public void addCustomPane(String name, Pane pane)
+      {
+         checkVisualizerRunning();
+         mainWindowController.getUserSidePaneController().addCustomPane(name, pane);
+      }
+
+      @Override
+      public boolean removeCustomPane(String name)
+      {
+         checkVisualizerRunning();
+         return mainWindowController.getUserSidePaneController().removeCustomPane(name);
       }
 
       @Override

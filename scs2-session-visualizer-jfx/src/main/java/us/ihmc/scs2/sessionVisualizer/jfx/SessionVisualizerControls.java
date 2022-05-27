@@ -1,9 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
@@ -16,13 +20,6 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 
 public interface SessionVisualizerControls
 {
-   /**
-    * Gets the main window's instance.
-    * 
-    * @return the main window.
-    */
-   Window getPrimaryWindow();
-
    /**
     * Sets the camera's orbit with respect to the focus point.
     * <p>
@@ -266,6 +263,54 @@ public interface SessionVisualizerControls
     * @param messageContent the content of the message.
     */
    <T> void submitMessage(Topic<T> topic, T messageContent);
+
+   /**
+    * Gets the main window's instance.
+    * 
+    * @return the main window.
+    */
+   Window getPrimaryWindow();
+
+   /**
+    * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
+    * panel on the right side of the main window.
+    * 
+    * @param control the custom control to add.
+    */
+   void addCustomControl(Node control);
+
+   /**
+    * Removes a custom JavaFX control that was previously added via {@link #addCustomControl(Node)}.
+    * 
+    * @param control the control to be removed.
+    * @return whether the control was found and removed successfully.
+    */
+   boolean removeCustomControl(Node control);
+
+   /**
+    * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
+    * right side of the main window.
+    * 
+    * @param name         the title of the new pane.
+    * @param fxmlResource the locator to the FXML resource.
+    */
+   void loadCustomPane(String name, URL fxmlResource);
+
+   /**
+    * Adds a mini-GUI to the user side panel on the right side of the main window.
+    * 
+    * @param name the title of the new pane.
+    * @param pane the pane to be added.
+    */
+   void addCustomPane(String name, Pane pane);
+
+   /**
+    * Removes a pane previously added via {@link #loadCustomPane(String, URL)} or
+    * {@link #addCustomPane(String, Pane)}.
+    * 
+    * @param name the title of the pane to remove.
+    */
+   boolean removeCustomPane(String name);
 
    /**
     * Requests to "gently" shutdown the visualizer and the session.

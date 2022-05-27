@@ -15,6 +15,7 @@ import javafx.scene.layout.Pane;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class UserSidePaneController implements VisualizerController
 {
@@ -38,12 +39,22 @@ public class UserSidePaneController implements VisualizerController
 
    public void addControl(Node control)
    {
-      userCustomControlsPane.getChildren().add(control);
+      addControl(control, null);
+   }
+
+   public void addControl(Node control, VisualizerController controller)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         if (controller != null)
+            controller.initialize(toolkit);
+         userCustomControlsPane.getChildren().add(control);
+      });
    }
 
    public boolean removeControl(Node control)
    {
-      return userCustomControlsPane.getChildren().remove(control);
+      return JavaFXMissingTools.runAndWait(getClass(), () -> userCustomControlsPane.getChildren().remove(control));
    }
 
    public void loadCustomPane(String name, URL fxmlResource)
@@ -53,23 +64,26 @@ public class UserSidePaneController implements VisualizerController
 
    public void loadCustomPane(String name, URL fxmlResource, VisualizerController controller)
    {
-      try
+      JavaFXMissingTools.runAndWait(getClass(), () ->
       {
-         FXMLLoader fxmlLoader = new FXMLLoader(fxmlResource);
-         Pane pane = fxmlLoader.load();
-         if (controller != null)
-            addCustomPane(name, pane, controller);
-         else if (fxmlLoader.getController() instanceof VisualizerController)
-            addCustomPane(name, pane, (VisualizerController) fxmlLoader.getController());
-         else
-            addCustomPane(name, pane);
+         try
+         {
+            FXMLLoader fxmlLoader = new FXMLLoader(fxmlResource);
+            Pane pane = fxmlLoader.load();
+            if (controller != null)
+               addCustomPane(name, pane, controller);
+            else if (fxmlLoader.getController() instanceof VisualizerController)
+               addCustomPane(name, pane, (VisualizerController) fxmlLoader.getController());
+            else
+               addCustomPane(name, pane);
 
-      }
-      catch (IOException e)
-      {
-         LogTools.error("Couldn't load FXML resource, skipping. Following is the stack-trace:");
-         e.printStackTrace();
-      }
+         }
+         catch (IOException e)
+         {
+            LogTools.error("Couldn't load FXML resource, skipping. Following is the stack-trace:");
+            e.printStackTrace();
+         }
+      });
    }
 
    public void addCustomPane(String name, Pane pane)
@@ -79,11 +93,14 @@ public class UserSidePaneController implements VisualizerController
 
    public void addCustomPane(String name, Pane pane, VisualizerController controller)
    {
-      if (controller != null)
-         controller.initialize(toolkit);
-      TitledPane titledPane = new TitledPane(name, pane);
-      accordion.getPanes().add(titledPane);
-      accordion.setExpandedPane(titledPane);
+      JavaFXMissingTools.runAndWait(getClass(), () ->
+      {
+         if (controller != null)
+            controller.initialize(toolkit);
+         TitledPane titledPane = new TitledPane(name, pane);
+         accordion.getPanes().add(titledPane);
+         accordion.setExpandedPane(titledPane);
+      });
    }
 
    public boolean removeCustomPane(String name)
