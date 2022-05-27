@@ -24,10 +24,13 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.DaemonThreadFactory;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
+import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -35,6 +38,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor;
 import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor.CameraDefinitionConsumer;
 import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor.CameraFrameConsumer;
+import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
@@ -324,40 +328,134 @@ public class SimulationSession extends Session
 
    private class SimulationSessionControlsImpl implements SimulationSessionControls
    {
+      // ------------------------------------------------------------------------------- //
+      // ------------------------ Simulation Properties -------------------------------- //
+      // ------------------------------------------------------------------------------- //
+
+      /** {@inheritDoc} */
       @Override
-      public void pause()
+      public double getDT()
       {
-         setSessionMode(SessionMode.PAUSE);
+         return getSessionDTSeconds();
       }
 
+      /** {@inheritDoc} */
       @Override
-      public void simulate()
+      public void setDT(double dt)
       {
-         if (terminalConditions.isEmpty())
-         {
-            setSessionMode(SessionMode.RUNNING);
-         }
-         else
-         {
-            if (getActiveMode() == SessionMode.RUNNING)
-               setSessionMode(SessionMode.PAUSE);
-
-            BooleanSupplier terminalCondition = () -> testTerminalConditions();
-            setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
-         }
+         setSessionDTSeconds(dt);
       }
 
+      /** {@inheritDoc} */
+      @Override
+      public boolean isSimulationThreadRunning()
+      {
+         return hasSessionStarted();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean isRealTimeRateSimulation()
+      {
+         return getRunAtRealTimeRate();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean isSimulating()
+      {
+         return getActiveMode() == SessionMode.RUNNING;
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean isPlaying()
+      {
+         return getActiveMode() == SessionMode.PLAYBACK;
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean isPaused()
+      {
+         return getActiveMode() == SessionMode.PAUSE;
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean isSessionShutdown()
+      {
+         return SimulationSession.this.isSessionShutdown();
+      }
+
+      // ------------------------------------------------------------------------------- //
+      // ------------------------- Simulation Controls --------------------------------- //
+      // ------------------------------------------------------------------------------- //
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean startSimulationThread()
+      {
+         return startSessionThread();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public boolean stopSimulationThread()
+      {
+         return stopSessionThread();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void shutdownSession()
+      {
+         SimulationSession.this.shutdownSession();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void setRealTimeRateSimulation(boolean enableRealTimeRate)
+      {
+         submitRunAtRealTimeRate(enableRealTimeRate);
+      }
+
+      /** {@inheritDoc} */
       @Override
       public void simulate(double duration)
       {
          if (getActiveMode() == SessionMode.RUNNING)
             setSessionMode(SessionMode.PAUSE);
 
-         double startTime = time.getValue();
-         BooleanSupplier terminalCondition = () -> time.getValue() - startTime >= duration || testTerminalConditions();
-         setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
+         SessionModeTransition transition;
+
+         if (duration == Double.POSITIVE_INFINITY)
+         {
+            if (terminalConditions.isEmpty())
+            {
+               transition = null;
+            }
+            else
+            {
+               BooleanSupplier terminalCondition = () -> testTerminalConditions();
+               transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
+            }
+         }
+         else
+         {
+            double startTime = time.getValue();
+            BooleanSupplier terminalCondition;
+            if (terminalConditions.isEmpty())
+               terminalCondition = () -> time.getValue() - startTime >= duration;
+            else
+               terminalCondition = () -> time.getValue() - startTime >= duration || testTerminalConditions();
+            transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
+         }
+
+         setSessionMode(SessionMode.RUNNING, transition);
       }
 
+      /** {@inheritDoc} */
       @Override
       public void simulate(int numberOfTicks)
       {
@@ -378,25 +476,19 @@ public class SimulationSession extends Session
          setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
       }
 
-      @Override
-      public boolean simulateNow(double duration)
-      {
-         long numberOfTicks = Conversions.secondsToNanoseconds(duration) / getSessionDTNanoseconds();
-         return simulateNow(numberOfTicks);
-      }
-
+      /** {@inheritDoc} */
       @Override
       public boolean simulateNow(long numberOfTicks)
       {
          if (isSessionShutdown())
             return false;
 
-         boolean sessionStartedInitialValue = hasSessionStarted();
+         boolean sessionStartedInitialValue = isSimulationThreadRunning();
 
          if (sessionStartedInitialValue)
          {
-            if (!stopSessionThread())
-               return false; // Could not stop the thread, abort. 
+            if (!stopSimulationThread())
+               return false; // Could not stop the thread, abort.
          }
 
          SessionMode activeModeInitialValue = getActiveMode();
@@ -407,7 +499,7 @@ public class SimulationSession extends Session
 
             boolean success = true;
 
-            if (numberOfTicks == -1L)
+            if (numberOfTicks == -1L || numberOfTicks == Long.MAX_VALUE)
             {
                while (true)
                {
@@ -419,10 +511,7 @@ public class SimulationSession extends Session
 
                   success = runTick();
 
-                  if (!success)
-                     break;
-
-                  if (testTerminalConditions())
+                  if (!success || testTerminalConditions())
                      break;
                }
             }
@@ -438,10 +527,7 @@ public class SimulationSession extends Session
 
                   success = runTick();
 
-                  if (!success)
-                     break;
-
-                  if (testTerminalConditions())
+                  if (!success || testTerminalConditions())
                      break;
                }
             }
@@ -461,10 +547,7 @@ public class SimulationSession extends Session
 
       private boolean handleVisualizerSessionModeRequests()
       {
-         if (getActiveMode() == SessionMode.RUNNING)
-            return true;
-
-         if (!hasWrittenBufferInLastRunTick())
+         if (isSimulating() || !hasWrittenBufferInLastRunTick())
             return true; // Make sure we stop running when the buffer was just updated.
 
          // The GUI requested a mode change, we pause the simulation until the GUI request RUNNING again.
@@ -474,10 +557,10 @@ public class SimulationSession extends Session
          {
             if (newMode != prevMode && newMode == SessionMode.RUNNING)
             {
-               stopSessionThread();
-               if (getBufferProperties().getCurrentIndex() != getBufferProperties().getOutPoint())
-               { // We make sure to go back to the  
-                  setBufferCurrentIndexToOutPoint();
+               stopSimulationThread();
+               if (getBufferCurrentIndex() != getBufferOutPoint())
+               { // We make sure to go back to the out-point
+                  gotoBufferOutPoint();
                   finalizePauseTick(true);
                }
                latch.countDown();
@@ -503,12 +586,6 @@ public class SimulationSession extends Session
          return true;
       }
 
-      @Override
-      public boolean simulateNow()
-      {
-         return simulateNow(-1L);
-      }
-
       private boolean testTerminalConditions()
       {
          for (int i = 0; i < terminalConditions.size(); i++)
@@ -520,6 +597,14 @@ public class SimulationSession extends Session
          return false;
       }
 
+      /** {@inheritDoc} */
+      @Override
+      public void addSimulationThrowableListener(Consumer<Throwable> listener)
+      {
+         addRunThrowableListener(listener);
+      }
+
+      /** {@inheritDoc} */
       @Override
       public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
       {
@@ -529,65 +614,147 @@ public class SimulationSession extends Session
          }
       }
 
+      /** {@inheritDoc} */
       @Override
       public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
       {
          return terminalConditions.remove(externalTerminalCondition);
       }
 
+      /** {@inheritDoc} */
       @Override
       public void clearExternalTerminalConditions()
       {
          terminalConditions.clear();
       }
 
+      /** {@inheritDoc} */
       @Override
-      public void addSimulationThrowableListener(Consumer<Throwable> listener)
+      public void play()
       {
-         addRunThrowableListener(listener);
+         setSessionMode(SessionMode.PLAYBACK);
       }
 
-      // Buffer controls
+      /** {@inheritDoc} */
       @Override
-      public void cropBuffer()
+      public void pause()
       {
-         submitCropBufferRequestAndWait(new CropBufferRequest(getBufferProperties().getInPoint(), getBufferProperties().getOutPoint()));
+         setSessionMode(SessionMode.PAUSE);
       }
 
+      // ------------------------------------------------------------------------------- //
+      // -------------------------- Buffer Properties ---------------------------------- //
+      // ------------------------------------------------------------------------------- //
+
+      /** {@inheritDoc} */
       @Override
-      public void setBufferInPointIndexToCurrent()
+      public YoBufferPropertiesReadOnly getBufferProperties()
       {
-         submitBufferInPointIndexRequestAndWait(getBufferProperties().getCurrentIndex());
+         return SimulationSession.this.getBufferProperties();
       }
 
+      /** {@inheritDoc} */
       @Override
-      public void setBufferOutPointIndexToCurrent()
+      public int getBufferRecordTickPeriod()
       {
-         submitBufferOutPointIndexRequestAndWait(getBufferProperties().getCurrentIndex());
+         return SimulationSession.this.getBufferRecordTickPeriod();
       }
 
+      /** {@inheritDoc} */
       @Override
-      public void setBufferCurrentIndexToInPoint()
+      public YoSharedBuffer getBuffer()
       {
-         submitBufferIndexRequestAndWait(getBufferProperties().getInPoint());
+         return SimulationSession.this.getBuffer();
       }
 
+      // ------------------------------------------------------------------------------- //
+      // --------------------------- Buffer Controls ----------------------------------- //
+      // ------------------------------------------------------------------------------- //
+
+      /** {@inheritDoc} */
       @Override
-      public void setBufferCurrentIndexToOutPoint()
+      public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
       {
-         submitBufferIndexRequestAndWait(getBufferProperties().getOutPoint());
+         SimulationSession.this.setBufferRecordTickPeriod(bufferRecordTickPeriod);
       }
 
+      /** {@inheritDoc} */
+      @Override
+      public void gotoBufferIndex(int bufferIndexRequest)
+      {
+         submitBufferIndexRequestAndWait(bufferIndexRequest);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void setBufferInPoint(int index)
+      {
+         submitBufferInPointIndexRequestAndWait(index);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void setBufferOutPoint(int index)
+      {
+         submitBufferOutPointIndexRequestAndWait(index);
+      }
+
+      /** {@inheritDoc} */
       @Override
       public void stepBufferIndexBackward(int stepSize)
       {
          submitDecrementBufferIndexRequestAndWait(stepSize);
       }
 
+      /** {@inheritDoc} */
       @Override
       public void stepBufferIndexForward(int stepSize)
       {
          submitIncrementBufferIndexRequestAndWait(stepSize);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void cropBuffer(CropBufferRequest request)
+      {
+         submitCropBufferRequestAndWait(request);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void changeBufferSize(int bufferSize)
+      {
+         SimulationSession.this.submitBufferSizeRequestAndWait(bufferSize);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void applyBufferProcessor(YoBufferProcessor processor)
+      {
+         if (!isPaused())
+            return;
+
+         if (isSimulationThreadRunning())
+         {
+            stopSimulationThread();
+            getBuffer().applyProcessor(processor);
+            startSimulationThread();
+         }
+         else
+         {
+            getBuffer().applyProcessor(processor);
+         }
+      }
+
+      // ------------------------------------------------------------------------------- //
+      // ---------------------------- Misc Controls ------------------------------------ //
+      // ------------------------------------------------------------------------------- //
+
+      /** {@inheritDoc} */
+      @Override
+      public void exportData(SessionDataExportRequest request)
+      {
+         submitSessionDataExportRequestAndWait(request);
       }
    }
 }
