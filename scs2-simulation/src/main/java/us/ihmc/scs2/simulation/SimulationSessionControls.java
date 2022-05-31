@@ -49,6 +49,13 @@ public interface SimulationSessionControls
    boolean isRealTimeRateSimulation();
 
    /**
+    * The speed at which the data should be played back.
+    * 
+    * @return real-time factor used for the playback.
+    */
+   double getPlaybackRealTimeRate();
+
+   /**
     * Whether this session is currently simulating.
     * 
     * @return {@code true} if this session is simulating, {@code false} if it is paused or playing
@@ -132,6 +139,16 @@ public interface SimulationSessionControls
     *                          {@value #DEFAULT_RUN_AT_REALTIME_RATE}.
     */
    void setRealTimeRateSimulation(boolean enableRealTimeRate);
+
+   /**
+    * Sets the speed at which data should be the played back.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    * 
+    * @param realTimeRate the real-time factor for playing back data in the buffer.
+    */
+   void setPlaybackRealTimeRate(double realTimeRate);
 
    /**
     * Requests to simulate indefinitely. (asynchronous)

@@ -17,6 +17,7 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionDataExportRequest;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
@@ -42,12 +43,15 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 {
    public static final ReferenceFrame inertialFrame = SimulationSession.DEFAULT_INERTIAL_FRAME;
 
+   public static final boolean DEFAULT_VISUALIZER_ENABLED = SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true)
+         && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
+
    private SimulationSession simulationSession;
 
    private SimulationSessionControls simulationSessionControls;
    private SessionVisualizerControls visualizerControls;
 
-   private boolean visualizerEnabled;
+   private boolean visualizerEnabled = DEFAULT_VISUALIZER_ENABLED;
    /**
     * This is initialized to {@code null} such that the JavaFX flag is not set by default, allowing the
     * user to set it from outside.
@@ -215,11 +219,21 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    // ----------------------------- YoVariables ------------------------------------- //
    // ------------------------------------------------------------------------------- //
 
+   /**
+    * Gets the simulation's root registry.
+    * 
+    * @return the root registry.
+    */
    public YoRegistry getRootRegistry()
    {
       return simulationSession.getRootRegistry();
    }
 
+   /**
+    * Adds a registry to the simulation's root registry.
+    * 
+    * @param registry the registry to add.
+    */
    public void addRegistry(YoRegistry registry)
    {
       getRootRegistry().addChild(registry);
@@ -255,16 +269,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       return getRootRegistry().hasUniqueVariable(namespaceEnding, name);
    }
 
-   public void setPlaybackRealTimeRate(double realTimeRate)
-   {
-      simulationSession.submitPlaybackRealTimeRate(realTimeRate);
-   }
-
-   public double getPlaybackRealTimeRate()
-   {
-      return simulationSession.getPlaybackRealTimeRate();
-   }
-
    // ------------------------------------------------------------------------------- //
    // ------------------------ Simulation Properties -------------------------------- //
    // ------------------------------------------------------------------------------- //
@@ -295,6 +299,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public boolean isRealTimeRateSimulation()
    {
       return simulationSessionControls.isRealTimeRateSimulation();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public double getPlaybackRealTimeRate()
+   {
+      return simulationSession.getPlaybackRealTimeRate();
    }
 
    /** {@inheritDoc} */
@@ -355,6 +366,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void setRealTimeRateSimulation(boolean enableRealTimeRate)
    {
       simulationSessionControls.setRealTimeRateSimulation(enableRealTimeRate);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void setPlaybackRealTimeRate(double realTimeRate)
+   {
+      simulationSession.submitPlaybackRealTimeRate(realTimeRate);
    }
 
    /** {@inheritDoc} */
