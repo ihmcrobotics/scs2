@@ -31,11 +31,11 @@ mainDependencies {
       exclude(group="us.ihmc", module="euclid-frame")
    }
 
-   val libGDXVersion = "1.10.0"
+   val libGDXVersion = "1.11.0"
    api("com.badlogicgames.gdx:gdx-bullet:$libGDXVersion")
    api("com.badlogicgames.gdx:gdx-bullet-platform:$libGDXVersion:natives-desktop")
 
-   val lwjglVersion = "3.2.3"
+   val lwjglVersion = "3.3.1"
    api("org.lwjgl:lwjgl-assimp:$lwjglVersion")
    api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-linux")
    api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-windows")
