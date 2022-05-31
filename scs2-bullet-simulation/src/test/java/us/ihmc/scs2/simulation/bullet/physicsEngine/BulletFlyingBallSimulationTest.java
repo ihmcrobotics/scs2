@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.mecano.tools.MomentOfInertiaFactory;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
@@ -20,8 +19,8 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 
 public class BulletFlyingBallSimulationTest
 {
-
    private static final double EPSILON = 0.01;
+   private static final boolean BULLET_PHYSICS_ENGINE = true;
    
    @Test
    public void testFlyingBall()
@@ -29,12 +28,11 @@ public class BulletFlyingBallSimulationTest
       Point3D initialPosition = new Point3D(0, 0, 0);
       Vector3D initialVelocity = new Vector3D(0.0, 0.0, 0);
 
-      double seconds = 0.0166666666666667;
+      double dt = 0.01;
 
       double ballRadius = 0.2;
       double ballMass = 2.0;
-      double radiusOfGyrationPercent = 1.0;
-      String name = "sphere1";
+      String name = "sphere";
 
       RobotDefinition sphereRobot1 = new RobotDefinition(name);
       RigidBodyDefinition rootBody = new RigidBodyDefinition(name + "RootBody");
@@ -42,56 +40,53 @@ public class BulletFlyingBallSimulationTest
       rootBody.addChildJoint(rootJoint);
       
       RigidBodyDefinition rigidBody = new RigidBodyDefinition(name + "RigidBody");
-      double radiusOfGyration = radiusOfGyrationPercent * ballRadius;
       rigidBody.setMass(ballMass);
-      //rigidBody.setMomentOfInertia(MomentOfInertiaFactory.fromMassAndRadiiOfGyration(ballMass, radiusOfGyration, radiusOfGyration, radiusOfGyration));
-      rigidBody.setMomentOfInertia(new MomentOfInertiaDefinition(1.0, 1.0, 1.0));
+      rigidBody.setMomentOfInertia(new MomentOfInertiaDefinition(0.1, 0.1, 0.1));
       rootJoint.setSuccessor(rigidBody);
 
       sphereRobot1.setRootBodyDefinition(rootBody);
-      sphereRobot1.getRigidBodyDefinition("sphere1RigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Sphere3DDefinition(ballRadius)));
+      sphereRobot1.getRigidBodyDefinition(name + "RigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Sphere3DDefinition(ballRadius)));
 
-      SixDoFJointState sphere1InitialState = new SixDoFJointState();
-      sphere1InitialState.setConfiguration(null, initialPosition);
-      sphere1InitialState.setVelocity(null, initialVelocity);
-      sphereRobot1.getRootJointDefinitions().get(0).setInitialJointState(sphere1InitialState);
- 
-      BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
-      BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-      bulletMultiBodyParameters.setLinearDamping(0);
-      bulletMultiBodyParameters.setAngularDamping(0);
-      bulletMultiBodyParameters.setMaxCoordinateVelocity(10000000);
-      bulletMultiBodyParameters.setUseRK4Integration(true);
+      SixDoFJointState sphereInitialState = new SixDoFJointState();
+      sphereInitialState.setConfiguration(null, initialPosition);
+      sphereInitialState.setVelocity(null, initialVelocity);
+      sphereRobot1.getRootJointDefinitions().get(0).setInitialJointState(sphereInitialState);
+       
+      SimulationSession simulationSession = null;
+      if (BULLET_PHYSICS_ENGINE)
+      {
+         BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
+         BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
+         bulletMultiBodyParameters.setLinearDamping(0);
+         bulletMultiBodyParameters.setMaxCoordinateVelocity(10000000);
+         bulletMultiBodyParameters.setUseRK4Integration(true);
+         simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
+      }
+      else
+      {
+         simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory());
+      }
       
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
-      //SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory());
       simulationSession.addRobot(sphereRobot1);
-      simulationSession.setSessionDTSeconds(seconds);
+      simulationSession.setSessionDTSeconds(dt);
       SimulationEnergyStatistics.setupSimulationEnergyStatistics(simulationSession);
-      SimFloatingRootJoint floatingRootJoint = (SimFloatingRootJoint)simulationSession.getPhysicsEngine().getRobots().get(0).getJoint("sphere1");
+      SimFloatingRootJoint floatingRootJoint = (SimFloatingRootJoint)simulationSession.getPhysicsEngine().getRobots().get(0).getJoint(name);
       
       double orbitalEnergy = 0;
       for (int i = 1; i <= 1000; i++)
       {
          simulationSession.runTick();
 
-         Vector3D height = heightAfterSeconds(initialPosition, initialVelocity, seconds * i, simulationSession.getGravity().getZ());
-      
-//         System.out.println("Loop: " + i + " Number of seconds: " + seconds * i);
-//         System.out.println("Joint Pose " + floatingRootJoint.getJointPose().getX() + " " + floatingRootJoint.getJointPose().getY() + " " + floatingRootJoint.getJointPose().getZ());
-//         System.out.println("Calc Pose  " + height.getX() + " " + height.getY() + " " +  height.getZ());
-//         System.out.println("Diff in Z " + (floatingRootJoint.getJointPose().getZ() - height.getZ()));
+         Vector3D height = heightAfterSeconds(initialPosition, initialVelocity, dt * i, simulationSession.getGravity().getZ());
 
-         System.out.println(i + ", " + floatingRootJoint.getJointPose().getZ() + ", " + height.getZ() + ", " + (floatingRootJoint.getJointPose().getZ() - height.getZ()));
-
-         assertEquals(floatingRootJoint.getJointPose().getX(), height.getX(), EPSILON);
-         assertEquals(floatingRootJoint.getJointPose().getY(), height.getY(), EPSILON);
-//         assertEquals(floatingRootJoint.getJointPose().getZ(), height.getZ(), 1.0);
+         assertEquals(floatingRootJoint.getJointPose().getX(), height.getX(), EPSILON, "X failed at iteration = " + i);
+         assertEquals(floatingRootJoint.getJointPose().getY(), height.getY(), EPSILON, "Y failed at iteration = " + i);
+         assertEquals(floatingRootJoint.getJointPose().getZ(), height.getZ(), 0.1, "Z failed at iteration = " + i);
          
          //orbital energy should remain constant
          if (orbitalEnergy == 0)
-            orbitalEnergy = simulationSession.getRootRegistry().findVariable("sphere1OrbitalEnergy").getValueAsDouble();
-//         assertEquals(simulationSession.getRootRegistry().findVariable("sphere1OrbitalEnergy").getValueAsDouble(), orbitalEnergy, 0.1);
+            orbitalEnergy = simulationSession.getRootRegistry().findVariable(name + "OrbitalEnergy").getValueAsDouble();
+         assertEquals(simulationSession.getRootRegistry().findVariable(name + "OrbitalEnergy").getValueAsDouble(), orbitalEnergy, 0.1, "Orbital Energy failed at iteration = " + i);
       }
    }
 

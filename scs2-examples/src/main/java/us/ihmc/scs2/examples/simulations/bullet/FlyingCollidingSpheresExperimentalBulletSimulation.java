@@ -16,7 +16,6 @@ import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 
 public class FlyingCollidingSpheresExperimentalBulletSimulation
 {
@@ -56,12 +55,10 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
 
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
-      //SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory());
       simulationSession.addRobot(sphereRobot1);
       simulationSession.addRobot(sphereRobot2);
       simulationSession.submitBufferSizeRequest(245760);
       simulationSession.setBufferRecordTickPeriod(8);
-      //simulationSession.setSessionDTSeconds(0.05);
 
       SimulationEnergyStatistics.setupSimulationEnergyStatistics(simulationSession);
 
