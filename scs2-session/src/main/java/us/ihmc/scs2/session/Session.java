@@ -47,11 +47,12 @@ import us.ihmc.yoVariables.variable.YoVariable;
  */
 public abstract class Session
 {
-   private static final int DEFAULT_INITIAL_BUFFER_SIZE = 8192;
-   private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = 1;
-   private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = false;
-   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = 2.0;
-   private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = (long) (1.0 / 30.0 * 1.0e9);
+   private static final int DEFAULT_INITIAL_BUFFER_SIZE = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.initialsize", 8192);
+   private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.recordtickperiod", 1);
+   private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = SessionPropertiesHelper.loadBooleanProperty("scs2.session.runrealtime", false);
+   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 2.0);
+   private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = SessionPropertiesHelper.loadLongProperty("scs2.session.buffer.publishperiod",
+                                                                                                      (long) (1.0 / 30.0 * 1.0e9));
 
    /** Name of the root registry for any session. */
    public static final String ROOT_REGISTRY_NAME = "root";
@@ -157,7 +158,7 @@ public abstract class Session
     */
    private final AtomicInteger bufferRecordTickPeriod = new AtomicInteger(DEFAULT_BUFFER_RECORD_TICK_PERIOD);
    /**
-    * Map from one session tick to the time increment in the data.
+    * Map from one session run tick to the time increment in the data.
     * <p>
     * When simulating, this corresponds to the simulation DT for instance.
     * </p>
@@ -1857,7 +1858,7 @@ public abstract class Session
    /**
     * The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data.
     * 
-    * @return real-time factor used for the playbakc.
+    * @return real-time factor used for the playback.
     */
    public double getPlaybackRealTimeRate()
    {

@@ -436,6 +436,13 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
+      public void setPlaybackRealTimeRate(double realTimeRate)
+      {
+         SimulationSession.this.submitPlaybackRealTimeRate(realTimeRate);
+      }
+
+      /** {@inheritDoc} */
+      @Override
       public void simulate(double duration)
       {
          if (getActiveMode() == SessionMode.RUNNING)
