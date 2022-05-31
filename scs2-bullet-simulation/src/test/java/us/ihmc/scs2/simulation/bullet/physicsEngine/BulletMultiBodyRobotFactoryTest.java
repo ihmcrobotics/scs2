@@ -188,8 +188,7 @@ public class BulletMultiBodyRobotFactoryTest
       assertEquals(btMultibody.getBaseMass(), 9.609f);
       assertEquals(btMultibody.getLinkMass(0), 2.27f);
       
-      
-//      assertBulletMultiBodyRobotCreatedCorrectly(robot, bulletMultiBodyRobot, globalMultiBodyParameters, globalMultiBodyJointParameters);
+     //TODO: need to add a test for MomentOfInertia after it is corrected
    }
 
    @Test
