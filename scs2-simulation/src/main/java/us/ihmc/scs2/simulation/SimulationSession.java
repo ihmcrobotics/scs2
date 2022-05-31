@@ -14,7 +14,9 @@ import java.util.function.Consumer;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.referenceFrame.interfaces.FrameVector3DReadOnly;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
@@ -43,7 +45,7 @@ public class SimulationSession extends Session
    public static final ReferenceFrame DEFAULT_INERTIAL_FRAME = ReferenceFrameTools.constructARootFrame("worldFrame");
 
    private final PhysicsEngine physicsEngine;
-   private final YoFrameVector3D gravity = new YoFrameVector3D("gravity", ReferenceFrame.getWorldFrame(), rootRegistry);
+   private final YoFrameVector3D gravity;
    private final String simulationName;
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
    private final List<Consumer<SensorMessage<CameraSensorDefinition>>> cameraDefinitionListeners = new ArrayList<>();
@@ -100,6 +102,7 @@ public class SimulationSession extends Session
 
       setSessionDTSeconds(0.0001);
       setSessionMode(SessionMode.PAUSE);
+      gravity = new YoFrameVector3D("gravity", inertialFrame, rootRegistry);
       gravity.set(0.0, 0.0, -9.81);
    }
 
@@ -584,5 +587,10 @@ public class SimulationSession extends Session
       {
          submitIncrementBufferIndexRequestAndWait(stepSize);
       }
+   }
+
+   public FrameVector3DReadOnly getGravity()
+   {
+      return gravity;
    }
 }
