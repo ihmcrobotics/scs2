@@ -133,6 +133,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
       runBulletStepSimulateTimer.start();
 
+      bulletMultiBodyDynamicsWorld.setGravity(gravity);
+
       if (hasGlobalBulletSimulationParameters.getValue())
          bulletMultiBodyDynamicsWorld.stepSimulation((float) globalBulletSimulationParameters.getTimeStamp(),
                                                      globalBulletSimulationParameters.getMaxSubSteps(),
@@ -246,7 +248,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       return globalMultiBodyParameters;
    }
-   
+
    public YoBulletMultiBodyJointParameters getGlobalBulletMultiBodyJointParameters()
    {
       return globalMultiBodyJointParameters;
@@ -257,7 +259,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       globalBulletSimulationParameters.set(bulletSimulationParameters);
       hasGlobalBulletSimulationParameters.set(true);
    }
-   
+
    public YoBulletSimulationParameters getGlobalSimulationParameters()
    {
       return globalBulletSimulationParameters;

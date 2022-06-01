@@ -14,9 +14,7 @@ import java.util.function.Consumer;
 
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.referenceFrame.interfaces.FrameVector3DReadOnly;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
@@ -589,7 +587,7 @@ public class SimulationSession extends Session
       }
    }
 
-   public FrameVector3DReadOnly getGravity()
+   public YoFrameVector3D getGravity()
    {
       return gravity;
    }
