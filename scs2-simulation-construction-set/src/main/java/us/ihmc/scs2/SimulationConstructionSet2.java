@@ -16,6 +16,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
@@ -31,7 +32,6 @@ import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
 import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
-import us.ihmc.scs2.simulation.physicsEngine.contactPointBased.ContactPointBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoNamespace;
@@ -39,10 +39,19 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+/**
+ * Convenience class for creating a simulation environment with a JavaFX GUI.
+ * 
+ * @author Sylvain Bertrand
+ */
 public class SimulationConstructionSet2 implements YoVariableHolder, SimulationSessionControls, SessionVisualizerControls
 {
    public static final ReferenceFrame inertialFrame = SimulationSession.DEFAULT_INERTIAL_FRAME;
 
+   /**
+    * Default value for {@link #visualizerEnabled}. If the system property is not set, it is
+    * {@code true} by default.
+    */
    public static final boolean DEFAULT_VISUALIZER_ENABLED = SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true)
          && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
 
@@ -58,48 +67,127 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     */
    private Boolean javaFXThreadImplicitExit = null;
 
+   /**
+    * Factory for setting up a contact point based physics engine. It is the default physics engine and
+    * is an adaptation of SCS1's physics engine.
+    * 
+    * @return the physics engine factory.
+    */
    public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory()
    {
-      return contactPointBasedPhysicsEngineFactory(null);
+      return PhysicsEngineFactory.newContactPointBasedPhysicsEngineFactory();
    }
 
-   public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory(ContactPointBasedContactParameters contactPointBasedContactParameters)
+   /**
+    * Factory for setting up a contact point based physics engine. It is the default physics engine and
+    * is an adaptation of SCS1's physics engine.
+    * 
+    * @param contactParameters the parameters to use for resolving contacts.
+    * @return the physics engine factory.
+    */
+   public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory(ContactPointBasedContactParameters contactParameters)
    {
-      return (inertialFrame, rootRegistry) ->
-      {
-         ContactPointBasedPhysicsEngine physicsEngine = new ContactPointBasedPhysicsEngine(inertialFrame, rootRegistry);
-         if (contactPointBasedContactParameters != null)
-            physicsEngine.setGroundContactParameters(contactPointBasedContactParameters);
-         return physicsEngine;
-      };
+      return PhysicsEngineFactory.newContactPointBasedPhysicsEngineFactory(contactParameters);
    }
 
+   /**
+    * Factory for setting up an impulse based physics engine. It is still at the experimental phase but
+    * can handle complex contact interactions.
+    * 
+    * @return the physics engine factory.
+    */
    public static PhysicsEngineFactory impulseBasedPhysicsEngineFactory()
    {
       return impulseBasedPhysicsEngineFactory(null);
    }
 
+   /**
+    * Factory for setting up an impulse based physics engine. It is still at the experimental phase but
+    * can handle complex contact interactions.
+    * 
+    * @param contactParameters the parameters to use for resolving contacts.
+    * @return the physics engine factory.
+    */
    public static PhysicsEngineFactory impulseBasedPhysicsEngineFactory(ContactParametersReadOnly contactParameters)
    {
       return PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters);
    }
 
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    */
+   public SimulationConstructionSet2()
+   {
+      this(Session.retrieveCallerName(), contactPointBasedPhysicsEngineFactory());
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    * 
+    * @param simulationName the name of the simulation.
+    */
    public SimulationConstructionSet2(String simulationName)
    {
       this(simulationName, contactPointBasedPhysicsEngineFactory());
    }
 
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    * 
+    * @param physicsEngineFactory the factory to use for setting the physics engine.
+    */
+   public SimulationConstructionSet2(PhysicsEngineFactory physicsEngineFactory)
+   {
+      this(Session.retrieveCallerName(), physicsEngineFactory);
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    * 
+    * @param simulationName       the name of the simulation.
+    * @param physicsEngineFactory the factory to use for setting the physics engine.
+    */
    public SimulationConstructionSet2(String simulationName, PhysicsEngineFactory physicsEngineFactory)
    {
       simulationSession = new SimulationSession(inertialFrame, simulationName, physicsEngineFactory);
       simulationSessionControls = simulationSession.getSimulationSessionControls();
    }
 
+   /**
+    * Gets the internal session.
+    * 
+    * @return the simulation session.
+    */
    public SimulationSession getSimulationSession()
    {
       return simulationSession;
    }
 
+   /**
+    * Gets the instance of the physics engine used in this simulation.
+    * 
+    * @return the physics engine.
+    */
    public PhysicsEngine getPhysicsEngine()
    {
       return simulationSession.getPhysicsEngine();
@@ -166,7 +254,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * If {@code null}, the JavaFX implicit exit flag is not modified.
     * </p>
     *
-    * @return
+    * @return the flag current value.
     * @see Platform#setImplicitExit(boolean)
     */
    public Boolean isJavaFXThreadImplicitExit()
@@ -174,45 +262,45 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       return javaFXThreadImplicitExit;
    }
 
+   /**
+    * Gets the list of robots being simulated.
+    * 
+    * @return the simulated robots.
+    */
    public List<? extends Robot> getRobots()
    {
       return getPhysicsEngine().getRobots();
    }
 
+   /**
+    * Adds a robot to this simulation.
+    * 
+    * @param robotDefinition the definition to use for creating a new robot to add to this simulation.
+    * @return the instantiated robot.
+    */
    public Robot addRobot(RobotDefinition robotDefinition)
    {
       return simulationSession.addRobot(robotDefinition);
    }
 
+   /**
+    * Adds a robot to this simulation.
+    * 
+    * @param robot the robot to add.
+    */
    public void addRobot(Robot robot)
    {
       simulationSession.addRobot(robot);
    }
 
+   /**
+    * Adds a terrain (static) object to the environment.
+    * 
+    * @param terrainObjectDefinition the definition used to create the new terrain object.
+    */
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
       simulationSession.addTerrainObject(terrainObjectDefinition);
-   }
-
-   public void addYoGraphicDefinition(YoGraphicDefinition yoGraphicDefinition)
-   {
-      simulationSession.addYoGraphicDefinition(yoGraphicDefinition);
-   }
-
-   public void addYoGraphicDefinitions(YoGraphicDefinition... yoGraphicDefinitions)
-   {
-      for (YoGraphicDefinition yoGraphicDefinition : yoGraphicDefinitions)
-      {
-         addYoGraphicDefinition(yoGraphicDefinition);
-      }
-   }
-
-   public void addYoGraphicDefinitions(Iterable<? extends YoGraphicDefinition> yoGraphicDefinitions)
-   {
-      for (YoGraphicDefinition yoGraphicDefinition : yoGraphicDefinitions)
-      {
-         addYoGraphicDefinition(yoGraphicDefinition);
-      }
    }
 
    // ------------------------------------------------------------------------------- //
@@ -239,30 +327,35 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       getRootRegistry().addChild(registry);
    }
 
+   /** {@inheritDoc} */
    @Override
    public List<YoVariable> getVariables()
    {
       return getRootRegistry().getVariables();
    }
 
+   /** {@inheritDoc} */
    @Override
    public YoVariable findVariable(String namespaceEnding, String name)
    {
       return getRootRegistry().findVariable(namespaceEnding, name);
    }
 
+   /** {@inheritDoc} */
    @Override
    public List<YoVariable> findVariables(String namespaceEnding, String name)
    {
       return getRootRegistry().findVariables(namespaceEnding, name);
    }
 
+   /** {@inheritDoc} */
    @Override
    public List<YoVariable> findVariables(YoNamespace namespace)
    {
       return getRootRegistry().findVariables(namespace);
    }
 
+   /** {@inheritDoc} */
    @Override
    public boolean hasUniqueVariable(String namespaceEnding, String name)
    {
@@ -656,6 +749,8 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    {
       if (visualizerControls != null)
          visualizerControls.addYoGraphic(yoGraphicDefinition);
+      else // It is possible that the simulation hasn't been started yet, add the graphic to the session instead.
+         simulationSession.addYoGraphicDefinition(yoGraphicDefinition);
    }
 
    /** {@inheritDoc} */

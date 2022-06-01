@@ -124,6 +124,19 @@ public interface SessionVisualizerControls
    void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
    /**
+    * Adds dynamic graphics to the 3D scene. The new graphics are added to root group.
+    * 
+    * @param yoGraphicDefinitions the definitions of the graphics to be added.
+    */
+   default void addYoGraphics(Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
+   {
+      for (YoGraphicDefinition yoGraphicDefinition : yoGraphicDefinitions)
+      {
+         addYoGraphic(yoGraphicDefinition);
+      }
+   }
+
+   /**
     * Adds a dynamic graphic to the 3D scene.
     * 
     * @param namespace           the desired namespace for the new graphic. The separator used is
@@ -145,6 +158,33 @@ public interface SessionVisualizerControls
          }
 
          addYoGraphic(yoGraphicDefinition);
+      }
+   }
+
+   /**
+    * Adds dynamic graphics to the 3D scene.
+    * 
+    * @param namespace            the desired namespace for the new graphics. The separator used is
+    *                             {@value YoGraphicTools#SEPARATOR}.
+    * @param yoGraphicDefinitions the definitions of the graphics to be added.
+    */
+   default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
+   {
+      String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
+      if (subNames == null || subNames.length == 0)
+      {
+         addYoGraphics(yoGraphicDefinitions);
+      }
+      else
+      {
+         YoGraphicGroupDefinition group = new YoGraphicGroupDefinition(subNames[subNames.length - 1], yoGraphicDefinitions);
+
+         for (int i = subNames.length - 2; i >= 0; i--)
+         {
+            group = new YoGraphicGroupDefinition(subNames[i], group);
+         }
+
+         addYoGraphic(group);
       }
    }
 
