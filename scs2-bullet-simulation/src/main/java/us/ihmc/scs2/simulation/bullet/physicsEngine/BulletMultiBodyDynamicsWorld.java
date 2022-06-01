@@ -15,6 +15,8 @@ import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
 
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+
 public class BulletMultiBodyDynamicsWorld
 {
    private final btCollisionConfiguration btCollisionConfiguration;
@@ -25,6 +27,7 @@ public class BulletMultiBodyDynamicsWorld
    private btIDebugDraw btIDebugDraw;
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
+   private final Vector3 btGravity = new Vector3();
 
    public BulletMultiBodyDynamicsWorld()
    {
@@ -37,13 +40,27 @@ public class BulletMultiBodyDynamicsWorld
                                                               btBroadphaseInterface,
                                                               btMultiBodyConstraintSolver,
                                                               btCollisionConfiguration);
-      Vector3 gravity = new Vector3(0.0f, 0.0f, -9.81f);
-      btMultiBodyDynamicsWorld.setGravity(gravity);
+   }
+
+   public void setGravity(Tuple3DReadOnly gravity)
+   {
+      btGravity.set(gravity.getX32(), gravity.getY32(), gravity.getZ32());
+      btMultiBodyDynamicsWorld.setGravity(btGravity);
    }
 
    public int stepSimulation(float timeStep, int maxSubSteps, float fixedTimeStep)
    {
       return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
+   }
+
+   public int stepSimulation(float timeStep, int maxSubSteps)
+   {
+      return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps);
+   }
+
+   public int stepSimulation(float timeStep)
+   {
+      return btMultiBodyDynamicsWorld.stepSimulation(timeStep);
    }
 
    public btMultiBodyDynamicsWorld getBtMultiBodyDynamicsWorld()

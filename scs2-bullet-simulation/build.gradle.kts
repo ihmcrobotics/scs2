@@ -44,4 +44,5 @@ mainDependencies {
 }
 
 testDependencies {
+   api("us.ihmc:scs2-session-visualizer-jfx:source")
 }
