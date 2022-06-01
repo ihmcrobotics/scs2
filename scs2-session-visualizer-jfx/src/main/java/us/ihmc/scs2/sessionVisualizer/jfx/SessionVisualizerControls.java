@@ -120,6 +120,7 @@ public interface SessionVisualizerControls
     * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
     * 
     * @param yoGraphicDefinition the definition of the graphic to be added.
+    * @see SCS1GraphicConversionTools
     */
    void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
@@ -127,6 +128,7 @@ public interface SessionVisualizerControls
     * Adds dynamic graphics to the 3D scene. The new graphics are added to root group.
     * 
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
+    * @see SCS1GraphicConversionTools
     */
    default void addYoGraphics(Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
@@ -142,6 +144,7 @@ public interface SessionVisualizerControls
     * @param namespace           the desired namespace for the new graphic. The separator used is
     *                            {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
+    * @see SCS1GraphicConversionTools
     */
    default void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
    {
@@ -167,6 +170,7 @@ public interface SessionVisualizerControls
     * @param namespace            the desired namespace for the new graphics. The separator used is
     *                             {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
+    * @see SCS1GraphicConversionTools
     */
    default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {

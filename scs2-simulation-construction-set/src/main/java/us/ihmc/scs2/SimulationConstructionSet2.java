@@ -37,6 +37,7 @@ import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
+import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 /**
@@ -301,6 +302,43 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
       simulationSession.addTerrainObject(terrainObjectDefinition);
+   }
+
+   /**
+    * Gets the variable holding the current time (in seconds) in this simulation.
+    * 
+    * @return the current time (in seconds) variable.
+    */
+   public YoDouble getTime()
+   {
+      return simulationSession.getTime();
+   }
+
+   /**
+    * Gets the inertial frame used for this simulation.
+    * <p>
+    * It is typically <b>not</b> equal to {@link ReferenceFrame#getWorldFrame()}.
+    * </p>
+    * 
+    * @return the inertial frame.
+    */
+   public ReferenceFrame getInertialFrame()
+   {
+      return simulationSession.getInertialFrame();
+   }
+
+   /**
+    * Reinitializes the physics engine.
+    * <p>
+    * Can be useful for resetting the simulation.
+    * </p>
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    */
+   public void reinitializeSimulation()
+   {
+      simulationSession.reinitializeSession();
    }
 
    // ------------------------------------------------------------------------------- //
@@ -905,5 +943,4 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       if (visualizerControls != null)
          visualizerControls.addVisualizerShutdownListener(listener);
    }
-
 }
