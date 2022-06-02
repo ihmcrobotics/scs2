@@ -295,6 +295,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    /**
+    * Adds a robots to this simulation.
+    * 
+    * @param robots the robots to add.
+    */
+   public void addRobots(Collection<? extends Robot> robots)
+   {
+      simulationSession.addRobots(robots);
+   }
+
+   /**
     * Adds a terrain (static) object to the environment.
     * 
     * @param terrainObjectDefinition the definition used to create the new terrain object.
@@ -478,6 +488,10 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * {@inheritDoc}
     * <p>
     * Starts the visualizer thread as well when called for the first and if the visualizer is enabled.
+    * </p>
+    * <p>
+    * It is recommended to call {@link #waitUntilVisualizerFullyUp()} right after starting the
+    * simulation thread.
     * </p>
     *
     * @see #setVisualizerEnabled(boolean)
