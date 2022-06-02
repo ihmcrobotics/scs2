@@ -305,6 +305,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    /**
+    * Adds terrain (static) objects to the environment.
+    * 
+    * @param terrainObjectDefinitions the definitions used to create the new terrain objects.
+    */
+   public void addTerrainObjects(Collection<? extends TerrainObjectDefinition> terrainObjectDefinitions)
+   {
+      simulationSession.addTerrainObjects(terrainObjectDefinitions);
+   }
+
+   /**
     * Gets the variable holding the current time (in seconds) in this simulation.
     * 
     * @return the current time (in seconds) variable.

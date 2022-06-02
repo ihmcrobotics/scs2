@@ -2,6 +2,7 @@ package us.ihmc.scs2.simulation;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -233,6 +234,16 @@ public class SimulationSession extends Session
    {
       checkSessionHasNotStarted();
       physicsEngine.addTerrainObject(terrainObjectDefinition);
+   }
+
+   public void addTerrainObjects(Collection<? extends TerrainObjectDefinition> terrainObjectDefinitions)
+   {
+      checkSessionHasNotStarted();
+
+      for (TerrainObjectDefinition terrainObjectDefinition : terrainObjectDefinitions)
+      {
+         physicsEngine.addTerrainObject(terrainObjectDefinition);
+      }
    }
 
    public void addYoGraphicDefinition(YoGraphicDefinition yoGraphicDefinition)
