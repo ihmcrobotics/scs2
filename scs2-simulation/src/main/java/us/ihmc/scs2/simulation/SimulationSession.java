@@ -173,6 +173,12 @@ public class SimulationSession extends Session
       physicsEngine.addRobot(robot);
    }
 
+   public void addRobots(Collection<? extends Robot> robots)
+   {
+      checkSessionHasNotStarted();
+      physicsEngine.addRobots(robots);
+   }
+
    public Robot addRobot(RobotDefinition robotDefinition)
    {
       Robot robot = new Robot(robotDefinition, inertialFrame);

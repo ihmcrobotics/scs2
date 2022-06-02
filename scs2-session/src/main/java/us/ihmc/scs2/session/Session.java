@@ -1061,7 +1061,7 @@ public abstract class Session
          return false;
       }
 
-      LogTools.info("Starting session's thread");
+      LogTools.trace("Starting session's thread");
       sessionThreadStarted = true;
       scheduleSessionTask(getActiveMode());
       return true;
