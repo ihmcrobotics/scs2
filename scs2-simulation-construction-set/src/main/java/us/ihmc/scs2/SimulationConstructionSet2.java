@@ -653,6 +653,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public void tick()
+   {
+      simulationSessionControls.tick();
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void gotoBufferIndex(int bufferIndexRequest)
    {
       simulationSessionControls.gotoBufferIndex(bufferIndexRequest);

@@ -7,6 +7,7 @@ import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -442,18 +443,19 @@ public interface SimulationSessionControls
    }
 
    /**
-    * Increments the buffer current index by {@code 1}.
-    * 
-    * @see #stepBufferIndexForward()
+    * Increments the buffer current index by {@code 1} pushing the out-point if necessary.
     */
-   default void tick()
-   {
-      stepBufferIndexForward();
-   }
+   @Deprecated
+   void tick();
 
    /**
     * Increments the buffer current index by {@code 1} and then writes the current {@code YoVariable}
     * values into the buffer.
+    * <p>
+    * When using the simulation session for visualization, prefer creating the session with
+    * {@link PhysicsEngineFactory#newDoNothingPhysicsEngineFactory()} and then update the data using
+    * {@link #simulateNow(long)} giving {@code 1}.
+    * </p>
     * <p>
     * This is a blocking request which will return only when the operation has completed.
     * </p>
@@ -461,6 +463,7 @@ public interface SimulationSessionControls
     * This request is only processed if the simulation is paused, it will be ignored otherwise.
     * </p>
     */
+   @Deprecated
    default void tickAndWrite()
    {
       if (!isPaused())
@@ -471,12 +474,14 @@ public interface SimulationSessionControls
          stopSimulationThread();
          tick();
          getBuffer().writeBuffer();
+         getBuffer().prepareLinkedBuffersForPull();
          startSimulationThread();
       }
       else
       {
          tick();
          getBuffer().writeBuffer();
+         getBuffer().prepareLinkedBuffersForPull();
       }
    }
 
@@ -484,12 +489,18 @@ public interface SimulationSessionControls
     * Writes the current {@code YoVariable} values into the buffer and then increments the buffer
     * current index by {@code 1}.
     * <p>
+    * When using the simulation session for visualization, prefer creating the session with
+    * {@link PhysicsEngineFactory#newDoNothingPhysicsEngineFactory()} and then update the data using
+    * {@link #simulateNow(long)} giving {@code 1}.
+    * </p>
+    * <p>
     * This is a blocking request which will return only when the operation has completed.
     * </p>
     * <p>
     * This request is only processed if the simulation is paused, it will be ignored otherwise.
     * </p>
     */
+   @Deprecated
    default void writeAndTick()
    {
       if (!isPaused())
@@ -500,12 +511,14 @@ public interface SimulationSessionControls
          stopSimulationThread();
          getBuffer().writeBuffer();
          tick();
+         getBuffer().prepareLinkedBuffersForPull();
          startSimulationThread();
       }
       else
       {
          getBuffer().writeBuffer();
          tick();
+         getBuffer().prepareLinkedBuffersForPull();
       }
    }
 
