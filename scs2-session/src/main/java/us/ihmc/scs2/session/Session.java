@@ -1113,7 +1113,7 @@ public abstract class Session
 
       shutdownListeners.forEach(Runnable::run);
 
-      LogTools.info("Stopped session's thread");
+      LogTools.info("Shutting down {}: {}", getClass().getSimpleName(), getSessionName());
       sessionThreadStarted = false;
 
       if (activePeriodicTask != null)

@@ -11,7 +11,6 @@ import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
@@ -1087,7 +1086,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       if (hasBeenDestroyed)
          return;
 
-      LogTools.info("Destroying simulation");
       hasBeenDestroyed = true;
 
       if (visualizerControls != null)
