@@ -13,6 +13,11 @@ public class GroundContactPointDefinition extends ExternalWrenchPointDefinition
       super();
    }
 
+   public GroundContactPointDefinition(String name)
+   {
+      super(name);
+   }
+
    public GroundContactPointDefinition(String name, Tuple3DReadOnly offsetFromJoint)
    {
       super(name, offsetFromJoint);

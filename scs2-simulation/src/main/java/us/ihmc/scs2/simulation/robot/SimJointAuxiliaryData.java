@@ -3,6 +3,7 @@ package us.ihmc.scs2.simulation.robot;
 import java.util.ArrayList;
 import java.util.List;
 
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.robot.ExternalWrenchPointDefinition;
 import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
@@ -56,11 +57,31 @@ public class SimJointAuxiliaryData
       cameraSensors.forEach(camera -> camera.update(physicsOutput));
    }
 
+   public KinematicPoint addKinematicPoint(String name)
+   {
+      return addKinematicPoint(new KinematicPointDefinition(name));
+   }
+
+   public KinematicPoint addKinematicPoint(String name, Tuple3DReadOnly offset)
+   {
+      return addKinematicPoint(new KinematicPointDefinition(name, offset));
+   }
+
    public KinematicPoint addKinematicPoint(KinematicPointDefinition definition)
    {
       KinematicPoint kinematicPoint = new KinematicPoint(definition, joint);
       kinematicPoints.add(kinematicPoint);
       return kinematicPoint;
+   }
+
+   public ExternalWrenchPoint addExternalWrenchPoint(String name)
+   {
+      return addExternalWrenchPoint(new ExternalWrenchPointDefinition(name));
+   }
+
+   public ExternalWrenchPoint addExternalWrenchPoint(String name, Tuple3DReadOnly offset)
+   {
+      return addExternalWrenchPoint(new ExternalWrenchPointDefinition(name, offset));
    }
 
    public ExternalWrenchPoint addExternalWrenchPoint(ExternalWrenchPointDefinition definition)
@@ -70,11 +91,31 @@ public class SimJointAuxiliaryData
       return externalWrenchPoint;
    }
 
+   public GroundContactPoint addGroundContactPoint(String name)
+   {
+      return addGroundContactPoint(new GroundContactPointDefinition(name));
+   }
+
+   public GroundContactPoint addGroundContactPoint(String name, Tuple3DReadOnly offset)
+   {
+      return addGroundContactPoint(new GroundContactPointDefinition(name, offset));
+   }
+
    public GroundContactPoint addGroundContactPoint(GroundContactPointDefinition definition)
    {
       GroundContactPoint groundContactPoint = new GroundContactPoint(definition, joint);
       groundContactPoints.add(groundContactPoint);
       return groundContactPoint;
+   }
+
+   public SimIMUSensor addIMUSensor(String name)
+   {
+      return addIMUSensor(new IMUSensorDefinition(name));
+   }
+
+   public SimIMUSensor addIMUSensor(String name, Tuple3DReadOnly offset)
+   {
+      return addIMUSensor(new IMUSensorDefinition(name, offset));
    }
 
    public SimIMUSensor addIMUSensor(IMUSensorDefinition definition)
@@ -84,11 +125,31 @@ public class SimJointAuxiliaryData
       return newSensor;
    }
 
+   public SimWrenchSensor addWrenchSensor(String name)
+   {
+      return addWrenchSensor(new WrenchSensorDefinition(name));
+   }
+
+   public SimWrenchSensor addWrenchSensor(String name, Tuple3DReadOnly offset)
+   {
+      return addWrenchSensor(new WrenchSensorDefinition(name, offset));
+   }
+
    public SimWrenchSensor addWrenchSensor(WrenchSensorDefinition definition)
    {
       SimWrenchSensor newSensor = new SimWrenchSensor(definition, joint);
       wrenchSensors.add(newSensor);
       return newSensor;
+   }
+
+   public SimCameraSensor addCameraSensor(String name)
+   {
+      return addCameraSensor(new CameraSensorDefinition(name));
+   }
+
+   public SimCameraSensor addCameraSensor(String name, Tuple3DReadOnly offset)
+   {
+      return addCameraSensor(new CameraSensorDefinition(name, offset));
    }
 
    public SimCameraSensor addCameraSensor(CameraSensorDefinition definition)
