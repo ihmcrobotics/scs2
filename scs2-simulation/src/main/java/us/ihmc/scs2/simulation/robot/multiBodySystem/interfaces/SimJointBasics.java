@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import org.ejml.data.DMatrix;
 
 import us.ihmc.euclid.referenceFrame.interfaces.FrameVector3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
@@ -18,6 +19,11 @@ import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
 import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
 import us.ihmc.scs2.definition.robot.KinematicPointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
+import us.ihmc.scs2.simulation.robot.sensors.SimIMUSensor;
+import us.ihmc.scs2.simulation.robot.sensors.SimWrenchSensor;
+import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
+import us.ihmc.scs2.simulation.robot.trackers.GroundContactPoint;
+import us.ihmc.scs2.simulation.robot.trackers.KinematicPoint;
 
 public interface SimJointBasics extends JointBasics, SimJointReadOnly
 {
@@ -60,29 +66,79 @@ public interface SimJointBasics extends JointBasics, SimJointReadOnly
 
    void setJointLinearDeltaVelocity(Vector3DReadOnly jointLinearDeltaVelocity);
 
-   default void addKinematicPoint(KinematicPointDefinition definition)
+   default KinematicPoint addKinematicPoint(String name)
    {
-      getAuxialiryData().addKinematicPoint(definition);
+      return getAuxialiryData().addKinematicPoint(name);
    }
 
-   default void addExternalWrenchPoint(ExternalWrenchPointDefinition definition)
+   default KinematicPoint addKinematicPoint(String name, Tuple3DReadOnly offset)
    {
-      getAuxialiryData().addExternalWrenchPoint(definition);
+      return getAuxialiryData().addKinematicPoint(name, offset);
    }
 
-   default void addGroundContactPoint(GroundContactPointDefinition definition)
+   default KinematicPoint addKinematicPoint(KinematicPointDefinition definition)
    {
-      getAuxialiryData().addGroundContactPoint(definition);
+      return getAuxialiryData().addKinematicPoint(definition);
    }
 
-   default void addIMUSensor(IMUSensorDefinition definition)
+   default ExternalWrenchPoint addExternalWrenchPoint(String name)
    {
-      getAuxialiryData().addIMUSensor(definition);
+      return getAuxialiryData().addExternalWrenchPoint(name);
    }
 
-   default void addWrenchSensor(WrenchSensorDefinition definition)
+   default ExternalWrenchPoint addExternalWrenchPoint(String name, Tuple3DReadOnly offset)
    {
-      getAuxialiryData().addWrenchSensor(definition);
+      return getAuxialiryData().addExternalWrenchPoint(name, offset);
+   }
+
+   default ExternalWrenchPoint addExternalWrenchPoint(ExternalWrenchPointDefinition definition)
+   {
+      return getAuxialiryData().addExternalWrenchPoint(definition);
+   }
+
+   default GroundContactPoint addGroundContactPoint(String name)
+   {
+      return getAuxialiryData().addGroundContactPoint(name);
+   }
+
+   default GroundContactPoint addGroundContactPoint(String name, Tuple3DReadOnly offset)
+   {
+      return getAuxialiryData().addGroundContactPoint(name, offset);
+   }
+
+   default GroundContactPoint addGroundContactPoint(GroundContactPointDefinition definition)
+   {
+      return getAuxialiryData().addGroundContactPoint(definition);
+   }
+
+   default SimIMUSensor addIMUSensor(String name)
+   {
+      return getAuxialiryData().addIMUSensor(name);
+   }
+
+   default SimIMUSensor addIMUSensor(String name, Tuple3DReadOnly offset)
+   {
+      return getAuxialiryData().addIMUSensor(name, offset);
+   }
+
+   default SimIMUSensor addIMUSensor(IMUSensorDefinition definition)
+   {
+      return getAuxialiryData().addIMUSensor(definition);
+   }
+
+   default SimWrenchSensor addWrenchSensor(String name)
+   {
+      return getAuxialiryData().addWrenchSensor(name);
+   }
+
+   default SimWrenchSensor addWrenchSensor(String name, Tuple3DReadOnly offset)
+   {
+      return getAuxialiryData().addWrenchSensor(name, offset);
+   }
+
+   default SimWrenchSensor addWrenchSensor(WrenchSensorDefinition definition)
+   {
+      return getAuxialiryData().addWrenchSensor(definition);
    }
 
    @Override
