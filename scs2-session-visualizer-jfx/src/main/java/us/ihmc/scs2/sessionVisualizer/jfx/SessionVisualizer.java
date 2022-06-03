@@ -26,7 +26,6 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import us.ihmc.log.LogTools;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
@@ -197,7 +196,6 @@ public class SessionVisualizer
 
       hasTerminated = true;
 
-      LogTools.info("Simulation GUI is going down.");
       try
       {
          viewport3DManager.dispose();
