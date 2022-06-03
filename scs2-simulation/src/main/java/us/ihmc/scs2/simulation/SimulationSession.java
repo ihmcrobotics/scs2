@@ -723,6 +723,24 @@ public class SimulationSession extends Session
          SimulationSession.this.setBufferRecordTickPeriod(bufferRecordTickPeriod);
       }
 
+      @Override
+      public void tick()
+      {
+         if (!isPaused())
+            return;
+
+         if (isSimulationThreadRunning())
+         {
+            stopSimulationThread();
+            getBuffer().incrementBufferIndex(true);
+            startSessionThread();
+         }
+         else
+         {
+            getBuffer().incrementBufferIndex(true);
+         }
+      }
+
       /** {@inheritDoc} */
       @Override
       public void gotoBufferIndex(int bufferIndexRequest)
