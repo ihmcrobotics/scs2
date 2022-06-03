@@ -1061,7 +1061,12 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void waitUntilVisualizerDown()
    {
       if (visualizerControls != null)
+      {
+         // We only going to use the visualizer, so let's make sure the simulation thread is running first.
+         if (!simulationSessionControls.isSimulationThreadRunning())
+            simulationSessionControls.startSimulationThread();
          visualizerControls.waitUntilVisualizerDown();
+      }
    }
 
    // TODO Missing setupGraph, setupGraphGroup
