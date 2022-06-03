@@ -106,6 +106,11 @@ public interface SimulationSessionControls
     * {@link #startSimulationThread()}.
     * </p>
     * <p>
+    * Stopping the simulation thread is preferred for improving the performance of
+    * {@link #simulateNow(long)}. However, the simulation thread has to be running for the visualizer
+    * to function normally.
+    * </p>
+    * <p>
     * This is a blocking operation and will return only when done.
     * </p>
     * 
@@ -217,6 +222,10 @@ public interface SimulationSessionControls
     * visualizer. When running the simulation is requested, the current buffer index is first moved to
     * the out-point where the {@code YoVariable}s are reloaded before resuming the simulation. This
     * allows to resume the simulation as if the user had never paused.
+    * </p>
+    * <p>
+    * For best performance, prefer stopping the simulation thread if you need to run single ticks many
+    * times. You can restart the simulation thread when done.
     * </p>
     * 
     * @param duration the simulation duration in seconds.

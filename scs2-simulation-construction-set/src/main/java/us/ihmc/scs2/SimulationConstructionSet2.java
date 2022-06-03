@@ -42,6 +42,106 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 /**
  * Convenience class for creating a simulation environment with a JavaFX GUI.
+ * <p>
+ * Example for using {@code SimulationConstructionSet2} for setting up a simulation that will be
+ * controlled via the visualizer:<br>
+ * 
+ * <pre>
+ * SimulationConstructionSet2 scs = new SimulationConstructionSet2();
+ * scs.addRobot(robot);
+ * robot.addThrottledController(smartRobotController, controllerPeriodInSeconds);
+ * scs.start(true, false, false);
+ * // Set nice camera angle, there are more methods for setting up the camera.
+ * scs.setCameraFocusPosition(0.0, 0.0, 1.0);
+ * scs.setCameraPosition(8.0, 0.0, 3.0);
+ * // If you want to start simulating right away
+ * scs.simulate();
+ * // Now the visualizer is up, the user can admire the robot doing smart things, or falling over in a remarkable way.
+ * </pre>
+ * </p>
+ * <p>
+ * Example for using {@code SimulationConstructionSet2} for doing an end-to-end simulation test
+ * environment:<br>
+ * 
+ * <pre>
+ * SimulationConstructionSet2 scs = new SimulationConstructionSet2();
+ * scs.addRobot(robot);
+ * robot.addThrottledController(controllerToTestBehavior, controllerPeriodInSeconds);
+ * scs.start(true, true, true);
+ * // Set nice camera angle, there are more methods for setting up the camera.
+ * scs.setCameraFocusPosition(0.0, 0.0, 1.0);
+ * scs.setCameraPosition(8.0, 0.0, 3.0);
+ * 
+ * for (int i = 0; i < numberOfChecks; i++)
+ * {
+ *    // Provide some input to the controller to test
+ *    boolean successfullySimulated = scs.simulateNow(duration); // Simulate for the given duration and return when done
+ *    assertTrue(successfullySimulated); // We check that the simulation completed normally without any exceptions.
+ *    assert (robotIsWhereItShouldBe); // Perform some assertions
+ * 
+ *    // Provide some more input to the controller to test
+ *    MutableObject<Throwable> robotDidNotDoSoGood = new MutableObject<Throwable>(null);
+ *    scs.addSimulationThrowableListener(thrown -> robotDidNotDoSoGood.setValue(thrown)); // Allows to save any exception being thrown by a controller for instance.
+ *    scs.addExternalTerminalCondition(() -> robotMadeItBeforeSimulationDuration); // This allows to terminate the next simulation early if the robot made it in advance.
+ * 
+ *    successfullySimulated = scs.simulateNow(forSomeMoreTime);
+ * 
+ *    assertTrue(successfullySimulated);
+ *    assertNull(robotDidNotDoSoGood.getValue); // We can check that no exception has been thrown for instance (it is redundant with successfullySimulated though).
+ * }
+ * 
+ * // Make sure we pause before resuming the thread.
+ * scs.pause();
+ * // Re-start the simulation thread so the visualizer is functional.
+ * scs.startSimulationThread();
+ * 
+ * if (keepVisualizerUp)
+ * { // This will cause this thread to pause and resume only once the user closes the visualizer.
+ *    scs.waitUntilVisualizerDown();
+ * }
+ * 
+ * // On shutdown, the visualizer already does that, so just being extra cautious here.
+ * scs.shutdownSession();
+ * // Free up that memory
+ * scs = null;
+ * </pre>
+ * </p>
+ * <p>
+ * Example for using {@code SimulationConstructionSet2} for visualization:<br>
+ * 
+ * <pre>
+ * // Use the do-nothing physics engine, that way you have 100% control on what the robot is doing.
+ * SimulationConstructionSet2 scs = new SimulationConstructionSet2(SimulationConstructionSet2.doNothingPhysicsEngine());
+ * scs.addRobot(theRobotToVisualize);
+ * scs.start(true, true, true);
+ * // Set nice camera angle, there are more methods for setting up the camera.
+ * scs.setCameraFocusPosition(0.0, 0.0, 1.0);
+ * scs.setCameraPosition(8.0, 0.0, 3.0);
+ * 
+ * for (int i = 0; i < numberOfThingsToDo; i++)
+ * {
+ *    // Do smart calculations
+ *    theRobotToVisualize.getOneDoFJoint("aJoint").setQ(theAngleComputed);
+ *    // This will record the data in the buffer and also let the visualizer know to update its graphics.
+ *    scs.simulateNow(1);
+ * }
+ * 
+ * // Make sure we pause before resuming the thread.
+ * scs.pause();
+ * // Re-start the simulation thread so the visualizer is functional.
+ * scs.startSimulationThread();
+ * 
+ * if (keepVisualizerUp)
+ * { // This will cause this thread to pause and resume only once the user closes the visualizer.
+ *    scs.waitUntilVisualizerDown();
+ * }
+ * 
+ * // On shutdown, the visualizer already does that, so just being extra cautious here.
+ * scs.shutdownSession();
+ * // Free up that memory
+ * scs = null;
+ * </pre>
+ * </p>
  * 
  * @author Sylvain Bertrand
  */
@@ -337,6 +437,35 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addTerrainObjects(Collection<? extends TerrainObjectDefinition> terrainObjectDefinitions)
    {
       simulationSession.addTerrainObjects(terrainObjectDefinitions);
+   }
+
+   /**
+    * Convenience method for start the simulation environment and configuring a couple things at once.
+    * 
+    * @param waitUntilVisualizerFullyUp setting it to {@code true} is recommended, especially if
+    *                                   {@link ReferenceFrame}s or {@link YoVariable}s are to be added
+    *                                   right after calling this method. This will let the visualizer
+    *                                   initialize before returning.
+    * @param stopSimulationThread       setting it to {@code true} is recommended if you are planning
+    *                                   on calling {@link #simulateNow(long)} many times, for
+    *                                   performance reason. You will need to restart the simulation
+    *                                   thread for the visualizer to be operational.
+    * @param disableJavaFXImplicitExit  in the case SCS2 will be closed and then reopened in the same
+    *                                   JVM, the JavaFX implicit exit has to be disabled or SCS2 will
+    *                                   throw an exception when trying to re-open it.
+    */
+   public void start(boolean waitUntilVisualizerFullyUp, boolean stopSimulationThread, boolean disableJavaFXImplicitExit)
+   {
+      if (disableJavaFXImplicitExit)
+         setJavaFXThreadImplicitExit(false);
+
+      startSimulationThread();
+
+      if (waitUntilVisualizerFullyUp)
+         waitUntilVisualizerFullyUp();
+
+      if (stopSimulationThread)
+         stopSimulationThread();
    }
 
    /**
