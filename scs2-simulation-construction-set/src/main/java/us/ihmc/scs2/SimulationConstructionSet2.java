@@ -33,6 +33,7 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
@@ -161,6 +162,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    private SessionVisualizerControls visualizerControls;
 
    private boolean visualizerEnabled = DEFAULT_VISUALIZER_ENABLED;
+   private boolean shutdownSessionOnVisualizerClose = true;
    /**
     * This is initialized to {@code null} such that the JavaFX flag is not set by default, allowing the
     * user to set it from outside.
@@ -329,6 +331,26 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    /**
+    * Specifies whether the closing visualizer should result in shutting down the simulation as well.
+    * <p>
+    * When {@code false}, the visualizer can be closed and then restarted via
+    * {@link #startSimulationThread()}.
+    * </p>
+    * 
+    * @param shutdownSessionOnVisualizerClose whether the visualizer should shut down the simulation
+    *                                         when being closed. Default value {@code true}.
+    */
+   public void setShutdownSessionOnVisualizerClose(boolean shutdownSessionOnVisualizerClose)
+   {
+      this.shutdownSessionOnVisualizerClose = shutdownSessionOnVisualizerClose;
+   }
+
+   public boolean isShutdownSessionOnVisualizerClose()
+   {
+      return shutdownSessionOnVisualizerClose;
+   }
+
+   /**
     * Sets the JavaFX implicit exit flag.
     * <p>
     * If {@code true}, the main JavaFX thread will terminate when closing the last window. Once the
@@ -491,6 +513,19 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    /**
+    * Gets the internal reference to the gravitational acceleration.
+    * <p>
+    * This vector can be modified to change gravity for this simulation.
+    * </p>
+    * 
+    * @return the gravity vector used for this simulation. Default value is {@code (0, 0, -9.81)}.
+    */
+   public YoFrameVector3D getGravity()
+   {
+      return simulationSession.getGravity();
+   }
+
+   /**
     * Reinitializes the physics engine.
     * <p>
     * Can be useful for resetting the simulation.
@@ -642,12 +677,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    @Override
    public boolean startSimulationThread()
    {
+      if (simulationSession.isSessionShutdown())
+         return false;
+
       boolean started = simulationSession.startSessionThread();
 
       if (visualizerEnabled && visualizerControls == null)
       {
-         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, javaFXThreadImplicitExit);
-         visualizerControls.addVisualizerShutdownListener(this::shutdownSession);
+         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, javaFXThreadImplicitExit, shutdownSessionOnVisualizerClose);
+         if (shutdownSessionOnVisualizerClose)
+            visualizerControls.addVisualizerShutdownListener(this::shutdownSession);
       }
       return started;
    }
@@ -939,6 +978,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName);
    }
 
+   @Override
+   public void showOverheadPlotter2D(boolean show)
+   {
+      if (visualizerControls != null)
+         visualizerControls.showOverheadPlotter2D(show);
+   }
+
    /** {@inheritDoc} */
    @Override
    public void addStaticVisual(VisualDefinition visualDefinition)
@@ -1066,6 +1112,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          if (!simulationSessionControls.isSimulationThreadRunning())
             simulationSessionControls.startSimulationThread();
          visualizerControls.waitUntilVisualizerDown();
+         visualizerControls = null;
       }
    }
 

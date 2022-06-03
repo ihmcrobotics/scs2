@@ -149,7 +149,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       mainWindow.setTitle(session.getSessionName());
    }
 
-   public void stopSession()
+   public void stopSession(boolean shutdownSession)
    {
       if (activeSessionProperty.get() == null)
          return;
@@ -171,7 +171,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
       mainWindow.setTitle(SessionVisualizer.NO_ACTIVE_SESSION_TITLE);
 
-      messager.submitMessage(topics.getSessionCurrentState(), SessionState.INACTIVE);
+      if (shutdownSession)
+         messager.submitMessage(topics.getSessionCurrentState(), SessionState.INACTIVE);
    }
 
    public boolean hasActiveSession()
