@@ -41,6 +41,16 @@ public class RobotControllerManager
    }
 
    /**
+    * Gets the internal list of controllers.
+    * 
+    * @return the controllers.
+    */
+   public List<Controller> getControllers()
+   {
+      return controllers;
+   }
+
+   /**
     * Adds a controller to be run with the robot owning this manager.
     * <p>
     * The controller will be updated every session run tick, e.g. simulation tick.
