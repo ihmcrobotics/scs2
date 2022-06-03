@@ -115,6 +115,21 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    /**
+    * Factory for setting up a physics engine that does close to nothing.
+    * <p>
+    * This is convenient for using the simulation environment for visualization. The physics engine
+    * will still run the controllers attached to the robot and apply their output, but that's it. The
+    * robot sensors are not updated.
+    * </p>
+    * 
+    * @return the physics engine factory.
+    */
+   public static PhysicsEngineFactory doNothingPhysicsEngine()
+   {
+      return PhysicsEngineFactory.newDoNothingPhysicsEngineFactory();
+   }
+
+   /**
     * Creates a new simulation environment.
     * <ul>
     * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.

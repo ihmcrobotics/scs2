@@ -69,4 +69,9 @@ public interface PhysicsEngineFactory
          return physicsEngine;
       };
    }
+
+   static PhysicsEngineFactory newDoNothingPhysicsEngineFactory()
+   {
+      return (frame, rootRegistry) -> new DoNothingPhysicsEngine(frame, rootRegistry);
+   }
 }
