@@ -75,6 +75,13 @@ public interface SessionVisualizerControls
    void requestCameraRigidBodyTracking(String robotName, String rigidBodyName);
 
    /**
+    * Requests to show the overhead view next to the 3D viewport where 2D graphics are displayed.
+    * 
+    * @param show whether the plotter 2D should be visible or not.
+    */
+   void showOverheadPlotter2D(boolean show);
+
+   /**
     * Adds a static graphic to the 3D scene.
     * 
     * @param visualDefinition the visual to be added to the 3D scene.
@@ -332,7 +339,7 @@ public interface SessionVisualizerControls
    /**
     * Requests an immediate shutdown of the visualizer and the session.
     * <p>
-    * No confirmation dialog will eb shown and the GUI configuration is not saved.
+    * No confirmation dialog will be shown and the GUI configuration is not saved.
     * </p>
     * <p>
     * After shutdown, the visualizer and the session become useless.

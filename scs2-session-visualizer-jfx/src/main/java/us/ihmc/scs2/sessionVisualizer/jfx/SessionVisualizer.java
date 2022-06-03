@@ -54,6 +54,8 @@ public class SessionVisualizer
       YoGraphicFXControllerTools.loadResources();
    }
 
+   private final boolean shutdownSessionOnClose;
+
    private final SessionVisualizerToolkit toolkit;
    private final MultiSessionManager multiSessionManager;
 
@@ -70,9 +72,10 @@ public class SessionVisualizer
 
    private boolean hasTerminated = false;
 
-   public SessionVisualizer(Stage primaryStage) throws Exception
+   public SessionVisualizer(Stage primaryStage, boolean shutdownSessionOnClose) throws Exception
    {
       this.primaryStage = primaryStage;
+      this.shutdownSessionOnClose = shutdownSessionOnClose;
       // Configuring listener first so this is the first one getting called. Allows to cancel the close request.
       primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, this::stop);
       SessionVisualizerIOTools.addSCSIconToWindow(primaryStage);
@@ -199,7 +202,7 @@ public class SessionVisualizer
       try
       {
          viewport3DManager.dispose();
-         multiSessionManager.stopSession(saveConfiguration);
+         multiSessionManager.stopSession(saveConfiguration, shutdownSessionOnClose);
          multiSessionManager.shutdown();
          mainWindowController.stop();
          toolkit.stop();
@@ -249,6 +252,11 @@ public class SessionVisualizer
 
    public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit)
    {
+      return startSessionVisualizer(session, javaFXThreadImplicitExit, true);
+   }
+
+   public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
+   {
       if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
          Platform.setImplicitExit(javaFXThreadImplicitExit);
 
@@ -260,7 +268,7 @@ public class SessionVisualizer
       {
          try
          {
-            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage());
+            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose);
             sessionVisualizerControls.setValue(sessionVisualizer.sessionVisualizerControls);
             if (session != null)
                sessionVisualizer.startSession(session);
@@ -345,8 +353,17 @@ public class SessionVisualizer
       @Override
       public void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
       {
+         checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
          submitMessage(getTopics().getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
+      }
+
+      @Override
+      public void showOverheadPlotter2D(boolean show)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getShowOverheadPlotter(), true);
       }
 
       @Override
