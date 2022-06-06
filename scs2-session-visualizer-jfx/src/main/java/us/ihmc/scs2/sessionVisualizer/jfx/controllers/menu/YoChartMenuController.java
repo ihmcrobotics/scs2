@@ -8,15 +8,17 @@ import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
 
-public class YoChartMenuController
+public class YoChartMenuController implements VisualizerController
 {
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private Window owner;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       topics = toolkit.getTopics();
@@ -47,6 +49,6 @@ public class YoChartMenuController
    @FXML
    public void newChartWindow()
    {
-      messager.submitMessage(topics.getOpenWindowRequest(), new Pair<>(SecondaryWindowManager.SECONDARY_CHART_WINDOW_TYPE, null));
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.chartWindow(owner));
    }
 }
