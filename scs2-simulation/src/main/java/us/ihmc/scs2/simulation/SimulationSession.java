@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
@@ -590,5 +589,10 @@ public class SimulationSession extends Session
    public YoFrameVector3D getGravity()
    {
       return gravity;
+   }
+   
+   public void setGravity(double x, double y, double z)
+   {
+      this.gravity.set(x, y, z);
    }
 }
