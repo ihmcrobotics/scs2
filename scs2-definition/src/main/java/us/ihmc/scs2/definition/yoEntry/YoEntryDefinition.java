@@ -7,6 +7,21 @@ public class YoEntryDefinition
    private String compositeType;
    private String compositeFullname;
 
+   public YoEntryDefinition()
+   {
+   }
+
+   public YoEntryDefinition(String compositeFullname)
+   {
+      this.compositeFullname = compositeFullname;
+   }
+
+   public YoEntryDefinition(String compositeType, String compositeFullname)
+   {
+      this.compositeType = compositeType;
+      this.compositeFullname = compositeFullname;
+   }
+
    @XmlElement
    public void setCompositeType(String compositeType)
    {

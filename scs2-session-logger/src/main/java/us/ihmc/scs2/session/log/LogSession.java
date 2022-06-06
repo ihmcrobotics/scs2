@@ -21,6 +21,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
 
 public class LogSession extends Session
@@ -83,12 +84,26 @@ public class LogSession extends Session
    }
 
    @Override
+   protected void initializeSession()
+   {
+      // We read the very first frame of the log.
+      logDataReader.read();
+
+      if (robotStateUpdater != null)
+         robotStateUpdater.run();
+   }
+
+   @Override
    protected void initializeRunTick()
    {
       if (firstRunTick)
       {
-         if (sharedBuffer.getProperties().getCurrentIndex() != sharedBuffer.getProperties().getOutPoint())
-            sharedBuffer.setInPoint(sharedBuffer.getProperties().getCurrentIndex());
+         YoBufferPropertiesReadOnly properties = sharedBuffer.getProperties();
+
+         if (properties.getCurrentIndex() != properties.getOutPoint())
+            sharedBuffer.setInPoint(properties.getCurrentIndex());
+         else if (!firstLogPositionRequest) // That means the user has scrubbed through the data.
+            sharedBuffer.setInPoint(properties.getCurrentIndex());
          sharedBuffer.incrementBufferIndex(true);
          nextRunBufferRecordTickCounter = 0;
          firstRunTick = false;
@@ -114,9 +129,14 @@ public class LogSession extends Session
       return logDataReader.getCurrentRobotTime();
    }
 
+   private boolean firstLogPositionRequest = true;
+
    @Override
    public void pauseTick()
    {
+      if (firstPauseTick)
+         firstLogPositionRequest = true;
+
       int logPosition = logPositionRequest.getAndSet(-1);
 
       if (logPosition == -1)
@@ -133,7 +153,11 @@ public class LogSession extends Session
          if (robotStateUpdater != null)
             robotStateUpdater.run();
 
-         sharedBuffer.incrementBufferIndex(true);
+         if (firstLogPositionRequest)
+         { // We increment only once when starting to scrub through the data to not write on the last data point.
+            sharedBuffer.incrementBufferIndex(true);
+            firstLogPositionRequest = false;
+         }
          sharedBuffer.writeBuffer();
          sharedBuffer.prepareLinkedBuffersForPull();
          publishBufferProperties(sharedBuffer.getProperties());

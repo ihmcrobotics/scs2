@@ -8,6 +8,7 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
@@ -17,6 +18,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -32,7 +34,7 @@ public class SessionVisualizerTopics
    private Topic<Object> forgetRecordable;
    private Topic<Boolean> showAdvancedControls;
    private Topic<Boolean> showOverheadPlotter;
-   private Topic<Pair<String, Object>> openWindowRequest;
+   private Topic<NewWindowRequest> openWindowRequest;
    private Topic<Boolean> sessionVisualizerCloseRequest;
 
    private Topic<Object> toggleKeyFrame, requestCurrentKeyFrames;
@@ -58,6 +60,8 @@ public class SessionVisualizerTopics
    private Topic<Pair<Window, File>> yoChartGroupSaveConfiguration;
    private Topic<Pair<Window, File>> yoChartGroupLoadConfiguration;
    private Topic<Pair<Window, String>> yoChartGroupName;
+
+   private Topic<YoEntryListDefinition> yoEntryListAdd;
 
    private Topic<File> yoSliderboardSaveConfiguration;
    private Topic<File> yoSliderboardLoadConfiguration;
@@ -131,6 +135,8 @@ public class SessionVisualizerTopics
       yoChartGroupSaveConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupSaveConfiguration;
       yoChartGroupLoadConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupLoadConfiguration;
       yoChartGroupName = SessionVisualizerMessagerAPI.YoChart.YoChartGroupName;
+
+      yoEntryListAdd = SessionVisualizerMessagerAPI.YoEntry.YoEntryListAdd;
 
       yoSliderboardSaveConfiguration = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSaveConfiguration;
       yoSliderboardLoadConfiguration = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardLoadConfiguration;
@@ -209,7 +215,7 @@ public class SessionVisualizerTopics
       return showOverheadPlotter;
    }
 
-   public Topic<Pair<String, Object>> getOpenWindowRequest()
+   public Topic<NewWindowRequest> getOpenWindowRequest()
    {
       return openWindowRequest;
    }
@@ -273,7 +279,7 @@ public class SessionVisualizerTopics
    {
       return yoCompositeRefreshAll;
    }
-   
+
    public Topic<Boolean> getShowSCS2YoVariables()
    {
       return showSCS2YoVariables;
@@ -327,6 +333,11 @@ public class SessionVisualizerTopics
    public Topic<Pair<Window, File>> getYoChartGroupSaveConfiguration()
    {
       return yoChartGroupSaveConfiguration;
+   }
+
+   public Topic<YoEntryListDefinition> getYoEntryListAdd()
+   {
+      return yoEntryListAdd;
    }
 
    public Topic<File> getYoSliderboardLoadConfiguration()

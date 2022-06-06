@@ -12,9 +12,11 @@ import us.ihmc.messager.MessagerAPIFactory.MessagerAPI;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.MessagerAPIFactory.TopicTheme;
 import us.ihmc.messager.MessagerAPIFactory.TypedTopicTheme;
+import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 
 public class SessionVisualizerMessagerAPI
 {
@@ -50,6 +52,7 @@ public class SessionVisualizerMessagerAPI
    private static final TopicTheme Name = apiFactory.createTopicTheme("name");
    private static final TopicTheme Precision = apiFactory.createTopicTheme("Precision");
    private static final TopicTheme Disable = apiFactory.createTopicTheme("Disable");
+   private static final TopicTheme Add = apiFactory.createTopicTheme("add");
 
    public static final Topic<Boolean> DisableUserControls = APIRoot.child(User).child(Controls).topic(Disable);
    public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = APIRoot.child(Video).topic(Request);
@@ -59,7 +62,7 @@ public class SessionVisualizerMessagerAPI
    public static final Topic<Object> ForgetRecordable = APIRoot.child(Forget).topic(Recordable);
    public static final Topic<Boolean> ShowAdvancedControls = APIRoot.child(Controls).child(Advanced).topic(Show);
    public static final Topic<Boolean> ShowOverheadPlotter = APIRoot.child(OverheadPlotter).topic(Show);
-   public static final Topic<Pair<String, Object>> OpenWindowRequest = APIRoot.topic(Open);
+   public static final Topic<NewWindowRequest> OpenWindowRequest = APIRoot.topic(Open);
    public static final Topic<Boolean> SessionVisualizerCloseRequest = APIRoot.topic(Close);
    public static final Topic<Integer> ControlsNumberPrecision = APIRoot.child(Controls).topic(Precision); // TODO Not the greatest topic name, nor the best place.
    public static final Topic<File> SessionVisualizerConfigurationLoadRequest = APIRoot.child(Configuration).topic(Load);
@@ -73,6 +76,7 @@ public class SessionVisualizerMessagerAPI
       new YoSearch();
       new YoGraphic();
       new YoChart();
+      new YoEntry();
       new YoSliderboard();
       new SessionAPI();
    }
@@ -113,8 +117,6 @@ public class SessionVisualizerMessagerAPI
    {
       private static final CategoryTheme YoGraphic = apiFactory.createCategoryTheme("YoGraphic");
 
-      private static final TopicTheme Add = apiFactory.createTopicTheme("add");
-
       public static final Topic<File> YoGraphicSaveRequest = APIRoot.child(YoGraphic).topic(Save);
       public static final Topic<File> YoGraphicLoadRequest = APIRoot.child(YoGraphic).topic(Load);
 
@@ -138,6 +140,14 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<Window, File>> YoChartGroupSaveConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Save);
       public static final Topic<Pair<Window, File>> YoChartGroupLoadConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Load);
       public static final Topic<Pair<Window, String>> YoChartGroupName = APIRoot.child(YoChart).child(Group).topic(Name);
+   }
+
+   public static class YoEntry
+   {
+      private static final CategoryTheme YoEntry = apiFactory.createCategoryTheme("YoEntry");
+      private static final CategoryTheme List = apiFactory.createCategoryTheme("List");
+
+      public static final Topic<YoEntryListDefinition> YoEntryListAdd = APIRoot.child(YoEntry).child(List).topic(Add);
    }
 
    public static class YoSliderboard
