@@ -1,5 +1,6 @@
 package us.ihmc.scs2.simulation.physicsEngine;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +25,14 @@ public interface PhysicsEngine
       Robot robot = new Robot(robotDefinition, getInertialFrame());
       addRobot(robot);
       return robot;
+   }
+
+   default void addRobots(Collection<? extends Robot> robots)
+   {
+      for (Robot robot : robots)
+      {
+         addRobot(robot);
+      }
    }
 
    void addRobot(Robot robot);

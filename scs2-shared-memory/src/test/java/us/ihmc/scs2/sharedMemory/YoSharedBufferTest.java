@@ -2,18 +2,22 @@ package us.ihmc.scs2.sharedMemory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.jupiter.api.Test;
 
 import us.ihmc.commons.RandomNumbers;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryRandomTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.registry.YoVariableHolder;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoEnum;
@@ -197,6 +201,94 @@ public class YoSharedBufferTest
 
          assertEquals(newOutPoint, properties.getOutPoint());
          assertFalse(yoSharedBuffer.setOutPoint(newOutPoint));
+      }
+   }
+
+   @Test
+   public void testApplyProcessor()
+   {
+      Random random = new Random(2348273);
+
+      for (int i = 0; i < ITERATIONS; i++)
+      {
+         YoSharedBuffer yoSharedBuffer = SharedMemoryRandomTools.nextYoSharedBuffer(random, 2, 5);
+         YoBufferPropertiesReadOnly properties = yoSharedBuffer.getProperties();
+
+         int initialIndex = properties.getCurrentIndex();
+         List<YoVariable> variables = yoSharedBuffer.getRootRegistry().collectSubtreeVariables();
+         MutableInt processorLastIndex = new MutableInt(-1);
+
+         YoBufferProcessor processor = new YoBufferProcessor()
+         {
+            boolean initialized = false;
+            boolean forward = random.nextBoolean();
+
+            @Override
+            public void initialize(YoVariableHolder yoVariableHolder)
+            {
+               assertTrue(yoVariableHolder == yoSharedBuffer.getRootRegistry());
+               initialized = true;
+            }
+
+            @Override
+            public void process(int startIndex, int endIndex, int currentIndex)
+            {
+               assertTrue(initialized);
+               if (forward)
+               {
+                  assertEquals(startIndex, properties.getInPoint());
+                  assertEquals(endIndex, properties.getOutPoint());
+               }
+               else
+               {
+                  assertEquals(startIndex, properties.getOutPoint());
+                  assertEquals(endIndex, properties.getInPoint());
+               }
+
+               for (YoVariable variable : variables)
+               {
+                  assertVariableEqualsBufferAt(variable, yoSharedBuffer.getRegistryBuffer().findYoVariableBuffer(variable), currentIndex);
+                  variable.setValueFromDouble(0.0);
+               }
+
+               if (processorLastIndex.intValue() != -1)
+               {
+                  if (forward)
+                     assertEquals(SharedMemoryTools.increment(processorLastIndex.intValue(), 1, properties.getSize()), currentIndex);
+                  else
+                     assertEquals(SharedMemoryTools.decrement(processorLastIndex.intValue(), 1, properties.getSize()), currentIndex);
+                  assertNotEquals(startIndex, currentIndex);
+                  assertEquals(properties.getCurrentIndex(), currentIndex);
+               }
+               else
+               {
+                  assertEquals(startIndex, currentIndex);
+               }
+               processorLastIndex.setValue(currentIndex);
+            }
+
+            @Override
+            public boolean goForward()
+            {
+               return forward;
+            }
+         };
+
+         yoSharedBuffer.applyProcessor(processor);
+         assertEquals(initialIndex, properties.getCurrentIndex());
+
+         yoSharedBuffer.setCurrentIndex(properties.getInPoint());
+
+         for (int j = 0; j < properties.getActiveBufferLength(); j++)
+         {
+            yoSharedBuffer.readBuffer();
+
+            for (YoVariable variable : variables)
+            {
+               assertEquals(0.0, variable.getValueAsDouble());
+            }
+            yoSharedBuffer.incrementBufferIndex(false);
+         }
       }
    }
 
