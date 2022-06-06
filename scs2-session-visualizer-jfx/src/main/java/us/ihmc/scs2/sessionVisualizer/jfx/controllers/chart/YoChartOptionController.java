@@ -36,10 +36,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartDoubleBounds;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartMarker;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart.ChartStyle;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
-public class YoChartOptionController
+public class YoChartOptionController implements VisualizerController
 {
    public static final String UNDEFINED = "N/A";
 
@@ -59,7 +60,7 @@ public class YoChartOptionController
    public enum ChartScalingMode
    {
       AUTO, INDIVIDUAL, MANUAL
-   };
+   }
 
    private SessionVisualizerWindowToolkit toolkit;
    private Stage window;
@@ -151,6 +152,7 @@ public class YoChartOptionController
    private final InvalidationListener actualBoundsUpdater = o -> updateActualBounds();
    private final ChangeListener<Object> resizeWindowListener = (o, oldValue, newValue) -> resizeWindow();
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       this.toolkit = toolkit;

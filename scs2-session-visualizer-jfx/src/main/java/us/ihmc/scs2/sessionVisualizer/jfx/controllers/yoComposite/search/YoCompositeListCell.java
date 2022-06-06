@@ -19,6 +19,7 @@ import javafx.scene.control.Labeled;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -187,6 +188,11 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       spinner.focusedProperty().addListener((o, oldValue, newValue) ->
       {
          valueFactory.setConverter(newValue ? rawDoubleStringConverter : scientificDoubleStringConverter);
+
+         // When gaining focus: we want to update the text to reflect the change of the converter.
+         // When losing focus: the text may be inconsistent with the actual value: reset the text. 
+         spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
+
       });
       yoDoubleProperty.bindDoubleProperty(spinner.getValueFactory().valueProperty());
 
@@ -221,9 +227,18 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       disabledProperty().addListener((o, oldValue, newValue) -> yoLongProperty.setLinkedBuffer(newValue ? null : linkedRegistry.linkYoVariable(yoLong)));
       yoVariableProperties.add(yoLongProperty);
 
-      Spinner<Long> spinner = new Spinner<>(new LongSpinnerValueFactory(Long.MIN_VALUE, Long.MAX_VALUE, yoLongProperty.getValue(), 1L));
+      LongSpinnerValueFactory valueFactory = new LongSpinnerValueFactory(Long.MIN_VALUE, Long.MAX_VALUE, yoLongProperty.getValue(), 1L);
+      Spinner<Long> spinner = new Spinner<>(valueFactory);
       spinner.setPrefWidth(GRAPHIC_PREF_WIDTH);
       spinner.setEditable(true);
+      spinner.focusedProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!newValue)
+         { // Losing focus
+           // Workaround: manually reset to the current value 
+            spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
+         }
+      });
       yoLongProperty.bindLongProperty(spinner.getValueFactory().valueProperty());
 
       Tooltip tooltip = new Tooltip();
@@ -240,9 +255,18 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       disabledProperty().addListener((o, oldValue, newValue) -> yoIntegerProperty.setLinkedBuffer(newValue ? null : linkedRegistry.linkYoVariable(yoInteger)));
       yoVariableProperties.add(yoIntegerProperty);
 
-      Spinner<Integer> spinner = new Spinner<>(Integer.MIN_VALUE, Integer.MAX_VALUE, yoIntegerProperty.getValue(), 1);
+      IntegerSpinnerValueFactory valueFactory = new IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE, yoIntegerProperty.getValue(), 1);
+      Spinner<Integer> spinner = new Spinner<>(valueFactory);
       spinner.setPrefWidth(GRAPHIC_PREF_WIDTH);
       spinner.setEditable(true);
+      spinner.focusedProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!newValue)
+         { // Losing focus
+           // Workaround: manually reset to the current value 
+            spinner.getEditor().setText(valueFactory.getConverter().toString(valueFactory.getValue()));
+         }
+      });
       yoIntegerProperty.bindIntegerProperty(spinner.getValueFactory().valueProperty());
 
       Tooltip tooltip = new Tooltip();

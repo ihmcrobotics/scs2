@@ -116,7 +116,10 @@ public class NumberSeriesLayer extends ImageView
    private IntegerProperty dataSizeProperty = new SimpleIntegerProperty(this, "dataSize", 0);
    private BooleanProperty updateIndexMarkerVisible = new SimpleBooleanProperty(this, "updateIndexMarkerVisible", false);
 
-   public NumberSeriesLayer(InvisibleNumberAxis xAxis, InvisibleNumberAxis yAxis, NumberSeries numberSeries, Executor backgroundExecutor,
+   public NumberSeriesLayer(InvisibleNumberAxis xAxis,
+                            InvisibleNumberAxis yAxis,
+                            NumberSeries numberSeries,
+                            Executor backgroundExecutor,
                             ChartRenderManager renderManager)
    {
       this.renderManager = renderManager;
@@ -291,7 +294,11 @@ public class NumberSeriesLayer extends ImageView
          return in;
    }
 
-   private static void drawMultiLine(Graphics2D graphics, List<Point2D> points, DoubleUnaryOperator xTransform, DoubleUnaryOperator yTransform, int[] xData,
+   private static void drawMultiLine(Graphics2D graphics,
+                                     List<Point2D> points,
+                                     DoubleUnaryOperator xTransform,
+                                     DoubleUnaryOperator yTransform,
+                                     int[] xData,
                                      int[] yData)
    {
       for (int i = 0; i < points.size(); i++)
@@ -326,24 +333,39 @@ public class NumberSeriesLayer extends ImageView
    {
       if (min == max)
          return coordinate -> 0.5;
-      else
-         return affineTransform(1.0 / (max - min), -min / (max - min));
+
+      double invRange = 1.0 / (max - min);
+
+      if (Double.isInfinite(invRange))
+         return coordinate -> 0.5;
+
+      return affineTransform(invRange, -min * invRange);
    }
 
    private static DoubleUnaryOperator xToHorizontalDisplayTransform(double displayWidth, double xMin, double xMax)
    {
       if (xMax == xMin)
          return affineTransform(displayWidth, -xMin * displayWidth);
-      else
-         return affineTransform(displayWidth / (xMax - xMin), -xMin * displayWidth / (xMax - xMin));
+
+      double invRange = 1.0 / (xMax - xMin);
+
+      if (Double.isInfinite(invRange))
+         return affineTransform(displayWidth, -xMin * displayWidth);
+
+      return affineTransform(displayWidth * invRange, -xMin * displayWidth * invRange);
    }
 
    private static DoubleUnaryOperator yToVerticalDisplayTransform(double displayHeight, double yMin, double yMax)
    {
       if (yMax == yMin)
          return affineTransform(-displayHeight, displayHeight * (1.0 + yMin));
-      else
-         return affineTransform(-displayHeight / (yMax - yMin), displayHeight * (1.0 + yMin / (yMax - yMin)));
+
+      double invRange = 1.0 / (yMax - yMin);
+
+      if (Double.isInfinite(invRange))
+         return affineTransform(-displayHeight, displayHeight * (1.0 + yMin));
+
+      return affineTransform(-displayHeight * invRange, displayHeight * (1.0 + yMin * invRange));
    }
 
    private static DoubleUnaryOperator affineTransform(double scale, double offset)

@@ -36,7 +36,7 @@ mainDependencies {
    api("us.ihmc:ihmc-graphics-description:0.19.4")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
    api("us.ihmc:svgloader:0.0")
-   api("us.ihmc:ihmc-javafx-extensions:17-0.1.0")
+   api("us.ihmc:ihmc-javafx-extensions:17-0.1.2")
 
    api("org.reflections:reflections:0.9.11")
 

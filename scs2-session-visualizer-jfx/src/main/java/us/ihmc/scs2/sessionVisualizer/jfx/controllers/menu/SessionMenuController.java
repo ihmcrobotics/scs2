@@ -4,9 +4,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Menu;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
-public class SessionMenuController
+public class SessionMenuController implements VisualizerController
 {
    @FXML
    private Menu menu;
@@ -14,6 +15,7 @@ public class SessionMenuController
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       topics = toolkit.getTopics();

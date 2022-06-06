@@ -15,9 +15,10 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartMarker;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartMarkerType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.ControllerListCell;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
-public class YoChartBaselinesOptionPaneController
+public class YoChartBaselinesOptionPaneController implements VisualizerController
 {
    private static final double ROW_HEIGHT = 24 + 12;
 
@@ -30,6 +31,7 @@ public class YoChartBaselinesOptionPaneController
    private ObservableList<ChartMarker> userMarkers;
    private boolean ignoreChanges = false;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       baselinesListView.setCellFactory(param -> new ControllerListCell<>());

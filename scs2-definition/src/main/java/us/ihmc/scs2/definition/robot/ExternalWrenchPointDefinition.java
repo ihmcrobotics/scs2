@@ -10,6 +10,11 @@ public class ExternalWrenchPointDefinition extends KinematicPointDefinition
       super();
    }
 
+   public ExternalWrenchPointDefinition(String name)
+   {
+      super(name);
+   }
+
    public ExternalWrenchPointDefinition(String name, Tuple3DReadOnly offsetFromJoint)
    {
       super(name, offsetFromJoint);

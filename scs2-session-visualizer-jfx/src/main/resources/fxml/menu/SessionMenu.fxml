@@ -7,7 +7,7 @@
 
 <Menu fx:id="menu" text="Session" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.SessionMenuController">
    <items>
-      <MenuItem onAction="#startRemoteSession" text="Start remote session...">
+      <MenuItem onAction="#startRemoteSession" text="Connect to remote session...">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
@@ -17,7 +17,7 @@
             </FontAwesomeIconView>
          </graphic>
       </MenuItem>
-      <MenuItem onAction="#startLogSession" text="Start log session...">
+      <MenuItem onAction="#startLogSession" text="Open log...">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
