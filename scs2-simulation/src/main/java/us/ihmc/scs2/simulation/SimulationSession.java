@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
@@ -40,7 +41,6 @@ import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor.CameraDefinitionCon
 import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor.CameraFrameConsumer;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
-import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 public class SimulationSession extends Session
 {
@@ -62,8 +62,6 @@ public class SimulationSession extends Session
    private final List<Runnable> cleanupActions = new ArrayList<>();
 
    private SimulationSessionControlsImpl controls = null;
-
-   private boolean hasSessionStarted = false;
 
    public SimulationSession()
    {
@@ -118,7 +116,6 @@ public class SimulationSession extends Session
    @Override
    protected void initializeSession()
    {
-      hasSessionStarted = true;
       super.initializeSession();
       physicsEngine.initialize(gravity);
    }
@@ -169,13 +166,11 @@ public class SimulationSession extends Session
 
    public void addRobot(Robot robot)
    {
-      checkSessionHasNotStarted();
       physicsEngine.addRobot(robot);
    }
 
    public void addRobots(Collection<? extends Robot> robots)
    {
-      checkSessionHasNotStarted();
       physicsEngine.addRobots(robots);
    }
 
@@ -238,14 +233,11 @@ public class SimulationSession extends Session
 
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
-      checkSessionHasNotStarted();
       physicsEngine.addTerrainObject(terrainObjectDefinition);
    }
 
    public void addTerrainObjects(Collection<? extends TerrainObjectDefinition> terrainObjectDefinitions)
    {
-      checkSessionHasNotStarted();
-
       for (TerrainObjectDefinition terrainObjectDefinition : terrainObjectDefinitions)
       {
          physicsEngine.addTerrainObject(terrainObjectDefinition);
@@ -254,7 +246,6 @@ public class SimulationSession extends Session
 
    public void addYoGraphicDefinition(YoGraphicDefinition yoGraphicDefinition)
    {
-      checkSessionHasNotStarted();
       yoGraphicDefinitions.add(yoGraphicDefinition);
    }
 
@@ -320,12 +311,6 @@ public class SimulationSession extends Session
    public void setGravity(double x, double y, double z)
    {
       this.gravity.set(x, y, z);
-   }
-
-   private void checkSessionHasNotStarted()
-   {
-      if (hasSessionStarted)
-         throw new IllegalOperationException("Illegal operation after session has started.");
    }
 
    public void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)
