@@ -229,6 +229,31 @@ public class CropSlider extends JFXSlider
       return trimEndValueChanging;
    }
 
+   /**
+    * When true, the current value of this slider will be automatically bound to the value of the trim
+    * that is being dragged.
+    */
+   private BooleanProperty bindValueToActiveTrim;
+
+   public final void setBindValueToActiveTrim(boolean bind)
+   {
+      bindValueToActiveTrimProperty().set(bind);
+   }
+
+   public final boolean isValueBoundToActiveTrim()
+   {
+      return bindValueToActiveTrim == null ? false : bindValueToActiveTrim.get();
+   }
+
+   public final BooleanProperty bindValueToActiveTrimProperty()
+   {
+      if (bindValueToActiveTrim == null)
+      {
+         bindValueToActiveTrim = new SimpleBooleanProperty(this, "bindValueToActiveTrim", false);
+      }
+      return bindValueToActiveTrim;
+   }
+
    public void adjustTrimStartValue(double newValue)
    {
       adjustValue(newValue, trimStartValue);

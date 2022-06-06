@@ -4,6 +4,7 @@ import javax.xml.bind.annotation.XmlElement;
 
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 
 public class IMUSensorDefinition extends SensorDefinition
 {
@@ -21,9 +22,19 @@ public class IMUSensorDefinition extends SensorDefinition
    {
    }
 
-   public IMUSensorDefinition(String name, RigidBodyTransformReadOnly imuTransform)
+   public IMUSensorDefinition(String name)
    {
-      super(name, imuTransform);
+      super(name);
+   }
+
+   public IMUSensorDefinition(String name, Tuple3DReadOnly offsetFromJoint)
+   {
+      super(name, offsetFromJoint);
+   }
+
+   public IMUSensorDefinition(String name, RigidBodyTransformReadOnly transformToJoint)
+   {
+      super(name, transformToJoint);
    }
 
    public IMUSensorDefinition(IMUSensorDefinition other)

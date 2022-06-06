@@ -18,7 +18,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
-public class SecondaryWindowControlsController
+public class SecondaryWindowControlsController implements VisualizerController
 {
    private Window owner;
    private JavaFXMessager messager;
@@ -39,6 +39,7 @@ public class SecondaryWindowControlsController
    {
    }
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       owner = toolkit.getWindow();

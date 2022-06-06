@@ -15,6 +15,7 @@ import javafx.scene.layout.Pane;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class YoSearchTabPaneController
@@ -28,12 +29,14 @@ public class YoSearchTabPaneController
 
    private SessionVisualizerToolkit toolkit;
    private final Map<YoRegistry, Tab> registryTabs = new HashMap<>();
+   private final Map<Tab, YoCompositeSearchPaneController> tabCompositeControllerMap = new HashMap<>();
 
    public void initialize(SessionVisualizerToolkit toolkit)
    {
       this.toolkit = toolkit;
       yoSearchTabPane.setTabClosingPolicy(TabClosingPolicy.ALL_TABS);
       yoSearchTabPane.getSelectionModel().select(1);
+      tabCompositeControllerMap.put(yoSearchTabPane.getSelectionModel().getSelectedItem(), mainYoCompositeSearchPaneController);
       yoRegistrySearchPaneController.initialize(toolkit);
       yoRegistrySearchPaneController.setRegistryViewRequestConsumer(newRequest ->
       {
@@ -66,7 +69,22 @@ public class YoSearchTabPaneController
             if (content != null)
                content.setDisable(tab != newValue);
          }
+
+         JavaFXMissingTools.runLater(getClass(), this::requestFocusForActiveSearchBox);
       });
+   }
+
+   public void requestFocusForActiveSearchBox()
+   {
+      YoCompositeSearchPaneController controller = tabCompositeControllerMap.get(yoSearchTabPane.getSelectionModel().getSelectedItem());
+      if (controller != null)
+      {
+         controller.requestFocusForSearchBox();
+      }
+      else
+      {
+         yoRegistrySearchPaneController.requestFocusForSearchBox();
+      }
    }
 
    public void start()
@@ -99,11 +117,13 @@ public class YoSearchTabPaneController
             controller.start();
             registryTabs.put(registry, newTab);
             newTab.setContent(rootPane);
+            tabCompositeControllerMap.put(newTab, controller);
             newTab.setClosable(true);
             newTab.setOnClosed(e ->
             {
                controller.stop();
                registryTabs.remove(registry);
+               tabCompositeControllerMap.remove(newTab);
             });
             if (tabIndex == -1)
                yoSearchTabPane.getTabs().add(yoSearchTabPane.getTabs().size() - 1, newTab);

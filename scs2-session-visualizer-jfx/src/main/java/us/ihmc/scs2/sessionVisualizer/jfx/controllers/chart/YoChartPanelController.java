@@ -64,6 +64,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart.ChartStyle;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData.ChartDataUpdate;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ChartDataManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -79,7 +80,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class YoChartPanelController extends ObservedAnimationTimer
+public class YoChartPanelController extends ObservedAnimationTimer implements VisualizerController
 {
    private static final long LEGEND_UPDATE_PERIOD = TimeUnit.MILLISECONDS.toNanos(100);
 
@@ -119,19 +120,20 @@ public class YoChartPanelController extends ObservedAnimationTimer
    private AtomicReference<List<String>> yoCompositeSelected;
    private Topic<List<String>> yoCompositeSelectedTopic;
 
-   private final SimpleObjectProperty<ContextMenu> contextMenuProperty = new SimpleObjectProperty<ContextMenu>(this, "graphContextMenu", null);
+   private final SimpleObjectProperty<ContextMenu> contextMenuProperty = new SimpleObjectProperty<>(this, "graphContextMenu", null);
 
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private YoManager yoManager;
    private SessionVisualizerWindowToolkit toolkit;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       this.toolkit = toolkit;
-      this.messager = toolkit.getMessager();
-      this.chartDataManager = toolkit.getChartDataManager();
-      this.yoManager = toolkit.getYoManager();
+      messager = toolkit.getMessager();
+      chartDataManager = toolkit.getChartDataManager();
+      yoManager = toolkit.getYoManager();
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
       topics = toolkit.getTopics();
       BackgroundExecutorManager backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
@@ -633,10 +635,7 @@ public class YoChartPanelController extends ObservedAnimationTimer
 
    public void handleDragDetected(MouseEvent event)
    {
-      if (event == null)
-         return;
-
-      if (!event.isPrimaryButtonDown())
+      if ((event == null) || !event.isPrimaryButtonDown())
          return;
 
       PickResult pickResult = event.getPickResult();

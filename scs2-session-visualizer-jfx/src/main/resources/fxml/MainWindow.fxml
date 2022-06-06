@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXDrawer?>
 <?import com.jfoenix.controls.JFXHamburger?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
@@ -11,43 +10,40 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="mainPane" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController">
+<AnchorPane fx:id="rootPane" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController">
    <children>
       <fx:include fx:id="mainWindowMenuBar" source="menu/MainWindowMenuBar.fxml" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-      <JFXDrawer fx:id="toolDrawer" defaultDrawerSize="300.0" overLayVisible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
-         <children>
-            <SplitPane fx:id="splitPane" dividerPositions="0.5" orientation="VERTICAL" prefHeight="372.0" prefWidth="542.0">
+      <SplitPane fx:id="mainGUIPane" dividerPositions="0.5" layoutY="25.0" orientation="VERTICAL" prefHeight="372.0" prefWidth="542.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+         <items>
+            <SplitPane fx:id="mainViewSplitPane">
                <items>
-                  <SplitPane fx:id="mainViewSplitPane">
-                     <items>
-                        <AnchorPane fx:id="sceneAnchorPane" minHeight="200.0" prefHeight="200.0" prefWidth="200.0">
-                           <children>
-                              <Pane prefHeight="200.0" prefWidth="200.0" />
-                              <JFXHamburger fx:id="hamburger" opacity="0.7" AnchorPane.leftAnchor="5.0" AnchorPane.topAnchor="5.0" />
-                              <ImageView fitWidth="90.0" layoutX="1101.0" layoutY="-11.0" mouseTransparent="true" opacity="0.6" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="5.0" AnchorPane.rightAnchor="5.0">
-                                 <image>
-                                    <Image url="@../icons/ihmc-logo-black.png" />
-                                 </image>
-                              </ImageView>
-                              <Label fx:id="fpsLabel" layoutX="481.0" layoutY="6.0" opacity="0.7" text="FPS" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                 <font>
-                                    <Font name="Calibri Bold" size="12.0" />
-                                 </font>
-                              </Label>
-                              <fx:include fx:id="sessionSimpleControls" source="SessionSimpleControls.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
-                           </children>
-                        </AnchorPane>
-                     </items>
-                  </SplitPane>
-                  <VBox prefHeight="150.0">
+                  <AnchorPane fx:id="sceneAnchorPane" minHeight="200.0" prefHeight="200.0" prefWidth="200.0">
                      <children>
-                        <fx:include fx:id="yoChartGroupPanel" source="chart/YoChartGroupPanel.fxml" VBox.vgrow="ALWAYS" />
-                        <fx:include fx:id="sessionAdvancedControls" source="SessionAdvancedControls.fxml" />
+                        <Pane prefHeight="200.0" prefWidth="200.0" />
+                        <JFXHamburger fx:id="leftDrawerBurger" opacity="0.7" AnchorPane.leftAnchor="5.0" AnchorPane.topAnchor="5.0" />
+                        <ImageView fitWidth="90.0" layoutX="1101.0" layoutY="-11.0" mouseTransparent="true" opacity="0.6" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="5.0" AnchorPane.rightAnchor="5.0">
+                           <image>
+                              <Image url="@../icons/ihmc-logo-black.png" />
+                           </image>
+                        </ImageView>
+                        <Label fx:id="fpsLabel" layoutX="481.0" layoutY="6.0" opacity="0.7" text="FPS" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="30.0">
+                           <font>
+                              <Font name="Calibri Bold" size="12.0" />
+                           </font>
+                        </Label>
+                        <JFXHamburger fx:id="rightDrawerBurger" layoutX="10.0" layoutY="10.0" opacity="0.7" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0" />
+                        <fx:include fx:id="sessionSimpleControls" source="SessionSimpleControls.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
                      </children>
-                  </VBox>
+                  </AnchorPane>
                </items>
             </SplitPane>
-         </children>
-      </JFXDrawer>
+            <VBox prefHeight="150.0">
+               <children>
+                  <fx:include fx:id="yoChartGroupPanel" source="chart/YoChartGroupPanel.fxml" VBox.vgrow="ALWAYS" />
+                  <fx:include fx:id="sessionAdvancedControls" source="SessionAdvancedControls.fxml" />
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
    </children>
 </AnchorPane>

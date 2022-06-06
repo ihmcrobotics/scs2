@@ -15,14 +15,14 @@
 <?import javafx.scene.layout.VBox?>
 <?import us.ihmc.scs2.sessionVisualizer.jfx.tools.CropSlider?>
 
-<AnchorPane fx:id="mainPane" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController">
+<AnchorPane fx:id="mainPane" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController">
    <children>
       <VBox layoutY="45.0" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <HBox alignment="CENTER" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" VBox.vgrow="NEVER">
                <children>
                   <JFXSpinner fx:id="loadingSpinner" prefHeight="30.0" prefWidth="30.0" visible="false" HBox.hgrow="NEVER" />
-                  <JFXButton fx:id="openSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Open session..." />
+                  <JFXButton fx:id="openSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Open log..." />
                   <JFXButton fx:id="endSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="end-session-button" text="End session" />
                </children>
             </HBox>
@@ -48,8 +48,10 @@
             <HBox fx:id="cropControlsContainer" alignment="CENTER" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" VBox.vgrow="NEVER">
                <children>
                   <JFXToggleButton fx:id="showTrimsButton" text="Enable crop data controls" />
-                  <JFXButton fx:id="resetTrimsButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#resetTrims" text="Reset" />
-                  <JFXButton fx:id="cropAndExportButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#cropAndExport" text="Crop &amp; Export" />
+                  <JFXButton fx:id="startTrimToCurrentButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#snapStartTrimToCurrent" styleClass="log-trim-controls-button" text="Start Trim to Current" />
+                  <JFXButton fx:id="endTrimToCurrentButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#snapEndTrimToCurrent" styleClass="log-trim-controls-button" text="End Trim to Current" />
+                  <JFXButton fx:id="resetTrimsButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#resetTrims" styleClass="log-trim-controls-button" text="Reset" />
+                  <JFXButton fx:id="cropAndExportButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#cropAndExport" styleClass="log-trim-controls-button" text="Crop &amp; Export" />
                </children>
             </HBox>
             <CropSlider fx:id="logPositionSlider" VBox.vgrow="NEVER">

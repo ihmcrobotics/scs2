@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
@@ -123,8 +124,11 @@ public class SessionIOTools
             if (file.list().length > 0)
             {
                // Clean up folder
-               String[] allExtensions = {infoFileExtension, robotDefinitionFileExtension, terrainObjectDefinitionFileExtension,
-                     yoGraphicConfigurationFileExtension, yoRegistryDefinitionFileExtension};
+               String[] allExtensions = {infoFileExtension,
+                                         robotDefinitionFileExtension,
+                                         terrainObjectDefinitionFileExtension,
+                                         yoGraphicConfigurationFileExtension,
+                                         yoRegistryDefinitionFileExtension};
                allExtensions = SharedMemoryTools.concatenate(allExtensions,
                                                              Arrays.stream(DataFormat.values()).map(DataFormat::getFileExtension).toArray(String[]::new));
 
@@ -255,13 +259,17 @@ public class SessionIOTools
 
       if (request.getExportRobotStateDefinitions())
       {
-         for (RobotStateDefinition robotStateDefinition : session.getCurrentRobotStateDefinitions(true))
+         List<RobotStateDefinition> currentRobotStateDefinitions = session.getCurrentRobotStateDefinitions(true);
+         if (currentRobotStateDefinitions != null)
          {
-            String name = robotStateDefinition.getRobotName() + "State";
-            File robotStateFile = new File(file, name + robotStateDefinitionFileExtension);
-            LogTools.info("Exporting RobotStateDefinition for: {} File: {}", name, robotStateFile);
-            DefinitionIOTools.saveRobotStateDefinition(new FileOutputStream(robotStateFile), robotStateDefinition);
-            sessionInfo.getRobotStateFileNames().add(robotStateFile.getName());
+            for (RobotStateDefinition robotStateDefinition : currentRobotStateDefinitions)
+            {
+               String name = robotStateDefinition.getRobotName() + "State";
+               File robotStateFile = new File(file, name + robotStateDefinitionFileExtension);
+               LogTools.info("Exporting RobotStateDefinition for: {} File: {}", name, robotStateFile);
+               DefinitionIOTools.saveRobotStateDefinition(new FileOutputStream(robotStateFile), robotStateDefinition);
+               sessionInfo.getRobotStateFileNames().add(robotStateFile.getName());
+            }
          }
       }
 

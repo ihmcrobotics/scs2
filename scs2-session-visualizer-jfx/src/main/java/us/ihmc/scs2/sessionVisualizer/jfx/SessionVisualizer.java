@@ -1,6 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -12,22 +14,25 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import us.ihmc.log.LogTools;
+import us.ihmc.messager.Messager;
+import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
@@ -38,7 +43,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 public class SessionVisualizer
@@ -50,6 +54,8 @@ public class SessionVisualizer
       DefinitionIOTools.loadResources();
       YoGraphicFXControllerTools.loadResources();
    }
+
+   private final boolean shutdownSessionOnClose;
 
    private final SessionVisualizerToolkit toolkit;
    private final MultiSessionManager multiSessionManager;
@@ -67,9 +73,10 @@ public class SessionVisualizer
 
    private boolean hasTerminated = false;
 
-   public SessionVisualizer(Stage primaryStage) throws Exception
+   public SessionVisualizer(Stage primaryStage, boolean shutdownSessionOnClose) throws Exception
    {
       this.primaryStage = primaryStage;
+      this.shutdownSessionOnClose = shutdownSessionOnClose;
       // Configuring listener first so this is the first one getting called. Allows to cancel the close request.
       primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, this::stop);
       SessionVisualizerIOTools.addSCSIconToWindow(primaryStage);
@@ -193,11 +200,10 @@ public class SessionVisualizer
 
       hasTerminated = true;
 
-      LogTools.info("Simulation GUI is going down.");
       try
       {
          viewport3DManager.dispose();
-         multiSessionManager.stopSession(saveConfiguration);
+         multiSessionManager.stopSession(saveConfiguration, shutdownSessionOnClose);
          multiSessionManager.shutdown();
          mainWindowController.stop();
          toolkit.stop();
@@ -247,6 +253,11 @@ public class SessionVisualizer
 
    public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit)
    {
+      return startSessionVisualizer(session, javaFXThreadImplicitExit, true);
+   }
+
+   public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
+   {
       if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
          Platform.setImplicitExit(javaFXThreadImplicitExit);
 
@@ -258,7 +269,7 @@ public class SessionVisualizer
       {
          try
          {
-            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage());
+            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose);
             sessionVisualizerControls.setValue(sessionVisualizer.sessionVisualizerControls);
             if (session != null)
                sessionVisualizer.startSession(session);
@@ -275,6 +286,11 @@ public class SessionVisualizer
 
    public static SessionVisualizer startSessionVisualizerExpert(Session session, Boolean javaFXThreadImplicitExit)
    {
+      return startSessionVisualizerExpert(session, javaFXThreadImplicitExit, true);
+   }
+
+   public static SessionVisualizer startSessionVisualizerExpert(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
+   {
       if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
          Platform.setImplicitExit(javaFXThreadImplicitExit);
 
@@ -285,7 +301,7 @@ public class SessionVisualizer
       {
          try
          {
-            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage());
+            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose);
             if (session != null)
                sessionVisualizer.startSession(session);
             JavaFXApplicationCreator.attachStopListener(sessionVisualizer::stop);
@@ -310,7 +326,7 @@ public class SessionVisualizer
       }
 
       @Override
-      public void waitUntilFullyUp()
+      public void waitUntilVisualizerFullyUp()
       {
          try
          {
@@ -323,7 +339,7 @@ public class SessionVisualizer
       }
 
       @Override
-      public void waitUntilDown()
+      public void waitUntilVisualizerDown()
       {
          try
          {
@@ -336,26 +352,18 @@ public class SessionVisualizer
       }
 
       @Override
-      public Window getPrimaryWindow()
+      public void setCameraOrientation(double latitude, double longitude)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
-         return primaryStage;
-      }
-
-      @Override
-      public void setCameraOrientation(double latitude, double longitude, double roll)
-      {
-         checkVisualizerRunning();
-         waitUntilFullyUp();
-         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, roll);
+         waitUntilVisualizerFullyUp();
+         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, 0);
       }
 
       @Override
       public void setCameraPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
+         waitUntilVisualizerFullyUp();
          viewport3DManager.getMainViewport().setCameraPosition(x, y, z);
       }
 
@@ -363,7 +371,7 @@ public class SessionVisualizer
       public void setCameraFocusPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
+         waitUntilVisualizerFullyUp();
          viewport3DManager.getMainViewport().setCameraFocusPosition(x, y, z);
       }
 
@@ -371,7 +379,7 @@ public class SessionVisualizer
       public void setCameraZoom(double distanceFromFocus)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
+         waitUntilVisualizerFullyUp();
          viewport3DManager.getMainViewport().setCameraZoom(distanceFromFocus);
       }
 
@@ -379,15 +387,23 @@ public class SessionVisualizer
       public void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
-         messager.submitMessage(topics.getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
+      }
+
+      @Override
+      public void showOverheadPlotter2D(boolean show)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getShowOverheadPlotter(), true);
       }
 
       @Override
       public void addStaticVisual(VisualDefinition visualDefinition)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
+         waitUntilVisualizerFullyUp();
          toolkit.getEnvironmentManager().addStaticVisual(visualDefinition);
       }
 
@@ -395,34 +411,20 @@ public class SessionVisualizer
       public void removeStaticVisual(VisualDefinition visualDefinition)
       {
          checkVisualizerRunning();
-         waitUntilFullyUp();
+         waitUntilVisualizerFullyUp();
          toolkit.getEnvironmentManager().removeStaticVisual(visualDefinition);
-      }
-
-      @Override
-      public void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
-      {
-         String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
-         if (subNames == null || subNames.length == 0)
-         {
-            addYoGraphic(yoGraphicDefinition);
-         }
-         else
-         {
-            for (int i = subNames.length - 1; i >= 0; i--)
-            {
-               yoGraphicDefinition = new YoGraphicGroupDefinition(subNames[i], yoGraphicDefinition);
-            }
-            
-            addYoGraphic(yoGraphicDefinition);
-         }
       }
 
       @Override
       public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
       {
-         checkVisualizerRunning();
-         messager.submitMessage(topics.getAddYoGraphicRequest(), yoGraphicDefinition);
+         submitMessage(getTopics().getAddYoGraphicRequest(), yoGraphicDefinition);
+      }
+
+      @Override
+      public void addYoEntry(String groupName, Collection<String> variableNames)
+      {
+         submitMessage(getTopics().getYoEntryListAdd(), YoEntryListDefinition.newYoVariableEntryList(groupName, variableNames));
       }
 
       @Override
@@ -451,28 +453,97 @@ public class SessionVisualizer
          }
       }
 
+      /** {@inheritDoc} */
       @Override
-      public void disableUserControls()
+      public void disableGUIControls()
+      {
+         submitMessage(getTopics().getDisableUserControls(), true);
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void enableGUIControls()
+      {
+         submitMessage(getTopics().getDisableUserControls(), false);
+      }
+
+      /**
+       * Gets the messager's topics.
+       * <p>
+       * The visualizer relies on the {@link Messager} framework to communicate requests.
+       * </p>
+       *
+       * @return the topics this visualizer uses.
+       */
+      SessionVisualizerTopics getTopics()
+      {
+         return topics;
+      }
+
+      /**
+       * Submits a message.
+       *
+       * @param <T>            the type of the message content imposed by the selected topic.
+       * @param topic          the topic to with the message is to be submitted.
+       * @param messageContent the content of the message.
+       */
+      <T> void submitMessage(Topic<T> topic, T messageContent)
       {
          checkVisualizerRunning();
-         messager.submitMessage(topics.getDisableUserControls(), true);
+         messager.submitMessage(topic, messageContent);
       }
 
       @Override
-      public void enableUserControls()
+      public Window getPrimaryGUIWindow()
       {
          checkVisualizerRunning();
-         messager.submitMessage(topics.getDisableUserControls(), false);
+         waitUntilVisualizerFullyUp();
+         return primaryStage;
       }
 
       @Override
-      public void shutdown()
+      public void addCustomGUIControl(Node control)
+      {
+         checkVisualizerRunning();
+         mainWindowController.getUserSidePaneController().addControl(control);
+      }
+
+      @Override
+      public boolean removeCustomGUIControl(Node control)
+      {
+         checkVisualizerRunning();
+         return mainWindowController.getUserSidePaneController().removeControl(control);
+      }
+
+      @Override
+      public void loadCustomGUIPane(String name, URL fxmlResource)
+      {
+         checkVisualizerRunning();
+         mainWindowController.getUserSidePaneController().loadCustomPane(name, fxmlResource);
+      }
+
+      @Override
+      public void addCustomGUIPane(String name, Pane pane)
+      {
+         checkVisualizerRunning();
+         mainWindowController.getUserSidePaneController().addCustomPane(name, pane);
+      }
+
+      @Override
+      public boolean removeCustomGUIPane(String name)
+      {
+         checkVisualizerRunning();
+         return mainWindowController.getUserSidePaneController().removeCustomPane(name);
+      }
+
+      @Override
+      public void requestVisualizerShutdown()
       {
          JavaFXMissingTools.runAndWait(getClass(), () -> stop());
       }
 
       @Override
-      public void shutdownNow()
+      public void shutdownSession()
       {
          JavaFXMissingTools.runAndWait(getClass(), () -> stopNow(false));
       }
