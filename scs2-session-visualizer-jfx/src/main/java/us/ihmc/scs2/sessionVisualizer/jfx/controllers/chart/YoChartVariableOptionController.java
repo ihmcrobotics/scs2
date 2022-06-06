@@ -15,10 +15,11 @@ import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
 import javafx.util.converter.DoubleStringConverter;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartDoubleBounds;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartOptionController.ChartScalingMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
-public class YoChartVariableOptionController
+public class YoChartVariableOptionController implements VisualizerController
 {
    @FXML
    private TitledPane mainPane;
@@ -34,7 +35,7 @@ public class YoChartVariableOptionController
    public enum ChartVariableScalingMode
    {
       AUTO, MANUAL
-   };
+   }
 
    private final ObjectProperty<ChartDoubleBounds> actualYBoundsProperty = new SimpleObjectProperty<>(this, "actualYBounds", null);
    private final ObjectProperty<ChartDoubleBounds> manualYBoundsProperty = new SimpleObjectProperty<>(this, "manualYBounds", null);
@@ -50,6 +51,7 @@ public class YoChartVariableOptionController
    private final ChangeListener<ChartVariableScalingMode> localScalingListener = (o, oldValue, newValue) -> setLocalScaling(newValue);
    private final ChangeListener<ChartDoubleBounds> actualYBoundsUpdater = (o, oldValue, newValue) -> actualYBoundsProperty.set(newValue);
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       scalingComboBox.setItems(FXCollections.observableArrayList(ChartVariableScalingMode.values()));

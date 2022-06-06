@@ -9,6 +9,11 @@ public class WrenchSensorDefinition extends SensorDefinition
    {
    }
 
+   public WrenchSensorDefinition(String name)
+   {
+      super(name);
+   }
+
    public WrenchSensorDefinition(String name, Tuple3DReadOnly offsetFromJoint)
    {
       super(name, offsetFromJoint);

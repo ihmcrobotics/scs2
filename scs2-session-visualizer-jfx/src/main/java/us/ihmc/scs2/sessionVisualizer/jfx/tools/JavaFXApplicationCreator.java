@@ -68,6 +68,7 @@ public class JavaFXApplicationCreator extends Application
       {
          stopListener.run();
       }
+      mainApplication = null;
    }
 
    /**

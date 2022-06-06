@@ -10,7 +10,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
-public class SessionSimpleControlsController
+public class SessionSimpleControlsController implements VisualizerController
 {
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
@@ -24,9 +24,10 @@ public class SessionSimpleControlsController
    {
    }
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
-      this.messager = toolkit.getMessager();
+      messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       messager.registerTopicListener(topics.getShowAdvancedControls(), showAdvancedControls -> show(!showAdvancedControls));
       messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> controlsHBox.setDisable(disable));

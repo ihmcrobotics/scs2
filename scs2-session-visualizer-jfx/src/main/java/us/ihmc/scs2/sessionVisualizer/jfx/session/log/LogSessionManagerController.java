@@ -70,7 +70,7 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private JFXToggleButton showTrimsButton;
    @FXML
-   private JFXButton resetTrimsButton, cropAndExportButton;
+   private JFXButton startTrimToCurrentButton, endTrimToCurrentButton, resetTrimsButton, cropAndExportButton;
    @FXML
    private CropSlider logPositionSlider;
    @FXML
@@ -217,6 +217,8 @@ public class LogSessionManagerController implements SessionControlsController
          if (newValue)
             resetTrims();
       });
+      startTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
+      endTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       resetTrimsButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropAndExportButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropProgressMonitorPane.getChildren().addListener((ListChangeListener<Node>) c ->
@@ -287,6 +289,18 @@ public class LogSessionManagerController implements SessionControlsController
    {
       logPositionSlider.setTrimStartValue(0.0);
       logPositionSlider.setTrimEndValue(logPositionSlider.getMax());
+   }
+
+   @FXML
+   public void snapStartTrimToCurrent()
+   {
+      logPositionSlider.setTrimStartValue(logPositionSlider.getValue());
+   }
+
+   @FXML
+   public void snapEndTrimToCurrent()
+   {
+      logPositionSlider.setTrimEndValue(logPositionSlider.getValue());
    }
 
    @FXML

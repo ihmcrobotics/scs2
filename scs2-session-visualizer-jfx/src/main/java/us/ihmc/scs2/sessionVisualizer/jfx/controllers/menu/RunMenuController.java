@@ -12,10 +12,11 @@ import javafx.util.converter.DoubleStringConverter;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
-public class RunMenuController
+public class RunMenuController implements VisualizerController
 {
    @FXML
    private Menu menu;
@@ -29,9 +30,10 @@ public class RunMenuController
 
    private AtomicReference<YoBufferPropertiesReadOnly> bufferProperties;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
-      this.messager = toolkit.getMessager();
+      messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       bufferProperties = messager.createInput(topics.getYoBufferCurrentProperties(), null);
 
