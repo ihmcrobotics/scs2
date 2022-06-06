@@ -18,6 +18,11 @@ public class KinematicPointDefinition implements Transformable
    {
    }
 
+   public KinematicPointDefinition(String name)
+   {
+      this.name = name;
+   }
+
    public KinematicPointDefinition(String name, Tuple3DReadOnly offsetFromJoint)
    {
       this.name = name;

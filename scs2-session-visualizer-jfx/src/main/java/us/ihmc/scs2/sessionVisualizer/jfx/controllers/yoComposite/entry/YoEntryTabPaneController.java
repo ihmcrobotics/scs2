@@ -88,11 +88,6 @@ public class YoEntryTabPaneController
                   }
                }
             }
-
-            if (change.getRemoved().contains(initialTab))
-            {
-
-            }
          }
       });
 
@@ -114,6 +109,7 @@ public class YoEntryTabPaneController
          if (state == SessionState.INACTIVE)
             yoEntryTabPane.getTabs().clear();
       });
+      messager.registerJavaFXSyncedTopicListener(topics.getYoEntryListAdd(), this::addYoEntryList);
    }
 
    public void setInput(YoEntryConfigurationDefinition input)
@@ -130,13 +126,32 @@ public class YoEntryTabPaneController
       List<YoEntryListDefinition> yoEntryLists = input.getYoEntryLists();
       for (int i = 0; i < yoEntryLists.size(); i++)
       {
-         setTabInput(tabs.get(i), yoEntryLists.get(i));
+         tabToControllerMap.get(tabs.get(i)).setInput(yoEntryLists.get(i));
       }
    }
 
-   private void setTabInput(Tab tab, YoEntryListDefinition input)
+   public void addYoEntryList(YoEntryListDefinition yoEntryListDefinition)
    {
-      tabToControllerMap.get(tab).setInput(input);
+      if (yoEntryListDefinition.getName() == null)
+      {
+         // We'll use the default tab
+         tabToControllerMap.get(initialTab).addYoEntries(yoEntryListDefinition.getYoEntries());
+      }
+      else
+      {
+         for (Tab tab : yoEntryTabPane.getTabs())
+         {
+            if (yoEntryListDefinition.getName().equals(tab.getText()))
+            {
+               tabToControllerMap.get(tab).addYoEntries(yoEntryListDefinition.getYoEntries());
+               return;
+            }
+         }
+
+         Tab newTab = newEmptyTab();
+         tabToControllerMap.get(newTab).setInput(yoEntryListDefinition);
+         yoEntryTabPane.getTabs().add(newTab);
+      }
    }
 
    public YoEntryConfigurationDefinition toYoEntryConfigurationDefinition()
@@ -304,7 +319,7 @@ public class YoEntryTabPaneController
 
          if (isTabEmpty(insertionPoint))
          {
-            setTabInput(insertionPoint, yoEntryLists.get(0));
+            tabToControllerMap.get(insertionPoint).setInput(yoEntryLists.get(0));
             startIndex++;
          }
 
@@ -314,7 +329,7 @@ public class YoEntryTabPaneController
          for (int i = startIndex; i < yoEntryLists.size(); i++)
          {
             Tab newEmptyTab = newEmptyTab();
-            setTabInput(newEmptyTab, yoEntryLists.get(i));
+            tabToControllerMap.get(newEmptyTab).setInput(yoEntryLists.get(i));
             tabs.add(insertionIndex, newEmptyTab);
             insertionIndex++;
          }

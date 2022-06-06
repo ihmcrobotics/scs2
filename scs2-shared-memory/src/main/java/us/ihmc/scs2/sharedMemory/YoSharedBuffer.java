@@ -11,6 +11,7 @@ import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -486,6 +487,61 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    public int decrementBufferIndex(int stepSize)
    {
       return properties.decrementIndex(stepSize);
+   }
+
+   /**
+    * Applies a function to the buffer from the in-point to the out-point.
+    * 
+    * @param processor the function to apply to the buffer.
+    */
+   public void applyProcessor(YoBufferProcessor processor)
+   {
+      if (isDisposed)
+         return;
+
+      linkedBuffersLock.lock();
+      try
+      {
+         int initialIndex = properties.getCurrentIndex();
+         int length = properties.getActiveBufferLength();
+         processor.initialize(getRootRegistry());
+
+         if (processor.goForward())
+         {
+            int startIndex = properties.getInPoint();
+            int endIndex = properties.getOutPoint();
+            setCurrentIndex(startIndex);
+
+            for (int i = 0; i < length; i++)
+            {
+               readBuffer();
+               processor.process(startIndex, endIndex, properties.getCurrentIndex());
+               writeBuffer();
+               incrementBufferIndex(false);
+            }
+         }
+         else
+         {
+            int startIndex = properties.getOutPoint();
+            int endIndex = properties.getInPoint();
+            setCurrentIndex(startIndex);
+            
+            for (int i = 0; i < length; i++)
+            {
+               readBuffer();
+               processor.process(startIndex, endIndex, properties.getCurrentIndex());
+               writeBuffer();
+               decrementBufferIndex(1);
+            }
+         }
+
+         setCurrentIndex(initialIndex);
+         readBuffer();
+      }
+      finally
+      {
+         linkedBuffersLock.unlock();
+      }
    }
 
    /**

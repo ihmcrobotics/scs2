@@ -21,6 +21,11 @@ public class CameraSensorDefinition extends SensorDefinition
    {
    }
 
+   public CameraSensorDefinition(String name)
+   {
+      super(name);
+   }
+
    public CameraSensorDefinition(String name, Tuple3DReadOnly offsetFromJoint)
    {
       super(name, offsetFromJoint);

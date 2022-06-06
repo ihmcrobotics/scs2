@@ -97,7 +97,7 @@ public class BulletFlyingBallSimulationTest
       if (VISUALIZE)
       {
          visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
-         visualizerControls.waitUntilFullyUp();
+         visualizerControls.waitUntilVisualizerFullyUp();
       }
 
       SimFloatingRootJoint floatingRootJoint = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(0).getJoint(name);
@@ -133,7 +133,7 @@ public class BulletFlyingBallSimulationTest
       {
          if (VISUALIZE)
          {
-            visualizerControls.waitUntilDown();
+            visualizerControls.waitUntilVisualizerDown();
          }
       }
    }

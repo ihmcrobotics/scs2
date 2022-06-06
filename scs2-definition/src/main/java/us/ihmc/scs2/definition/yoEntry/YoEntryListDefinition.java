@@ -1,6 +1,8 @@
 package us.ihmc.scs2.definition.yoEntry;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -11,6 +13,21 @@ public class YoEntryListDefinition
 {
    private String name;
    private List<YoEntryDefinition> yoEntries;
+
+   public YoEntryListDefinition()
+   {
+   }
+
+   public YoEntryListDefinition(String name, List<YoEntryDefinition> yoEntries)
+   {
+      this.name = name;
+      this.yoEntries = yoEntries;
+   }
+
+   public static YoEntryListDefinition newYoVariableEntryList(String name, Collection<String> variableNames)
+   {
+      return new YoEntryListDefinition(name, variableNames.stream().map(YoEntryDefinition::new).collect(Collectors.toList()));
+   }
 
    @XmlAttribute
    public void setName(String name)
