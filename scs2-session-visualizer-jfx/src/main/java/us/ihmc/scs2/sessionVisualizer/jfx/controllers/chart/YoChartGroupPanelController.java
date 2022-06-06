@@ -63,6 +63,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartGroupModel;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.TableSizeQuickAccess;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
@@ -71,7 +72,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class YoChartGroupPanelController
+public class YoChartGroupPanelController implements VisualizerController
 {
    private SessionVisualizerWindowToolkit toolkit;
    private YoCompositeSearchManager yoCompositeSearchManager;
@@ -105,6 +106,7 @@ public class YoChartGroupPanelController
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       this.toolkit = toolkit;

@@ -1,7 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
+
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import com.sun.javafx.application.PlatformImpl;
 
@@ -126,6 +129,55 @@ public class JavaFXMissingTools
          catch (InterruptedException ex)
          {
             ex.printStackTrace();
+         }
+      }
+   }
+
+   public static <R> R runAndWait(Class<?> caller, final Callable<R> callable)
+   {
+      if (Platform.isFxApplicationThread())
+      {
+         try
+         {
+            return callable.call();
+         }
+         catch (Throwable t)
+         {
+            LogTools.error("Exception in callable");
+            t.printStackTrace();
+            return null;
+         }
+      }
+      else
+      {
+         final CountDownLatch doneLatch = new CountDownLatch(1);
+         final MutableObject<R> result = new MutableObject<>();
+
+         runLater(caller, () ->
+         {
+            try
+            {
+               result.setValue(callable.call());
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+            }
+            finally
+            {
+               doneLatch.countDown();
+            }
+         });
+
+         try
+         {
+            doneLatch.await();
+            return result.getValue();
+         }
+         catch (InterruptedException ex)
+         {
+            ex.printStackTrace();
+            return null;
          }
       }
    }

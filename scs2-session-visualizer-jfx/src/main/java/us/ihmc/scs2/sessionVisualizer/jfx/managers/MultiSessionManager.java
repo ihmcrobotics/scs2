@@ -63,7 +63,7 @@ public class MultiSessionManager
 
                SessionVisualizerIOTools.addSCSIconToDialog(alert);
                Optional<ButtonType> result = alert.showAndWait();
-               stopSession(result.isPresent() && result.get() == ButtonType.YES);
+               stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
                if (oldValue != null)
                   oldValue.shutdownSession();
             }
@@ -112,14 +112,14 @@ public class MultiSessionManager
       });
    }
 
-   public void stopSession(boolean saveConfiguration)
+   public void stopSession(boolean saveConfiguration, boolean shutdownSession)
    {
       if (!toolkit.hasActiveSession())
          return;
 
       if (saveConfiguration)
          saveSessionDefaultConfiguration();
-      toolkit.stopSession();
+      toolkit.stopSession(shutdownSession);
       mainWindowController.stopSession();
       inactiveControllerMap.values().forEach(SessionControlsController::unloadSession);
    }

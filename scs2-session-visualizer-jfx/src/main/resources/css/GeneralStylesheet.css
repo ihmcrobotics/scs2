@@ -432,6 +432,11 @@
 	-fx-vgap: 5.0;
 }
 
+.log-trim-controls-button {
+	-jfx-button-type: RAISED;
+	-fx-background-color: #bbd3fa;
+}
+
 /*******************************************************************************
  *                                                                             *
  * Remote session controls                                                     *

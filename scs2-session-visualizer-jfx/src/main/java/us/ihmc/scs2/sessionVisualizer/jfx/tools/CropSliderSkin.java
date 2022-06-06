@@ -81,7 +81,6 @@ public class CropSliderSkin extends JFXSliderSkin
       registerChangeListener(slider.orientationProperty(), obs -> handleControlPropertyChanged(ORIENTATION));
       registerChangeListener(slider.indicatorPositionProperty(), obs -> handleControlPropertyChanged(INDICATOR_POSITION));
       registerChangeListener(slider.trimStartValueProperty(), obs -> handleControlPropertyChanged(TRIM_START_VALUE));
-      registerChangeListener(slider.trimStartValueProperty(), obs -> handleControlPropertyChanged(TRIM_START_VALUE));
       registerChangeListener(slider.trimEndValueProperty(), obs -> handleControlPropertyChanged(TRIM_END_VALUE));
       registerChangeListener(slider.showTrimProperty(), obs -> handleControlPropertyChanged(TRIM_SHOW));
    }
@@ -96,23 +95,25 @@ public class CropSliderSkin extends JFXSliderSkin
          valueChangingProperty.set(true);
          dragStart = marker.localToParent(e.getX(), e.getY());
          preDragTrimMarkerPosition = normalize(valueProperty.get());
-         if (!slider.valueProperty().isBound())
+         if (!slider.valueProperty().isBound() && slider.isValueBoundToActiveTrim())
          {
             slider.valueProperty().bind(valueProperty);
             boundValueToTrimMarker = true;
+            thumb.fireEvent(e);
          }
-         thumb.fireEvent(e);
       });
 
       marker.setOnMouseReleased(e ->
       {
          CropSlider slider = getSlider();
          valueChangingProperty.set(false);
-         slider.adjustValue(valueProperty.get());
          if (boundValueToTrimMarker)
+         {
+            slider.adjustValue(valueProperty.get());
             slider.valueProperty().unbind();
-         boundValueToTrimMarker = false;
-         thumb.fireEvent(e);
+            boundValueToTrimMarker = false;
+            thumb.fireEvent(e);
+         }
       });
 
       marker.setOnMouseDragged(e ->

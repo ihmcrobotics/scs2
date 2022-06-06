@@ -22,13 +22,12 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
@@ -85,7 +84,7 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
             if (selectedRegistry == null)
                return;
             messager.submitMessage(topics.getOpenWindowRequest(),
-                                   new Pair<>(SecondaryWindowManager.REGISTRY_STATISTICS_WINDOW_TYPE, selectedRegistry.getValue().getNamespace().toString()));
+                                   NewWindowRequest.registryStatisticWindow(toolkit.getMainWindow(), selectedRegistry.getValue()));
          });
          return openStatisticsMenuItem;
       });
@@ -116,6 +115,11 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       showSCS2YoVariables = messager.createPropertyInput(topics.getShowSCS2YoVariables(), false);
       showSCS2YoVariables.addListener((o, oldValue, newValue) -> refreshRootRegistry = true);
       scs2InternalRegistryFilter = reg -> showSCS2YoVariables.getValue() || !reg.getNamespace().equals(Session.SESSION_INTERNAL_NAMESPACE);
+   }
+
+   public void requestFocusForSearchBox()
+   {
+      searchTextField.requestFocus();
    }
 
    public void setRegistryViewRequestConsumer(Consumer<YoRegistry> consumer)
@@ -260,7 +264,10 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       {
          TreeItem<YoRegistry> child = parent.getChildren().get(i);
 
-         if (child.isLeaf() && !registriesToKeep.contains(child.getValue()))
+         if (!child.isLeaf() || child.getValue() == null)
+            continue;
+
+         if (!registriesToKeep.contains(child.getValue()))
             parent.getChildren().remove(i);
       }
    }

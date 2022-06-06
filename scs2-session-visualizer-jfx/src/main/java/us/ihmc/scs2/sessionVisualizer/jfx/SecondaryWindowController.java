@@ -11,13 +11,13 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SecondaryWindowControlsController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
-public class SecondaryWindowController
+public class SecondaryWindowController implements VisualizerController
 {
    @FXML
    private VBox mainNode;
@@ -28,12 +28,13 @@ public class SecondaryWindowController
 
    private SessionVisualizerWindowToolkit toolkit;
 
-   public void initialize(SessionVisualizerToolkit globalToolkit, Stage owner)
+   public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
-      toolkit = new SessionVisualizerWindowToolkit(owner, globalToolkit);
+      this.toolkit = toolkit;
       menuController.initialize(toolkit);
       controlsController.initialize(toolkit);
 
+      Stage owner = toolkit.getWindow();
       owner.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
       {
          if (e.isConsumed())

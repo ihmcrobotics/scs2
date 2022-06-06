@@ -23,6 +23,11 @@ public class SensorDefinition implements Transformable
    {
    }
 
+   public SensorDefinition(String name)
+   {
+      this.name = name;
+   }
+
    public SensorDefinition(String name, Tuple3DReadOnly offsetFromJoint)
    {
       this.name = name;

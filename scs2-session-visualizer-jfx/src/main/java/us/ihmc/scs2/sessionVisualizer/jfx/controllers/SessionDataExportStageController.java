@@ -46,7 +46,7 @@ import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class SessionDataExportStageController
+public class SessionDataExportStageController implements VisualizerController
 {
    @FXML
    private Stage stage;
@@ -83,6 +83,7 @@ public class SessionDataExportStageController
    private JavaFXMessager messager;
    private YoManager yoManager;
 
+   @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
       owner = toolkit.getWindow();
@@ -201,7 +202,7 @@ public class SessionDataExportStageController
 
    private void refreshTreeView()
    {
-      rootItem = new CheckBoxTreeItem<Object>(yoManager.getRootRegistry());
+      rootItem = new CheckBoxTreeItem<>(yoManager.getRootRegistry());
       rootItem.setSelected(true);
       rootItem.setExpanded(true);
       buildTreeRecursively(rootItem);
