@@ -105,7 +105,7 @@ public class BulletMultiBodyJointParametersTest
 
          jointParameters.setJointDisableParentCollision(jointDisableParentCollision);
          jointParameters.setJointFriction(jointFriction);
-         jointParameters.setJointResitution(jointRestitution);
+         jointParameters.setJointRestitution(jointRestitution);
          jointParameters.setJointHitFraction(jointHitFration);
          jointParameters.setJointRollingFriction(jointRollingFriction);
          jointParameters.setJointSpinningFriction(jointSpinningFriction);

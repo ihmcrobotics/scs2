@@ -15,7 +15,7 @@ public class BulletMultiBodyJointParameters
       BulletMultiBodyJointParameters bulletMultiBodyJointParameters = new BulletMultiBodyJointParameters();
       bulletMultiBodyJointParameters.setJointDisableParentCollision(true);
       bulletMultiBodyJointParameters.setJointFriction(0.5);
-      bulletMultiBodyJointParameters.setJointResitution(0.0);
+      bulletMultiBodyJointParameters.setJointRestitution(0.0);
       bulletMultiBodyJointParameters.setJointHitFraction(1.0);
       bulletMultiBodyJointParameters.setJointRollingFriction(0.0);
       bulletMultiBodyJointParameters.setJointSpinningFriction(0.0);
@@ -58,7 +58,7 @@ public class BulletMultiBodyJointParameters
       this.jointFriction = jointFriction;
    }
 
-   public void setJointResitution(double jointRestitution)
+   public void setJointRestitution(double jointRestitution)
    {
       this.jointRestitution = jointRestitution;
    }
