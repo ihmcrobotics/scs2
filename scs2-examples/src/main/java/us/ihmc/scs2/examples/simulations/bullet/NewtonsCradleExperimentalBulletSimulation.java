@@ -85,7 +85,7 @@ public class NewtonsCradleExperimentalBulletSimulation
 
       BulletMultiBodyParameters parameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
       BulletMultiBodyJointParameters jointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-      jointParameters.setJointResitution(0.95);
+      jointParameters.setJointRestitution(0.95);
       jointParameters.setJointContactProcessingThreshold(0.0001);
       
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
