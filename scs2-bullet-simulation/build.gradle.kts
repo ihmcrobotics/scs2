@@ -8,8 +8,11 @@ ihmc {
    loadProductProperties("../group.gradle.properties")
 
    configureDependencyResolution()
+   repository("https://oss.sonatype.org/content/repositories/snapshots")
    configurePublications()
 }
+
+val javaCPPVersion = "1.5.8-SNAPSHOT"
 
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
@@ -21,9 +24,8 @@ mainDependencies {
    api("us.ihmc:ihmc-yovariables:0.9.15")
    api("us.ihmc:mecano-yovariables:0.11.2")
 
-   val libGDXVersion = "1.11.0"
-   api("com.badlogicgames.gdx:gdx-bullet:$libGDXVersion")
-   api("com.badlogicgames.gdx:gdx-bullet-platform:$libGDXVersion:natives-desktop")
+   apiBytedecoNatives("javacpp")
+   apiBytedecoNatives("bullet", "3.24-")
 }
 
 debugDependencies {
@@ -39,4 +41,19 @@ debugDependencies {
 
 testDependencies {
    api("us.ihmc:scs2-session-visualizer-jfx:source")
+}
+
+fun us.ihmc.build.IHMCDependenciesExtension.apiBytedecoNatives(name: String, versionPrefix: String = "")
+{
+   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion")
+   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:linux-x86_64")
+   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:windows-x86_64")
+   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:macosx-x86_64")
+}
+
+fun us.ihmc.build.IHMCDependenciesExtension.apiBytedecoSelective(dependencyNotation: String)
+{
+   api(dependencyNotation) {
+      exclude(group = "org.bytedeco")
+   }
 }
