@@ -1,6 +1,11 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import org.junit.jupiter.api.Test;
+
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+
+import static org.junit.jupiter.api.Assertions.*;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
@@ -17,25 +22,27 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 
 public class BulletSingleContactTest
 {
-   private static final int ITERATIONS = 10000;
+   private static final int NUMBER_OF_TRIES = 10000;
    private static final boolean BULLET_PHYSICS_ENGINE = true;
-   private static final double EPSILON = 2.0e-12;
+   private static final double EPSILON = 0.06;
    
    @Test
    public void testFlyingCollidingSpheres()
    {
-      //Random random = new Random(12542141257L);
+      //Random random = new Random(12541257L);
 
       //double dt = 1.0 / 60.0;
-      double dt = 0.01;
+      double dt = 0.001;
       String name1 = "sphere1";
       String name2 = "sphere2";
       double radius1 = 0.2;
       double radius2 = 0.2;
-      double mass1 = 1.0;
-      double mass2 = 1.0;
+      double mass1 = 2;
+      double mass2 = 2;
       double initialVelocity1 = -1.0;
       double initialVelocity2 = 2.0;
+      
+      double coefficientOfRestitution = 0.2;
 
       RobotDefinition sphereRobot1 = createSphereRobot(radius1,
                                                        mass1,
@@ -56,43 +63,30 @@ public class BulletSingleContactTest
       {
          BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
          BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-         bulletMultiBodyParameters.setLinearDamping(0);
-         bulletMultiBodyParameters.setAngularDamping(0);
-         bulletMultiBodyJointParameter.setJointRestitution(1.0);
-         bulletMultiBodyJointParameter.setJointFriction(0);
+         bulletMultiBodyParameters.setLinearDamping(0.0);
+         bulletMultiBodyJointParameter.setJointRestitution(coefficientOfRestitution);
             
          simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
       }
       else
       {
          ContactParameters contactParameters = new ContactParameters();
-         contactParameters.setCoefficientOfRestitution(1.0);
+         contactParameters.setCoefficientOfRestitution(coefficientOfRestitution);
          simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
       }
       
       simulationSession.addRobot(sphereRobot1);
       simulationSession.addRobot(sphereRobot2);
       simulationSession.setSessionDTSeconds(dt);
-      simulationSession.setGravity(0, 0, 0);
+      simulationSession.setGravity(0.0f, 0.0f, 0.0f);
       
+      BulletPhysicsEngine bulletPhysicsEngine = null;
       if (BULLET_PHYSICS_ENGINE)
       {
-         BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine)simulationSession.getPhysicsEngine();
-         //
-//               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setDamping(1);
-//               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setTimeStep((float)dt);
-//               System.out.println("timestep " + bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().getTimeStep());
-         //
-//               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setRestingContactRestitutionThreshold(0);
-//               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setRestitution(0f);
-//               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setRestitutionVelocityThreshold(1000.0f);
-//               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setFriction(0);
-//              
-               System.out.println("activiation state: " + bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getMultiBody(0).getBaseCollider().getActivationState());
-               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getMultiBody(0).getBaseCollider().forceActivationState(4);
-               bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getMultiBody(1).getBaseCollider().forceActivationState(4);
-//               System.out.println("friction: " + bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getMultiBody(0).getBaseCollider().getAnisotropicFriction());
-               
+          bulletPhysicsEngine = (BulletPhysicsEngine)simulationSession.getPhysicsEngine();
+//         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setSplitImpulse(0);
+//         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setSplitImpulseTurnErp(1.0f);
+//         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setSplitImpulsePenetrationThreshold(-0.0000001f);
       }
       
       SimFloatingRootJoint floatingRootJoint1 = (SimFloatingRootJoint)simulationSession.getPhysicsEngine().getRobots().get(0).getAllJoints().get(0);
@@ -102,7 +96,7 @@ public class BulletSingleContactTest
       Double finalVelocity2 = initialVelocity2;
       
       int i = 0;
-      while (i < ITERATIONS && initialVelocity1 == finalVelocity1)
+      while (i < NUMBER_OF_TRIES && initialVelocity1 == finalVelocity1)
       {
          simulationSession.runTick();
          
@@ -125,6 +119,8 @@ public class BulletSingleContactTest
          System.out.println("v2: " + (cR * (initialVelocity1 - initialVelocity2) + finalVelocity1));
       
          System.out.println("v1: " + (mass1 * initialVelocity1 + mass2 * initialVelocity2 + mass2 * cR * (initialVelocity2 - initialVelocity1)) / (mass1 + mass2));
+         
+         assertEquals(cR, coefficientOfRestitution, EPSILON);
       }
       else
       {
@@ -150,14 +146,13 @@ public class BulletSingleContactTest
       rootJoint.setSuccessor(rigidBody);
 
       sphereRobot.setRootBodyDefinition(rootBody);
-      sphereRobot.getRigidBodyDefinition(name + "RigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Sphere3DDefinition(radius)));
-
+      CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(new Sphere3DDefinition(radius));
+      sphereRobot.getRigidBodyDefinition(name + "RigidBody").addCollisionShapeDefinition(collisionShapeDefinition);
+      
       SixDoFJointState sphere2InitialState = new SixDoFJointState();
       sphere2InitialState.setConfiguration(null, initialPosition);
       sphere2InitialState.setVelocity(null, initialVelocity);
       sphereRobot.getRootJointDefinitions().get(0).setInitialJointState(sphere2InitialState);
-      
-      sphereRobot.getRigidBodyDefinition(name + "RigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Sphere3DDefinition(radius)));
       
       return sphereRobot;
    }
