@@ -110,8 +110,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       {
          for (SimJointBasics joint : robot.getJointsToConsider())
          {
-            List<GroundContactPoint> groundContactPoints = joint.getAuxialiryData().getGroundContactPoints();
-            List<ExternalWrenchPoint> externalWrenchPoints = joint.getAuxialiryData().getExternalWrenchPoints();
+            List<GroundContactPoint> groundContactPoints = joint.getAuxiliaryData().getGroundContactPoints();
+            List<ExternalWrenchPoint> externalWrenchPoints = joint.getAuxiliaryData().getExternalWrenchPoints();
 
             if (groundContactPoints.isEmpty() && externalWrenchPoints.isEmpty())
                continue;

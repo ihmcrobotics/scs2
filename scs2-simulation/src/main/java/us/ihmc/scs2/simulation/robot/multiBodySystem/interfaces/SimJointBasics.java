@@ -68,84 +68,84 @@ public interface SimJointBasics extends JointBasics, SimJointReadOnly
 
    default KinematicPoint addKinematicPoint(String name)
    {
-      return getAuxialiryData().addKinematicPoint(name);
+      return getAuxiliaryData().addKinematicPoint(name);
    }
 
    default KinematicPoint addKinematicPoint(String name, Tuple3DReadOnly offset)
    {
-      return getAuxialiryData().addKinematicPoint(name, offset);
+      return getAuxiliaryData().addKinematicPoint(name, offset);
    }
 
    default KinematicPoint addKinematicPoint(KinematicPointDefinition definition)
    {
-      return getAuxialiryData().addKinematicPoint(definition);
+      return getAuxiliaryData().addKinematicPoint(definition);
    }
 
    default ExternalWrenchPoint addExternalWrenchPoint(String name)
    {
-      return getAuxialiryData().addExternalWrenchPoint(name);
+      return getAuxiliaryData().addExternalWrenchPoint(name);
    }
 
    default ExternalWrenchPoint addExternalWrenchPoint(String name, Tuple3DReadOnly offset)
    {
-      return getAuxialiryData().addExternalWrenchPoint(name, offset);
+      return getAuxiliaryData().addExternalWrenchPoint(name, offset);
    }
 
    default ExternalWrenchPoint addExternalWrenchPoint(ExternalWrenchPointDefinition definition)
    {
-      return getAuxialiryData().addExternalWrenchPoint(definition);
+      return getAuxiliaryData().addExternalWrenchPoint(definition);
    }
 
    default GroundContactPoint addGroundContactPoint(String name)
    {
-      return getAuxialiryData().addGroundContactPoint(name);
+      return getAuxiliaryData().addGroundContactPoint(name);
    }
 
    default GroundContactPoint addGroundContactPoint(String name, Tuple3DReadOnly offset)
    {
-      return getAuxialiryData().addGroundContactPoint(name, offset);
+      return getAuxiliaryData().addGroundContactPoint(name, offset);
    }
 
    default GroundContactPoint addGroundContactPoint(GroundContactPointDefinition definition)
    {
-      return getAuxialiryData().addGroundContactPoint(definition);
+      return getAuxiliaryData().addGroundContactPoint(definition);
    }
 
    default SimIMUSensor addIMUSensor(String name)
    {
-      return getAuxialiryData().addIMUSensor(name);
+      return getAuxiliaryData().addIMUSensor(name);
    }
 
    default SimIMUSensor addIMUSensor(String name, Tuple3DReadOnly offset)
    {
-      return getAuxialiryData().addIMUSensor(name, offset);
+      return getAuxiliaryData().addIMUSensor(name, offset);
    }
 
    default SimIMUSensor addIMUSensor(IMUSensorDefinition definition)
    {
-      return getAuxialiryData().addIMUSensor(definition);
+      return getAuxiliaryData().addIMUSensor(definition);
    }
 
    default SimWrenchSensor addWrenchSensor(String name)
    {
-      return getAuxialiryData().addWrenchSensor(name);
+      return getAuxiliaryData().addWrenchSensor(name);
    }
 
    default SimWrenchSensor addWrenchSensor(String name, Tuple3DReadOnly offset)
    {
-      return getAuxialiryData().addWrenchSensor(name, offset);
+      return getAuxiliaryData().addWrenchSensor(name, offset);
    }
 
    default SimWrenchSensor addWrenchSensor(WrenchSensorDefinition definition)
    {
-      return getAuxialiryData().addWrenchSensor(definition);
+      return getAuxiliaryData().addWrenchSensor(definition);
    }
 
    @Override
    default void updateFrame()
    {
       JointBasics.super.updateFrame();
-      getAuxialiryData().updateFrames();
+      getAuxiliaryData().updateFrames();
    }
 
    @Override
