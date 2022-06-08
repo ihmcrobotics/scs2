@@ -257,9 +257,6 @@ public class SessionVisualizer
 
    public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
    {
-      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
-         Platform.setImplicitExit(javaFXThreadImplicitExit);
-
       MutableObject<SessionVisualizerControls> sessionVisualizerControls = new MutableObject<>();
 
       JavaFXApplicationCreator.spawnJavaFXMainApplication();
@@ -279,6 +276,9 @@ public class SessionVisualizer
             throw new RuntimeException(e);
          }
       });
+
+      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
+         Platform.setImplicitExit(javaFXThreadImplicitExit);
 
       return sessionVisualizerControls.getValue();
    }
