@@ -62,7 +62,7 @@ public class SimPlanarJoint extends YoPlanarJoint implements SimJointBasics, Sim
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }
