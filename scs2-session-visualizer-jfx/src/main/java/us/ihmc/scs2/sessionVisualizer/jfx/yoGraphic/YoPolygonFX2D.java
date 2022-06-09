@@ -34,6 +34,9 @@ public class YoPolygonFX2D extends YoGraphicFX2D
    {
       polygonNode.getPoints().clear();
 
+      if (vertices == null)
+         return;
+
       if (numberOfVertices == null)
       {
          for (Tuple2DProperty vertex : vertices)

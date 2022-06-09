@@ -97,7 +97,7 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
    {
       for (SimJointBasics joint : getJointsToConsider())
       {
-         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
+         joint.getAuxiliaryData().update(robotPhysics.getPhysicsOutput());
       }
    }
 
