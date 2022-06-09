@@ -190,7 +190,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
 
          for (SimJointBasics joint : robot.getJointsToConsider())
          {
-            List<ExternalWrenchPoint> externalWrenchPoints = joint.getAuxialiryData().getExternalWrenchPoints();
+            List<ExternalWrenchPoint> externalWrenchPoints = joint.getAuxiliaryData().getExternalWrenchPoints();
 
             if (externalWrenchPoints.isEmpty())
                continue;

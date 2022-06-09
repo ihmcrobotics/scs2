@@ -65,7 +65,7 @@ public class SimPrismaticJoint extends YoPrismaticJoint implements SimOneDoFJoin
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }
