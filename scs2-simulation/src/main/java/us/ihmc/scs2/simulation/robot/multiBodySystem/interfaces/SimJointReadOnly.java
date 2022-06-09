@@ -56,7 +56,16 @@ public interface SimJointReadOnly extends JointReadOnly
 
    int getJointDeltaVelocity(int rowStart, DMatrix matrixToPack);
 
-   SimJointAuxiliaryData getAuxialiryData();
+   /**
+    * Use {@link #getAuxiliaryData()} instead.
+    */
+   @Deprecated
+   default SimJointAuxiliaryData getAuxialiryData()
+   {
+      return getAuxiliaryData();
+   }
+
+   SimJointAuxiliaryData getAuxiliaryData();
 
    @Override
    default Iterable<? extends SimJointReadOnly> subtreeIterable()

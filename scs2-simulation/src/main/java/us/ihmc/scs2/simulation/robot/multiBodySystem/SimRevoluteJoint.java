@@ -69,7 +69,7 @@ public class SimRevoluteJoint extends YoRevoluteJoint implements SimOneDoFJointB
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }
