@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.yoVariables.euclid.YoVector3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -24,6 +26,8 @@ public class SimCameraSensor extends SimSensor
 
    private final YoInteger imageWidth;
    private final YoInteger imageHeight;
+
+   private final YoVector3D depthAxis, upAxis;
 
    private final List<CameraFrameConsumer> cameraFrameConsumers = new ArrayList<>();
 
@@ -51,6 +55,11 @@ public class SimCameraSensor extends SimSensor
       clipFar = new YoDouble(name + "ClipFar", registry);
       imageWidth = new YoInteger(name + "ImageWidth", registry);
       imageHeight = new YoInteger(name + "ImageHeight", registry);
+
+      depthAxis = new YoVector3D(name + "DepthAxis", registry);
+      depthAxis.set(Axis3D.X);
+      upAxis = new YoVector3D(name + "UpAxis", registry);
+      upAxis.set(Axis3D.Z);
 
       enable.addListener(v -> notifyDefinitionConsumers.set(true));
       fieldOfView.addListener(v -> notifyDefinitionConsumers.set(true));
@@ -90,6 +99,8 @@ public class SimCameraSensor extends SimSensor
          newDefinition.setUpdatePeriod(0);
       else
          newDefinition.setUpdatePeriod((int) (1000.0 / getSamplingRate().getValue()));
+      newDefinition.setDepthAxis(depthAxis);
+      newDefinition.setUpAxis(upAxis);
       return newDefinition;
    }
 

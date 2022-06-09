@@ -72,7 +72,7 @@ public class ContactPointBasedRobot extends RobotExtension implements Collidable
    {
       for (SimJointBasics joint : getJointsToConsider())
       {
-         joint.getAuxialiryData().update(robotPhysics.getPhysicsOutput());
+         joint.getAuxiliaryData().update(robotPhysics.getPhysicsOutput());
       }
    }
 

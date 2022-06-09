@@ -61,7 +61,7 @@ public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasic
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }
