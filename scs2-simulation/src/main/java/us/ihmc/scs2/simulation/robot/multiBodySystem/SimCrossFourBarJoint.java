@@ -115,7 +115,7 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }
