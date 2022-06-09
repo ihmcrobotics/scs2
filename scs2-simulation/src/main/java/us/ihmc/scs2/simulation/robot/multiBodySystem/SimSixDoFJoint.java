@@ -57,7 +57,7 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }

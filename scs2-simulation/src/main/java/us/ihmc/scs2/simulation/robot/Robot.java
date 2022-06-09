@@ -177,17 +177,17 @@ public class Robot implements RobotInterface
 
          SimRigidBody childSuccessor = bodyBuilder.fromDefinition(childJointDefinition.getSuccessor(), childJoint);
 
-         childJointDefinition.getKinematicPointDefinitions().forEach(childJoint.getAuxialiryData()::addKinematicPoint);
-         childJointDefinition.getExternalWrenchPointDefinitions().forEach(childJoint.getAuxialiryData()::addExternalWrenchPoint);
-         childJointDefinition.getGroundContactPointDefinitions().forEach(childJoint.getAuxialiryData()::addGroundContactPoint);
+         childJointDefinition.getKinematicPointDefinitions().forEach(childJoint.getAuxiliaryData()::addKinematicPoint);
+         childJointDefinition.getExternalWrenchPointDefinitions().forEach(childJoint.getAuxiliaryData()::addExternalWrenchPoint);
+         childJointDefinition.getGroundContactPointDefinitions().forEach(childJoint.getAuxiliaryData()::addGroundContactPoint);
          for (SensorDefinition sensorDefinition : childJointDefinition.getSensorDefinitions())
          {
             if (sensorDefinition instanceof IMUSensorDefinition)
-               childJoint.getAuxialiryData().addIMUSensor((IMUSensorDefinition) sensorDefinition);
+               childJoint.getAuxiliaryData().addIMUSensor((IMUSensorDefinition) sensorDefinition);
             else if (sensorDefinition instanceof WrenchSensorDefinition)
-               childJoint.getAuxialiryData().addWrenchSensor((WrenchSensorDefinition) sensorDefinition);
+               childJoint.getAuxiliaryData().addWrenchSensor((WrenchSensorDefinition) sensorDefinition);
             else if (sensorDefinition instanceof CameraSensorDefinition)
-               childJoint.getAuxialiryData().addCameraSensor((CameraSensorDefinition) sensorDefinition);
+               childJoint.getAuxiliaryData().addCameraSensor((CameraSensorDefinition) sensorDefinition);
             else
                LogTools.warn("Unsupported sensor: " + sensorDefinition);
          }

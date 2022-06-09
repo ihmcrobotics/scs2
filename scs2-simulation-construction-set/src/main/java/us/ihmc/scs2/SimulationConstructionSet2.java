@@ -1007,7 +1007,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    {
       if (visualizerControls != null)
          visualizerControls.addYoGraphic(yoGraphicDefinition);
-      else if (!simulationSession.hasSessionStarted()) // It is possible that the simulation hasn't been started yet, add the graphic to the session instead.
+      else // It is possible that the simulation hasn't been started yet, add the graphic to the session instead.
          simulationSession.addYoGraphicDefinition(yoGraphicDefinition);
    }
 

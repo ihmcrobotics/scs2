@@ -46,7 +46,7 @@ public class SimFixedJoint extends FixedJoint implements SimJointBasics
    }
 
    @Override
-   public SimJointAuxiliaryData getAuxialiryData()
+   public SimJointAuxiliaryData getAuxiliaryData()
    {
       return auxiliaryData;
    }

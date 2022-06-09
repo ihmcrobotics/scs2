@@ -118,7 +118,7 @@ public class YoRobotFX
          if (rigidBody.isRootBody())
             continue;
 
-         SimJointAuxiliaryData auxialiryData = rigidBody.getParentJoint().getAuxialiryData();
+         SimJointAuxiliaryData auxialiryData = rigidBody.getParentJoint().getAuxiliaryData();
 
          auxialiryData.getKinematicPoints().forEach(this::linkKinematicPointFrame);
          auxialiryData.getExternalWrenchPoints().forEach(this::linkKinematicPointFrame);
