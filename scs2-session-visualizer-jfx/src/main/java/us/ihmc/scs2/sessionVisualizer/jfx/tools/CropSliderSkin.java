@@ -77,11 +77,12 @@ public class CropSliderSkin extends JFXSliderSkin
       getChildren().add(1, trimEnd);
       getChildren().add(1, trimStart);
 
-      registerChangeListener(slider.orientationProperty(), ORIENTATION);
-      registerChangeListener(slider.indicatorPositionProperty(), INDICATOR_POSITION);
-      registerChangeListener(slider.trimStartValueProperty(), TRIM_START_VALUE);
-      registerChangeListener(slider.trimEndValueProperty(), TRIM_END_VALUE);
-      registerChangeListener(slider.showTrimProperty(), TRIM_SHOW);
+      // TODO Clean me up
+      registerChangeListener(slider.orientationProperty(), obs -> handleControlPropertyChanged(ORIENTATION));
+      registerChangeListener(slider.indicatorPositionProperty(), obs -> handleControlPropertyChanged(INDICATOR_POSITION));
+      registerChangeListener(slider.trimStartValueProperty(), obs -> handleControlPropertyChanged(TRIM_START_VALUE));
+      registerChangeListener(slider.trimEndValueProperty(), obs -> handleControlPropertyChanged(TRIM_END_VALUE));
+      registerChangeListener(slider.showTrimProperty(), obs -> handleControlPropertyChanged(TRIM_SHOW));
    }
 
    private void initTrimMarkerListeners(Node marker, DoubleProperty valueProperty, BooleanProperty valueChangingProperty)
@@ -137,18 +138,18 @@ public class CropSliderSkin extends JFXSliderSkin
       }
 
       // calculate the available space
-      thumbWidth = snapSize(thumb.prefWidth(-1));
-      thumbHeight = snapSize(thumb.prefHeight(-1));
+      thumbWidth = snapSizeX(thumb.prefWidth(-1));
+      thumbHeight = snapSizeY(thumb.prefHeight(-1));
 
       if (getSkinnable().getOrientation() == Orientation.HORIZONTAL)
       {
-         trackLength = snapSize(w - thumbWidth);
-         trackStart = snapPosition(x + (thumbWidth / 2));
+         trackLength = snapSizeX(w - thumbWidth);
+         trackStart = snapPositionX(x + (thumbWidth / 2));
       }
       else
       {
-         trackLength = snapSize(h - thumbHeight);
-         trackStart = snapPosition(y + (thumbHeight / 2));
+         trackLength = snapSizeY(h - thumbHeight);
+         trackStart = snapPositionY(y + (thumbHeight / 2));
       }
 
       double prefWidth = trimStart.prefWidth(-1);
