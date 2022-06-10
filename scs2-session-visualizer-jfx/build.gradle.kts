@@ -24,7 +24,7 @@ mainDependencies {
    api(ihmc.javaFXModule("fxml", javaFXVersion))
    api(ihmc.javaFXModule("swing", javaFXVersion))
 
-   api("us.ihmc:ihmc-javafx-toolkit:0.21.1") {
+   api("us.ihmc:ihmc-javafx-toolkit:17-0.21.1") {
       exclude(group="us.ihmc", module="jassimp")
       exclude(group="us.ihmc", module="euclid")
       exclude(group="us.ihmc", module="euclid-shape")
