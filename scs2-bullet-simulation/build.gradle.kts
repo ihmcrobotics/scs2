@@ -21,7 +21,7 @@ mainDependencies {
    api("us.ihmc:ihmc-yovariables:0.9.13")
    api("us.ihmc:mecano-yovariables:0.11.1")
 
-   api("us.ihmc:ihmc-javafx-toolkit:0.21.1") {
+   api("us.ihmc:ihmc-javafx-toolkit:17-0.21.1") {
       exclude(group="us.ihmc", module="jassimp")
       exclude(group="us.ihmc", module="euclid")
       exclude(group="us.ihmc", module="euclid-shape")
