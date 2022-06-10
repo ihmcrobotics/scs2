@@ -186,7 +186,7 @@ public class SimulationSession extends Session
    {
       for (SimJointBasics joint : robot.getAllJoints())
       {
-         for (SimCameraSensor cameraSensor : joint.getAuxialiryData().getCameraSensors())
+         for (SimCameraSensor cameraSensor : joint.getAuxiliaryData().getCameraSensors())
             configureCameraSensor(robot.getName(), cameraSensor);
       }
    }

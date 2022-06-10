@@ -148,7 +148,7 @@ public class LoopClosureSoftConstraintController implements Controller
    public void setParentJoint(SimJointBasics parentJoint)
    {
       this.parentJoint = parentJoint;
-      constraintA = parentJoint.getAuxialiryData().addExternalWrenchPoint(constraintDefinitionA);
+      constraintA = parentJoint.getAuxiliaryData().addExternalWrenchPoint(constraintDefinitionA);
 
       YoRegistry registry = parentJoint.getRegistry();
       proportionalGains = new YoVector3D(name + "ProportionalGain", registry);
@@ -166,7 +166,7 @@ public class LoopClosureSoftConstraintController implements Controller
 
    public void setSuccessor(SimRigidBodyBasics rigidBody)
    {
-      constraintB = rigidBody.getParentJoint().getAuxialiryData().addExternalWrenchPoint(constraintDefinitionB);
+      constraintB = rigidBody.getParentJoint().getAuxiliaryData().addExternalWrenchPoint(constraintDefinitionB);
    }
 
    private boolean isFirstUpdate = true;

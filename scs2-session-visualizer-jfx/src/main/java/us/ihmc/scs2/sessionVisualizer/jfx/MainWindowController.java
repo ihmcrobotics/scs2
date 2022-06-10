@@ -254,6 +254,9 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       drawerSidePane.setDisable(!drawer.isOpened());
       drawer.addEventHandler(Event.ANY, e ->
       {
+         if (e.getTarget() != drawer)
+            return;
+
          if (e.getEventType() == JFXDrawerEvent.CLOSED)
          {
             drawerSidePane.setVisible(false);

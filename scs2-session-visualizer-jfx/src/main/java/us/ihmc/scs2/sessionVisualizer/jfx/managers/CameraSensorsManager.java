@@ -17,10 +17,15 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
+import us.ihmc.euclid.exceptions.NotARotationMatrixException;
+import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
+import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
@@ -132,6 +137,8 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
       private final String robotName;
       private final String sensorName;
       private final ReferenceFrame sensorFrame;
+      private final RotationMatrix cameraViewOrientationOffset = new RotationMatrix();
+      private final RigidBodyTransform actualCameraPose = new RigidBodyTransform();
       private long period;
 
       private boolean enable = false;
@@ -145,6 +152,11 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
       private BufferedImage bufferedImage;
 
       private int width, height;
+
+      // Temp variables used to compute the camera orientation offset.
+      private final Vector3D xAxis = new Vector3D();
+      private final Vector3D yAxis = new Vector3D();
+      private final Vector3D zAxis = new Vector3D();
 
       public SingleCameraSensorManager(String robotName, CameraSensorDefinition definition, ReferenceFrame sensorFrame)
       {
@@ -167,11 +179,37 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
          if (enable)
          {
             period = TimeUnit.MILLISECONDS.toNanos(definition.getUpdatePeriod());
-            
+
+            Vector3D depthAxis = definition.getDepthAxis();
+            Vector3D upAxis = definition.getUpAxis();
+
+            if (depthAxis == null || upAxis == null)
+            {
+               cameraViewOrientationOffset.setIdentity();
+            }
+            else
+            {
+               zAxis.setAndNormalize(depthAxis);
+               yAxis.setAndNegate(upAxis);
+               yAxis.normalize();
+               xAxis.cross(yAxis, zAxis);
+               yAxis.cross(zAxis, xAxis);
+
+               try
+               {
+                  cameraViewOrientationOffset.setColumns(xAxis, yAxis, zAxis);
+               }
+               catch (NotARotationMatrixException e)
+               {
+                  LogTools.error("Erro computing the camera view direction. depth-axis: {}, up-axis: {}", depthAxis, upAxis);
+                  cameraViewOrientationOffset.setIdentity();
+               }
+            }
+
             camera.setFieldOfView(Math.toDegrees(definition.getFieldOfView()));
             camera.setNearClip(definition.getClipNear());
             camera.setFarClip(definition.getClipFar());
-            
+
             if (bufferedImage == null || width != definition.getImageWidth() || height != definition.getImageHeight())
             {
                width = definition.getImageWidth();
@@ -199,7 +237,9 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
 
          if (lastFrame == -1 || now - lastFrame >= period)
          {
-            JavaFXTools.convertRigidBodyTransformToAffine(sensorFrame.getTransformToRoot(), cameraTransform);
+            actualCameraPose.set(sensorFrame.getTransformToRoot());
+            actualCameraPose.appendOrientation(cameraViewOrientationOffset);
+            JavaFXTools.convertRigidBodyTransformToAffine(actualCameraPose, cameraTransform);
             image = mainSceneRoot.snapshot(snapshotParameters, image);
             bufferedImage = SwingFXUtils.fromFXImage(image, bufferedImage);
             messager.submitMessage(topics.getCameraSensorFrame(), new SensorMessage<>(robotName, sensorName, bufferedImage));

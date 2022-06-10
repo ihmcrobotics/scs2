@@ -59,10 +59,10 @@ public class ContactPointBasedForceCalculator
    {
       for (SimJointBasics joint : robot.getJointsToConsider())
       {
-         if (joint.getAuxialiryData().getGroundContactPoints().isEmpty())
+         if (joint.getAuxiliaryData().getGroundContactPoints().isEmpty())
             continue;
 
-         for (GroundContactPoint gcp : joint.getAuxialiryData().getGroundContactPoints())
+         for (GroundContactPoint gcp : joint.getAuxiliaryData().getGroundContactPoints())
          {
             YoFramePoseUsingYawPitchRoll gcpPose = gcp.getPose();
 
