@@ -1,10 +1,15 @@
 package us.ihmc.scs2.definition.robot;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 
 public class CameraSensorDefinition extends SensorDefinition
 {
@@ -16,6 +21,11 @@ public class CameraSensorDefinition extends SensorDefinition
 
    private int imageWidth;
    private int imageHeight;
+
+   /** Selects the axis in the sensor frame towards which the camera is looking at. */
+   private Vector3D depthAxis = new Vector3D(Axis3D.X);
+   /** Selects the axis in the sensor frame that represents the up direction. */
+   private Vector3D upAxis = new Vector3D(Axis3D.Z);
 
    public CameraSensorDefinition()
    {
@@ -56,6 +66,8 @@ public class CameraSensorDefinition extends SensorDefinition
       clipFar = other.clipFar;
       imageWidth = other.imageWidth;
       imageHeight = other.imageHeight;
+      depthAxis.set(other.depthAxis);
+      upAxis.set(other.upAxis);
    }
 
    public boolean getEnable()
@@ -124,6 +136,38 @@ public class CameraSensorDefinition extends SensorDefinition
       this.imageHeight = imageHeight;
    }
 
+   public Vector3D getDepthAxis()
+   {
+      return depthAxis;
+   }
+
+   @XmlElement
+   public void setDepthAxis(Vector3D depthAxis)
+   {
+      this.depthAxis = depthAxis;
+   }
+
+   public void setDepthAxis(Vector3DReadOnly depthAxis)
+   {
+      this.depthAxis = new Vector3D(depthAxis);
+   }
+
+   public Vector3D getUpAxis()
+   {
+      return upAxis;
+   }
+
+   @XmlElement
+   public void setUpAxis(Vector3D upAxis)
+   {
+      this.upAxis = upAxis;
+   }
+
+   public void setUpAxis(Vector3DReadOnly upAxis)
+   {
+      this.upAxis = new Vector3D(upAxis);
+   }
+
    @Override
    public CameraSensorDefinition copy()
    {
@@ -140,6 +184,8 @@ public class CameraSensorDefinition extends SensorDefinition
       bits = EuclidHashCodeTools.addToHashCode(bits, clipFar);
       bits = EuclidHashCodeTools.addToHashCode(bits, imageWidth);
       bits = EuclidHashCodeTools.addToHashCode(bits, imageHeight);
+      bits = EuclidHashCodeTools.addToHashCode(bits, depthAxis);
+      bits = EuclidHashCodeTools.addToHashCode(bits, upAxis);
       return EuclidHashCodeTools.toIntHashCode(bits);
    }
 
@@ -162,6 +208,10 @@ public class CameraSensorDefinition extends SensorDefinition
       if (imageWidth != other.imageWidth)
          return false;
       if (imageHeight != other.imageHeight)
+         return false;
+      if (!Objects.equals(depthAxis, other.depthAxis))
+         return false;
+      if (!Objects.equals(upAxis, other.upAxis))
          return false;
       return true;
    }

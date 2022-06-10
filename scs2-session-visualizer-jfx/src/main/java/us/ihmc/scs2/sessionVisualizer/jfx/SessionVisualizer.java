@@ -258,9 +258,6 @@ public class SessionVisualizer
 
    public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
    {
-      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
-         Platform.setImplicitExit(javaFXThreadImplicitExit);
-
       MutableObject<SessionVisualizerControls> sessionVisualizerControls = new MutableObject<>();
 
       JavaFXApplicationCreator.spawnJavaFXMainApplication();
@@ -281,6 +278,9 @@ public class SessionVisualizer
          }
       });
 
+      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
+         Platform.setImplicitExit(javaFXThreadImplicitExit);
+
       return sessionVisualizerControls.getValue();
    }
 
@@ -291,9 +291,6 @@ public class SessionVisualizer
 
    public static SessionVisualizer startSessionVisualizerExpert(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
    {
-      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
-         Platform.setImplicitExit(javaFXThreadImplicitExit);
-
       JavaFXApplicationCreator.spawnJavaFXMainApplication();
 
       AtomicReference<SessionVisualizer> sessionVisualizerAtomicReference = new AtomicReference<>();
@@ -313,6 +310,9 @@ public class SessionVisualizer
          }
       });
 
+      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
+         Platform.setImplicitExit(javaFXThreadImplicitExit);
+      
       return sessionVisualizerAtomicReference.get();
    }
 
