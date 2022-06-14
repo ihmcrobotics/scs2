@@ -2,33 +2,33 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
+
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
 
 public class BulletMultiBodyRobot
 {
-   private final btMultiBody btMultiBody;
+   private final org.bytedeco.bullet.BulletDynamics.btMultiBody btMultiBody;
    private HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
    private final ArrayList<BulletMultiBodyLinkCollider> allBulletMultiBodyLinkColliders = new ArrayList<>();
-   private final ArrayList<btMultiBodyConstraint> allBtMultiBodyConstraints = new ArrayList<>();
+   private final ArrayList<org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint> allBtMultiBodyConstraints = new ArrayList<>();
 
    public BulletMultiBodyRobot(int numberOfLinks,
                                float rootBodyMass,
-                               Vector3 rootBodyIntertia,
+                               btVector3 rootBodyIntertia,
                                boolean fixedBase,
                                boolean canSleep,
                                HashMap<String, Integer> jointNameToBulletJointIndexMap)
    {
-      btMultiBody = new btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
+      btMultiBody = new org.bytedeco.bullet.BulletDynamics.btMultiBody(numberOfLinks, rootBodyMass, rootBodyIntertia, fixedBase, canSleep);
 
       this.jointNameToBulletJointIndexMap = jointNameToBulletJointIndexMap;
    }
 
-   public btMultiBody getBtMultiBody()
+   public org.bytedeco.bullet.BulletDynamics.btMultiBody getBtMultiBody()
    {
       return btMultiBody;
    }
@@ -43,7 +43,7 @@ public class BulletMultiBodyRobot
       return allBulletMultiBodyLinkColliders.get(index);
    }
 
-   public ArrayList<btMultiBodyConstraint> getBtMultiBodyConstraintArray()
+   public ArrayList<org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint> getBtMultiBodyConstraintArray()
    {
       return allBtMultiBodyConstraints;
    }
