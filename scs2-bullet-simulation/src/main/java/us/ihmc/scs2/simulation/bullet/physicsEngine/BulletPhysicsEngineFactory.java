@@ -29,4 +29,18 @@ public interface BulletPhysicsEngineFactory
          return physicsEngine;
       };
    }
+   
+   static PhysicsEngineFactory newBulletPhysicsEngineFactory(BulletMultiBodyParameters bulletMultiBodyParameters,
+                                                             BulletMultiBodyJointParameters bulletMultiBodyJointParameters,
+                                                             BulletContactSolverInfoParameters bulletContactSolverInfoParameters)
+   {
+      return (frame, rootRegistry) ->
+      {
+         BulletPhysicsEngine physicsEngine = new BulletPhysicsEngine(frame, rootRegistry);
+         physicsEngine.setGlobalBulletMultiBodyParameters(bulletMultiBodyParameters);
+         physicsEngine.setGlobalBulletMultiBodyJointParameters(bulletMultiBodyJointParameters);
+         physicsEngine.setGlobalContactSolverInfoParameters(bulletContactSolverInfoParameters);
+         return physicsEngine;
+      };
+   }
 }

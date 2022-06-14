@@ -17,6 +17,7 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletContactSolverInfoParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
@@ -85,10 +86,11 @@ public class NewtonsCradleExperimentalBulletSimulation
 
       BulletMultiBodyParameters parameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
       BulletMultiBodyJointParameters jointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-      jointParameters.setJointRestitution(0.95);
-      jointParameters.setJointContactProcessingThreshold(0.0001);
+      jointParameters.setJointRestitution(1.0);
+      BulletContactSolverInfoParameters contactSolverInfoParameters = BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters();
+      contactSolverInfoParameters.setErrorReductionForContactConstraints(0.035);
       
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters, contactSolverInfoParameters));
       simulationSession.addRobot(robotDefinition);
 
       if (VISUALIZE_WITH_DEBUG_DRAWING)
