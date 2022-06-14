@@ -1,40 +1,39 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.*;
-import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
-import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
+import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.LinearMath.btDefaultMotionState;
+import org.bytedeco.bullet.LinearMath.btTransform;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 public class BulletTerrainObject
 {
-   private final btMotionState btMotionState = new btMotionState()
+   private final btDefaultMotionState btMotionState = new btDefaultMotionState()
    {
       @Override
-      public void setWorldTransform(Matrix4 transformToWorld)
+      public void setWorldTransform(btTransform transformToWorld)
       {
          // Should be always 0, the child shapes are statically placed
       }
 
       @Override
-      public void getWorldTransform(Matrix4 transformToWorld)
+      public void getWorldTransform(btTransform transformToWorld)
       {
          // Should be always 0, the child shapes are statically placed
       }
    };
-   private final btRigidBody btRigidBody;
+   private final org.bytedeco.bullet.BulletDynamics.btRigidBody btRigidBody;
    private final int collisionGroup = 1; // group 1 is rigid and static bodies
    private final int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
 
    public BulletTerrainObject(float mass, btCollisionShape bulletCompoundCollisionShape)
    {
-      Vector3 localInertia = new Vector3();
+      btVector3 localInertia = new btVector3();
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 
-      btRigidBody = new btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
+      btRigidBody = new org.bytedeco.bullet.BulletDynamics.btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
    }
 
-   public btRigidBody getBtRigidBody()
+   public org.bytedeco.bullet.BulletDynamics.btRigidBody getBtRigidBody()
    {
       return btRigidBody;
    }

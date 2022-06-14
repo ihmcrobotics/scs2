@@ -2,49 +2,42 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
 
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.CollisionConstants;
-import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
-import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
+import org.bytedeco.bullet.BulletCollision.btCollisionObject;
+import org.bytedeco.bullet.BulletCollision.btDbvtBroadphase;
+import org.bytedeco.bullet.BulletCollision.btDefaultCollisionConfiguration;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 
 public class BulletMultiBodyDynamicsWorld
 {
-   private final btCollisionConfiguration btCollisionConfiguration;
-   private final btCollisionDispatcher btCollisionDispatcher;
-   private final btBroadphaseInterface btBroadphaseInterface;
-   private final btMultiBodyConstraintSolver btMultiBodyConstraintSolver;
-   private final btMultiBodyDynamicsWorld btMultiBodyDynamicsWorld;
-   private btIDebugDraw btIDebugDraw;
+   private final org.bytedeco.bullet.BulletCollision.btCollisionConfiguration btCollisionConfiguration;
+   private final org.bytedeco.bullet.BulletCollision.btCollisionDispatcher btCollisionDispatcher;
+   private final org.bytedeco.bullet.BulletCollision.btBroadphaseInterface btBroadphaseInterface;
+   private final org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraintSolver btMultiBodyConstraintSolver;
+   private final org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld btMultiBodyDynamicsWorld;
+   private org.bytedeco.bullet.LinearMath.btIDebugDraw btIDebugDraw;
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
-   private final Vector3 btGravity = new Vector3();
+   private final btVector3 btGravity = new btVector3();
 
    public BulletMultiBodyDynamicsWorld()
    {
       btCollisionConfiguration = new btDefaultCollisionConfiguration();
-      btCollisionDispatcher = new btCollisionDispatcher(btCollisionConfiguration);
+      btCollisionDispatcher = new org.bytedeco.bullet.BulletCollision.btCollisionDispatcher(btCollisionConfiguration);
       btBroadphaseInterface = new btDbvtBroadphase();
-      btMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
+      btMultiBodyConstraintSolver = new org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraintSolver();
       btIDebugDraw = null;
-      btMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(btCollisionDispatcher,
-                                                              btBroadphaseInterface,
-                                                              btMultiBodyConstraintSolver,
-                                                              btCollisionConfiguration);
+      btMultiBodyDynamicsWorld = new org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld(btCollisionDispatcher,
+                                                                                                 btBroadphaseInterface,
+                                                                                                 btMultiBodyConstraintSolver,
+                                                                                                 btCollisionConfiguration);
    }
 
    public void setGravity(Tuple3DReadOnly gravity)
    {
-      btGravity.set(gravity.getX32(), gravity.getY32(), gravity.getZ32());
+      btGravity.setValue(gravity.getX32(), gravity.getY32(), gravity.getZ32());
       btMultiBodyDynamicsWorld.setGravity(btGravity);
    }
 
@@ -55,7 +48,7 @@ public class BulletMultiBodyDynamicsWorld
 
    public int stepSimulation(float timeStep, int maxSubSteps)
    {
-      return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps);
+      return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, timeStep);
    }
 
    public int stepSimulation(float timeStep)
@@ -63,69 +56,70 @@ public class BulletMultiBodyDynamicsWorld
       return btMultiBodyDynamicsWorld.stepSimulation(timeStep);
    }
 
-   public btMultiBodyDynamicsWorld getBtMultiBodyDynamicsWorld()
+   public org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld getBtMultiBodyDynamicsWorld()
    {
       return btMultiBodyDynamicsWorld;
    }
 
    public void dispose()
    {
-      if (!btMultiBodyDynamicsWorld.isDisposed())
+      if (btMultiBodyDynamicsWorld != null)
       {
-         for (BulletTerrainObject bulletTerrainObject : terrainObjects)
-         {
-            bulletTerrainObject.getBtRigidBody().getCollisionShape().dispose();
-            bulletTerrainObject.getBtRigidBody().getMotionState().dispose();
-            btMultiBodyDynamicsWorld.removeRigidBody(bulletTerrainObject.getBtRigidBody());
-            bulletTerrainObject.getBtRigidBody().dispose();
-         }
-
-         for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
-         {
-            for (int i = 0; i < btMultiBodyDynamicsWorld.getNumConstraints(); i++)
-            {
-               btMultiBodyDynamicsWorld.removeConstraint(btMultiBodyDynamicsWorld.getConstraint(i));
-            }
-
-            for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
-            {
-               btMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
-               bulletMultiBodyConstraint.dispose();
-            }
-
-            btMultiBodyDynamicsWorld.removeMultiBody(bulletMultiBodyRobot.getBtMultiBody());
-            for (BulletMultiBodyLinkCollider multiBodyLinkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
-            {
-               btMultiBodyDynamicsWorld.removeCollisionObject(multiBodyLinkCollider.getBtMultiBodyLinkCollider());
-               multiBodyLinkCollider.getBtMultiBodyLinkCollider().getCollisionShape().dispose();
-               multiBodyLinkCollider.getBtMultiBodyLinkCollider().dispose();
-            }
-            for (int i = 0; bulletMultiBodyRobot.getBtMultiBody().getNumLinks() < i; i++)
-            {
-               bulletMultiBodyRobot.getBtMultiBody().getLink(i).dispose();
-            }
-            bulletMultiBodyRobot.getBtMultiBody().dispose();
-         }
-
-         if (btIDebugDraw != null)
-         {
-            btIDebugDraw.dispose();
-         }
-
-         btMultiBodyDynamicsWorld.dispose();
-         btMultiBodyConstraintSolver.dispose();
-         btBroadphaseInterface.dispose();
-         btCollisionDispatcher.dispose();
-         btCollisionConfiguration.dispose();
+//         for (BulletTerrainObject bulletTerrainObject : terrainObjects)
+//         {
+//            bulletTerrainObject.getBtRigidBody().getCollisionShape().deallocate();
+//            bulletTerrainObject.getBtRigidBody().getMotionState().deallocate();
+//            btMultiBodyDynamicsWorld.removeRigidBody(bulletTerrainObject.getBtRigidBody());
+//            bulletTerrainObject.getBtRigidBody().deallocate();
+//            ;
+//         }
+//
+//         for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
+//         {
+//            for (int i = 0; i < btMultiBodyDynamicsWorld.getNumConstraints(); i++)
+//            {
+//               btMultiBodyDynamicsWorld.removeConstraint(btMultiBodyDynamicsWorld.getConstraint(i));
+//            }
+//
+//            for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
+//            {
+//               btMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
+//               bulletMultiBodyConstraint.deallocate();;
+//            }
+//
+//            btMultiBodyDynamicsWorld.removeMultiBody(bulletMultiBodyRobot.getBtMultiBody());
+//            for (BulletMultiBodyLinkCollider multiBodyLinkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
+//            {
+//               btMultiBodyDynamicsWorld.removeCollisionObject(multiBodyLinkCollider.getBtMultiBodyLinkCollider());
+//               multiBodyLinkCollider.getBtMultiBodyLinkCollider().getCollisionShape().deallocate();
+//               multiBodyLinkCollider.getBtMultiBodyLinkCollider().deallocate();
+//            }
+//            for (int i = 0; bulletMultiBodyRobot.getBtMultiBody().getNumLinks() < i; i++)
+//            {
+//               bulletMultiBodyRobot.getBtMultiBody().getLink(i).deallocate();
+//            }
+//            bulletMultiBodyRobot.getBtMultiBody().deallocate();
+//         }
+//
+//         if (btIDebugDraw != null)
+//         {
+//            btIDebugDraw.deallocate();
+//         }
+//
+//         btMultiBodyDynamicsWorld.deallocate();
+//         btMultiBodyConstraintSolver.deallocate();
+//         btBroadphaseInterface.deallocate();
+//         btCollisionDispatcher.deallocate();
+//         btCollisionConfiguration.deallocate();
       }
    }
 
    public void addBulletMultiBodyRobot(BulletMultiBodyRobot bulletMultiBodyRobot)
    {
-      //add Bullet Multibody to array
+      // add Bullet Multibody to array
       multiBodyRobots.add(bulletMultiBodyRobot);
 
-      //add Bullet Multibody collisionObjects to multiBodyDynamicsWorld
+      // add Bullet Multibody collisionObjects to multiBodyDynamicsWorld
       for (BulletMultiBodyLinkCollider linkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
       {
          btMultiBodyDynamicsWorld.addCollisionObject(linkCollider.getBtMultiBodyLinkCollider(),
@@ -133,13 +127,13 @@ public class BulletMultiBodyDynamicsWorld
                                                      linkCollider.getCollisionGroupMask());
       }
 
-      //add Bullet Multibody constraints to multiBodyDynamicsWorld
+      // add Bullet Multibody constraints to multiBodyDynamicsWorld
       for (btMultiBodyConstraint constraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
       {
          btMultiBodyDynamicsWorld.addMultiBodyConstraint(constraint);
       }
 
-      //add Bullet Multibody to multiBodyDynamicsWorld
+      // add Bullet Multibody to multiBodyDynamicsWorld
       btMultiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot.getBtMultiBody());
    }
 
@@ -150,8 +144,9 @@ public class BulletMultiBodyDynamicsWorld
                                             bulletTerrainObject.getCollisionGroup(),
                                             bulletTerrainObject.getCollisionGroupMask());
       bulletTerrainObject.getBtRigidBody()
-                         .setCollisionFlags(bulletTerrainObject.getBtRigidBody().getCollisionFlags() | btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
-      bulletTerrainObject.getBtRigidBody().setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
+                         .setCollisionFlags(bulletTerrainObject.getBtRigidBody().getCollisionFlags() | btCollisionObject.CF_KINEMATIC_OBJECT);
+      //bulletTerrainObject.getBtRigidBody().setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
+      bulletTerrainObject.getBtRigidBody().setActivationState(4);
    }
 
    public void updateAllMultiBodyParameters(YoBulletMultiBodyParameters multiBodyParameters)
@@ -170,17 +165,17 @@ public class BulletMultiBodyDynamicsWorld
       }
    }
 
-   public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
+   public void setBtDebugDrawer(org.bytedeco.bullet.LinearMath.btIDebugDraw btIDebugDraw)
    {
-      if (!btMultiBodyDynamicsWorld.isDisposed())
-         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
-      this.btIDebugDraw = btIDebugDraw;
+//      if (!btMultiBodyDynamicsWorld.isNull())
+//         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
+//      this.btIDebugDraw = btIDebugDraw;
    }
 
    public void debugDrawWorld()
    {
-      if (!btMultiBodyDynamicsWorld.isDisposed())
-         btMultiBodyDynamicsWorld.debugDrawWorld();
+//      if (!btMultiBodyDynamicsWorld.isNull())
+//         btMultiBodyDynamicsWorld.debugDrawWorld();
    }
 
    public void updateContactSolverInfoParameters(YoBulletContactSolverInfoParameters globalContactSolverInfoParameters)

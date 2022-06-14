@@ -2,11 +2,27 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Quaternion;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.*;
+import org.bytedeco.bullet.BulletCollision.btBoxShape;
+import org.bytedeco.bullet.BulletCollision.btCapsuleShapeZ;
+import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.BulletCollision.btCompoundFromGimpactShape;
+import org.bytedeco.bullet.BulletCollision.btCompoundShape;
+import org.bytedeco.bullet.BulletCollision.btConeShapeZ;
+import org.bytedeco.bullet.BulletCollision.btConvexHullShape;
+import org.bytedeco.bullet.BulletCollision.btConvexTriangleMeshShape;
+import org.bytedeco.bullet.BulletCollision.btCylinderShapeZ;
+import org.bytedeco.bullet.BulletCollision.btGImpactMeshShape;
+import org.bytedeco.bullet.BulletCollision.btSphereShape;
+import org.bytedeco.bullet.BulletCollision.btTriangleMesh;
+import org.bytedeco.bullet.LinearMath.btMatrix3x3;
+import org.bytedeco.bullet.LinearMath.btQuaternion;
+import org.bytedeco.bullet.LinearMath.btTransform;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
+import us.ihmc.euclid.matrix.Matrix3D;
+import us.ihmc.euclid.matrix.RotationMatrix;
+import us.ihmc.euclid.matrix.interfaces.CommonMatrix3DBasics;
+import us.ihmc.euclid.matrix.interfaces.RotationMatrixReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Face3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.RigidBodyTransform;
@@ -27,59 +43,64 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.modelLoader.AssimpLoader;
 
 public class BulletTools
 {
-   public static void toBullet(RigidBodyTransform rigidBodyTransform, Matrix4 bulletAffineToPack)
+   private static btMatrix3x3 btMatrix3x3ToPack = new btMatrix3x3();
+   private static btVector3 btVector3 = new btVector3();
+   
+   public static void toBullet(RigidBodyTransform rigidBodyTransform, btTransform bulletAffineToPack)
    {
-      bulletAffineToPack.val[Matrix4.M00] = (float) rigidBodyTransform.getM00();
-      bulletAffineToPack.val[Matrix4.M01] = (float) rigidBodyTransform.getM01();
-      bulletAffineToPack.val[Matrix4.M02] = (float) rigidBodyTransform.getM02();
-      bulletAffineToPack.val[Matrix4.M10] = (float) rigidBodyTransform.getM10();
-      bulletAffineToPack.val[Matrix4.M11] = (float) rigidBodyTransform.getM11();
-      bulletAffineToPack.val[Matrix4.M12] = (float) rigidBodyTransform.getM12();
-      bulletAffineToPack.val[Matrix4.M20] = (float) rigidBodyTransform.getM20();
-      bulletAffineToPack.val[Matrix4.M21] = (float) rigidBodyTransform.getM21();
-      bulletAffineToPack.val[Matrix4.M22] = (float) rigidBodyTransform.getM22();
-      bulletAffineToPack.val[Matrix4.M03] = (float) rigidBodyTransform.getM03();
-      bulletAffineToPack.val[Matrix4.M13] = (float) rigidBodyTransform.getM13();
-      bulletAffineToPack.val[Matrix4.M23] = (float) rigidBodyTransform.getM23();
+      btMatrix3x3ToPack.setValue((float) rigidBodyTransform.getM00(), (float) rigidBodyTransform.getM01(), (float) rigidBodyTransform.getM02(), (float) rigidBodyTransform.getM10(), (float) rigidBodyTransform.getM11(), (float) rigidBodyTransform.getM12(), (float) rigidBodyTransform.getM20(), (float) rigidBodyTransform.getM21(), (float) rigidBodyTransform.getM22());
+      bulletAffineToPack.setBasis(btMatrix3x3ToPack);
+      btVector3.setValue((float) rigidBodyTransform.getM03(), (float) rigidBodyTransform.getM03(), (float) rigidBodyTransform.getM23());
+      bulletAffineToPack.setOrigin(btVector3);
+//      bulletAffineToPack.val[Matrix4.M00] = (float) rigidBodyTransform.getM00();
+//      bulletAffineToPack.val[Matrix4.M01] = (float) rigidBodyTransform.getM01();
+//      bulletAffineToPack.val[Matrix4.M02] = (float) rigidBodyTransform.getM02();
+//      bulletAffineToPack.val[Matrix4.M10] = (float) rigidBodyTransform.getM10();
+//      bulletAffineToPack.val[Matrix4.M11] = (float) rigidBodyTransform.getM11();
+//      bulletAffineToPack.val[Matrix4.M12] = (float) rigidBodyTransform.getM12();
+//      bulletAffineToPack.val[Matrix4.M20] = (float) rigidBodyTransform.getM20();
+//      bulletAffineToPack.val[Matrix4.M21] = (float) rigidBodyTransform.getM21();
+//      bulletAffineToPack.val[Matrix4.M22] = (float) rigidBodyTransform.getM22();
+//      bulletAffineToPack.val[Matrix4.M03] = (float) rigidBodyTransform.getM03();
+//      bulletAffineToPack.val[Matrix4.M13] = (float) rigidBodyTransform.getM03();
+//      bulletAffineToPack.val[Matrix4.M23] = (float) rigidBodyTransform.getM23();
    }
 
-   public static void toEuclid(Matrix4 bulletAffine, RigidBodyTransform rigidBodyTransform)
+   public static void toEuclid(btTransform bulletAffine, RigidBodyTransform rigidBodyTransform)
    {
-      rigidBodyTransform.getRotation().setAndNormalize(bulletAffine.val[Matrix4.M00],
-                                                       bulletAffine.val[Matrix4.M01],
-                                                       bulletAffine.val[Matrix4.M02],
-                                                       bulletAffine.val[Matrix4.M10],
-                                                       bulletAffine.val[Matrix4.M11],
-                                                       bulletAffine.val[Matrix4.M12],
-                                                       bulletAffine.val[Matrix4.M20],
-                                                       bulletAffine.val[Matrix4.M21],
-                                                       bulletAffine.val[Matrix4.M22]);
-      rigidBodyTransform.getTranslation().setX(bulletAffine.val[Matrix4.M03]);
-      rigidBodyTransform.getTranslation().setY(bulletAffine.val[Matrix4.M13]);
-      rigidBodyTransform.getTranslation().setZ(bulletAffine.val[Matrix4.M23]);
+      btMatrix3x3ToPack = bulletAffine.getBasis();
+      rigidBodyTransform.getRotation().setAndNormalize(btMatrix3x3ToPack.getColumn(0).getX(),
+                                                       btMatrix3x3ToPack.getColumn(0).getY(),
+                                                       btMatrix3x3ToPack.getColumn(0).getZ(),
+                                                       btMatrix3x3ToPack.getColumn(1).getX(),
+                                                       btMatrix3x3ToPack.getColumn(1).getY(),
+                                                       btMatrix3x3ToPack.getColumn(1).getZ(),
+                                                       btMatrix3x3ToPack.getColumn(2).getX(),
+                                                       btMatrix3x3ToPack.getColumn(2).getY(),
+                                                       btMatrix3x3ToPack.getColumn(2).getZ());
+      rigidBodyTransform.getTranslation().setX(btVector3.getX());
+      rigidBodyTransform.getTranslation().setY(btVector3.getY());
+      rigidBodyTransform.getTranslation().setZ(btVector3.getZ());
    }
 
-   public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, Quaternion bulletQuaternion)
+   public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, btQuaternion bulletQuaternion)
    {
-      bulletQuaternion.x = euclidQuaternion.getX32();
-      bulletQuaternion.y = euclidQuaternion.getY32();
-      bulletQuaternion.z = euclidQuaternion.getZ32();
-      bulletQuaternion.w = euclidQuaternion.getS32();
+      bulletQuaternion.setValue(euclidQuaternion.getX32(), euclidQuaternion.getY32(), euclidQuaternion.getZ32(), euclidQuaternion.getS32()); 
    }
 
-   public static void toBullet(Tuple3DReadOnly euclidTuple, Vector3 bulletVector3)
+   public static void toBullet(Tuple3DReadOnly euclidTuple, btVector3 bulletVector3)
    {
-      bulletVector3.set(euclidTuple.getX32(), euclidTuple.getY32(), euclidTuple.getZ32());
+      bulletVector3.setValue(euclidTuple.getX32(), euclidTuple.getY32(), euclidTuple.getZ32());
    }
 
-   public static void toEuclid(Vector3 bulletVector3, Vector3DBasics euclidVector3D32)
+   public static void toEuclid(btVector3 bulletVector3, Vector3DBasics euclidVector3D32)
    {
-      euclidVector3D32.set(bulletVector3.x, bulletVector3.y, bulletVector3.z);
+      euclidVector3D32.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
    }
 
-   public static void toEuclid(Vector3 bulletVector3, Point3DBasics euclidPoint3D32)
+   public static void toEuclid(btVector3 bulletVector3, Point3DBasics euclidPoint3D32)
    {
-      euclidPoint3D32.set(bulletVector3.x, bulletVector3.y, bulletVector3.z);
+      euclidPoint3D32.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
    }
 
    public static List<btConvexTriangleMeshShape> loadConvexTriangleMeshShapeFromFile(String modelFilePath)
@@ -93,11 +114,11 @@ public class BulletTools
 
          for (int i = 0; i < vertexList.size(); i += 3)
          {
-            bulletTriangleMesh.addTriangle(new Vector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
-                                           new Vector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
-                                           new Vector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
+            bulletTriangleMesh.addTriangle(new btVector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
+                                           new btVector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
+                                           new btVector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
          }
-         bulletTriangleMesh.releaseOwnership();
+         //bulletTriangleMesh.releaseOwnership();
 
          btConvexTriangleMeshShape bulletConvexTriangleMeshShape = new btConvexTriangleMeshShape(bulletTriangleMesh);
 
@@ -117,11 +138,11 @@ public class BulletTools
 
          for (int i = 0; i < vertexList.size(); i += 3)
          {
-            bulletTriangleMesh.addTriangle(new Vector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
-                                           new Vector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
-                                           new Vector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
+            bulletTriangleMesh.addTriangle(new btVector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
+                                           new btVector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
+                                           new btVector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
          }
-         bulletTriangleMesh.releaseOwnership();
+         //bulletTriangleMesh.releaseOwnership();
 
          btGImpactMeshShape bulletConvexTriangleMeshShape = new btGImpactMeshShape(bulletTriangleMesh);
          bulletConvexTriangleMeshShape.updateBound();
@@ -139,7 +160,7 @@ public class BulletTools
       {
          ModelFileGeometryDefinition modelFileGeometryDefinition = (ModelFileGeometryDefinition) collisionShapeDefinition.getGeometryDefinition();
 
-         Matrix4 identity = new Matrix4();
+         btTransform identity = new btTransform();
          if (collisionShapeDefinition.isConcave())
          {
             List<btGImpactMeshShape> shapes = BulletTools.loadConcaveGImpactMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
@@ -171,7 +192,7 @@ public class BulletTools
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
       {
          Box3DDefinition boxGeometryDefinition = (Box3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btBoxShape boxShape = new btBoxShape(new Vector3((float) boxGeometryDefinition.getSizeX() / 2.0f,
+         btBoxShape boxShape = new btBoxShape(new btVector3((float) boxGeometryDefinition.getSizeX() / 2.0f,
                                                           (float) boxGeometryDefinition.getSizeY() / 2.0f,
                                                           (float) boxGeometryDefinition.getSizeZ() / 2.0f));
          bulletCollisionShape = boxShape;
@@ -185,7 +206,7 @@ public class BulletTools
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cylinder3DDefinition)
       {
          Cylinder3DDefinition cylinderGeometryDefinition = (Cylinder3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new Vector3((float) cylinderGeometryDefinition.getRadius(),
+         btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new btVector3((float) cylinderGeometryDefinition.getRadius(),
                                                                            (float) cylinderGeometryDefinition.getRadius(),
                                                                            (float) cylinderGeometryDefinition.getLength() / 2.0f));
          bulletCollisionShape = cylinderShape;
@@ -214,7 +235,7 @@ public class BulletTools
          {
             for (Vertex3DReadOnly vertex : face.getVertices())
             {
-               convexHullShape.addPoint(new Vector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
+               convexHullShape.addPoint(new btVector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
             }
          }
          bulletCollisionShape = convexHullShape;

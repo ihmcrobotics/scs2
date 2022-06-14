@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
@@ -25,11 +23,11 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 public class BulletPhysicsEngine implements PhysicsEngine
 {
-   static
-   {
-      Bullet.init();
-      LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
-   }
+//   static
+//   {
+//      Bullet.init();
+//      LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
+//   }
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final ReferenceFrame inertialFrame;
    private final List<BulletRobot> robotList = new ArrayList<>();
