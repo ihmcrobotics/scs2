@@ -54,6 +54,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    }
    private final YoBulletMultiBodyParameters globalMultiBodyParameters;
    private final YoBulletMultiBodyJointParameters globalMultiBodyJointParameters;
+   private final YoBulletContactSolverInfoParameters globalContactSolverInfoParameters;
    private final YoBoolean hasGlobalBulletSimulationParameters;
    private final YoBulletSimulationParameters globalBulletSimulationParameters;
    private boolean initialize = true;
@@ -65,11 +66,13 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
       globalMultiBodyParameters = new YoBulletMultiBodyParameters("globalMultiBody", physicsEngineRegistry);
       globalMultiBodyJointParameters = new YoBulletMultiBodyJointParameters("globalMultiBodyJoint", physicsEngineRegistry);
+      globalContactSolverInfoParameters = new YoBulletContactSolverInfoParameters("globalContactSolverInfo", physicsEngineRegistry);
       hasGlobalBulletSimulationParameters = new YoBoolean("hasGlobalSimulationParameters", physicsEngineRegistry);
       globalBulletSimulationParameters = new YoBulletSimulationParameters("globalSimulation", physicsEngineRegistry);
       setGlobalBulletMultiBodyParameters(BulletMultiBodyParameters.defaultBulletMultiBodyParameters());
       setGlobalBulletMultiBodyJointParameters(BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
-
+      setGlobalContactSolverInfoParameters(BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters());
+      
       hasGlobalBulletSimulationParameters.set(false);
 
       bulletMultiBodyDynamicsWorld = new BulletMultiBodyDynamicsWorld();
@@ -112,6 +115,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
       {
          globalMultiBodyJointParameters.setUpdateGlobalMultiBodyJointParameters(false);
          bulletMultiBodyDynamicsWorld.updateAllMultiBodyJointParameters(globalMultiBodyJointParameters);
+      }
+      if(globalContactSolverInfoParameters.getUpdateGlobalContactSolverInfoParameters())
+      {
+         globalContactSolverInfoParameters.setUpdateGlobalContactSolverInfoParameters(false);
+         bulletMultiBodyDynamicsWorld.updateContactSolverInfoParameters(globalContactSolverInfoParameters);
       }
 
       runControllerManagerTimer.start();
@@ -268,6 +276,16 @@ public class BulletPhysicsEngine implements PhysicsEngine
    public BulletMultiBodyDynamicsWorld getBulletMultiBodyDynamicsWorld()
    {
       return bulletMultiBodyDynamicsWorld;
+   }
+
+   public void setGlobalContactSolverInfoParameters(BulletContactSolverInfoParameters bulletContactSolverInfoParameters)
+   {
+      globalContactSolverInfoParameters.set(bulletContactSolverInfoParameters);
+   }
+   
+   public YoBulletContactSolverInfoParameters getGlobalContactSolverInfoParameters()
+   {
+      return globalContactSolverInfoParameters;
    }
 
 }

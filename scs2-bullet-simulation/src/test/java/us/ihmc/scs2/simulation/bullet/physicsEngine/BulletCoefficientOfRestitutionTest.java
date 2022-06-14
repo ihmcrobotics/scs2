@@ -116,22 +116,20 @@ public class BulletCoefficientOfRestitutionTest
       if (BULLET_PHYSICS_ENGINE)
       {
          BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
-         BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
+         BulletMultiBodyJointParameters bulletMultiBodyJointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
+         BulletContactSolverInfoParameters bulletContactSolverInfoParameters = BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters();
          bulletMultiBodyParameters.setLinearDamping(0.0);
          bulletMultiBodyParameters.setAngularDamping(0.0);
-         bulletMultiBodyJointParameter.setJointRestitution(coefficientOfRestitution);
+         bulletMultiBodyJointParameters.setJointRestitution(coefficientOfRestitution);
+         bulletContactSolverInfoParameters.setSplitImpulse(1);
+         bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0f);
+         bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001f);
+         bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0);
+         bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);
 
          simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters,
-                                                                                                            bulletMultiBodyJointParameter));
-
-         BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine) simulationSession.getPhysicsEngine();
-         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setSplitImpulse(1);
-         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setSplitImpulseTurnErp(1.0f);
-         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo()
-                            .setSplitImpulsePenetrationThreshold(-0.0000001f);
-         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setErp(0);
-         bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld().getSolverInfo().setErp2(0);
-
+                                                                                                            bulletMultiBodyJointParameters,
+                                                                                                            bulletContactSolverInfoParameters));
       }
       else
       {

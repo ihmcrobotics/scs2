@@ -182,4 +182,33 @@ public class BulletMultiBodyDynamicsWorld
       if (!btMultiBodyDynamicsWorld.isDisposed())
          btMultiBodyDynamicsWorld.debugDrawWorld();
    }
+
+   public void updateContactSolverInfoParameters(YoBulletContactSolverInfoParameters globalContactSolverInfoParameters)
+   {
+      btMultiBodyDynamicsWorld.getSolverInfo().setTau((float)globalContactSolverInfoParameters.getTau());
+      btMultiBodyDynamicsWorld.getSolverInfo().setDamping((float)globalContactSolverInfoParameters.getDamping());
+      btMultiBodyDynamicsWorld.getSolverInfo().setFriction((float)globalContactSolverInfoParameters.getFriction());
+      btMultiBodyDynamicsWorld.getSolverInfo().setTimeStep((float)globalContactSolverInfoParameters.getTimeStep());
+      btMultiBodyDynamicsWorld.getSolverInfo().setRestitution((float)globalContactSolverInfoParameters.getRestitution());
+      btMultiBodyDynamicsWorld.getSolverInfo().setMaxErrorReduction((float)globalContactSolverInfoParameters.getMaxErrorReduction());
+      btMultiBodyDynamicsWorld.getSolverInfo().setNumIterations(globalContactSolverInfoParameters.getNumberOfIterations());
+      btMultiBodyDynamicsWorld.getSolverInfo().setErp((float)globalContactSolverInfoParameters.getErrorReductionForNonContactConstraints());
+      btMultiBodyDynamicsWorld.getSolverInfo().setErp2((float)globalContactSolverInfoParameters.getErrorReductionForContactConstraints());
+      btMultiBodyDynamicsWorld.getSolverInfo().setGlobalCfm((float)globalContactSolverInfoParameters.getConstraintForceMixingForContactsAndNonContacts());
+      btMultiBodyDynamicsWorld.getSolverInfo().setFrictionERP((float)globalContactSolverInfoParameters.getErrorReductionForFrictionConstraints());
+      btMultiBodyDynamicsWorld.getSolverInfo().setFrictionCFM((float)globalContactSolverInfoParameters.getConstraintForceMixingForFrictionConstraints());
+      btMultiBodyDynamicsWorld.getSolverInfo().setSor((float)globalContactSolverInfoParameters.getSuccessiveOverRelaxationTerm());
+      btMultiBodyDynamicsWorld.getSolverInfo().setSplitImpulse(globalContactSolverInfoParameters.getSplitImpulse());
+      btMultiBodyDynamicsWorld.getSolverInfo().setSplitImpulsePenetrationThreshold((float)globalContactSolverInfoParameters.getSplitImpulsePenetrationThreshold());
+      btMultiBodyDynamicsWorld.getSolverInfo().setSplitImpulseTurnErp((float)globalContactSolverInfoParameters.getSplitImpulseTurnErp());
+      btMultiBodyDynamicsWorld.getSolverInfo().setLinearSlop((float)globalContactSolverInfoParameters.getLinearSlop());
+      btMultiBodyDynamicsWorld.getSolverInfo().setWarmstartingFactor((float)globalContactSolverInfoParameters.getWarmstartingFactor());
+      btMultiBodyDynamicsWorld.getSolverInfo().setSolverMode(globalContactSolverInfoParameters.getSolverMode());
+      btMultiBodyDynamicsWorld.getSolverInfo().setRestingContactRestitutionThreshold(globalContactSolverInfoParameters.getRestingContactRestitutionThreshold());
+      btMultiBodyDynamicsWorld.getSolverInfo().setMinimumSolverBatchSize(globalContactSolverInfoParameters.getMinimumSolverBatchSize());
+      btMultiBodyDynamicsWorld.getSolverInfo().setMaxGyroscopicForce((float)globalContactSolverInfoParameters.getMaxGyroscopicForce());
+      btMultiBodyDynamicsWorld.getSolverInfo().setSingleAxisRollingFrictionThreshold((float)globalContactSolverInfoParameters.getSingleAxisRollingFrictionThreshold());
+      btMultiBodyDynamicsWorld.getSolverInfo().setLeastSquaresResidualThreshold((float)globalContactSolverInfoParameters.getLeastSquaresResidualThreshold());
+      btMultiBodyDynamicsWorld.getSolverInfo().setRestitutionVelocityThreshold((float)globalContactSolverInfoParameters.getRestitutionVelocityThreshold());
+   }
 }
