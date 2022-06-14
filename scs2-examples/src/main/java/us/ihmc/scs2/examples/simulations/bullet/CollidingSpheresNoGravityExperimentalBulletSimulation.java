@@ -11,14 +11,18 @@ import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
-import us.ihmc.scs2.simulation.SimulationEnergyStatistics;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletContactSolverInfoParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
+import us.ihmc.scs2.simulation.parameters.ContactParameters;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 
 public class CollidingSpheresNoGravityExperimentalBulletSimulation
 {
+   private final boolean BULLET_PHYSICS_ENGINE = true;
+
    public CollidingSpheresNoGravityExperimentalBulletSimulation()
    {
       double radius1 = 0.2;
@@ -40,30 +44,43 @@ public class CollidingSpheresNoGravityExperimentalBulletSimulation
 
       SixDoFJointState sphere1InitialState = new SixDoFJointState();
       sphere1InitialState.setConfiguration(null, new Point3D(0.2, 3.0, 0.6));
-      sphere1InitialState.setVelocity(null, new Vector3D(0.0, -1.0, 0.0));
+      sphere1InitialState.setVelocity(null, new Vector3D(0.0, -2.0, 0.0));
       sphereRobot1.getRootJointDefinitions().get(0).setInitialJointState(sphere1InitialState);
 
       SixDoFJointState sphere2InitialState = new SixDoFJointState();
       sphere2InitialState.setConfiguration(null, new Point3D(0.2, -3.0, 0.6));
-      sphere2InitialState.setVelocity(null, new Vector3D(0.0, 1.0, 0.0));
+      sphere2InitialState.setVelocity(null, new Vector3D(0.0, 2.0, 0.0));
       sphereRobot2.getRootJointDefinitions().get(0).setInitialJointState(sphere2InitialState);
 
       BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
       bulletMultiBodyParameters.setLinearDamping(0);
-      bulletMultiBodyParameters.setMaxCoordinateVelocity(100000);
-      bulletMultiBodyParameters.setUseRK4Integration(true);
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-      //bulletMultiBodyJointParameter.setJointResitution(0.05);
+      bulletMultiBodyJointParameter.setJointRestitution(0);
+      BulletContactSolverInfoParameters bulletContactSolverInfoParameters = BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters();
+      bulletContactSolverInfoParameters.setSplitImpulse(1);
+      bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0f);
+      bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001f);
+      bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0);
+      bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);
 
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
+      SimulationSession simulationSession = null;
+      if (BULLET_PHYSICS_ENGINE)
+      {
+         simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters,
+                                                                                                            bulletMultiBodyJointParameter,
+                                                                                                            bulletContactSolverInfoParameters));
+      }
+      else
+      {
+         ContactParameters contactParameters = new ContactParameters();
+         contactParameters.setCoefficientOfRestitution(0.0);
+         simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      }
+
       simulationSession.addRobot(sphereRobot1);
       simulationSession.addRobot(sphereRobot2);
-      simulationSession.submitBufferSizeRequest(245760);
-      simulationSession.setBufferRecordTickPeriod(8);
       simulationSession.setGravity(0.0, 0.0, 0.0);
-      simulationSession.setSessionDTSeconds(0.01);
-
-      SimulationEnergyStatistics.setupSimulationEnergyStatistics(simulationSession);
+      simulationSession.setSessionDTSeconds(0.0001);
 
       SessionVisualizer.startSessionVisualizer(simulationSession);
    }
