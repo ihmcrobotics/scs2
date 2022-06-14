@@ -1,40 +1,35 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
-import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
+import org.bytedeco.bullet.LinearMath.btTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 
 public class BulletMultiBodyLinkCollider
 {
-   private final btMultiBodyLinkCollider btMultiBodyLinkCollider;
-   private final btMultiBody btMultiBody;
+   private final org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider btMultiBodyLinkCollider;
+   private final org.bytedeco.bullet.BulletDynamics.btMultiBody btMultiBody;
    private final String jointName;
    private final int linkColliderIndex;
-   private final Matrix4 bulletTempConversionMatrix4 = new Matrix4();
-   private final Vector3 bulletTempConversionVector3 = new Vector3();
-   private final btVector3 linkForce;
-   private final btVector3 linkTorque;
+   private final btTransform bulletTempConversionBtTransform = new btTransform();
+   private final org.bytedeco.bullet.LinearMath.btVector3 bulletTempConversionVector3 = new org.bytedeco.bullet.LinearMath.btVector3();
+   private final org.bytedeco.bullet.LinearMath.btVector3 linkForce;
+   private final org.bytedeco.bullet.LinearMath.btVector3 linkTorque;
    private int collisionGroup;
    private int collisionGroupMask;
    
-   public BulletMultiBodyLinkCollider(btMultiBody btMultibody, int index, String jointName)
+   public BulletMultiBodyLinkCollider(org.bytedeco.bullet.BulletDynamics.btMultiBody btMultibody, int index, String jointName)
    {
-      btMultiBodyLinkCollider = new btMultiBodyLinkCollider(btMultibody, index);
+      btMultiBodyLinkCollider = new org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider(btMultibody, index);
       this.linkColliderIndex = index;
       this.jointName = jointName;
       this.collisionGroup = 2;
       this.collisionGroupMask = 1 + 2;
 
-      btMultiBody = btMultiBodyLinkCollider.getMultiBody();
-
-      linkForce = btMultiBody.getLink(linkColliderIndex).getAppliedConstraintForce();
-      linkTorque = btMultiBody.getLink(linkColliderIndex).getAppliedConstraintTorque();
+      btMultiBody = btMultiBodyLinkCollider.m_multiBody();
+      
+      linkForce = btMultiBody.getLink(linkColliderIndex).m_appliedConstraintForce();
+      linkTorque = btMultiBody.getLink(linkColliderIndex).m_appliedConstraintTorque();
    }
 
    public void setCollisionGroupMask(int collisionGroup, int collisionGroupMask)
@@ -43,7 +38,7 @@ public class BulletMultiBodyLinkCollider
       this.collisionGroupMask = collisionGroupMask;
    }
 
-   public void setCollisionShape(btCollisionShape shape)
+   public void setCollisionShape(org.bytedeco.bullet.BulletCollision.btCollisionShape shape)
    {
       btMultiBodyLinkCollider.setCollisionShape(shape);
    }
@@ -78,7 +73,7 @@ public class BulletMultiBodyLinkCollider
       btMultiBodyLinkCollider.setContactProcessingThreshold((float) contactProcessingThreshold);
    }
 
-   public btMultiBodyLinkCollider getBtMultiBodyLinkCollider()
+   public org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider getBtMultiBodyLinkCollider()
    {
       return btMultiBodyLinkCollider;
    }
@@ -100,17 +95,16 @@ public class BulletMultiBodyLinkCollider
 
    public void getWorldTransform(RigidBodyTransform jointSuccessorBodyFixedFrameToWorldEuclid)
    {
-      btMultiBodyLinkCollider.getWorldTransform(bulletTempConversionMatrix4);
-      BulletTools.toEuclid(bulletTempConversionMatrix4, jointSuccessorBodyFixedFrameToWorldEuclid);
+      BulletTools.toEuclid(btMultiBodyLinkCollider.getWorldTransform(), jointSuccessorBodyFixedFrameToWorldEuclid);
    }
 
    public void setWorldTransform(RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid)
    {
-      BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletTempConversionMatrix4);
-      btMultiBodyLinkCollider.setWorldTransform(bulletTempConversionMatrix4);
+      BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletTempConversionBtTransform);
+      btMultiBodyLinkCollider.setWorldTransform(bulletTempConversionBtTransform);
 
       if (linkColliderIndex == -1)
-         btMultiBody.setBaseWorldTransform(bulletTempConversionMatrix4);
+         btMultiBody.setBaseWorldTransform(bulletTempConversionBtTransform);
    }
 
    public void setJointPos(double jointPosition)

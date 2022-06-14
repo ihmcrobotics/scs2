@@ -1,7 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
+import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -14,8 +14,6 @@ import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class BulletDebugDrawingNode extends Group
 {
-   private final com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw btIDebugDraw;
-   private int debugMode = com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw.DebugDrawModes.DBG_DrawWireframe; // TODO: Provide options in combo box
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
    private PrivateAnimationTimer animationTimer;
@@ -36,67 +34,67 @@ public class BulletDebugDrawingNode extends Group
       updateDebugDrawings.set(true);
       showDebugDrawings.set(true);
 
-      btIDebugDraw = new btIDebugDraw()
-      {
-         @Override
-         public void drawLine(Vector3 from, Vector3 to, Vector3 color)
-         {
-            if (lineDraws >= maxLineDrawsPerModel)
-            {
-               lineDraws = 0;
-               nextModel();
-            }
-
-            BulletTools.toEuclid(from, fromEuclid);
-            BulletTools.toEuclid(to, toEuclid);
-            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
-
-            meshHelper.addLine(fromEuclid, toEuclid, 0.002, colorJavaFX);
-
-            ++lineDraws;
-         }
-
-         @Override
-         public void drawContactPoint(Vector3 pointOnB, Vector3 normalOnB, float distance, int lifeTime, Vector3 color)
-         {
-            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
-            BulletTools.toEuclid(pointOnB, pointOnEuclid);
-            meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
-            BulletTools.toEuclid(normalOnB, pointOnEuclid);
-            meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
-         }
-
-         @Override
-         public void drawTriangle(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 color, float alpha)
-         {
-
-         }
-
-         @Override
-         public void reportErrorWarning(String warningString)
-         {
-            LogTools.error("Bullet: {}", warningString);
-         }
-
-         @Override
-         public void draw3dText(Vector3 location, String textString)
-         {
-
-         }
-
-         @Override
-         public void setDebugMode(int debugMode)
-         {
-            BulletDebugDrawingNode.this.debugMode = debugMode;
-         }
-
-         @Override
-         public int getDebugMode()
-         {
-            return debugMode;
-         }
-      };
-      bulletMultiBodyDynamicsWorld.setBtDebugDrawer(btIDebugDraw);
+//      btIDebugDraw = new btIDebugDraw()
+//      {
+//         @Override
+//         public void drawLine(btVector3 from, btVector3 to, btVector3 color)
+//         {
+//            if (lineDraws >= maxLineDrawsPerModel)
+//            {
+//               lineDraws = 0;
+//               nextModel();
+//            }
+//
+//            BulletTools.toEuclid(from, fromEuclid);
+//            BulletTools.toEuclid(to, toEuclid);
+//            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
+//
+//            meshHelper.addLine(fromEuclid, toEuclid, 0.002, colorJavaFX);
+//
+//            ++lineDraws;
+//         }
+//
+//         @Override
+//         public void drawContactPoint(Vector3 pointOnB, Vector3 normalOnB, float distance, int lifeTime, Vector3 color)
+//         {
+//            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
+//            BulletTools.toEuclid(pointOnB, pointOnEuclid);
+//            meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
+//            BulletTools.toEuclid(normalOnB, pointOnEuclid);
+//            meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
+//         }
+//
+//         @Override
+//         public void drawTriangle(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 color, float alpha)
+//         {
+//
+//         }
+//
+//         @Override
+//         public void reportErrorWarning(String warningString)
+//         {
+//            LogTools.error("Bullet: {}", warningString);
+//         }
+//
+//         @Override
+//         public void draw3dText(Vector3 location, String textString)
+//         {
+//
+//         }
+//
+//         @Override
+//         public void setDebugMode(int debugMode)
+//         {
+//            BulletDebugDrawingNode.this.debugMode = debugMode;
+//         }
+//
+//         @Override
+//         public int getDebugMode()
+//         {
+//            return debugMode;
+//         }
+//      };
+//      bulletMultiBodyDynamicsWorld.setBtDebugDrawer(btIDebugDraw);
    }
 
    public void initializeWithJavaFX()
