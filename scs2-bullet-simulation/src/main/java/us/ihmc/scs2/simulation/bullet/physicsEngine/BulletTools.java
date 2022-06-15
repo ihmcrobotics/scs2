@@ -103,54 +103,54 @@ public class BulletTools
       euclidPoint3D32.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
    }
 
-   public static List<btConvexTriangleMeshShape> loadConvexTriangleMeshShapeFromFile(String modelFilePath)
-   {
-      List<List<Point3D32>> vertexLists = AssimpLoader.loadTriangleVertexPositionsAsList(modelFilePath);
-      List<btConvexTriangleMeshShape> shapes = new ArrayList<>();
+//   public static List<btConvexTriangleMeshShape> loadConvexTriangleMeshShapeFromFile(String modelFilePath)
+//   {
+//      List<List<Point3D32>> vertexLists = AssimpLoader.loadTriangleVertexPositionsAsList(modelFilePath);
+//      List<btConvexTriangleMeshShape> shapes = new ArrayList<>();
+//
+//      for (List<Point3D32> vertexList : vertexLists)
+//      {
+//         btTriangleMesh bulletTriangleMesh = new btTriangleMesh(false, false);
+//
+//         for (int i = 0; i < vertexList.size(); i += 3)
+//         {
+//            bulletTriangleMesh.addTriangle(new btVector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
+//                                           new btVector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
+//                                           new btVector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
+//         }
+//         //bulletTriangleMesh.releaseOwnership();
+//
+//         btConvexTriangleMeshShape bulletConvexTriangleMeshShape = new btConvexTriangleMeshShape(bulletTriangleMesh);
+//
+//         shapes.add(bulletConvexTriangleMeshShape);
+//      }
+//      return shapes;
+//   }
 
-      for (List<Point3D32> vertexList : vertexLists)
-      {
-         btTriangleMesh bulletTriangleMesh = new btTriangleMesh(false, false);
-
-         for (int i = 0; i < vertexList.size(); i += 3)
-         {
-            bulletTriangleMesh.addTriangle(new btVector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
-                                           new btVector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
-                                           new btVector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
-         }
-         //bulletTriangleMesh.releaseOwnership();
-
-         btConvexTriangleMeshShape bulletConvexTriangleMeshShape = new btConvexTriangleMeshShape(bulletTriangleMesh);
-
-         shapes.add(bulletConvexTriangleMeshShape);
-      }
-      return shapes;
-   }
-
-   public static List<btGImpactMeshShape> loadConcaveGImpactMeshShapeFromFile(String modelFilePath)
-   {
-      List<List<Point3D32>> vertexLists = AssimpLoader.loadTriangleVertexPositionsAsList(modelFilePath);
-      List<btGImpactMeshShape> shapes = new ArrayList<>();
-
-      for (List<Point3D32> vertexList : vertexLists)
-      {
-         btTriangleMesh bulletTriangleMesh = new btTriangleMesh(false, false);
-
-         for (int i = 0; i < vertexList.size(); i += 3)
-         {
-            bulletTriangleMesh.addTriangle(new btVector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
-                                           new btVector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
-                                           new btVector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
-         }
-         //bulletTriangleMesh.releaseOwnership();
-
-         btGImpactMeshShape bulletConvexTriangleMeshShape = new btGImpactMeshShape(bulletTriangleMesh);
-         bulletConvexTriangleMeshShape.updateBound();
-
-         shapes.add(bulletConvexTriangleMeshShape);
-      }
-      return shapes;
-   }
+//   public static List<btGImpactMeshShape> loadConcaveGImpactMeshShapeFromFile(String modelFilePath)
+//   {
+//      List<List<Point3D32>> vertexLists = AssimpLoader.loadTriangleVertexPositionsAsList(modelFilePath);
+//      List<btGImpactMeshShape> shapes = new ArrayList<>();
+//
+//      for (List<Point3D32> vertexList : vertexLists)
+//      {
+//         btTriangleMesh bulletTriangleMesh = new btTriangleMesh(false, false);
+//
+//         for (int i = 0; i < vertexList.size(); i += 3)
+//         {
+//            bulletTriangleMesh.addTriangle(new btVector3(vertexList.get(i).getX32(), vertexList.get(i).getY32(), vertexList.get(i).getZ32()),
+//                                           new btVector3(vertexList.get(i + 1).getX32(), vertexList.get(i + 1).getY32(), vertexList.get(i + 1).getZ32()),
+//                                           new btVector3(vertexList.get(i + 2).getX32(), vertexList.get(i + 2).getY32(), vertexList.get(i + 2).getZ32()));
+//         }
+//         //bulletTriangleMesh.releaseOwnership();
+//
+//         btGImpactMeshShape bulletConvexTriangleMeshShape = new btGImpactMeshShape(bulletTriangleMesh);
+//         bulletConvexTriangleMeshShape.updateBound();
+//
+//         shapes.add(bulletConvexTriangleMeshShape);
+//      }
+//      return shapes;
+//   }
 
    public static btCollisionShape createBulletCollisionShape(CollisionShapeDefinition collisionShapeDefinition)
    {
@@ -163,30 +163,30 @@ public class BulletTools
          btTransform identity = new btTransform();
          if (collisionShapeDefinition.isConcave())
          {
-            List<btGImpactMeshShape> shapes = BulletTools.loadConcaveGImpactMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
-            btCompoundFromGimpactShape compoundFromGimpactShape = new btCompoundFromGimpactShape();
-
-            for (btCollisionShape shape : shapes)
-            {
-               shape.setMargin(0.01f);
-               compoundFromGimpactShape.addChildShape(identity, shape);
-            }
-
-            bulletCollisionShape = compoundFromGimpactShape;
+//            List<btGImpactMeshShape> shapes = BulletTools.loadConcaveGImpactMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
+//            btCompoundFromGimpactShape compoundFromGimpactShape = new btCompoundFromGimpactShape();
+//
+//            for (btCollisionShape shape : shapes)
+//            {
+//               shape.setMargin(0.01f);
+//               compoundFromGimpactShape.addChildShape(identity, shape);
+//            }
+//
+//            bulletCollisionShape = compoundFromGimpactShape;
          }
          else
          {
-            List<btConvexTriangleMeshShape> shapes = BulletTools.loadConvexTriangleMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
-
-            btCompoundShape compoundShape = new btCompoundShape();
-
-            for (btCollisionShape shape : shapes)
-            {
-               shape.setMargin(0.01f);
-               compoundShape.addChildShape(identity, shape);
-            }
-
-            bulletCollisionShape = compoundShape;
+//            List<btConvexTriangleMeshShape> shapes = BulletTools.loadConvexTriangleMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
+//
+//            btCompoundShape compoundShape = new btCompoundShape();
+//
+//            for (btCollisionShape shape : shapes)
+//            {
+//               shape.setMargin(0.01f);
+//               compoundShape.addChildShape(identity, shape);
+//            }
+//
+//            bulletCollisionShape = compoundShape;
          }
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
@@ -247,4 +247,69 @@ public class BulletTools
 
       return bulletCollisionShape;
    }
+   
+   public enum BroadphaseNativeTypes
+   {
+      // polyhedral convex shapes
+      BOX_SHAPE_PROXYTYPE,
+      TRIANGLE_SHAPE_PROXYTYPE,
+      TETRAHEDRAL_SHAPE_PROXYTYPE,
+      CONVEX_TRIANGLEMESH_SHAPE_PROXYTYPE,
+      CONVEX_HULL_SHAPE_PROXYTYPE,
+      CONVEX_POINT_CLOUD_SHAPE_PROXYTYPE,
+      CUSTOM_POLYHEDRAL_SHAPE_TYPE,
+      //implicit convex shapes
+      IMPLICIT_CONVEX_SHAPES_START_HERE,
+      SPHERE_SHAPE_PROXYTYPE,
+      MULTI_SPHERE_SHAPE_PROXYTYPE,
+      CAPSULE_SHAPE_PROXYTYPE,
+      CONE_SHAPE_PROXYTYPE,
+      CONVEX_SHAPE_PROXYTYPE,
+      CYLINDER_SHAPE_PROXYTYPE,
+      UNIFORM_SCALING_SHAPE_PROXYTYPE,
+      MINKOWSKI_SUM_SHAPE_PROXYTYPE,
+      MINKOWSKI_DIFFERENCE_SHAPE_PROXYTYPE,
+      BOX_2D_SHAPE_PROXYTYPE,
+      CONVEX_2D_SHAPE_PROXYTYPE,
+      CUSTOM_CONVEX_SHAPE_TYPE,
+      //concave shapes
+      CONCAVE_SHAPES_START_HERE,
+      //keep all the convex shapetype below here, for the check IsConvexShape in broadphase proxy!
+      TRIANGLE_MESH_SHAPE_PROXYTYPE,
+      SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE,
+      ///used for demo integration FAST/Swift collision library and Bullet
+      FAST_CONCAVE_MESH_PROXYTYPE,
+      //terrain
+      TERRAIN_SHAPE_PROXYTYPE,
+      ///Used for GIMPACT Trimesh integration
+      GIMPACT_SHAPE_PROXYTYPE,
+      ///Multimaterial mesh
+      MULTIMATERIAL_TRIANGLE_MESH_PROXYTYPE,
+
+      EMPTY_SHAPE_PROXYTYPE,
+      STATIC_PLANE_PROXYTYPE,
+      CUSTOM_CONCAVE_SHAPE_TYPE,
+      CONCAVE_SHAPES_END_HERE,
+
+      COMPOUND_SHAPE_PROXYTYPE,
+
+      SOFTBODY_SHAPE_PROXYTYPE,
+      HFFLUID_SHAPE_PROXYTYPE,
+      HFFLUID_BUOYANT_CONVEX_SHAPE_PROXYTYPE,
+      INVALID_SHAPE_PROXYTYPE,
+
+      MAX_BROADPHASE_COLLISION_TYPES,
+      
+      NOT_DEFINED_TYPE
+   };
+   
+   public enum eFeatherstoneJointType
+   {
+      eRevolute,
+      ePrismatic,
+      eSpherical,
+      ePlanar,
+      eFixed,
+      eInvalid
+   };
 }
