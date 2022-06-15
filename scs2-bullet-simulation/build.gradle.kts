@@ -33,6 +33,13 @@ mainDependencies {
 
    apiBytedecoNatives("javacpp")
    apiBytedecoNatives("bullet", "3.24-")
+   
+   val lwjglVersion = "3.3.1"
+   api("org.lwjgl:lwjgl-assimp:$lwjglVersion")
+   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-linux")
+   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-windows")
+   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-windows-x86")
+   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-macos")
 }
 
 testDependencies {
@@ -43,8 +50,11 @@ fun us.ihmc.build.IHMCDependenciesExtension.apiBytedecoNatives(name: String, ver
 {
    apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion")
    apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:linux-x86_64")
+   if (name != "spinnaker")
+      apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:linux-arm64")
    apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:windows-x86_64")
-   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:macosx-x86_64")
+   if (name != "spinnaker")
+      apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:macosx-x86_64")
 }
 
 fun us.ihmc.build.IHMCDependenciesExtension.apiBytedecoSelective(dependencyNotation: String)
