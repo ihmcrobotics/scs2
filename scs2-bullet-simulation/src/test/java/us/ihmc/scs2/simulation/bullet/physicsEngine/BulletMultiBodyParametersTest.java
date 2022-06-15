@@ -1,23 +1,17 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Random;
+
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.LinearMath.btVector3;
 import org.junit.jupiter.api.Test;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
-import us.ihmc.log.LogTools;
+
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 
 public class BulletMultiBodyParametersTest
 {
-   static
-   {
-      Bullet.init();
-      LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
-   }
-
    private static final int ITERATIONS = 1000;
 
    @Test
@@ -27,7 +21,7 @@ public class BulletMultiBodyParametersTest
       BulletMultiBodyParameters parameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
 
       //create a simple btMultiBody 
-      Vector3 intertia = new Vector3();
+      btVector3 intertia = new btVector3();
       btMultiBody btMultiBody = new btMultiBody(0, 1.0f, intertia, false, parameters.getCanSleep());
 
       //The default BulletMultiBodyParameters should be the same as a newly created btMultiBody
