@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-import us.ihmc.log.LogTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -23,11 +22,6 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 public class BulletPhysicsEngine implements PhysicsEngine
 {
-//   static
-//   {
-//      Bullet.init();
-//      LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
-//   }
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final ReferenceFrame inertialFrame;
    private final List<BulletRobot> robotList = new ArrayList<>();

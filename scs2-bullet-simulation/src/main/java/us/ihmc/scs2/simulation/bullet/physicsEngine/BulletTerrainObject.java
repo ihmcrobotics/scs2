@@ -4,6 +4,7 @@ import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.LinearMath.btDefaultMotionState;
 import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.bullet.BulletDynamics.btRigidBody;
 
 public class BulletTerrainObject
 {
@@ -21,7 +22,7 @@ public class BulletTerrainObject
          // Should be always 0, the child shapes are statically placed
       }
    };
-   private final org.bytedeco.bullet.BulletDynamics.btRigidBody btRigidBody;
+   private final btRigidBody btRigidBody;
    private final int collisionGroup = 1; // group 1 is rigid and static bodies
    private final int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
 
@@ -30,10 +31,10 @@ public class BulletTerrainObject
       btVector3 localInertia = new btVector3();
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 
-      btRigidBody = new org.bytedeco.bullet.BulletDynamics.btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
+      btRigidBody = new btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
    }
 
-   public org.bytedeco.bullet.BulletDynamics.btRigidBody getBtRigidBody()
+   public btRigidBody getBtRigidBody()
    {
       return btRigidBody;
    }
