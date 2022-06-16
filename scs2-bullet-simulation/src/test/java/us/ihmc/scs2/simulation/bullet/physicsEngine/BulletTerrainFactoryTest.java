@@ -51,7 +51,7 @@ public class BulletTerrainFactoryTest
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
          btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
          assertEquals(bulletTerrainObject.getCollisionGroup(), 1);
          assertEquals(bulletTerrainObject.getCollisionGroupMask(), -1);
 
@@ -82,7 +82,7 @@ public class BulletTerrainFactoryTest
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
          btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
 
          btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
@@ -103,7 +103,7 @@ public class BulletTerrainFactoryTest
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
          btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
 
          btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
@@ -126,7 +126,7 @@ public class BulletTerrainFactoryTest
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
          btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE.ordinal());
 
          btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
@@ -148,7 +148,7 @@ public class BulletTerrainFactoryTest
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
          btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE.ordinal());
 
          btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);

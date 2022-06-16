@@ -4,23 +4,26 @@ import org.bytedeco.bullet.LinearMath.btTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 public class BulletMultiBodyLinkCollider
 {
-   private final org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider btMultiBodyLinkCollider;
-   private final org.bytedeco.bullet.BulletDynamics.btMultiBody btMultiBody;
+   private final btMultiBodyLinkCollider btMultiBodyLinkCollider;
+   private final btMultiBody btMultiBody;
    private final String jointName;
    private final int linkColliderIndex;
    private final btTransform bulletTempConversionBtTransform = new btTransform();
-   private final org.bytedeco.bullet.LinearMath.btVector3 bulletTempConversionVector3 = new org.bytedeco.bullet.LinearMath.btVector3();
-   private final org.bytedeco.bullet.LinearMath.btVector3 linkForce;
-   private final org.bytedeco.bullet.LinearMath.btVector3 linkTorque;
+   private final btVector3 bulletTempConversionVector3 = new org.bytedeco.bullet.LinearMath.btVector3();
+   private final btVector3 linkForce;
+   private final btVector3 linkTorque;
    private int collisionGroup;
    private int collisionGroupMask;
    
-   public BulletMultiBodyLinkCollider(org.bytedeco.bullet.BulletDynamics.btMultiBody btMultibody, int index, String jointName)
+   public BulletMultiBodyLinkCollider(btMultiBody btMultibody, int index, String jointName)
    {
-      btMultiBodyLinkCollider = new org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider(btMultibody, index);
+      btMultiBodyLinkCollider = new btMultiBodyLinkCollider(btMultibody, index);
       this.linkColliderIndex = index;
       this.jointName = jointName;
       this.collisionGroup = 2;
@@ -73,7 +76,7 @@ public class BulletMultiBodyLinkCollider
       btMultiBodyLinkCollider.setContactProcessingThreshold((float) contactProcessingThreshold);
    }
 
-   public org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider getBtMultiBodyLinkCollider()
+   public btMultiBodyLinkCollider getBtMultiBodyLinkCollider()
    {
       return btMultiBodyLinkCollider;
    }
