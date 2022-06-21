@@ -32,6 +32,8 @@ public class BulletTerrainObject
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 
       btRigidBody = new btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
+      
+      btRigidBody.setFriction(1f);
    }
 
    public btRigidBody getBtRigidBody()
