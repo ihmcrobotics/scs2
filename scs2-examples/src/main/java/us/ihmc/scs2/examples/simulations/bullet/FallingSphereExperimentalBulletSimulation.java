@@ -17,7 +17,6 @@ import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.examples.simulations.SlopeGroundDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationEnergyStatistics;
 import us.ihmc.scs2.simulation.SimulationSession;
