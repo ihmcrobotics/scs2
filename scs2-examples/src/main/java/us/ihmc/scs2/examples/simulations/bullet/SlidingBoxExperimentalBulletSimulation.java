@@ -31,7 +31,7 @@ public class SlidingBoxExperimentalBulletSimulation
 
       RobotDefinition boxRobot = ExampleExperimentalSimulationTools.newBoxRobot("box", boxSize, 150.0, 0.8, ColorDefinitions.DarkCyan());
       SixDoFJointState initialState = new SixDoFJointState();
-      Point3D initialPosition = new Point3D(0, 0, calculateZ(groundPitch)); 
+      Point3D initialPosition = new Point3D(0, 0, 0.248); 
       initialState.setConfiguration(new YawPitchRoll(0, groundPitch, 0), initialPosition);
       initialState.setVelocity(new Vector3D(0, 0, 0), new Vector3D(0, 0, 0));
       boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialState);
@@ -48,22 +48,13 @@ public class SlidingBoxExperimentalBulletSimulation
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-      bulletMultiBodyJointParameter.setJointFriction(0.6235);
+      bulletMultiBodyJointParameter.setJointFriction(0.6);
 
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
                                                                                                                            bulletMultiBodyJointParameter));
       simulationSession.addRobot(boxRobot);
       simulationSession.addTerrainObject(terrain);
       SessionVisualizer.startSessionVisualizer(simulationSession);
-      // simulationSession.setSessionDTSeconds(0.001);
-   }
-   
-   public static double calculateZ(double angleOfGround)
-   {
-      double a1 = 50 * Math.sin(angleOfGround);
-      double b1 = 50 * Math.cos(angleOfGround);
-      double a2 = b1 * Math.tan(angleOfGround - 0.00412);
-      return a1 - a2;
    }
 
    public static void main(String[] args)
