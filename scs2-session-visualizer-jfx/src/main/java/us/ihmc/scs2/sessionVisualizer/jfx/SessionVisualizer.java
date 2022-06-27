@@ -37,6 +37,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -511,6 +516,53 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          return mainWindowController.getUserSidePaneController().removeCustomPane(name);
+      }
+
+      @Override
+      public YoDoubleProperty newYoDoubleProperty(String variableName)
+      {
+         checkVisualizerRunning();
+         return toolkit.getYoManager().newYoDoubleProperty(variableName);
+      }
+
+      @Override
+      public YoIntegerProperty newYoIntegerProperty(String variableName)
+      {
+         checkVisualizerRunning();
+         return toolkit.getYoManager().newYoIntegerProperty(variableName);
+      }
+
+      @Override
+      public YoBooleanProperty newYoBooleanProperty(String variableName)
+      {
+         checkVisualizerRunning();
+         return toolkit.getYoManager().newYoBooleanProperty(variableName);
+      }
+
+      @Override
+      public YoLongProperty newYoLongProperty(String variableName)
+      {
+         checkVisualizerRunning();
+         return toolkit.getYoManager().newYoLongProperty(variableName);
+      }
+
+      @Override
+      public <E extends Enum<E>> YoEnumAsStringProperty<E> newYoEnumProperty(String variableName)
+      {
+         checkVisualizerRunning();
+         return toolkit.getYoManager().newYoEnumProperty(variableName);
+      }
+
+      @Override
+      public void addSessionChangedListener(SessionChangeListener listener)
+      {
+         toolkit.addSessionChangedListener(listener);
+      }
+
+      @Override
+      public boolean removeSessionChangedListener(SessionChangeListener listener)
+      {
+         return toolkit.removeSessionChangedListener(listener);
       }
 
       @Override
