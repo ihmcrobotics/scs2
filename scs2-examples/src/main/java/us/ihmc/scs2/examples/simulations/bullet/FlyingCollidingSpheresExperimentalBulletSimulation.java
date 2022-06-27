@@ -40,7 +40,7 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
 
       SixDoFJointState sphere1InitialState = new SixDoFJointState();
       sphere1InitialState.setConfiguration(null, new Point3D(-1.3, 1.0, 0.6));
-      sphere1InitialState.setVelocity(null, new Vector3D(2.0, 1.0, 0));
+      sphere1InitialState.setVelocity(null, new Vector3D(2.0, 0, 0));
       sphereRobot1.getRootJointDefinitions().get(0).setInitialJointState(sphere1InitialState);
 
       SixDoFJointState sphere2InitialState = new SixDoFJointState();
