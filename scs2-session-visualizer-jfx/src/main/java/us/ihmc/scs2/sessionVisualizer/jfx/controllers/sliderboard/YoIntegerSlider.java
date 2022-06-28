@@ -105,7 +105,7 @@ public class YoIntegerSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoIntegerSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoIntegerProperty.setAndPush(virtualSlider.valueProperty().getValue().intValue());
+            yoIntegerProperty.set(virtualSlider.valueProperty().getValue().intValue());
             updating.setFalse();
          });
       };
@@ -191,7 +191,7 @@ public class YoIntegerSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoIntegerSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoIntegerProperty.setAndPush(yoIntegerValue);
+            yoIntegerProperty.set(yoIntegerValue);
             updating.setFalse();
          });
       };
@@ -240,7 +240,7 @@ public class YoIntegerSlider implements YoVariableSlider
    @Override
    public void dispose()
    {
-      yoIntegerProperty.finalize();
+      yoIntegerProperty.dispose();
       cleanupTasks.forEach(Runnable::run);
    }
 }
