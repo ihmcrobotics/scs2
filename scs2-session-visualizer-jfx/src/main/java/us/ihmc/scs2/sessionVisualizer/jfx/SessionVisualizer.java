@@ -584,6 +584,12 @@ public class SessionVisualizer
          stopListeners.add(listener);
       }
 
+      @Override
+      public boolean isVisualizerShutdown()
+      {
+         return hasTerminated;
+      }
+
       private void checkVisualizerRunning()
       {
          if (hasTerminated)

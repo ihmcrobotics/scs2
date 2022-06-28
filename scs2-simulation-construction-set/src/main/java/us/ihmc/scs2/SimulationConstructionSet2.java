@@ -1241,4 +1241,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       if (visualizerControls != null)
          visualizerControls.addVisualizerShutdownListener(listener);
    }
+
+   @Override
+   public boolean isVisualizerShutdown()
+   {
+      if (visualizerControls != null)
+         return visualizerControls.isVisualizerShutdown();
+      else
+         return true;
+   }
 }

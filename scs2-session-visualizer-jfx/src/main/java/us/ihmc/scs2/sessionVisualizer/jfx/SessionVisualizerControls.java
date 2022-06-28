@@ -472,6 +472,13 @@ public interface SessionVisualizerControls
    void shutdownSession();
 
    /**
+    * Indicates whether the visualizer has been shutdown or not.
+    * 
+    * @return {@code true} if the visualizer has been shutdown, {@code false} otherwise.
+    */
+   boolean isVisualizerShutdown();
+
+   /**
     * Adds a listener to be notified when the visualizer just shutdown.
     * 
     * @param listener the shutdown listener.
