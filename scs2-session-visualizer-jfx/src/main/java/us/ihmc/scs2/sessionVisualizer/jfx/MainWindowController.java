@@ -91,6 +91,9 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       mainWindowMenuBarController.initialize(windowToolkit);
       sessionSimpleControlsController.initialize(windowToolkit);
       sessionAdvancedControlsController.initialize(windowToolkit);
+      // Show the advanced controls by default
+      sessionSimpleControlsController.show(false);
+      sessionAdvancedControlsController.showProperty().set(true);
       yoChartGroupPanelController.initialize(windowToolkit);
 
       rootPane.getChildren().set(1, leftDrawer);
