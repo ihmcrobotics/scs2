@@ -106,7 +106,7 @@ public class YoDoubleSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoDoubleSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoDoubleProperty.setAndPush(virtualSlider.valueProperty().get());
+            yoDoubleProperty.set(virtualSlider.valueProperty().get());
             updating.setFalse();
          });
       };
@@ -192,7 +192,7 @@ public class YoDoubleSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoDoubleSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoDoubleProperty.setAndPush(yoDoubleValue);
+            yoDoubleProperty.set(yoDoubleValue);
             updating.setFalse();
          });
       };
@@ -241,7 +241,7 @@ public class YoDoubleSlider implements YoVariableSlider
    @Override
    public void dispose()
    {
-      yoDoubleProperty.finalize();
+      yoDoubleProperty.dispose();
       cleanupTasks.forEach(Runnable::run);
    }
 }

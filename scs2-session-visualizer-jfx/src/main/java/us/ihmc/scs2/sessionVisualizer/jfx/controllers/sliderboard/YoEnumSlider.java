@@ -71,7 +71,7 @@ public class YoEnumSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoEnumSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoEnumProperty.setAndPush(yoEnumProperty.toEnumString(virtualSlider.valueProperty().getValue().intValue()));
+            yoEnumProperty.set(yoEnumProperty.toEnumString(virtualSlider.valueProperty().getValue().intValue()));
             updating.setFalse();
          });
       };
@@ -138,7 +138,7 @@ public class YoEnumSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoEnumSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoEnumProperty.setAndPush(yoEnumProperty.toEnumString(yoEnumOrdinal));
+            yoEnumProperty.set(yoEnumProperty.toEnumString(yoEnumOrdinal));
             updating.setFalse();
          });
       };
@@ -178,7 +178,7 @@ public class YoEnumSlider implements YoVariableSlider
    @Override
    public void dispose()
    {
-      yoEnumProperty.finalize();
+      yoEnumProperty.dispose();
       cleanupTasks.forEach(Runnable::run);
    }
 }
