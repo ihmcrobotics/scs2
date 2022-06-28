@@ -1,7 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import org.bytedeco.bullet.BulletDynamics.*;
-import org.bytedeco.bullet.LinearMath.*;
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
@@ -17,6 +17,10 @@ import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
 

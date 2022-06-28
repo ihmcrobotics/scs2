@@ -1,5 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
+import java.util.ArrayList;
+
 import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.BulletCollision.btCompoundShape;
 import org.bytedeco.bullet.LinearMath.btTransform;
@@ -12,6 +14,8 @@ public interface BulletTerrainFactory
    public static BulletTerrainObject newInstance(TerrainObjectDefinition terrainObjectDefinition)
    {
       btCompoundShape bulletCompoundCollisionShape = new btCompoundShape();
+      ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+      ArrayList<btTransform> btTransforms = new ArrayList<>();
 
       for (CollisionShapeDefinition collisionShapeDefinition : terrainObjectDefinition.getCollisionShapeDefinitions())
       {
@@ -24,10 +28,12 @@ public interface BulletTerrainFactory
          
          BulletTools.toBullet(collisionShapeDefinitionTransformToWorld, bulletTransformToWorld);
          bulletCompoundCollisionShape.addChildShape(bulletTransformToWorld, bulletCollisionShape);
+         btCollisionShapes.add(bulletCollisionShape);
+         btTransforms.add(bulletTransformToWorld);
       }
 
       float mass = 0.0f;
-      BulletTerrainObject bulletTerrainObject = new BulletTerrainObject(mass, bulletCompoundCollisionShape);
+      BulletTerrainObject bulletTerrainObject = new BulletTerrainObject(mass, bulletCompoundCollisionShape, btCollisionShapes, btTransforms);
 
       return bulletTerrainObject;
    }

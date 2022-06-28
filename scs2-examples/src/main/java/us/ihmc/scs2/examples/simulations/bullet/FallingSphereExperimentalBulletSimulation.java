@@ -2,10 +2,8 @@ package us.ihmc.scs2.examples.simulations.bullet;
 
 import static us.ihmc.scs2.examples.simulations.ExampleExperimentalSimulationTools.newSphereRobot;
 
-import java.io.IOException;
-
-import org.bytedeco.bullet.BulletDynamics.btDiscreteDynamicsWorld;
-import org.bytedeco.javacpp.Loader;
+import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
@@ -24,6 +22,7 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngine;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
@@ -60,27 +59,36 @@ public class FallingSphereExperimentalBulletSimulation
                                                                                          terrainGeometry,
                                                                                          new MaterialDefinition(ColorDefinitions.LightSlateGray())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
-      //simulationSession.addTerrainObject(terrain);
+      simulationSession.addTerrainObject(terrain);
 
       simulationSession.submitBufferSizeRequest(245760);
       simulationSession.setBufferRecordTickPeriod(8);
-      simulationSession.setSessionDTSeconds(0.1);
+      simulationSession.setSessionDTSeconds(0.000001);
+      
+      BulletPhysicsEngine bulletPhysicsEngine  = (BulletPhysicsEngine)simulationSession.getPhysicsEngine();
+      btMultiBodyDynamicsWorld multiBodyDynamicsWorld = bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld();
+      
+      int size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
+      for (int i = 0; i < size; i++)
+      {
+         btCollisionShape collisionShape = multiBodyDynamicsWorld.getCollisionObjectArray().get(i).getCollisionShape();
+         System.out.println(i + " before Visualizer " + collisionShape.getShapeType());
+      }
 
       SessionVisualizer.startSessionVisualizer(simulationSession);
+      
+      size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
+      for (int i = 0; i < size; i++)
+      {
+         btCollisionShape collisionShape = multiBodyDynamicsWorld.getCollisionObjectArray().get(i).getCollisionShape();
+         System.out.println(i + " after Visualizer " + collisionShape.getShapeType());
+      }
+
    }
 
    public static void main(String[] args)
    {
       new FallingSphereExperimentalBulletSimulation();
    }
-   
-//   public static void main(String[] args) throws IOException, InterruptedException {
-//      Class<?> clazz = btDiscreteDynamicsWorld.class;
-//      try {
-//          Loader.load(clazz);
-//      } catch (UnsatisfiedLinkError e) {
-//          String path = Loader.cacheResource(clazz, "windows-x86_64/jnidc1394.dll").getPath();
-//          new ProcessBuilder("C:/Users/tvanderhey/Downloads/Dependencies_x64_Release/DependenciesGui.exe", path).start().waitFor();
-//      }
-//   }
+  
 }

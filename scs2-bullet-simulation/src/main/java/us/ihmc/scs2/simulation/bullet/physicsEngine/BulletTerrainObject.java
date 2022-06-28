@@ -1,5 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
+import java.util.ArrayList;
+
 import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.LinearMath.btDefaultMotionState;
 import org.bytedeco.bullet.LinearMath.btTransform;
@@ -25,13 +27,19 @@ public class BulletTerrainObject
    private final btRigidBody btRigidBody;
    private final int collisionGroup = 1; // group 1 is rigid and static bodies
    private final int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
+   private final btCollisionShape btCollisionShape;
+   private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+   private final btVector3 localInertia = new btVector3();
+   private ArrayList<btTransform> btTransforms = new ArrayList<>();
 
-   public BulletTerrainObject(float mass, btCollisionShape bulletCompoundCollisionShape)
+   public BulletTerrainObject(float mass, btCollisionShape bulletCompoundCollisionShape, ArrayList<btCollisionShape> btCollisionShapes, ArrayList<btTransform> btTransforms)
    {
-      btVector3 localInertia = new btVector3();
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 
       btRigidBody = new btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
+      btCollisionShape = bulletCompoundCollisionShape;
+      this.btCollisionShapes = btCollisionShapes;
+      this.btTransforms = btTransforms;
    }
 
    public btRigidBody getBtRigidBody()
@@ -48,5 +56,6 @@ public class BulletTerrainObject
    {
       return collisionGroupMask;
    }
+
 
 }
