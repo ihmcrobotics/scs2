@@ -4,6 +4,11 @@ import org.bytedeco.bullet.LinearMath.btTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+
+import java.util.ArrayList;
+
+import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.BulletCollision.btCompoundShape;
 import org.bytedeco.bullet.BulletDynamics.btMultiBody;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider;
 import org.bytedeco.bullet.LinearMath.btVector3;
@@ -15,11 +20,14 @@ public class BulletMultiBodyLinkCollider
    private final String jointName;
    private final int linkColliderIndex;
    private final btTransform bulletTempConversionBtTransform = new btTransform();
-   private final btVector3 bulletTempConversionVector3 = new org.bytedeco.bullet.LinearMath.btVector3();
+   private final btVector3 bulletTempConversionVector3 = new btVector3();
    private final btVector3 linkForce;
    private final btVector3 linkTorque;
    private int collisionGroup;
    private int collisionGroupMask;
+   private btCollisionShape shape;
+   private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+   private ArrayList<btTransform> btTransforms = new ArrayList<>();
    
    public BulletMultiBodyLinkCollider(btMultiBody btMultibody, int index, String jointName)
    {
@@ -41,8 +49,11 @@ public class BulletMultiBodyLinkCollider
       this.collisionGroupMask = collisionGroupMask;
    }
 
-   public void setCollisionShape(org.bytedeco.bullet.BulletCollision.btCollisionShape shape)
+   public void setCollisionShape(btCollisionShape shape, ArrayList<btCollisionShape> btCollisionShapes, ArrayList<btTransform> btTransforms)
    {
+      this.shape = shape;
+      this.btCollisionShapes = btCollisionShapes;
+      this.btTransforms = btTransforms;
       btMultiBodyLinkCollider.setCollisionShape(shape);
    }
 

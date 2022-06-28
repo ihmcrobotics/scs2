@@ -1,5 +1,6 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -296,13 +297,18 @@ public class BulletMultiBodyRobotFactory
 
       bulletMultiBodyLinkCollider.setCollisionGroupMask(collisionGroup, collisionGroupMask);
 
+      ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+      ArrayList<btTransform> btTransforms = new ArrayList<>();
       for (CollisionShapeDefinition shapeDefinition : collisionShapeDefinitions)
       {
          btCollisionShape bulletCollisionShape = BulletTools.createBulletCollisionShape(shapeDefinition);
-         bulletCompoundShape.addChildShape(bulletCollisionShapeLocalTransform(shapeDefinition, linkCenterOfMassFrame), bulletCollisionShape);
+         btTransform bulletCollisionShapeLocalTransform = bulletCollisionShapeLocalTransform(shapeDefinition, linkCenterOfMassFrame);
+         bulletCompoundShape.addChildShape(bulletCollisionShapeLocalTransform, bulletCollisionShape);
+         btCollisionShapes.add(bulletCompoundShape);
+         btTransforms.add(bulletCollisionShapeLocalTransform);
       }
 
-      bulletMultiBodyLinkCollider.setCollisionShape(bulletCompoundShape);
+      bulletMultiBodyLinkCollider.setCollisionShape(bulletCompoundShape, btCollisionShapes, btTransforms);
 
       bulletMultiBodyRobot.addBulletMuliBodyLinkCollider(bulletMultiBodyLinkCollider);
 

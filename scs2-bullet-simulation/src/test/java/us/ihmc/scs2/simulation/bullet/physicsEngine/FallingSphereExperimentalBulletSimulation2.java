@@ -1,14 +1,13 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import org.bytedeco.bullet.BulletDynamics.*;
-import org.bytedeco.bullet.LinearMath.*;
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 import us.ihmc.euclid.Axis3D;
-import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.mecano.tools.MomentOfInertiaFactory;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
@@ -25,10 +24,9 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.robot.Robot;
-import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 
 public class FallingSphereExperimentalBulletSimulation2
 {
@@ -47,7 +45,7 @@ public class FallingSphereExperimentalBulletSimulation2
       sphere1InitialState.setConfiguration(null, new Point3D(0, 0, 2.0));
       sphere1InitialState.setVelocity(null, new Vector3D(0.0, 0.0, 0));
       sphereRobot1.getRootJointDefinitions().get(0).setInitialJointState(sphere1InitialState);
-      
+
       BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
       bulletMultiBodyParameters.setLinearDamping(0);
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
@@ -66,22 +64,23 @@ public class FallingSphereExperimentalBulletSimulation2
 
       simulationSession.submitBufferSizeRequest(245760);
       simulationSession.setBufferRecordTickPeriod(8);
-      simulationSession.setSessionDTSeconds(0.1);
+      simulationSession.setSessionDTSeconds(0.001);
       
       BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine)simulationSession.getPhysicsEngine();
       BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld = bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld();
       btMultiBody btMultiBody = bulletMultiBodyDynamicsWorld.getBtMultiBodyDynamicsWorld().getMultiBody(0);
+      btMultiBodyDynamicsWorld multiBodyDynamicsWorld = bulletMultiBodyDynamicsWorld.getBtMultiBodyDynamicsWorld();
       
-      double dt = 0.1;
+      double dt = 0.001;
       Vector3D gravity = new Vector3D(0.0, .0, -9.81);
 
-      for (int i = 1; i <= 10; i++)
+      for (int i = 1; i <= 1000; i++)
       {
          //bulletMultiBodyDynamicsWorld.stepSimulation((float) dt, 1, (float) dt);   //Works
          //bulletPhysicsEngine.simulate(dt, dt, gravity);                            //Works
-         
-         simulationSession.runTick();                                                //EXCEPTION_ACCESS_VIOLATION
-         
+          
+         boolean test = simulationSession.runTick();                                                //EXCEPTION_ACCESS_VIOLATION
+
          btVector3 position = btMultiBody.getBasePos();
          System.out.println(i + " " + position.z());
       }
