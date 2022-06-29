@@ -54,7 +54,8 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
       bulletMultiBodyParameters.setUseRK4Integration(true);
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
 
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters,
+                                                                                                                           bulletMultiBodyJointParameter));
       simulationSession.addRobot(sphereRobot1);
       simulationSession.addRobot(sphereRobot2);
       simulationSession.submitBufferSizeRequest(245760);

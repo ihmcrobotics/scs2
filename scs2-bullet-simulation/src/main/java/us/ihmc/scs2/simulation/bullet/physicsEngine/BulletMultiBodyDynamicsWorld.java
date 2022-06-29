@@ -3,20 +3,17 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 import java.util.ArrayList;
 import org.bytedeco.bullet.BulletCollision.btDbvtBroadphase;
 import org.bytedeco.bullet.BulletCollision.btDefaultCollisionConfiguration;
-import org.bytedeco.bullet.BulletCollision.btSphereShape;
 import org.bytedeco.bullet.BulletCollision.btCollisionDispatcher;
 import org.bytedeco.bullet.BulletCollision.btCollisionObject;
-import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.BulletCollision.btCollisionConfiguration;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraintSolver;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld;
 import org.bytedeco.bullet.BulletCollision.btBroadphaseInterface;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
 import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.bullet.global.BulletCollision;
 import org.bytedeco.bullet.BulletDynamics.btContactSolverInfo;
-import org.bytedeco.bullet.BulletCollision.btCompoundShape;
-import org.bytedeco.bullet.LinearMath.btTransform;
-
+import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletContactSolverInfoParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
@@ -29,7 +26,7 @@ public class BulletMultiBodyDynamicsWorld
    private final btBroadphaseInterface btBroadphaseInterface;
    private final btMultiBodyConstraintSolver btMultiBodyConstraintSolver;
    private final btMultiBodyDynamicsWorld btMultiBodyDynamicsWorld;
-   //private btIDebugDraw btIDebugDraw;
+   private btIDebugDraw btIDebugDraw;
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
    private final btVector3 btGravity = new btVector3();
@@ -41,7 +38,7 @@ public class BulletMultiBodyDynamicsWorld
       btCollisionDispatcher = new btCollisionDispatcher(btCollisionConfiguration);
       btBroadphaseInterface = new btDbvtBroadphase();
       btMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
-      //btIDebugDraw = null;
+      btIDebugDraw = null;
       btMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(btCollisionDispatcher,
                                                               btBroadphaseInterface,
                                                               btMultiBodyConstraintSolver,
@@ -78,7 +75,7 @@ public class BulletMultiBodyDynamicsWorld
 
    public void dispose()
    {
-      if (btMultiBodyDynamicsWorld != null)
+      if (!btMultiBodyDynamicsWorld.isNull())
       {
          for (BulletTerrainObject bulletTerrainObject : terrainObjects)
          {
@@ -117,10 +114,10 @@ public class BulletMultiBodyDynamicsWorld
             bulletMultiBodyRobot.getBtMultiBody().deallocate();
          }
 
-         //if (btIDebugDraw != null)
-         //{
-         //   btIDebugDraw.deallocate();
-         //}
+         if (btIDebugDraw != null)
+         {
+            btIDebugDraw.deallocate();
+         }
 
          btMultiBodyDynamicsWorld.deallocate();
          btMultiBodyConstraintSolver.deallocate();
@@ -160,8 +157,7 @@ public class BulletMultiBodyDynamicsWorld
                                             bulletTerrainObject.getCollisionGroup(),
                                             bulletTerrainObject.getCollisionGroupMask());
       bulletTerrainObject.getBtRigidBody().setCollisionFlags(bulletTerrainObject.getBtRigidBody().getCollisionFlags() | btCollisionObject.CF_KINEMATIC_OBJECT);
-      //bulletTerrainObject.getBtRigidBody().setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
-      bulletTerrainObject.getBtRigidBody().setActivationState(4);
+      bulletTerrainObject.getBtRigidBody().setActivationState(BulletCollision.DISABLE_DEACTIVATION);
    }
 
    public void updateAllMultiBodyParameters(YoBulletMultiBodyParameters multiBodyParameters)
@@ -180,17 +176,17 @@ public class BulletMultiBodyDynamicsWorld
       }
    }
 
-   //   public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
-   //   {
-   //      if (!btMultiBodyDynamicsWorld.isNull())
-   //         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
-   //      this.btIDebugDraw = btIDebugDraw;
-   //   }
+   public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
+   {
+      if (!btMultiBodyDynamicsWorld.isNull())
+         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
+      this.btIDebugDraw = btIDebugDraw;
+   }
 
    public void debugDrawWorld()
    {
-      //      if (!btMultiBodyDynamicsWorld.isNull())
-      //         btMultiBodyDynamicsWorld.debugDrawWorld();
+      if (!btMultiBodyDynamicsWorld.isNull())
+         btMultiBodyDynamicsWorld.debugDrawWorld();
    }
 
    public void updateContactSolverInfoParameters(YoBulletContactSolverInfoParameters globalContactSolverInfoParameters)

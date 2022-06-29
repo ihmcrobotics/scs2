@@ -8,7 +8,6 @@ import java.util.Random;
 
 import org.bytedeco.bullet.BulletCollision.btBoxShape;
 import org.bytedeco.bullet.BulletCollision.btCapsuleShapeZ;
-import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.BulletCollision.btCompoundShape;
 import org.bytedeco.bullet.BulletCollision.btConeShapeZ;
 import org.bytedeco.bullet.BulletCollision.btCylinderShape;
@@ -121,12 +120,12 @@ public class BulletMultiBodyRobotFactoryTest
          assertTrue(bulletMultiBodyRobot.getBtMultiBody().getBaseCollider() != null, "Assert btMultiBody does not have a Base Collider");
 
          assertBulletMultiBodyRobotCreatedCorrectly(robot, bulletMultiBodyRobot, globalMultiBodyParameters, globalMultiBodyJointParameters);
-         
+
          globalMultiBodyParameters.set(nextRandomMultiBodyParameters(random));
          globalMultiBodyJointParameters.set(nextRandomMultiBodyJointParameters(random));
       }
    }
-   
+
    @Test
    public void testNewInstanceRegressionTest()
    {
@@ -135,18 +134,18 @@ public class BulletMultiBodyRobotFactoryTest
       globalMultiBodyParameters.set(BulletMultiBodyParameters.defaultBulletMultiBodyParameters());
       YoBulletMultiBodyJointParameters globalMultiBodyJointParameters = new YoBulletMultiBodyJointParameters("globalMultiJointBody", physicsEngineRegistry);
       globalMultiBodyJointParameters.set(BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
-      
+
       Robot robot = createTestRobotWithKnownValues();
-    
+
       BulletMultiBodyRobot bulletMultiBodyRobot = BulletMultiBodyRobotFactory.newInstance(robot, globalMultiBodyParameters, globalMultiBodyJointParameters);
-      
+
       btMultiBody btMultibody = bulletMultiBodyRobot.getBtMultiBody();
       assertEquals(btMultibody.getNumLinks(), 1);
       assertEquals(bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(0).getCollisionGroup(), 64);
       assertEquals(bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(0).getCollisionGroupMask(), 899);
       assertEquals(bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(1).getCollisionGroup(), 1);
       assertEquals(bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(1).getCollisionGroupMask(), 3);
-      
+
       btVector3 linkAxis = bulletMultiBodyRobot.getBtMultiBody().getLink(0).getAxisTop(0);
       assertEquals(linkAxis.getX(), 0);
       assertEquals(linkAxis.getY(), 0);
@@ -154,7 +153,7 @@ public class BulletMultiBodyRobotFactoryTest
 
       btMultiBodyLinkCollider baseCollider = bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(0).getBtMultiBodyLinkCollider();
       btMultiBodyLinkCollider linkCollider = bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(1).getBtMultiBodyLinkCollider();
-      
+
       //TODO: see why collision shape cannot be cast to btCompoundShape
       //btCompoundShape baseColliderCompoundShape = (btCompoundShape)baseCollider.getCollisionShape();
       //assertEquals(baseColliderCompoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
@@ -176,18 +175,18 @@ public class BulletMultiBodyRobotFactoryTest
       //assertEquals(Math.abs(boxVertex.getX()), (float) 0.03f / 2.0f, EPSILON);
       //assertEquals(Math.abs(boxVertex.getY()), (float) 0.04f / 2.0f, EPSILON);
       //assertEquals(Math.abs(boxVertex.getZ()), (float) 0.02f / 2.0f, EPSILON);
-      
+
       assertEquals(linkCollider.getFriction(), (float) globalMultiBodyJointParameters.getJointFriction());
       assertEquals(linkCollider.getRestitution(), (float) globalMultiBodyJointParameters.getJointRestitution());
       assertEquals(linkCollider.getHitFraction(), (float) globalMultiBodyJointParameters.getJointHitFraction());
       assertEquals(linkCollider.getRollingFriction(), (float) globalMultiBodyJointParameters.getJointRollingFriction());
       assertEquals(linkCollider.getSpinningFriction(), (float) globalMultiBodyJointParameters.getJointSpinningFriction());
       assertEquals(linkCollider.getContactProcessingThreshold(), (float) globalMultiBodyJointParameters.getJointContactProcessingThreshold());
-      
+
       assertEquals(btMultibody.getBaseMass(), 9.609f);
       assertEquals(btMultibody.getLinkMass(0), 2.27f);
-      
-     //TODO: need to add a test for MomentOfInertia after it is corrected
+
+      //TODO: need to add a test for MomentOfInertia after it is corrected
    }
 
    @Test
@@ -280,7 +279,7 @@ public class BulletMultiBodyRobotFactoryTest
                                                                            random.nextDouble());
       return parameters;
    }
-   
+
    private static BulletMultiBodyJointParameters nextRandomMultiBodyJointParameters(Random random)
    {
       BulletMultiBodyJointParameters jointParameters = new BulletMultiBodyJointParameters(random.nextBoolean(),
@@ -292,7 +291,7 @@ public class BulletMultiBodyRobotFactoryTest
                                                                                           random.nextDouble());
       return jointParameters;
    }
-   
+
    private void assertBulletMultiBodyRobotCreatedCorrectly(Robot robot,
                                                            BulletMultiBodyRobot bulletMultiBodyRobot,
                                                            YoBulletMultiBodyParameters globalMultiBodyParameters,
@@ -329,26 +328,26 @@ public class BulletMultiBodyRobotFactoryTest
       for (JointBasics joint : robot.getRootBody().getChildrenJoints())
       {
          if (!(joint instanceof SimFloatingRootJoint))
-          assertJointAndLinkEqual(robot, bulletMultiBodyRobot, globalMultiBodyJointParameters, btMultiBody, joint, hasBaseCollider);
-         
+            assertJointAndLinkEqual(robot, bulletMultiBodyRobot, globalMultiBodyJointParameters, btMultiBody, joint, hasBaseCollider);
+
          testChildJoints(robot, bulletMultiBodyRobot, globalMultiBodyJointParameters, btMultiBody, joint, hasBaseCollider);
       }
    }
 
-   private static void testChildJoints (Robot robot,
-                                        BulletMultiBodyRobot bulletMultiBodyRobot,
-                                        YoBulletMultiBodyJointParameters globalMultiBodyJointParameters,
-                                        btMultiBody btMultiBody,
-                                        JointBasics jointBasics,
-                                        boolean hasBaseCollider)
+   private static void testChildJoints(Robot robot,
+                                       BulletMultiBodyRobot bulletMultiBodyRobot,
+                                       YoBulletMultiBodyJointParameters globalMultiBodyJointParameters,
+                                       btMultiBody btMultiBody,
+                                       JointBasics jointBasics,
+                                       boolean hasBaseCollider)
    {
       for (JointBasics childJoint : jointBasics.getSuccessor().getChildrenJoints())
       {
          assertJointAndLinkEqual(robot, bulletMultiBodyRobot, globalMultiBodyJointParameters, btMultiBody, childJoint, hasBaseCollider);
          testChildJoints(robot, bulletMultiBodyRobot, globalMultiBodyJointParameters, btMultiBody, childJoint, hasBaseCollider);
-       }
+      }
    }
-   
+
    private static void assertJointAndLinkEqual(Robot robot,
                                                BulletMultiBodyRobot bulletMultiBodyRobot,
                                                YoBulletMultiBodyJointParameters globalMultiBodyJointParameters,
@@ -369,7 +368,8 @@ public class BulletMultiBodyRobotFactoryTest
       assertEquals(btMultiBody.getLink(index).m_flags(), (globalMultiBodyJointParameters.getJointDisableParentCollision() ? 1 : 0));
       JointDefinition jointDefinition = robot.getRobotDefinition().getJointDefinition(jointBasics.getName());
       RigidBodyDefinition jointRigidBodyDefinition = jointDefinition.getSuccessor();
-      btMultiBodyLinkCollider btMultiBodyLinkCollider = bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(index + (hasBaseCollider ? 1 : 0)).getBtMultiBodyLinkCollider();
+      btMultiBodyLinkCollider btMultiBodyLinkCollider = bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(index + (hasBaseCollider ? 1 : 0))
+                                                                            .getBtMultiBodyLinkCollider();
 
       //TODO: see why the collision shape can not be cast to btCompoundShape
       //List<CollisionShapeDefinition> collisionShapes = jointRigidBodyDefinition.getCollisionShapeDefinitions();
@@ -383,8 +383,7 @@ public class BulletMultiBodyRobotFactoryTest
       OneDoFJointDefinition oneDoFJointDefinition = (OneDoFJointDefinition) jointDefinition;
       Vector3D jointAxis = oneDoFJointDefinition.getAxis();
       btMultibodyLink link = btMultiBody.getLink(index);
-      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion(jointDefinition.getTransformToParent()
-                                                                                                                        .getRotation());
+      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion(jointDefinition.getTransformToParent().getRotation());
       euclidRotationFromParent.invert();
       assertQuaternionEqualsBtQuaternion(euclidRotationFromParent, link.m_zeroRotParentToThis());
 
@@ -424,22 +423,22 @@ public class BulletMultiBodyRobotFactoryTest
 
    private static void assertMatrix4EqualsRigidBodyTransform(String name, btTransform bulletCollisionShapeLocalTransform, RigidBodyTransform rigidBodyTransform)
    {
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M00], rigidBodyTransform.getM00(), EPSILON, name + " - M00 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M01], rigidBodyTransform.getM01(), EPSILON, name + " - M01 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M02], rigidBodyTransform.getM02(), EPSILON, name + " - M02 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M03], rigidBodyTransform.getM03(), EPSILON, name + " - M03 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M10], rigidBodyTransform.getM10(), EPSILON, name + " - M10 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M11], rigidBodyTransform.getM11(), EPSILON, name + " - M11 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M12], rigidBodyTransform.getM12(), EPSILON, name + " - M12 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M13], rigidBodyTransform.getM13(), EPSILON, name + " - M13 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M20], rigidBodyTransform.getM20(), EPSILON, name + " - M20 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M21], rigidBodyTransform.getM21(), EPSILON, name + " - M21 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M22], rigidBodyTransform.getM22(), EPSILON, name + " - M22 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M23], rigidBodyTransform.getM23(), EPSILON, name + " - M23 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M30], rigidBodyTransform.getM30(), EPSILON, name + " - M30 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M31], rigidBodyTransform.getM31(), EPSILON, name + " - M31 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M32], rigidBodyTransform.getM32(), EPSILON, name + " - M32 is not as expected");
-//      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M33], rigidBodyTransform.getM33(), EPSILON, name + " - M33 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M00], rigidBodyTransform.getM00(), EPSILON, name + " - M00 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M01], rigidBodyTransform.getM01(), EPSILON, name + " - M01 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M02], rigidBodyTransform.getM02(), EPSILON, name + " - M02 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M03], rigidBodyTransform.getM03(), EPSILON, name + " - M03 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M10], rigidBodyTransform.getM10(), EPSILON, name + " - M10 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M11], rigidBodyTransform.getM11(), EPSILON, name + " - M11 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M12], rigidBodyTransform.getM12(), EPSILON, name + " - M12 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M13], rigidBodyTransform.getM13(), EPSILON, name + " - M13 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M20], rigidBodyTransform.getM20(), EPSILON, name + " - M20 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M21], rigidBodyTransform.getM21(), EPSILON, name + " - M21 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M22], rigidBodyTransform.getM22(), EPSILON, name + " - M22 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M23], rigidBodyTransform.getM23(), EPSILON, name + " - M23 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M30], rigidBodyTransform.getM30(), EPSILON, name + " - M30 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M31], rigidBodyTransform.getM31(), EPSILON, name + " - M31 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M32], rigidBodyTransform.getM32(), EPSILON, name + " - M32 is not as expected");
+      //      assertEquals(bulletCollisionShapeLocalTransform.val[Matrix4.M33], rigidBodyTransform.getM33(), EPSILON, name + " - M33 is not as expected");
    }
 
    private static void assertQuaternionEqualsBtQuaternion(us.ihmc.euclid.tuple4D.Quaternion quaterion, btQuaternion btQuaternion)
@@ -576,7 +575,7 @@ public class BulletMultiBodyRobotFactoryTest
 
       return new Robot(boxRobot, ReferenceFrameTools.constructARootFrame("worldFrame"));
    }
-   
+
    private static Robot createTestRobotWithKnownValues()
    {
       String name = "TestRobot";
@@ -585,27 +584,27 @@ public class BulletMultiBodyRobotFactoryTest
       SixDoFJointDefinition rootJoint = new SixDoFJointDefinition(name + "RootJoint");
       rootBody.addChildJoint(rootJoint);
       RigidBodyDefinition rigidBodyDefinition = new RigidBodyDefinition(name + "RigidBody");
-      
+
       MomentOfInertiaDefinition momentOfInertiaRigidBody = new MomentOfInertiaDefinition();
       momentOfInertiaRigidBody.set(0.125568, 8.0E-4, -5.00733E-4, 8.0E-4, 0.0972042, -5.0E-4, -5.00733E-4, -5.0E-4, 0.117936);
       rigidBodyDefinition.setMass(9.609);
       rigidBodyDefinition.setMomentOfInertia(momentOfInertiaRigidBody);
-      rigidBodyDefinition.getInertiaPose().setOrientation(0.0, -0.0,  0.0);
-      rigidBodyDefinition.getInertiaPose().getTranslation().set(0.012,  0.0,  0.027);
+      rigidBodyDefinition.getInertiaPose().setOrientation(0.0, -0.0, 0.0);
+      rigidBodyDefinition.getInertiaPose().getTranslation().set(0.012, 0.0, 0.027);
 
-      CollisionShapeDefinition collisionShapeDefinition1 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.046,  0.0,  0.01, 0.0, -0.0,  1.571)
-                                                                                        , new Cylinder3DDefinition(0.06, 0.11));
+      CollisionShapeDefinition collisionShapeDefinition1 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.046, 0.0, 0.01, 0.0, -0.0, 1.571),
+                                                                                        new Cylinder3DDefinition(0.06, 0.11));
       collisionShapeDefinition1.setCollisionGroup(899);
       collisionShapeDefinition1.setCollisionMask(64);
       rigidBodyDefinition.addCollisionShapeDefinition(collisionShapeDefinition1);
-      
-      CollisionShapeDefinition collisionShapeDefinition2 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(-0.03,  0.0,  0.01, 0.0, -0.0,  1.571), 
+
+      CollisionShapeDefinition collisionShapeDefinition2 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(-0.03, 0.0, 0.01, 0.0, -0.0, 1.571),
                                                                                         new Cylinder3DDefinition(0.04, 0.12));
       collisionShapeDefinition1.setCollisionGroup(899);
       collisionShapeDefinition1.setCollisionMask(64);
       rigidBodyDefinition.addCollisionShapeDefinition(collisionShapeDefinition2);
-      
-      CollisionShapeDefinition collisionShapeDefinition3 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.01,  0.042,  0.09, 0.0, -0.0,  0.0), 
+
+      CollisionShapeDefinition collisionShapeDefinition3 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.01, 0.042, 0.09, 0.0, -0.0, 0.0),
                                                                                         new Cylinder3DDefinition(0.05, 0.16));
       collisionShapeDefinition1.setCollisionGroup(899);
       collisionShapeDefinition1.setCollisionMask(64);
@@ -614,28 +613,28 @@ public class BulletMultiBodyRobotFactoryTest
       RevoluteJointDefinition revoluteJointDefinition = new RevoluteJointDefinition("RevoluteJoint");
       revoluteJointDefinition.setAxis(Axis3D.Z);
 
-      TransformToParent.setTranslation(-0.013,  0.0,  0.0);
-      TransformToParent.setOrientation(0.0,  0.0,  0.0);
+      TransformToParent.setTranslation(-0.013, 0.0, 0.0);
+      TransformToParent.setOrientation(0.0, 0.0, 0.0);
       revoluteJointDefinition.setTransformToParent(TransformToParent);
       RigidBodyDefinition jointRigidBodyDefinition = new RigidBodyDefinition(name + "RevoluteJointBody");
       MomentOfInertiaDefinition momentOfInertiaJoint = new MomentOfInertiaDefinition();
       momentOfInertiaJoint.set(0.0039092, -5.04491E-8, -3.42157E-4, -5.04491E-8, 0.00341694, 4.87119E-7, -3.42157E-4, 4.87119E-7, 0.00174492);
       jointRigidBodyDefinition.setMass(2.27);
       jointRigidBodyDefinition.setMomentOfInertia(momentOfInertiaJoint);
-      jointRigidBodyDefinition.getInertiaPose().setOrientation(0.0, 0.0,  0.0);
-      jointRigidBodyDefinition.getInertiaPose().getTranslation().set(-0.0112984, -3.15366E-6,  0.0746835);
-      
-      CollisionShapeDefinition jointCollisionShapeDefinition = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.0,  0.0, -0.02, 0.0,  0.0,  0.0)
-                                                                                          , new Box3DDefinition(0.03, 0.04, 0.02));
+      jointRigidBodyDefinition.getInertiaPose().setOrientation(0.0, 0.0, 0.0);
+      jointRigidBodyDefinition.getInertiaPose().getTranslation().set(-0.0112984, -3.15366E-6, 0.0746835);
+
+      CollisionShapeDefinition jointCollisionShapeDefinition = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.0, 0.0, -0.02, 0.0, 0.0, 0.0),
+                                                                                            new Box3DDefinition(0.03, 0.04, 0.02));
       jointCollisionShapeDefinition.setCollisionGroup(3);
       jointCollisionShapeDefinition.setCollisionMask(1);
       jointRigidBodyDefinition.addCollisionShapeDefinition(jointCollisionShapeDefinition);
       revoluteJointDefinition.setSuccessor(jointRigidBodyDefinition);
       rigidBodyDefinition.addChildJoint(revoluteJointDefinition);
-      
+
       rootJoint.setSuccessor(rigidBodyDefinition);
       testRobot.setRootBodyDefinition(rootBody);
-      
+
       return new Robot(testRobot, ReferenceFrameTools.constructARootFrame("worldFrame"));
    }
 

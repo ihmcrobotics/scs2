@@ -9,7 +9,6 @@ import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.BulletCollision.btConeShapeZ;
 import org.bytedeco.bullet.BulletCollision.btCylinderShapeZ;
 import org.bytedeco.bullet.BulletCollision.btSphereShape;
-import org.bytedeco.bullet.LinearMath.btMatrix3x3;
 import org.bytedeco.bullet.LinearMath.btQuaternion;
 import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
@@ -83,7 +82,7 @@ public class BulletToolsTest
 
          bulletQuaternion.setRotation(vector1, random.nextFloat());
 
-         bulletAffine.setRotation(bulletQuaternion);  
+         bulletAffine.setRotation(bulletQuaternion);
 
          translation.setX(random.nextFloat());
          translation.setY(random.nextFloat());

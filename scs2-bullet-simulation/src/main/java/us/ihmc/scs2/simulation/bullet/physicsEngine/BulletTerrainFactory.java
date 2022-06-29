@@ -15,25 +15,23 @@ public interface BulletTerrainFactory
    {
       btCompoundShape bulletCompoundCollisionShape = new btCompoundShape();
       ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
-      ArrayList<btTransform> btTransforms = new ArrayList<>();
 
       for (CollisionShapeDefinition collisionShapeDefinition : terrainObjectDefinition.getCollisionShapeDefinitions())
       {
          btCollisionShape bulletCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
          btTransform bulletTransformToWorld = new btTransform();
-         
+
          RigidBodyTransform collisionShapeDefinitionTransformToWorld = new RigidBodyTransform(collisionShapeDefinition.getOriginPose().getRotation(),
                                                                                               collisionShapeDefinition.getOriginPose().getTranslation());
-         
+
          BulletTools.toBullet(collisionShapeDefinitionTransformToWorld, bulletTransformToWorld);
          bulletCompoundCollisionShape.addChildShape(bulletTransformToWorld, bulletCollisionShape);
          btCollisionShapes.add(bulletCollisionShape);
-         btTransforms.add(bulletTransformToWorld);
       }
 
       float mass = 0.0f;
-      BulletTerrainObject bulletTerrainObject = new BulletTerrainObject(mass, bulletCompoundCollisionShape, btCollisionShapes, btTransforms);
+      BulletTerrainObject bulletTerrainObject = new BulletTerrainObject(mass, bulletCompoundCollisionShape, btCollisionShapes);
 
       return bulletTerrainObject;
    }

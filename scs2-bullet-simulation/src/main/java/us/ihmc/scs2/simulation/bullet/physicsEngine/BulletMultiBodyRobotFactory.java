@@ -3,7 +3,6 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
 import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.BulletCollision.btCompoundShape;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyJointLimitConstraint;
@@ -12,7 +11,6 @@ import org.bytedeco.bullet.BulletDynamics.btMultibodyLink;
 import org.bytedeco.bullet.LinearMath.btQuaternion;
 import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
@@ -42,7 +40,7 @@ public class BulletMultiBodyRobotFactory
       {
          throw new UnsupportedOperationException("Robot must have at least one joint: " + robot.getClass().getSimpleName());
       }
-      
+
       JointBasics rootJoint = robot.getRootBody().getChildrenJoints().get(0);
       boolean hasBaseCollider = rootJoint instanceof SimFloatingRootJoint;
 
@@ -56,13 +54,13 @@ public class BulletMultiBodyRobotFactory
 
       RigidBodyDefinition rigidBodyDefinition = robot.getRobotDefinition().getRootBodyDefinition().getChildrenJoints().get(0).getSuccessor();
       float rootBodyMass = (float) rigidBodyDefinition.getMass();
-      
-//      TODO: fix moment of inertia using SVD      
-//      RotationMatrix svd_rotation = new RotationMatrix();
-//      Vector3 rootBodyIntertia = decomposeMomentOfInertia(svd_rotation, rigidBodyDefinition);
+
+      //      TODO: fix moment of inertia using SVD      
+      //      RotationMatrix svd_rotation = new RotationMatrix();
+      //      Vector3 rootBodyIntertia = decomposeMomentOfInertia(svd_rotation, rigidBodyDefinition);
       btVector3 rootBodyIntertia = new btVector3((float) rigidBodyDefinition.getMomentOfInertia().getM00(),
-                                             (float) rigidBodyDefinition.getMomentOfInertia().getM11(),
-                                             (float) rigidBodyDefinition.getMomentOfInertia().getM22());
+                                                 (float) rigidBodyDefinition.getMomentOfInertia().getM11(),
+                                                 (float) rigidBodyDefinition.getMomentOfInertia().getM22());
       boolean fixedBase = hasBaseCollider ? false : true;
       BulletMultiBodyRobot bulletMultiBodyRobot = new BulletMultiBodyRobot(numberOfLinks,
                                                                            rootBodyMass,
@@ -74,7 +72,7 @@ public class BulletMultiBodyRobotFactory
       for (JointBasics joint : robot.getRootBody().getChildrenJoints())
       {
          int linkIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(joint.getName());
-         if (linkIndex == -1) 
+         if (linkIndex == -1)
          {
 
             //create BaseCollider
@@ -94,10 +92,10 @@ public class BulletMultiBodyRobotFactory
                                                               linkIndex,
                                                               bulletMultiBodyJointParameters.getJointDisableParentCollision());
             bulletLink.m_collider(createBulletLinkCollider(bulletMultiBodyRobot,
-                                                            rootJointDefinition.getSuccessor().getCollisionShapeDefinitions(),
-                                                            joint.getSuccessor().getBodyFixedFrame(),
-                                                            linkIndex,
-                                                            joint.getName()));
+                                                           rootJointDefinition.getSuccessor().getCollisionShapeDefinitions(),
+                                                           joint.getSuccessor().getBodyFixedFrame(),
+                                                           linkIndex,
+                                                           joint.getName()));
          }
 
          //Create LinkColliders for each root joint 
@@ -122,15 +120,15 @@ public class BulletMultiBodyRobotFactory
 
          btMultibodyLink btMultibodyLink = setupBtMultibodyLink(bulletMultiBodyRobot, childJoint, childJointDefinition, linkIndex, disableParentCollision);
          btMultibodyLink.m_collider(createBulletLinkCollider(bulletMultiBodyRobot,
-                                                              childJointDefinition.getSuccessor().getCollisionShapeDefinitions(),
-                                                              childJoint.getSuccessor().getBodyFixedFrame(),
-                                                              linkIndex,
-                                                              childJoint.getName()));
+                                                             childJointDefinition.getSuccessor().getCollisionShapeDefinitions(),
+                                                             childJoint.getSuccessor().getBodyFixedFrame(),
+                                                             linkIndex,
+                                                             childJoint.getName()));
 
          createBulletLinkColliderChildren(bulletMultiBodyRobot, robot, childJoint, disableParentCollision);
       }
    }
-   
+
    private static btQuaternion rotationFromParentBullet = new btQuaternion();
    private static us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion();
    private static RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
@@ -144,18 +142,18 @@ public class BulletMultiBodyRobotFactory
                                                        int bulletJointIndex,
                                                        boolean disableParentCollision)
    {
-      
-//      TODO: fix moment of inertia using SVD      
-//      RotationMatrix svd_rotation = new RotationMatrix();
-//      Vector3 linkInertiaDiagonal = decomposeMomentOfInertia(svd_rotation, jointDefinition.getSuccessor());
+
+      //      TODO: fix moment of inertia using SVD      
+      //      RotationMatrix svd_rotation = new RotationMatrix();
+      //      Vector3 linkInertiaDiagonal = decomposeMomentOfInertia(svd_rotation, jointDefinition.getSuccessor());
       btVector3 linkInertiaDiagonal = new btVector3((float) jointDefinition.getSuccessor().getMomentOfInertia().getM00(),
-                                                (float) jointDefinition.getSuccessor().getMomentOfInertia().getM11(),
-                                                (float) jointDefinition.getSuccessor().getMomentOfInertia().getM22());
-      
+                                                    (float) jointDefinition.getSuccessor().getMomentOfInertia().getM11(),
+                                                    (float) jointDefinition.getSuccessor().getMomentOfInertia().getM22());
+
       euclidRotationFromParent.set(jointDefinition.getTransformToParent().getRotation());
       euclidRotationFromParent.invert();
       BulletTools.toBullet(euclidRotationFromParent, rotationFromParentBullet);
-      
+
       joint.getPredecessor().getBodyFixedFrame().getTransformToDesiredFrame(parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid,
                                                                             joint.getFrameBeforeJoint());
       parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid.invert();
@@ -180,7 +178,7 @@ public class BulletMultiBodyRobotFactory
 
          btVector3 jointAxis = new btVector3();
          BulletTools.toBullet(revoluteJointDefinition.getAxis(), jointAxis);
- 
+
          bulletMultiBodyRobot.getBtMultiBody().setupRevolute(bulletJointIndex,
                                                              linkMass,
                                                              linkInertiaDiagonal,
@@ -236,44 +234,44 @@ public class BulletMultiBodyRobotFactory
       return bulletMultiBodyRobot.getBtMultiBody().getLink(bulletJointIndex);
    }
 
-//   TODO: fix moment of inertia using SVD   
-//   private static Vector3 decomposeMomentOfInertia(RotationMatrix svd_rotation, RigidBodyDefinition rigidBodyDefinition)
-//   {
-//      Vector3 localInertiaDiagonal = new Vector3();
-//      if (rigidBodyDefinition.getMomentOfInertia().getM01() == 0 && rigidBodyDefinition.getMomentOfInertia().getM02() == 0
-//            && rigidBodyDefinition.getMomentOfInertia().getM21() == 0)
-//      {
-//         localInertiaDiagonal.x = (float) rigidBodyDefinition.getMomentOfInertia().getM00();
-//         localInertiaDiagonal.y = (float) rigidBodyDefinition.getMomentOfInertia().getM11();
-//         localInertiaDiagonal.z = (float) rigidBodyDefinition.getMomentOfInertia().getM22();
-//      }
-//      else {
-//         SingularValueDecomposition3D svd = new SingularValueDecomposition3D();
-//         
-//         if (svd.decompose(rigidBodyDefinition.getMomentOfInertia()))
-//         {
-//            svd_rotation.set(svd.getU());
-//
-//            localInertiaDiagonal.x = (float) svd.getW().getX();
-//            localInertiaDiagonal.y = (float) svd.getW().getY();
-//            localInertiaDiagonal.z = (float) svd.getW().getZ();
-//         }
-//         else
-//         {
-//            LogTools.warn("SVD did not decompose", rigidBodyDefinition.getName());
-//         }
-//      }
-//      if (localInertiaDiagonal.x < 0 || localInertiaDiagonal.x > (localInertiaDiagonal.y + localInertiaDiagonal.z) || localInertiaDiagonal.y < 0
-//            || localInertiaDiagonal.y > (localInertiaDiagonal.x + localInertiaDiagonal.z) || localInertiaDiagonal.z < 0
-//            || localInertiaDiagonal.z > (localInertiaDiagonal.x + localInertiaDiagonal.y))
-//      {
-//         LogTools.warn("Bad inertia tensor properties, setting inertia to zero for link:", rigidBodyDefinition.getName());
-//         localInertiaDiagonal.x = 0.f;
-//         localInertiaDiagonal.y = 0.f;
-//         localInertiaDiagonal.z = 0.f;
-//      }
-//      return localInertiaDiagonal;
-//   }
+   //   TODO: fix moment of inertia using SVD   
+   //   private static Vector3 decomposeMomentOfInertia(RotationMatrix svd_rotation, RigidBodyDefinition rigidBodyDefinition)
+   //   {
+   //      Vector3 localInertiaDiagonal = new Vector3();
+   //      if (rigidBodyDefinition.getMomentOfInertia().getM01() == 0 && rigidBodyDefinition.getMomentOfInertia().getM02() == 0
+   //            && rigidBodyDefinition.getMomentOfInertia().getM21() == 0)
+   //      {
+   //         localInertiaDiagonal.x = (float) rigidBodyDefinition.getMomentOfInertia().getM00();
+   //         localInertiaDiagonal.y = (float) rigidBodyDefinition.getMomentOfInertia().getM11();
+   //         localInertiaDiagonal.z = (float) rigidBodyDefinition.getMomentOfInertia().getM22();
+   //      }
+   //      else {
+   //         SingularValueDecomposition3D svd = new SingularValueDecomposition3D();
+   //         
+   //         if (svd.decompose(rigidBodyDefinition.getMomentOfInertia()))
+   //         {
+   //            svd_rotation.set(svd.getU());
+   //
+   //            localInertiaDiagonal.x = (float) svd.getW().getX();
+   //            localInertiaDiagonal.y = (float) svd.getW().getY();
+   //            localInertiaDiagonal.z = (float) svd.getW().getZ();
+   //         }
+   //         else
+   //         {
+   //            LogTools.warn("SVD did not decompose", rigidBodyDefinition.getName());
+   //         }
+   //      }
+   //      if (localInertiaDiagonal.x < 0 || localInertiaDiagonal.x > (localInertiaDiagonal.y + localInertiaDiagonal.z) || localInertiaDiagonal.y < 0
+   //            || localInertiaDiagonal.y > (localInertiaDiagonal.x + localInertiaDiagonal.z) || localInertiaDiagonal.z < 0
+   //            || localInertiaDiagonal.z > (localInertiaDiagonal.x + localInertiaDiagonal.y))
+   //      {
+   //         LogTools.warn("Bad inertia tensor properties, setting inertia to zero for link:", rigidBodyDefinition.getName());
+   //         localInertiaDiagonal.x = 0.f;
+   //         localInertiaDiagonal.y = 0.f;
+   //         localInertiaDiagonal.z = 0.f;
+   //      }
+   //      return localInertiaDiagonal;
+   //   }
 
    private static btMultiBodyLinkCollider createBulletLinkCollider(BulletMultiBodyRobot bulletMultiBodyRobot,
                                                                    List<CollisionShapeDefinition> collisionShapeDefinitions,
@@ -298,17 +296,15 @@ public class BulletMultiBodyRobotFactory
       bulletMultiBodyLinkCollider.setCollisionGroupMask(collisionGroup, collisionGroupMask);
 
       ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
-      ArrayList<btTransform> btTransforms = new ArrayList<>();
       for (CollisionShapeDefinition shapeDefinition : collisionShapeDefinitions)
       {
          btCollisionShape bulletCollisionShape = BulletTools.createBulletCollisionShape(shapeDefinition);
          btTransform bulletCollisionShapeLocalTransform = bulletCollisionShapeLocalTransform(shapeDefinition, linkCenterOfMassFrame);
          bulletCompoundShape.addChildShape(bulletCollisionShapeLocalTransform, bulletCollisionShape);
-         btCollisionShapes.add(bulletCompoundShape);
-         btTransforms.add(bulletCollisionShapeLocalTransform);
+         btCollisionShapes.add(bulletCollisionShape);
       }
 
-      bulletMultiBodyLinkCollider.setCollisionShape(bulletCompoundShape, btCollisionShapes, btTransforms);
+      bulletMultiBodyLinkCollider.setCollisionShape(bulletCompoundShape, btCollisionShapes);
 
       bulletMultiBodyRobot.addBulletMuliBodyLinkCollider(bulletMultiBodyLinkCollider);
 

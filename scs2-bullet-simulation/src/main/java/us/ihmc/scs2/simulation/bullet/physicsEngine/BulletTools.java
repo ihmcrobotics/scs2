@@ -36,10 +36,12 @@ import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 
 public class BulletTools
 {
-   
+
    public static void toBullet(RigidBodyTransform rigidBodyTransform, btTransform bulletAffineToPack)
    {
-      bulletAffineToPack.getOrigin().setValue((float) rigidBodyTransform.getTranslationX(), (float) rigidBodyTransform.getTranslationY(), (float) rigidBodyTransform.getTranslationZ());
+      bulletAffineToPack.getOrigin().setValue((float) rigidBodyTransform.getTranslationX(),
+                                              (float) rigidBodyTransform.getTranslationY(),
+                                              (float) rigidBodyTransform.getTranslationZ());
       bulletAffineToPack.getBasis().setValue((float) rigidBodyTransform.getM00(),
                                              (float) rigidBodyTransform.getM01(),
                                              (float) rigidBodyTransform.getM02(),
@@ -69,7 +71,7 @@ public class BulletTools
 
    public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, btQuaternion bulletQuaternion)
    {
-      bulletQuaternion.setValue(euclidQuaternion.getX32(), euclidQuaternion.getY32(), euclidQuaternion.getZ32(), euclidQuaternion.getS32()); 
+      bulletQuaternion.setValue(euclidQuaternion.getX32(), euclidQuaternion.getY32(), euclidQuaternion.getZ32(), euclidQuaternion.getS32());
    }
 
    public static void toBullet(Tuple3DReadOnly euclidTuple, btVector3 bulletVector3)
@@ -95,7 +97,7 @@ public class BulletTools
       Point3D32[] vertices = triangleMesh3DDefinition.getVertices();
 
       boolean ignorePose = meshPose == null || (!meshPose.hasRotation() && !meshPose.hasTranslation());
-      
+
       Point3D32 v0 = new Point3D32();
       Point3D32 v1 = new Point3D32();
       Point3D32 v2 = new Point3D32();
@@ -163,8 +165,8 @@ public class BulletTools
       {
          Box3DDefinition boxGeometryDefinition = (Box3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btBoxShape boxShape = new btBoxShape(new btVector3((float) boxGeometryDefinition.getSizeX() / 2.0f,
-                                                          (float) boxGeometryDefinition.getSizeY() / 2.0f,
-                                                          (float) boxGeometryDefinition.getSizeZ() / 2.0f));
+                                                            (float) boxGeometryDefinition.getSizeY() / 2.0f,
+                                                            (float) boxGeometryDefinition.getSizeZ() / 2.0f));
          btCollisionShape = boxShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Sphere3DDefinition)
@@ -177,8 +179,8 @@ public class BulletTools
       {
          Cylinder3DDefinition cylinderGeometryDefinition = (Cylinder3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new btVector3((float) cylinderGeometryDefinition.getRadius(),
-                                                                           (float) cylinderGeometryDefinition.getRadius(),
-                                                                           (float) cylinderGeometryDefinition.getLength() / 2.0f));
+                                                                             (float) cylinderGeometryDefinition.getRadius(),
+                                                                             (float) cylinderGeometryDefinition.getLength() / 2.0f));
          btCollisionShape = cylinderShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cone3DDefinition)
@@ -217,7 +219,7 @@ public class BulletTools
 
       return btCollisionShape;
    }
-   
+
    public enum BroadphaseNativeTypes
    {
       // polyhedral convex shapes
@@ -269,17 +271,12 @@ public class BulletTools
       INVALID_SHAPE_PROXYTYPE,
 
       MAX_BROADPHASE_COLLISION_TYPES,
-      
+
       NOT_DEFINED_TYPE
    };
-   
+
    public enum eFeatherstoneJointType
    {
-      eRevolute,
-      ePrismatic,
-      eSpherical,
-      ePlanar,
-      eFixed,
-      eInvalid
+      eRevolute, ePrismatic, eSpherical, ePlanar, eFixed, eInvalid
    };
 }

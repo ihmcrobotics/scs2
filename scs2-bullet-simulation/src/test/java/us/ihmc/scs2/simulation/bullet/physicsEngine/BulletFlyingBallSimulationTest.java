@@ -128,7 +128,7 @@ public class BulletFlyingBallSimulationTest
       try
       {
          simulationSession.getSimulationSessionControls().simulateNow(numberOfSimulationTicks);
-         if (caughtException.getValue()!= null)
+         if (caughtException.getValue() != null)
             throw caughtException.getValue();
       }
       finally

@@ -1,6 +1,9 @@
 package us.ihmc.scs2.examples.simulations.bullet;
 
+import java.util.ArrayList;
+
 import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.BulletCollision.btCompoundShape;
 import org.bytedeco.bullet.BulletCollision.btSphereShape;
 import org.bytedeco.bullet.BulletDynamics.btMultiBody;
 import org.bytedeco.bullet.LinearMath.btTransform;
@@ -23,7 +26,13 @@ public class SimpleSphereUsingBulletNoSCS2
 
       BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld = new BulletMultiBodyDynamicsWorld();
 
+      btCompoundShape bulletCompoundShape = new btCompoundShape();
       btCollisionShape childShape = new btSphereShape(ballRadius);
+      bulletCompoundShape.addChildShape(btTransform.getIdentity(), childShape);
+
+      ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+      btCollisionShapes.add(childShape);
+
       childShape.calculateLocalInertia(ballMass, baseInertiaDiag);
       BulletMultiBodyRobot bulletMultiBody = new BulletMultiBodyRobot(0, ballMass, baseInertiaDiag, isFixed, false, null);
 
@@ -32,7 +41,7 @@ public class SimpleSphereUsingBulletNoSCS2
       bulletMultiBody.getBtMultiBody().setBaseWorldTransform(startTrans);
 
       BulletMultiBodyLinkCollider linkCollider = new BulletMultiBodyLinkCollider(bulletMultiBody.getBtMultiBody(), -1, null);
-      linkCollider.setCollisionShape(childShape);
+      linkCollider.setCollisionShape(bulletCompoundShape, btCollisionShapes);
       linkCollider.setCollisionGroupMask(1, -1);
 
       bulletMultiBody.addBulletMuliBodyLinkCollider(linkCollider);
@@ -48,7 +57,7 @@ public class SimpleSphereUsingBulletNoSCS2
       for (int i = 1; i < 100; i++)
       {
          bulletMultiBodyDynamicsWorld.stepSimulation((float) dt, 1, (float) dt);
-         
+
          btVector3 position = btMultiBody.getBasePos();
          System.out.println(i + " " + position.z());
       }

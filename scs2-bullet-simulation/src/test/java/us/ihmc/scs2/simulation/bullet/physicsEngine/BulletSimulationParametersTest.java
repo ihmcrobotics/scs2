@@ -16,7 +16,7 @@ public class BulletSimulationParametersTest
    public void testDefaultBulletSimulationParameters()
    {
       BulletSimulationParameters simulationParameters = BulletSimulationParameters.defaultBulletSimulateParameters();
-      
+
       assertSimulationParametersEqual(0.0005, 1, 0.0005, simulationParameters);
    }
 
