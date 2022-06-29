@@ -10,7 +10,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyPa
 public class MobileBulletSimulation
 {
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-   
+
    public static void main(String[] args)
    {
       MobileBulletDefinition definition = new MobileBulletDefinition();
@@ -21,7 +21,7 @@ public class MobileBulletSimulation
 
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
       simulationSession.addRobot(definition);
-      
+
       if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);

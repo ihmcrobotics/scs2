@@ -72,7 +72,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       setGlobalBulletMultiBodyParameters(BulletMultiBodyParameters.defaultBulletMultiBodyParameters());
       setGlobalBulletMultiBodyJointParameters(BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
       setGlobalContactSolverInfoParameters(BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters());
-      
+
       hasGlobalBulletSimulationParameters.set(false);
 
       bulletMultiBodyDynamicsWorld = new BulletMultiBodyDynamicsWorld();
@@ -116,7 +116,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
          globalMultiBodyJointParameters.setUpdateGlobalMultiBodyJointParameters(false);
          bulletMultiBodyDynamicsWorld.updateAllMultiBodyJointParameters(globalMultiBodyJointParameters);
       }
-      if(globalContactSolverInfoParameters.getUpdateGlobalContactSolverInfoParameters())
+      if (globalContactSolverInfoParameters.getUpdateGlobalContactSolverInfoParameters())
       {
          globalContactSolverInfoParameters.setUpdateGlobalContactSolverInfoParameters(false);
          bulletMultiBodyDynamicsWorld.updateContactSolverInfoParameters(globalContactSolverInfoParameters);
@@ -282,7 +282,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       globalContactSolverInfoParameters.set(bulletContactSolverInfoParameters);
    }
-   
+
    public YoBulletContactSolverInfoParameters getGlobalContactSolverInfoParameters()
    {
       return globalContactSolverInfoParameters;

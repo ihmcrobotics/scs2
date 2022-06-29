@@ -28,7 +28,7 @@ public class PrismaticSpringBulletSimulation
 {
    private static final String SPRING_PENDULUM = "SpringPendulum";
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-   
+
    private final double ballRadius = 0.04;
    private final double stringLength = 0.4;
    private final double stringRadius = 0.005;
@@ -55,8 +55,12 @@ public class PrismaticSpringBulletSimulation
                                                                                      ballRadiusOfGyration,
                                                                                      ballRadiusOfGyration));
       rigidBody.setCenterOfMassOffset(0.0, 0.0, -stringLength);
-      
-      MaterialDefinition ballMaterial = new MaterialDefinition(ColorDefinitions.Silver(), ColorDefinitions.White(), ColorDefinitions.LightBlue(), ColorDefinitions.AntiqueWhite(), 20);
+
+      MaterialDefinition ballMaterial = new MaterialDefinition(ColorDefinitions.Silver(),
+                                                               ColorDefinitions.White(),
+                                                               ColorDefinitions.LightBlue(),
+                                                               ColorDefinitions.AntiqueWhite(),
+                                                               20);
 
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
       factory.appendTranslation(0.0, 0.0, -0.5 * stringLength);

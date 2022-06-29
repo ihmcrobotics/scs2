@@ -28,9 +28,9 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 public class ConnectedShapesExperimentalBulletSimulation
 {
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-   
+
    public ConnectedShapesExperimentalBulletSimulation()
-   {  
+   {
       Vector3D boxSize1 = new Vector3D(0.5, 0.3, 0.3);
       double boxMass1 = 1.0;
       double radiusOfGyrationPercent = 0.8;
@@ -39,10 +39,10 @@ public class ConnectedShapesExperimentalBulletSimulation
       Vector3D boxSize2 = new Vector3D(0.3, 0.3, 0.3);
       double boxMass2 = 1.0;
       ColorDefinition boxApp2 = ColorDefinitions.Teal();
-      
+
       double groundWidth = 5.0;
       double groundLength = 5.0;
-   
+
       Vector3D connectionOffset = new Vector3D(0.9, 0.0, 0.0);
 
       RobotDefinition robotDefinition = new RobotDefinition("ConnectedShapes");
@@ -52,7 +52,7 @@ public class ConnectedShapesExperimentalBulletSimulation
       RigidBodyDefinition rigidBody1 = ExampleExperimentalSimulationTools.newBoxRigidBody("box1", boxSize1, boxMass1, radiusOfGyrationPercent, boxApp1);
       rigidBody1.getInertiaPose().getTranslation().add(0.01, -0.02, 0.03);
       rootJointDefinition.setSuccessor(rigidBody1);
-      
+
       RevoluteJointDefinition pinJointDefinition = new RevoluteJointDefinition("pin");
       pinJointDefinition.setAxis(Axis3D.Y);
       RigidBodyDefinition rigidBody2 = ExampleExperimentalSimulationTools.newBoxRigidBody("box2", boxSize2, boxMass2, radiusOfGyrationPercent, boxApp2);
@@ -65,7 +65,7 @@ public class ConnectedShapesExperimentalBulletSimulation
       rigidBody2.addVisualDefinitions(factory2.getVisualDefinitions());
       pinJointDefinition.setSuccessor(rigidBody2);
       rigidBody1.addChildJoint(pinJointDefinition);
-      
+
       robotDefinition.setRootBodyDefinition(rootBodyDefinition);
 
       SixDoFJointState initialRootJointState = new SixDoFJointState(null, new Point3D(0.0, 0.0, boxSize1.getZ()));
@@ -77,7 +77,6 @@ public class ConnectedShapesExperimentalBulletSimulation
       rigidBody1.addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxSize1)));
       rigidBody2.addCollisionShapeDefinition(new CollisionShapeDefinition(new RigidBodyTransform(new Quaternion(), connectionOffset),
                                                                           new Box3DDefinition(boxSize2)));
-      
 
       GeometryDefinition terrainGeometry = new Box3DDefinition(groundLength, groundWidth, 0.1);
       RigidBodyTransform terrainPose = new RigidBodyTransform();
@@ -101,7 +100,7 @@ public class ConnectedShapesExperimentalBulletSimulation
          SessionVisualizer.startSessionVisualizer(simulationSession);
       }
    }
-   
+
    public static void main(String[] args)
    {
       new ConnectedShapesExperimentalBulletSimulation();

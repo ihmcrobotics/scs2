@@ -4,9 +4,7 @@ import org.bytedeco.bullet.LinearMath.btTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-
 import java.util.ArrayList;
-
 import org.bytedeco.bullet.BulletCollision.btCollisionShape;
 import org.bytedeco.bullet.BulletCollision.btCompoundShape;
 import org.bytedeco.bullet.BulletDynamics.btMultiBody;
@@ -25,10 +23,9 @@ public class BulletMultiBodyLinkCollider
    private final btVector3 linkTorque;
    private int collisionGroup;
    private int collisionGroupMask;
-   private btCollisionShape shape;
+   private btCompoundShape shape;
    private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
-   private ArrayList<btTransform> btTransforms = new ArrayList<>();
-   
+
    public BulletMultiBodyLinkCollider(btMultiBody btMultibody, int index, String jointName)
    {
       btMultiBodyLinkCollider = new btMultiBodyLinkCollider(btMultibody, index);
@@ -38,7 +35,7 @@ public class BulletMultiBodyLinkCollider
       this.collisionGroupMask = 1 + 2;
 
       btMultiBody = btMultiBodyLinkCollider.m_multiBody();
-      
+
       linkForce = btMultiBody.getLink(linkColliderIndex).m_appliedConstraintForce();
       linkTorque = btMultiBody.getLink(linkColliderIndex).m_appliedConstraintTorque();
    }
@@ -49,11 +46,10 @@ public class BulletMultiBodyLinkCollider
       this.collisionGroupMask = collisionGroupMask;
    }
 
-   public void setCollisionShape(btCollisionShape shape, ArrayList<btCollisionShape> btCollisionShapes, ArrayList<btTransform> btTransforms)
+   public void setCollisionShape(btCompoundShape shape, ArrayList<btCollisionShape> btCollisionShapes)
    {
-      this.shape = shape;
-      this.btCollisionShapes = btCollisionShapes;
-      this.btTransforms = btTransforms;
+      this.setShape(shape);
+      this.setBtCollisionShapes(btCollisionShapes);
       btMultiBodyLinkCollider.setCollisionShape(shape);
    }
 
@@ -177,5 +173,25 @@ public class BulletMultiBodyLinkCollider
    public void getBaseOmega(Vector3D bulletBaseAngularVelocityEuclid)
    {
       BulletTools.toEuclid(btMultiBody.getBaseOmega(), bulletBaseAngularVelocityEuclid);
+   }
+
+   public btCompoundShape getShape()
+   {
+      return shape;
+   }
+
+   public void setShape(btCompoundShape shape)
+   {
+      this.shape = shape;
+   }
+
+   public ArrayList<btCollisionShape> getBtCollisionShapes()
+   {
+      return btCollisionShapes;
+   }
+
+   public void setBtCollisionShapes(ArrayList<btCollisionShape> btCollisionShapes)
+   {
+      this.btCollisionShapes = btCollisionShapes;
    }
 }

@@ -12,7 +12,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 public class FallingBoxBulletSimulation
 {
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-   
+
    public static void main(String[] args)
    {
       BoxRobotDefinition definition = new BoxRobotDefinition();

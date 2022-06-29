@@ -25,7 +25,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyPa
 public class NewtonsCradleExperimentalBulletSimulation
 {
    private static final String NEWTONS_CRADLE = "NewtonsCradle";
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
+   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = true;
    private final int numberOfBalls = 6;
    private final double ballRadius = 0.05;
 
@@ -89,8 +89,10 @@ public class NewtonsCradleExperimentalBulletSimulation
       jointParameters.setJointRestitution(1.0);
       BulletContactSolverInfoParameters contactSolverInfoParameters = BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters();
       contactSolverInfoParameters.setErrorReductionForContactConstraints(0.035);
-      
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters, contactSolverInfoParameters));
+
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters,
+                                                                                                                           jointParameters,
+                                                                                                                           contactSolverInfoParameters));
       simulationSession.addRobot(robotDefinition);
 
       if (VISUALIZE_WITH_DEBUG_DRAWING)

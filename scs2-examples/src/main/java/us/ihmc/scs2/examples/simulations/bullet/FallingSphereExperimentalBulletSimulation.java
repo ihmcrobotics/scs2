@@ -49,10 +49,11 @@ public class FallingSphereExperimentalBulletSimulation
       bulletMultiBodyParameters.setLinearDamping(0);
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
       bulletMultiBodyJointParameter.setJointRestitution(1.0);
-      
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
+
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters,
+                                                                                                                           bulletMultiBodyJointParameter));
       simulationSession.addRobot(sphereRobot1);
-      
+
       GeometryDefinition terrainGeometry = new Box3DDefinition(6, 6, 0.01);
       RigidBodyTransform terrainPose = new RigidBodyTransform(new Quaternion(), new Vector3D(0.0, 0.0, 0.0));
       TerrainObjectDefinition terrain = new TerrainObjectDefinition(new VisualDefinition(terrainPose,
@@ -63,11 +64,11 @@ public class FallingSphereExperimentalBulletSimulation
 
       simulationSession.submitBufferSizeRequest(245760);
       simulationSession.setBufferRecordTickPeriod(8);
-      simulationSession.setSessionDTSeconds(0.000001);
-      
-      BulletPhysicsEngine bulletPhysicsEngine  = (BulletPhysicsEngine)simulationSession.getPhysicsEngine();
+      //simulationSession.setSessionDTSeconds(0.000001);
+
+      BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine) simulationSession.getPhysicsEngine();
       btMultiBodyDynamicsWorld multiBodyDynamicsWorld = bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld();
-      
+
       int size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
       for (int i = 0; i < size; i++)
       {
@@ -76,7 +77,7 @@ public class FallingSphereExperimentalBulletSimulation
       }
 
       SessionVisualizer.startSessionVisualizer(simulationSession);
-      
+
       size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
       for (int i = 0; i < size; i++)
       {
@@ -90,5 +91,5 @@ public class FallingSphereExperimentalBulletSimulation
    {
       new FallingSphereExperimentalBulletSimulation();
    }
-  
+
 }
