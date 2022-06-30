@@ -12,6 +12,7 @@ import org.bytedeco.bullet.BulletCollision.btBroadphaseInterface;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
 import org.bytedeco.bullet.LinearMath.btVector3;
 import org.bytedeco.bullet.global.BulletCollision;
+import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.bullet.BulletDynamics.btContactSolverInfo;
 import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -39,10 +40,12 @@ public class BulletMultiBodyDynamicsWorld
       btBroadphaseInterface = new btDbvtBroadphase();
       btMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
       btIDebugDraw = null;
+      
       btMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(btCollisionDispatcher,
                                                               btBroadphaseInterface,
                                                               btMultiBodyConstraintSolver,
                                                               btCollisionConfiguration);
+      
       btContactSolverInfo = btMultiBodyDynamicsWorld.getSolverInfo();
    }
 
@@ -59,7 +62,6 @@ public class BulletMultiBodyDynamicsWorld
 
    public int stepSimulation(float timeStep, int maxSubSteps)
    {
-
       return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, timeStep);
    }
 
@@ -83,7 +85,6 @@ public class BulletMultiBodyDynamicsWorld
             bulletTerrainObject.getBtRigidBody().getMotionState().deallocate();
             btMultiBodyDynamicsWorld.removeRigidBody(bulletTerrainObject.getBtRigidBody());
             bulletTerrainObject.getBtRigidBody().deallocate();
-            ;
          }
 
          for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
@@ -97,7 +98,6 @@ public class BulletMultiBodyDynamicsWorld
             {
                btMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
                bulletMultiBodyConstraint.deallocate();
-               ;
             }
 
             btMultiBodyDynamicsWorld.removeMultiBody(bulletMultiBodyRobot.getBtMultiBody());
@@ -178,9 +178,16 @@ public class BulletMultiBodyDynamicsWorld
 
    public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
    {
+      //TODO: it looks like the setDebugDrawer method might not be working. After setting it, 
+      //      I checked btMultiBodyDynamicsWorld.getDebugDrawer() and it is null. However, the btIDebugDraw object
+      //      is not null and the methods can be accessed.
       if (!btMultiBodyDynamicsWorld.isNull())
          btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
       this.btIDebugDraw = btIDebugDraw;
+      
+//      System.out.println("Debug Mode is: " + btIDebugDraw.getDebugMode());
+//      if (btMultiBodyDynamicsWorld.getDebugDrawer() == null)
+//         System.out.println("btMultiBodyDynamicsWorld.getDebugDrawer() is null"); 
    }
 
    public void debugDrawWorld()
