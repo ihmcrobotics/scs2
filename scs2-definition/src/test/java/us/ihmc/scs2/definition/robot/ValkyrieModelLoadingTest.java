@@ -271,7 +271,7 @@ public class ValkyrieModelLoadingTest
          Orientation3DBasics rotation = jointDefinition.getTransformToParent().getRotation();
          Vector3D translation = jointDefinition.getTransformToParent().getTranslation();
          assertTrue(rotation.isZeroOrientation(EPSILON), "Expected zero rotation, was: " + rotation);
-         EuclidCoreTestTools.assertTuple3DEquals(messagePrefix, (Tuple3DReadOnly) jointProperties.get("offsetFromParentJoint"), translation, EPSILON);
+         EuclidCoreTestTools.assertEquals(messagePrefix, (Tuple3DReadOnly) jointProperties.get("offsetFromParentJoint"), translation, EPSILON);
          if (jointDefinition instanceof OneDoFJointDefinition)
          {
             OneDoFJointDefinition oneDoFJointDefinition = (OneDoFJointDefinition) jointDefinition;
@@ -281,7 +281,7 @@ public class ValkyrieModelLoadingTest
             assertEquals((double) jointProperties.get("velocityUpperLimit"), oneDoFJointDefinition.getVelocityUpperLimit(), messagePrefix);
             assertEquals((double) jointProperties.get("effortLowerLimit"), oneDoFJointDefinition.getEffortLowerLimit(), messagePrefix);
             assertEquals((double) jointProperties.get("effortUpperLimit"), oneDoFJointDefinition.getEffortUpperLimit(), messagePrefix);
-            EuclidCoreTestTools.assertTuple3DEquals(messagePrefix, (Tuple3DReadOnly) jointProperties.get("axis"), oneDoFJointDefinition.getAxis(), EPSILON);
+            EuclidCoreTestTools.assertEquals(messagePrefix, (Tuple3DReadOnly) jointProperties.get("axis"), oneDoFJointDefinition.getAxis(), EPSILON);
             assertEquals((double) jointProperties.get("damping"), oneDoFJointDefinition.getDamping(), messagePrefix);
             assertEquals((double) jointProperties.get("stiction"), oneDoFJointDefinition.getStiction(), messagePrefix);
          }
@@ -293,7 +293,7 @@ public class ValkyrieModelLoadingTest
          Map<String, Object> linkProperties = robotProperties.get(linkName);
          RigidBodyDefinition rigidBodyDefinition = robotDefinition.getRigidBodyDefinition(linkName);
          assertEquals((double) linkProperties.get("mass"), rigidBodyDefinition.getMass(), EPSILON, messagePrefix);
-         EuclidCoreTestTools.assertTuple3DEquals(messagePrefix,
+         EuclidCoreTestTools.assertEquals(messagePrefix,
                                                  (Tuple3DReadOnly) linkProperties.get("centerOfMass"),
                                                  rigidBodyDefinition.getCenterOfMassOffset(),
                                                  EPSILON);
@@ -341,7 +341,7 @@ public class ValkyrieModelLoadingTest
       if (sensorProperties == null)
          return;
 
-      EuclidCoreTestTools.assertRigidBodyTransformEquals("Sensor: " + sensorDefinition.getName(),
+      EuclidCoreTestTools.assertEquals("Sensor: " + sensorDefinition.getName(),
                                                          (RigidBodyTransform) sensorProperties.get("transformToJoint"),
                                                          new RigidBodyTransform(sensorDefinition.getTransformToJoint()),
                                                          EPSILON);

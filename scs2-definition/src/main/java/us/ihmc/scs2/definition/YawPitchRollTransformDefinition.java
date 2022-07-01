@@ -1,13 +1,13 @@
 package us.ihmc.scs2.definition;
 
-import java.util.Objects;
-
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
+import us.ihmc.euclid.interfaces.EuclidGeometry;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformBasics;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
@@ -58,13 +58,11 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
       set(rigidBodyTransform);
    }
 
-   @Override
    public void setTranslation(double x, double y, double z)
    {
       translation.set(x, y, z);
    }
 
-   @Override
    public void setTranslation(Tuple3DReadOnly translation)
    {
       this.translation.set(translation);
@@ -159,10 +157,76 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
    }
 
    @Override
-   public String toString()
+   public boolean equals(EuclidGeometry geometry)
+   {
+      if (this == geometry)
+         return true;
+      if (geometry == null)
+         return false;
+      if (getClass() != geometry.getClass())
+         return false;
+
+      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) geometry;
+
+      if (!EuclidCoreTools.equals(translation, other.translation))
+         return false;
+      if (!EuclidCoreTools.equals(orientation, other.orientation))
+         return false;
+
+      return true;
+   }
+
+   @Override
+   public boolean epsilonEquals(EuclidGeometry geometry, double epsilon)
+   {
+      if (this == geometry)
+         return true;
+      if (geometry == null)
+         return false;
+      if (getClass() != geometry.getClass())
+         return false;
+
+      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) geometry;
+
+      if (!EuclidCoreTools.epsilonEquals(translation, other.translation, epsilon))
+         return false;
+      if (!EuclidCoreTools.epsilonEquals(orientation, other.orientation, epsilon))
+         return false;
+
+      return true;
+   }
+
+   @Override
+   public boolean geometricallyEquals(EuclidGeometry geometry, double epsilon)
+   {
+      if (this == geometry)
+         return true;
+      if (geometry == null)
+         return false;
+      if (getClass() != geometry.getClass())
+         return false;
+
+      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) geometry;
+
+      if (!EuclidCoreTools.geometricallyEquals(translation, other.translation, epsilon))
+         return false;
+      if (!EuclidCoreTools.geometricallyEquals(orientation, other.orientation, epsilon))
+         return false;
+
+      return true;
+   }
+
+   @Override
+   public String toString(String format)
    {
       return "[(x,y,z)=" + translation + ", (y,p,r)="
-            + EuclidCoreIOTools.getStringOf("(", ")]", ", ", orientation.getYaw(), orientation.getPitch(), orientation.getRoll());
+            + EuclidCoreIOTools.getStringOf("(", ")]", ", ", format, orientation.getYaw(), orientation.getPitch(), orientation.getRoll());
+   }
+
+   @Override
+   public String toString()
+   {
+      return toString(EuclidCoreIOTools.DEFAULT_FORMAT);
    }
 
    @Override
@@ -177,20 +241,9 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
    @Override
    public boolean equals(Object object)
    {
-      if (this == object)
+      if (object instanceof EuclidGeometry)
+         return equals((EuclidGeometry) object);
+      else
          return true;
-      if (object == null)
-         return false;
-      if (getClass() != object.getClass())
-         return false;
-
-      YawPitchRollTransformDefinition other = (YawPitchRollTransformDefinition) object;
-
-      if (!Objects.equals(translation, other.translation))
-         return false;
-      if (!Objects.equals(orientation, other.orientation))
-         return false;
-
-      return true;
    }
 }
