@@ -97,7 +97,7 @@ public class BulletCoefficientOfFrictionTest
             {
                expectedPosition.set(initialPosition);
                if (friction > Math.abs(Math.tan(angleOfGround)))
-                  EuclidCoreTestTools.assertTuple3DEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
+                  EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
                else
                {
                   if (time > 0.5)
@@ -172,7 +172,7 @@ public class BulletCoefficientOfFrictionTest
             simulationSession.runTick();
 
          if (friction > Math.abs(Math.tan(groundPitch)))
-            EuclidCoreTestTools.assertTuple3DEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
+            EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
          else
          {
             Assertions.assertNotEquals(expectedPosition.getZ(), floatingRootJoint.getJointPose().getPosition().getZ());

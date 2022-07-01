@@ -114,7 +114,7 @@ public class BulletFlyingBallSimulationTest
          public void accept(double time)
          {
             expectedPosition.set(heightAfterSeconds(initialPosition, initialVelocity, time, gravity.getZ()));
-            EuclidCoreTestTools.assertTuple3DEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
+            EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
 
             //orbital energy should remain constant
             if (initialOrbitalEnergy == 0)

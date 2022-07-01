@@ -80,8 +80,8 @@ public class BulletFlyingBallNoSCS2Test
           
          BulletTools.toEuclid(btMultiBody.getBasePos(), actual); 
          BulletTools.toEuclid(expectedFloat, expectedTest);
-         //EuclidCoreTestTools.assertTuple3DEquals(expected, actual, EPSILON);
-         EuclidCoreTestTools.assertTuple3DEquals(expectedTest, actual, EPSILON);
+         //EuclidCoreTestTools.assertEquals(expected, actual, EPSILON);
+         EuclidCoreTestTools.assertEquals(expectedTest, actual, EPSILON);
          
          System.out.println(output + " " + i + " " + btMultiBody.getBasePos().z + " " + expected.getZ() + " : " + expectedFloat.z);
          
