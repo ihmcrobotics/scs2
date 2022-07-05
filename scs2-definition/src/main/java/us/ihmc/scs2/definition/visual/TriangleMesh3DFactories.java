@@ -2563,7 +2563,7 @@ public class TriangleMesh3DFactories
    public static TriangleMesh3DDefinition Line(float x0, float y0, float z0, float x1, float y1, float z1, float width)
    {
       Vector3D32 lineDirection = new Vector3D32(x1 - x0, y1 - y0, z1 - z0);
-      float lineLength = (float) lineDirection.length();
+      float lineLength = (float) lineDirection.norm();
       lineDirection.scale(1.0f / lineLength);
       TriangleMesh3DDefinition line = Box(width, width, lineLength, false);
       line.setName("Line Factory");
@@ -3462,7 +3462,7 @@ public class TriangleMesh3DFactories
          startDirection.sub(edge.getFirstEndpoint(), arcCenter);
          endDirection.sub(edge.getSecondEndpoint(), arcCenter);
          meshes.addAll(toSegmentedLine3DMesh(arcCenter, arcNormal, largeRadius, lineThickness, startDirection, startDirection.angle(endDirection), 32, 8));
-         endpoint.scaleAdd(largeRadius / startDirection.length(), startDirection, arcCenter);
+         endpoint.scaleAdd(largeRadius / startDirection.norm(), startDirection, arcCenter);
          meshes.add(translate(Sphere(lineThickness, 8, 8), endpoint));
       }
 
@@ -3493,7 +3493,7 @@ public class TriangleMesh3DFactories
          startDirection.sub(start, arcCenter);
          endDirection.sub(end, arcCenter);
          meshes.addAll(toSegmentedLine3DMesh(arcCenter, arcNormal, largeRadius, lineThickness, startDirection, startDirection.angle(endDirection), 32, 8));
-         endpoint.scaleAdd(largeRadius / startDirection.length(), startDirection, arcCenter);
+         endpoint.scaleAdd(largeRadius / startDirection.norm(), startDirection, arcCenter);
          meshes.add(translate(Sphere(lineThickness, 8, 8), endpoint));
       }
 
@@ -3721,7 +3721,7 @@ public class TriangleMesh3DFactories
          if (flip)
             alpha = 1.0 - alpha;
          sphereToEdge.interpolate(sphereAToEdge, sphereBToEdge, alpha);
-         sphereToEdge.scale(radius / sphereToEdge.length());
+         sphereToEdge.scale(radius / sphereToEdge.norm());
          sphereCenter.sub(commonEdgeCenter, sphereToEdge);
          limitAB.sub(vertex, sphereCenter);
          limitAB.normalize();

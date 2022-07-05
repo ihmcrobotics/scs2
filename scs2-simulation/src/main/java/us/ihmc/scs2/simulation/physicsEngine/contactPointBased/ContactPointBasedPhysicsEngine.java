@@ -145,9 +145,9 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
          robot.getAllJoints().forEach(joint ->
          {
-            if (joint.getJointTwist().getAngularPart().length() > MAX_ROT_ACCEL)
+            if (joint.getJointTwist().getAngularPart().norm() > MAX_ROT_ACCEL)
                throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
-            if (joint.getJointTwist().getLinearPart().length() > MAX_TRANS_ACCEL)
+            if (joint.getJointTwist().getLinearPart().norm() > MAX_TRANS_ACCEL)
                throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
          });
 
