@@ -6,9 +6,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.commons.lang3.mutable.MutableObject;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -258,30 +255,11 @@ public class SessionVisualizer
 
    public static SessionVisualizerControls startSessionVisualizer(Session session, Boolean javaFXThreadImplicitExit, boolean shutdownSessionOnClose)
    {
-      MutableObject<SessionVisualizerControls> sessionVisualizerControls = new MutableObject<>();
-
-      JavaFXApplicationCreator.spawnJavaFXMainApplication();
-
-      JavaFXMissingTools.runAndWait(SessionVisualizer.class, () ->
-      {
-         try
-         {
-            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose);
-            sessionVisualizerControls.setValue(sessionVisualizer.sessionVisualizerControls);
-            if (session != null)
-               sessionVisualizer.startSession(session);
-            JavaFXApplicationCreator.attachStopListener(sessionVisualizer::stop);
-         }
-         catch (Exception e)
-         {
-            throw new RuntimeException(e);
-         }
-      });
-
-      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
-         Platform.setImplicitExit(javaFXThreadImplicitExit);
-
-      return sessionVisualizerControls.getValue();
+      SessionVisualizer sessionVisualizer = startSessionVisualizerExpert(session, javaFXThreadImplicitExit, shutdownSessionOnClose);
+      if (sessionVisualizer != null)
+         return sessionVisualizer.getSessionVisualizerControls();
+      else
+         return null;
    }
 
    public static SessionVisualizer startSessionVisualizerExpert(Session session, Boolean javaFXThreadImplicitExit)
@@ -293,27 +271,26 @@ public class SessionVisualizer
    {
       JavaFXApplicationCreator.spawnJavaFXMainApplication();
 
-      AtomicReference<SessionVisualizer> sessionVisualizerAtomicReference = new AtomicReference<>();
-      JavaFXMissingTools.runAndWait(SessionVisualizer.class, () ->
+      return JavaFXMissingTools.runAndWait(SessionVisualizer.class, () ->
       {
          try
          {
             SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose);
             if (session != null)
                sessionVisualizer.startSession(session);
+
             JavaFXApplicationCreator.attachStopListener(sessionVisualizer::stop);
-            sessionVisualizerAtomicReference.set(sessionVisualizer);
+
+            if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
+               Platform.setImplicitExit(javaFXThreadImplicitExit);
+
+            return sessionVisualizer;
          }
          catch (Exception e)
          {
             throw new RuntimeException(e);
          }
       });
-
-      if (javaFXThreadImplicitExit != null && Platform.isImplicitExit() != javaFXThreadImplicitExit)
-         Platform.setImplicitExit(javaFXThreadImplicitExit);
-      
-      return sessionVisualizerAtomicReference.get();
    }
 
    private class SessionVisualizerControlsImpl implements SessionVisualizerControls
