@@ -175,7 +175,7 @@ public interface SimJointBasics extends JointBasics, SimJointReadOnly
 
    default void updateAuxiliaryDataRecursively(RobotPhysicsOutput physicsOutput)
    {
-      getAuxialiryData().update(physicsOutput);
+      getAuxiliaryData().update(physicsOutput);
 
       if (getSuccessor() != null)
       {

@@ -303,14 +303,14 @@ public class SimulationSession extends Session
          return physicsEngine.getCurrentRobotStateDefinitions();
    }
 
-   public YoFrameVector3D getGravity()
-   {
-      return gravity;
-   }
-
    public void setGravity(double x, double y, double z)
    {
       this.gravity.set(x, y, z);
+   }
+
+   public YoFrameVector3D getGravity()
+   {
+      return gravity;
    }
 
    public void addBeforePhysicsCallback(TimeConsumer beforePhysicsCallback)

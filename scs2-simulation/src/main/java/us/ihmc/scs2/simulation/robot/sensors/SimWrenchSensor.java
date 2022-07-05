@@ -82,6 +82,7 @@ public class SimWrenchSensor extends SimSensor
       { // Initialize
          filterInitialized.set(false);
       }
+
       if (!filterInitialized.getValue())
       {
          wrenchFiltered.set(wrench);
