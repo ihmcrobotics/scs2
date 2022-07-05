@@ -12,8 +12,10 @@ import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 public class CollisionShapeDefinition
 {
    private String name;
+   /** In parent after joint frame. */
    private YawPitchRollTransformDefinition originPose = new YawPitchRollTransformDefinition();
    private GeometryDefinition geometryDefinition;
+   private boolean isConcave = false;
 
    /**
     * Collision identifier for this collidable. Use {@link CollidableHelper} to compute collision masks
@@ -104,6 +106,16 @@ public class CollisionShapeDefinition
       return geometryDefinition;
    }
 
+   public void setConcave(boolean concave)
+   {
+      isConcave = concave;
+   }
+
+   public boolean isConcave()
+   {
+      return isConcave;
+   }
+
    public long getCollisionMask()
    {
       return collisionMask;
@@ -126,6 +138,7 @@ public class CollisionShapeDefinition
       bits = EuclidHashCodeTools.addToHashCode(bits, name);
       bits = EuclidHashCodeTools.addToHashCode(bits, originPose);
       bits = EuclidHashCodeTools.addToHashCode(bits, geometryDefinition);
+      bits = EuclidHashCodeTools.addToHashCode(bits, isConcave);
       bits = EuclidHashCodeTools.addToHashCode(bits, collisionMask);
       bits = EuclidHashCodeTools.addToHashCode(bits, collisionGroup);
       return EuclidHashCodeTools.toIntHashCode(bits);
@@ -149,6 +162,8 @@ public class CollisionShapeDefinition
          return false;
       if (!Objects.equals(geometryDefinition, other.geometryDefinition))
          return false;
+      if (!isConcave != other.isConcave)
+         return false;
       if (collisionMask != other.collisionMask)
          return false;
       if (collisionGroup != other.collisionGroup)
@@ -159,7 +174,7 @@ public class CollisionShapeDefinition
    @Override
    public String toString()
    {
-      return "CollisionShapeDefinition [name=" + name + ", originPose=" + originPose + ", geometryDefinition=" + geometryDefinition + ", collisionMask="
-            + collisionMask + ", collisionGroup=" + collisionGroup + "]";
+      return "CollisionShapeDefinition [name=" + name + ", originPose=" + originPose + ", geometryDefinition=" + geometryDefinition
+             + ", isConcave=" + isConcave + ", collisionMask=" + collisionMask + ", collisionGroup=" + collisionGroup + "]";
    }
 }

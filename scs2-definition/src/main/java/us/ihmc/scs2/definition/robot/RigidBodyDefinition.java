@@ -32,6 +32,7 @@ public class RigidBodyDefinition implements Transformable
    private String name;
    private double mass;
    private MomentOfInertiaDefinition momentOfInertia = new MomentOfInertiaDefinition();
+   /** In parent after joint frame. */
    private YawPitchRollTransformDefinition inertiaPose = new YawPitchRollTransformDefinition();
 
    private JointDefinition parentJoint;
