@@ -172,7 +172,7 @@ public class BulletCoefficientOfRestitutionTest
          differenceFinalVelocity.set(finalVelocity1);
          differenceFinalVelocity.sub(finalVelocity2);
          
-         double calculatedCoefficientOfRestitution = differenceFinalVelocity.length() / differenceInitialVelocity.length();
+         double calculatedCoefficientOfRestitution = differenceFinalVelocity.norm() / differenceInitialVelocity.norm();
 
          assertEquals(coefficientOfRestitution * coefficientOfRestitution, calculatedCoefficientOfRestitution, EPSILON);
       }
