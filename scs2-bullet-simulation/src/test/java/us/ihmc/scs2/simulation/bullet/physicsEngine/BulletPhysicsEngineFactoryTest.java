@@ -4,6 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletSimulationParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletSimulationParameters;
 
 public class BulletPhysicsEngineFactoryTest
 {

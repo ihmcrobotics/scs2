@@ -8,6 +8,7 @@ import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 
 public class BulletMultiBodyParametersTest
 {

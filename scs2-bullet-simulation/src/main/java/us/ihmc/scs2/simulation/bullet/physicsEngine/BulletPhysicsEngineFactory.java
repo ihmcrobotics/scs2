@@ -1,6 +1,9 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletContactSolverInfoParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.yoVariables.registry.YoRegistry;
