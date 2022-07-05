@@ -7,8 +7,6 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.property.StringPropertyBase;
 import us.ihmc.scs2.sharedMemory.LinkedYoEnum;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
@@ -21,8 +19,6 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
    private final Object bean;
    private final YoVariableChangedListener propertyUpdater = new YoEnumPropertyUpdater(this);
    private final List<String> enumConstants;
-
-   private SimpleStringProperty lastUserInput;
 
    private LinkedYoEnum<E> linkedBuffer;
 
@@ -66,6 +62,12 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
    @Override
    public void finalize()
    {
+      dispose();
+   }
+
+   @Override
+   public void dispose()
+   {
       try
       {
          yoEnum.removeListener(propertyUpdater);
@@ -80,15 +82,8 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
    @Override
    public void set(String newValue)
    {
-      if (lastUserInput != null)
-         lastUserInput.set(newValue);
       super.set(newValue);
       yoEnum.set(toEnumOrdinal(newValue));
-   }
-
-   public void setAndPush(String newValue)
-   {
-      set(newValue);
       if (linkedBuffer != null)
          linkedBuffer.push();
    }
@@ -121,7 +116,7 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
             return;
 
          updatingThis.setTrue();
-         setAndPush(newValue);
+         set(newValue);
          updatingThis.setFalse();
       });
    }
@@ -143,14 +138,6 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
          return null;
       else
          return enumConstants.get(yoEnum.getOrdinal());
-   }
-
-   @Override
-   public StringProperty userInputProperty()
-   {
-      if (lastUserInput == null)
-         lastUserInput = new SimpleStringProperty(this, getName() + "LastUserInput", get());
-      return lastUserInput;
    }
 
    @Override

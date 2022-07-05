@@ -7,11 +7,17 @@ import java.util.Collections;
 
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -326,6 +332,124 @@ public interface SessionVisualizerControls
    boolean removeCustomGUIPane(String name);
 
    /**
+    * Creates a property that is bound to the {@code YoDouble} of the given name.
+    * <p>
+    * The new property can be used to safely access the current value of the variable via
+    * {@link YoDoubleProperty#get()} and to safely submit a new value via
+    * {@link YoDoubleProperty#set(double)}.
+    * </p>
+    * <p>
+    * The new property can be bound to UI control like a {@link ToggleButton} for instance.
+    * </p>
+    * <p>
+    * A session has to be active to be able to create a new property.
+    * </p>
+    * 
+    * @param variableName the name of the variable to create the property for.
+    * @return the new property or {@code null} if the variable could not be found, the type of the
+    *         variable doesn't match, or there is no active session.
+    */
+   YoDoubleProperty newYoDoubleProperty(String variableName);
+
+   /**
+    * Creates a property that is bound to the {@code YoInteger} of the given name.
+    * <p>
+    * The new property can be used to safely access the current value of the variable via
+    * {@link YoIntegerProperty#get()} and to safely submit a new value via
+    * {@link YoIntegerProperty#set(int)}.
+    * </p>
+    * <p>
+    * The new property can be bound to UI control like a {@link ToggleButton} for instance.
+    * </p>
+    * <p>
+    * A session has to be active to be able to create a new property.
+    * </p>
+    * 
+    * @param variableName the name of the variable to create the property for.
+    * @return the new property or {@code null} if the variable could not be found, the type of the
+    *         variable doesn't match, or there is no active session.
+    */
+   YoIntegerProperty newYoIntegerProperty(String variableName);
+
+   /**
+    * Creates a property that is bound to the {@code YoLong} of the given name.
+    * <p>
+    * The new property can be used to safely access the current value of the variable via
+    * {@link YoLongProperty#get()} and to safely submit a new value via
+    * {@link YoLongProperty#set(long)}.
+    * </p>
+    * <p>
+    * The new property can be bound to UI control like a {@link ToggleButton} for instance.
+    * </p>
+    * <p>
+    * A session has to be active to be able to create a new property.
+    * </p>
+    * 
+    * @param variableName the name of the variable to create the property for.
+    * @return the new property or {@code null} if the variable could not be found, the type of the
+    *         variable doesn't match, or there is no active session.
+    */
+   YoLongProperty newYoLongProperty(String variableName);
+
+   /**
+    * Creates a property that is bound to the {@code YoBoolean} of the given name.
+    * <p>
+    * The new property can be used to safely access the current value of the variable via
+    * {@link YoBooleanProperty#get()} and to safely submit a new value via
+    * {@link YoBooleanProperty#set(boolean)}.
+    * </p>
+    * <p>
+    * The new property can be bound to UI control like a {@link ToggleButton} for instance.
+    * </p>
+    * <p>
+    * A session has to be active to be able to create a new property.
+    * </p>
+    * 
+    * @param variableName the name of the variable to create the property for.
+    * @return the new property or {@code null} if the variable could not be found, the type of the
+    *         variable doesn't match, or there is no active session.
+    */
+   YoBooleanProperty newYoBooleanProperty(String variableName);
+
+   /**
+    * Creates a property that is bound to the {@code YoEnum<E>} of the given name.
+    * <p>
+    * The new property can be used to safely access the current value of the variable via
+    * {@link YoEnumAsStringProperty#get()} and to safely submit a new value via
+    * {@link YoEnumAsStringProperty#set(E)}.
+    * </p>
+    * <p>
+    * The new property can be bound to UI control like a {@link ToggleButton} for instance.
+    * </p>
+    * <p>
+    * A session has to be active to be able to create a new property.
+    * </p>
+    * 
+    * @param variableName the name of the variable to create the property for.
+    * @return the new property or {@code null} if the variable could not be found, the type of the
+    *         variable doesn't match, or there is no active session.
+    */
+   <E extends Enum<E>> YoEnumAsStringProperty<E> newYoEnumProperty(String variableName);
+
+   /**
+    * Adds a listener to be notified when the active session has changed.
+    * <p>
+    * This is particularly useful for initializing controls once the session has changed.
+    * </p>
+    * 
+    * @param listener the session changed listener.
+    */
+   void addSessionChangedListener(SessionChangeListener listener);
+
+   /**
+    * Removes a listener previously added.
+    * 
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed.
+    */
+   boolean removeSessionChangedListener(SessionChangeListener listener);
+
+   /**
     * Requests to "gently" shutdown the visualizer and the session.
     * <p>
     * A confirmation dialog may popup to confirm the shutdown and ask for saving the GUI configuration.
@@ -346,6 +470,13 @@ public interface SessionVisualizerControls
     * </p>
     */
    void shutdownSession();
+
+   /**
+    * Indicates whether the visualizer has been shutdown or not.
+    * 
+    * @return {@code true} if the visualizer has been shutdown, {@code false} otherwise.
+    */
+   boolean isVisualizerShutdown();
 
    /**
     * Adds a listener to be notified when the visualizer just shutdown.

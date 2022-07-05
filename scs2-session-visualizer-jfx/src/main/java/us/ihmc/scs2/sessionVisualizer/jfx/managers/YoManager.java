@@ -4,6 +4,11 @@ import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sharedMemory.LinkedBufferProperties;
@@ -13,6 +18,13 @@ import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.tools.YoSearchTools;
+import us.ihmc.yoVariables.tools.YoTools;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoManager extends ObservedAnimationTimer implements Manager
@@ -128,5 +140,116 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       if (linkedBufferProperties.peekCurrentBufferProperties() == null)
          return -1;
       return linkedBufferProperties.peekCurrentBufferProperties().getSize();
+   }
+
+   public YoDoubleProperty newYoDoubleProperty(String variableName)
+   {
+      if (rootRegistry == null)
+      {
+         LogTools.error("No active session.");
+         return null;
+      }
+
+      YoDouble variable = findYoVariable(YoDouble.class, variableName);
+      if (variable == null)
+      {
+         LogTools.error("Could not find variable from name: {}", variableName);
+         return null;
+      }
+
+      YoDoubleProperty property = new YoDoubleProperty(variable);
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      return property;
+   }
+
+   public YoIntegerProperty newYoIntegerProperty(String variableName)
+   {
+      if (rootRegistry == null)
+      {
+         LogTools.error("No active session.");
+         return null;
+      }
+
+      YoInteger variable = findYoVariable(YoInteger.class, variableName);
+      if (variable == null)
+      {
+         LogTools.error("Could not find variable from name: {}", variableName);
+         return null;
+      }
+
+      YoIntegerProperty property = new YoIntegerProperty(variable);
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      return property;
+   }
+
+   public YoLongProperty newYoLongProperty(String variableName)
+   {
+      if (rootRegistry == null)
+      {
+         LogTools.error("No active session.");
+         return null;
+      }
+
+      YoLong variable = findYoVariable(YoLong.class, variableName);
+      if (variable == null)
+      {
+         LogTools.error("Could not find variable from name: {}", variableName);
+         return null;
+      }
+
+      YoLongProperty property = new YoLongProperty(variable);
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      return property;
+   }
+
+   public YoBooleanProperty newYoBooleanProperty(String variableName)
+   {
+      if (rootRegistry == null)
+      {
+         LogTools.error("No active session.");
+         return null;
+      }
+
+      YoBoolean variable = findYoVariable(YoBoolean.class, variableName);
+      if (variable == null)
+      {
+         LogTools.error("Could not find variable from name: {}", variableName);
+         return null;
+      }
+
+      YoBooleanProperty property = new YoBooleanProperty(variable);
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      return property;
+   }
+
+   public <E extends Enum<E>> YoEnumAsStringProperty<E> newYoEnumProperty(String variableName)
+   {
+      if (rootRegistry == null)
+      {
+         LogTools.error("No active session.");
+         return null;
+      }
+
+      @SuppressWarnings("unchecked")
+      YoEnum<E> variable = findYoVariable(YoEnum.class, variableName);
+      if (variable == null)
+      {
+         LogTools.error("Could not find variable from name: {}", variableName);
+         return null;
+      }
+
+      YoEnumAsStringProperty<E> property = new YoEnumAsStringProperty<>(variable);
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      return property;
+   }
+
+   @SuppressWarnings("unchecked")
+   private <T extends YoVariable> T findYoVariable(Class<T> type, String variableName)
+   {
+      int separatorIndex = variableName.lastIndexOf(YoTools.NAMESPACE_SEPERATOR_STRING);
+
+      String namespaceEnding = separatorIndex == -1 ? null : variableName.substring(0, separatorIndex);
+      String name = separatorIndex == -1 ? variableName : variableName.substring(separatorIndex + 1);
+      return (T) YoSearchTools.findFirstVariable(namespaceEnding, name, type::isInstance, rootRegistry);
    }
 }
