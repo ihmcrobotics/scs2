@@ -127,6 +127,7 @@ public class SimulationSession extends Session
       cleanupActions.forEach(Runnable::run);
       cleanupActions.clear();
       cameraBroadcastExecutor.shutdown();
+      physicsEngine.dispose();
    }
 
    @Override
@@ -300,6 +301,11 @@ public class SimulationSession extends Session
          return physicsEngine.getBeforePhysicsRobotStateDefinitions();
       else
          return physicsEngine.getCurrentRobotStateDefinitions();
+   }
+
+   public void setGravity(double x, double y, double z)
+   {
+      this.gravity.set(x, y, z);
    }
 
    public YoFrameVector3D getGravity()

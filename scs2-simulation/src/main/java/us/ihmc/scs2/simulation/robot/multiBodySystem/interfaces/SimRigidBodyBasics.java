@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.multiBodySystem.iterators.JointIterable;
 import us.ihmc.mecano.multiBodySystem.iterators.RigidBodyIterable;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
+import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 
 public interface SimRigidBodyBasics extends RigidBodyBasics, SimRigidBodyReadOnly
 {
@@ -42,5 +44,14 @@ public interface SimRigidBodyBasics extends RigidBodyBasics, SimRigidBodyReadOnl
    default SimRigidBodyBasics[] subtreeArray()
    {
       return subtreeStream().toArray(SimRigidBodyBasics[]::new);
+   }
+
+   default void updateAuxiliaryDataRecursively(RobotPhysicsOutput physicsOutput)
+   {
+      List<JointBasics> childrenJoints = getChildrenJoints();
+      for (int childIndex = 0; childIndex < childrenJoints.size(); childIndex++)
+      {
+         ((SimJointBasics) childrenJoints.get(childIndex)).updateAuxiliaryDataRecursively(physicsOutput);
+      }
    }
 }

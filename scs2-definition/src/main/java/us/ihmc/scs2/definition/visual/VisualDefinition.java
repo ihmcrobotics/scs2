@@ -16,6 +16,7 @@ import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 public class VisualDefinition
 {
    private String name;
+   /** In parent after joint frame. */
    private AffineTransformDefinition originPose = new AffineTransformDefinition();
    private GeometryDefinition geometryDefinition;
    private MaterialDefinition materialDefinition;

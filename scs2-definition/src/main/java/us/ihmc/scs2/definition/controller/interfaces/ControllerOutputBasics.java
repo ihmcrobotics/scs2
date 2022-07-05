@@ -31,6 +31,11 @@ public interface ControllerOutputBasics extends ControllerOutputReadOnly
       return (OneDoFJointStateBasics) getJointOutput(joint);
    }
 
+   default OneDoFJointStateBasics getOneDoFJointOutput(String jointName)
+   {
+      return (OneDoFJointStateBasics) getJointOutput(jointName);
+   }
+
    default JointStateBasics[] getJointOutputs(JointReadOnly[] joints)
    {
       return Stream.of(joints).map(this::getJointOutput).toArray(JointStateBasics[]::new);
