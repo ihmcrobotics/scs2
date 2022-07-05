@@ -35,7 +35,7 @@ public class BulletFlyingBallSimulationTest
 {
    private static final double EPSILON = 0.01;
    private static final boolean BULLET_PHYSICS_ENGINE = true;
-   private static final boolean VISUALIZE = true;
+   private static final boolean VISUALIZE = false;
 
    @Test
    public void testFlyingBall() throws Throwable
