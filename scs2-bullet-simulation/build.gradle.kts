@@ -31,13 +31,6 @@ mainDependencies {
    val libGDXVersion = "1.11.0"
    api("com.badlogicgames.gdx:gdx-bullet:$libGDXVersion")
    api("com.badlogicgames.gdx:gdx-bullet-platform:$libGDXVersion:natives-desktop")
-
-   val lwjglVersion = "3.3.1"
-   api("org.lwjgl:lwjgl-assimp:$lwjglVersion")
-   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-linux")
-   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-windows")
-   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-windows-x86")
-   api("org.lwjgl:lwjgl-assimp:$lwjglVersion:natives-macos")
 }
 
 testDependencies {
