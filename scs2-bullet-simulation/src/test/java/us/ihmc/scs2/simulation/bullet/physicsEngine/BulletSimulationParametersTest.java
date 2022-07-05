@@ -6,6 +6,8 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletSimulationParameters;
+
 public class BulletSimulationParametersTest
 {
    private static final int ITERATIONS = 1000;

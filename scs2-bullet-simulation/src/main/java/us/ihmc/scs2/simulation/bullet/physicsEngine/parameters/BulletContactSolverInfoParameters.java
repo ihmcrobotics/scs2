@@ -1,9 +1,10 @@
-package us.ihmc.scs2.simulation.bullet.physicsEngine;
+package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
 import com.badlogic.gdx.physics.bullet.dynamics.btSolverMode;
 
 public class BulletContactSolverInfoParameters
 {
+   // @formatter:off
    private double tau;                                               //m_tau
    private double damping;                                           //m_damping - global non-contact constraint damping, can be locally overridden by constraints during 'getInfo2'.
    private double friction;                                          //m_friction
@@ -29,6 +30,7 @@ public class BulletContactSolverInfoParameters
    private double singleAxisRollingFrictionThreshold;                //m_singleAxisRollingFrictionThreshold - if the velocity is above this threshold, it will use a single constraint row (axis), otherwise 3 rows.
    private double leastSquaresResidualThreshold;                     //m_leastSquaresResidualThreshold
    private double restitutionVelocityThreshold;                      //m_restitutionVelocityThreshold - if the relative velocity is below this threshold, there is zero restitution
+   // @formatter:on
 
    public static BulletContactSolverInfoParameters defaultBulletContactSolverInfoParameters()
    {
@@ -51,20 +53,21 @@ public class BulletContactSolverInfoParameters
       bulletContactSolverInfoParameters.setSplitImpulseTurnErp(0.1);
       bulletContactSolverInfoParameters.setLinearSlop(0.0);
       bulletContactSolverInfoParameters.setWarmstartingFactor(0.85);
-      bulletContactSolverInfoParameters.setSolverMode(btSolverMode.SOLVER_USE_WARMSTARTING | btSolverMode.SOLVER_SIMD | btSolverMode.SOLVER_USE_2_FRICTION_DIRECTIONS);
+      bulletContactSolverInfoParameters.setSolverMode(btSolverMode.SOLVER_USE_WARMSTARTING | btSolverMode.SOLVER_SIMD
+            | btSolverMode.SOLVER_USE_2_FRICTION_DIRECTIONS);
       bulletContactSolverInfoParameters.setRestingContactRestitutionThreshold(2);
       bulletContactSolverInfoParameters.setMinimumSolverBatchSize(128);
       bulletContactSolverInfoParameters.setMaxGyroscopicForce(100.0);
       bulletContactSolverInfoParameters.setSingleAxisRollingFrictionThreshold(1e30f);
       bulletContactSolverInfoParameters.setLeastSquaresResidualThreshold(0);
       bulletContactSolverInfoParameters.setRestitutionVelocityThreshold(0.2);
-      
+
       return bulletContactSolverInfoParameters;
    }
-   
+
    public BulletContactSolverInfoParameters()
    {
- 
+
    }
 
    public double getTau()

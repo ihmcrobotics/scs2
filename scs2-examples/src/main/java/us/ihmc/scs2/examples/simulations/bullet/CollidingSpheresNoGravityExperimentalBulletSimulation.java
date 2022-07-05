@@ -12,10 +12,10 @@ import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletContactSolverInfoParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletContactSolverInfoParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 

@@ -10,6 +10,7 @@ import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
 import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
 
 public class BulletMultiBodyJointParametersTest
 {

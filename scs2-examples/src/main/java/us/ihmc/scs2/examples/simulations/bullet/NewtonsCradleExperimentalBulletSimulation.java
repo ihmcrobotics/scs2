@@ -17,10 +17,10 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletContactSolverInfoParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletContactSolverInfoParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 
 public class NewtonsCradleExperimentalBulletSimulation
 {
