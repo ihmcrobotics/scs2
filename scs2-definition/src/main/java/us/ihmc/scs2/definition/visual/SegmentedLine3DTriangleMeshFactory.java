@@ -299,7 +299,7 @@ public final class SegmentedLine3DTriangleMeshFactory
       if (sectionDirections != null)
       {
          tempDirection.set(sectionDirections[sectionIndex]);
-         double length = tempDirection.length();
+         double length = tempDirection.norm();
          if (length > Epsilons.ONE_HUNDRED_MILLIONTH)
          {
             tempDirection.scale(1.0 / length);
@@ -323,8 +323,8 @@ public final class SegmentedLine3DTriangleMeshFactory
 
          tempPreviousSegment.sub(currentCenter, previousCenter);
          tempNextSegment.sub(nextCenter, currentCenter);
-         double previousLength = tempPreviousSegment.length();
-         double nextLength = tempNextSegment.length();
+         double previousLength = tempPreviousSegment.norm();
+         double nextLength = tempNextSegment.norm();
 
          double alpha = nextLength / (previousLength + nextLength);
          tempDirection.interpolate(tempPreviousSegment, tempNextSegment, alpha);

@@ -197,14 +197,14 @@ public class LoopClosureSoftConstraintController implements Controller
       rootFrame.transformFromThisToDesiredFrame(frameA, positionError);
       // Applying the sub-space on the error so the visualization is accurate, i.e. doesn't incorporate error that does not matter.
       constraintForceSubSpace.transform(positionError);
-      positionErrorMagnitude.set(positionError.length());
+      positionErrorMagnitude.set(positionError.norm());
 
       // Rotation error in A's local coordinates.
       quaternionDifference.difference(constraintA.getPose().getOrientation(), constraintB.getPose().getOrientation()); // This the orientation from B to A
       quaternionDifference.normalizeAndLimitToPi();
       quaternionDifference.getRotationVector(rotationError);
       constraintMomentSubSpace.transform(rotationError);
-      rotationErrorMagnitude.set(rotationError.length());
+      rotationErrorMagnitude.set(rotationError.norm());
 
       // Linear velocity error in A's local coordinates
       linearVelocityError.set(constraintB.getTwist().getLinearPart());

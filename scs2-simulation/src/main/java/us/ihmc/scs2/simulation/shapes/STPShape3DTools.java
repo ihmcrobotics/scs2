@@ -339,7 +339,7 @@ public class STPShape3DTools
          orthogonalToAxis.sub(supportDirection, orthogonalToAxis);
          edgeSphereCenter.setAndScale(sign * capsuleHalfLength, capsuleAxis);
 
-         double distanceSquaredFromAxis = orthogonalToAxis.lengthSquared();
+         double distanceSquaredFromAxis = orthogonalToAxis.normSquared();
 
          if (distanceSquaredFromAxis < EuclidShapeTools.MIN_DISTANCE_EPSILON)
          {
@@ -398,7 +398,7 @@ public class STPShape3DTools
          orthogonalToAxis.setAndScale(dot, cylinderAxis);
          orthogonalToAxis.sub(supportDirection, orthogonalToAxis);
 
-         double distanceSquaredFromAxis = orthogonalToAxis.lengthSquared();
+         double distanceSquaredFromAxis = orthogonalToAxis.normSquared();
 
          if (distanceSquaredFromAxis < EuclidShapeTools.MIN_DISTANCE_EPSILON)
          {
@@ -561,7 +561,7 @@ public class STPShape3DTools
          edgeTorusAxis.sub(edge.getSecondEndpoint(), edge.getFirstEndpoint());
 
          double radius = largeRadius - smallRadius;
-         double torusRadius = Math.sqrt(radius * radius - 0.25 * edgeTorusAxis.lengthSquared());
+         double torusRadius = Math.sqrt(radius * radius - 0.25 * edgeTorusAxis.normSquared());
          double torusTubeRadius = largeRadius;
 
          EuclidShapeTools.innerSupportingVertexTorus3D(supportDirection, edgeTorusCenter, edgeTorusAxis, torusRadius, torusTubeRadius, supportingVertexToPack);
