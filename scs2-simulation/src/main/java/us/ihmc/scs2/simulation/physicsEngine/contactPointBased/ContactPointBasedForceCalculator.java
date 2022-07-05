@@ -213,8 +213,8 @@ public class ContactPointBasedForceCalculator
 
       forceParallel.sub(forceWorld, forceNormal);
 
-      double parallelSpringForce = forceParallel.length();
-      double normalSpringForce = forceNormal.length();
+      double parallelSpringForce = forceParallel.norm();
+      double normalSpringForce = forceNormal.norm();
 
       double ratio = parallelSpringForce / normalSpringForce;
 
@@ -237,7 +237,7 @@ public class ContactPointBasedForceCalculator
 
          // Move touch-down values along the perp direction to follow the slipping.
 
-         double len = forceParallel.length();
+         double len = forceParallel.norm();
          if (len > 1e-7)
             forceParallel.scale(1.0 / len);
 

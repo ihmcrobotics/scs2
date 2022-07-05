@@ -71,7 +71,7 @@ public class YoArrowFX3D extends YoGraphicFX3D
 
       arrowAffine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(axisAngle, origin.toPoint3DInWorld()));
 
-      double directionMagnitude = directionLocal.length();
+      double directionMagnitude = directionLocal.norm();
       double arrowScaleXY = scaleRadius ? bodyRadius.get() * directionMagnitude : bodyRadius.get();
       double arrowScaleZ = scaleLength ? bodyLength.get() * directionMagnitude : bodyLength.get();
 

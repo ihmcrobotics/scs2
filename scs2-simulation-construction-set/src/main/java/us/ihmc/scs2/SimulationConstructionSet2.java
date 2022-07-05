@@ -18,8 +18,14 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -1095,6 +1101,74 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public YoDoubleProperty newYoDoubleProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoDoubleProperty(variableName);
+      else
+         return null;
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public YoBooleanProperty newYoBooleanProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoBooleanProperty(variableName);
+      else
+         return null;
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public YoIntegerProperty newYoIntegerProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoIntegerProperty(variableName);
+      else
+         return null;
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public YoLongProperty newYoLongProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoLongProperty(variableName);
+      else
+         return null;
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public <E extends Enum<E>> YoEnumAsStringProperty<E> newYoEnumProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoEnumProperty(variableName);
+      else
+         return null;
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void addSessionChangedListener(SessionChangeListener listener)
+   {
+      if (visualizerControls != null)
+         visualizerControls.addSessionChangedListener(listener);
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean removeSessionChangedListener(SessionChangeListener listener)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.removeSessionChangedListener(listener);
+      else
+         return false;
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void waitUntilVisualizerFullyUp()
    {
       if (visualizerControls != null)
@@ -1166,5 +1240,14 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    {
       if (visualizerControls != null)
          visualizerControls.addVisualizerShutdownListener(listener);
+   }
+
+   @Override
+   public boolean isVisualizerShutdown()
+   {
+      if (visualizerControls != null)
+         return visualizerControls.isVisualizerShutdown();
+      else
+         return true;
    }
 }
