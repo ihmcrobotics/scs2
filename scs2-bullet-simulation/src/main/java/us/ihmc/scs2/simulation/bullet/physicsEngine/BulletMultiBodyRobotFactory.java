@@ -21,6 +21,7 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimCrossFourBarJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
@@ -223,6 +224,10 @@ public class BulletMultiBodyRobotFactory
                                                                                                              (float) primaticJointDefinition.getPositionUpperLimit());
 
          bulletMultiBodyRobot.addBtMultiBodyConstraint(multiBodyJointLimitConstraint);
+      }
+      else if(joint instanceof SimCrossFourBarJoint)
+      {
+         // TODO: Add the four bar to Bullet
       }
       else
       {
