@@ -14,10 +14,7 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
-import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
-import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.definition.robot.*;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -228,6 +225,43 @@ public class BulletMultiBodyRobotFactory
       else if(joint instanceof SimCrossFourBarJoint)
       {
          // TODO: Add the four bar to Bullet
+         CrossFourBarJointDefinition crossFourBarJointDefinition = (CrossFourBarJointDefinition) jointDefinition;
+
+         int parentBulletJointIndex;
+         if (joint.getPredecessor().getParentJoint() == null)
+            parentBulletJointIndex = -1;
+         else
+            parentBulletJointIndex = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(joint.getPredecessor().getParentJoint().getName());
+
+         Vector3 jointAxis = new Vector3();
+         BulletTools.toBullet(crossFourBarJointDefinition.getAxis(), jointAxis);
+
+         // for each joint
+         {
+
+            String jointNameA = crossFourBarJointDefinition.getJointNameA();
+
+            crossFourBarJointDefinition.getTransformAToPredecessor();
+
+            bulletMultiBodyRobot.getBtMultiBody()
+                                .setupRevolute(bulletJointIndex,
+                                               linkMass,
+                                               linkInertiaDiagonal,
+                                               parentBulletJointIndex,
+                                               rotationFromParentBullet,
+                                               jointAxis,
+                                               parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet,
+                                               parentJointAfterFrameToLinkCenterOfMassTranslationBullet,
+                                               disableParentCollision);
+
+            btMultiBodyJointLimitConstraint multiBodyJointLimitConstraint = new btMultiBodyJointLimitConstraint(bulletMultiBodyRobot.getBtMultiBody(),
+                                                                                                                bulletJointIndex,
+                                                                                                                (float) crossFourBarJointDefinition.getPositionLowerLimit(),
+                                                                                                                (float) crossFourBarJointDefinition.getPositionUpperLimit());
+
+            bulletMultiBodyRobot.addBtMultiBodyConstraint(multiBodyJointLimitConstraint);
+         }
+
       }
       else
       {
