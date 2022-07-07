@@ -26,13 +26,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
 
 public class BulletTools
 {
@@ -214,6 +208,24 @@ public class BulletTools
             }
          }
          btCollisionShape = convexHullShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Ellipsoid3DDefinition)
+      {
+         Ellipsoid3DDefinition ellipsoidGeometryDefinition = (Ellipsoid3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+
+         btSphereShape sphereShape = new btSphereShape((float) ellipsoidGeometryDefinition.getRadiusX());
+         btCollisionShape = sphereShape;
+
+//         new btEllipsoidShape();
+//         btConvexHullShape convexHullShape = new btConvexHullShape();
+//         for (Face3DReadOnly face : ellipsoidGeometryDefinition.getConvexPolytope().getFaces())
+//         {
+//            for (Vertex3DReadOnly vertex : face.getVertices())
+//            {
+//               convexHullShape.addPoint(new Vector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
+//            }
+//         }
+//         btCollisionShape = convexHullShape;
       }
       else
       {
