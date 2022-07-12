@@ -286,8 +286,15 @@ public final class SegmentedLine3DTriangleMeshFactory
    private void computeRotation(Vector3DReadOnly previousDirection, Vector3DReadOnly sectionDirection, RotationMatrixReadOnly previousRotation,
                                 RotationMatrixBasics rotationToPack)
    {
-      EuclidGeometryTools.orientation3DFromFirstToSecondVector3D(previousDirection, sectionDirection, rotationToPack);
-      rotationToPack.preMultiply(previousRotation);
+      if (previousDirection.containsNaN() || sectionDirection.containsNaN())
+      {
+         rotationToPack.setToZero();
+      }
+      else
+      {
+         EuclidGeometryTools.orientation3DFromFirstToSecondVector3D(previousDirection, sectionDirection, rotationToPack);
+         rotationToPack.preMultiply(previousRotation);
+      }
    }
 
    private final Vector3D tempDirection = new Vector3D();
