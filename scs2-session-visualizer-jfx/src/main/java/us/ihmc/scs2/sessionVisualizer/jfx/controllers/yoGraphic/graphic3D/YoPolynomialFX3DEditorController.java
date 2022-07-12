@@ -41,12 +41,12 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
       setupDoublePropertyListEditor(coefficientsYListEditorController,
                                     "Coefficent Y",
                                     "Coefficients Y",
-                                    yoGraphicToEdit::setNumberOfCoefficientsX,
+                                    yoGraphicToEdit::setNumberOfCoefficientsY,
                                     yoGraphicToEdit::setCoefficientsY);
       setupDoublePropertyListEditor(coefficientsZListEditorController,
                                     "Coefficent Z",
                                     "Coefficients Z",
-                                    yoGraphicToEdit::setNumberOfCoefficientsX,
+                                    yoGraphicToEdit::setNumberOfCoefficientsZ,
                                     yoGraphicToEdit::setCoefficientsZ);
       setupDoublePropertyEditor(startTimeTextField, startTimeValidImageView, YoPolynomialFX3D::setStartTime);
       setupDoublePropertyEditor(endTimeTextField, endTimeValidImageView, YoPolynomialFX3D::setEndTime);
