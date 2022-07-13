@@ -23,6 +23,7 @@ import javax.xml.bind.JAXBException;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
@@ -33,6 +34,8 @@ import us.ihmc.robotDataLogger.jointState.SixDoFState;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
 import us.ihmc.scs2.definition.robot.sdf.items.SDFRoot;
+import us.ihmc.scs2.definition.robot.urdf.URDFTools;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -86,6 +89,11 @@ public class RobotModelLoader
 
    public static RobotDefinition loadModel(String modelName, String[] resourceDirectories, byte[] model, byte[] resourceZip)
    {
+      return loadModel(modelName, null, resourceDirectories, model, resourceZip);
+   }
+
+   public static RobotDefinition loadModel(String modelName, String modelType, String[] resourceDirectories, byte[] model, byte[] resourceZip)
+   {
       if (model == null)
          return null;
 
@@ -96,19 +104,83 @@ public class RobotModelLoader
          return robotDefinition;
 
       ClassLoader resourceClassLoader = unpackResources(modelName, resourceZip);
-      try
+
+      if (modelType == null)
       {
-         SDFRoot sdfRoot = SDFTools.loadSDFRoot(new ByteArrayInputStream(model), Arrays.asList(resourceDirectories), resourceClassLoader);
-         robotDefinition = SDFTools.toFloatingRobotDefinition(sdfRoot.getModels().get(0));
-         robotDefinition.setResourceClassLoader(resourceClassLoader);
-         cachedImportedModels.put(modelHashCode, robotDefinition);
-         return robotDefinition;
+         try
+         {
+            return loadSDFModel(resourceDirectories, model, modelHashCode, resourceClassLoader);
+         }
+         catch (JAXBException e)
+         {
+            try
+            {
+               return loadURDFModel(resourceDirectories, model, modelHashCode, resourceClassLoader);
+            }
+            catch (JAXBException e1)
+            {
+               LogTools.error("Could not load model {} with SDF or URDF model loaders", modelName);
+               LogTools.error("Stack trace from SDF model loader:");
+               e.printStackTrace();
+               LogTools.error("Stack trace from URDF model loader:");
+               e1.printStackTrace();
+               return null;
+            }
+         }
       }
-      catch (JAXBException e)
+      else
       {
-         e.printStackTrace();
-         return null;
+         String modelTypeLowerCase = modelType.toLowerCase();
+         if (modelTypeLowerCase.contains("sdf"))
+         {
+            try
+            {
+               return loadSDFModel(resourceDirectories, model, modelHashCode, resourceClassLoader);
+            }
+            catch (JAXBException e)
+            {
+               e.printStackTrace();
+               return null;
+            }
+         }
+         else if (modelTypeLowerCase.contains("urdf"))
+         {
+            try
+            {
+               return loadURDFModel(resourceDirectories, model, modelHashCode, resourceClassLoader);
+            }
+            catch (JAXBException e)
+            {
+               e.printStackTrace();
+               return null;
+            }
+         }
+         else
+         {
+            LogTools.error("Unhandled model type: {}", modelType);
+            return null;
+         }
       }
+   }
+
+   private static RobotDefinition loadSDFModel(String[] resourceDirectories, byte[] model, long modelHashCode, ClassLoader resourceClassLoader)
+         throws JAXBException
+   {
+      SDFRoot sdfRoot = SDFTools.loadSDFRoot(new ByteArrayInputStream(model), Arrays.asList(resourceDirectories), resourceClassLoader);
+      RobotDefinition robotDefinition = SDFTools.toFloatingRobotDefinition(sdfRoot.getModels().get(0));
+      robotDefinition.setResourceClassLoader(resourceClassLoader);
+      cachedImportedModels.put(modelHashCode, robotDefinition);
+      return robotDefinition;
+   }
+
+   private static RobotDefinition loadURDFModel(String[] resourceDirectories, byte[] model, long modelHashCode, ClassLoader resourceClassLoader)
+         throws JAXBException
+   {
+      URDFModel urdfModel = URDFTools.loadURDFModel(new ByteArrayInputStream(model), Arrays.asList(resourceDirectories), resourceClassLoader);
+      RobotDefinition robotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
+      robotDefinition.setResourceClassLoader(resourceClassLoader);
+      cachedImportedModels.put(modelHashCode, robotDefinition);
+      return robotDefinition;
    }
 
    private static ClassLoader unpackResources(String modelName, byte[] resourceZip)
