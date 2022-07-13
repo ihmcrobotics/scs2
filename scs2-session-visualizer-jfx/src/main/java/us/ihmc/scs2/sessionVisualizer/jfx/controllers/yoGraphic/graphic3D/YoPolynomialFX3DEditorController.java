@@ -67,9 +67,9 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
    @Override
    public void resetFields()
    {
-      coefficientsXListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsX(), definitionBeforeEdits.getNumberOfCoefficientsX());
-      coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY(), definitionBeforeEdits.getNumberOfCoefficientsY());
-      coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ(), definitionBeforeEdits.getNumberOfCoefficientsZ());
+      coefficientsXListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsX());
+      coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY());
+      coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ());
       styleEditorController.setInput(definitionBeforeEdits);
       startTimeTextField.setText(definitionBeforeEdits.getStartTime());
       endTimeTextField.setText(definitionBeforeEdits.getEndTime());
