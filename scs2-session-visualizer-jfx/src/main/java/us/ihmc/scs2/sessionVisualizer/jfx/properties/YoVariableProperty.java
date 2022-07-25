@@ -6,11 +6,9 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public interface YoVariableProperty<T extends YoVariable, P> extends Property<P>
 {
-   Property<P> userInputProperty();
-
    T getYoVariable();
 
    LinkedYoVariable<T> getLinkedBuffer();
 
-   void finalize();
+   void dispose();
 }

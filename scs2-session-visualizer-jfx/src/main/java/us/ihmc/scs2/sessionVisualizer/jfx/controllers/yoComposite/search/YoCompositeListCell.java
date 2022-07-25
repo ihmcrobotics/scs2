@@ -81,7 +81,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       super.updateItem(yoComposite, empty);
 
       // Cleanup the properties: remove listeners and disable linked buffer
-      yoVariableProperties.forEach(property -> property.finalize());
+      yoVariableProperties.forEach(property -> property.dispose());
       yoVariableProperties.clear();
 
       prefWidthProperty().bind(owner.widthProperty().subtract(15.0));

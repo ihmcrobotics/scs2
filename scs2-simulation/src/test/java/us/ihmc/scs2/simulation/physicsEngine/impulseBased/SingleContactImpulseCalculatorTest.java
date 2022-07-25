@@ -323,9 +323,9 @@ public class SingleContactImpulseCalculatorTest
 
          // Check that the spheres do not start spinning
          assertTrue(TupleTools.isTupleZero(rootJointA.getJointTwist().getAngularPart(), 1.0e-5),
-                    "Iteration: " + i + ", non-zero angular velocity, magnitude: " + rootJointA.getJointTwist().getAngularPart().length());
+                    "Iteration: " + i + ", non-zero angular velocity, magnitude: " + rootJointA.getJointTwist().getAngularPart().norm());
          assertTrue(TupleTools.isTupleZero(rootJointB.getJointTwist().getAngularPart(), 1.0e-5),
-                    "Iteration: " + i + ", non-zero angular velocity, magnitude: " + rootJointB.getJointTwist().getAngularPart().length());
+                    "Iteration: " + i + ", non-zero angular velocity, magnitude: " + rootJointB.getJointTwist().getAngularPart().norm());
 
          // Computing expected velocities post impulse
          Vector3D sphereAFinalVelocity = new Vector3D();
@@ -391,21 +391,21 @@ public class SingleContactImpulseCalculatorTest
          impulseNormal.changeFrame(worldFrame);
          impulseTangential.changeFrame(worldFrame);
 
-         boolean isSticking = impulseTangential.length() < (impulseCalculator.getContactParameters().getCoefficientOfFriction() - epsilon)
-               * impulseNormal.length();
+         boolean isSticking = impulseTangential.norm() < (impulseCalculator.getContactParameters().getCoefficientOfFriction() - epsilon)
+               * impulseNormal.norm();
 
          if (isSticking)
          {
             assertEquals(0.0,
-                         contactLinearVelocityPostImpulse.length(),
-                         Math.max(1.0, contactLinearVelocityNoImpulse.length()) * postImpulseVelocityEpsilon,
+                         contactLinearVelocityPostImpulse.norm(),
+                         Math.max(1.0, contactLinearVelocityNoImpulse.norm()) * postImpulseVelocityEpsilon,
                          messagePrefix);
          }
          else
          {
-            assertEquals(impulseTangential.length(),
-                         impulseCalculator.getContactParameters().getCoefficientOfFriction() * impulseNormal.length(),
-                         Math.max(1.0, Math.abs(impulseTangential.length())) * epsilon,
+            assertEquals(impulseTangential.norm(),
+                         impulseCalculator.getContactParameters().getCoefficientOfFriction() * impulseNormal.norm(),
+                         Math.max(1.0, Math.abs(impulseTangential.norm())) * epsilon,
                          messagePrefix);
             FrameVector3D tangentialVelocityPostImpulse = extractTangentialPart(contactLinearVelocityPostImpulse, collisionAxisForA);
             try

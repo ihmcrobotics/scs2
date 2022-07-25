@@ -41,12 +41,12 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
       setupDoublePropertyListEditor(coefficientsYListEditorController,
                                     "Coefficent Y",
                                     "Coefficients Y",
-                                    yoGraphicToEdit::setNumberOfCoefficientsX,
+                                    yoGraphicToEdit::setNumberOfCoefficientsY,
                                     yoGraphicToEdit::setCoefficientsY);
       setupDoublePropertyListEditor(coefficientsZListEditorController,
                                     "Coefficent Z",
                                     "Coefficients Z",
-                                    yoGraphicToEdit::setNumberOfCoefficientsX,
+                                    yoGraphicToEdit::setNumberOfCoefficientsZ,
                                     yoGraphicToEdit::setCoefficientsZ);
       setupDoublePropertyEditor(startTimeTextField, startTimeValidImageView, YoPolynomialFX3D::setStartTime);
       setupDoublePropertyEditor(endTimeTextField, endTimeValidImageView, YoPolynomialFX3D::setEndTime);
@@ -67,9 +67,9 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
    @Override
    public void resetFields()
    {
-      coefficientsXListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsX(), definitionBeforeEdits.getNumberOfCoefficientsX());
-      coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY(), definitionBeforeEdits.getNumberOfCoefficientsY());
-      coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ(), definitionBeforeEdits.getNumberOfCoefficientsZ());
+      coefficientsXListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsX());
+      coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY());
+      coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ());
       styleEditorController.setInput(definitionBeforeEdits);
       startTimeTextField.setText(definitionBeforeEdits.getStartTime());
       endTimeTextField.setText(definitionBeforeEdits.getEndTime());

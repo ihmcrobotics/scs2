@@ -286,8 +286,15 @@ public final class SegmentedLine3DTriangleMeshFactory
    private void computeRotation(Vector3DReadOnly previousDirection, Vector3DReadOnly sectionDirection, RotationMatrixReadOnly previousRotation,
                                 RotationMatrixBasics rotationToPack)
    {
-      EuclidGeometryTools.orientation3DFromFirstToSecondVector3D(previousDirection, sectionDirection, rotationToPack);
-      rotationToPack.preMultiply(previousRotation);
+      if (previousDirection.containsNaN() || sectionDirection.containsNaN())
+      {
+         rotationToPack.setToZero();
+      }
+      else
+      {
+         EuclidGeometryTools.orientation3DFromFirstToSecondVector3D(previousDirection, sectionDirection, rotationToPack);
+         rotationToPack.preMultiply(previousRotation);
+      }
    }
 
    private final Vector3D tempDirection = new Vector3D();
@@ -299,7 +306,7 @@ public final class SegmentedLine3DTriangleMeshFactory
       if (sectionDirections != null)
       {
          tempDirection.set(sectionDirections[sectionIndex]);
-         double length = tempDirection.length();
+         double length = tempDirection.norm();
          if (length > Epsilons.ONE_HUNDRED_MILLIONTH)
          {
             tempDirection.scale(1.0 / length);
@@ -323,8 +330,8 @@ public final class SegmentedLine3DTriangleMeshFactory
 
          tempPreviousSegment.sub(currentCenter, previousCenter);
          tempNextSegment.sub(nextCenter, currentCenter);
-         double previousLength = tempPreviousSegment.length();
-         double nextLength = tempNextSegment.length();
+         double previousLength = tempPreviousSegment.norm();
+         double nextLength = tempNextSegment.norm();
 
          double alpha = nextLength / (previousLength + nextLength);
          tempDirection.interpolate(tempPreviousSegment, tempNextSegment, alpha);

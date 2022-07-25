@@ -466,7 +466,7 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
             impulseA.getAngularPart().setZ(EuclidCoreTools.interpolate(impulsePreviousA.getAngularPartZ(), impulseA.getAngularPartZ(), alpha));
          impulseChangeA.set(impulseA);
          impulseChangeA.sub(impulsePreviousA);
-         isImpulseZero = impulseA.getLinearPart().length() < 1.0e-6;
+         isImpulseZero = impulseA.getLinearPart().norm() < 1.0e-6;
       }
 
       if (isImpulseZero)
