@@ -58,8 +58,8 @@ public class CollidingSpheresNoGravityExperimentalBulletSimulation
       bulletMultiBodyJointParameter.setJointRestitution(0);
       BulletContactSolverInfoParameters bulletContactSolverInfoParameters = BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters();
       bulletContactSolverInfoParameters.setSplitImpulse(1);
-      bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0f);
-      bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001f);
+      bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0);
+      bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001);
       bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0);
       bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);
 

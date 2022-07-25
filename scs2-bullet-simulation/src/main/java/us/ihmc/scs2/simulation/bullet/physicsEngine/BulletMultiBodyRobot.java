@@ -17,7 +17,7 @@ public class BulletMultiBodyRobot
    private final ArrayList<btMultiBodyConstraint> allBtMultiBodyConstraints = new ArrayList<>();
 
    public BulletMultiBodyRobot(int numberOfLinks,
-                               float rootBodyMass,
+                               double rootBodyMass,
                                btVector3 rootBodyIntertia,
                                boolean fixedBase,
                                boolean canSleep,
@@ -78,10 +78,10 @@ public class BulletMultiBodyRobot
       btMultiBody.setUseGyroTerm(bulletMultiBodyParameters.getUseGyroTerm());
       btMultiBody.useGlobalVelocities(bulletMultiBodyParameters.getUseGlobalVelocities());
       btMultiBody.useRK4Integration(bulletMultiBodyParameters.getUseRK4Integration());
-      btMultiBody.setLinearDamping((float) bulletMultiBodyParameters.getLinearDamping());
-      btMultiBody.setAngularDamping((float) bulletMultiBodyParameters.getAngularDamping());
-      btMultiBody.setMaxAppliedImpulse((float) bulletMultiBodyParameters.getMaxAppliedImpulse());
-      btMultiBody.setMaxCoordinateVelocity((float) bulletMultiBodyParameters.getMaxCoordinateVelocity());
+      btMultiBody.setLinearDamping(bulletMultiBodyParameters.getLinearDamping());
+      btMultiBody.setAngularDamping(bulletMultiBodyParameters.getAngularDamping());
+      btMultiBody.setMaxAppliedImpulse(bulletMultiBodyParameters.getMaxAppliedImpulse());
+      btMultiBody.setMaxCoordinateVelocity(bulletMultiBodyParameters.getMaxCoordinateVelocity());
    }
 
    public void setMultiBodyJointParameters(YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)

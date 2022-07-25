@@ -25,7 +25,7 @@ public class SimpleBoxUsingBtClasses
       createRigidBody(0, groundTransform, groundShape);
 
       btBoxShape colShape = new btBoxShape(new btVector3(1, 1, 1));
-      float mass = 1.0f;
+      double mass = 1.0;
 
       colShape.calculateLocalInertia(mass, new btVector3(0, 0, 0));
 
@@ -36,7 +36,7 @@ public class SimpleBoxUsingBtClasses
 
       for (int i = 0; i < 15; ++i)
       {
-         m_dynamicsWorld.stepSimulation(0.1f, 10, 0.01f);
+         m_dynamicsWorld.stepSimulation(0.1, 10, 0.01);
          btVector3 position = box.getWorldTransform().getOrigin();
          System.out.println(i + " " + position.y());
       }
@@ -55,7 +55,7 @@ public class SimpleBoxUsingBtClasses
       m_dynamicsWorld.setGravity(new btVector3(0, -10, 0));
    }
 
-   private static btRigidBody createRigidBody(float mass, btTransform startTransform, btCollisionShape shape)
+   private static btRigidBody createRigidBody(double mass, btTransform startTransform, btCollisionShape shape)
    {
       boolean isDynamic = (mass != 0.f);
 

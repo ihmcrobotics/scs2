@@ -30,7 +30,7 @@ public interface BulletTerrainFactory
          btCollisionShapes.add(bulletCollisionShape);
       }
 
-      float mass = 0.0f;
+      double mass = 0.0;
       BulletTerrainObject bulletTerrainObject = new BulletTerrainObject(mass, bulletCompoundCollisionShape, btCollisionShapes);
 
       return bulletTerrainObject;

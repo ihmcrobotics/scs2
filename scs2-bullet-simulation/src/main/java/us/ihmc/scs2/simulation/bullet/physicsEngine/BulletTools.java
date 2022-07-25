@@ -39,18 +39,18 @@ public class BulletTools
 
    public static void toBullet(RigidBodyTransform rigidBodyTransform, btTransform bulletAffineToPack)
    {
-      bulletAffineToPack.getOrigin().setValue((float) rigidBodyTransform.getTranslationX(),
-                                              (float) rigidBodyTransform.getTranslationY(),
-                                              (float) rigidBodyTransform.getTranslationZ());
-      bulletAffineToPack.getBasis().setValue((float) rigidBodyTransform.getM00(),
-                                             (float) rigidBodyTransform.getM01(),
-                                             (float) rigidBodyTransform.getM02(),
-                                             (float) rigidBodyTransform.getM10(),
-                                             (float) rigidBodyTransform.getM11(),
-                                             (float) rigidBodyTransform.getM12(),
-                                             (float) rigidBodyTransform.getM20(),
-                                             (float) rigidBodyTransform.getM21(),
-                                             (float) rigidBodyTransform.getM22());
+      bulletAffineToPack.getOrigin().setValue(rigidBodyTransform.getTranslationX(),
+                                              rigidBodyTransform.getTranslationY(),
+                                              rigidBodyTransform.getTranslationZ());
+      bulletAffineToPack.getBasis().setValue(rigidBodyTransform.getM00(),
+                                             rigidBodyTransform.getM01(),
+                                             rigidBodyTransform.getM02(),
+                                             rigidBodyTransform.getM10(),
+                                             rigidBodyTransform.getM11(),
+                                             rigidBodyTransform.getM12(),
+                                             rigidBodyTransform.getM20(),
+                                             rigidBodyTransform.getM21(),
+                                             rigidBodyTransform.getM22());
    }
 
    public static void toEuclid(btTransform bulletAffine, RigidBodyTransform rigidBodyTransform)
@@ -144,7 +144,7 @@ public class BulletTools
 
             btCompoundFromGimpactShape compoundFromGimpactShape = new btCompoundFromGimpactShape();
 
-            btGImpactMeshShape.setMargin(0.01f);
+            btGImpactMeshShape.setMargin(0.01);
             compoundFromGimpactShape.addChildShape(identity, btGImpactMeshShape);
 
             btCollisionShape = compoundFromGimpactShape;
@@ -155,7 +155,7 @@ public class BulletTools
 
             btCompoundShape btCompoundShape = new btCompoundShape();
 
-            btConvexTriangleMeshShape.setMargin(0.01f);
+            btConvexTriangleMeshShape.setMargin(0.01);
             btCompoundShape.addChildShape(identity, btConvexTriangleMeshShape);
 
             btCollisionShape = btCompoundShape;
@@ -164,29 +164,29 @@ public class BulletTools
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
       {
          Box3DDefinition boxGeometryDefinition = (Box3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btBoxShape boxShape = new btBoxShape(new btVector3((float) boxGeometryDefinition.getSizeX() / 2.0f,
-                                                            (float) boxGeometryDefinition.getSizeY() / 2.0f,
-                                                            (float) boxGeometryDefinition.getSizeZ() / 2.0f));
+         btBoxShape boxShape = new btBoxShape(new btVector3(boxGeometryDefinition.getSizeX() / 2.0,
+                                                            boxGeometryDefinition.getSizeY() / 2.0,
+                                                            boxGeometryDefinition.getSizeZ() / 2.0));
          btCollisionShape = boxShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Sphere3DDefinition)
       {
          Sphere3DDefinition sphereGeometryDefinition = (Sphere3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btSphereShape sphereShape = new btSphereShape((float) sphereGeometryDefinition.getRadius());
+         btSphereShape sphereShape = new btSphereShape(sphereGeometryDefinition.getRadius());
          btCollisionShape = sphereShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cylinder3DDefinition)
       {
          Cylinder3DDefinition cylinderGeometryDefinition = (Cylinder3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new btVector3((float) cylinderGeometryDefinition.getRadius(),
-                                                                             (float) cylinderGeometryDefinition.getRadius(),
-                                                                             (float) cylinderGeometryDefinition.getLength() / 2.0f));
+         btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new btVector3(cylinderGeometryDefinition.getRadius(),
+                                                                             cylinderGeometryDefinition.getRadius(),
+                                                                             cylinderGeometryDefinition.getLength() / 2.0));
          btCollisionShape = cylinderShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cone3DDefinition)
       {
          Cone3DDefinition coneGeometryDefinition = (Cone3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btConeShapeZ coneShape = new btConeShapeZ((float) coneGeometryDefinition.getRadius(), (float) coneGeometryDefinition.getHeight());
+         btConeShapeZ coneShape = new btConeShapeZ(coneGeometryDefinition.getRadius(), coneGeometryDefinition.getHeight());
          btCollisionShape = coneShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Capsule3DDefinition)
@@ -196,7 +196,7 @@ public class BulletTools
                || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
                || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
-         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
+         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ(capsuleGeometryDefinition.getRadiusX(), capsuleGeometryDefinition.getLength());
          btCollisionShape = capsuleShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof ConvexPolytope3DDefinition)

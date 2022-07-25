@@ -31,7 +31,7 @@ public class BulletTerrainObject
    private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
    private final btVector3 localInertia = new btVector3();
 
-   public BulletTerrainObject(float mass, btCompoundShape bulletCompoundCollisionShape, ArrayList<btCollisionShape> btCollisionShapes)
+   public BulletTerrainObject(double mass, btCompoundShape bulletCompoundCollisionShape, ArrayList<btCollisionShape> btCollisionShapes)
    {
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 

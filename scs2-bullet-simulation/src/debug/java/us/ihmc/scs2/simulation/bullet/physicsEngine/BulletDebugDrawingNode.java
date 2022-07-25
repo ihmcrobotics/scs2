@@ -58,7 +58,7 @@ public class BulletDebugDrawingNode extends Group
          }
 
          @Override
-         public void drawContactPoint(btVector3 pointOnB, btVector3 normalOnB, float distance, int lifeTime, btVector3 color)
+         public void drawContactPoint(btVector3 pointOnB, btVector3 normalOnB, double distance, int lifeTime, btVector3 color)
          {
             Color colorJavaFX = new Color(color.getX(), color.getY(), color.getZ(), 1.0);
             BulletTools.toEuclid(pointOnB, pointOnEuclid);
@@ -68,7 +68,7 @@ public class BulletDebugDrawingNode extends Group
          }
 
          @Override
-         public void drawTriangle(btVector3 v0, btVector3 v1, btVector3 v2, btVector3 color, float alpha)
+         public void drawTriangle(btVector3 v0, btVector3 v1, btVector3 v2, btVector3 color, double alpha)
          {
 
          }

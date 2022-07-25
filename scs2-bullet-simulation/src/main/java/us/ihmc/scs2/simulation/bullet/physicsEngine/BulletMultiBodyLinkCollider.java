@@ -55,32 +55,32 @@ public class BulletMultiBodyLinkCollider
 
    public void setFriction(double friction)
    {
-      btMultiBodyLinkCollider.setFriction((float) friction);
+      btMultiBodyLinkCollider.setFriction(friction);
    }
 
    public void setRestitution(double restitution)
    {
-      btMultiBodyLinkCollider.setRestitution((float) restitution);
+      btMultiBodyLinkCollider.setRestitution(restitution);
    }
 
    public void setHitFraction(double hitFraction)
    {
-      btMultiBodyLinkCollider.setHitFraction((float) hitFraction);
+      btMultiBodyLinkCollider.setHitFraction(hitFraction);
    }
 
    public void setRollingFriction(double rollingFriction)
    {
-      btMultiBodyLinkCollider.setRollingFriction((float) rollingFriction);
+      btMultiBodyLinkCollider.setRollingFriction(rollingFriction);
    }
 
    public void setSpinningFriction(double spinningFriction)
    {
-      btMultiBodyLinkCollider.setSpinningFriction((float) spinningFriction);
+      btMultiBodyLinkCollider.setSpinningFriction(spinningFriction);
    }
 
    public void setContactProcessingThreshold(double contactProcessingThreshold)
    {
-      btMultiBodyLinkCollider.setContactProcessingThreshold((float) contactProcessingThreshold);
+      btMultiBodyLinkCollider.setContactProcessingThreshold(contactProcessingThreshold);
    }
 
    public btMultiBodyLinkCollider getBtMultiBodyLinkCollider()
@@ -119,25 +119,25 @@ public class BulletMultiBodyLinkCollider
 
    public void setJointPos(double jointPosition)
    {
-      btMultiBody.setJointPos(linkColliderIndex, (float) jointPosition);
+      btMultiBody.setJointPos(linkColliderIndex, jointPosition);
    }
 
    public void setJointVel(double jointVelocity)
    {
-      btMultiBody.setJointVel(linkColliderIndex, (float) jointVelocity);
+      btMultiBody.setJointVel(linkColliderIndex, jointVelocity);
    }
 
    public void addJointTorque(double jointTau)
    {
-      btMultiBody.addJointTorque(linkColliderIndex, (float) jointTau);
+      btMultiBody.addJointTorque(linkColliderIndex, jointTau);
    }
 
-   public float getJointPos()
+   public double getJointPos()
    {
       return btMultiBody.getJointPos(linkColliderIndex);
    }
 
-   public float getJointVel()
+   public double getJointVel()
    {
       return btMultiBody.getJointVel(linkColliderIndex);
    }
@@ -145,12 +145,12 @@ public class BulletMultiBodyLinkCollider
    public void getAppliedConstraintForce(Vector3D force)
    {
 
-      force.set((double) linkForce.getX(), (double) linkForce.getY(), (double) linkForce.getZ());
+      force.set(linkForce.getX(), linkForce.getY(), linkForce.getZ());
    }
 
    public void getAppliedConstraintTorque(Vector3D torque)
    {
-      torque.set((double) linkTorque.getX(), (double) linkTorque.getY(), (double) linkTorque.getZ());
+      torque.set(linkTorque.getX(), linkTorque.getY(), linkTorque.getZ());
    }
 
    public void setBaseVel(Vector3DReadOnly linearVelocityEuclid)
