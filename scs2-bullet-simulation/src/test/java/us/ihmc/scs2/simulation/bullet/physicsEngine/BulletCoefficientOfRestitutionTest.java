@@ -115,8 +115,8 @@ public class BulletCoefficientOfRestitutionTest
          bulletMultiBodyParameters.setAngularDamping(0.0);
          bulletMultiBodyJointParameters.setJointRestitution(coefficientOfRestitution);
          bulletContactSolverInfoParameters.setSplitImpulse(1);
-         bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0f);
-         bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001f);
+         bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0);
+         bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001);
          bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0);
          bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);
 
@@ -134,7 +134,7 @@ public class BulletCoefficientOfRestitutionTest
       simulationSession.addRobot(sphereRobot1);
       simulationSession.addRobot(sphereRobot2);
       simulationSession.setSessionDTSeconds(DT);
-      simulationSession.setGravity(0.0f, 0.0f, 0.0f);
+      simulationSession.setGravity(0.0, 0.0, 0.0);
 
       SimFloatingRootJoint floatingRootJoint1 = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(0).getAllJoints().get(0);
       SimFloatingRootJoint floatingRootJoint2 = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(1).getAllJoints().get(0);

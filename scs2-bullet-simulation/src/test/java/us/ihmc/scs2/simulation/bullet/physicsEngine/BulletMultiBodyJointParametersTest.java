@@ -23,15 +23,15 @@ public class BulletMultiBodyJointParametersTest
 
       //create a simple btMultiBody with one linkCollider
       btVector3 intertia = new btVector3();
-      btVector3 parentComToCurrentCom = new btVector3(0f, 0.05f * 2.f, 0f);
-      btVector3 currentPivotToCurrentCom = new btVector3(0f, -0.05f, 0f);
+      btVector3 parentComToCurrentCom = new btVector3(0, 0.05 * 2.0, 0);
+      btVector3 currentPivotToCurrentCom = new btVector3(0, -0.05, 0);
       btVector3 hingeJointAxis = new btVector3(1, 0, 0);
       btVector3 parentComToCurrentPivot = new btVector3(parentComToCurrentCom.getX() - currentPivotToCurrentCom.getX(),
                                                         parentComToCurrentCom.getY() - currentPivotToCurrentCom.getY(),
                                                         parentComToCurrentCom.getZ() - currentPivotToCurrentCom.getZ());
-      btQuaternion rotParentToThis = new btQuaternion(0.f, 0.f, 0.f, 1.f);
+      btQuaternion rotParentToThis = new btQuaternion(0.0, 0.0, 0.0, 1.0);
 
-      btMultiBody btMultiBody = new btMultiBody(1, 1.0f, intertia, false, true);
+      btMultiBody btMultiBody = new btMultiBody(1, 1.0, intertia, false, true);
       btMultiBody.setupRevolute(0, 0, intertia, -1, rotParentToThis, hingeJointAxis, parentComToCurrentPivot, currentPivotToCurrentCom);
       btMultiBodyLinkCollider linkCollider = new btMultiBodyLinkCollider(btMultiBody, 0);
 
@@ -126,11 +126,11 @@ public class BulletMultiBodyJointParametersTest
                                                    BulletMultiBodyJointParameters jointParameters)
    {
       Assertions.assertEquals(jointDisableParentCollision, jointParameters.getJointDisableParentCollision());
-      Assertions.assertEquals((float) jointFriction, (float) jointParameters.getJointFriction());
-      Assertions.assertEquals((float) jointRestitution, (float) jointParameters.getJointRestitution());
-      Assertions.assertEquals((float) jointHitFration, (float) jointParameters.getJointHitFraction());
-      Assertions.assertEquals((float) jointRollingFriction, (float) jointParameters.getJointRollingFriction());
-      Assertions.assertEquals((float) jointSpinningFriction, (float) jointParameters.getJointSpinningFriction());
-      Assertions.assertEquals((float) jointContactProcessingThreshold, (float) jointParameters.getJointContactProcessingThreshold());
+      Assertions.assertEquals(jointFriction, jointParameters.getJointFriction());
+      Assertions.assertEquals(jointRestitution, jointParameters.getJointRestitution());
+      Assertions.assertEquals(jointHitFration, jointParameters.getJointHitFraction());
+      Assertions.assertEquals(jointRollingFriction, jointParameters.getJointRollingFriction());
+      Assertions.assertEquals(jointSpinningFriction, jointParameters.getJointSpinningFriction());
+      Assertions.assertEquals(jointContactProcessingThreshold, jointParameters.getJointContactProcessingThreshold());
    }
 }

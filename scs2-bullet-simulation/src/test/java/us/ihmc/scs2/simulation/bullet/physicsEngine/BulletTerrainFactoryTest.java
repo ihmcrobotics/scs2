@@ -65,9 +65,9 @@ public class BulletTerrainFactoryTest
          {
             btBoxShape.getVertex(j, boxVertex);
 
-            assertEquals(Math.abs(boxVertex.getX()), (float) terrainGeometry.getSizeX() / 2.0f, EPSILON);
-            assertEquals(Math.abs(boxVertex.getY()), (float) terrainGeometry.getSizeY() / 2.0f, EPSILON);
-            assertEquals(Math.abs(boxVertex.getZ()), (float) terrainGeometry.getSizeZ() / 2.0f, EPSILON);
+            assertEquals(Math.abs(boxVertex.getX()), terrainGeometry.getSizeX() / 2.0, EPSILON);
+            assertEquals(Math.abs(boxVertex.getY()), terrainGeometry.getSizeY() / 2.0, EPSILON);
+            assertEquals(Math.abs(boxVertex.getZ()), terrainGeometry.getSizeZ() / 2.0, EPSILON);
          }
       }
 
@@ -89,7 +89,7 @@ public class BulletTerrainFactoryTest
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
          btSphereShape sphereShape = (btSphereShape) compoundShape.getChildShape(0);
-         assertEquals(sphereShape.getRadius(), (float) terrainGeometry.getRadius());
+         assertEquals(sphereShape.getRadius(), terrainGeometry.getRadius());
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -111,8 +111,8 @@ public class BulletTerrainFactoryTest
 
          btCylinderShapeZ cylinderShape = (btCylinderShapeZ) compoundShape.getChildShape(0);
 
-         assertEquals(cylinderShape.getRadius(), (float) terrainGeometry.getRadius(), EPSILON);
-         assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), (float) terrainGeometry.getLength() / 2.0f, EPSILON);
+         assertEquals(cylinderShape.getRadius(), terrainGeometry.getRadius(), EPSILON);
+         assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), terrainGeometry.getLength() / 2.0, EPSILON);
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -133,8 +133,8 @@ public class BulletTerrainFactoryTest
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
          btConeShapeZ coneShape = (btConeShapeZ) compoundShape.getChildShape(0);
-         assertEquals(coneShape.getRadius(), (float) terrainGeometry.getRadius(), EPSILON);
-         assertEquals(coneShape.getHeight(), (float) terrainGeometry.getHeight(), EPSILON);
+         assertEquals(coneShape.getRadius(), terrainGeometry.getRadius(), EPSILON);
+         assertEquals(coneShape.getHeight(), terrainGeometry.getHeight(), EPSILON);
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -155,26 +155,26 @@ public class BulletTerrainFactoryTest
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
          btCapsuleShapeZ capsuleShape = (btCapsuleShapeZ) compoundShape.getChildShape(0);
-         assertEquals(capsuleShape.getRadius(), (float) terrainGeometry.getRadiusX(), EPSILON);
-         assertEquals(capsuleShape.getRadius(), (float) terrainGeometry.getRadiusY(), EPSILON);
-         assertEquals(capsuleShape.getRadius(), (float) terrainGeometry.getRadiusZ(), EPSILON);
-         assertEquals(capsuleShape.getHalfHeight(), (float) terrainGeometry.getLength() / 2.0f, EPSILON);
+         assertEquals(capsuleShape.getRadius(), terrainGeometry.getRadiusX(), EPSILON);
+         assertEquals(capsuleShape.getRadius(), terrainGeometry.getRadiusY(), EPSILON);
+         assertEquals(capsuleShape.getRadius(), terrainGeometry.getRadiusZ(), EPSILON);
+         assertEquals(capsuleShape.getHalfHeight(), terrainGeometry.getLength() / 2.0, EPSILON);
       }
    }
 
    private static void assertChildTransformEqualToTerrainPose(RigidBodyTransform terrainPose, btTransform childTransform)
    {
-      assertEquals(childTransform.getOrigin().getX(), (float) terrainPose.getM00(), EPSILON);
-      assertEquals(childTransform.getOrigin().getY(), (float) terrainPose.getM01(), EPSILON);
-      assertEquals(childTransform.getOrigin().getZ(), (float) terrainPose.getM02(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(0).getX(), (float) terrainPose.getM10(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(0).getY(), (float) terrainPose.getM11(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(0).getZ(), (float) terrainPose.getM12(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(1).getX(), (float) terrainPose.getM20(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(1).getY(), (float) terrainPose.getM21(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(1).getZ(), (float) terrainPose.getM22(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(2).getX(), (float) terrainPose.getM03(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(2).getY(), (float) terrainPose.getM13(), EPSILON);
-      assertEquals(childTransform.getBasis().getRow(2).getZ(), (float) terrainPose.getM23(), EPSILON);
+      assertEquals(childTransform.getOrigin().getX(), terrainPose.getM00(), EPSILON);
+      assertEquals(childTransform.getOrigin().getY(), terrainPose.getM01(), EPSILON);
+      assertEquals(childTransform.getOrigin().getZ(), terrainPose.getM02(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(0).getX(), terrainPose.getM10(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(0).getY(), terrainPose.getM11(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(0).getZ(), terrainPose.getM12(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(1).getX(), terrainPose.getM20(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(1).getY(), terrainPose.getM21(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(1).getZ(), terrainPose.getM22(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(2).getX(), terrainPose.getM03(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(2).getY(), terrainPose.getM13(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(2).getZ(), terrainPose.getM23(), EPSILON);
    }
 }

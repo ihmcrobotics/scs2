@@ -21,8 +21,8 @@ public class BulletFlyingBallNoSCS2Test
    public void testHeightAfterSeconds()
    {
       double dt = 0.1;
-      float ballMass = 1;
-      float ballRadius = 0.5f;
+      double ballMass = 1;
+      double ballRadius = 0.5;
       double gravity = -9.81;
       btVector3 baseInertiaDiag = new btVector3();
       boolean isFixed = false;
@@ -68,7 +68,7 @@ public class BulletFlyingBallNoSCS2Test
 
       for (int i = 1; i < 100; i++)
       {
-         bulletMultiBodyDynamicsWorld.stepSimulation((float) dt, 1, (float) dt);
+         bulletMultiBodyDynamicsWorld.stepSimulation(dt, 1, dt);
 
          Vector3D expected = heightAfterSeconds(initialPosition, initialVelocity, seconds, gravity);
           
