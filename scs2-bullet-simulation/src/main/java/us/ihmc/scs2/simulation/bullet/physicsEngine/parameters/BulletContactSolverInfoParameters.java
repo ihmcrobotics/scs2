@@ -49,7 +49,7 @@ public class BulletContactSolverInfoParameters
       bulletContactSolverInfoParameters.setTau(0.6);
       bulletContactSolverInfoParameters.setDamping(1.0);
       bulletContactSolverInfoParameters.setFriction(0.3);
-      bulletContactSolverInfoParameters.setTimeStep(1f / 60f);
+      bulletContactSolverInfoParameters.setTimeStep(1 / 60);
       bulletContactSolverInfoParameters.setRestitution(0.0);
       bulletContactSolverInfoParameters.setMaxErrorReduction(20.0);
       bulletContactSolverInfoParameters.setNumberOfIterations(10);
@@ -68,7 +68,7 @@ public class BulletContactSolverInfoParameters
       bulletContactSolverInfoParameters.setRestingContactRestitutionThreshold(2);
       bulletContactSolverInfoParameters.setMinimumSolverBatchSize(128);
       bulletContactSolverInfoParameters.setMaxGyroscopicForce(100.0);
-      bulletContactSolverInfoParameters.setSingleAxisRollingFrictionThreshold(1e30f);
+      bulletContactSolverInfoParameters.setSingleAxisRollingFrictionThreshold(1e30);
       bulletContactSolverInfoParameters.setLeastSquaresResidualThreshold(0);
       bulletContactSolverInfoParameters.setRestitutionVelocityThreshold(0.2);
 

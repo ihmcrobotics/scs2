@@ -18,8 +18,8 @@ public class SimpleSphereUsingBulletNoSCS2
    public static void main(String[] args)
    {
       double dt = 0.1;
-      float ballMass = 1;
-      float ballRadius = 0.5f;
+      double ballMass = 1;
+      double ballRadius = 0.5;
       double gravity = -9.81;
       btVector3 baseInertiaDiag = new btVector3();
       boolean isFixed = false;
@@ -56,7 +56,7 @@ public class SimpleSphereUsingBulletNoSCS2
 
       for (int i = 1; i < 100; i++)
       {
-         bulletMultiBodyDynamicsWorld.stepSimulation((float) dt, 1, (float) dt);
+         bulletMultiBodyDynamicsWorld.stepSimulation(dt, 1, dt);
 
          btVector3 position = btMultiBody.getBasePos();
          System.out.println(i + " " + position.z());

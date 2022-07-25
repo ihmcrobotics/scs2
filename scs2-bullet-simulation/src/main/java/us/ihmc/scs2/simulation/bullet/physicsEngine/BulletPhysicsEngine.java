@@ -144,11 +144,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
       bulletMultiBodyDynamicsWorld.setGravity(gravity);
 
       if (hasGlobalBulletSimulationParameters.getValue())
-         bulletMultiBodyDynamicsWorld.stepSimulation((float) globalBulletSimulationParameters.getTimeStamp(),
+         bulletMultiBodyDynamicsWorld.stepSimulation(globalBulletSimulationParameters.getTimeStamp(),
                                                      globalBulletSimulationParameters.getMaxSubSteps(),
-                                                     (float) globalBulletSimulationParameters.getFixedTimeStep());
+                                                     globalBulletSimulationParameters.getFixedTimeStep());
       else
-         bulletMultiBodyDynamicsWorld.stepSimulation((float) dt, 1, (float) dt);
+         bulletMultiBodyDynamicsWorld.stepSimulation(dt, 1, dt);
 
       runBulletStepSimulateTimer.stop();
 

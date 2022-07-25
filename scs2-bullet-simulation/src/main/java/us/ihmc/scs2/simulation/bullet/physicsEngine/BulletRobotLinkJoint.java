@@ -51,9 +51,9 @@ public class BulletRobotLinkJoint extends BulletRobotLinkBasics
 
    public void pullStateFromBullet(double dt)
    {
-      float jointPosition = getBulletMultiBodyLinkCollider().getJointPos();
+      double jointPosition = getBulletMultiBodyLinkCollider().getJointPos();
       simOneDofJoint.setQ(jointPosition);
-      float jointPVel = getBulletMultiBodyLinkCollider().getJointVel();
+      double jointPVel = getBulletMultiBodyLinkCollider().getJointVel();
       simOneDofJoint.setQdd((jointPVel - simOneDofJoint.getQd()) / dt);
       simOneDofJoint.setQd(jointPVel);
 
