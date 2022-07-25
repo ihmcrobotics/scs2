@@ -158,33 +158,33 @@ public class BulletMultiBodyRobotFactoryTest
       //btCompoundShape baseColliderCompoundShape = (btCompoundShape)baseCollider.getCollisionShape();
       //assertEquals(baseColliderCompoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       //btCylinderShape cylinderShape = (btCylinderShape)baseColliderCompoundShape.getChildShape(0);
-      //assertEquals(cylinderShape.getRadius(), 0.11f);
-      //assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.06f / 2.0f);
+      //assertEquals(cylinderShape.getRadius(), 0.11);
+      //assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.06 / 2.0);
       //assertEquals(baseColliderCompoundShape.getChildShape(1).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       //cylinderShape = (btCylinderShape)baseColliderCompoundShape.getChildShape(1);
-      //assertEquals(cylinderShape.getRadius(), 0.12f);
-      //assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.04f / 2.0f);
+      //assertEquals(cylinderShape.getRadius(), 0.12);
+      //assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.04 / 2.0);
       //assertEquals(baseColliderCompoundShape.getChildShape(2).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       //cylinderShape = (btCylinderShape)baseColliderCompoundShape.getChildShape(2);
-      //assertEquals(cylinderShape.getRadius(), 0.16f);
-      //assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.05f / 2.0f);
+      //assertEquals(cylinderShape.getRadius(), 0.16);
+      //assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.05 / 2.0);
       //btCompoundShape linkColliderCompoundShape = (btCompoundShape)linkCollider.getCollisionShape();
       //assertEquals(linkColliderCompoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
       //btBoxShape boxShape = (btBoxShape)linkColliderCompoundShape.getChildShape(0);
       //boxShape.getVertex(0, boxVertex);
-      //assertEquals(Math.abs(boxVertex.getX()), (float) 0.03f / 2.0f, EPSILON);
-      //assertEquals(Math.abs(boxVertex.getY()), (float) 0.04f / 2.0f, EPSILON);
-      //assertEquals(Math.abs(boxVertex.getZ()), (float) 0.02f / 2.0f, EPSILON);
+      //assertEquals(Math.abs(boxVertex.getX()), 0.03 / 2.0, EPSILON);
+      //assertEquals(Math.abs(boxVertex.getY()), 0.04 / 2.0, EPSILON);
+      //assertEquals(Math.abs(boxVertex.getZ()), 0.02 / 2.0, EPSILON);
 
-      assertEquals(linkCollider.getFriction(), (float) globalMultiBodyJointParameters.getJointFriction());
-      assertEquals(linkCollider.getRestitution(), (float) globalMultiBodyJointParameters.getJointRestitution());
-      assertEquals(linkCollider.getHitFraction(), (float) globalMultiBodyJointParameters.getJointHitFraction());
-      assertEquals(linkCollider.getRollingFriction(), (float) globalMultiBodyJointParameters.getJointRollingFriction());
-      assertEquals(linkCollider.getSpinningFriction(), (float) globalMultiBodyJointParameters.getJointSpinningFriction());
-      assertEquals(linkCollider.getContactProcessingThreshold(), (float) globalMultiBodyJointParameters.getJointContactProcessingThreshold());
+      assertEquals(linkCollider.getFriction(), globalMultiBodyJointParameters.getJointFriction());
+      assertEquals(linkCollider.getRestitution(), globalMultiBodyJointParameters.getJointRestitution());
+      assertEquals(linkCollider.getHitFraction(), globalMultiBodyJointParameters.getJointHitFraction());
+      assertEquals(linkCollider.getRollingFriction(), globalMultiBodyJointParameters.getJointRollingFriction());
+      assertEquals(linkCollider.getSpinningFriction(), globalMultiBodyJointParameters.getJointSpinningFriction());
+      assertEquals(linkCollider.getContactProcessingThreshold(), globalMultiBodyJointParameters.getJointContactProcessingThreshold());
 
-      assertEquals(btMultibody.getBaseMass(), 9.609f);
-      assertEquals(btMultibody.getLinkMass(0), 2.27f);
+      assertEquals(btMultibody.getBaseMass(), 9.609);
+      assertEquals(btMultibody.getLinkMass(0), 2.27);
 
       //TODO: need to add a test for MomentOfInertia after it is corrected
    }
@@ -311,7 +311,7 @@ public class BulletMultiBodyRobotFactoryTest
          numberOfLinks += countJointsAndCreateIndexMap(joint);
       }
 
-      assertEquals((float) rigidBodyDefinition.getMass(), btMultiBody.getBaseMass(), EPSILON);
+      assertEquals(rigidBodyDefinition.getMass(), btMultiBody.getBaseMass(), EPSILON);
       assertEquals((hasBaseCollider ? numberOfLinks - 1 : numberOfLinks), btMultiBody.getNumDofs());
       assertEquals((hasBaseCollider ? numberOfLinks - 1 : numberOfLinks), btMultiBody.getNumLinks());
       assertEquals(numberOfLinks, bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().size());
@@ -320,10 +320,10 @@ public class BulletMultiBodyRobotFactoryTest
       assertEquals(btMultiBody.hasSelfCollision(), globalMultiBodyParameters.getHasSelfCollision());
       assertEquals(btMultiBody.getUseGyroTerm(), globalMultiBodyParameters.getUseGyroTerm());
       assertEquals(btMultiBody.isUsingRK4Integration(), globalMultiBodyParameters.getUseRK4Integration());
-      assertEquals(btMultiBody.getLinearDamping(), (float) globalMultiBodyParameters.getLinearDamping(), EPSILON);
-      assertEquals(btMultiBody.getAngularDamping(), (float) globalMultiBodyParameters.getAngularDamping(), EPSILON);
-      assertEquals(btMultiBody.getMaxAppliedImpulse(), (float) globalMultiBodyParameters.getMaxAppliedImpulse(), EPSILON);
-      assertEquals(btMultiBody.getMaxCoordinateVelocity(), (float) globalMultiBodyParameters.getMaxCoordinateVelocity(), EPSILON);
+      assertEquals(btMultiBody.getLinearDamping(), globalMultiBodyParameters.getLinearDamping(), EPSILON);
+      assertEquals(btMultiBody.getAngularDamping(), globalMultiBodyParameters.getAngularDamping(), EPSILON);
+      assertEquals(btMultiBody.getMaxAppliedImpulse(), globalMultiBodyParameters.getMaxAppliedImpulse(), EPSILON);
+      assertEquals(btMultiBody.getMaxCoordinateVelocity(), globalMultiBodyParameters.getMaxCoordinateVelocity(), EPSILON);
 
       for (JointBasics joint : robot.getRootBody().getChildrenJoints())
       {
@@ -358,12 +358,12 @@ public class BulletMultiBodyRobotFactoryTest
       int index = bulletMultiBodyRobot.getJointNameToBulletJointIndexMap().get(jointBasics.getName());
       btMultiBodyLinkCollider linkCollider = btMultiBody.getLinkCollider(index);
 
-      assertEquals(linkCollider.getFriction(), (float) globalMultiBodyJointParameters.getJointFriction());
-      assertEquals(linkCollider.getRestitution(), (float) globalMultiBodyJointParameters.getJointRestitution());
-      assertEquals(linkCollider.getHitFraction(), (float) globalMultiBodyJointParameters.getJointHitFraction());
-      assertEquals(linkCollider.getRollingFriction(), (float) globalMultiBodyJointParameters.getJointRollingFriction());
-      assertEquals(linkCollider.getSpinningFriction(), (float) globalMultiBodyJointParameters.getJointSpinningFriction());
-      assertEquals(linkCollider.getContactProcessingThreshold(), (float) globalMultiBodyJointParameters.getJointContactProcessingThreshold());
+      assertEquals(linkCollider.getFriction(), globalMultiBodyJointParameters.getJointFriction());
+      assertEquals(linkCollider.getRestitution(), globalMultiBodyJointParameters.getJointRestitution());
+      assertEquals(linkCollider.getHitFraction(), globalMultiBodyJointParameters.getJointHitFraction());
+      assertEquals(linkCollider.getRollingFriction(), globalMultiBodyJointParameters.getJointRollingFriction());
+      assertEquals(linkCollider.getSpinningFriction(), globalMultiBodyJointParameters.getJointSpinningFriction());
+      assertEquals(linkCollider.getContactProcessingThreshold(), globalMultiBodyJointParameters.getJointContactProcessingThreshold());
 
       assertEquals(btMultiBody.getLink(index).m_flags(), (globalMultiBodyJointParameters.getJointDisableParentCollision() ? 1 : 0));
       JointDefinition jointDefinition = robot.getRobotDefinition().getJointDefinition(jointBasics.getName());
@@ -378,7 +378,7 @@ public class BulletMultiBodyRobotFactoryTest
       //assertCollisionShapesSame(collisionShapes, compoundShape, linkCenterOfMassFrame);
 
       //TODO: need to add a test for joint MomentOfInertia after it is corrected
-      assertEquals((float) jointRigidBodyDefinition.getMass(), btMultiBody.getLinkMass(index));
+      assertEquals(jointRigidBodyDefinition.getMass(), btMultiBody.getLinkMass(index));
 
       OneDoFJointDefinition oneDoFJointDefinition = (OneDoFJointDefinition) jointDefinition;
       Vector3D jointAxis = oneDoFJointDefinition.getAxis();
@@ -443,10 +443,10 @@ public class BulletMultiBodyRobotFactoryTest
 
    private static void assertQuaternionEqualsBtQuaternion(us.ihmc.euclid.tuple4D.Quaternion quaterion, btQuaternion btQuaternion)
    {
-      assertEquals((float) quaterion.getX(), btQuaternion.getX(), EPSILON);
-      assertEquals((float) quaterion.getY(), btQuaternion.getY(), EPSILON);
-      assertEquals((float) quaterion.getZ(), btQuaternion.getZ(), EPSILON);
-      assertEquals((float) quaterion.getS(), btQuaternion.getW(), EPSILON);
+      assertEquals(quaterion.getX(), btQuaternion.getX(), EPSILON);
+      assertEquals(quaterion.getY(), btQuaternion.getY(), EPSILON);
+      assertEquals(quaterion.getZ(), btQuaternion.getZ(), EPSILON);
+      assertEquals(quaterion.getS(), btQuaternion.getW(), EPSILON);
    }
 
    private static void assertVector3DEqualsVector3(Vector3D vector3D, btVector3 vector3)
@@ -497,7 +497,7 @@ public class BulletMultiBodyRobotFactoryTest
             Sphere3DDefinition sphereShape = (Sphere3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btSphereShape btSphereShape = (btSphereShape) compoundShape.getChildShape(j);
 
-            assertEquals((float) sphereShape.getRadius(), btSphereShape.getRadius());
+            assertEquals(sphereShape.getRadius(), btSphereShape.getRadius());
 
          }
          else if (shapeType == BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE)
@@ -505,8 +505,8 @@ public class BulletMultiBodyRobotFactoryTest
             Cylinder3DDefinition cylinderShape = (Cylinder3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btCylinderShape btCylinderShape = (btCylinderShape) compoundShape.getChildShape(j);
 
-            assertEquals((float) cylinderShape.getRadius(), btCylinderShape.getRadius(), EPSILON);
-            assertEquals(btCylinderShape.getHalfExtentsWithMargin().getZ(), (float) cylinderShape.getLength() / 2.0f, EPSILON);
+            assertEquals(cylinderShape.getRadius(), btCylinderShape.getRadius(), EPSILON);
+            assertEquals(btCylinderShape.getHalfExtentsWithMargin().getZ(), cylinderShape.getLength() / 2.0, EPSILON);
 
          }
          else if (shapeType == BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE)
@@ -518,9 +518,9 @@ public class BulletMultiBodyRobotFactoryTest
             {
                btBoxShape.getVertex(j, boxVertex);
 
-               assertEquals(Math.abs(boxVertex.getX()), (float) boxShape.getSizeX() / 2.0f, EPSILON);
-               assertEquals(Math.abs(boxVertex.getY()), (float) boxShape.getSizeY() / 2.0f, EPSILON);
-               assertEquals(Math.abs(boxVertex.getZ()), (float) boxShape.getSizeZ() / 2.0f, EPSILON);
+               assertEquals(Math.abs(boxVertex.getX()), boxShape.getSizeX() / 2.0, EPSILON);
+               assertEquals(Math.abs(boxVertex.getY()), boxShape.getSizeY() / 2.0, EPSILON);
+               assertEquals(Math.abs(boxVertex.getZ()), boxShape.getSizeZ() / 2.0, EPSILON);
             }
          }
          else if (shapeType == BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE)
@@ -528,18 +528,18 @@ public class BulletMultiBodyRobotFactoryTest
             Cone3DDefinition coneShape = (Cone3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btConeShapeZ btConeShape = (btConeShapeZ) compoundShape.getChildShape(j);
 
-            assertEquals(btConeShape.getRadius(), (float) coneShape.getRadius(), EPSILON);
-            assertEquals(btConeShape.getHeight(), (float) coneShape.getHeight(), EPSILON);
+            assertEquals(btConeShape.getRadius(), coneShape.getRadius(), EPSILON);
+            assertEquals(btConeShape.getHeight(), coneShape.getHeight(), EPSILON);
          }
          else if (shapeType == BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE)
          {
             Capsule3DDefinition capsuleShape = (Capsule3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btCapsuleShapeZ btCapsuleShapeZ = (btCapsuleShapeZ) compoundShape.getChildShape(j);
 
-            assertEquals(btCapsuleShapeZ.getRadius(), (float) capsuleShape.getRadiusX(), EPSILON);
-            assertEquals(btCapsuleShapeZ.getRadius(), (float) capsuleShape.getRadiusY(), EPSILON);
-            assertEquals(btCapsuleShapeZ.getRadius(), (float) capsuleShape.getRadiusZ(), EPSILON);
-            assertEquals(btCapsuleShapeZ.getHalfHeight(), (float) capsuleShape.getLength() / 2.0f, EPSILON);
+            assertEquals(btCapsuleShapeZ.getRadius(), capsuleShape.getRadiusX(), EPSILON);
+            assertEquals(btCapsuleShapeZ.getRadius(), capsuleShape.getRadiusY(), EPSILON);
+            assertEquals(btCapsuleShapeZ.getRadius(), capsuleShape.getRadiusZ(), EPSILON);
+            assertEquals(btCapsuleShapeZ.getHalfHeight(), capsuleShape.getLength() / 2.0, EPSILON);
          }
 
          compoundShapeChildTransform = compoundShape.getChildTransform(j);

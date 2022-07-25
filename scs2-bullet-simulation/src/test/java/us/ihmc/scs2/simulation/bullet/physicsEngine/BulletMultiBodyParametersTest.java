@@ -22,7 +22,7 @@ public class BulletMultiBodyParametersTest
 
       //create a simple btMultiBody 
       btVector3 intertia = new btVector3();
-      btMultiBody btMultiBody = new btMultiBody(0, 1.0f, intertia, false, parameters.getCanSleep());
+      btMultiBody btMultiBody = new btMultiBody(0, 1.0, intertia, false, parameters.getCanSleep());
 
       //The default BulletMultiBodyParameters should be the same as a newly created btMultiBody
       assertParametersEqual(btMultiBody.getCanSleep(),
@@ -135,9 +135,9 @@ public class BulletMultiBodyParametersTest
       assertEquals(useGyroTerm, parameters.getUseGyroTerm());
       assertEquals(useGlobalVelocities, parameters.getUseGlobalVelocities());
       assertEquals(useRK4Integration, parameters.getUseRK4Integration());
-      assertEquals((float) linearDamping, (float) parameters.getLinearDamping());
-      assertEquals((float) angularDamping, (float) parameters.getAngularDamping());
-      assertEquals((float) maxAppliedImpulse, (float) parameters.getMaxAppliedImpulse());
-      assertEquals((float) maxCoordinateVelocity, (float) parameters.getMaxCoordinateVelocity());
+      assertEquals(linearDamping, parameters.getLinearDamping());
+      assertEquals(angularDamping, parameters.getAngularDamping());
+      assertEquals(maxAppliedImpulse, parameters.getMaxAppliedImpulse());
+      assertEquals(maxCoordinateVelocity, parameters.getMaxCoordinateVelocity());
    }
 }

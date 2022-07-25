@@ -54,18 +54,18 @@ public class BulletToolsTest
 
          BulletTools.toBullet(rigidBodyTransform, bulletAffineToPack);
 
-         assertEquals(bulletAffineToPack.getOrigin().getX(), (float) rigidBodyTransform.getTranslationX(), EPSILON);
-         assertEquals(bulletAffineToPack.getOrigin().getY(), (float) rigidBodyTransform.getTranslationY(), EPSILON);
-         assertEquals(bulletAffineToPack.getOrigin().getZ(), (float) rigidBodyTransform.getTranslationZ(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(0).getX(), (float) rigidBodyTransform.getM00(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(0).getY(), (float) rigidBodyTransform.getM01(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(0).getZ(), (float) rigidBodyTransform.getM02(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(1).getX(), (float) rigidBodyTransform.getM10(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(1).getY(), (float) rigidBodyTransform.getM11(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(1).getZ(), (float) rigidBodyTransform.getM12(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(2).getX(), (float) rigidBodyTransform.getM20(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(2).getY(), (float) rigidBodyTransform.getM21(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(2).getZ(), (float) rigidBodyTransform.getM22(), EPSILON);
+         assertEquals(bulletAffineToPack.getOrigin().getX(), rigidBodyTransform.getTranslationX(), EPSILON);
+         assertEquals(bulletAffineToPack.getOrigin().getY(), rigidBodyTransform.getTranslationY(), EPSILON);
+         assertEquals(bulletAffineToPack.getOrigin().getZ(), rigidBodyTransform.getTranslationZ(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(0).getX(), rigidBodyTransform.getM00(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(0).getY(), rigidBodyTransform.getM01(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(0).getZ(), rigidBodyTransform.getM02(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(1).getX(), rigidBodyTransform.getM10(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(1).getY(), rigidBodyTransform.getM11(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(1).getZ(), rigidBodyTransform.getM12(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(2).getX(), rigidBodyTransform.getM20(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(2).getY(), rigidBodyTransform.getM21(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(2).getZ(), rigidBodyTransform.getM22(), EPSILON);
       }
    }
 
@@ -91,18 +91,18 @@ public class BulletToolsTest
 
          BulletTools.toEuclid(bulletAffine, rigidBodyTransformToPack);
 
-         assertEquals(bulletAffine.getOrigin().getX(), (float) rigidBodyTransformToPack.getTranslationX(), EPSILON);
-         assertEquals(bulletAffine.getOrigin().getY(), (float) rigidBodyTransformToPack.getTranslationY(), EPSILON);
-         assertEquals(bulletAffine.getOrigin().getZ(), (float) rigidBodyTransformToPack.getTranslationZ(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(0).getX(), (float) rigidBodyTransformToPack.getM00(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(0).getY(), (float) rigidBodyTransformToPack.getM01(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(0).getZ(), (float) rigidBodyTransformToPack.getM02(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(1).getX(), (float) rigidBodyTransformToPack.getM10(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(1).getY(), (float) rigidBodyTransformToPack.getM11(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(1).getZ(), (float) rigidBodyTransformToPack.getM12(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(2).getX(), (float) rigidBodyTransformToPack.getM20(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(2).getY(), (float) rigidBodyTransformToPack.getM21(), EPSILON);
-         assertEquals(bulletAffine.getBasis().getRow(2).getZ(), (float) rigidBodyTransformToPack.getM22(), EPSILON);
+         assertEquals(bulletAffine.getOrigin().getX(), rigidBodyTransformToPack.getTranslationX(), EPSILON);
+         assertEquals(bulletAffine.getOrigin().getY(), rigidBodyTransformToPack.getTranslationY(), EPSILON);
+         assertEquals(bulletAffine.getOrigin().getZ(), rigidBodyTransformToPack.getTranslationZ(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(0).getX(), rigidBodyTransformToPack.getM00(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(0).getY(), rigidBodyTransformToPack.getM01(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(0).getZ(), rigidBodyTransformToPack.getM02(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(1).getX(), rigidBodyTransformToPack.getM10(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(1).getY(), rigidBodyTransformToPack.getM11(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(1).getZ(), rigidBodyTransformToPack.getM12(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(2).getX(), rigidBodyTransformToPack.getM20(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(2).getY(), rigidBodyTransformToPack.getM21(), EPSILON);
+         assertEquals(bulletAffine.getBasis().getRow(2).getZ(), rigidBodyTransformToPack.getM22(), EPSILON);
       }
    }
 
@@ -198,9 +198,9 @@ public class BulletToolsTest
          {
             btBoxShape.getVertex(j, vector1);
 
-            assertEquals(Math.abs(vector1.getX()), (float) boxGeometryDefinition.getSizeX() / 2.0f, EPSILON);
-            assertEquals(Math.abs(vector1.getY()), (float) boxGeometryDefinition.getSizeY() / 2.0f, EPSILON);
-            assertEquals(Math.abs(vector1.getZ()), (float) boxGeometryDefinition.getSizeZ() / 2.0f, EPSILON);
+            assertEquals(Math.abs(vector1.getX()), boxGeometryDefinition.getSizeX() / 2.0, EPSILON);
+            assertEquals(Math.abs(vector1.getY()), boxGeometryDefinition.getSizeY() / 2.0, EPSILON);
+            assertEquals(Math.abs(vector1.getZ()), boxGeometryDefinition.getSizeZ() / 2.0, EPSILON);
          }
       }
 
@@ -214,7 +214,7 @@ public class BulletToolsTest
 
          btSphereShape sphereShape = (btSphereShape) btCollisionShape;
 
-         assertEquals(sphereShape.getRadius(), (float) sphereGeometryDefinition.getRadius());
+         assertEquals(sphereShape.getRadius(), sphereGeometryDefinition.getRadius());
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -227,8 +227,8 @@ public class BulletToolsTest
 
          btCylinderShapeZ cylinderShape = (btCylinderShapeZ) btCollisionShape;
 
-         assertEquals(cylinderShape.getRadius(), (float) cylinderGeometryDefinition.getRadius(), EPSILON);
-         assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), (float) cylinderGeometryDefinition.getLength() / 2.0f, EPSILON);
+         assertEquals(cylinderShape.getRadius(), cylinderGeometryDefinition.getRadius(), EPSILON);
+         assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), cylinderGeometryDefinition.getLength() / 2.0, EPSILON);
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -241,8 +241,8 @@ public class BulletToolsTest
          assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE.ordinal());
 
          btConeShapeZ coneShape = (btConeShapeZ) btCollisionShape;
-         assertEquals(coneShape.getRadius(), (float) coneGeometryDefinition.getRadius(), EPSILON);
-         assertEquals(coneShape.getHeight(), (float) coneGeometryDefinition.getHeight(), EPSILON);
+         assertEquals(coneShape.getRadius(), coneGeometryDefinition.getRadius(), EPSILON);
+         assertEquals(coneShape.getHeight(), coneGeometryDefinition.getHeight(), EPSILON);
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -254,10 +254,10 @@ public class BulletToolsTest
          assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE.ordinal());
 
          btCapsuleShapeZ capsuleShape = (btCapsuleShapeZ) btCollisionShape;
-         assertEquals(capsuleShape.getRadius(), (float) capsuleGeometryDefinition.getRadiusX(), EPSILON);
-         assertEquals(capsuleShape.getRadius(), (float) capsuleGeometryDefinition.getRadiusY(), EPSILON);
-         assertEquals(capsuleShape.getRadius(), (float) capsuleGeometryDefinition.getRadiusZ(), EPSILON);
-         assertEquals(capsuleShape.getHalfHeight(), (float) capsuleGeometryDefinition.getLength() / 2.0f, EPSILON);
+         assertEquals(capsuleShape.getRadius(), capsuleGeometryDefinition.getRadiusX(), EPSILON);
+         assertEquals(capsuleShape.getRadius(), capsuleGeometryDefinition.getRadiusY(), EPSILON);
+         assertEquals(capsuleShape.getRadius(), capsuleGeometryDefinition.getRadiusZ(), EPSILON);
+         assertEquals(capsuleShape.getHalfHeight(), capsuleGeometryDefinition.getLength() / 2.0, EPSILON);
       }
 
       Ellipsoid3DDefinition polytypeGeometryDefinition = new Ellipsoid3DDefinition(1.0, 1.0, 1.0);
