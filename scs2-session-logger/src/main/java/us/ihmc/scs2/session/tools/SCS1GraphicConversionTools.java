@@ -43,6 +43,7 @@ import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCoordinateSystem3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCylinder3DDefinition;
@@ -368,12 +369,9 @@ public class SCS1GraphicConversionTools
                                       .map(YoVariable::getFullNameString).collect(Collectors.toList());
          yoVariableIndex += ySize;
 
-         definition.setCoefficientsX(xCoeffs);
-         definition.setCoefficientsY(yCoeffs);
-         definition.setCoefficientsZ(zCoeffs);
-         definition.setNumberOfCoefficientsX(xNumberOfCoeffs);
-         definition.setNumberOfCoefficientsY(yNumberOfCoeffs);
-         definition.setNumberOfCoefficientsZ(zNumberOfCoeffs);
+         definition.setCoefficientsX(new YoListDefinition(xCoeffs, xNumberOfCoeffs));
+         definition.setCoefficientsY(new YoListDefinition(yCoeffs, yNumberOfCoeffs));
+         definition.setCoefficientsZ(new YoListDefinition(zCoeffs, zNumberOfCoeffs));
          definition.setStartTime(0.0);
          definition.setEndTime(yoVariables[yoVariableIndex].getFullNameString());
          definition.setVisible(yoGraphicPolynomial3D.isGraphicObjectShowing());
@@ -411,12 +409,9 @@ public class SCS1GraphicConversionTools
                                          .map(YoVariable::getFullNameString).collect(Collectors.toList());
             yoVariableIndex += ySize;
 
-            definition.setCoefficientsX(xCoeffs);
-            definition.setCoefficientsY(yCoeffs);
-            definition.setCoefficientsZ(zCoeffs);
-            definition.setNumberOfCoefficientsX(xNumberOfCoeffs);
-            definition.setNumberOfCoefficientsY(yNumberOfCoeffs);
-            definition.setNumberOfCoefficientsZ(zNumberOfCoeffs);
+            definition.setCoefficientsX(new YoListDefinition(xCoeffs, xNumberOfCoeffs));
+            definition.setCoefficientsY(new YoListDefinition(yCoeffs, yNumberOfCoeffs));
+            definition.setCoefficientsZ(new YoListDefinition(zCoeffs, zNumberOfCoeffs));
             definition.setStartTime(i == 0 ? Double.toString(0.0) : waypointTimes[i - 1].getFullNameString());
             definition.setEndTime(waypointTimes[i].getFullNameString());
             definition.setVisible(yoGraphicPolynomial3D.isGraphicObjectShowing());

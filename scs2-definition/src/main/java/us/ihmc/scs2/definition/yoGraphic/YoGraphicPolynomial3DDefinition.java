@@ -1,50 +1,34 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 
 public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
 {
-   private List<String> coefficientsX, coefficientsY, coefficientsZ;
-   private String numberOfCoefficientsX, numberOfCoefficientsY, numberOfCoefficientsZ;
+   private YoListDefinition coefficientsX;
+   private YoListDefinition coefficientsY;
+   private YoListDefinition coefficientsZ;
+
    private String startTime, endTime;
    private String size;
 
-   @XmlElement(name = "coefficientX")
-   public void setCoefficientsX(List<String> coefficientsX)
+   @XmlElement(name = "coefficientsX")
+   public void setCoefficientsX(YoListDefinition coefficientsX)
    {
       this.coefficientsX = coefficientsX;
    }
 
-   @XmlElement(name = "coefficientY")
-   public void setCoefficientsY(List<String> coefficientsY)
+   @XmlElement(name = "coefficientsY")
+   public void setCoefficientsY(YoListDefinition coefficientsY)
    {
       this.coefficientsY = coefficientsY;
    }
 
-   @XmlElement(name = "coefficientZ")
-   public void setCoefficientsZ(List<String> coefficientsZ)
+   @XmlElement(name = "coefficientsZ")
+   public void setCoefficientsZ(YoListDefinition coefficientsZ)
    {
       this.coefficientsZ = coefficientsZ;
-   }
-
-   @XmlElement
-   public void setNumberOfCoefficientsX(String numberOfCoefficientsX)
-   {
-      this.numberOfCoefficientsX = numberOfCoefficientsX;
-   }
-
-   @XmlElement
-   public void setNumberOfCoefficientsY(String numberOfCoefficientsY)
-   {
-      this.numberOfCoefficientsY = numberOfCoefficientsY;
-   }
-
-   @XmlElement
-   public void setNumberOfCoefficientsZ(String numberOfCoefficientsZ)
-   {
-      this.numberOfCoefficientsZ = numberOfCoefficientsZ;
    }
 
    public void setStartTime(double startTime)
@@ -80,34 +64,19 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       this.size = size;
    }
 
-   public List<String> getCoefficientsX()
+   public YoListDefinition getCoefficientsX()
    {
       return coefficientsX;
    }
 
-   public List<String> getCoefficientsY()
+   public YoListDefinition getCoefficientsY()
    {
       return coefficientsY;
    }
 
-   public List<String> getCoefficientsZ()
+   public YoListDefinition getCoefficientsZ()
    {
       return coefficientsZ;
-   }
-
-   public String getNumberOfCoefficientsX()
-   {
-      return numberOfCoefficientsX;
-   }
-
-   public String getNumberOfCoefficientsY()
-   {
-      return numberOfCoefficientsY;
-   }
-
-   public String getNumberOfCoefficientsZ()
-   {
-      return numberOfCoefficientsZ;
    }
 
    public String getStartTime()
@@ -140,17 +109,11 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       {
          YoGraphicPolynomial3DDefinition other = (YoGraphicPolynomial3DDefinition) object;
 
-         if (coefficientsX == null ? other.coefficientsX != null : !coefficientsX.equals(other.coefficientsX))
+         if (!Objects.equals(coefficientsX, other.coefficientsX))
             return false;
-         if (coefficientsY == null ? other.coefficientsY != null : !coefficientsY.equals(other.coefficientsY))
+         if (!Objects.equals(coefficientsY, other.coefficientsY))
             return false;
-         if (coefficientsZ == null ? other.coefficientsZ != null : !coefficientsZ.equals(other.coefficientsZ))
-            return false;
-         if (numberOfCoefficientsX == null ? other.numberOfCoefficientsX != null : !numberOfCoefficientsX.equals(other.numberOfCoefficientsX))
-            return false;
-         if (numberOfCoefficientsY == null ? other.numberOfCoefficientsY != null : !numberOfCoefficientsY.equals(other.numberOfCoefficientsY))
-            return false;
-         if (numberOfCoefficientsZ == null ? other.numberOfCoefficientsZ != null : !numberOfCoefficientsZ.equals(other.numberOfCoefficientsZ))
+         if (!Objects.equals(coefficientsZ, other.coefficientsZ))
             return false;
          if (startTime == null ? other.startTime != null : !startTime.equals(other.startTime))
             return false;

@@ -187,6 +187,7 @@ public class URDFTools
       rootJointDefinition.setSuccessor(startBodyDefinition);
       RigidBodyDefinition rootBodyDefinition = new RigidBodyDefinition("rootBody");
       rootBodyDefinition.addChildJoint(rootJointDefinition);
+      jointDefinitions.add(rootJointDefinition); // This is required for sensors that are attached to the successor of the root joint.
       addSensor(urdfGazebos, jointDefinitions);
       simplifyKinematics(rootJointDefinition);
       correctTransforms(rootJointDefinition);

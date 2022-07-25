@@ -2,14 +2,13 @@
 
 <?import com.jfoenix.controls.JFXButton?>
 <?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="mainPane" prefHeight="400.0" prefWidth="600.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController">
+<AnchorPane fx:id="mainPane" prefHeight="400.0" prefWidth="600.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController">
    <children>
-      <JFXButton fx:id="dropDownMenuButton" onAction="#openMenu" AnchorPane.leftAnchor="3.0" AnchorPane.topAnchor="0.0" styleClass="chart-group-button">
+      <JFXButton fx:id="dropDownMenuButton" focusTraversable="false" onAction="#openMenu" styleClass="chart-group-button" AnchorPane.leftAnchor="3.0" AnchorPane.topAnchor="0.0">
          <graphic>
-            <FontAwesomeIconView styleClass="chart-group-button-icon-view"/>
+            <FontAwesomeIconView styleClass="chart-group-button-icon-view" />
          </graphic>
       </JFXButton>
    </children>

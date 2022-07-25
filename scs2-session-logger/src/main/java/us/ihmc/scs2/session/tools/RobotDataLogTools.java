@@ -65,17 +65,17 @@ public class RobotDataLogTools
 
       return new File(logDirectory, variables.getSummaryAsString());
    }
-   
+
    public static File indexFile(File logDirectory, LogProperties logProperties)
    {
       return indexFile(logDirectory, logProperties.getVariables());
    }
-   
+
    public static File indexFile(File logDirectory, Variables variables)
    {
       if (variables.getIndexAsString().isEmpty())
          return null;
-      
+
       return new File(logDirectory, variables.getIndexAsString());
    }
 
@@ -162,7 +162,11 @@ public class RobotDataLogTools
       byte[] resourceData = loadModelResourceBundle(logDirectory, model);
       if (resourceData == null)
          return null;
-      return RobotModelLoader.loadModel(model.getNameAsString(), model.getResourceDirectoriesList().toStringArray(), modelData, resourceData);
+      return RobotModelLoader.loadModel(model.getNameAsString(),
+                                        model.getLoaderAsString(),
+                                        model.getResourceDirectoriesList().toStringArray(),
+                                        modelData,
+                                        resourceData);
    }
 
    public static void updateLogs(File directory, LogProperties properties, ProgressConsumer progressConsumer)
