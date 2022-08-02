@@ -5,11 +5,15 @@ import static us.ihmc.mecano.tools.MultiBodySystemTools.filterJoints;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.ejml.data.DMatrix;
 
+import us.ihmc.euclid.tools.EuclidCoreTools;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
@@ -798,38 +802,202 @@ public class SimMultiBodySystemTools
       return startIndex;
    }
 
+   private interface JointStateInsertor
+   {
+      int insertState(SimJointBasics joint, int startIndex, DMatrix state);
+   }
+
+   private static final JointStateInsertor jointConfigurationInsertor = (joint, startIndex, state) -> joint.setJointConfiguration(startIndex, state);
+   private static final JointStateInsertor jointVelocityInsertor = (joint, startIndex, state) -> joint.setJointVelocity(startIndex, state);
+   private static final JointStateInsertor jointDeltaVelocityInsertor = (joint, startIndex, state) -> joint.setJointDeltaVelocity(startIndex, state);
+   private static final JointStateInsertor jointAccelerationInsertor = (joint, startIndex, state) -> joint.setJointAcceleration(startIndex, state);
+   private static final JointStateInsertor jointEffortInsertor = (joint, startIndex, state) -> joint.setJointTau(startIndex, state);
+
    /**
     * Iterates through the given {@code joints}, and update their requested state
     * {@code stateSelection} using the given {@code matrix} assuming the state has been previously
     * stored in the proper order.
     *
-    * @param joints         the joints to update the state of. Modified.
-    * @param stateSelection indicates what state is to be updated, i.e. it can be either configuration,
-    *                       velocity, acceleration, or tau (or effort).
-    * @param matrix         the matrix in which the new state of the joints is stored. The data is
-    *                       expected to be stored as a column vector starting at the first row.
-    *                       Modified.
+    * @param joints           the joints to update the state of. Modified.
+    * @param stateSelection   indicates what state is to be updated, i.e. it can be either
+    *                         configuration, velocity, acceleration, or tau (or effort).
+    * @param matrix           the matrix in which the new state of the joints is stored. The data is
+    *                         expected to be stored as a column vector starting at the first row.
+    *                         Not modified.
+    * @param maxMagnitude     asserts for each joint that the norm of the state being inserted is below
+    *                         this value, throws an {@link IllegalArgumentException} is a state's norm
+    *                         exceeds the value. This argument is ignored for
+    *                         {@link SimJointStateType#CONFIGURATION}.
+    * @param testFiniteValues when {@code true}, tests that the values are all finite, i.e. not
+    *                         infinite or NaN, throws an {@link IllegalArgumentException} if at least
+    *                         one value is not finite.
     * @return the number of rows that were used from the matrix.
     */
-   public static int insertJointsState(List<? extends SimJointBasics> joints, SimJointStateType stateSelection, DMatrix matrix)
+   public static int insertJointsState(List<? extends SimJointBasics> joints,
+                                       SimJointStateType stateSelection,
+                                       DMatrix matrix,
+                                       double maxMagnitude,
+                                       boolean testFiniteValues)
    {
-      switch (stateSelection)
+      if (testFiniteValues)
       {
-         case VELOCITY_CHANGE:
-            return insertJointsDeltaVelocity(joints, 0, matrix);
-         default:
-            return MultiBodySystemTools.insertJointsState(joints, stateSelection.toJointStateType(), matrix);
+         checkFiniteValues(stateSelection, matrix);
+      }
+
+      JointStateInsertor stateInsertor = toJointStateInsertor(stateSelection);
+
+      int startIndex = 0;
+
+      if (stateSelection == SimJointStateType.CONFIGURATION || maxMagnitude == Double.POSITIVE_INFINITY)
+      {
+         for (int jointIndex = 0; jointIndex < joints.size(); jointIndex++)
+         {
+            SimJointBasics joint = joints.get(jointIndex);
+            startIndex = stateInsertor.insertState(joint, startIndex, matrix);
+         }
+      }
+      else
+      {
+         for (int jointIndex = 0; jointIndex < joints.size(); jointIndex++)
+         {
+            SimJointBasics joint = joints.get(jointIndex);
+            checkStateNorm(joint, startIndex, matrix, maxMagnitude, stateSelection);
+            startIndex = stateInsertor.insertState(joint, startIndex, matrix);
+         }
+      }
+      return startIndex;
+   }
+
+   public static void checkFiniteValues(SimJointStateType stateSelection, DMatrix matrix)
+   {
+      checkFiniteValues(stateSelection, matrix, 0, matrix.getNumRows());
+   }
+
+   public static void checkFiniteValues(SimJointStateType stateSelection, DMatrix matrix, int startIndex, int numberOfElements)
+   {
+      for (int row = startIndex; row < startIndex + numberOfElements; row++)
+      {
+         if (!Double.isFinite(matrix.get(row, 0)))
+            throw new IllegalArgumentException("The given state (" + stateSelection + ") matrix contains non-finite values: " + matrix);
       }
    }
 
-   private static int insertJointsDeltaVelocity(List<? extends SimJointBasics> joints, int startIndex, DMatrix matrix)
+   public static JointStateInsertor toJointStateInsertor(SimJointStateType stateSelection)
    {
+      JointStateInsertor stateInsertor;
+
+      switch (stateSelection)
+      {
+         case CONFIGURATION:
+            stateInsertor = jointConfigurationInsertor;
+            break;
+         case VELOCITY:
+            stateInsertor = jointVelocityInsertor;
+            break;
+         case VELOCITY_CHANGE:
+            stateInsertor = jointDeltaVelocityInsertor;
+            break;
+         case ACCELERATION:
+            stateInsertor = jointAccelerationInsertor;
+            break;
+         case EFFORT:
+            stateInsertor = jointEffortInsertor;
+            break;
+         default:
+            throw new RuntimeException("Unexpected value for stateSelection: " + stateSelection);
+      }
+      return stateInsertor;
+   }
+
+   private static void checkStateNorm(JointReadOnly joint, int startIndex, DMatrix stateMatrix, double maxMagnitude, SimJointStateType state)
+   {
+
+      double normSquared = 0.0;
+      for (int dof = 0; dof < joint.getDegreesOfFreedom(); dof++)
+      {
+         normSquared += EuclidCoreTools.square(stateMatrix.get(startIndex + dof, 0));
+      }
+
+      if (normSquared > maxMagnitude * maxMagnitude)
+      {
+         throw new IllegalArgumentException("Joint (" + joint.getName() + ") state (" + state + ") exceeds max magnitude (" + maxMagnitude + "): "
+               + Math.sqrt(normSquared));
+      }
+   }
+
+   /**
+    * Similar to {@link #insertJointsState(List, SimJointStateType, DMatrix, double, boolean)} but
+    * allows to insert either a state {@code A} or {@code B} on a per-joint basis depending on the
+    * result of the given predicate.
+    * 
+    * @param joints            the joints to update the state of. Modified.
+    * @param predicateStateA   the predicate used to switch between states {@code A} and {@code B},
+    *                          when the predicate returns {@code true}, the state {@code A} is used.
+    * @param stateSelectionA   the state to be updated when inserting state {@code A}.
+    * @param matrixA           the values for the state {@code A}. Not modified.
+    * @param maxMagnitudeA
+    * @param testFiniteValuesA
+    * @param stateSelectionB   the state to be updated when inserting state {@code B}.
+    * @param matrixB           the values for the state {@code B}. Not modified.
+    * @param maxMagnitudeB
+    * @param testFiniteValuesB
+    * @return
+    */
+   public static int insertJointsStateWithBackup(List<? extends SimJointBasics> joints,
+                                                 Predicate<SimJointBasics> predicateStateA,
+                                                 SimJointStateType stateSelectionA,
+                                                 DMatrix matrixA,
+                                                 double maxMagnitudeA,
+                                                 boolean testFiniteValuesA,
+                                                 SimJointStateType stateSelectionB,
+                                                 DMatrix matrixB,
+                                                 double maxMagnitudeB,
+                                                 boolean testFiniteValuesB)
+   {
+      JointStateInsertor stateInsertorA = toJointStateInsertor(stateSelectionA);
+      JointStateInsertor stateInsertorB = toJointStateInsertor(stateSelectionB);
+
+      int startIndex = 0;
+
+      if (stateSelectionA == SimJointStateType.CONFIGURATION)
+         maxMagnitudeA = Double.POSITIVE_INFINITY;
+      if (stateSelectionB == SimJointStateType.CONFIGURATION)
+         maxMagnitudeB = Double.POSITIVE_INFINITY;
+
       for (int jointIndex = 0; jointIndex < joints.size(); jointIndex++)
       {
          SimJointBasics joint = joints.get(jointIndex);
-         startIndex = joint.setJointDeltaVelocity(startIndex, matrix);
-      }
+         if (predicateStateA.test(joint))
+         {
+            if (testFiniteValuesA)
+            {
+               if (stateSelectionA == SimJointStateType.CONFIGURATION)
+                  checkFiniteValues(stateSelectionA, matrixA, startIndex, joint.getConfigurationMatrixSize());
+               else
+                  checkFiniteValues(stateSelectionA, matrixA, startIndex, joint.getDegreesOfFreedom());
+            }
 
+            if (maxMagnitudeA != Double.POSITIVE_INFINITY)
+               checkStateNorm(joint, startIndex, matrixA, maxMagnitudeA, stateSelectionA);
+
+            startIndex = stateInsertorA.insertState(joint, startIndex, matrixA);
+         }
+         else
+         {
+            if (testFiniteValuesB)
+            {
+               if (stateSelectionB == SimJointStateType.CONFIGURATION)
+                  checkFiniteValues(stateSelectionB, matrixB, startIndex, joint.getConfigurationMatrixSize());
+               else
+                  checkFiniteValues(stateSelectionB, matrixB, startIndex, joint.getDegreesOfFreedom());
+            }
+
+            if (maxMagnitudeB != Double.POSITIVE_INFINITY)
+               checkStateNorm(joint, startIndex, matrixB, maxMagnitudeB, stateSelectionB);
+
+            startIndex = stateInsertorB.insertState(joint, startIndex, matrixB);
+         }
+      }
       return startIndex;
    }
 
@@ -838,31 +1006,199 @@ public class SimMultiBodySystemTools
     * {@code stateSelection} using the given {@code matrix} assuming the state has been previously
     * stored in the proper order.
     *
-    * @param joints         the joints to update the state of. Modified.
-    * @param stateSelection indicates what state is to be updated, i.e. it can be either configuration,
-    *                       velocity, acceleration, or tau (or effort).
-    * @param matrix         the matrix in which the new state of the joints is stored. The data is
-    *                       expected to be stored as a column vector starting at the first row.
-    *                       Modified.
+    * @param joints           the joints to update the state of. Modified.
+    * @param stateSelection   indicates what state is to be updated, i.e. it can be either
+    *                         configuration, velocity, acceleration, or tau (or effort).
+    * @param matrix           the matrix in which the new state of the joints is stored. The data is
+    *                         expected to be stored as a column vector starting at the first row.
+    *                         Modified.
+    * @param maxMagnitude     asserts for each joint that the norm of the state being inserted is below
+    *                         this value, throws an {@link IllegalArgumentException} is a state's norm
+    *                         exceeds the value. This argument is ignored for
+    *                         {@link SimJointStateType#CONFIGURATION}.
+    * @param testFiniteValues when {@code true}, tests that the values are all finite, i.e. not
+    *                         infinite or NaN, throws an {@link IllegalArgumentException} if at least
+    *                         one value is not finite.
     * @return the number of rows that were used from the matrix.
     */
-   public static int insertJointsState(SimJointBasics[] joints, SimJointStateType stateSelection, DMatrix matrix)
+   public static int insertJointsState(SimJointBasics[] joints, SimJointStateType stateSelection, DMatrix matrix, double maxMagnitude, boolean testFiniteValues)
    {
+      if (testFiniteValues)
+      {
+         checkFiniteValues(stateSelection, matrix);
+      }
+
       switch (stateSelection)
       {
+         case CONFIGURATION:
+            return insertJointsConfiguration(joints, 0, matrix);
+         case VELOCITY:
+            return insertJointsVelocity(joints, 0, matrix, maxMagnitude);
          case VELOCITY_CHANGE:
-            return insertJointsDeltaVelocity(joints, 0, matrix);
+            return insertJointsDeltaVelocity(joints, 0, matrix, maxMagnitude);
+         case ACCELERATION:
+            return insertJointsAcceleration(joints, 0, matrix, maxMagnitude);
+         case EFFORT:
+            return insertJointsTau(joints, 0, matrix, maxMagnitude);
          default:
-            return MultiBodySystemTools.insertJointsState(joints, stateSelection.toJointStateType(), matrix);
+            throw new RuntimeException("Unexpected value for stateSelection: " + stateSelection);
       }
    }
 
-   private static int insertJointsDeltaVelocity(SimJointBasics[] joints, int startIndex, DMatrix matrix)
+   private static int insertJointsConfiguration(JointBasics[] joints, int startIndex, DMatrix matrix)
    {
       for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
       {
-         SimJointBasics joint = joints[jointIndex];
-         startIndex = joint.setJointDeltaVelocity(startIndex, matrix);
+         JointBasics joint = joints[jointIndex];
+         startIndex = joint.setJointConfiguration(startIndex, matrix);
+      }
+
+      return startIndex;
+   }
+
+   private static int insertJointsVelocity(JointBasics[] joints, int startIndex, DMatrix matrix, double maxMagnitude)
+   {
+      if (maxMagnitude == Double.POSITIVE_INFINITY)
+      {
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            JointBasics joint = joints[jointIndex];
+            startIndex = joint.setJointVelocity(startIndex, matrix);
+         }
+      }
+      else
+      {
+         double maxMagSquared = maxMagnitude * maxMagnitude;
+
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            JointBasics joint = joints[jointIndex];
+
+            double normSquared = 0.0;
+            for (int dof = 0; dof < joint.getDegreesOfFreedom(); dof++)
+            {
+               normSquared += EuclidCoreTools.square(matrix.get(startIndex + dof, 0));
+            }
+
+            if (normSquared > maxMagSquared)
+            {
+               throw new IllegalArgumentException("Joint (" + joint.getName() + ") velocity exceeds max magnitude (" + maxMagnitude + "): "
+                     + Math.sqrt(normSquared));
+            }
+
+            startIndex = joint.setJointVelocity(startIndex, matrix);
+         }
+      }
+
+      return startIndex;
+   }
+
+   private static int insertJointsDeltaVelocity(SimJointBasics[] joints, int startIndex, DMatrix matrix, double maxMagnitude)
+   {
+      if (maxMagnitude == Double.POSITIVE_INFINITY)
+      {
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            SimJointBasics joint = joints[jointIndex];
+            startIndex = joint.setJointDeltaVelocity(startIndex, matrix);
+         }
+      }
+      else
+      {
+         double maxMagSquared = maxMagnitude * maxMagnitude;
+
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            SimJointBasics joint = joints[jointIndex];
+
+            double normSquared = 0.0;
+            for (int dof = 0; dof < joint.getDegreesOfFreedom(); dof++)
+            {
+               normSquared += EuclidCoreTools.square(matrix.get(startIndex + dof, 0));
+            }
+
+            if (normSquared > maxMagSquared)
+            {
+               throw new IllegalArgumentException("Joint (" + joint.getName() + ") dela-velocity exceeds max magnitude (" + maxMagnitude + "): "
+                     + Math.sqrt(normSquared));
+            }
+
+            startIndex = joint.setJointDeltaVelocity(startIndex, matrix);
+         }
+      }
+
+      return startIndex;
+   }
+
+   private static int insertJointsAcceleration(JointBasics[] joints, int startIndex, DMatrix matrix, double maxMagnitude)
+   {
+      if (maxMagnitude == Double.POSITIVE_INFINITY)
+      {
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            JointBasics joint = joints[jointIndex];
+            startIndex = joint.setJointAcceleration(startIndex, matrix);
+         }
+      }
+      else
+      {
+         double maxMagSquared = maxMagnitude * maxMagnitude;
+
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            JointBasics joint = joints[jointIndex];
+
+            double normSquared = 0.0;
+            for (int dof = 0; dof < joint.getDegreesOfFreedom(); dof++)
+            {
+               normSquared += EuclidCoreTools.square(matrix.get(startIndex + dof, 0));
+            }
+
+            if (normSquared > maxMagSquared)
+            {
+               throw new IllegalArgumentException("Joint (" + joint.getName() + ") acceleration exceeds max magnitude (" + maxMagnitude + "): "
+                     + Math.sqrt(normSquared));
+            }
+
+            startIndex = joint.setJointAcceleration(startIndex, matrix);
+         }
+      }
+
+      return startIndex;
+   }
+
+   private static int insertJointsTau(JointBasics[] joints, int startIndex, DMatrix matrix, double maxMagnitude)
+   {
+      if (maxMagnitude == Double.POSITIVE_INFINITY)
+      {
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            JointBasics joint = joints[jointIndex];
+            startIndex = joint.setJointTau(startIndex, matrix);
+         }
+      }
+      else
+      {
+         double maxMagSquared = maxMagnitude * maxMagnitude;
+
+         for (int jointIndex = 0; jointIndex < joints.length; jointIndex++)
+         {
+            JointBasics joint = joints[jointIndex];
+
+            double normSquared = 0.0;
+            for (int dof = 0; dof < joint.getDegreesOfFreedom(); dof++)
+            {
+               normSquared += EuclidCoreTools.square(matrix.get(startIndex + dof, 0));
+            }
+
+            if (normSquared > maxMagSquared)
+            {
+               throw new IllegalArgumentException("Joint (" + joint.getName() + ") acceleration exceeds max magnitude (" + maxMagnitude + "): "
+                     + Math.sqrt(normSquared));
+            }
+
+            startIndex = joint.setJointTau(startIndex, matrix);
+         }
       }
 
       return startIndex;
