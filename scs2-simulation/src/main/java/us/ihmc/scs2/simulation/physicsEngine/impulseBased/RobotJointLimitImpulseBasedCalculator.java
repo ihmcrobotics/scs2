@@ -251,10 +251,17 @@ public class RobotJointLimitImpulseBasedCalculator implements ImpulseBasedConstr
 
       DMatrixRMaj solverOutput_f = solver.solve(solverInput_A, solverInput_b);
 
-      for (int i = 0; i < jointsAtLimit.size(); i++)
+      if (solverOutput_f == null)
       {
-         ActiveLimit activeLimit = activeLimits.get(i);
-         impulse.set(i, activeLimit.transform(solverOutput_f.get(i)));
+         impulse.zero();
+      }
+      else
+      {
+         for (int i = 0; i < jointsAtLimit.size(); i++)
+         {
+            ActiveLimit activeLimit = activeLimits.get(i);
+            impulse.set(i, activeLimit.transform(solverOutput_f.get(i)));
+         }
       }
 
       if (isFirstUpdate)
