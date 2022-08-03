@@ -43,11 +43,11 @@ import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCoordinateSystem3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCylinder3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory.DefaultPoint2DGraphic;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicLine2DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPoint2DDefinition;
@@ -55,20 +55,13 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicPoint3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygon2DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygonExtruded3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolynomial3DDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SCS1GraphicConversionTools
 {
    public static final String WORLD_FRAME = "worldFrame";
-   private static final String GRAPHIC_2D_CIRCLE_NAME = "Circle";
-   private static final String GRAPHIC_2D_PLUS_NAME = "Plus";
-   private static final String GRAPHIC_2D_CIRCLE_PLUS_NAME = "Circle plus";
-   private static final String GRAPHIC_2D_CROSS_NAME = "Cross";
-   private static final String GRAPHIC_2D_CIRCLE_CROSS_NAME = "Circle cross";
-   private static final String GRAPHIC_2D_DIAMOND_NAME = "Diamond";
-   private static final String GRAPHIC_2D_DIAMOND_PLUS_NAME = "Diamond plus";
-   private static final String GRAPHIC_2D_SQUARE_NAME = "Square";
-   private static final String GRAPHIC_2D_SQUARE_CROSS_NAME = "Square cross";
+
    private static final String GRAPHIC_3D_SPHERE_NAME = "Sphere";
 
    public static List<YoGraphicDefinition> toYoGraphicDefinitions(YoGraphicsListRegistry registry)
@@ -576,40 +569,43 @@ public class SCS1GraphicConversionTools
       int graphicTypeIndex = (int) yoArtifactPosition.getConstants()[1];
       if (graphicTypeIndex >= 0 && graphicTypeIndex < GraphicType.values().length)
       {
+         DefaultPoint2DGraphic graphic = null;
          switch (GraphicType.values()[graphicTypeIndex])
          {
             case BALL:
             case SOLID_BALL:
-               definition.setGraphicName(GRAPHIC_2D_CIRCLE_NAME);
+               graphic = DefaultPoint2DGraphic.CIRCLE;
                break;
             case CROSS:
-               definition.setGraphicName(GRAPHIC_2D_PLUS_NAME);
+               graphic = DefaultPoint2DGraphic.CROSS;
                break;
             case BALL_WITH_CROSS:
-               definition.setGraphicName(GRAPHIC_2D_CIRCLE_PLUS_NAME);
+               graphic = DefaultPoint2DGraphic.CIRCLE_PLUS;
                break;
             case ROTATED_CROSS:
-               definition.setGraphicName(GRAPHIC_2D_CROSS_NAME);
+               graphic = DefaultPoint2DGraphic.CROSS;
                break;
             case BALL_WITH_ROTATED_CROSS:
-               definition.setGraphicName(GRAPHIC_2D_CIRCLE_CROSS_NAME);
+               graphic = DefaultPoint2DGraphic.CIRCLE_CROSS;
                break;
             case DIAMOND:
-               definition.setGraphicName(GRAPHIC_2D_DIAMOND_NAME);
+               graphic = DefaultPoint2DGraphic.DIAMOND;
                break;
             case DIAMOND_WITH_CROSS:
-               definition.setGraphicName(GRAPHIC_2D_DIAMOND_PLUS_NAME);
+               graphic = DefaultPoint2DGraphic.DIAMOND_PLUS;
                break;
             case SQUARE:
-               definition.setGraphicName(GRAPHIC_2D_SQUARE_NAME);
+               graphic = DefaultPoint2DGraphic.SQUARE;
                break;
             case SQUARE_WITH_CROSS:
-               definition.setGraphicName(GRAPHIC_2D_SQUARE_CROSS_NAME);
+               graphic = DefaultPoint2DGraphic.SQUARE_CROSS;
                break;
             case ELLIPSOID:
-               definition.setGraphicName(null);
+               graphic = null;
                break;
          }
+
+         definition.setGraphicName(graphic != null ? graphic.getGraphicName() : null);
       }
 
       definition.setStrokeColor(toColorDefinition(yoArtifactPosition.getAppearance()));
