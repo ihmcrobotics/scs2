@@ -7,133 +7,133 @@
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.FlowPane?>
 
-<FlowPane fx:id="buttonsContainer" alignment="CENTER" columnHalignment="CENTER" minWidth="210.0" prefWrapLength="385.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SecondaryWindowControlsController">
+<FlowPane fx:id="buttonsContainer" alignment="CENTER" columnHalignment="CENTER" minWidth="210.0" pickOnBounds="false" prefWrapLength="385.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SecondaryWindowControlsController">
    <children>
       <JFXButton fx:id="runButton" mnemonicParsing="false" onAction="#startRunning" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView fx:id="runningIconView">
                <styleClass>
-                  <String fx:value="run-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="run-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Start running"/>
+            <Tooltip text="Start running" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="playbackButton" mnemonicParsing="false" onAction="#startPlayback" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView fx:id="playbackIconView">
                <styleClass>
-                  <String fx:value="playback-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="playback-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Playback"/>
+            <Tooltip text="Playback" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="pauseButton" mnemonicParsing="false" onAction="#pause" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView fx:id="pauseIconView">
                <styleClass>
-                  <String fx:value="pause-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="pause-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Pause simulation"/>
+            <Tooltip text="Pause simulation" />
          </tooltip>
       </JFXButton>
-      <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0"/>
+      <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0" />
       <JFXButton fx:id="setInPointButton" mnemonicParsing="false" onAction="#setInPoint" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="set-inpoint-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="set-inpoint-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Set current index as new in-point"/>
+            <Tooltip text="Set current index as new in-point" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="gotoInPointButton" mnemonicParsing="false" onAction="#gotoInPoint" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="goto-inpoint-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="goto-inpoint-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Go to in-point"/>
+            <Tooltip text="Go to in-point" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="stepBackButton" mnemonicParsing="false" onAction="#stepBack" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="step-backward-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="step-backward-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Step back"/>
+            <Tooltip text="Step back" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="stepForwardButton" mnemonicParsing="false" onAction="#stepForward" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="step-forward-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="step-forward-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Step forward"/>
+            <Tooltip text="Step forward" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="gotoOutPointButton" mnemonicParsing="false" onAction="#gotoOutPoint" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="goto-outpoint-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="goto-outpoint-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Go to out-point"/>
+            <Tooltip text="Go to out-point" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="setOutPointButton" mnemonicParsing="false" onAction="#setOutPoint" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="set-outpoint-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="set-outpoint-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Set current index as new out-point"/>
+            <Tooltip text="Set current index as new out-point" />
          </tooltip>
       </JFXButton>
-      <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0"/>
+      <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0" />
       <JFXButton fx:id="previousKeyFrameButton" mnemonicParsing="false" onAction="#gotoPreviousKeyFrame" styleClass="previous-keyframe-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="previous-keyframe-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="previous-keyframe-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
@@ -142,51 +142,51 @@
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="set-keyframe-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="set-keyframe-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Add/remove current index to keyframe list"/>
+            <Tooltip text="Add/remove current index to keyframe list" />
          </tooltip>
       </JFXButton>
       <JFXButton fx:id="nextKeyFrameButton" mnemonicParsing="false" onAction="#gotoNextKeyFrame" styleClass="advanced-controls-button">
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="next-keyframe-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="next-keyframe-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
          <tooltip>
-            <Tooltip text="Go to next keyframe"/>
+            <Tooltip text="Go to next keyframe" />
          </tooltip>
       </JFXButton>
-      <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0"/>
+      <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0" />
       <JFXButton fx:id="zoomInButton" mnemonicParsing="false" onAction="#requestZoomInGraphs" styleClass="advanced-controls-button">
          <tooltip>
-            <Tooltip text="Zoom in graphs"/>
+            <Tooltip text="Zoom in graphs" />
          </tooltip>
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="zoom-in-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="zoom-in-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
       </JFXButton>
       <JFXButton fx:id="zoomOutButton" mnemonicParsing="false" onAction="#requestZoomOutGraphs" styleClass="advanced-controls-button">
          <tooltip>
-            <Tooltip text="Zoom out graphs"/>
+            <Tooltip text="Zoom out graphs" />
          </tooltip>
          <graphic>
             <FontAwesomeIconView>
                <styleClass>
-                  <String fx:value="zoom-out-icon-view"/>
-                  <String fx:value="advanced-controls-icon-view"/>
+                  <String fx:value="zoom-out-icon-view" />
+                  <String fx:value="advanced-controls-icon-view" />
                </styleClass>
             </FontAwesomeIconView>
          </graphic>
