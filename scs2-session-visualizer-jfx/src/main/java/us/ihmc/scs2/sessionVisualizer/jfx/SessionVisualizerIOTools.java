@@ -361,8 +361,42 @@ public class SessionVisualizerIOTools
    {
       FileChooser fileChooser = fileChooser(title, extensionFilter);
       File result = fileChooser.showSaveDialog(owner);
+
       if (result != null)
+      {
+         // FIXME: This is to address what seems to be a bug with the FileChooser on Windows.
+         // When saving, if you select a file with the same extension, then modify the name, the FileChooser will append the file extension another time.
+         if (extensionFilter != null && !extensionFilter.getExtensions().isEmpty())
+         {
+            String filename = result.getName();
+
+            for (String extension : extensionFilter.getExtensions())
+            {
+               if (extension.charAt(0) == '*')
+                  extension = extension.substring(1);
+
+               int firstIndexOfExtension = filename.indexOf(extension);
+
+               if (firstIndexOfExtension == -1)
+               {
+                  continue;
+               }
+               else if (firstIndexOfExtension == filename.length() - extension.length())
+               {
+                  break;
+               }
+               else
+               {
+                  String newFilename = filename.substring(0, firstIndexOfExtension) + extension;
+                  result = new File(result.getParentFile(), newFilename);
+                  // No need to worry if the file already exists, it would have caused a prompt in the FileChooser.
+                  break;
+               }
+            }
+         }
          setDefaultFilePath(result);
+      }
+
       return result;
    }
 
