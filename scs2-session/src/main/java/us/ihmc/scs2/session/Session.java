@@ -50,7 +50,7 @@ public abstract class Session
    private static final int DEFAULT_INITIAL_BUFFER_SIZE = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.initialsize", 8192);
    private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.recordtickperiod", 1);
    private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = SessionPropertiesHelper.loadBooleanProperty("scs2.session.runrealtime", false);
-   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 2.0);
+   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 1.0);
    private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = SessionPropertiesHelper.loadLongProperty("scs2.session.buffer.publishperiod",
                                                                                                       (long) (1.0 / 30.0 * 1.0e9));
 
