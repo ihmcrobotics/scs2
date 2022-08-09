@@ -65,7 +65,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    private final YoBulletContactSolverInfoParameters globalContactSolverInfoParameters;
    private final YoBoolean hasGlobalBulletSimulationParameters;
    private final YoBulletSimulationParameters globalBulletSimulationParameters;
-   private boolean initialize = true;
+   private boolean hasBeenInitialized = false;
 
    public BulletPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
@@ -87,11 +87,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
    }
 
    @Override
-   public boolean initialize(Vector3DReadOnly gravity)
+   public void initialize(Vector3DReadOnly gravity)
    {
-      if (!initialize)
-         return false;
-
       for (BulletRobot robot : robotList)
       {
          robot.initializeState();
@@ -99,15 +96,17 @@ public class BulletPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().initializeControllers();
       }
 
-      initialize = false;
-      return true;
+      hasBeenInitialized = true;
    }
 
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-      if (initialize(gravity))
+      if (!hasBeenInitialized)
+      {
+         initialize(gravity);         
          return;
+      }
 
       //set yoVariable Tick Expected Time Rate in milliseconds
       runTickExpectedTimeRate.set(dt * 1000);
