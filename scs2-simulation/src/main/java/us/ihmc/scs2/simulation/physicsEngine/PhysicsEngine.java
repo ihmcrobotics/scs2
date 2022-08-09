@@ -14,7 +14,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 
 public interface PhysicsEngine
 {
-   boolean initialize(Vector3DReadOnly gravity);
+   void initialize(Vector3DReadOnly gravity);
 
    void simulate(double currentTime, double dt, Vector3DReadOnly gravity);
 

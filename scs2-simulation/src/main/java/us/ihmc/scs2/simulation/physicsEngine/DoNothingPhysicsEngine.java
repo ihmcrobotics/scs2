@@ -22,7 +22,7 @@ public class DoNothingPhysicsEngine implements PhysicsEngine
    private final List<Robot> robotList = new ArrayList<>();
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
-   private boolean initialize = true;
+   private boolean hasBeenInitialized = false;
 
    public DoNothingPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
@@ -45,25 +45,24 @@ public class DoNothingPhysicsEngine implements PhysicsEngine
    }
 
    @Override
-   public boolean initialize(Vector3DReadOnly gravity)
+   public void initialize(Vector3DReadOnly gravity)
    {
-      if (!initialize)
-         return false;
-
       for (Robot robot : robotList)
       {
          robot.initializeState();
          robot.getControllerManager().initializeControllers();
       }
-      initialize = false;
-      return true;
+      hasBeenInitialized = true;
    }
 
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-      if (initialize(gravity))
+      if (!hasBeenInitialized)
+      {
+         initialize(gravity);
          return;
+      }
 
       for (Robot robot : robotList)
       {
