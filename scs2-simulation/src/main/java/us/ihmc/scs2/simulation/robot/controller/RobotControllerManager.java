@@ -142,6 +142,7 @@ public class RobotControllerManager
    public void initializeControllers()
    {
       controllerInput.setTime(0.0);
+      controllerOutput.clear();
 
       for (Controller controller : controllers)
       {
