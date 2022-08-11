@@ -343,6 +343,8 @@ public class SCS1GraphicConversionTools
          YoGraphicPolynomial3DDefinition definition = new YoGraphicPolynomial3DDefinition();
          definition.setName(yoGraphicPolynomial3D.getName());
          definition.setSize(constants[0]);
+         definition.setTimeResolution((int) constants[1]);
+         definition.setNumberOfDivisions((int) constants[2]);
 
          int xSize = (int) polynomialSizes[0];
          String xNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
@@ -383,6 +385,8 @@ public class SCS1GraphicConversionTools
             YoGraphicPolynomial3DDefinition definition = new YoGraphicPolynomial3DDefinition();
             definition.setName(yoGraphicPolynomial3D.getName() + Integer.toString(i));
             definition.setSize(constants[0]);
+            definition.setTimeResolution((int) constants[1]);
+            definition.setNumberOfDivisions((int) constants[2]);
 
             int xSize = (int) polynomialSizes[0];
             String xNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();

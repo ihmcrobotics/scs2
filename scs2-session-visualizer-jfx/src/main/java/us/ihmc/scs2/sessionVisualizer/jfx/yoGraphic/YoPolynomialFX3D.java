@@ -29,12 +29,11 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
    private DoubleProperty startTime = new SimpleDoubleProperty(0.0);
    private DoubleProperty endTime;
    private DoubleProperty size = new SimpleDoubleProperty(0.01);
+   private IntegerProperty timeResolution = new SimpleIntegerProperty(50);
+   private IntegerProperty numberOfDivisions = new SimpleIntegerProperty(20);
 
    private final PhongMaterial material = new PhongMaterial();
    private final Group polynomialNode = new Group();
-
-   private int timeResolution = 50;
-   private int numberOfDivisions = 20;
 
    private Polynomial3DData newPolynomial = null;
    private Polynomial3DData oldPolynomial = null;
@@ -104,6 +103,9 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
 
       if (newPolynomialLocal.equals(oldPolynomial) && !polynomialNode.getChildren().isEmpty())
          return;
+
+      int timeResolution = this.timeResolution.get();
+      int numberOfDivisions = this.numberOfDivisions.get();
 
       Point3D[] positions = new Point3D[timeResolution];
       Vector3D[] velocities = new Vector3D[timeResolution];
@@ -292,10 +294,20 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
 
    public void setTimeResolution(int timeResolution)
    {
+      setTimeResolution(new SimpleIntegerProperty(timeResolution));
+   }
+
+   public void setTimeResolution(IntegerProperty timeResolution)
+   {
       this.timeResolution = timeResolution;
    }
 
    public void setNumberOfDivisions(int numberOfDivisions)
+   {
+      setNumberOfDivisions(new SimpleIntegerProperty(numberOfDivisions));
+   }
+
+   public void setNumberOfDivisions(IntegerProperty numberOfDivisions)
    {
       this.numberOfDivisions = numberOfDivisions;
    }
@@ -329,6 +341,8 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       clone.setStartTime(startTime);
       clone.setEndTime(endTime);
       clone.setSize(size);
+      clone.setTimeResolution(timeResolution);
+      clone.setNumberOfDivisions(numberOfDivisions);
       clone.setColor(color);
       return clone;
    }
@@ -376,6 +390,16 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
    public DoubleProperty getSize()
    {
       return size;
+   }
+
+   public IntegerProperty getTimeResolution()
+   {
+      return timeResolution;
+   }
+
+   public IntegerProperty getNumberOfDivisions()
+   {
+      return numberOfDivisions;
    }
 
    @Override
