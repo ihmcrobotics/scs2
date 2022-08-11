@@ -34,7 +34,6 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
@@ -267,10 +266,7 @@ public class VideoRecordingPreviewPaneController
    @FXML
    void exportVideo(ActionEvent event)
    {
-      FileChooser fileChooser = new FileChooser();
-      fileChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath("video"));
-      fileChooser.getExtensionFilters().add(SessionVisualizerIOTools.videoExtensionFilter);
-      File result = fileChooser.showSaveDialog(owner);
+      File result = SessionVisualizerIOTools.videoExportSaveFileDialog(owner);
 
       if (result == null)
          return;
