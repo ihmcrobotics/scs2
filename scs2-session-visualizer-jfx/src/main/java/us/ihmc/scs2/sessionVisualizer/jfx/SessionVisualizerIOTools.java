@@ -19,6 +19,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
+import javafx.scene.layout.Region;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -423,12 +424,13 @@ public class SessionVisualizerIOTools
          // When saving, the filename is not guaranteed to contain the file extension.
          if (!containsExtension)
          {
-            String newFilename = filename + extensions.get(0);
+            String newFilename = filename + extensions.get(0).replace("*", "");
             result = new File(result.getParentFile(), newFilename);
             if (result.exists())
             { // On Linux, this case is not covered by the FileChooser, we need to manually display a confirmation
 
                Alert alert = new Alert(AlertType.WARNING, result.getName() + " already exists.\nDo you want to replace it?", ButtonType.YES, ButtonType.NO);
+               alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
                alert.initOwner(owner);
                alert.setTitle("Confirm Save As");
                JavaFXMissingTools.centerDialogInOwner(alert);
