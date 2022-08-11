@@ -7,10 +7,16 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.prefs.Preferences;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
@@ -19,6 +25,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import us.ihmc.commons.nio.FileTools;
 import us.ihmc.scs2.session.SessionIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
@@ -364,21 +371,27 @@ public class SessionVisualizerIOTools
 
    private static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
+      List<String> extensions = extensionFilter != null ? extensionFilter.getExtensions() : Collections.emptyList();
+      boolean hasExtension = !extensions.isEmpty();
+
       FileChooser fileChooser = fileChooser(title, extensionFilter);
-      fileChooser.setInitialFileName(extensionFilter.getExtensions().get(0));
+      if (hasExtension)
+         fileChooser.setInitialFileName(extensions.get(0));
       File result = fileChooser.showSaveDialog(owner);
 
       if (result == null)
          return null;
 
-      // FIXME: This is to address what seems to be a bug with the FileChooser on Windows.
-      // When saving, if you select a file with the same extension, then modify the name, the FileChooser will append the file extension another time.
-      if (extensionFilter != null && !extensionFilter.getExtensions().isEmpty())
+      if (hasExtension)
       {
+         // FIXME: This is to address what seems to be a bug with the FileChooser on Windows.
+         // When saving, if you select a file with the same extension, then modify the name, the FileChooser will append the file extension another time.
          String filename = result.getName();
+         boolean containsExtension = false;
 
-         for (String extension : extensionFilter.getExtensions())
+         for (int i = 0; i < extensions.size(); i++)
          {
+            String extension = extensions.get(i);
             if (extension.charAt(0) == '*')
                extension = extension.substring(1);
 
@@ -388,16 +401,44 @@ public class SessionVisualizerIOTools
             {
                continue;
             }
-            else if (firstIndexOfExtension == filename.length() - extension.length())
-            {
-               break;
-            }
             else
             {
-               String newFilename = filename.substring(0, firstIndexOfExtension) + extension;
-               result = new File(result.getParentFile(), newFilename);
-               // No need to worry if the file already exists, it would have caused a prompt in the FileChooser.
-               break;
+               containsExtension = true;
+
+               if (firstIndexOfExtension == filename.length() - extension.length())
+               {
+                  break;
+               }
+               else
+               {
+                  String newFilename = filename.substring(0, firstIndexOfExtension) + extension;
+                  result = new File(result.getParentFile(), newFilename);
+                  // No need to worry if the file already exists, it would have caused a prompt in the FileChooser.
+                  break;
+               }
+            }
+         }
+
+         // FIXME: This is to address what seems to be a bug with the FileChooser on Linux.
+         // When saving, the filename is not guaranteed to contain the file extension.
+         if (!containsExtension)
+         {
+            String newFilename = filename + extensions.get(0);
+            result = new File(result.getParentFile(), newFilename);
+            if (result.exists())
+            { // On Linux, this case is not covered by the FileChooser, we need to manually display a confirmation
+
+               Alert alert = new Alert(AlertType.WARNING, result.getName() + " already exists.\nDo you want to replace it?", ButtonType.YES, ButtonType.NO);
+               alert.initOwner(owner);
+               alert.setTitle("Confirm Save As");
+               JavaFXMissingTools.centerDialogInOwner(alert);
+               // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+               // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+               alert.setOnShown(e -> JavaFXMissingTools.runLater(SessionVisualizerIOTools.class, () -> JavaFXMissingTools.centerDialogInOwner(alert)));
+               Optional<ButtonType> confirmation = alert.showAndWait();
+
+               if (!confirmation.isPresent() || confirmation.get() == ButtonType.NO)
+                  return null;
             }
          }
       }
