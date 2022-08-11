@@ -570,15 +570,20 @@ public class SCS1GraphicConversionTools
       definition.setPosition(toYoTuple2DDefinition(yoArtifactPosition.getVariables(), 0));
       definition.setSize(2.0 * yoArtifactPosition.getConstants()[0]);
 
+      boolean fill = false;
       int graphicTypeIndex = (int) yoArtifactPosition.getConstants()[1];
+
       if (graphicTypeIndex >= 0 && graphicTypeIndex < GraphicType.values().length)
       {
          DefaultPoint2DGraphic graphic = null;
          switch (GraphicType.values()[graphicTypeIndex])
          {
             case BALL:
+               graphic = DefaultPoint2DGraphic.CIRCLE;
+               break;
             case SOLID_BALL:
                graphic = DefaultPoint2DGraphic.CIRCLE;
+               fill = true;
                break;
             case CROSS:
                graphic = DefaultPoint2DGraphic.CROSS;
@@ -612,8 +617,19 @@ public class SCS1GraphicConversionTools
          definition.setGraphicName(graphic != null ? graphic.getGraphicName() : null);
       }
 
-      definition.setStrokeColor(toColorDefinition(yoArtifactPosition.getAppearance()));
-      definition.setStrokeWidth(1.5);
+      ColorDefinition color = toColorDefinition(yoArtifactPosition.getAppearance());
+
+      if (fill)
+      {
+         definition.setFillColor(color);
+         definition.setStrokeWidth(0.0);
+      }
+      else
+      {
+         definition.setStrokeColor(color);
+         definition.setStrokeWidth(1.5);
+      }
+
       definition.setVisible(yoArtifactPosition.isVisible());
       return definition;
    }
