@@ -643,6 +643,9 @@ public class JavaFXVisualTools
       return atLeastOneFieldSet ? phongMaterial : DEFAULT_MATERIAL;
    }
 
+   private static final Map<URL, Image> cachedURLImages = new ConcurrentHashMap<>();
+   private static final Map<String, Image> cachedFilenameImages = new ConcurrentHashMap<>();
+
    public static Image toImage(TextureDefinition textureDefinition, ClassLoader resourceClassLoader)
    {
       try
@@ -652,13 +655,27 @@ public class JavaFXVisualTools
          if (textureDefinition.getImage() != null)
             return SwingFXUtils.toFXImage(textureDefinition.getImage(), null);
          if (textureDefinition.getFileURL() != null)
-            return new Image(textureDefinition.getFileURL().openStream());
+         {
+            Image image = cachedURLImages.get(textureDefinition.getFileURL());
+            if (image == null)
+            {
+               image = new Image(textureDefinition.getFileURL().openStream());
+               cachedURLImages.put(textureDefinition.getFileURL(), image);
+            }
+            return image;
+         }
          if (textureDefinition.getFilename() != null)
          {
-            if (resourceClassLoader != null)
-               return new Image(resourceClassLoader.getResourceAsStream(textureDefinition.getFilename()));
-            else
-               return new Image(textureDefinition.getFilename());
+            Image image = cachedFilenameImages.get(textureDefinition.getFilename());
+            if (image == null)
+            {
+               if (resourceClassLoader != null)
+                  image = new Image(resourceClassLoader.getResourceAsStream(textureDefinition.getFilename()));
+               else
+                  image = new Image(textureDefinition.getFilename());
+               cachedFilenameImages.put(textureDefinition.getFilename(), image);
+            }
+            return image;
          }
          return null;
       }
