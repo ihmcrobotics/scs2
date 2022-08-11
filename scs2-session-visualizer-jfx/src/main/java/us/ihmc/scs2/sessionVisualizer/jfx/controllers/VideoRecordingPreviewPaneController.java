@@ -35,7 +35,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
@@ -117,8 +116,6 @@ public class VideoRecordingPreviewPaneController
    private final Property<SessionMode> currentSessionMode = new SimpleObjectProperty<>(this, "currentSessionMode", null);
    private AtomicReference<YoBufferPropertiesReadOnly> bufferProperties;
 
-   private Window owner;
-
    private Stage stage;
    private Group rootNode3D;
    private JavaFXMessager messager;
@@ -138,7 +135,6 @@ public class VideoRecordingPreviewPaneController
 
    public void initialize(Window owner, Group mainView3DRoot, PerspectiveCamera targetCamera, JavaFXMessager messager, SessionVisualizerTopics topics)
    {
-      this.owner = owner;
       this.rootNode3D = mainView3DRoot;
       this.messager = messager;
       this.topics = topics;
@@ -220,7 +216,7 @@ public class VideoRecordingPreviewPaneController
       currentBufferIndexSlider.valueProperty().addListener(currentBufferIndexSliderListener);
       cleanupActions.add(() -> currentBufferIndexSlider.valueProperty().removeListener(currentBufferIndexSliderListener));
 
-      stage = new Stage(StageStyle.UTILITY);
+      stage = new Stage();
       stage.setTitle("Video export preview and properties");
       stage.setScene(new Scene(mainPane));
       refreshViewAnimation.start();
@@ -266,12 +262,11 @@ public class VideoRecordingPreviewPaneController
    @FXML
    void exportVideo(ActionEvent event)
    {
-      File result = SessionVisualizerIOTools.videoExportSaveFileDialog(owner);
+      File result = SessionVisualizerIOTools.videoExportSaveFileDialog(stage);
 
       if (result == null)
          return;
 
-      SessionVisualizerIOTools.setDefaultFilePath("video", result);
       SceneVideoRecordingRequest request = new SceneVideoRecordingRequest();
       request.setFile(result);
       request.setFrameRate(frameRate.getValue());
