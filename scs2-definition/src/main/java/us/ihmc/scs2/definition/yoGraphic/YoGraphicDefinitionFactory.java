@@ -390,6 +390,35 @@ public class YoGraphicDefinitionFactory
                                                                           ColorDefinition color)
    {
       return newYoGraphicPolynomial3D(name,
+                                      coefficientsX,
+                                      numberOfCoefficientsX,
+                                      coefficientsY,
+                                      numberOfCoefficientsY,
+                                      coefficientsZ,
+                                      numberOfCoefficientsZ,
+                                      startTime,
+                                      endTime,
+                                      size,
+                                      50,
+                                      10,
+                                      color);
+   }
+
+   public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,
+                                                                          YoVariable[] coefficientsX,
+                                                                          YoInteger numberOfCoefficientsX,
+                                                                          YoVariable[] coefficientsY,
+                                                                          YoInteger numberOfCoefficientsY,
+                                                                          YoVariable[] coefficientsZ,
+                                                                          YoInteger numberOfCoefficientsZ,
+                                                                          YoDouble startTime,
+                                                                          YoDouble endTime,
+                                                                          double size,
+                                                                          int timeResolution,
+                                                                          int numberOfDivisions,
+                                                                          ColorDefinition color)
+   {
+      return newYoGraphicPolynomial3D(name,
                                       toYoListDefinition(coefficientsX, numberOfCoefficientsX),
                                       toYoListDefinition(coefficientsY, numberOfCoefficientsY),
                                       toYoListDefinition(coefficientsZ, numberOfCoefficientsZ),
@@ -398,6 +427,8 @@ public class YoGraphicDefinitionFactory
                                       endTime,
                                       0,
                                       size,
+                                      timeResolution,
+                                      numberOfDivisions,
                                       color);
    }
 
@@ -412,6 +443,33 @@ public class YoGraphicDefinitionFactory
                                                                           double size,
                                                                           ColorDefinition color)
    {
+      return newYoGraphicPolynomial3D(name,
+                                      coefficientsX,
+                                      coefficientsY,
+                                      coefficientsZ,
+                                      startTime,
+                                      defaultStartTime,
+                                      endTime,
+                                      defaultEndTime,
+                                      size,
+                                      50,
+                                      10,
+                                      color);
+   }
+
+   public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,
+                                                                          YoListDefinition coefficientsX,
+                                                                          YoListDefinition coefficientsY,
+                                                                          YoListDefinition coefficientsZ,
+                                                                          YoDouble startTime,
+                                                                          double defaultStartTime,
+                                                                          YoDouble endTime,
+                                                                          double defaultEndTime,
+                                                                          double size,
+                                                                          int timeResolution,
+                                                                          int numberOfDivisions,
+                                                                          ColorDefinition color)
+   {
       YoGraphicPolynomial3DDefinition definition = new YoGraphicPolynomial3DDefinition();
       definition.setName(name);
       definition.setVisible(true);
@@ -421,6 +479,8 @@ public class YoGraphicDefinitionFactory
       definition.setStartTime(toPropertyName(startTime, defaultStartTime));
       definition.setEndTime(toPropertyName(endTime, defaultEndTime));
       definition.setSize(size);
+      definition.setTimeResolution(timeResolution);
+      definition.setNumberOfDivisions(numberOfDivisions);
       definition.setColor(color);
       return definition;
    }

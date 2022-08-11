@@ -11,7 +11,10 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    private YoListDefinition coefficientsZ;
 
    private String startTime, endTime;
+
    private String size;
+   private String timeResolution;
+   private String numberOfDivisions;
 
    @XmlElement(name = "coefficientsX")
    public void setCoefficientsX(YoListDefinition coefficientsX)
@@ -64,6 +67,28 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       this.size = size;
    }
 
+   public void setTimeResolution(int timeResolution)
+   {
+      setTimeResolution(Integer.toString(timeResolution));
+   }
+
+   @XmlElement
+   public void setTimeResolution(String timeResolution)
+   {
+      this.timeResolution = timeResolution;
+   }
+
+   public void setNumberOfDivisions(int numberOfDivisions)
+   {
+      setNumberOfDivisions(Integer.toString(numberOfDivisions));
+   }
+
+   @XmlElement
+   public void setNumberOfDivisions(String numberOfDivisions)
+   {
+      this.numberOfDivisions = numberOfDivisions;
+   }
+
    public YoListDefinition getCoefficientsX()
    {
       return coefficientsX;
@@ -94,6 +119,16 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       return size;
    }
 
+   public String getTimeResolution()
+   {
+      return timeResolution;
+   }
+
+   public String getNumberOfDivisions()
+   {
+      return numberOfDivisions;
+   }
+
    @Override
    public boolean equals(Object object)
    {
@@ -115,12 +150,17 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
             return false;
          if (!Objects.equals(coefficientsZ, other.coefficientsZ))
             return false;
-         if (startTime == null ? other.startTime != null : !startTime.equals(other.startTime))
+         if (!Objects.equals(startTime, other.startTime))
             return false;
-         if (endTime == null ? other.endTime != null : !endTime.equals(other.endTime))
+         if (!Objects.equals(endTime, other.endTime))
             return false;
-         if (size == null ? other.size != null : !size.equals(other.size))
+         if (!Objects.equals(size, other.size))
             return false;
+         if (!Objects.equals(timeResolution, other.timeResolution))
+            return false;
+         if (!Objects.equals(numberOfDivisions, other.numberOfDivisions))
+            return false;
+         
          return true;
       }
       else
