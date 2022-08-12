@@ -134,8 +134,11 @@ public class SessionIOTools
             if (file.list().length > 0)
             {
                // Clean up folder
-               String[] allExtensions = {infoFileExtension, robotDefinitionFileExtension, terrainObjectDefinitionFileExtension,
-                     yoGraphicConfigurationFileExtension, yoRegistryDefinitionFileExtension};
+               String[] allExtensions = {infoFileExtension,
+                                         robotDefinitionFileExtension,
+                                         terrainObjectDefinitionFileExtension,
+                                         yoGraphicConfigurationFileExtension,
+                                         yoRegistryDefinitionFileExtension};
                allExtensions = SharedMemoryTools.concatenate(allExtensions,
                                                              Arrays.stream(DataFormat.values()).map(DataFormat::getFileExtension).toArray(String[]::new));
 
