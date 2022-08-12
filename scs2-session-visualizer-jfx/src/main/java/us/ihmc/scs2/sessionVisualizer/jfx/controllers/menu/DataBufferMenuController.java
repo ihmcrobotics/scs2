@@ -5,8 +5,8 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import javafx.beans.property.Property;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.TextField;
@@ -17,6 +17,7 @@ import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
@@ -28,13 +29,13 @@ public class DataBufferMenuController implements VisualizerController
    @FXML
    private Menu menu;
    @FXML
+   private CustomMenuItem bufferSizeMenuItem, bufferRecordTickPeriodMenuItem, numberPrecisionMenuItem;
+   @FXML
    private TextField bufferSizeTextField;
    @FXML
    private TextField bufferRecordTickPeriodTextField;
    @FXML
    private Spinner<Integer> numberPrecisionSpinner;
-   @FXML
-   private MenuItem sizeMenuItem;
    @FXML
    private CheckMenuItem showSCS2YoVariablesMenuItem;
 
@@ -59,17 +60,9 @@ public class DataBufferMenuController implements VisualizerController
 
       TextFormatter<Integer> bufferSizeFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
       bufferSizeTextField.setTextFormatter(bufferSizeFormatter);
-      /*
-       * TODO: Workaround for a bug in JFX that's causing the previous MenuItem to be triggered and
-       * pressing enter while editing the TextField. Registering an EventHandler (even empty) using
-       * TextField.setOnAction(...) changes the internal logic and prevents the bug from occurring, see:
-       * @formatter:off
-       * https://stackoverflow.com/questions/51307577/javafx-custommenuitem-strange-behaviour-with-textfield
-       * @formatter:on
-       */
-      bufferSizeTextField.setOnAction(e ->
-      {
-      });
+
+      MenuTools.configureTextFieldForCustomMenuItem(bufferSizeMenuItem, bufferSizeTextField);
+      MenuTools.configureTextFieldForCustomMenuItem(bufferRecordTickPeriodMenuItem, bufferRecordTickPeriodTextField);
 
       MutableBoolean updatingBufferResize = new MutableBoolean(false);
 
@@ -102,10 +95,6 @@ public class DataBufferMenuController implements VisualizerController
 
       TextFormatter<Integer> recordPeriodFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
       bufferRecordTickPeriodTextField.setTextFormatter(recordPeriodFormatter);
-
-      bufferRecordTickPeriodTextField.setOnAction(e ->
-      {
-      });
 
       messager.bindBidirectional(topics.getBufferRecordTickPeriod(), recordPeriodFormatter.valueProperty(), false);
 

@@ -18,7 +18,7 @@ import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXToolkit.cameraControllers.CameraZoomCalculator;
 import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class MainViewport3DManager implements SingleViewport3DManager
@@ -140,7 +140,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    static void setupNodeTrackingContextMenu(ObjectProperty<Node> nodeTrackedProperty, Node viewport, Predicate<Node> filter)
    {
-      ContextMenuTools.setupContextMenu(viewport, (owner, event) ->
+      MenuTools.setupContextMenu(viewport, (owner, event) ->
       {
 
          PickResult pickResult = event.getPickResult();

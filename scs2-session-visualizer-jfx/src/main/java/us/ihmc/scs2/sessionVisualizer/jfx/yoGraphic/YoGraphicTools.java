@@ -648,6 +648,8 @@ public class YoGraphicTools
       yoGraphicFXToPack.setStartTime(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getStartTime()));
       yoGraphicFXToPack.setEndTime(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getEndTime()));
       yoGraphicFXToPack.setSize(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getSize()));
+      yoGraphicFXToPack.setTimeResolution(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getTimeResolution()));
+      yoGraphicFXToPack.setNumberOfDivisions(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfDivisions()));
    }
 
    public static YoCoordinateSystemFX3D toYoCoordinateSystemFX3D(YoVariableDatabase yoVariableDatabase,
@@ -1450,6 +1452,8 @@ public class YoGraphicTools
       definition.setStartTime(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStartTime()));
       definition.setEndTime(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getEndTime()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
+      definition.setTimeResolution(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getTimeResolution()));
+      definition.setNumberOfDivisions(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfDivisions()));
       definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
 
       return definition;

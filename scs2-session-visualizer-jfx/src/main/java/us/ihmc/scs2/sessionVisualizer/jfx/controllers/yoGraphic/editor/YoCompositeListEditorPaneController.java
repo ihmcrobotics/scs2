@@ -63,7 +63,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextFie
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
@@ -205,7 +205,7 @@ public class YoCompositeListEditorPaneController
       });
 
       listView.setOnDragDetected(this::handleDragDetected);
-      ContextMenuTools.setupContextMenu(listView,
+      MenuTools.setupContextMenu(listView,
                                         addBeforeMenuItemFactory(this::newYoCompositeEditor),
                                         addAfterMenuItemFactory(this::newYoCompositeEditor),
                                         removeMenuItemFactory(false));

@@ -18,6 +18,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasi
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, SimFloatingJointBasics
 {
@@ -48,6 +49,31 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
                                               new YoFrameVector3D("qd_delta" + varName + "w", afterJointFrame, registry),
                                               new YoFrameVector3D("qd_delta" + varName, afterJointFrame, registry));
       isPinned = new YoBoolean("is" + varName + "pinned", registry);
+      getJointPose().attachVariableChangedListener(v ->
+      {
+         if (!Double.isFinite(((YoDouble) v).getValue()))
+            throw new IllegalStateException("Invalid joint configuration: " + getJointPose());
+      });
+      getJointTwist().getAngularPart().attachVariableChangedListener(v ->
+      {
+         if (!Double.isFinite(((YoDouble) v).getValue()))
+            throw new IllegalStateException("Invalid joint twist: " + getJointTwist());
+      });
+      getJointTwist().getLinearPart().attachVariableChangedListener(v ->
+      {
+         if (!Double.isFinite(((YoDouble) v).getValue()))
+            throw new IllegalStateException("Invalid joint twist: " + getJointTwist());
+      });
+      getJointAcceleration().getAngularPart().attachVariableChangedListener(v ->
+      {
+         if (!Double.isFinite(((YoDouble) v).getValue()))
+            throw new IllegalStateException("Invalid joint acceleration: " + getJointAcceleration());
+      });
+      getJointAcceleration().getLinearPart().attachVariableChangedListener(v ->
+      {
+         if (!Double.isFinite(((YoDouble) v).getValue()))
+            throw new IllegalStateException("Invalid joint acceleration: " + getJointAcceleration());
+      });
    }
 
    @Override
