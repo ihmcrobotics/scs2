@@ -62,6 +62,18 @@ You'll need to clone this repository and at times source dependencies will be re
 # Environment variables:
 - `SCS2_HOME`: Defines the home folder in which SCS2 is saving configuration files.
 
+# Useful Tools classes:
+- `URDFTools`: for creating a `RobotDefinition` from a URDF file.
+- `SDFTools`: for creating a `RobotDefinition` from a SDF file.
+- `DefinitionIOTools`: for writing/reading definitions into/from XML file.
+- `SimMultiBodySystemTools`: common operations with system composed of `SimRigidBodyBasics` and `SimJointBasics` which are used to define the robot in simulation.
+- `SharedMemoryIOTools`: for writing a `SharedBuffer` into a data file and reading a `SharedBuffer` from a data file.
+- `JavaFXMissingTools`: provides additional tools for working with JavaFX.
+- `SCS1GraphicConversionTools`: for converting SCS1 `YoGraphic` and `Artifact` into SCS2 `YoGraphicDefinition`.
+- `SegmentedLine3DTriangleMeshFactory`: for creating a 3D "noodle" that goes through 3D waypoint.
+- `VisualDefinitionFactory`: for creating `VisualDefinition`.
+- `YoGraphicDefinitionFactory`: for creating `YoGraphicDefinition`.
+
 # External references:
 ## Icons:
 - <img src="scs2-session-visualizer-jfx/src/main/resources/icons/valid-icon.png" alt="Valid icon" width="25"/> & <img src="scs2-session-visualizer-jfx/src/main/resources/icons/invalid-icon.png" alt="Invalid icon" width="25"/> icons from <a href="https://icons8.com/icons/">Icons8</a>
