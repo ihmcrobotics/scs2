@@ -6,6 +6,7 @@ import com.jfoenix.controls.JFXTextField;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
@@ -14,12 +15,15 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 public class RunMenuController implements VisualizerController
 {
    @FXML
    private Menu menu;
+   @FXML
+   private CustomMenuItem playbackRealTimeRateMenuItem;
    @FXML
    private CheckMenuItem simulateAtRealTimeCheckMenuItem;
    @FXML
@@ -45,17 +49,7 @@ public class RunMenuController implements VisualizerController
       playbackRealTimeRateTextField.setTextFormatter(formatter);
       messager.bindBidirectional(topics.getPlaybackRealTimeRate(), formatter.valueProperty(), false);
 
-      /*
-       * TODO: Workaround for a bug in JFX that's causing the previous MenuItem to be triggered and
-       * pressing enter while editing the TextField. Registering an EventHandler (even empty) using
-       * TextField.setOnAction(...) changes the internal logic and prevents the bug from occurring, see:
-       * @formatter:off
-       * https://stackoverflow.com/questions/51307577/javafx-custommenuitem-strange-behaviour-with-textfield
-       * @formatter:on
-       */
-      playbackRealTimeRateTextField.setOnAction(e ->
-      {
-      });
+      MenuTools.configureTextFieldForCustomMenuItem(playbackRealTimeRateMenuItem, playbackRealTimeRateTextField);
    }
 
    @FXML

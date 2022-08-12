@@ -8,6 +8,7 @@ import org.ejml.interfaces.linsol.LinearSolverDense;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import us.ihmc.log.LogTools;
 
 /**
  * Algorithm from: <i>"`"</i> by
@@ -57,6 +58,7 @@ public class LinearComplementarityProblemSolver
    private final LinearSolverDense<DMatrixRMaj> linearSolver = LinearSolverFactory_DDRM.chol(10);
 
    private double tolerance = 1.0e-12;
+   private int maxIteration = 1000;
 
    public LinearComplementarityProblemSolver()
    {
@@ -91,14 +93,20 @@ public class LinearComplementarityProblemSolver
          if (d == -1)
             break;
 
-         driveToZeroFrictionless(d, A);
+         if (!driveToZeroFrictionless(d, A))
+         {
+            LogTools.error("Solver failed, A: {}\nb: {}", A, b);
+            return null;
+         }
       }
 
       return f;
    }
 
-   public void driveToZeroFrictionless(int d, DMatrixRMaj A)
+   public boolean driveToZeroFrictionless(int d, DMatrixRMaj A)
    {
+      int iteration = 0;
+
       while (true)
       {
          fDirection(d, A);
@@ -120,7 +128,11 @@ public class LinearComplementarityProblemSolver
             clampedIndexSet.add(maxStep.j); // j must be d, implying a_d = 0
             break;
          }
+         if (iteration++ >= maxIteration)
+            return false;
       }
+
+      return true;
    }
 
    public void fDirection(int d, DMatrixRMaj A)

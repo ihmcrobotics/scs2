@@ -38,6 +38,23 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoGraphicDefinitionFactory
 {
+   public enum DefaultPoint2DGraphic
+   {
+      PLUS, CROSS, CIRCLE, CIRCLE_PLUS, CIRCLE_CROSS, DIAMOND, DIAMOND_PLUS, SQUARE, SQUARE_CROSS;
+
+      private final String graphicName;
+
+      private DefaultPoint2DGraphic()
+      {
+         this.graphicName = name().charAt(0) + name().substring(1).toLowerCase().replace("_", " ");
+      }
+
+      public String getGraphicName()
+      {
+         return graphicName;
+      }
+   }
+
    public static YoGraphicArrow3DDefinition newYoGraphicArrow3D(String name,
                                                                 YoFrameTuple3D origin,
                                                                 YoFrameTuple3D direction,
@@ -334,6 +351,32 @@ public class YoGraphicDefinitionFactory
       return definition;
    }
 
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
+                                                                YoFrameTuple2D position,
+                                                                double size,
+                                                                ColorDefinition strokeColor,
+                                                                DefaultPoint2DGraphic graphicType)
+   {
+      return newYoGraphicPoint2D(name, position, position.getReferenceFrame(), size, strokeColor, graphicType);
+   }
+
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
+                                                                YoTuple2D position,
+                                                                ReferenceFrame positionFrame,
+                                                                double size,
+                                                                ColorDefinition strokeColor,
+                                                                DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPoint2DDefinition definition = new YoGraphicPoint2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPosition(newYoTuple2DDefinition(position, positionFrame));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(size);
+      definition.setStrokeColor(strokeColor);
+      return definition;
+   }
+
    public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,
                                                                           YoVariable[] coefficientsX,
                                                                           YoInteger numberOfCoefficientsX,
@@ -347,6 +390,35 @@ public class YoGraphicDefinitionFactory
                                                                           ColorDefinition color)
    {
       return newYoGraphicPolynomial3D(name,
+                                      coefficientsX,
+                                      numberOfCoefficientsX,
+                                      coefficientsY,
+                                      numberOfCoefficientsY,
+                                      coefficientsZ,
+                                      numberOfCoefficientsZ,
+                                      startTime,
+                                      endTime,
+                                      size,
+                                      50,
+                                      10,
+                                      color);
+   }
+
+   public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,
+                                                                          YoVariable[] coefficientsX,
+                                                                          YoInteger numberOfCoefficientsX,
+                                                                          YoVariable[] coefficientsY,
+                                                                          YoInteger numberOfCoefficientsY,
+                                                                          YoVariable[] coefficientsZ,
+                                                                          YoInteger numberOfCoefficientsZ,
+                                                                          YoDouble startTime,
+                                                                          YoDouble endTime,
+                                                                          double size,
+                                                                          int timeResolution,
+                                                                          int numberOfDivisions,
+                                                                          ColorDefinition color)
+   {
+      return newYoGraphicPolynomial3D(name,
                                       toYoListDefinition(coefficientsX, numberOfCoefficientsX),
                                       toYoListDefinition(coefficientsY, numberOfCoefficientsY),
                                       toYoListDefinition(coefficientsZ, numberOfCoefficientsZ),
@@ -355,6 +427,8 @@ public class YoGraphicDefinitionFactory
                                       endTime,
                                       0,
                                       size,
+                                      timeResolution,
+                                      numberOfDivisions,
                                       color);
    }
 
@@ -369,6 +443,33 @@ public class YoGraphicDefinitionFactory
                                                                           double size,
                                                                           ColorDefinition color)
    {
+      return newYoGraphicPolynomial3D(name,
+                                      coefficientsX,
+                                      coefficientsY,
+                                      coefficientsZ,
+                                      startTime,
+                                      defaultStartTime,
+                                      endTime,
+                                      defaultEndTime,
+                                      size,
+                                      50,
+                                      10,
+                                      color);
+   }
+
+   public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,
+                                                                          YoListDefinition coefficientsX,
+                                                                          YoListDefinition coefficientsY,
+                                                                          YoListDefinition coefficientsZ,
+                                                                          YoDouble startTime,
+                                                                          double defaultStartTime,
+                                                                          YoDouble endTime,
+                                                                          double defaultEndTime,
+                                                                          double size,
+                                                                          int timeResolution,
+                                                                          int numberOfDivisions,
+                                                                          ColorDefinition color)
+   {
       YoGraphicPolynomial3DDefinition definition = new YoGraphicPolynomial3DDefinition();
       definition.setName(name);
       definition.setVisible(true);
@@ -378,6 +479,8 @@ public class YoGraphicDefinitionFactory
       definition.setStartTime(toPropertyName(startTime, defaultStartTime));
       definition.setEndTime(toPropertyName(endTime, defaultEndTime));
       definition.setSize(size);
+      definition.setTimeResolution(timeResolution);
+      definition.setNumberOfDivisions(numberOfDivisions);
       definition.setColor(color);
       return definition;
    }

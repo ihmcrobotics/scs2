@@ -30,7 +30,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableTools;
@@ -75,7 +75,7 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
-      ContextMenuTools.setupContextMenu(registryTreeView, treeView ->
+      MenuTools.setupContextMenu(registryTreeView, treeView ->
       {
          MenuItem openStatisticsMenuItem = new MenuItem("Open statistics...");
          openStatisticsMenuItem.setOnAction(e ->

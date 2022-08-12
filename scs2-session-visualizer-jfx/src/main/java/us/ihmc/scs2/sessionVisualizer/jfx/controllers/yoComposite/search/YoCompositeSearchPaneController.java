@@ -39,7 +39,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableTools;
@@ -97,7 +97,7 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       activeSearchEngine = messager.createInput(topics.getYoSearchEngine(), SearchEngines.DEFAULT);
       maxNumberOfItemsReference = messager.createInput(topics.getYoSearchMaxListSize(), 500);
 
-      ContextMenuTools.setupContextMenu(yoCompositeListView, listView ->
+      MenuTools.setupContextMenu(yoCompositeListView, listView ->
       {
          if (registryViewRequestConsumer == null)
             return null;
