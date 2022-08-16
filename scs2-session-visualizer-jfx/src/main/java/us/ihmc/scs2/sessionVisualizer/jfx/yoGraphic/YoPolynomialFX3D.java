@@ -8,30 +8,36 @@ import java.util.stream.Stream;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
+import javafx.scene.transform.Affine;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.scs2.definition.visual.SegmentedLine3DTriangleMeshFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class YoPolynomialFX3D extends YoGraphicFX3D
 {
    private List<DoubleProperty> coefficientsX, coefficientsY, coefficientsZ;
    private IntegerProperty numberOfCoefficientsX, numberOfCoefficientsY, numberOfCoefficientsZ;
+   private Property<ReferenceFrame> referenceFrame;
    private DoubleProperty startTime = new SimpleDoubleProperty(0.0);
    private DoubleProperty endTime;
    private DoubleProperty size = new SimpleDoubleProperty(0.01);
    private IntegerProperty timeResolution = new SimpleIntegerProperty(50);
    private IntegerProperty numberOfDivisions = new SimpleIntegerProperty(20);
 
+   private final Affine affine = new Affine();
    private final PhongMaterial material = new PhongMaterial();
    private final Group polynomialNode = new Group();
 
@@ -41,6 +47,7 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
 
    public YoPolynomialFX3D()
    {
+      polynomialNode.getTransforms().add(affine);
    }
 
    public YoPolynomialFX3D(ReferenceFrame worldFrame)
@@ -51,6 +58,15 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (referenceFrame == null || referenceFrame.getValue() == null || referenceFrame.getValue().isRootFrame())
+      {
+         affine.setToIdentity();
+      }
+      else
+      {
+         JavaFXMissingTools.toJavaFX(referenceFrame.getValue().getTransformToRoot(), affine);
+      }
+
       newPolynomial = newPolynomial3D();
 
       if (color != null)
@@ -124,7 +140,8 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
 
       SegmentedLine3DTriangleMeshFactory meshGenerator = new SegmentedLine3DTriangleMeshFactory(timeResolution, numberOfDivisions, newPolynomialLocal.size);
       meshGenerator.compute(positions, velocities);
-      Mesh[] meshes = Stream.of(meshGenerator.getTriangleMesh3DDefinitions()).map(JavaFXTriangleMesh3DDefinitionInterpreter::interpretDefinition)
+      Mesh[] meshes = Stream.of(meshGenerator.getTriangleMesh3DDefinitions())
+                            .map(JavaFXTriangleMesh3DDefinitionInterpreter::interpretDefinition)
                             .toArray(Mesh[]::new);
 
       MeshView[] meshViews = new MeshView[meshes.length];
@@ -262,6 +279,16 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       setNumberOfCoefficientsZ(new SimpleIntegerProperty(numberOfCoefficientsZ));
    }
 
+   public void setReferenceFrame(ReferenceFrame referenceFrame)
+   {
+      setReferenceFrame(new SimpleObjectProperty<>(referenceFrame));
+   }
+
+   public void setReferenceFrame(Property<ReferenceFrame> referenceFrame)
+   {
+      this.referenceFrame = referenceFrame;
+   }
+
    public void setStartTime(DoubleProperty startTime)
    {
       this.startTime = startTime;
@@ -321,6 +348,7 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       numberOfCoefficientsX = null;
       numberOfCoefficientsY = null;
       numberOfCoefficientsZ = null;
+      referenceFrame = null;
       startTime = null;
       endTime = null;
       size = null;
@@ -338,6 +366,7 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       clone.setNumberOfCoefficientsX(numberOfCoefficientsX);
       clone.setNumberOfCoefficientsY(numberOfCoefficientsY);
       clone.setNumberOfCoefficientsZ(numberOfCoefficientsZ);
+      clone.setReferenceFrame(referenceFrame);
       clone.setStartTime(startTime);
       clone.setEndTime(endTime);
       clone.setSize(size);
@@ -375,6 +404,11 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
    public IntegerProperty getNumberOfCoefficientsZ()
    {
       return numberOfCoefficientsZ;
+   }
+
+   public Property<ReferenceFrame> getReferenceFrame()
+   {
+      return referenceFrame;
    }
 
    public DoubleProperty getStartTime()
