@@ -50,7 +50,10 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
          userObject = new Object();
 
       if (linkedBuffer != null)
+      {
          linkedBuffer.addUser(userObject);
+         pullYoEnumValue();
+      }
    }
 
    @Override

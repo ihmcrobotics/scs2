@@ -67,7 +67,10 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
       {
          yoLong.removeListener(propertyUpdater);
          if (linkedBuffer != null)
+         {
             linkedBuffer.removeUser(userObject);
+            pullYoLongValue();
+         }
       }
       finally
       {
