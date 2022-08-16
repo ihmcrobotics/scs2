@@ -16,9 +16,13 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
    @FXML
    private YoCompositeListEditorPaneController coefficientsXListEditorController, coefficientsYListEditorController, coefficientsZListEditorController;
    @FXML
+   private JFXTextField referenceFrameSearchTextField;
+   @FXML
    private JFXTextField startTimeTextField, endTimeTextField;
    @FXML
    private JFXTextField sizeTextField;
+   @FXML
+   private ImageView referenceFrameValidImageView;
    @FXML
    private ImageView startTimeValidImageView, endTimeValidImageView;
    @FXML
@@ -48,6 +52,7 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
                                     "Coefficients Z",
                                     yoGraphicToEdit::setNumberOfCoefficientsZ,
                                     yoGraphicToEdit::setCoefficientsZ);
+      setupReferenceFramePropertyEditor(referenceFrameSearchTextField, referenceFrameValidImageView, YoPolynomialFX3D::setReferenceFrame);
       setupDoublePropertyEditor(startTimeTextField, startTimeValidImageView, YoPolynomialFX3D::setStartTime);
       setupDoublePropertyEditor(endTimeTextField, endTimeValidImageView, YoPolynomialFX3D::setEndTime);
       setupDoublePropertyEditor(sizeTextField, sizeValidImageView, YoPolynomialFX3D::setSize);
@@ -71,6 +76,7 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
       coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY());
       coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ());
       styleEditorController.setInput(definitionBeforeEdits);
+      referenceFrameSearchTextField.setText(definitionBeforeEdits.getReferenceFrame());
       startTimeTextField.setText(definitionBeforeEdits.getStartTime());
       endTimeTextField.setText(definitionBeforeEdits.getEndTime());
       sizeTextField.setText(definitionBeforeEdits.getSize());
