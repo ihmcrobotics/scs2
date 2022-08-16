@@ -45,7 +45,10 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
          userObject = new Object();
 
       if (linkedBuffer != null)
+      {
          linkedBuffer.addUser(userObject);
+         pullYoDoubleValue();
+      }
    }
 
    @Override

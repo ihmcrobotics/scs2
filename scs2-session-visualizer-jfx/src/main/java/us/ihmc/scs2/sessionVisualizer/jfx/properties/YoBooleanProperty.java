@@ -45,7 +45,10 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
          userObject = new Object();
 
       if (linkedBuffer != null)
+      {
          linkedBuffer.addUser(userObject);
+         pullYoBooleanValue();
+      }
    }
 
    @Override

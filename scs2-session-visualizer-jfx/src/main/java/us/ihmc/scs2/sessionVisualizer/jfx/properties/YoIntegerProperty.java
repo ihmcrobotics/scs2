@@ -67,7 +67,10 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
       {
          yoInteger.removeListener(propertyUpdater);
          if (linkedBuffer != null)
+         {
             linkedBuffer.removeUser(userObject);
+            pullYoIntegerValue();
+         }
       }
       finally
       {
