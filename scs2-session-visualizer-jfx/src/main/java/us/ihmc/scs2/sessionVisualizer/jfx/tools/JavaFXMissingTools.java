@@ -32,6 +32,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
 import us.ihmc.euclid.transform.AffineTransform;
+import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
@@ -316,6 +317,22 @@ public class JavaFXMissingTools
                           jfxTransform.getMzy(),
                           jfxTransform.getMzz(),
                           jfxTransform.getTz());
+   }
+
+   public static void toJavaFX(RigidBodyTransform euclidTransform, javafx.scene.transform.Affine jfxTransform)
+   {
+      jfxTransform.setToTransform(euclidTransform.getM00(),
+                                  euclidTransform.getM01(),
+                                  euclidTransform.getM02(),
+                                  euclidTransform.getM03(),
+                                  euclidTransform.getM10(),
+                                  euclidTransform.getM11(),
+                                  euclidTransform.getM12(),
+                                  euclidTransform.getM13(),
+                                  euclidTransform.getM20(),
+                                  euclidTransform.getM21(),
+                                  euclidTransform.getM22(),
+                                  euclidTransform.getM23());
    }
 
    public static javafx.geometry.Point3D toJavaFX(Tuple3DReadOnly euclidInput)
