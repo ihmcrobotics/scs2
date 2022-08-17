@@ -37,21 +37,16 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
       yoEnum.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoEnum<E> linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
       {
-         linkedBuffer.addUser(userObject);
+         linkedBuffer.addUser(this);
          pullYoEnumValue();
       }
    }
@@ -75,7 +70,7 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
       {
          yoEnum.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+            linkedBuffer.removeUser(this);
       }
       finally
       {

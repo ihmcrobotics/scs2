@@ -88,7 +88,7 @@ public class YoDoubleTextField extends YoVariableTextField<DoubleProperty>
       else
       {
          YoDoubleProperty yoDoubleProperty = new YoDoubleProperty((YoDouble) yoComposite.getYoComponents().get(0));
-         yoDoubleProperty.setLinkedBuffer(linkedRootRegistry.linkYoVariable(yoDoubleProperty.getYoVariable()));
+         yoDoubleProperty.setLinkedBuffer(linkedRootRegistry.linkYoVariable(yoDoubleProperty.getYoVariable(), yoDoubleProperty));
          return yoDoubleProperty;
       }
    }

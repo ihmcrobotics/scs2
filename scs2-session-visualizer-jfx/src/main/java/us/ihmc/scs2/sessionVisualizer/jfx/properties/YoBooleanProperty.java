@@ -32,21 +32,16 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
       yoBoolean.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoBoolean linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
       {
-         linkedBuffer.addUser(userObject);
+         linkedBuffer.addUser(this);
          pullYoBooleanValue();
       }
    }
@@ -70,7 +65,7 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
       {
          yoBoolean.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+            linkedBuffer.removeUser(this);
       }
       finally
       {

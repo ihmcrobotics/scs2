@@ -27,7 +27,7 @@ public class YoEnumSlider implements YoVariableSlider
    public YoEnumSlider(YoEnum<?> yoEnum, LinkedYoRegistry linkedYoRegistry)
    {
       yoEnumProperty = new YoEnumAsStringProperty<>(yoEnum, this);
-      yoEnumProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable((YoEnum) yoEnum));
+      yoEnumProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable((YoEnum) yoEnum, yoEnumProperty));
    }
 
    @Override

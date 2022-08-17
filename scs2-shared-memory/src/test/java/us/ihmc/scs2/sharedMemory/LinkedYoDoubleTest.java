@@ -36,7 +36,7 @@ public class LinkedYoDoubleTest extends LinkedYoVariableTest<YoDouble>
       {
          YoDouble linkedVariable = SharedMemoryRandomTools.nextYoDouble(random, new YoRegistry("Dummy"));
          YoDoubleBuffer buffer = SharedMemoryRandomTools.nextYoDoubleBuffer(random, new YoRegistry("Dummy"));
-         LinkedYoDouble linkedYoDouble = new LinkedYoDouble(linkedVariable, buffer);
+         LinkedYoDouble linkedYoDouble = new LinkedYoDouble(linkedVariable, buffer, null);
 
          assertTrue(linkedVariable == linkedYoDouble.getLinkedYoVariable());
          assertTrue(buffer == linkedYoDouble.getBuffer());
@@ -62,7 +62,7 @@ public class LinkedYoDoubleTest extends LinkedYoVariableTest<YoDouble>
       {
          YoDouble linkedVariable = SharedMemoryRandomTools.nextYoDouble(random, new YoRegistry("Dummy"));
          YoDoubleBuffer buffer = SharedMemoryRandomTools.nextYoDoubleBuffer(random, new YoRegistry("Dummy"));
-         LinkedYoDouble linkedYoDouble = new LinkedYoDouble(linkedVariable, buffer);
+         LinkedYoDouble linkedYoDouble = new LinkedYoDouble(linkedVariable, buffer, null);
 
          DoublePullRequest pullRequest = linkedYoDouble.toPullRequest();
          assertTrue(linkedVariable == pullRequest.getVariableToUpdate());
@@ -82,7 +82,7 @@ public class LinkedYoDoubleTest extends LinkedYoVariableTest<YoDouble>
       {
          YoDouble linkedVariable = SharedMemoryRandomTools.nextYoDouble(random, new YoRegistry("Dummy"));
          YoDoubleBuffer buffer = SharedMemoryRandomTools.nextYoDoubleBuffer(random, new YoRegistry("Dummy"));
-         LinkedYoDouble linkedYoDouble = new LinkedYoDouble(linkedVariable, buffer);
+         LinkedYoDouble linkedYoDouble = new LinkedYoDouble(linkedVariable, buffer, null);
 
          DoublePushRequest pullRequest = linkedYoDouble.toPushRequest();
          assertTrue(buffer.getYoVariable() == pullRequest.getVariableToUpdate());

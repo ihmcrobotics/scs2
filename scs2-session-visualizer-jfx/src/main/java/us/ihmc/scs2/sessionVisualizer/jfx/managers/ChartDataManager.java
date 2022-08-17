@@ -83,7 +83,20 @@ public class ChartDataManager implements Manager
       YoVariableChartData yoVariableChartData = chartDataMap.get(yoVariable);
       if (yoVariableChartData == null)
       {
-         yoVariableChartData = new YoVariableChartData(messager, topics, getLinkedYoVariable(yoVariable));
+         LinkedYoVariable<?> linkedYoVariable = linkedVariableMap.get(yoVariable);
+
+         if (linkedYoVariable == null)
+         {
+            linkedYoVariable = yoManager.newLinkedYoVariable(yoVariable, this); // Make `this` a temporary user to indicate the linked variable is used while setting it up.
+            linkedVariableMap.put(yoVariable, linkedYoVariable);
+            yoVariableChartData = new YoVariableChartData(messager, topics, linkedYoVariable);
+            linkedYoVariable.removeUser(this); // YoVariableChartData adds itself as user, we don't want `this` to be a user.
+         }
+         else
+         {
+            yoVariableChartData = new YoVariableChartData(messager, topics, linkedYoVariable);
+         }
+
          yoVariableChartData.registerCaller(callerID);
          chartDataMap.put(yoVariable, yoVariableChartData);
       }
@@ -92,16 +105,5 @@ public class ChartDataManager implements Manager
          yoVariableChartData.registerCaller(callerID);
       }
       return yoVariableChartData;
-   }
-
-   private LinkedYoVariable<?> getLinkedYoVariable(YoVariable yoVariable)
-   {
-      LinkedYoVariable<?> linkedYoVariable = linkedVariableMap.get(yoVariable);
-      if (linkedYoVariable == null)
-      {
-         linkedYoVariable = yoManager.newLinkedYoVariable(yoVariable);
-         linkedVariableMap.put(yoVariable, linkedYoVariable);
-      }
-      return linkedYoVariable;
    }
 }

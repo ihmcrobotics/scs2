@@ -14,5 +14,10 @@ public interface LinkedYoVariableFactory
 
    LinkedYoRegistry newLinkedYoRegistry(YoRegistry registryToLink);
 
-   LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink);
+   default LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink)
+   {
+      return newLinkedYoVariable(variableToLink, null);
+   }
+
+   LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink, Object initialUser);
 }

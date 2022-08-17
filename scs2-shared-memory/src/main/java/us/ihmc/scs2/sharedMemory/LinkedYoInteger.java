@@ -4,9 +4,9 @@ import us.ihmc.yoVariables.variable.YoInteger;
 
 public class LinkedYoInteger extends LinkedYoVariable<YoInteger>
 {
-   LinkedYoInteger(YoInteger linkedVariable, YoIntegerBuffer buffer)
+   LinkedYoInteger(YoInteger linkedVariable, YoIntegerBuffer buffer, Object initialUser)
    {
-      super(linkedVariable, buffer);
+      super(linkedVariable, buffer, initialUser);
    }
 
    @Override
