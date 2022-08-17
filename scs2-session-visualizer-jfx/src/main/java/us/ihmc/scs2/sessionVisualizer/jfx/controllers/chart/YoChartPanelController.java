@@ -19,6 +19,7 @@ import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
@@ -42,6 +43,12 @@ import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
 import us.ihmc.commons.MathTools;
@@ -121,6 +128,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private Topic<List<String>> yoCompositeSelectedTopic;
 
    private final SimpleObjectProperty<ContextMenu> contextMenuProperty = new SimpleObjectProperty<>(this, "graphContextMenu", null);
+
+   private Border defaultBorder = null;
 
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
@@ -264,6 +273,18 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       messager = toolkit.getMessager();
       yoCompositeSelectedTopic = toolkit.getTopics().getYoCompositeSelected();
       yoCompositeSelected = messager.createInput(yoCompositeSelectedTopic);
+
+      // CSS style doesn't get applied immediately
+      ChangeListener<? super Border> borderInitializer = new ChangeListener<Border>()
+      {
+         @Override
+         public void changed(ObservableValue<? extends Border> o, Border oldValue, Border newValue)
+         {
+            defaultBorder = newValue;
+            dynamicLineChart.borderProperty().removeListener(this);
+         }
+      };
+      dynamicLineChart.borderProperty().addListener(borderInitializer);
    }
 
    public void setChartConfiguration(YoChartConfigurationDefinition definition)
@@ -667,9 +688,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    public void setSelectionHighlight(boolean isSelected)
    {
       if (isSelected)
-         dynamicLineChart.setStyle("-fx-border-color:green; -fx-border-radius:5;");
+         dynamicLineChart.setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT)));
       else
-         dynamicLineChart.setStyle(null);
+         dynamicLineChart.setBorder(defaultBorder);
    }
 
    public void handleDragEntered(DragEvent event)

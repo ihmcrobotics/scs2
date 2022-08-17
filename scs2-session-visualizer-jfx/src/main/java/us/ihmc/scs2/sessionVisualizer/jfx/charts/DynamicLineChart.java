@@ -98,7 +98,8 @@ public class DynamicLineChart extends DynamicXYChart
       setSeriesDefaultStyleClass(layer, seriesIndex);
       seriesLayers.add(layer);
       legend.getItems().add(layer.getLegendNode());
-      plotContent.getChildren().add(layer);
+      // Add the plot under the markers
+      plotContent.getChildren().add(seriesLayers.size() - 1, layer);
       chartUpdaterListener.changed(null, null, null);
    }
 
