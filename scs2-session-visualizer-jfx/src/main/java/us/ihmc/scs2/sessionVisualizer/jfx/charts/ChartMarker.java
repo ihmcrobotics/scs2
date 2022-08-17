@@ -11,6 +11,7 @@ import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleablePropertyFactory;
+import javafx.scene.CacheHint;
 import javafx.scene.chart.InvisibleNumberAxis;
 import javafx.scene.shape.Line;
 
@@ -60,6 +61,8 @@ public final class ChartMarker extends Line
                change.getRemoved().forEach(coordinate::removeListener);
          }
       });
+      setCache(true);
+      setCacheHint(CacheHint.SPEED);
    }
 
    public ChartMarker(ChartMarkerType type, DoubleProperty coordinate)
@@ -92,18 +95,20 @@ public final class ChartMarker extends Line
    {
       if (typeProperty.get() == ChartMarkerType.HORIZONTAL)
       {
-         setStartX(0);
+         setStartX(0.0);
          setEndX(xAxis.getWidth());
-         setStartY(Math.ceil(yAxis.getDisplayPosition(coordinate.get())));
+         setStartY(0.0);
          setEndY(getStartY());
+         setTranslateY(Math.ceil(yAxis.getDisplayPosition(coordinate.get())));
          toFront();
       }
       else if (typeProperty.get() == ChartMarkerType.VERTICAL)
       {
-         setStartY(0d);
+         setStartY(0.0);
          setEndY(yAxis.getHeight());
-         setStartX(Math.ceil(xAxis.getDisplayPosition(coordinate.get())));
+         setStartX(0.0);
          setEndX(getStartX());
+         setTranslateX(Math.ceil(xAxis.getDisplayPosition(coordinate.get())));
          toFront();
       }
    }
