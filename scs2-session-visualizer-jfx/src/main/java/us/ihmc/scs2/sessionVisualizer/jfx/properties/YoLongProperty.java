@@ -32,20 +32,18 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
       yoLong.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoLong linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
-         linkedBuffer.addUser(userObject);
+      {
+         linkedBuffer.addUser(this);
+         pullYoLongValue();
+      }
    }
 
    @Override
@@ -68,7 +66,7 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
          yoLong.removeListener(propertyUpdater);
          if (linkedBuffer != null)
          {
-            linkedBuffer.removeUser(userObject);
+            linkedBuffer.removeUser(this);
             pullYoLongValue();
          }
       }

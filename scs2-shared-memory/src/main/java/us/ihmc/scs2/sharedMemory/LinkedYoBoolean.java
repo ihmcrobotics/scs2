@@ -4,9 +4,9 @@ import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class LinkedYoBoolean extends LinkedYoVariable<YoBoolean>
 {
-   LinkedYoBoolean(YoBoolean linkedVariable, YoBooleanBuffer buffer)
+   LinkedYoBoolean(YoBoolean linkedVariable, YoBooleanBuffer buffer, Object initialUser)
    {
-      super(linkedVariable, buffer);
+      super(linkedVariable, buffer, initialUser);
    }
 
    @Override

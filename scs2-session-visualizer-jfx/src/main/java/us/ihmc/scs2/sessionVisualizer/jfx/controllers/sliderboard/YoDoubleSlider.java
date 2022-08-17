@@ -32,7 +32,7 @@ public class YoDoubleSlider implements YoVariableSlider
    public YoDoubleSlider(YoDouble yoDouble, LinkedYoRegistry linkedYoRegistry)
    {
       yoDoubleProperty = new YoDoubleProperty(yoDouble, this);
-      yoDoubleProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoDouble));
+      yoDoubleProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoDouble, yoDoubleProperty));
    }
 
    @Override

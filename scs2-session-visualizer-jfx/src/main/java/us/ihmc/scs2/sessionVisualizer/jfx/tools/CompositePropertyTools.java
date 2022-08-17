@@ -158,7 +158,7 @@ public class CompositePropertyTools
          }
          Objects.requireNonNull(yoDouble, "Could not find the YoVariable: " + field);
          YoDoubleProperty yoDoubleProperty = new YoDoubleProperty(yoDouble);
-         yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble));
+         yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble, yoDoubleProperty));
          return yoDoubleProperty;
       }
    }
@@ -183,7 +183,7 @@ public class CompositePropertyTools
          }
          Objects.requireNonNull(yoInteger, "Could not find the YoVariable: " + field);
          YoIntegerProperty yoIntegerProperty = new YoIntegerProperty(yoInteger);
-         yoIntegerProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoInteger));
+         yoIntegerProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoInteger, yoIntegerProperty));
          return yoIntegerProperty;
       }
    }

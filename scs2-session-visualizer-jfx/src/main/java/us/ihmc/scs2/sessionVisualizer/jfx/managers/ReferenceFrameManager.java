@@ -242,8 +242,7 @@ public class ReferenceFrameManager implements Manager
 
          for (int i = 0; i < variablesToLink.length; i++)
          {
-            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i]);
-            linkedVariables[i].addUser(frame);
+            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i], frame);
             variablesToLink[i].addListener(v -> haveVariableChanged.set(true));
          }
 
@@ -264,8 +263,7 @@ public class ReferenceFrameManager implements Manager
 
          for (int i = 0; i < variablesToLink.length; i++)
          {
-            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i]);
-            linkedVariables[i].addUser(frame);
+            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i], frame);
             variablesToLink[i].addListener(v -> haveVariableChanged.set(true));
          }
 

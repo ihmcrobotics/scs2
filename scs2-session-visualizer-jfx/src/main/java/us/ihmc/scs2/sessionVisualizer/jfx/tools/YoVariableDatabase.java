@@ -88,9 +88,9 @@ public class YoVariableDatabase
       rootRegistry.addListener(registryChangedListener);
    }
 
-   public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink)
+   public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink, Object initialUser)
    {
-      return linkedRootRegistry.linkYoVariable(variableToLink);
+      return linkedRootRegistry.linkYoVariable(variableToLink, initialUser);
    }
 
    public YoVariable searchExact(String fullnameToSearch)

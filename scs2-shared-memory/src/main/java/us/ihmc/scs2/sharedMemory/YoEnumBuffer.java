@@ -53,9 +53,9 @@ public class YoEnumBuffer<E extends Enum<E>> extends YoVariableBuffer<YoEnum<E>>
    }
 
    @Override
-   LinkedYoEnum<E> newLinkedYoVariable(YoEnum<E> variableToLink)
+   LinkedYoEnum<E> newLinkedYoVariable(YoEnum<E> variableToLink, Object initialUser)
    {
-      return new LinkedYoEnum<>(variableToLink, this);
+      return new LinkedYoEnum<>(variableToLink, this, initialUser);
    }
 
    @Override
