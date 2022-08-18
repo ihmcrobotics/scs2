@@ -14,6 +14,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Dialog;
@@ -22,6 +23,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Transform;
@@ -496,5 +499,13 @@ public class JavaFXMissingTools
       }
 
       tupleTransformed.set(x_out, y_out, z_out);
+   }
+
+   public static void setDrawModeRecursive(Node start, DrawMode drawMode)
+   {
+      if (start instanceof Shape3D)
+         ((Shape3D) start).setDrawMode(drawMode);
+      if (start instanceof Group)
+         ((Group) start).getChildren().forEach(c -> setDrawModeRecursive(c, drawMode));
    }
 }
