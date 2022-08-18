@@ -151,6 +151,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       legendPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 5);
 
       dynamicLineChart = new DynamicLineChart(xAxis, yAxis, backgroundExecutorManager::executeInBackground, toolkit.getChartRenderManager());
+      dynamicLineChart.markerAutoUpdateProperty().set(false);
       chartMainPane.getChildren().add(0, dynamicLineChart);
       AnchorPane.setTopAnchor(dynamicLineChart, 0.0);
       AnchorPane.setBottomAnchor(dynamicLineChart, 0.0);
@@ -203,8 +204,6 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
                for (ChartMarker newMarker : change.getAddedSubList())
                {
                   dynamicLineChart.addMarker(newMarker);
-                  if (!newMarker.getStyleClass().contains(KEYFRAME_MARKER_STYLECLASS))
-                     newMarker.getStyleClass().add(KEYFRAME_MARKER_STYLECLASS);
                }
             }
 
@@ -442,7 +441,11 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       keyFrameMarkers.clear();
 
       for (int keyFrame : newKeyFrames)
-         keyFrameMarkers.add(new ChartMarker(new SimpleDoubleProperty(this, "keyFrameMarkerCoordinate" + keyFrameMarkers.size(), keyFrame)));
+      {
+         ChartMarker newMarker = new ChartMarker(new SimpleDoubleProperty(this, "keyFrameMarkerCoordinate" + keyFrameMarkers.size(), keyFrame));
+         newMarker.getStyleClass().add(KEYFRAME_MARKER_STYLECLASS);
+         keyFrameMarkers.add(newMarker);
+      }
    }
 
    private long legendUpdateLastTime = -1L;
@@ -488,6 +491,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       }
 
       charts.values().forEach(YoVariableChartPackage::updateChart);
+      if (!dynamicLineChart.markerAutoUpdateProperty().get())
+         dynamicLineChart.updateMarkers();
    }
 
    private ContextMenu newGraphContextMenu()
