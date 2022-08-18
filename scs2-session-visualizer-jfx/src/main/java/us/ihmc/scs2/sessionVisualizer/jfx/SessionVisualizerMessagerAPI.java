@@ -16,7 +16,9 @@ import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 
 public class SessionVisualizerMessagerAPI
 {
@@ -36,6 +38,9 @@ public class SessionVisualizerMessagerAPI
    private static final CategoryTheme Video = apiFactory.createCategoryTheme("Video");
    private static final CategoryTheme User = apiFactory.createCategoryTheme("User");
    private static final CategoryTheme Debug = apiFactory.createCategoryTheme("Debug");
+   private static final CategoryTheme Robot = apiFactory.createCategoryTheme("Robot");
+   private static final CategoryTheme Terrain = apiFactory.createCategoryTheme("Terrain");
+   private static final CategoryTheme Visual = apiFactory.createCategoryTheme("Visual");
 
    private static final TopicTheme Toggle = apiFactory.createTopicTheme("Toggle");
    private static final TopicTheme Next = apiFactory.createTopicTheme("Next");
@@ -62,6 +67,8 @@ public class SessionVisualizerMessagerAPI
    public static final Topic<Object> ForgetRecordable = APIRoot.child(Forget).topic(Recordable);
    public static final Topic<Boolean> ShowAdvancedControls = APIRoot.child(Controls).child(Advanced).topic(Show);
    public static final Topic<Boolean> ShowOverheadPlotter = APIRoot.child(OverheadPlotter).topic(Show);
+   public static final Topic<NewRobotVisualRequest> RobotVisualRequest = APIRoot.child(Robot).child(Visual).topic(Request);
+   public static final Topic<NewTerrainVisualRequest> TerrainVisualRequest = APIRoot.child(Terrain).child(Visual).topic(Request);
    public static final Topic<NewWindowRequest> OpenWindowRequest = APIRoot.topic(Open);
    public static final Topic<Boolean> SessionVisualizerCloseRequest = APIRoot.topic(Close);
    public static final Topic<Integer> ControlsNumberPrecision = APIRoot.child(Controls).topic(Precision); // TODO Not the greatest topic name, nor the best place.

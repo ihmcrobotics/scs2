@@ -43,9 +43,9 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final CameraSensorsManager cameraSensorsManager;
 
    private final BackgroundExecutorManager backgroundExecutorManager = new BackgroundExecutorManager(4);
-   private final EnvironmentManager environmentManager = new EnvironmentManager(backgroundExecutorManager);
    private final ReferenceFrameManager referenceFrameManager = new ReferenceFrameManager(yoManager, backgroundExecutorManager);
    private final YoRobotFXManager yoRobotFXManager;
+   private final EnvironmentManager environmentManager;
    private final SecondaryWindowManager secondaryWindowManager;
 
    private final Stage mainWindow;
@@ -78,6 +78,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoCompositeSearchManager = new YoCompositeSearchManager(messager, topics, yoManager, backgroundExecutorManager);
       keyFrameManager = new KeyFrameManager(messager, topics);
       yoRobotFXManager = new YoRobotFXManager(messager, topics, yoManager, referenceFrameManager, backgroundExecutorManager);
+      environmentManager = new EnvironmentManager(messager, topics, backgroundExecutorManager);
       secondaryWindowManager = new SecondaryWindowManager(this);
       cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, messager, topics, yoRobotFXManager);
 

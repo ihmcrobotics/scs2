@@ -11,6 +11,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.shape.DrawMode;
 import javafx.util.Duration;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -158,6 +159,11 @@ public class YoRobotFX
             initialize = false;
          }
       }
+   }
+
+   public void setDrawMode(DrawMode drawMode)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> JavaFXMissingTools.setDrawModeRecursive(rootNode, drawMode));
    }
 
    public RigidBodyReadOnly getRootBody()

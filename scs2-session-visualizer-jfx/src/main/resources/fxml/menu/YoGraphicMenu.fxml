@@ -39,6 +39,10 @@
             </FontAwesomeIconView>
          </graphic>
       </MenuItem>
+      <CheckMenuItem fx:id="showRobotMenuItem" text="Show Robot" selected="true" />
+      <CheckMenuItem fx:id="enableWireframeRobotModeMenuItem" text="Enable Wireframe Robot Mode" selected="false" />
+      <CheckMenuItem fx:id="showTerrainMenuItem" text="Show Terrain" selected="true" />
+      <CheckMenuItem fx:id="enableWireframeTerrainModeMenuItem" text="Enable Wireframe Terrain Mode" selected="false" />
    </items>
    <graphic>
       <FontAwesomeIconView glyphName="CUBES" />
