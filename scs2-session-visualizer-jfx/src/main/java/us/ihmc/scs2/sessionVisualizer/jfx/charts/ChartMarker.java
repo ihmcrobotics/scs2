@@ -100,7 +100,6 @@ public final class ChartMarker extends Line
          setStartY(0.0);
          setEndY(getStartY());
          setTranslateY(Math.ceil(yAxis.getDisplayPosition(coordinate.get())));
-         toFront();
       }
       else if (typeProperty.get() == ChartMarkerType.VERTICAL)
       {
@@ -109,7 +108,6 @@ public final class ChartMarker extends Line
          setStartX(0.0);
          setEndX(getStartX());
          setTranslateX(Math.ceil(xAxis.getDisplayPosition(coordinate.get())));
-         toFront();
       }
    }
 
