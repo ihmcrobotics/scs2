@@ -13,6 +13,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Side;
+import javafx.scene.Group;
 import javafx.scene.chart.InvisibleNumberAxis;
 import us.ihmc.javaFXExtensions.chart.DynamicXYChart;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ChartRenderManager;
@@ -24,6 +25,22 @@ public class DynamicLineChart extends DynamicXYChart
       RAW, NORMALIZED
    };
 
+   private final Group seriesGroup = new Group()
+   {
+      @Override
+      public void requestLayout()
+      {
+      } // suppress layout requests
+   };
+   private final Group markerGroup = new Group()
+   {
+      @Override
+      public void requestLayout()
+      {
+      } // suppress layout requests
+   };
+
+   private final BooleanProperty markerAutoUpdateProperty = new SimpleBooleanProperty(this, "markerAutoUpdate", true);
    private final ObjectProperty<ChartStyle> chartStyleProperty = new SimpleObjectProperty<>(this, "chartStyle", ChartStyle.RAW);
    private final ObservableList<NumberSeriesLayer> seriesLayers = FXCollections.observableArrayList();
    private final ChangeListener<Object> chartUpdaterListener = (o, oldValue, newValue) -> requestChartLayout();
@@ -57,6 +74,19 @@ public class DynamicLineChart extends DynamicXYChart
 
       chartStyleProperty.addListener(chartUpdaterListener);
 
+      plotContent.getChildren().addAll(seriesGroup, markerGroup);
+
+      // We don't want seriesGroup/markerGroup to autoSize or do layout
+      seriesGroup.setAutoSizeChildren(false);
+      markerGroup.setAutoSizeChildren(false);
+      // setup css style classes
+      seriesGroup.getStyleClass().setAll("series-group");
+      markerGroup.getStyleClass().setAll("marker-group");
+      // mark seriesGroup/markerGroup as unmanaged as its preferred size changes do not effect our layout
+      seriesGroup.setManaged(false);
+      markerGroup.setManaged(false);
+
+      ChangeListener<Object> updateMarkerListener = (o, oldValue, newValue) -> updateMarkers();
       markers.addListener((ListChangeListener<ChartMarker>) change ->
       {
          while (change.next())
@@ -65,8 +95,9 @@ public class DynamicLineChart extends DynamicXYChart
             {
                for (ChartMarker newMarker : change.getAddedSubList())
                {
-                  plotContent.getChildren().add(newMarker);
-                  newMarker.addListener((o, oldValue, newValue) -> updateMarkers());
+                  markerGroup.getChildren().add(newMarker);
+                  if (markerAutoUpdateProperty.get())
+                     newMarker.addListener(updateMarkerListener);
                }
                updateMarkers();
             }
@@ -75,11 +106,18 @@ public class DynamicLineChart extends DynamicXYChart
             {
                for (ChartMarker oldMarker : change.getRemoved())
                {
-                  plotContent.getChildren().remove(oldMarker);
+                  markerGroup.getChildren().remove(oldMarker);
                   oldMarker.destroy();
                }
             }
          }
+      });
+      markerAutoUpdateProperty.addListener((o, oldValue, newValue) ->
+      {
+         if (newValue)
+            markers.forEach(marker -> marker.addListener(updateMarkerListener));
+         else
+            markers.forEach(marker -> marker.removeListener(updateMarkerListener));
       });
 
       setLegend(legend);
@@ -99,7 +137,7 @@ public class DynamicLineChart extends DynamicXYChart
       seriesLayers.add(layer);
       legend.getItems().add(layer.getLegendNode());
       // Add the plot under the markers
-      plotContent.getChildren().add(seriesLayers.size() - 1, layer);
+      seriesGroup.getChildren().add(layer);
       chartUpdaterListener.changed(null, null, null);
    }
 
@@ -117,7 +155,7 @@ public class DynamicLineChart extends DynamicXYChart
          series.customYBoundsProperty().removeListener(chartUpdaterListener);
          series.dirtyProperty().removeListener(chartUpdaterListener);
          containingLayer.get().chartStyleProperty().unbind();
-         plotContent.getChildren().remove(containingLayer.get());
+         seriesGroup.getChildren().remove(containingLayer.get());
          legend.getItems().remove(containingLayer.get().getLegendNode());
 
          for (int i = indexOf; i < seriesLayers.size(); i++)
@@ -148,11 +186,20 @@ public class DynamicLineChart extends DynamicXYChart
    @Override
    protected void layoutPlotChildren(double top, double left, double width, double height)
    {
+      // position plot group, its origin is the bottom left corner of the plot area
+      seriesGroup.setLayoutX(left);
+      seriesGroup.setLayoutY(top);
+      seriesGroup.requestLayout(); // Note: not sure this is right, maybe plotContent should be resizeable
+      markerGroup.setLayoutX(left);
+      markerGroup.setLayoutY(top);
+      markerGroup.requestLayout(); // Note: not sure this is right, maybe plotContent should be resizeable
+
       updateSeriesList(top, left, width, height);
-      updateMarkers();
+      if (markerAutoUpdateProperty.get())
+         updateMarkers();
    }
 
-   private void updateMarkers()
+   public void updateMarkers()
    {
       markers.forEach(marker -> marker.updateMarker(xAxis, yAxis));
    }
@@ -249,6 +296,11 @@ public class DynamicLineChart extends DynamicXYChart
    public BooleanProperty updateIndexMarkersVisible()
    {
       return updateIndexMarkersVisible;
+   }
+
+   public BooleanProperty markerAutoUpdateProperty()
+   {
+      return markerAutoUpdateProperty;
    }
 
    public void setChartStyle(ChartStyle style)
