@@ -49,9 +49,14 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
                                               new YoFrameVector3D("qd_delta" + varName + "w", afterJointFrame, registry),
                                               new YoFrameVector3D("qd_delta" + varName, afterJointFrame, registry));
       isPinned = new YoBoolean("is" + varName + "pinned", registry);
-      getJointPose().attachVariableChangedListener(v ->
+      getJointPose().getOrientation().attachVariableChangedListener(v ->
       {
          if (!Double.isFinite(((YoDouble) v).getValue()))
+            throw new IllegalStateException("Invalid joint configuration: " + getJointPose());
+      });
+      getJointPose().getPosition().attachVariableChangedListener(v ->
+      {
+         if (Double.isNaN(((YoDouble) v).getValue())) // Let's allow the values of +/- Infinity for the position
             throw new IllegalStateException("Invalid joint configuration: " + getJointPose());
       });
       getJointTwist().getAngularPart().attachVariableChangedListener(v ->
