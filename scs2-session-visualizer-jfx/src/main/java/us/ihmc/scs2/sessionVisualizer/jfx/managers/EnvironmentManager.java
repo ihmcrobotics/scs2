@@ -7,13 +7,16 @@ import java.util.Map;
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
+import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.Skybox;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -30,10 +33,20 @@ public class EnvironmentManager implements Manager
 
    private final BackgroundExecutorManager backgroundExecutorManager;
 
-   public EnvironmentManager(BackgroundExecutorManager backgroundExecutorManager)
+   public EnvironmentManager(JavaFXMessager messager, SessionVisualizerTopics topics, BackgroundExecutorManager backgroundExecutorManager)
    {
       this.backgroundExecutorManager = backgroundExecutorManager;
       rootNode.getChildren().add(terrainObjectGraphics);
+      messager.registerTopicListener(topics.getTerrainVisualRequest(), this::handleTerrainVisualRequest);
+   }
+
+   private void handleTerrainVisualRequest(NewTerrainVisualRequest request)
+   {
+      if (request.getRequestedVisible() != null)
+         terrainObjectGraphics.setVisible(request.getRequestedVisible());
+
+      if (request.getRequestedDrawMode() != null)
+         setTerrainDrawMode(request.getRequestedDrawMode());
    }
 
    public void addWorldCoordinateSystem(double size)
@@ -125,6 +138,11 @@ public class EnvironmentManager implements Manager
       {
          staticVisualsRoot.getChildren().remove(nodeToRemove);
       });
+   }
+
+   public void setTerrainDrawMode(DrawMode drawMode)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> JavaFXMissingTools.setDrawModeRecursive(terrainObjectGraphics, drawMode));
    }
 
    @Override

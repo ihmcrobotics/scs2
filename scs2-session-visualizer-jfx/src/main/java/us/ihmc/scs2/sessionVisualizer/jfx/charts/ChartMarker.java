@@ -11,6 +11,7 @@ import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleablePropertyFactory;
+import javafx.scene.CacheHint;
 import javafx.scene.chart.InvisibleNumberAxis;
 import javafx.scene.shape.Line;
 
@@ -54,12 +55,41 @@ public final class ChartMarker extends Line
          while (change.next())
          {
             if (change.wasAdded())
-               change.getAddedSubList().forEach(coordinate::addListener);
+            {
+               change.getAddedSubList().forEach(listener ->
+               { // Workaround for updating the marker when the style changes but the coordinate does not.
+                  coordinate.addListener(listener);
+                  typeProperty.addListener(listener);
+                  strokeProperty().addListener(listener);
+                  strokeWidthProperty().addListener(listener);
+                  strokeTypeProperty().addListener(listener);
+                  strokeLineCapProperty().addListener(listener);
+                  strokeDashOffsetProperty().addListener(listener);
+                  strokeDashOffsetProperty().addListener(listener);
+               });
+            }
 
             if (change.wasRemoved())
-               change.getRemoved().forEach(coordinate::removeListener);
+            {
+               change.getRemoved().forEach(listener ->
+               {
+                  coordinate.removeListener(listener);
+                  typeProperty.removeListener(listener);
+                  strokeProperty().removeListener(listener);
+                  strokeWidthProperty().removeListener(listener);
+                  strokeTypeProperty().removeListener(listener);
+                  strokeLineCapProperty().removeListener(listener);
+                  strokeDashOffsetProperty().removeListener(listener);
+                  strokeDashOffsetProperty().removeListener(listener);
+               });
+            }
          }
       });
+
+      setSmooth(false);
+      setManaged(false);
+      setCache(true);
+      setCacheHint(CacheHint.SPEED);
    }
 
    public ChartMarker(ChartMarkerType type, DoubleProperty coordinate)
@@ -88,23 +118,32 @@ public final class ChartMarker extends Line
       listeners.add(listener);
    }
 
+   public void removeListener(ChangeListener<Object> listener)
+   {
+      listeners.remove(listener);
+   }
+
    public void updateMarker(InvisibleNumberAxis xAxis, InvisibleNumberAxis yAxis)
    {
       if (typeProperty.get() == ChartMarkerType.HORIZONTAL)
       {
-         setStartX(0);
+         setStartX(0.0);
          setEndX(xAxis.getWidth());
-         setStartY(Math.ceil(yAxis.getDisplayPosition(coordinate.get())));
-         setEndY(getStartY());
-         toFront();
+         setStartY(0.0);
+         setEndY(0.0);
+         setTranslateX(0.0);
+         setTranslateY(Math.ceil(yAxis.getDisplayPosition(coordinate.get())));
       }
       else if (typeProperty.get() == ChartMarkerType.VERTICAL)
       {
-         setStartY(0d);
+         setStartY(0.0);
          setEndY(yAxis.getHeight());
-         setStartX(Math.ceil(xAxis.getDisplayPosition(coordinate.get())));
-         setEndX(getStartX());
-         toFront();
+         setStartX(0.0);
+         setEndX(0.0);
+         setEndX(0.0);
+
+         setTranslateY(0.0);
+         setTranslateX(Math.ceil(xAxis.getDisplayPosition(coordinate.get())));
       }
    }
 

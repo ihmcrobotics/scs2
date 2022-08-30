@@ -35,6 +35,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoEntryListViewController
@@ -127,7 +128,9 @@ public class YoEntryListViewController
             continue;
          }
 
-         if (collection.getPattern().getComponentIdentifiers().length == 1)
+         YoCompositePattern pattern = collection.getPattern();
+
+         if (pattern.getComponentIdentifiers() != null && pattern.getComponentIdentifiers().length == 1)
          {
             YoVariable variable = yoManager.getRootRegistry().findVariable(fullname);
             if (variable != null)

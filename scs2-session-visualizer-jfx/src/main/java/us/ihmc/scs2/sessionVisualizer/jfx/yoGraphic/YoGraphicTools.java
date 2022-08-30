@@ -645,6 +645,9 @@ public class YoGraphicTools
                                                                                           coefficientsY == null ? null : coefficientsY.getSize()));
       yoGraphicFXToPack.setNumberOfCoefficientsZ(CompositePropertyTools.toIntegerProperty(yoVariableDatabase,
                                                                                           coefficientsZ == null ? null : coefficientsZ.getSize()));
+      yoGraphicFXToPack.setReferenceFrame(CompositePropertyTools.toReferenceFrameProperty(yoVariableDatabase,
+                                                                                          referenceFrameManager,
+                                                                                          definition.getReferenceFrame()));
       yoGraphicFXToPack.setStartTime(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getStartTime()));
       yoGraphicFXToPack.setEndTime(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getEndTime()));
       yoGraphicFXToPack.setSize(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getSize()));
@@ -1139,7 +1142,9 @@ public class YoGraphicTools
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
       yoGraphicFX.setThickness(geometryDefinition.getTopZ() - geometryDefinition.getBottomZ());
-      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices().stream().map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
+      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices()
+                                                .stream()
+                                                .map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
                                                 .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getPolygonVertices().size());
       return yoGraphicFX;
@@ -1154,8 +1159,11 @@ public class YoGraphicTools
       yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
-      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope().getVertices().stream()
-                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).collect(Collectors.toList()));
+      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope()
+                                                .getVertices()
+                                                .stream()
+                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ()))
+                                                .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getConvexPolytope().getNumberOfVertices());
       return yoGraphicFX;
    }
@@ -1449,6 +1457,7 @@ public class YoGraphicTools
       definition.setCoefficientsX(toYoDoubleListDefinition(yoGraphicFX.getCoefficientsX(), yoGraphicFX.getNumberOfCoefficientsX()));
       definition.setCoefficientsY(toYoDoubleListDefinition(yoGraphicFX.getCoefficientsY(), yoGraphicFX.getNumberOfCoefficientsY()));
       definition.setCoefficientsZ(toYoDoubleListDefinition(yoGraphicFX.getCoefficientsZ(), yoGraphicFX.getNumberOfCoefficientsZ()));
+      definition.setReferenceFrame(CompositePropertyTools.toReferenceFramePropertyName(yoGraphicFX.getReferenceFrame()));
       definition.setStartTime(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStartTime()));
       definition.setEndTime(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getEndTime()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));

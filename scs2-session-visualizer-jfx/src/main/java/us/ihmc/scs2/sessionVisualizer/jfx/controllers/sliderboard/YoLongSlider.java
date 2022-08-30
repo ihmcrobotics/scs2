@@ -32,7 +32,7 @@ public class YoLongSlider implements YoVariableSlider
    public YoLongSlider(YoLong yoLong, LinkedYoRegistry linkedYoRegistry)
    {
       yoLongProperty = new YoLongProperty(yoLong, this);
-      yoLongProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoLong));
+      yoLongProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoLong, yoLongProperty));
    }
 
    @Override

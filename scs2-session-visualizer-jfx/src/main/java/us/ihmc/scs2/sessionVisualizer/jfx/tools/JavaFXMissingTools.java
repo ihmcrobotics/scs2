@@ -14,6 +14,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Dialog;
@@ -22,6 +23,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Transform;
@@ -32,6 +35,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
 import us.ihmc.euclid.transform.AffineTransform;
+import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
@@ -318,6 +322,22 @@ public class JavaFXMissingTools
                           jfxTransform.getTz());
    }
 
+   public static void toJavaFX(RigidBodyTransform euclidTransform, javafx.scene.transform.Affine jfxTransform)
+   {
+      jfxTransform.setToTransform(euclidTransform.getM00(),
+                                  euclidTransform.getM01(),
+                                  euclidTransform.getM02(),
+                                  euclidTransform.getM03(),
+                                  euclidTransform.getM10(),
+                                  euclidTransform.getM11(),
+                                  euclidTransform.getM12(),
+                                  euclidTransform.getM13(),
+                                  euclidTransform.getM20(),
+                                  euclidTransform.getM21(),
+                                  euclidTransform.getM22(),
+                                  euclidTransform.getM23());
+   }
+
    public static javafx.geometry.Point3D toJavaFX(Tuple3DReadOnly euclidInput)
    {
       if (euclidInput == null)
@@ -479,5 +499,13 @@ public class JavaFXMissingTools
       }
 
       tupleTransformed.set(x_out, y_out, z_out);
+   }
+
+   public static void setDrawModeRecursive(Node start, DrawMode drawMode)
+   {
+      if (start instanceof Shape3D)
+         ((Shape3D) start).setDrawMode(drawMode);
+      if (start instanceof Group)
+         ((Group) start).getChildren().forEach(c -> setDrawModeRecursive(c, drawMode));
    }
 }

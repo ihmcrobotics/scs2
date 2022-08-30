@@ -53,9 +53,9 @@ public class YoLongBuffer extends YoVariableBuffer<YoLong>
    }
 
    @Override
-   LinkedYoLong newLinkedYoVariable(YoLong variableToLink)
+   LinkedYoLong newLinkedYoVariable(YoLong variableToLink, Object initialUser)
    {
-      return new LinkedYoLong(variableToLink, this);
+      return new LinkedYoLong(variableToLink, this, initialUser);
    }
 
    @Override

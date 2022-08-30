@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -237,23 +238,17 @@ public class ReferenceFrameManager implements Manager
          frame = new YoFixedReferenceFrameUsingYawPitchRoll(frameName, offset, parentFrame);
          YoDouble[] variablesToLink = {offset.getYoX(), offset.getYoY(), offset.getYoZ(), offset.getYoYaw(), offset.getYoPitch(), offset.getYoRoll()};
          LinkedYoDouble[] linkedVariables = new LinkedYoDouble[variablesToLink.length];
+         AtomicBoolean haveVariableChanged = new AtomicBoolean(true);
 
          for (int i = 0; i < variablesToLink.length; i++)
          {
-            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i]);
-            linkedVariables[i].addUser(frame);
+            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i], frame);
+            variablesToLink[i].addListener(v -> haveVariableChanged.set(true));
          }
 
          addUpdateTask(() ->
          {
-            boolean updateFrame = false;
-
-            for (LinkedYoDouble linkedVariable : linkedVariables)
-            {
-               updateFrame |= linkedVariable.pull();
-            }
-
-            if (updateFrame)
+            if (haveVariableChanged.getAndSet(false))
                frame.update();
          });
       }
@@ -264,23 +259,17 @@ public class ReferenceFrameManager implements Manager
          frame = new YoFixedMovingReferenceFrameUsingYawPitchRoll(frameName, offset, parentFrame);
          YoDouble[] variablesToLink = {offset.getYoX(), offset.getYoY(), offset.getYoZ(), offset.getYoYaw(), offset.getYoPitch(), offset.getYoRoll()};
          LinkedYoDouble[] linkedVariables = new LinkedYoDouble[variablesToLink.length];
+         AtomicBoolean haveVariableChanged = new AtomicBoolean(true);
 
          for (int i = 0; i < variablesToLink.length; i++)
          {
-            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i]);
-            linkedVariables[i].addUser(frame);
+            linkedVariables[i] = yoManager.getLinkedRootRegistry().linkYoVariable(variablesToLink[i], frame);
+            variablesToLink[i].addListener(v -> haveVariableChanged.set(true));
          }
 
          addUpdateTask(() ->
          {
-            boolean updateFrame = false;
-
-            for (LinkedYoDouble linkedVariable : linkedVariables)
-            {
-               updateFrame |= linkedVariable.pull();
-            }
-
-            if (updateFrame)
+            if (haveVariableChanged.getAndSet(false))
                frame.update();
          });
       }

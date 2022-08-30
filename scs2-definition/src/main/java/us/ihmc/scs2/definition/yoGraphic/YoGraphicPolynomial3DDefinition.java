@@ -9,6 +9,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    private YoListDefinition coefficientsX;
    private YoListDefinition coefficientsY;
    private YoListDefinition coefficientsZ;
+   private String referenceFrame;
 
    private String startTime, endTime;
 
@@ -32,6 +33,12 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    public void setCoefficientsZ(YoListDefinition coefficientsZ)
    {
       this.coefficientsZ = coefficientsZ;
+   }
+
+   @XmlElement(name = "referenceFrame")
+   public void setReferenceFrame(String referenceFrame)
+   {
+      this.referenceFrame = referenceFrame;
    }
 
    public void setStartTime(double startTime)
@@ -104,6 +111,11 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       return coefficientsZ;
    }
 
+   public String getReferenceFrame()
+   {
+      return referenceFrame;
+   }
+
    public String getStartTime()
    {
       return startTime;
@@ -149,6 +161,8 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
          if (!Objects.equals(coefficientsY, other.coefficientsY))
             return false;
          if (!Objects.equals(coefficientsZ, other.coefficientsZ))
+            return false;
+         if (!Objects.equals(referenceFrame, other.referenceFrame))
             return false;
          if (!Objects.equals(startTime, other.startTime))
             return false;

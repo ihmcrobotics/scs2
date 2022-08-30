@@ -26,7 +26,7 @@ public class YoBooleanSlider implements YoVariableSlider
    public YoBooleanSlider(YoBoolean yoBoolean, LinkedYoRegistry linkedYoRegistry)
    {
       yoBooleanProperty = new YoBooleanProperty(yoBoolean, this);
-      yoBooleanProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoBoolean));
+      yoBooleanProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoBoolean, yoBooleanProperty));
    }
 
    @Override
