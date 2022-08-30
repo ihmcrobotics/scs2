@@ -18,7 +18,9 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -34,6 +36,8 @@ public class SessionVisualizerTopics
    private Topic<Object> forgetRecordable;
    private Topic<Boolean> showAdvancedControls;
    private Topic<Boolean> showOverheadPlotter;
+   private Topic<NewRobotVisualRequest> robotVisualRequest;
+   private Topic<NewTerrainVisualRequest> terrainVisualRequest;
    private Topic<NewWindowRequest> openWindowRequest;
    private Topic<Boolean> sessionVisualizerCloseRequest;
 
@@ -107,6 +111,8 @@ public class SessionVisualizerTopics
       forgetRecordable = SessionVisualizerMessagerAPI.ForgetRecordable;
       showAdvancedControls = SessionVisualizerMessagerAPI.ShowAdvancedControls;
       showOverheadPlotter = SessionVisualizerMessagerAPI.ShowOverheadPlotter;
+      robotVisualRequest = SessionVisualizerMessagerAPI.RobotVisualRequest;
+      terrainVisualRequest = SessionVisualizerMessagerAPI.TerrainVisualRequest;
       openWindowRequest = SessionVisualizerMessagerAPI.OpenWindowRequest;
       sessionVisualizerCloseRequest = SessionVisualizerMessagerAPI.SessionVisualizerCloseRequest;
 
@@ -213,6 +219,16 @@ public class SessionVisualizerTopics
    public Topic<Boolean> getShowOverheadPlotter()
    {
       return showOverheadPlotter;
+   }
+
+   public Topic<NewRobotVisualRequest> getRobotVisualRequest()
+   {
+      return robotVisualRequest;
+   }
+
+   public Topic<NewTerrainVisualRequest> getTerrainVisualRequest()
+   {
+      return terrainVisualRequest;
    }
 
    public Topic<NewWindowRequest> getOpenWindowRequest()

@@ -53,9 +53,9 @@ public class YoIntegerBuffer extends YoVariableBuffer<YoInteger>
    }
 
    @Override
-   LinkedYoInteger newLinkedYoVariable(YoInteger variableToLink)
+   LinkedYoInteger newLinkedYoVariable(YoInteger variableToLink, Object initialUser)
    {
-      return new LinkedYoInteger(variableToLink, this);
+      return new LinkedYoInteger(variableToLink, this, initialUser);
    }
 
    @Override
