@@ -1,7 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.plotter;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.EventHandler;
@@ -16,6 +18,7 @@ import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXToEuclidConversions;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 
 public class Plotter2D extends Region
 {
@@ -24,6 +27,7 @@ public class Plotter2D extends Region
    private final PlotterGrid2D grid2D = new PlotterGrid2D(root.localToSceneTransformProperty());
 
    private final Translate rootTranslation = new Translate();
+   private final Translate trackingTranslation = new Translate();
    private final ObjectProperty<MouseButton> mouseButtonForTranslation = new SimpleObjectProperty<>(this, "mouseButtonForTranslation", MouseButton.PRIMARY);
    private final Scale rootScale = new Scale(1.0, -1.0);
    private final DoubleProperty scaleModifier = new SimpleDoubleProperty(this, "scaleModifier", -0.0025);
@@ -31,16 +35,82 @@ public class Plotter2D extends Region
 
    private final Point2D center = new Point2D();
 
+   private final Property<Tuple2DProperty> coordinateToTrack = new SimpleObjectProperty<>(this, "coordinateToTrackProperty", null);
+   private final AnimationTimer trackingAnimation = new AnimationTimer()
+   {
+      private boolean initialized = false;
+
+      @Override
+      public void start()
+      {
+         initialized = false;
+         super.start();
+      }
+
+      @Override
+      public void handle(long now)
+      {
+         Tuple2DProperty coordinateProperty = coordinateToTrack.getValue();
+         if (coordinateProperty == null)
+         {
+            stop();
+            return;
+         }
+
+         Point2D coordinateInWorld = coordinateProperty.toPoint2DInWorld();
+
+         if (coordinateInWorld.containsNaN())
+            return;
+
+         if (!initialized)
+         {
+            rootTranslation.setX(0.5 * contentWidth());
+            rootTranslation.setY(0.5 * contentHeight());
+            trackingTranslation.setX(-coordinateInWorld.getX());
+            trackingTranslation.setY(-coordinateInWorld.getY());
+            center.set(coordinateInWorld);
+            initialized = true;
+         }
+         else
+         {
+            trackingTranslation.setX(-coordinateInWorld.getX());
+            trackingTranslation.setY(-coordinateInWorld.getY());
+            center.set(computeCenterLocal());
+         }
+      }
+   };
+
    public Plotter2D()
    {
       getChildren().add(grid2D.getRoot());
       getChildren().add(root);
-      root.getTransforms().addAll(rootTranslation, rootScale);
+      root.getTransforms().addAll(rootTranslation, rootScale, trackingTranslation);
 
       addEventHandler(MouseEvent.ANY, createTranslationEventHandler());
       addEventHandler(ScrollEvent.ANY, createScaleEventHandler());
       requestParentLayout();
       setManaged(false);
+
+      coordinateToTrack.addListener((o, oldValue, newValue) ->
+      {
+         trackingAnimation.stop();
+
+         if (oldValue != null)
+         {
+            trackingTranslation.setX(0.0);
+            trackingTranslation.setY(0.0);
+         }
+
+         if (newValue != null)
+         {
+            trackingAnimation.start();
+         }
+      });
+   }
+
+   public Property<Tuple2DProperty> coordinateToTrackProperty()
+   {
+      return coordinateToTrack;
    }
 
    public void setScale(double scale)
@@ -56,12 +126,8 @@ public class Plotter2D extends Region
 
    public void setFieldOfView(double centerX, double centerY, double rangeX, double rangeY, boolean axisEquals)
    {
-      double top = snappedTopInset();
-      double left = snappedLeftInset();
-      double bottom = snappedBottomInset();
-      double right = snappedRightInset();
-      double contentWidth = getWidth() - (left + right);
-      double contentHeight = getHeight() - (top + bottom);
+      double contentWidth = contentWidth();
+      double contentHeight = contentHeight();
 
       double scaleX = contentWidth / rangeX;
       double scaleY = contentHeight / rangeY;
@@ -82,17 +148,14 @@ public class Plotter2D extends Region
 
    public EventHandler<MouseEvent> createTranslationEventHandler()
    {
-      return new EventHandler<MouseEvent>()
+      return new EventHandler<>()
       {
          Point2D oldMouseLocation;
 
          @Override
          public void handle(MouseEvent event)
          {
-            if (event.getButton() != mouseButtonForTranslation.get())
-               return;
-
-            if (event.isStillSincePress())
+            if ((event.getButton() != mouseButtonForTranslation.get()) || event.isStillSincePress())
                return;
 
             if (event.getEventType() == MouseEvent.MOUSE_PRESSED)
@@ -121,21 +184,23 @@ public class Plotter2D extends Region
 
    public EventHandler<ScrollEvent> createScaleEventHandler()
    {
-      return new EventHandler<ScrollEvent>()
+      return new EventHandler<>()
       {
          @Override
          public void handle(ScrollEvent event)
          {
-
             double verticalDrag = event.getDeltaY();
             double oldScale = rootScale.getX();
             double newScale = oldScale * (1.0 - scaleModifier.get() * verticalDrag);
             newScale = Math.max(minScale.get(), newScale);
 
-            javafx.geometry.Point2D preScaleLocation = root.sceneToLocal(event.getX(), event.getY());
+            double trackedLocationX = event.getX();
+            double trackedLocationY = event.getY();
+
+            javafx.geometry.Point2D preScaleLocation = root.sceneToLocal(trackedLocationX, trackedLocationY);
             rootScale.setX(newScale);
             rootScale.setY(-newScale);
-            javafx.geometry.Point2D postScaleLocation = root.sceneToLocal(event.getX(), event.getY());
+            javafx.geometry.Point2D postScaleLocation = root.sceneToLocal(trackedLocationX, trackedLocationY);
 
             rootTranslation.setX(rootTranslation.getX() + rootScale.getX() * (postScaleLocation.getX() - preScaleLocation.getX()));
             rootTranslation.setY(rootTranslation.getY() + rootScale.getY() * (postScaleLocation.getY() - preScaleLocation.getY()));
@@ -148,26 +213,22 @@ public class Plotter2D extends Region
 
    private Point2D computeCenterLocal()
    {
-      double top = snappedTopInset();
-      double left = snappedLeftInset();
-      double bottom = snappedBottomInset();
-      double right = snappedRightInset();
-      double contentWidth = getWidth() - (left + right);
-      double contentHeight = getHeight() - (top + bottom);
-
-      Point2D newCenter = JavaFXToEuclidConversions.convertPoint2D(root.sceneToLocal(0.5 * contentWidth, 0.5 * contentHeight));
-      return newCenter;
+      return JavaFXToEuclidConversions.convertPoint2D(root.sceneToLocal(0.5 * contentWidth(), 0.5 * contentHeight()));
    }
 
    public void updateGrid()
    {
-      double top = snappedTopInset();
-      double left = snappedLeftInset();
-      double bottom = snappedBottomInset();
-      double right = snappedRightInset();
-      double contentWidth = getWidth() - (left + right);
-      double contentHeight = getHeight() - (top + bottom);
-      grid2D.update(top, left, contentWidth, contentHeight);
+      grid2D.update(snappedTopInset(), snappedLeftInset(), contentWidth(), contentHeight());
+   }
+
+   private double contentWidth()
+   {
+      return getWidth() - (snappedLeftInset() + snappedRightInset());
+   }
+
+   private double contentHeight()
+   {
+      return getHeight() - (snappedTopInset() + snappedBottomInset());
    }
 
    @Override
