@@ -1015,6 +1015,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestPlotter2DCoordinateTracking(xVariableName, yVariableName, frameName));
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void addStaticVisual(VisualDefinition visualDefinition)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addStaticVisual(visualDefinition));
