@@ -36,7 +36,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -63,7 +62,6 @@ public class SessionVisualizer
    private final MultiSessionManager multiSessionManager;
 
    private final Group view3DRoot;
-   private final Plotter2D plotter2D = new Plotter2D();
    private final MainWindowController mainWindowController;
    private final MultiViewport3DManager viewport3DManager;
    private final BufferedJavaFXMessager messager;
@@ -111,8 +109,6 @@ public class SessionVisualizer
       toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
       toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
       messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
-
-      mainWindowController.setupPlotter2D(plotter2D);
 
       scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
       mainWindowController.setupViewport3D(viewport3DManager.getPane());
