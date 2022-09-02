@@ -45,6 +45,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
@@ -222,6 +223,9 @@ public class VideoRecordingPreviewPaneController
       refreshViewAnimation.start();
       stage.setOnCloseRequest(e -> close());
       owner.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e -> close());
+
+      SessionVisualizerIOTools.addSCSIconToWindow(stage);
+      JavaFXMissingTools.centerWindowInOwner(stage, owner);
    }
 
    public void close()
