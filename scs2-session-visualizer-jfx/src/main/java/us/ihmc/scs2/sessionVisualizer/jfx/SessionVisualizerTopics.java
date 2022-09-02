@@ -8,6 +8,7 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
@@ -56,6 +57,7 @@ public class SessionVisualizerTopics
    private Topic<File> yoGraphicLoadRequest;
    private Topic<File> yoGraphicSaveRequest;
    private Topic<YoGraphicDefinition> addYoGraphicRequest;
+   private Topic<YoTuple2DDefinition> plotter2DTrackCoordinateRequest;
 
    private Topic<Pair<Window, Double>> yoChartZoomFactor;
    private Topic<Pair<Window, Boolean>> yoChartRequestZoomIn, yoChartRequestZoomOut;
@@ -133,6 +135,7 @@ public class SessionVisualizerTopics
       yoGraphicLoadRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicLoadRequest;
       yoGraphicSaveRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicSaveRequest;
       addYoGraphicRequest = SessionVisualizerMessagerAPI.YoGraphic.AddYoGraphicRequest;
+      plotter2DTrackCoordinateRequest = SessionVisualizerMessagerAPI.YoGraphic.Plotter2DTrackCoordinateRequest;
 
       yoChartZoomFactor = SessionVisualizerMessagerAPI.YoChart.YoChartZoomFactor;
       yoChartRequestZoomIn = SessionVisualizerMessagerAPI.YoChart.YoChartRequestZoomIn;
@@ -314,6 +317,11 @@ public class SessionVisualizerTopics
    public Topic<YoGraphicDefinition> getAddYoGraphicRequest()
    {
       return addYoGraphicRequest;
+   }
+
+   public Topic<YoTuple2DDefinition> getPlotter2DTrackCoordinateRequest()
+   {
+      return plotter2DTrackCoordinateRequest;
    }
 
    public Topic<Pair<Window, Double>> getYoChartZoomFactor()
