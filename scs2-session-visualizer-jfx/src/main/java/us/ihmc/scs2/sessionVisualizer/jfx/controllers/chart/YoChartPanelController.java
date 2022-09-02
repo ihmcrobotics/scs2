@@ -440,6 +440,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    {
       keyFrameMarkers.clear();
 
+      if (newKeyFrames == null)
+         return;
+
       for (int keyFrame : newKeyFrames)
       {
          ChartMarker newMarker = new ChartMarker(new SimpleDoubleProperty(this, "keyFrameMarkerCoordinate" + keyFrameMarkers.size(), keyFrame));
