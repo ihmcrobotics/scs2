@@ -28,12 +28,14 @@ import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
@@ -372,6 +374,20 @@ public class SessionVisualizer
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
          submitMessage(getTopics().getShowOverheadPlotter(), true);
+      }
+
+      @Override
+      public void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         if (xVariableName == null)
+            xVariableName = Double.toString(0.0);
+         if (yVariableName == null)
+            yVariableName = Double.toString(0.0);
+         if (frameName == null)
+            frameName = ReferenceFrameManager.WORLD_FRAME;
+         submitMessage(getTopics().getPlotter2DTrackCoordinateRequest(), new YoTuple2DDefinition(xVariableName, yVariableName, frameName));
       }
 
       @Override
