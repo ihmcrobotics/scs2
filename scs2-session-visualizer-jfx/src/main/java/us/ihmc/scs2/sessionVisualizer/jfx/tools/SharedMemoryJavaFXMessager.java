@@ -137,6 +137,7 @@ public class SharedMemoryJavaFXMessager extends SharedMemoryMessager implements 
    @SuppressWarnings("unchecked")
    private class JavaFXSyncedTopicListeners
    {
+      private static final Object NULL_OBJECT = new Object();
       private final ConcurrentLinkedQueue<Object> inputQueue = new ConcurrentLinkedQueue<>();
       private final ConcurrentLinkedQueue<TopicListener<Object>> listeners = new ConcurrentLinkedQueue<>();
 
@@ -146,6 +147,8 @@ public class SharedMemoryJavaFXMessager extends SharedMemoryMessager implements 
          {
             if (message != null)
                inputQueue.add(message);
+            else
+               inputQueue.add(NULL_OBJECT);
          });
       }
 
@@ -164,7 +167,10 @@ public class SharedMemoryJavaFXMessager extends SharedMemoryMessager implements 
          while (!inputQueue.isEmpty())
          {
             Object newData = inputQueue.poll();
-            listeners.forEach(listener -> listener.receivedMessageForTopic(newData));
+            if (newData == NULL_OBJECT)
+               listeners.forEach(listener -> listener.receivedMessageForTopic(null));
+            else
+               listeners.forEach(listener -> listener.receivedMessageForTopic(newData));
          }
       }
 
