@@ -36,11 +36,14 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsContr
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 
 public class MainWindowController extends ObservedAnimationTimer implements VisualizerController
 {
@@ -74,6 +77,8 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    private SidePaneController sidePaneController;
    /** Controller for the right pane where custom user controls are displayed. */
    private UserSidePaneController userSidePaneController;
+
+   private final Plotter2D plotter2D = new Plotter2D();
 
    private SessionVisualizerToolkit globalToolkit;
    private SessionVisualizerWindowToolkit windowToolkit;
@@ -132,6 +137,14 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       {
          e.printStackTrace();
       }
+
+      setupPlotter2D(plotter2D);
+      messager.registerJavaFXSyncedTopicListener(topics.getPlotter2DTrackCoordinateRequest(), m ->
+      {
+         YoVariableDatabase rootRegistryDatabase = toolkit.getYoManager().getRootRegistryDatabase();
+         ReferenceFrameManager referenceFrameManager = toolkit.getReferenceFrameManager();
+         plotter2D.coordinateToTrackProperty().setValue(CompositePropertyTools.toTuple2DProperty(rootRegistryDatabase, referenceFrameManager, m));
+      });
    }
 
    public void setupViewport3D(Pane viewportPane)
@@ -383,6 +396,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    {
       yoChartGroupPanelController.closeAndDispose();
       sidePaneController.stop();
+      plotter2D.coordinateToTrackProperty().setValue(null);
    }
 
    public AnchorPane getMainPane()
