@@ -57,9 +57,6 @@ public class MultiSessionManager
                Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO);
                alert.initOwner(toolkit.getMainWindow());
                JavaFXMissingTools.centerDialogInOwner(alert);
-               // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
-               // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
-               alert.setOnShown(e -> JavaFXMissingTools.runLater(getClass(), () -> JavaFXMissingTools.centerDialogInOwner(alert)));
 
                SessionVisualizerIOTools.addSCSIconToDialog(alert);
                Optional<ButtonType> result = alert.showAndWait();
