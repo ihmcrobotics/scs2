@@ -434,9 +434,6 @@ public class SessionVisualizerIOTools
                alert.initOwner(owner);
                alert.setTitle("Confirm Save As");
                JavaFXMissingTools.centerDialogInOwner(alert);
-               // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
-               // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
-               alert.setOnShown(e -> JavaFXMissingTools.runLater(SessionVisualizerIOTools.class, () -> JavaFXMissingTools.centerDialogInOwner(alert)));
                Optional<ButtonType> confirmation = alert.showAndWait();
 
                if (!confirmation.isPresent() || confirmation.get() == ButtonType.NO)
