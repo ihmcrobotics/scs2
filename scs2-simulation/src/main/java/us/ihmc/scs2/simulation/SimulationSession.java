@@ -32,6 +32,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.simulation.SimulationTerminalCondition.TerminalState;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -54,7 +55,7 @@ public class SimulationSession extends Session
    private final List<CameraDefinitionConsumer> cameraDefinitionNotifiers = new ArrayList<>();
    private final Map<String, Map<String, SimCameraSensor>> robotNameToSensorNameToCameraMap = new HashMap<>();
    private final ExecutorService cameraBroadcastExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("SCS2-Camera-Server"));
-   private final List<BooleanSupplier> terminalConditions = new ArrayList<>();
+   private final List<SimulationTerminalCondition> terminalConditions = new ArrayList<>();
 
    private final List<TimeConsumer> beforePhysicsCallbacks = new ArrayList<>();
    private final List<TimeConsumer> afterPhysicsCallbacks = new ArrayList<>();
@@ -465,7 +466,7 @@ public class SimulationSession extends Session
             }
             else
             {
-               BooleanSupplier terminalCondition = () -> testTerminalConditions();
+               BooleanSupplier terminalCondition = () -> testTerminalConditions() != null;
                transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
             }
          }
@@ -476,7 +477,7 @@ public class SimulationSession extends Session
             if (terminalConditions.isEmpty())
                terminalCondition = () -> time.getValue() - startTime >= duration;
             else
-               terminalCondition = () -> time.getValue() - startTime >= duration || testTerminalConditions();
+               terminalCondition = () -> time.getValue() - startTime >= duration || testTerminalConditions() != null;
             transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
          }
 
@@ -498,7 +499,7 @@ public class SimulationSession extends Session
             public boolean getAsBoolean()
             {
                tickCounter++;
-               return tickCounter >= numberOfTicks || testTerminalConditions();
+               return tickCounter >= numberOfTicks || testTerminalConditions() != null;
             }
          };
          setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
@@ -539,8 +540,17 @@ public class SimulationSession extends Session
 
                   success = runTick();
 
-                  if (!success || testTerminalConditions())
+                  if (!success)
                      break;
+
+                  TerminalState state = testTerminalConditions();
+                  
+                  if (state != null)
+                  {
+                     if (state == TerminalState.FAILURE)
+                        success = false;
+                     break;
+                  }
                }
             }
             else
@@ -555,8 +565,17 @@ public class SimulationSession extends Session
 
                   success = runTick();
 
-                  if (!success || testTerminalConditions())
+                  if (!success)
                      break;
+
+                  TerminalState state = testTerminalConditions();
+                  
+                  if (state != null)
+                  {
+                     if (state == TerminalState.FAILURE)
+                        success = false;
+                     break;
+                  }
                }
             }
 
@@ -614,15 +633,16 @@ public class SimulationSession extends Session
          return true;
       }
 
-      private boolean testTerminalConditions()
+      private TerminalState testTerminalConditions()
       {
          for (int i = 0; i < terminalConditions.size(); i++)
          {
-            if (terminalConditions.get(i).getAsBoolean())
-               return true;
+            TerminalState result = terminalConditions.get(i).testCondition();
+            if (result != null)
+               return result;
          }
 
-         return false;
+         return null;
       }
 
       /** {@inheritDoc} */
@@ -634,7 +654,7 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
-      public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
+      public void addExternalTerminalCondition(SimulationTerminalCondition... externalTerminalConditions)
       {
          for (int i = 0; i < externalTerminalConditions.length; i++)
          {
@@ -644,7 +664,7 @@ public class SimulationSession extends Session
 
       /** {@inheritDoc} */
       @Override
-      public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+      public boolean removeExternalTerminalCondition(SimulationTerminalCondition externalTerminalCondition)
       {
          return terminalConditions.remove(externalTerminalCondition);
       }
