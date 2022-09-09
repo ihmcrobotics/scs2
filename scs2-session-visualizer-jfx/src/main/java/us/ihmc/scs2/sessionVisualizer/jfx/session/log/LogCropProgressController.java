@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import com.jfoenix.controls.JFXProgressBar;
-
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -9,6 +7,7 @@ import javafx.animation.Timeline;
 import javafx.beans.property.DoubleProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -22,7 +21,7 @@ public class LogCropProgressController implements ProgressConsumer
    @FXML
    private Label taskInProgressLabel, progressInfoLabel, progressErrorLabel;
    @FXML
-   private JFXProgressBar progressBar;
+   private ProgressBar progressBar;
 
    private Pane parent;
    private Timeline openTimeline, closeTimeline;
