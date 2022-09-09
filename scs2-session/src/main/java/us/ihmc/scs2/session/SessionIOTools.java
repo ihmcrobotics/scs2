@@ -186,6 +186,15 @@ public class SessionIOTools
             }
          }
       }
+      else
+      {
+         // File does not exist
+         if (!file.mkdirs())
+         {
+            LogTools.error("Unable to create parent directies of {}", file);
+            return;
+         }
+      }
 
       SessionInformationDefinition sessionInfo = new SessionInformationDefinition();
       sessionInfo.setSessionName(session.getSessionName());
