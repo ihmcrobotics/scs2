@@ -366,12 +366,12 @@ public class SessionVisualizerIOTools
       return showSaveDialog(owner, "Save Video", videoExtensionFilter, "video");
    }
 
-   private static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter)
+   public static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter)
    {
       return showSaveDialog(owner, title, extensionFilter, "filePath");
    }
 
-   private static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
+   public static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
       List<String> extensions = extensionFilter != null ? extensionFilter.getExtensions() : Collections.emptyList();
       boolean hasExtension = !extensions.isEmpty();
