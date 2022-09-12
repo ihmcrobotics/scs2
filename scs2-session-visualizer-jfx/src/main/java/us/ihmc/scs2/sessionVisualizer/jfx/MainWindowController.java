@@ -10,6 +10,7 @@ import com.jfoenix.controls.events.JFXDrawerEvent;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -73,6 +74,8 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    /** The drawer used to hold onto custom GUI controls. */
    private final JFXDrawer rightDrawer = new JFXDrawer();
 
+   private BooleanProperty disableUserControls = new SimpleBooleanProperty(this, "disableUserControlsProperty", false);
+
    /** Controller for the left pane where variable search and entries are displayed. */
    private SidePaneController sidePaneController;
    /** Controller for the right pane where custom user controls are displayed. */
@@ -92,6 +95,8 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       globalToolkit = toolkit.getGlobalToolkit();
       topics = toolkit.getTopics();
       messager = toolkit.getMessager();
+
+      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m -> disableUserControls.set(m));
 
       mainWindowMenuBarController.initialize(windowToolkit);
       sessionSimpleControlsController.initialize(windowToolkit);
@@ -114,8 +119,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       try
       {
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SIDE_PANE_URL);
-         Pane sidePane = setupLeftDrawer(loader.load());
-         messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> sidePane.setDisable(disable));
+         setupLeftDrawer(loader.load());
          sidePaneController = loader.getController();
          sidePaneController.initialize(toolkit.getGlobalToolkit());
       }
@@ -127,8 +131,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       try
       {
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.USER_SIDE_PANE_URL);
-         Pane sidePane = setupRightDrawer(loader.load());
-         messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> sidePane.setDisable(disable));
+         setupRightDrawer(loader.load());
          userSidePaneController = loader.getController();
          userSidePaneController.initialize(toolkit);
          userSidePaneController.computedPrefWidthProperty().addListener((o, oldValue, newValue) -> rightDrawer.setDefaultDrawerSize(newValue.doubleValue()));
@@ -265,9 +268,8 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       drawer.setOverLayVisible(false);
       drawer.setContent(remove);
 
-      // By disabling the side pane, we unlink YoVariables (in search tabs) reducing the cost of a run tick for the Session
-      drawerSidePane.setVisible(drawer.isOpened());
-      drawerSidePane.setDisable(!drawer.isOpened());
+      BooleanProperty drawerOpenProperty = new SimpleBooleanProperty(drawer, "drawerOpenProperty", drawer.isOpened());
+
       drawer.addEventHandler(Event.ANY, e ->
       {
          if (e.getTarget() != drawer)
@@ -275,13 +277,11 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
          if (e.getEventType() == JFXDrawerEvent.CLOSED)
          {
-            drawerSidePane.setVisible(false);
-            drawerSidePane.setDisable(true);
+            drawerOpenProperty.set(false);
          }
          if (e.getEventType() == JFXDrawerEvent.OPENING || e.getEventType() == JFXDrawerEvent.OPENED)
          {
-            drawerSidePane.setVisible(true);
-            drawerSidePane.setDisable(false);
+            drawerOpenProperty.set(true);
          }
       });
 
@@ -290,15 +290,17 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          if (drawer.isClosed() || drawer.isClosing())
          {
             drawer.open();
-            // The event handler is not clean visually, need something that kicks in earlier.
-            drawerSidePane.setVisible(true);
-            drawerSidePane.setDisable(false);
+            drawerOpenProperty.set(true);
          }
          else
          {
             drawer.close();
          }
       });
+
+      // By disabling the side pane, we unlink YoVariables (in search tabs) reducing the cost of a run tick for the Session
+      drawerSidePane.visibleProperty().bind(drawerOpenProperty);
+      drawerSidePane.disableProperty().bind(drawerOpenProperty.not().or(disableUserControls));
 
       return drawerSidePane;
    }

@@ -87,14 +87,16 @@ public class LogSessionManagerController implements SessionControlsController
    private BackgroundExecutorManager backgroundExecutorManager;
 
    private Stage stage;
+   private SessionVisualizerTopics topics;
+   private JavaFXMessager messager;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
    {
       stage = new Stage();
 
-      SessionVisualizerTopics topics = toolkit.getTopics();
-      JavaFXMessager messager = toolkit.getMessager();
+      topics = toolkit.getTopics();
+      messager = toolkit.getMessager();
 
       backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
 
@@ -227,38 +229,8 @@ public class LogSessionManagerController implements SessionControlsController
          stage.sizeToScene();
       });
 
-      openSessionButton.disableProperty().bind(loadingSpinner.visibleProperty());
-      openSessionButton.setOnAction(e ->
-      {
-         FileChooser fileChooser = new FileChooser();
-         fileChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath(LOG_FILE_KEY));
-         fileChooser.getExtensionFilters().add(new ExtensionFilter("Log property file", "*.log"));
-         fileChooser.setTitle("Choose log directory");
-         File result = fileChooser.showOpenDialog(stage);
-         if (result == null)
-            return;
-
-         unloadSession();
-         setIsLoading(true);
-
-         backgroundExecutorManager.executeInBackground(() ->
-         {
-            LogSession newSession;
-            try
-            {
-               LogTools.info("Creating log session.");
-               newSession = new LogSession(result.getParentFile(), null); // TODO Need a progress window
-               LogTools.info("Created log session.");
-               JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
-               SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
-            }
-            catch (IOException ex)
-            {
-               ex.printStackTrace();
-               setIsLoading(false);
-            }
-         });
-      });
+      loadingSpinner.visibleProperty().addListener((o, oldValue, newValue) -> openSessionButton.setDisable(newValue));
+      openSessionButton.setOnAction(e -> openLogFile());
 
       endSessionButton.setOnAction(e ->
       {
@@ -266,6 +238,14 @@ public class LogSessionManagerController implements SessionControlsController
          if (logSession != null)
             logSession.shutdownSession();
          activeSessionProperty.set(null);
+      });
+
+      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m ->
+      {
+         openSessionButton.setDisable(m);
+         endSessionButton.setDisable(m);
+         cropControlsContainer.setDisable(m);
+         logPositionSlider.setDisable(m);
       });
 
       stage.setScene(new Scene(mainPane));
@@ -277,6 +257,38 @@ public class LogSessionManagerController implements SessionControlsController
             shutdown();
       });
       stage.show();
+   }
+
+   public void openLogFile()
+   {
+      FileChooser fileChooser = new FileChooser();
+      fileChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath(LOG_FILE_KEY));
+      fileChooser.getExtensionFilters().add(new ExtensionFilter("Log property file", "*.log"));
+      fileChooser.setTitle("Choose log directory");
+      File result = fileChooser.showOpenDialog(stage);
+      if (result == null)
+         return;
+
+      unloadSession();
+      setIsLoading(true);
+
+      backgroundExecutorManager.executeInBackground(() ->
+      {
+         LogSession newSession;
+         try
+         {
+            LogTools.info("Creating log session.");
+            newSession = new LogSession(result.getParentFile(), null); // TODO Need a progress window
+            LogTools.info("Created log session.");
+            JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
+            SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
+         }
+         catch (IOException ex)
+         {
+            ex.printStackTrace();
+            setIsLoading(false);
+         }
+      });
    }
 
    public void setIsLoading(boolean isLoading)
@@ -320,10 +332,20 @@ public class LogSessionManagerController implements SessionControlsController
       LogCropProgressController controller = loader.getController();
       controller.initialize(cropProgressMonitorPane);
 
-      backgroundExecutorManager.executeInBackground(() -> logCropper.crop(destination,
-                                                                          (int) logPositionSlider.getTrimStartValue(),
-                                                                          (int) logPositionSlider.getTrimEndValue(),
-                                                                          controller));
+      backgroundExecutorManager.executeInBackground(() ->
+      {
+         setIsLoading(true);
+         messager.submitMessage(topics.getDisableUserControls(), true);
+         try
+         {
+            logCropper.crop(destination, (int) logPositionSlider.getTrimStartValue(), (int) logPositionSlider.getTrimEndValue(), controller);
+         }
+         finally
+         {
+            messager.submitMessage(topics.getDisableUserControls(), false);
+            setIsLoading(false);
+         }
+      });
    }
 
    @Override
