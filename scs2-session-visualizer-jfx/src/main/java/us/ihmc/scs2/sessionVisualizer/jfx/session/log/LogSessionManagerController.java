@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
 import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXSpinner;
 import com.jfoenix.controls.JFXToggleButton;
 
@@ -19,6 +20,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableLongValue;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -29,7 +31,6 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -66,11 +67,13 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private Label sessionNameLabel, dateLabel, logPathLabel;
    @FXML
-   private HBox cropControlsContainer;
+   private Pane cropControlsContainer;
    @FXML
    private JFXToggleButton showTrimsButton;
    @FXML
    private JFXButton startTrimToCurrentButton, endTrimToCurrentButton, resetTrimsButton, cropAndExportButton;
+   @FXML
+   private JFXComboBox<OutputFormat> outputFormatComboxBox;
    @FXML
    private CropSlider logPositionSlider;
    @FXML
@@ -79,6 +82,11 @@ public class LogSessionManagerController implements SessionControlsController
    private TitledPane thumbnailsTitledPane;
    @FXML
    private FlowPane videoThumbnailPane;
+
+   private enum OutputFormat
+   {
+      Default, MATLAB;
+   };
 
    private final ObjectProperty<MultiVideoViewer> multiVideoViewerProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
    private final ObjectProperty<LogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
@@ -222,6 +230,7 @@ public class LogSessionManagerController implements SessionControlsController
       startTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       endTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       resetTrimsButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
+      outputFormatComboxBox.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropAndExportButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropProgressMonitorPane.getChildren().addListener((ListChangeListener<Node>) c ->
       {
@@ -239,6 +248,9 @@ public class LogSessionManagerController implements SessionControlsController
             logSession.shutdownSession();
          activeSessionProperty.set(null);
       });
+
+      outputFormatComboxBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
+      outputFormatComboxBox.getSelectionModel().select(OutputFormat.Default);
 
       messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m ->
       {
@@ -322,11 +334,32 @@ public class LogSessionManagerController implements SessionControlsController
       if (logCropper == null)
          return;
 
-      DirectoryChooser directoryChooser = new DirectoryChooser();
-      directoryChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath(LOG_FILE_KEY));
-      File destination = directoryChooser.showDialog(stage);
+      File destination;
+
+      OutputFormat outputFormat = outputFormatComboxBox.getSelectionModel().getSelectedItem();
+      switch (outputFormat)
+      {
+         case MATLAB:
+         {
+            destination = SessionVisualizerIOTools.showSaveDialog(stage,
+                                                                  "Export MATLAB data",
+                                                                  new ExtensionFilter("MATLAB File format", "*.mat"),
+                                                                  LOG_FILE_KEY);
+            break;
+         }
+         case Default:
+         default:
+         {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath(LOG_FILE_KEY));
+            destination = directoryChooser.showDialog(stage);
+            break;
+         }
+      }
+
       if (destination == null)
          return;
+
       FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.LOG_CROP_PROGRESS_PANE_FXML_URL);
       loader.load();
       LogCropProgressController controller = loader.getController();
@@ -338,7 +371,12 @@ public class LogSessionManagerController implements SessionControlsController
          messager.submitMessage(topics.getDisableUserControls(), true);
          try
          {
-            logCropper.crop(destination, (int) logPositionSlider.getTrimStartValue(), (int) logPositionSlider.getTrimEndValue(), controller);
+            int from = (int) logPositionSlider.getTrimStartValue();
+            int to = (int) logPositionSlider.getTrimEndValue();
+            if (outputFormat == OutputFormat.MATLAB)
+               logCropper.cropMATLAB(destination, activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList(), from, to, controller);
+            else
+               logCropper.crop(destination, from, to, controller);
          }
          finally
          {
