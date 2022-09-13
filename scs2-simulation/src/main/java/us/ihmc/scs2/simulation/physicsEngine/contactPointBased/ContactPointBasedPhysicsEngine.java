@@ -72,6 +72,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
          robot.updateSensors();
          robot.getControllerManager().initializeControllers();
       }
+      forceCalculator.reset(robotList);
       hasBeenInitialized = true;
    }
 
