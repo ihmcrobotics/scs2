@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.configuration;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -18,6 +19,7 @@ public class SCSGuiConfigurationDefinition
    private int bufferSize = -1;
    private int recordTickPeriod = -1;
    private int numberPrecision = -1;
+   private boolean showYoSearchPanel = false;
    private boolean showOverheadPlotter = false;
    private boolean showAdvancedControls = false;
    private WindowConfigurationDefinition mainWindowConfiguration;
@@ -71,6 +73,11 @@ public class SCSGuiConfigurationDefinition
    public void setNumberPrecision(int numberPrecision)
    {
       this.numberPrecision = numberPrecision;
+   }
+
+   public void setShowYoSearchPanel(boolean showYoSearchPanel)
+   {
+      this.showYoSearchPanel = showYoSearchPanel;
    }
 
    public void setShowOverheadPlotter(boolean showOverheadPlotter)
@@ -143,6 +150,11 @@ public class SCSGuiConfigurationDefinition
       return numberPrecision;
    }
 
+   public boolean isShowYoSearchPanel()
+   {
+      return showYoSearchPanel;
+   }
+
    public boolean isShowOverheadPlotter()
    {
       return showOverheadPlotter;
@@ -176,22 +188,17 @@ public class SCSGuiConfigurationDefinition
 
          if (name == null ? other.name != null : !name.equals(other.name))
             return false;
-         if (yoGraphicsFilename == null ? other.yoGraphicsFilename != null : !yoGraphicsFilename.equals(other.yoGraphicsFilename))
+         if (!Objects.equals(yoGraphicsFilename, other.yoGraphicsFilename))
             return false;
-         if (yoCompositePatternListFilename == null ? other.yoCompositePatternListFilename != null
-               : !yoCompositePatternListFilename.equals(other.yoCompositePatternListFilename))
+         if (!Objects.equals(yoCompositePatternListFilename, other.yoCompositePatternListFilename))
             return false;
-         if (yoEntryConfigurationFilename == null ? other.yoEntryConfigurationFilename != null
-               : !yoEntryConfigurationFilename.equals(other.yoEntryConfigurationFilename))
+         if (!Objects.equals(yoEntryConfigurationFilename, other.yoEntryConfigurationFilename))
             return false;
-         if (yoSliderboardConfigurationFilename == null ? other.yoSliderboardConfigurationFilename != null
-               : !yoSliderboardConfigurationFilename.equals(other.yoSliderboardConfigurationFilename))
+         if (!Objects.equals(yoSliderboardConfigurationFilename, other.yoSliderboardConfigurationFilename))
             return false;
-         if (mainYoChartGroupConfigurationFilename == null ? other.mainYoChartGroupConfigurationFilename != null
-               : !mainYoChartGroupConfigurationFilename.equals(other.mainYoChartGroupConfigurationFilename))
+         if (!Objects.equals(mainYoChartGroupConfigurationFilename, other.mainYoChartGroupConfigurationFilename))
             return false;
-         if (secondaryYoChartGroupConfigurationsFilenames == null ? other.secondaryYoChartGroupConfigurationsFilenames != null
-               : !secondaryYoChartGroupConfigurationsFilenames.equals(other.secondaryYoChartGroupConfigurationsFilenames))
+         if (!Objects.equals(secondaryYoChartGroupConfigurationsFilenames, other.secondaryYoChartGroupConfigurationsFilenames))
             return false;
          if (bufferSize != other.bufferSize)
             return false;
@@ -199,14 +206,15 @@ public class SCSGuiConfigurationDefinition
             return false;
          if (numberPrecision != other.numberPrecision)
             return false;
+         if (showYoSearchPanel != other.showYoSearchPanel)
+            return false;
          if (showOverheadPlotter != other.showOverheadPlotter)
             return false;
          if (showAdvancedControls != other.showAdvancedControls)
             return false;
          if (mainWindowConfiguration == null ? other.mainWindowConfiguration == null : !mainWindowConfiguration.equals(other.mainWindowConfiguration))
             return false;
-         if (secondaryWindowConfigurations == null ? other.secondaryWindowConfigurations == null
-               : !secondaryWindowConfigurations.equals(other.secondaryWindowConfigurations))
+         if (!Objects.equals(secondaryWindowConfigurations, other.secondaryWindowConfigurations))
             return false;
          return true;
       }
@@ -223,7 +231,8 @@ public class SCSGuiConfigurationDefinition
             + "\nyoEntryConfiguration: " + yoEntryConfigurationFilename + "\nyoSliderboardConfiguration: " + yoSliderboardConfigurationFilename
             + "\nmainYoChartGroupConfiguration: " + mainYoChartGroupConfigurationFilename + "\nsecondaryYoChartGroupConfigurations: "
             + secondaryYoChartGroupConfigurationsFilenames + "\nbufferSize: " + bufferSize + "\nrecordTickPeriod: " + recordTickPeriod + "\nnumberPrecision: "
-            + numberPrecision + "\nshowOverheadPlotter: " + showOverheadPlotter + "\nshowAdvancedControls: " + showAdvancedControls
-            + "\nmainWindowConfiguration: " + mainWindowConfiguration + "\nsecondaryWindowConfigurations: " + secondaryWindowConfigurations;
+            + numberPrecision + "\nshowYoSearchPanel: " + showYoSearchPanel + "\nshowOverheadPlotter: " + showOverheadPlotter + "\nshowAdvancedControls: "
+            + showAdvancedControls + "\nmainWindowConfiguration: " + mainWindowConfiguration + "\nsecondaryWindowConfigurations: "
+            + secondaryWindowConfigurations;
    }
 }

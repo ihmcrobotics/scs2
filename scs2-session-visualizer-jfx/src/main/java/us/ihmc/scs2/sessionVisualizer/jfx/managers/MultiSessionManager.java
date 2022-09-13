@@ -229,7 +229,8 @@ public class MultiSessionManager
       {
          JavaFXMissingTools.runLaterWhen(getClass(),
                                          () -> toolkit.getYoCompositeSearchManager().isSessionLoaded(),
-                                         () -> mainWindowController.getSidePaneController().getYoEntryTabPaneController()
+                                         () -> mainWindowController.getSidePaneController()
+                                                                   .getYoEntryTabPaneController()
                                                                    .load(configuration.getYoEntryConfigurationFile()));
       }
 
@@ -251,6 +252,7 @@ public class MultiSessionManager
          messager.submitMessage(topics.getInitializeBufferRecordTickPeriod(), configuration.getRecordTickPeriod());
       if (configuration.hasNumberPrecision())
          messager.submitMessage(topics.getControlsNumberPrecision(), configuration.getNumberPrecision());
+      mainWindowController.leftSidePaneOpenProperty().set(configuration.getShowYoSearchPanel());
       messager.submitMessage(topics.getShowOverheadPlotter(), configuration.getShowOverheadPlotter());
       messager.submitMessage(topics.getShowAdvancedControls(), configuration.getShowAdvancedControls());
       if (configuration.hasYoSliderboardConfiguration())
@@ -304,8 +306,8 @@ public class MultiSessionManager
       toolkit.getYoGraphicFXManager().saveYoGraphicToFile(configuration.getYoGraphicsConfigurationFile());
       toolkit.getYoCompositeSearchManager().saveYoCompositePatternToFile(configuration.getYoCompositeConfigurationFile());
       mainWindowController.getSidePaneController().getYoEntryTabPaneController().exportAllTabs(configuration.getYoEntryConfigurationFile());
-      mainWindowController.getYoChartGroupPanelController().saveChartGroupConfiguration(toolkit.getMainWindow(),
-                                                                                        configuration.getMainYoChartGroupConfigurationFile());
+      mainWindowController.getYoChartGroupPanelController()
+                          .saveChartGroupConfiguration(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile());
       toolkit.getWindowManager().saveSessionConfiguration(configuration);
       configuration.setMainStage(toolkit.getMainWindow());
 
@@ -320,6 +322,7 @@ public class MultiSessionManager
       Integer numberPrecision = messager.getLastValue(topics.getControlsNumberPrecision());
       if (numberPrecision != null)
          configuration.setNumberPrecision(numberPrecision);
+      configuration.setShowYoSearchPanel(mainWindowController.leftSidePaneOpenProperty().get());
       configuration.setShowOverheadPlotter(mainWindowController.showOverheadPlotterProperty().getValue());
       configuration.setShowAdvancedControls(mainWindowController.showAdvancedControlsProperty().get());
 

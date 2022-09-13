@@ -3,6 +3,8 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.mutable.MutableBoolean;
+
 import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.controls.JFXDrawer.DrawerDirection;
 import com.jfoenix.controls.JFXHamburger;
@@ -74,7 +76,9 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    /** The drawer used to hold onto custom GUI controls. */
    private final JFXDrawer rightDrawer = new JFXDrawer();
 
-   private BooleanProperty disableUserControls = new SimpleBooleanProperty(this, "disableUserControlsProperty", false);
+   private final BooleanProperty leftDrawerOpen = new SimpleBooleanProperty(this, "leftDrawerOpenProperty", false);
+   private final BooleanProperty rightDrawerOpen = new SimpleBooleanProperty(this, "rightDrawerOpenProperty", false);
+   private final BooleanProperty disableUserControls = new SimpleBooleanProperty(this, "disableUserControlsProperty", false);
 
    /** Controller for the left pane where variable search and entries are displayed. */
    private SidePaneController sidePaneController;
@@ -189,9 +193,9 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       return showOverheadPlotterProperty;
    }
 
-   public Pane setupLeftDrawer(Pane sidePane)
+   public void setupLeftDrawer(Pane sidePane)
    {
-      Pane drawerSidePane = configureDrawer(sidePane, leftDrawer, leftDrawerBurger);
+      configureDrawer(sidePane, leftDrawer, leftDrawerBurger, leftDrawerOpen);
       HamburgerAnimationTransition transition = new HamburgerAnimationTransition(leftDrawerBurger, FrameType.BURGER, FrameType.LEFT_CLOSE);
 
       leftDrawer.addEventHandler(Event.ANY, e ->
@@ -214,13 +218,11 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
             transition.play();
          }
       });
-
-      return drawerSidePane;
    }
 
-   public Pane setupRightDrawer(Pane sidePane)
+   public void setupRightDrawer(Pane sidePane)
    {
-      Pane drawerSidePane = configureDrawer(sidePane, rightDrawer, rightDrawerBurger);
+      configureDrawer(sidePane, rightDrawer, rightDrawerBurger, rightDrawerOpen);
       HamburgerAnimationTransition transition = new HamburgerAnimationTransition(rightDrawerBurger, FrameType.LEFT_ANGLE, FrameType.RIGHT_CLOSE);
 
       rightDrawer.addEventHandler(Event.ANY, e ->
@@ -243,11 +245,9 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
             transition.play();
          }
       });
-
-      return drawerSidePane;
    }
 
-   public Pane configureDrawer(Pane sidePane, JFXDrawer drawer, Node openCloseControl)
+   public void configureDrawer(Pane sidePane, JFXDrawer drawer, Node openCloseControl, BooleanProperty drawerOpenProperty)
    {
       Pane drawerSidePane = addEdgeToSidePane(sidePane, drawer.getDirection());
       drawer.setSidePane(drawerSidePane);
@@ -268,7 +268,20 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       drawer.setOverLayVisible(false);
       drawer.setContent(remove);
 
-      BooleanProperty drawerOpenProperty = new SimpleBooleanProperty(drawer, "drawerOpenProperty", drawer.isOpened());
+      BooleanProperty drawerFullyClosed = new SimpleBooleanProperty(drawer, "drawerFullyClosedProperty", !drawerOpenProperty.get());
+      drawerOpenProperty.set(drawer.isOpened());
+
+      MutableBoolean ignoreOpenChange = new MutableBoolean(false);
+
+      drawerOpenProperty.addListener((o, oldValue, newValue) ->
+      {
+         if (ignoreOpenChange.booleanValue())
+            return;
+         if (newValue && (drawer.isClosing() || drawer.isClosed()))
+            drawer.open();
+         else if (drawer.isOpening() || drawer.isOpened())
+            drawer.close();
+      });
 
       drawer.addEventHandler(Event.ANY, e ->
       {
@@ -277,32 +290,31 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
          if (e.getEventType() == JFXDrawerEvent.CLOSED)
          {
+            ignoreOpenChange.setTrue();
             drawerOpenProperty.set(false);
+            ignoreOpenChange.setFalse();
+            drawerFullyClosed.set(true);
          }
          if (e.getEventType() == JFXDrawerEvent.OPENING || e.getEventType() == JFXDrawerEvent.OPENED)
          {
+            ignoreOpenChange.setTrue();
             drawerOpenProperty.set(true);
+            ignoreOpenChange.setFalse();
+            drawerFullyClosed.set(false);
          }
       });
 
       openCloseControl.setOnMouseClicked(e ->
       {
          if (drawer.isClosed() || drawer.isClosing())
-         {
             drawer.open();
-            drawerOpenProperty.set(true);
-         }
          else
-         {
             drawer.close();
-         }
       });
 
       // By disabling the side pane, we unlink YoVariables (in search tabs) reducing the cost of a run tick for the Session
-      drawerSidePane.visibleProperty().bind(drawerOpenProperty);
-      drawerSidePane.disableProperty().bind(drawerOpenProperty.not().or(disableUserControls));
-
-      return drawerSidePane;
+      drawerSidePane.visibleProperty().bind(drawerFullyClosed.not());
+      drawerSidePane.disableProperty().bind(drawerFullyClosed.or(disableUserControls));
    }
 
    private Pane addEdgeToSidePane(Pane sidePane, DrawerDirection contentSide)
@@ -429,6 +441,16 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    public UserSidePaneController getUserSidePaneController()
    {
       return userSidePaneController;
+   }
+
+   public BooleanProperty leftSidePaneOpenProperty()
+   {
+      return leftDrawerOpen;
+   }
+
+   public BooleanProperty rightSidePaneOpenProperty()
+   {
+      return rightDrawerOpen;
    }
 
    public Property<Boolean> showOverheadPlotterProperty()

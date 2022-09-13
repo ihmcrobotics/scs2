@@ -116,7 +116,7 @@ public class SCSGuiConfiguration
 
       if (isLoading)
       { // TODO This is backward compatibility, the name extension changed
-         if (toPath(toFilename("Main", scsConfigurationFileExtension)).toFile().exists())
+         if (!toPath(toFilename("Main", scsMainConfigurationFileExtension)).toFile().exists())
             mainConfigurationFilename = toFilename("Main", scsConfigurationFileExtension);
          else
             mainConfigurationFilename = toFilename("Main", scsMainConfigurationFileExtension);
@@ -210,6 +210,11 @@ public class SCSGuiConfiguration
    public void setNumberPrecision(int numberPrecision)
    {
       definition.setNumberPrecision(numberPrecision);
+   }
+
+   public void setShowYoSearchPanel(boolean showYoSearchPanel)
+   {
+      definition.setShowYoSearchPanel(showYoSearchPanel);
    }
 
    public void setShowOverheadPlotter(boolean showOverheadPlotter)
@@ -375,6 +380,11 @@ public class SCSGuiConfiguration
    public int getNumberPrecision()
    {
       return definition.getNumberPrecision();
+   }
+
+   public boolean getShowYoSearchPanel()
+   {
+      return definition.isShowYoSearchPanel();
    }
 
    public boolean getShowOverheadPlotter()
