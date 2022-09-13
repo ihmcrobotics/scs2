@@ -119,6 +119,7 @@ public class SimulationSession extends Session
    {
       super.initializeSession();
       physicsEngine.initialize(gravity);
+      time.set(0.0);
    }
 
    @Override
