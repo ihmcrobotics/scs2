@@ -131,19 +131,29 @@ public class LinkedBufferArray extends LinkedBuffer
       boolean hasPulledSomething = false;
       try
       {
+         boolean attemptRepair = false;
+
          for (int i = 0; i < size; i++)
          {
             if (linkedBuffers[i] == null)
             {
-               LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
-                                            i,
-                                            size,
-                                            EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
-                                            EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
-               break;
+               if (!attemptRepair)
+               {
+                  LogTools.error(String.format("Unexpected null pointer, queried index:%d, current size:%d, elements: [%s], stacktrace:[%s]",
+                                               i,
+                                               size,
+                                               EuclidCoreIOTools.getArrayString(", ", linkedBuffers, b -> b.getClass().getSimpleName()),
+                                               EuclidCoreIOTools.getArrayString(", ", new Exception().getStackTrace())));
+                  LogTools.info("Attempting to repair.");
+                  attemptRepair = true;
+               }
+               linkedBuffers[i] = linkedBuffers[--size];
+               i--;
             }
-
-            hasPulledSomething |= linkedBuffers[i].pull();
+            else
+            {
+               hasPulledSomething |= linkedBuffers[i].pull();
+            }
          }
       }
       catch (NullPointerException e)
