@@ -126,6 +126,21 @@ public class RobotDefinition
       return rootBodyDefinition;
    }
 
+   public SixDoFJointDefinition getFloatingRootJointDefinition()
+   {
+      if (rootBodyDefinition == null)
+         return null;
+      if (rootBodyDefinition.getChildrenJoints().size() != 1)
+         return null;
+
+      JointDefinition jointDefinition = getRootJointDefinitions().get(0);
+
+      if (jointDefinition instanceof SixDoFJointDefinition)
+         return (SixDoFJointDefinition) jointDefinition;
+
+      return null;
+   }
+
    public List<JointDefinition> getRootJointDefinitions()
    {
       return rootBodyDefinition.getChildrenJoints();

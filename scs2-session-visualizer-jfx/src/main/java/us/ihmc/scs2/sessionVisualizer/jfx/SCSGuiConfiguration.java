@@ -1,7 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.SCS2_CONFIGURATION_DEFAULT_PATH;
-import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.*;
+import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.scsConfigurationFileExtension;
+import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.scsMainConfigurationFileExtension;
 import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.yoChartGroupConfigurationFileExtension;
 import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.yoCompositeConfigurationFileExtension;
 import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.yoEntryConfigurationFileExtension;
@@ -29,6 +30,7 @@ import us.ihmc.commons.nio.FileTools;
 import us.ihmc.scs2.definition.configuration.SCSGuiConfigurationDefinition;
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 
 public class SCSGuiConfiguration
@@ -116,7 +118,7 @@ public class SCSGuiConfiguration
 
       if (isLoading)
       { // TODO This is backward compatibility, the name extension changed
-         if (toPath(toFilename("Main", scsConfigurationFileExtension)).toFile().exists())
+         if (!toPath(toFilename("Main", scsMainConfigurationFileExtension)).toFile().exists())
             mainConfigurationFilename = toFilename("Main", scsConfigurationFileExtension);
          else
             mainConfigurationFilename = toFilename("Main", scsMainConfigurationFileExtension);
@@ -210,6 +212,11 @@ public class SCSGuiConfiguration
    public void setNumberPrecision(int numberPrecision)
    {
       definition.setNumberPrecision(numberPrecision);
+   }
+
+   public void setShowYoSearchPanel(boolean showYoSearchPanel)
+   {
+      definition.setShowYoSearchPanel(showYoSearchPanel);
    }
 
    public void setShowOverheadPlotter(boolean showOverheadPlotter)
@@ -377,6 +384,11 @@ public class SCSGuiConfiguration
       return definition.getNumberPrecision();
    }
 
+   public boolean getShowYoSearchPanel()
+   {
+      return definition.isShowYoSearchPanel();
+   }
+
    public boolean getShowOverheadPlotter()
    {
       return definition.isShowOverheadPlotter();
@@ -456,14 +468,20 @@ public class SCSGuiConfiguration
       stage.setX(positionX);
       stage.setY(positionY);
 
-      if (definition.isMaximized())
+      double finalWidth = width;
+      double finalHeight = height;
+
+      JavaFXMissingTools.runLater(SCSGuiConfiguration.class, () ->
       {
-         stage.setMaximized(true);
-      }
-      else
-      {
-         stage.setWidth(width);
-         stage.setHeight(height);
-      }
+         if (definition.isMaximized())
+         {
+            stage.setMaximized(true);
+         }
+         else
+         {
+            stage.setWidth(finalWidth);
+            stage.setHeight(finalHeight);
+         }
+      });
    }
 }

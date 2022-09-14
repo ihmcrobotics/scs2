@@ -88,6 +88,18 @@ public interface SessionVisualizerControls
    void showOverheadPlotter2D(boolean show);
 
    /**
+    * Requests the plotter to track the {@code YoVariable} coordinates.
+    * 
+    * @param xVariableName the name (fullname or short name) of the {@code YoVariable} to track. Can be
+    *                      a double value.
+    * @param yVariableName the name (fullname or short name) of the {@code YoVariable} to track. Can be
+    *                      a double value.
+    * @param frameName     the name of the reference frame in which the coordinates are expressed. If
+    *                      {@code null}, world frame is used.
+    */
+   void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName);
+
+   /**
     * Adds a static graphic to the 3D scene.
     * 
     * @param visualDefinition the visual to be added to the 3D scene.

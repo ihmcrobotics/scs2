@@ -140,6 +140,7 @@ public class SessionVisualizerIOTools
    public static final URL USER_SIDE_PANE_URL = getFXMLResource("UserSidePane");
    public static final URL VIDEO_PREVIEW_PANE_URL = getFXMLResource("VideoRecordingPreviewPane");
    public static final URL SESSION_DATA_EXPORT_STAGE_URL = getFXMLResource("SessionDataExportStage");
+   public static final URL PLOTTER2D_OPTIONS_STAGE_URL = getFXMLResource(YO_GRAPHIC, "Plotter2DOptionsStage");
 
    public static final URL CHART_PANEL_FXML_URL = getFXMLResource(CHART, "YoChartPanel");
    public static final URL CHART_GROUP_PANEL_URL = getFXMLResource(CHART, "YoChartGroupPanel");
@@ -365,12 +366,12 @@ public class SessionVisualizerIOTools
       return showSaveDialog(owner, "Save Video", videoExtensionFilter, "video");
    }
 
-   private static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter)
+   public static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter)
    {
       return showSaveDialog(owner, title, extensionFilter, "filePath");
    }
 
-   private static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
+   public static File showSaveDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
       List<String> extensions = extensionFilter != null ? extensionFilter.getExtensions() : Collections.emptyList();
       boolean hasExtension = !extensions.isEmpty();
@@ -434,9 +435,6 @@ public class SessionVisualizerIOTools
                alert.initOwner(owner);
                alert.setTitle("Confirm Save As");
                JavaFXMissingTools.centerDialogInOwner(alert);
-               // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
-               // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
-               alert.setOnShown(e -> JavaFXMissingTools.runLater(SessionVisualizerIOTools.class, () -> JavaFXMissingTools.centerDialogInOwner(alert)));
                Optional<ButtonType> confirmation = alert.showAndWait();
 
                if (!confirmation.isPresent() || confirmation.get() == ButtonType.NO)

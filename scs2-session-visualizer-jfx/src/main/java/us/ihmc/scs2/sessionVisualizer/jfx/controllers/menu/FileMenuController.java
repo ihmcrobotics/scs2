@@ -88,6 +88,7 @@ public class FileMenuController implements VisualizerController
          SessionDataExportStageController controller = loader.getController();
          controller.initialize(toolkit);
          controller.getStage().show();
+         dataExportController.setValue(controller);
       }
       catch (IOException e)
       {
@@ -140,6 +141,7 @@ public class FileMenuController implements VisualizerController
          VideoRecordingPreviewPaneController controller = loader.getController();
          controller.initialize(owner, mainView3DRoot, (PerspectiveCamera) mainScene3D.getCamera(), messager, topics);
          controller.getStage().show();
+         videoExportController.setValue(controller);
       }
       catch (IOException e)
       {
