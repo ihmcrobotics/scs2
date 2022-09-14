@@ -12,6 +12,7 @@ import us.ihmc.messager.MessagerAPIFactory.MessagerAPI;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.MessagerAPIFactory.TopicTheme;
 import us.ihmc.messager.MessagerAPIFactory.TypedTopicTheme;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
@@ -123,11 +124,13 @@ public class SessionVisualizerMessagerAPI
    public static class YoGraphic
    {
       private static final CategoryTheme YoGraphic = apiFactory.createCategoryTheme("YoGraphic");
+      private static final CategoryTheme Plotter2D = apiFactory.createCategoryTheme("Plotter2D");
 
       public static final Topic<File> YoGraphicSaveRequest = APIRoot.child(YoGraphic).topic(Save);
       public static final Topic<File> YoGraphicLoadRequest = APIRoot.child(YoGraphic).topic(Load);
 
       public static final Topic<YoGraphicDefinition> AddYoGraphicRequest = APIRoot.child(YoGraphic).topic(Add);
+      public static final Topic<YoTuple2DDefinition> Plotter2DTrackCoordinateRequest = APIRoot.child(YoGraphic).child(Plotter2D).child(Track).topic(Request);
    }
 
    public static class YoChart

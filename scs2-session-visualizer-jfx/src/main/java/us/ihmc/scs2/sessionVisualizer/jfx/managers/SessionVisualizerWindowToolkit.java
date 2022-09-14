@@ -1,8 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import javafx.stage.Stage;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
 public class SessionVisualizerWindowToolkit
@@ -42,7 +42,7 @@ public class SessionVisualizerWindowToolkit
       return globalToolkit;
    }
 
-   public JavaFXMessager getMessager()
+   public BufferedJavaFXMessager getMessager()
    {
       return globalToolkit.getMessager();
    }

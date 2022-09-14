@@ -32,6 +32,7 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
 import us.ihmc.euclid.transform.AffineTransform;
@@ -300,10 +301,42 @@ public class JavaFXMissingTools
          return;
       }
 
-      double x = owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth());
-      double y = owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight());
-      dialog.setX(x);
-      dialog.setY(y);
+      dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
+      dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
+
+      if (!dialog.isShowing())
+      {
+         // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+         // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+         dialog.setOnShown(e ->
+         {
+            runLater(JavaFXMissingTools.class, () ->
+            {
+               dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
+               dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
+            });
+         });
+      }
+   }
+
+   public static void centerWindowInOwner(Window window, Window owner)
+   {
+      window.setX(owner.getX() + 0.5 * (owner.getWidth() - window.getWidth()));
+      window.setY(owner.getY() + 0.5 * (owner.getHeight() - window.getHeight()));
+
+      if (!window.isShowing())
+      {
+         // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+         // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
+         window.addEventHandler(WindowEvent.WINDOW_SHOWN, e ->
+         {
+            runLater(JavaFXMissingTools.class, () ->
+            {
+               window.setX(owner.getX() + 0.5 * (owner.getWidth() - window.getWidth()));
+               window.setY(owner.getY() + 0.5 * (owner.getHeight() - window.getHeight()));
+            });
+         });
+      }
    }
 
    public static void toEuclid(javafx.scene.transform.Transform jfxTransform, AffineTransform euclidTransform)

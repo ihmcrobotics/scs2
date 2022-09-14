@@ -40,6 +40,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
@@ -198,6 +199,9 @@ public class SessionDataExportStageController implements VisualizerController
       cleanupActions.add(() -> owner.removeEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, closeWindowEventHandler));
 
       stage.setOnCloseRequest(e -> close());
+
+      SessionVisualizerIOTools.addSCSIconToWindow(stage);
+      JavaFXMissingTools.centerWindowInOwner(stage, owner);
    }
 
    private void refreshTreeView()
