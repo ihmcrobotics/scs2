@@ -60,6 +60,7 @@ You'll need to clone this repository and at times source dependencies will be re
 - `scs2.session.runrealtime`: If defined, the simulation will not go faster than real-time.
 - `scs2.session.playrealtime`: Defines the default real-time rate when playing back data for any type of session.
 - `scs2.session.buffer.publishperiod`: Defines the default rate at which the GUI is refreshed for any type of session.
+- `scs2.session.gui.mainwindow.loadconfig`: Determines whether or not the main window configuration (width, height, position, maximized or not) from the configuration file. Enabled by default, can be disabled if the behavior is not desired.
 
 # Environment variables:
 - `SCS2_HOME`: Defines the home folder in which SCS2 is saving configuration files.

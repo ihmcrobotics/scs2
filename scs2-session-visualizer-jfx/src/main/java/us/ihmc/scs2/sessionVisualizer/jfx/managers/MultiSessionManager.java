@@ -22,6 +22,7 @@ import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -35,6 +36,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class MultiSessionManager
 {
+   private static final boolean LOAD_MAIN_WINDOW_CONFIGURATION = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.mainwindow.loadconfig", true);
+
    private final SessionVisualizerToolkit toolkit;
    private final MainWindowController mainWindowController;
 
@@ -42,6 +45,8 @@ public class MultiSessionManager
    private final ObjectProperty<SessionControlsController> activeController = new SimpleObjectProperty<>(this, "activeSessionControls", null);
    // TODO This activeSession is not setup properly, when starting a sim it remains null.
    private final ObjectProperty<Session> activeSession = new SimpleObjectProperty<>(this, "activeSession", null);
+
+   private boolean isFirstSession = true;
 
    public MultiSessionManager(SessionVisualizerToolkit toolkit, MainWindowController mainWindowController)
    {
@@ -100,6 +105,7 @@ public class MultiSessionManager
          {
             if (sessionLoadedCallback != null)
                sessionLoadedCallback.run();
+            isFirstSession = false;
          }
       };
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
@@ -219,6 +225,18 @@ public class MultiSessionManager
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
+      if (LOAD_MAIN_WINDOW_CONFIGURATION)
+      {
+         JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+         {
+            if (isFirstSession)
+            {// TODO When the main window is already up, changing its configuration is quite unpleasant.
+               if (configuration.hasMainWindowConfiguration())
+                  configuration.getMainWindowConfiguration(toolkit.getMainWindow());
+            }
+         });
+      }
+
       if (configuration.hasYoGraphicsConfiguration())
          messager.submitMessage(topics.getYoGraphicLoadRequest(), configuration.getYoGraphicsConfigurationFile());
 
@@ -239,12 +257,6 @@ public class MultiSessionManager
                                 new Pair<>(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile()));
 
       toolkit.getWindowManager().loadSessionConfiguration(configuration);
-      //      JavaFXMissingTools.runAndWait(getClass(), () ->
-      //      {
-      // TODO When the main window is already up, changing its configuration is quite unpleasant.
-      //         if (configuration.hasMainWindowConfiguration())
-      //            configuration.getMainWindowConfiguration(toolkit.getMainWindow());
-      //      });
 
       if (configuration.hasBufferSize())
          messager.submitMessage(topics.getYoBufferInitializeSize(), configuration.getBufferSize());
