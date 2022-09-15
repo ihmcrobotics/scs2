@@ -257,9 +257,10 @@ public class Robot implements RobotInterface
    {
       for (int i = 0; i < allJoints.size(); i++)
       {
+         SimJointBasics jointToUpdate = allJoints.get(i);
          JointStateReadOnly initialState = allJointInitialStates.get(i);
          if (initialState != null)
-            initialState.getAllStates(allJoints.get(i));
+            initialState.getAllStates(jointToUpdate);
       }
       rootBody.updateFramesRecursively();
    }
