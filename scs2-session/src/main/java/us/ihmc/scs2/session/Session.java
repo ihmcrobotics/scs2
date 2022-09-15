@@ -897,6 +897,7 @@ public abstract class Session
       {
          pendingBufferIndexRequest.submit(bufferIndexRequest);
          processBufferRequests(true);
+         sharedBuffer.readBuffer();
       }
    }
 
@@ -924,6 +925,7 @@ public abstract class Session
       {
          pendingIncrementBufferIndexRequest.submit(incrementBufferIndexRequest);
          processBufferRequests(true);
+         sharedBuffer.readBuffer();
       }
    }
 
@@ -951,6 +953,7 @@ public abstract class Session
       {
          pendingDecrementBufferIndexRequest.submit(decrementBufferIndexRequest);
          processBufferRequests(true);
+         sharedBuffer.readBuffer();
       }
    }
 
