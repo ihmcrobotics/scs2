@@ -1327,10 +1327,8 @@ public abstract class Session
       if (!sessionInitialized)
       {
          initializeSession();
-         // Not sure why we wouldn't want that when starting in RUNNING.
          // When running simulation, the session starts in PAUSE, writing in the buffer allows to write the robot initial state.
-         if (currentMode == SessionMode.PAUSE || currentMode == SessionMode.PLAYBACK)
-            sharedBuffer.writeBuffer();
+         sharedBuffer.writeBuffer();
          sessionInitialized = true;
       }
 
