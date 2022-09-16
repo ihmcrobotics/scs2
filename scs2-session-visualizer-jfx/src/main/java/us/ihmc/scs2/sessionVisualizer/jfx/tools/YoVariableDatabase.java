@@ -12,6 +12,7 @@ import org.apache.commons.text.similarity.LongestCommonSubsequence;
 import org.apache.commons.text.similarity.SimilarityScore;
 
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
@@ -23,6 +24,8 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoVariableDatabase
 {
+   private static final boolean ENABLE_FUZZY_SEARCH = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.yovariable.enablefuzzysearch", false);
+
    private final YoRegistry rootRegistry;
    private final YoRegistryChangedListener registryChangedListener;
    private final LinkedYoRegistry linkedRootRegistry;
@@ -106,6 +109,9 @@ public class YoVariableDatabase
    @SuppressWarnings("unchecked")
    public <T extends YoVariable> T searchSimilar(String fullnameToSearch, double minScore, Class<? extends T> type)
    {
+      if (!ENABLE_FUZZY_SEARCH)
+         return null;
+
       // 1- First see if we've made this exact search previously.
       if (previousSearchResults.containsKey(fullnameToSearch))
          return type.cast(previousSearchResults.get(fullnameToSearch));
@@ -182,7 +188,9 @@ public class YoVariableDatabase
                                                                                                                                      minScore,
                                                                                                                                      type,
                                                                                                                                      candidate))
-                                                                  .filter(Objects::nonNull).sorted().collect(Collectors.toList());
+                                                                  .filter(Objects::nonNull)
+                                                                  .sorted()
+                                                                  .collect(Collectors.toList());
                if (!similarVariables.isEmpty())
                {
                   T bestYoVariable = similarVariables.get(0).getObject();
@@ -227,7 +235,9 @@ public class YoVariableDatabase
 
       // 7- General search for similar variables. Expensive search that scores all variables against our fullname, if the score is good we assume it is what we were looking for.
       List<T> correctTypeVariables = (List<T>) allTypedYoVariables.computeIfAbsent(type,
-                                                                                   typeLocal -> allYoVariables.stream().filter(type::isInstance).map(type::cast)
+                                                                                   typeLocal -> allYoVariables.stream()
+                                                                                                              .filter(type::isInstance)
+                                                                                                              .map(type::cast)
                                                                                                               .collect(Collectors.toList()));
 
       List<Number> score = new ArrayList<>();
