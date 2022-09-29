@@ -234,6 +234,7 @@ public class MultiSessionManager
                if (configuration.hasMainWindowConfiguration())
                   configuration.getMainWindowConfiguration(toolkit.getMainWindow());
             }
+            JavaFXMissingTools.runNFramesLater(2, () -> toolkit.getMainWindow().toFront());
          });
       }
 
