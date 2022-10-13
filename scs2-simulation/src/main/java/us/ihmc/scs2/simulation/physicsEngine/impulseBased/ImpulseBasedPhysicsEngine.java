@@ -151,6 +151,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
          robot.updateSensors();
          robot.getControllerManager().initializeControllers();
       }
+      collisionDetectionPlugin.clear();
+
       hasBeenInitialized = true;
    }
 

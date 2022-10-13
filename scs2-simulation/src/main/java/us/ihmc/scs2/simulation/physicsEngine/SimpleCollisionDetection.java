@@ -30,6 +30,12 @@ public class SimpleCollisionDetection
       this.rootFrame = rootFrame;
    }
 
+   public void clear()
+   {
+      allCollisions.clear();
+      previousCollisionMap.clear();
+   }
+
    public void setMinimumPenetration(double minimumPenetration)
    {
       this.minimumPenetration = minimumPenetration;
