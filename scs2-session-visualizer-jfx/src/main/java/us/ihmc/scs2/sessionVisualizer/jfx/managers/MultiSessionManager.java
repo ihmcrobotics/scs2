@@ -22,6 +22,7 @@ import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -35,6 +36,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class MultiSessionManager
 {
+   private static final boolean LOAD_MAIN_WINDOW_CONFIGURATION = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.mainwindow.loadconfig", true);
+
    private final SessionVisualizerToolkit toolkit;
    private final MainWindowController mainWindowController;
 
@@ -42,6 +45,8 @@ public class MultiSessionManager
    private final ObjectProperty<SessionControlsController> activeController = new SimpleObjectProperty<>(this, "activeSessionControls", null);
    // TODO This activeSession is not setup properly, when starting a sim it remains null.
    private final ObjectProperty<Session> activeSession = new SimpleObjectProperty<>(this, "activeSession", null);
+
+   private boolean isFirstSession = true;
 
    public MultiSessionManager(SessionVisualizerToolkit toolkit, MainWindowController mainWindowController)
    {
@@ -57,9 +62,6 @@ public class MultiSessionManager
                Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO);
                alert.initOwner(toolkit.getMainWindow());
                JavaFXMissingTools.centerDialogInOwner(alert);
-               // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
-               // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
-               alert.setOnShown(e -> JavaFXMissingTools.runLater(getClass(), () -> JavaFXMissingTools.centerDialogInOwner(alert)));
 
                SessionVisualizerIOTools.addSCSIconToDialog(alert);
                Optional<ButtonType> result = alert.showAndWait();
@@ -103,6 +105,7 @@ public class MultiSessionManager
          {
             if (sessionLoadedCallback != null)
                sessionLoadedCallback.run();
+            isFirstSession = false;
          }
       };
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
@@ -222,6 +225,18 @@ public class MultiSessionManager
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
+      if (LOAD_MAIN_WINDOW_CONFIGURATION)
+      {
+         JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+         {
+            if (isFirstSession)
+            {// TODO When the main window is already up, changing its configuration is quite unpleasant.
+               if (configuration.hasMainWindowConfiguration())
+                  configuration.getMainWindowConfiguration(toolkit.getMainWindow());
+            }
+         });
+      }
+
       if (configuration.hasYoGraphicsConfiguration())
          messager.submitMessage(topics.getYoGraphicLoadRequest(), configuration.getYoGraphicsConfigurationFile());
 
@@ -232,7 +247,8 @@ public class MultiSessionManager
       {
          JavaFXMissingTools.runLaterWhen(getClass(),
                                          () -> toolkit.getYoCompositeSearchManager().isSessionLoaded(),
-                                         () -> mainWindowController.getSidePaneController().getYoEntryTabPaneController()
+                                         () -> mainWindowController.getSidePaneController()
+                                                                   .getYoEntryTabPaneController()
                                                                    .load(configuration.getYoEntryConfigurationFile()));
       }
 
@@ -241,12 +257,6 @@ public class MultiSessionManager
                                 new Pair<>(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile()));
 
       toolkit.getWindowManager().loadSessionConfiguration(configuration);
-      //      JavaFXMissingTools.runAndWait(getClass(), () ->
-      //      {
-      // TODO When the main window is already up, changing its configuration is quite unpleasant.
-      //         if (configuration.hasMainWindowConfiguration())
-      //            configuration.getMainWindowConfiguration(toolkit.getMainWindow());
-      //      });
 
       if (configuration.hasBufferSize())
          messager.submitMessage(topics.getYoBufferInitializeSize(), configuration.getBufferSize());
@@ -254,6 +264,7 @@ public class MultiSessionManager
          messager.submitMessage(topics.getInitializeBufferRecordTickPeriod(), configuration.getRecordTickPeriod());
       if (configuration.hasNumberPrecision())
          messager.submitMessage(topics.getControlsNumberPrecision(), configuration.getNumberPrecision());
+      mainWindowController.leftSidePaneOpenProperty().set(configuration.getShowYoSearchPanel());
       messager.submitMessage(topics.getShowOverheadPlotter(), configuration.getShowOverheadPlotter());
       messager.submitMessage(topics.getShowAdvancedControls(), configuration.getShowAdvancedControls());
       if (configuration.hasYoSliderboardConfiguration())
@@ -307,8 +318,8 @@ public class MultiSessionManager
       toolkit.getYoGraphicFXManager().saveYoGraphicToFile(configuration.getYoGraphicsConfigurationFile());
       toolkit.getYoCompositeSearchManager().saveYoCompositePatternToFile(configuration.getYoCompositeConfigurationFile());
       mainWindowController.getSidePaneController().getYoEntryTabPaneController().exportAllTabs(configuration.getYoEntryConfigurationFile());
-      mainWindowController.getYoChartGroupPanelController().saveChartGroupConfiguration(toolkit.getMainWindow(),
-                                                                                        configuration.getMainYoChartGroupConfigurationFile());
+      mainWindowController.getYoChartGroupPanelController()
+                          .saveChartGroupConfiguration(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile());
       toolkit.getWindowManager().saveSessionConfiguration(configuration);
       configuration.setMainStage(toolkit.getMainWindow());
 
@@ -323,6 +334,7 @@ public class MultiSessionManager
       Integer numberPrecision = messager.getLastValue(topics.getControlsNumberPrecision());
       if (numberPrecision != null)
          configuration.setNumberPrecision(numberPrecision);
+      configuration.setShowYoSearchPanel(mainWindowController.leftSidePaneOpenProperty().get());
       configuration.setShowOverheadPlotter(mainWindowController.showOverheadPlotterProperty().getValue());
       configuration.setShowAdvancedControls(mainWindowController.showAdvancedControlsProperty().get());
 

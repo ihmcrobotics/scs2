@@ -34,9 +34,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
@@ -47,6 +45,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
@@ -118,8 +117,6 @@ public class VideoRecordingPreviewPaneController
    private final Property<SessionMode> currentSessionMode = new SimpleObjectProperty<>(this, "currentSessionMode", null);
    private AtomicReference<YoBufferPropertiesReadOnly> bufferProperties;
 
-   private Window owner;
-
    private Stage stage;
    private Group rootNode3D;
    private JavaFXMessager messager;
@@ -139,7 +136,6 @@ public class VideoRecordingPreviewPaneController
 
    public void initialize(Window owner, Group mainView3DRoot, PerspectiveCamera targetCamera, JavaFXMessager messager, SessionVisualizerTopics topics)
    {
-      this.owner = owner;
       this.rootNode3D = mainView3DRoot;
       this.messager = messager;
       this.topics = topics;
@@ -221,12 +217,15 @@ public class VideoRecordingPreviewPaneController
       currentBufferIndexSlider.valueProperty().addListener(currentBufferIndexSliderListener);
       cleanupActions.add(() -> currentBufferIndexSlider.valueProperty().removeListener(currentBufferIndexSliderListener));
 
-      stage = new Stage(StageStyle.UTILITY);
+      stage = new Stage();
       stage.setTitle("Video export preview and properties");
       stage.setScene(new Scene(mainPane));
       refreshViewAnimation.start();
       stage.setOnCloseRequest(e -> close());
       owner.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e -> close());
+
+      SessionVisualizerIOTools.addSCSIconToWindow(stage);
+      JavaFXMissingTools.centerWindowInOwner(stage, owner);
    }
 
    public void close()
@@ -267,15 +266,11 @@ public class VideoRecordingPreviewPaneController
    @FXML
    void exportVideo(ActionEvent event)
    {
-      FileChooser fileChooser = new FileChooser();
-      fileChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath("video"));
-      fileChooser.getExtensionFilters().add(SessionVisualizerIOTools.videoExtensionFilter);
-      File result = fileChooser.showSaveDialog(owner);
+      File result = SessionVisualizerIOTools.videoExportSaveFileDialog(stage);
 
       if (result == null)
          return;
 
-      SessionVisualizerIOTools.setDefaultFilePath("video", result);
       SceneVideoRecordingRequest request = new SceneVideoRecordingRequest();
       request.setFile(result);
       request.setFrameRate(frameRate.getValue());

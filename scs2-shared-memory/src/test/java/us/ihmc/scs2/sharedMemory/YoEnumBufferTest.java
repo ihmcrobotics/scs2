@@ -154,7 +154,7 @@ public class YoEnumBufferTest
                                           new YoRegistry("Dummy"),
                                           ((YoEnum) yoEnumBuffer.getYoVariable()).getEnumType(),
                                           ((YoEnum) yoEnumBuffer.getYoVariable()).isNullAllowed());
-         LinkedYoEnum<?> linkedYoVariable = yoEnumBuffer.newLinkedYoVariable(linkedEnum);
+         LinkedYoEnum<?> linkedYoVariable = yoEnumBuffer.newLinkedYoVariable(linkedEnum, null);
          assertTrue(linkedEnum == linkedYoVariable.getLinkedYoVariable());
          assertTrue(yoEnumBuffer == linkedYoVariable.getBuffer());
       }

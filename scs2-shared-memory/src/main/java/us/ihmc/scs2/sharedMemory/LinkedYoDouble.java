@@ -4,9 +4,9 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 public class LinkedYoDouble extends LinkedYoVariable<YoDouble>
 {
-   LinkedYoDouble(YoDouble linkedVariable, YoDoubleBuffer buffer)
+   LinkedYoDouble(YoDouble linkedVariable, YoDoubleBuffer buffer, Object initialUser)
    {
-      super(linkedVariable, buffer);
+      super(linkedVariable, buffer, initialUser);
    }
 
    @Override

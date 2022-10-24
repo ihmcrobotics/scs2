@@ -32,29 +32,37 @@ public abstract class LinkedYoVariable<T extends YoVariable> extends LinkedBuffe
 
    private boolean isDisposed = false;
 
-   @SuppressWarnings({"rawtypes", "unchecked"})
+   @SuppressWarnings({"rawtypes"})
    static LinkedYoVariable newLinkedYoVariable(YoVariable yoVariableToLink, YoVariableBuffer<?> buffer)
    {
+      return newLinkedYoVariable(yoVariableToLink, buffer, null);
+   }
+
+   @SuppressWarnings({"rawtypes", "unchecked"})
+   static LinkedYoVariable newLinkedYoVariable(YoVariable yoVariableToLink, YoVariableBuffer<?> buffer, Object initialUser)
+   {
       if (yoVariableToLink instanceof YoBoolean)
-         return new LinkedYoBoolean((YoBoolean) yoVariableToLink, (YoBooleanBuffer) buffer);
+         return new LinkedYoBoolean((YoBoolean) yoVariableToLink, (YoBooleanBuffer) buffer, initialUser);
       if (yoVariableToLink instanceof YoDouble)
-         return new LinkedYoDouble((YoDouble) yoVariableToLink, (YoDoubleBuffer) buffer);
+         return new LinkedYoDouble((YoDouble) yoVariableToLink, (YoDoubleBuffer) buffer, initialUser);
       if (yoVariableToLink instanceof YoInteger)
-         return new LinkedYoInteger((YoInteger) yoVariableToLink, (YoIntegerBuffer) buffer);
+         return new LinkedYoInteger((YoInteger) yoVariableToLink, (YoIntegerBuffer) buffer, initialUser);
       if (yoVariableToLink instanceof YoLong)
-         return new LinkedYoLong((YoLong) yoVariableToLink, (YoLongBuffer) buffer);
+         return new LinkedYoLong((YoLong) yoVariableToLink, (YoLongBuffer) buffer, initialUser);
       if (yoVariableToLink instanceof YoEnum)
-         return new LinkedYoEnum<>((YoEnum) yoVariableToLink, (YoEnumBuffer) buffer);
+         return new LinkedYoEnum<>((YoEnum) yoVariableToLink, (YoEnumBuffer) buffer, initialUser);
 
       throw new UnsupportedOperationException("Unsupported YoVariable type: " + yoVariableToLink.getClass().getSimpleName());
    }
 
-   LinkedYoVariable(T yoVariable, YoVariableBuffer<T> buffer)
+   LinkedYoVariable(T yoVariable, YoVariableBuffer<T> buffer, Object initialUser)
    {
       Objects.requireNonNull(buffer, "Cannot create a linked YoVariable without a buffer.");
 
       this.linkedYoVariable = yoVariable;
       this.buffer = buffer;
+      if (initialUser != null)
+         addUser(initialUser);
    }
 
    public void requestEntireBuffer()

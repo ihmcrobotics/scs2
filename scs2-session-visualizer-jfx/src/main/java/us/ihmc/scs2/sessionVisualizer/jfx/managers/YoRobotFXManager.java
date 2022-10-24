@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
@@ -18,6 +19,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.YoRobotFX;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
@@ -70,6 +72,41 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
             });
          }
       });
+
+      messager.registerTopicListener(topics.getRobotVisualRequest(), this::handleRobotVisualRequest);
+   }
+
+   private void handleRobotVisualRequest(NewRobotVisualRequest request)
+   {
+      String robotName = request.getRobotName();
+      if (robotName == null)
+      {
+         LogTools.warn("Received request but robot name is null, ignoring.");
+         return;
+      }
+
+      if (robotName.equals(NewRobotVisualRequest.ALL_ROBOTS))
+      {
+         if (request.getRequestedVisible() != null)
+            robots.forEach(robot -> robot.getRootNode().setVisible(request.getRequestedVisible()));
+         if (request.getRequestedDrawMode() != null)
+            robots.forEach(robot -> robot.setDrawMode(request.getRequestedDrawMode()));
+      }
+      else
+      {
+         YoRobotFX robot = robots.stream().filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName)).findFirst().orElse(null);
+
+         if (robot == null)
+         {
+            LogTools.warn("Could not find robot named: {}, ignoring request.", robotName);
+            return;
+         }
+
+         if (request.getRequestedVisible() != null)
+            robot.getRootNode().setVisible(request.getRequestedVisible());
+         if (request.getRequestedDrawMode() != null)
+            robot.setDrawMode(request.getRequestedDrawMode());
+      }
    }
 
    public void addRobotDefinition(RobotDefinition robotDefinition)

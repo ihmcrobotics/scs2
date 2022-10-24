@@ -4,9 +4,9 @@ import us.ihmc.yoVariables.variable.YoEnum;
 
 public class LinkedYoEnum<E extends Enum<E>> extends LinkedYoVariable<YoEnum<E>>
 {
-   LinkedYoEnum(YoEnum<E> linkedVariable, YoEnumBuffer<E> buffer)
+   LinkedYoEnum(YoEnum<E> linkedVariable, YoEnumBuffer<E> buffer, Object initialUser)
    {
-      super(linkedVariable, buffer);
+      super(linkedVariable, buffer, initialUser);
    }
 
    @Override

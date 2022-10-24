@@ -28,15 +28,16 @@ import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.plotter.Plotter2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -63,7 +64,6 @@ public class SessionVisualizer
    private final MultiSessionManager multiSessionManager;
 
    private final Group view3DRoot;
-   private final Plotter2D plotter2D = new Plotter2D();
    private final MainWindowController mainWindowController;
    private final MultiViewport3DManager viewport3DManager;
    private final BufferedJavaFXMessager messager;
@@ -111,8 +111,6 @@ public class SessionVisualizer
       toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
       toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
       messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
-
-      mainWindowController.setupPlotter2D(plotter2D);
 
       scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
       mainWindowController.setupViewport3D(viewport3DManager.getPane());
@@ -177,9 +175,6 @@ public class SessionVisualizer
          SessionVisualizerIOTools.addSCSIconToDialog(alert);
          alert.initOwner(primaryStage);
          JavaFXMissingTools.centerDialogInOwner(alert);
-         // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
-         // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
-         alert.setOnShown(e -> JavaFXMissingTools.runLater(getClass(), () -> JavaFXMissingTools.centerDialogInOwner(alert)));
 
          Optional<ButtonType> result = alert.showAndWait();
          if (!result.isPresent() || result.get() == ButtonType.CANCEL)
@@ -379,6 +374,20 @@ public class SessionVisualizer
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
          submitMessage(getTopics().getShowOverheadPlotter(), true);
+      }
+
+      @Override
+      public void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         if (xVariableName == null)
+            xVariableName = Double.toString(0.0);
+         if (yVariableName == null)
+            yVariableName = Double.toString(0.0);
+         if (frameName == null)
+            frameName = ReferenceFrameManager.WORLD_FRAME;
+         submitMessage(getTopics().getPlotter2DTrackCoordinateRequest(), new YoTuple2DDefinition(xVariableName, yVariableName, frameName));
       }
 
       @Override

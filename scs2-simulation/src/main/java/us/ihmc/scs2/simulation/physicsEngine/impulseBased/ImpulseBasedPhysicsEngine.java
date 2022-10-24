@@ -84,7 +84,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    private final YoTimer physicsEngineTotalTimer = new YoTimer("physicsEngineTotalTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
    private final YoDouble physicsEngineRealTimeRate = new YoDouble("physicsEngineRealTimeRate", physicsEngineRegistry);
 
-   private boolean initialize = true;
+   private boolean hasBeenInitialized = false;
 
    private MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener;
 
@@ -140,11 +140,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    }
 
    @Override
-   public boolean initialize(Vector3DReadOnly gravity)
+   public void initialize(Vector3DReadOnly gravity)
    {
-      if (!initialize)
-         return false;
-
       for (ImpulseBasedRobot robot : robotList)
       {
          robot.initializeState();
@@ -154,8 +151,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
          robot.updateSensors();
          robot.getControllerManager().initializeControllers();
       }
-      initialize = false;
-      return true;
+      hasBeenInitialized = true;
    }
 
    private final YoTimer initialPhaseTimer = new YoTimer("initialPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
@@ -169,8 +165,11 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-      if (initialize(gravity))
+      if (!hasBeenInitialized)
+      {
+         initialize(gravity);
          return;
+      }
 
       physicsEngineTotalTimer.start();
       initialPhaseTimer.start();

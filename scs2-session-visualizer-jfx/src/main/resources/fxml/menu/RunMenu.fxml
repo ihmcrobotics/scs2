@@ -108,7 +108,7 @@
       </MenuItem>
       <SeparatorMenuItem />
       <CheckMenuItem fx:id="simulateAtRealTimeCheckMenuItem" text="Run at real-time rate" />
-      <CustomMenuItem mnemonicParsing="false" text="Unspecified Action">
+      <CustomMenuItem fx:id="playbackRealTimeRateMenuItem" mnemonicParsing="false" text="Unspecified Action">
          <content>
             <HBox alignment="CENTER" spacing="8.0">
                <children>

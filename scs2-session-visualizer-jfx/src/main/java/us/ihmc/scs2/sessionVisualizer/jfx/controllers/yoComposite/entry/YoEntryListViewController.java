@@ -31,10 +31,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.YoCompo
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoEntryListViewController
@@ -60,7 +61,7 @@ public class YoEntryListViewController
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
       yoEntryListView.setCellFactory(param -> new YoCompositeListCell(toolkit.getYoManager(), showUniqueNamesProperty, numberPrecision, param));
       yoEntryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-      ContextMenuTools.setupContextMenu(yoEntryListView, removeMenuItemFactory(true));
+      MenuTools.setupContextMenu(yoEntryListView, removeMenuItemFactory(true));
 
       yoEntryListView.setOnDragDetected(this::handleDragDetected);
       yoEntryListView.setOnDragEntered(this::handleDragEntered);
@@ -127,7 +128,9 @@ public class YoEntryListViewController
             continue;
          }
 
-         if (collection.getPattern().getComponentIdentifiers().length == 1)
+         YoCompositePattern pattern = collection.getPattern();
+
+         if (pattern.getComponentIdentifiers() != null && pattern.getComponentIdentifiers().length == 1)
          {
             YoVariable variable = yoManager.getRootRegistry().findVariable(fullname);
             if (variable != null)

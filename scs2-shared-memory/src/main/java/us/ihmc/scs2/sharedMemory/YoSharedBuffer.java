@@ -525,7 +525,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
             int startIndex = properties.getOutPoint();
             int endIndex = properties.getInPoint();
             setCurrentIndex(startIndex);
-            
+
             for (int i = 0; i < length; i++)
             {
                readBuffer();
@@ -732,12 +732,14 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    }
 
    @Override
-   public LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink)
+   public LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink, Object initialUser)
    {
       if (isDisposed)
          return null;
 
-      LinkedYoVariable<?> linkedYoVariable = LinkedYoVariable.newLinkedYoVariable(variableToLink, registryBuffer.findYoVariableBuffer(variableToLink));
+      LinkedYoVariable<?> linkedYoVariable = LinkedYoVariable.newLinkedYoVariable(variableToLink,
+                                                                                  registryBuffer.findYoVariableBuffer(variableToLink),
+                                                                                  initialUser);
       linkedBuffersLock.lock();
       try
       {

@@ -102,7 +102,7 @@ public class YoIntegerTextField extends YoVariableTextField<IntegerProperty>
       else
       {
          YoIntegerProperty yoIntegerProperty = new YoIntegerProperty((YoInteger) yoComposite.getYoComponents().get(0));
-         yoIntegerProperty.setLinkedBuffer(linkedRootRegistry.linkYoVariable(yoIntegerProperty.getYoVariable()));
+         yoIntegerProperty.setLinkedBuffer(linkedRootRegistry.linkYoVariable(yoIntegerProperty.getYoVariable(), yoIntegerProperty));
          return yoIntegerProperty;
       }
    }

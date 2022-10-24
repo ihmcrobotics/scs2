@@ -48,6 +48,9 @@ public class YoReferenceFrameTextField extends YoVariableTextField<Property<Refe
    @Override
    protected String simplifyText(String text)
    {
+      if (text == null)
+         return referenceFrameManager.getUniqueName(referenceFrameManager.getWorldFrame());
+
       ReferenceFrame referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(text);
       if (referenceFrame == null)
          return null;

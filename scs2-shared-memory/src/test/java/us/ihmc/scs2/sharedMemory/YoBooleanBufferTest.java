@@ -152,7 +152,7 @@ public class YoBooleanBufferTest
       {
          YoBooleanBuffer yoBooleanBuffer = SharedMemoryRandomTools.nextYoBooleanBuffer(random, new YoRegistry("Dummy"));
          YoBoolean linkedBoolean = new YoBoolean("linked", new YoRegistry("Dummy"));
-         LinkedYoBoolean linkedYoVariable = yoBooleanBuffer.newLinkedYoVariable(linkedBoolean);
+         LinkedYoBoolean linkedYoVariable = yoBooleanBuffer.newLinkedYoVariable(linkedBoolean, null);
          assertTrue(linkedBoolean == linkedYoVariable.getLinkedYoVariable());
          assertTrue(yoBooleanBuffer == linkedYoVariable.getBuffer());
       }

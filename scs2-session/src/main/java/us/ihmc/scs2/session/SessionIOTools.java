@@ -37,11 +37,21 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SessionIOTools
 {
-   public static final Path SCS2_HOME = Paths.get(System.getProperty("user.home"), ".ihmc", "scs2");
-   public static final Path SCS2_TEMP_FOLDER_PATH = SCS2_HOME.resolve(".temp");
+   public static final Path SCS2_HOME;
+   public static final Path SCS2_TEMP_FOLDER_PATH;
 
    static
    {
+      String scs2home = System.getProperty("scs2.home");
+
+      if (scs2home == null)
+      {
+         scs2home = System.getenv("SCS2_HOME");
+      }
+
+      SCS2_HOME = scs2home != null ? Paths.get(scs2home) : Paths.get(System.getProperty("user.home"), ".ihmc", "scs2");
+      SCS2_TEMP_FOLDER_PATH = SCS2_HOME.resolve(".temp");
+
       try
       {
          FileTools.ensureDirectoryExists(SCS2_HOME);
@@ -174,6 +184,15 @@ public class SessionIOTools
                   }
                }
             }
+         }
+      }
+      else
+      {
+         // File does not exist
+         if (!file.mkdirs())
+         {
+            LogTools.error("Unable to create parent directies of {}", file);
+            return;
          }
       }
 
