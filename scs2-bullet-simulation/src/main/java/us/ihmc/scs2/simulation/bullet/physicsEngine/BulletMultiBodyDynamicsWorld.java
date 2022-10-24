@@ -12,7 +12,6 @@ import org.bytedeco.bullet.BulletCollision.btBroadphaseInterface;
 import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
 import org.bytedeco.bullet.LinearMath.btVector3;
 import org.bytedeco.bullet.global.BulletCollision;
-import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.bullet.BulletDynamics.btContactSolverInfo;
 import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -31,7 +30,7 @@ public class BulletMultiBodyDynamicsWorld
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
    private final btVector3 btGravity = new btVector3();
-   private btContactSolverInfo btContactSolverInfo = new btContactSolverInfo();
+   private btContactSolverInfo btContactSolverInfo;
 
    public BulletMultiBodyDynamicsWorld()
    {
