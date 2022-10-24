@@ -60,6 +60,7 @@ public class RemoteSession extends Session
       yoGraphicDefinitions = SCS1GraphicConversionTools.toYoGraphicDefinitions(handshakeParser.getYoGraphicsListRegistry());
 
       RobotDefinition robotDefinition = RobotModelLoader.loadModel(handshake.getModelName(),
+                                                                   handshake.getModelLoaderClass(),
                                                                    handshake.getResourceDirectories(),
                                                                    handshake.getModel(),
                                                                    handshake.getResourceZip());

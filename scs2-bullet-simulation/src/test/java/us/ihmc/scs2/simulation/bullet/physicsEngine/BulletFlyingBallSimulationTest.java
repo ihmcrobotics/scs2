@@ -24,6 +24,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
 import us.ihmc.scs2.simulation.SimulationEnergyStatistics;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.TimeConsumer;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
@@ -33,7 +35,7 @@ public class BulletFlyingBallSimulationTest
 {
    private static final double EPSILON = 0.01;
    private static final boolean BULLET_PHYSICS_ENGINE = true;
-   private static final boolean VISUALIZE = true;
+   private static final boolean VISUALIZE = false;
 
    @Test
    public void testFlyingBall() throws Throwable
@@ -114,7 +116,7 @@ public class BulletFlyingBallSimulationTest
          public void accept(double time)
          {
             expectedPosition.set(heightAfterSeconds(initialPosition, initialVelocity, time, gravity.getZ()));
-            EuclidCoreTestTools.assertTuple3DEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
+            EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
 
             //orbital energy should remain constant
             if (initialOrbitalEnergy == 0)

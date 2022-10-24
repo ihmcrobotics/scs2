@@ -7,7 +7,7 @@
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.FlowPane?>
 
-<FlowPane fx:id="buttonsContainer" alignment="CENTER" columnHalignment="CENTER" minWidth="370.0" prefWrapLength="555.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController">
+<FlowPane fx:id="buttonsContainer" alignment="CENTER" columnHalignment="CENTER" minWidth="370.0" pickOnBounds="false" prefWrapLength="555.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController">
    <children>
       <JFXButton fx:id="runButton" mnemonicParsing="false" onAction="#startRunning" styleClass="advanced-controls-button">
          <graphic>

@@ -13,9 +13,9 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationEnergyStatistics;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyJointParameters;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 
 public class FlyingCollidingSpheresExperimentalBulletSimulation
 {
@@ -40,7 +40,7 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
 
       SixDoFJointState sphere1InitialState = new SixDoFJointState();
       sphere1InitialState.setConfiguration(null, new Point3D(-1.3, 1.0, 0.6));
-      sphere1InitialState.setVelocity(null, new Vector3D(2.0, 1.0, 0));
+      sphere1InitialState.setVelocity(null, new Vector3D(2.0, 0, 0));
       sphereRobot1.getRootJointDefinitions().get(0).setInitialJointState(sphere1InitialState);
 
       SixDoFJointState sphere2InitialState = new SixDoFJointState();

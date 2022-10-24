@@ -37,6 +37,13 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
          this.children = new ArrayList<>(children);
    }
 
+   public void addChild(YoGraphicDefinition child)
+   {
+      if (children == null)
+         children = new ArrayList<>();
+      children.add(child);
+   }
+
    @XmlElement
    public void setChildren(List<YoGraphicDefinition> children)
    {

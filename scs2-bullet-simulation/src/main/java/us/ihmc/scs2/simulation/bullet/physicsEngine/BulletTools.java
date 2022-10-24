@@ -26,6 +26,7 @@ import us.ihmc.euclid.matrix.interfaces.RotationMatrixReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Face3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Point3D32;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -37,9 +38,8 @@ import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
 import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.modelLoader.AssimpLoader;
+import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 
 public class BulletTools
 {
@@ -167,17 +167,14 @@ public class BulletTools
          }
          else
          {
-            List<btConvexTriangleMeshShape> shapes = BulletTools.loadConvexTriangleMeshShapeFromFile(modelFileGeometryDefinition.getFileName());
+            btConvexTriangleMeshShape btConvexTriangleMeshShape = new btConvexTriangleMeshShape(btTriangleMesh);
 
-            btCompoundShape compoundShape = new btCompoundShape();
+            btCompoundShape btCompoundShape = new btCompoundShape();
 
-            for (btCollisionShape shape : shapes)
-            {
-               shape.setMargin(0.01f);
-               compoundShape.addChildShape(identity, shape);
-            }
+            btConvexTriangleMeshShape.setMargin(0.01f);
+            btCompoundShape.addChildShape(identity, btConvexTriangleMeshShape);
 
-            bulletCollisionShape = compoundShape;
+            btCollisionShape = btCompoundShape;
          }
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
@@ -186,13 +183,13 @@ public class BulletTools
          btBoxShape boxShape = new btBoxShape(new btVector3((float) boxGeometryDefinition.getSizeX() / 2.0f,
                                                           (float) boxGeometryDefinition.getSizeY() / 2.0f,
                                                           (float) boxGeometryDefinition.getSizeZ() / 2.0f));
-         bulletCollisionShape = boxShape;
+         btCollisionShape = boxShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Sphere3DDefinition)
       {
          Sphere3DDefinition sphereGeometryDefinition = (Sphere3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btSphereShape sphereShape = new btSphereShape((float) sphereGeometryDefinition.getRadius());
-         bulletCollisionShape = sphereShape;
+         btCollisionShape = sphereShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cylinder3DDefinition)
       {
@@ -200,13 +197,13 @@ public class BulletTools
          btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new btVector3((float) cylinderGeometryDefinition.getRadius(),
                                                                            (float) cylinderGeometryDefinition.getRadius(),
                                                                            (float) cylinderGeometryDefinition.getLength() / 2.0f));
-         bulletCollisionShape = cylinderShape;
+         btCollisionShape = cylinderShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cone3DDefinition)
       {
          Cone3DDefinition coneGeometryDefinition = (Cone3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btConeShapeZ coneShape = new btConeShapeZ((float) coneGeometryDefinition.getRadius(), (float) coneGeometryDefinition.getHeight());
-         bulletCollisionShape = coneShape;
+         btCollisionShape = coneShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof Capsule3DDefinition)
       {
@@ -216,7 +213,7 @@ public class BulletTools
                || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
          btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ((float) capsuleGeometryDefinition.getRadiusX(), (float) capsuleGeometryDefinition.getLength());
-         bulletCollisionShape = capsuleShape;
+         btCollisionShape = capsuleShape;
       }
       else if (collisionShapeDefinition.getGeometryDefinition() instanceof ConvexPolytope3DDefinition)
       {
@@ -229,14 +226,14 @@ public class BulletTools
                convexHullShape.addPoint(new btVector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
             }
          }
-         bulletCollisionShape = convexHullShape;
+         btCollisionShape = convexHullShape;
       }
       else
       {
          throw new UnsupportedOperationException("Unsupported shape: " + collisionShapeDefinition.getGeometryDefinition().getClass().getSimpleName());
       }
 
-      return bulletCollisionShape;
+      return btCollisionShape;
    }
    
    public enum BroadphaseNativeTypes

@@ -1,4 +1,4 @@
-package us.ihmc.scs2.simulation.bullet.physicsEngine;
+package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
 public class BulletMultiBodyParameters
 {

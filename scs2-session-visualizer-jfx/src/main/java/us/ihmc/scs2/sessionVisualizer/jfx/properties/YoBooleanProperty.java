@@ -4,10 +4,8 @@ import java.lang.ref.WeakReference;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleBooleanProperty;
 import us.ihmc.scs2.sharedMemory.LinkedYoBoolean;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -18,8 +16,6 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
    private final YoBoolean yoBoolean;
    private final Object bean;
    private final YoVariableChangedListener propertyUpdater = new YoBooleanPropertyUpdater(this);
-
-   private SimpleBooleanProperty lastUserInput;
 
    private LinkedYoBoolean linkedBuffer;
 
@@ -36,20 +32,18 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
       yoBoolean.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoBoolean linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
-         linkedBuffer.addUser(userObject);
+      {
+         linkedBuffer.addUser(this);
+         pullYoBooleanValue();
+      }
    }
 
    @Override
@@ -61,11 +55,17 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
    @Override
    public void finalize()
    {
+      dispose();
+   }
+
+   @Override
+   public void dispose()
+   {
       try
       {
          yoBoolean.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+            linkedBuffer.removeUser(this);
       }
       finally
       {
@@ -75,15 +75,8 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
    @Override
    public void set(boolean newValue)
    {
-      if (lastUserInput != null)
-         lastUserInput.set(newValue);
       super.set(newValue);
       yoBoolean.set(newValue);
-   }
-
-   public void setAndPush(boolean newValue)
-   {
-      set(newValue);
       if (linkedBuffer != null)
          linkedBuffer.push();
    }
@@ -116,17 +109,9 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
             return;
 
          updatingThis.setTrue();
-         setAndPush(newValue);
+         set(newValue);
          updatingThis.setFalse();
       });
-   }
-
-   @Override
-   public BooleanProperty userInputProperty()
-   {
-      if (lastUserInput == null)
-         lastUserInput = new SimpleBooleanProperty(this, getName() + "LastUserInput", get());
-      return lastUserInput;
    }
 
    @Override

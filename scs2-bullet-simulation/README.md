@@ -1,3 +1,5 @@
+![SCS 2](snapshots/SCS2_Bullet.png)
+
 # SCS2 - Bullet Physics Engine Notes
 
 SCS2 has the ability to use the Bullet Physics Engine while running a simulation. To run SCS2 using the Bullet Physics Engine, create a new SimulationSession with BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory() as the physicsEngineFactory. If a simulation is using the BulletPhysicsEngine, then a btMultiBody object will be created for each Robot added to the simulation and a btRigidBody object will be created for each Terrain added. The Bullet Physics Engine will keep the btMultiBodies and Robots in sync before and after each simulation step.
@@ -24,7 +26,7 @@ By default, Bullet does not use Simulation Parameters. It uses the sessionDTSeco
 
 **FixedTimeStep** - regulates resolution of the simulation. 
 
-![SCS 2 Atlas FlatGroundWalkingTrackSCS2Bullet](snapshots/BulletSimulationParameters.png)
+![SCS 2 BulletSimulationParameters](snapshots/BulletSimulationParameters.png)
 
 # Contact Solver Information Parameters
 
@@ -102,7 +104,7 @@ The variables are as follows:
 
 **RestitutionVelocityThreshold** - default is 0.2. If the relative velocity is below this threshold, there is zero restitution.
 
-![SCS 2 Atlas FlatGroundWalkingTrackSCS2Bullet](snapshots/BulletContactSolverInfoParameters.png)
+![SCS 2 BulletContactSolverInfoParameters](snapshots/BulletContactSolverInfoParameters.png)
 
 # MultiBody Parameters
 
@@ -133,7 +135,7 @@ simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPh
 
 **MaxCoordinatedVelocity** - default is 100.0. Clamps the velocity of the btMultiBody to +/- the amount in this field.
 
-![SCS 2 Atlas FlatGroundWalkingTrackSCS2Bullet](snapshots/BulletMultiBodyParameters.png)
+![SCS 2 BulletMultiBodyParameters](snapshots/BulletMultiBodyParameters.png)
 
 # MultiBody Joint Parameters
 
@@ -168,7 +170,7 @@ bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);<br 
 
 **JointContactProcessingThreshold** - default is 9.9999998E17. The constraint solver can discard solving contacts, if the distance is above this threshold. Note: that using contacts with positive distance can improve stability. It increases, however, the chance of colliding with degenerate contacts, such as 'interior' triangle edges
 
-![SCS 2 Atlas FlatGroundWalkingTrackSCS2Bullet](snapshots/BulletMultiBodyJointParameters.png)
+![SCS 2 BulletMultiBodyJointParameters](snapshots/BulletMultiBodyJointParameters.png)
 
 # External references:
 

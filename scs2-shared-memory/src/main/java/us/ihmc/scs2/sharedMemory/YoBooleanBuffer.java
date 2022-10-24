@@ -53,9 +53,9 @@ public class YoBooleanBuffer extends YoVariableBuffer<YoBoolean>
    }
 
    @Override
-   LinkedYoBoolean newLinkedYoVariable(YoBoolean variableToLink)
+   LinkedYoBoolean newLinkedYoVariable(YoBoolean variableToLink, Object initialUser)
    {
-      return new LinkedYoBoolean(variableToLink, this);
+      return new LinkedYoBoolean(variableToLink, this, initialUser);
    }
 
    @Override

@@ -19,6 +19,7 @@ import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
@@ -42,6 +43,12 @@ import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
 import us.ihmc.commons.MathTools;
@@ -122,6 +129,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
 
    private final SimpleObjectProperty<ContextMenu> contextMenuProperty = new SimpleObjectProperty<>(this, "graphContextMenu", null);
 
+   private Border defaultBorder = null;
+
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private YoManager yoManager;
@@ -142,6 +151,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       legendPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 5);
 
       dynamicLineChart = new DynamicLineChart(xAxis, yAxis, backgroundExecutorManager::executeInBackground, toolkit.getChartRenderManager());
+      dynamicLineChart.markerAutoUpdateProperty().set(false);
       chartMainPane.getChildren().add(0, dynamicLineChart);
       AnchorPane.setTopAnchor(dynamicLineChart, 0.0);
       AnchorPane.setBottomAnchor(dynamicLineChart, 0.0);
@@ -194,8 +204,6 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
                for (ChartMarker newMarker : change.getAddedSubList())
                {
                   dynamicLineChart.addMarker(newMarker);
-                  if (!newMarker.getStyleClass().contains(KEYFRAME_MARKER_STYLECLASS))
-                     newMarker.getStyleClass().add(KEYFRAME_MARKER_STYLECLASS);
                }
             }
 
@@ -264,6 +272,18 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       messager = toolkit.getMessager();
       yoCompositeSelectedTopic = toolkit.getTopics().getYoCompositeSelected();
       yoCompositeSelected = messager.createInput(yoCompositeSelectedTopic);
+
+      // CSS style doesn't get applied immediately
+      ChangeListener<? super Border> borderInitializer = new ChangeListener<Border>()
+      {
+         @Override
+         public void changed(ObservableValue<? extends Border> o, Border oldValue, Border newValue)
+         {
+            defaultBorder = newValue;
+            dynamicLineChart.borderProperty().removeListener(this);
+         }
+      };
+      dynamicLineChart.borderProperty().addListener(borderInitializer);
    }
 
    public void setChartConfiguration(YoChartConfigurationDefinition definition)
@@ -420,8 +440,15 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    {
       keyFrameMarkers.clear();
 
+      if (newKeyFrames == null)
+         return;
+
       for (int keyFrame : newKeyFrames)
-         keyFrameMarkers.add(new ChartMarker(new SimpleDoubleProperty(this, "keyFrameMarkerCoordinate" + keyFrameMarkers.size(), keyFrame)));
+      {
+         ChartMarker newMarker = new ChartMarker(new SimpleDoubleProperty(this, "keyFrameMarkerCoordinate" + keyFrameMarkers.size(), keyFrame));
+         newMarker.getStyleClass().add(KEYFRAME_MARKER_STYLECLASS);
+         keyFrameMarkers.add(newMarker);
+      }
    }
 
    private long legendUpdateLastTime = -1L;
@@ -467,6 +494,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       }
 
       charts.values().forEach(YoVariableChartPackage::updateChart);
+      if (!dynamicLineChart.markerAutoUpdateProperty().get())
+         dynamicLineChart.updateMarkers();
    }
 
    private ContextMenu newGraphContextMenu()
@@ -667,9 +696,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    public void setSelectionHighlight(boolean isSelected)
    {
       if (isSelected)
-         dynamicLineChart.setStyle("-fx-border-color:green; -fx-border-radius:5;");
+         dynamicLineChart.setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT)));
       else
-         dynamicLineChart.setStyle(null);
+         dynamicLineChart.setBorder(defaultBorder);
    }
 
    public void handleDragEntered(DragEvent event)

@@ -158,7 +158,7 @@ public class CompositePropertyTools
          }
          Objects.requireNonNull(yoDouble, "Could not find the YoVariable: " + field);
          YoDoubleProperty yoDoubleProperty = new YoDoubleProperty(yoDouble);
-         yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble));
+         yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble, yoDoubleProperty));
          return yoDoubleProperty;
       }
    }
@@ -183,7 +183,7 @@ public class CompositePropertyTools
          }
          Objects.requireNonNull(yoInteger, "Could not find the YoVariable: " + field);
          YoIntegerProperty yoIntegerProperty = new YoIntegerProperty(yoInteger);
-         yoIntegerProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoInteger));
+         yoIntegerProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoInteger, yoIntegerProperty));
          return yoIntegerProperty;
       }
    }
@@ -194,17 +194,24 @@ public class CompositePropertyTools
    {
       if (field == null)
          return null;
-      if (!field.contains(ReferenceFrame.SEPARATOR))
-         return new SimpleObjectProperty<>(referenceFrameManager.getWorldFrame()); // We're looking for a root frame, we can use world.
 
       ReferenceFrame referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(field);
 
       if (referenceFrame != null)
          return new SimpleObjectProperty<>(referenceFrame);
+
+      referenceFrame = referenceFrameManager.getReferenceFrameFromUniqueName(field);
+
+      if (referenceFrame != null)
+         return new SimpleObjectProperty<>(referenceFrame);
+
+      if (!field.contains(ReferenceFrame.SEPARATOR))
+         return new SimpleObjectProperty<>(referenceFrameManager.getWorldFrame()); // We're looking for a root frame, we can use world.
+
       LogTools.warn("Could not retrieve the frame {} using world instead (fullname: {})",
                     field.substring(field.lastIndexOf(ReferenceFrame.SEPARATOR) + 1),
                     field);
-      return null;
+      return new SimpleObjectProperty<>(referenceFrameManager.getWorldFrame());
    }
 
    public static String toDoublePropertyName(DoubleProperty doubleProperty)

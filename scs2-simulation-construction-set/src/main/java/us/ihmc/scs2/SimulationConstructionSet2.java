@@ -3,7 +3,7 @@ package us.ihmc.scs2;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BooleanSupplier;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
 import javafx.application.Platform;
@@ -19,13 +19,20 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.SimulationSessionControls;
+import us.ihmc.scs2.simulation.SimulationTerminalCondition;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
 import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParameters;
@@ -156,10 +163,11 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public static final boolean DEFAULT_VISUALIZER_ENABLED = SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true)
          && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
 
-   private SimulationSession simulationSession;
+   private final SimulationSession simulationSession;
 
-   private SimulationSessionControls simulationSessionControls;
+   private final SimulationSessionControls simulationSessionControls;
    private SessionVisualizerControls visualizerControls;
+   private ConcurrentLinkedQueue<Runnable> pendingVisualizerTasks = null;
 
    private boolean visualizerEnabled = DEFAULT_VISUALIZER_ENABLED;
    private boolean shutdownSessionOnVisualizerClose = true;
@@ -685,6 +693,17 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       if (visualizerEnabled && visualizerControls == null)
       {
          visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, javaFXThreadImplicitExit, shutdownSessionOnVisualizerClose);
+
+         if (pendingVisualizerTasks != null && !pendingVisualizerTasks.isEmpty())
+         {
+            visualizerControls.waitUntilVisualizerFullyUp();
+
+            while (!pendingVisualizerTasks.isEmpty())
+               pendingVisualizerTasks.poll().run();
+
+            pendingVisualizerTasks = null;
+         }
+
          if (shutdownSessionOnVisualizerClose)
             visualizerControls.addVisualizerShutdownListener(this::shutdownSession);
       }
@@ -742,14 +761,14 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
-   public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
+   public void addExternalTerminalCondition(SimulationTerminalCondition... externalTerminalConditions)
    {
       simulationSessionControls.addExternalTerminalCondition(externalTerminalConditions);
    }
 
    /** {@inheritDoc} */
    @Override
-   public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+   public boolean removeExternalTerminalCondition(SimulationTerminalCondition externalTerminalCondition)
    {
       return simulationSessionControls.removeExternalTerminalCondition(externalTerminalCondition);
    }
@@ -938,67 +957,81 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    // ------------------------- Visualizer Controls --------------------------------- //
    // ------------------------------------------------------------------------------- //
 
+   private void executeOrScheduleVisualizerTask(Runnable task)
+   {
+      if (visualizerControls != null)
+      {
+         task.run();
+      }
+      else if (visualizerEnabled && !isVisualizerShutdown())
+      {
+         if (pendingVisualizerTasks == null)
+            pendingVisualizerTasks = new ConcurrentLinkedQueue<>();
+         pendingVisualizerTasks.add(task);
+      }
+   }
+
    /** {@inheritDoc} */
    @Override
    public void setCameraOrientation(double latitude, double longitude)
    {
-      if (visualizerControls != null)
-         visualizerControls.setCameraOrientation(latitude, longitude);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setCameraOrientation(latitude, longitude));
    }
 
    /** {@inheritDoc} */
    @Override
    public void setCameraPosition(double x, double y, double z)
    {
-      if (visualizerControls != null)
-         visualizerControls.setCameraPosition(x, y, z);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setCameraPosition(x, y, z));
    }
 
    /** {@inheritDoc} */
    @Override
    public void setCameraFocusPosition(double x, double y, double z)
    {
-      if (visualizerControls != null)
-         visualizerControls.setCameraFocusPosition(x, y, z);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setCameraFocusPosition(x, y, z));
    }
 
    /** {@inheritDoc} */
    @Override
    public void setCameraZoom(double distanceFromFocus)
    {
-      if (visualizerControls != null)
-         visualizerControls.setCameraZoom(distanceFromFocus);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setCameraZoom(distanceFromFocus));
    }
 
    /** {@inheritDoc} */
    @Override
    public void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
    {
-      if (visualizerControls != null)
-         visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName));
    }
 
+   /** {@inheritDoc} */
    @Override
    public void showOverheadPlotter2D(boolean show)
    {
-      if (visualizerControls != null)
-         visualizerControls.showOverheadPlotter2D(show);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.showOverheadPlotter2D(show));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestPlotter2DCoordinateTracking(xVariableName, yVariableName, frameName));
    }
 
    /** {@inheritDoc} */
    @Override
    public void addStaticVisual(VisualDefinition visualDefinition)
    {
-      if (visualizerControls != null)
-         visualizerControls.addStaticVisual(visualDefinition);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addStaticVisual(visualDefinition));
    }
 
    /** {@inheritDoc} */
    @Override
    public void removeStaticVisual(VisualDefinition visualDefinition)
    {
-      if (visualizerControls != null)
-         visualizerControls.removeStaticVisual(visualDefinition);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeStaticVisual(visualDefinition));
    }
 
    /** {@inheritDoc} */
@@ -1015,11 +1048,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    @Override
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
-      if (visualizerControls != null)
-         visualizerControls.addYoEntry(groupName, variableNames);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public void exportVideo(SceneVideoRecordingRequest request)
    {
@@ -1027,7 +1065,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          visualizerControls.exportVideo(request);
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public void disableGUIControls()
    {
@@ -1035,7 +1079,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          visualizerControls.disableGUIControls();
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public void enableGUIControls()
    {
@@ -1043,7 +1093,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          visualizerControls.enableGUIControls();
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public Window getPrimaryGUIWindow()
    {
@@ -1054,11 +1110,16 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    @Override
    public void addCustomGUIControl(Node control)
    {
-      if (visualizerControls != null)
-         visualizerControls.addCustomGUIControl(control);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addCustomGUIControl(control));
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public boolean removeCustomGUIControl(Node control)
    {
@@ -1072,19 +1133,23 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    @Override
    public void loadCustomGUIPane(String name, URL fxmlResource)
    {
-      if (visualizerControls != null)
-         visualizerControls.loadCustomGUIPane(name, fxmlResource);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.loadCustomGUIPane(name, fxmlResource));
    }
 
    /** {@inheritDoc} */
    @Override
    public void addCustomGUIPane(String name, Pane pane)
    {
-      if (visualizerControls != null)
-         visualizerControls.addCustomGUIPane(name, pane);
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addCustomGUIPane(name, pane));
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public boolean removeCustomGUIPane(String name)
    {
@@ -1094,7 +1159,116 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          return false;
    }
 
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
+   @Override
+   public YoDoubleProperty newYoDoubleProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoDoubleProperty(variableName);
+      else
+         return null;
+   }
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
+   @Override
+   public YoBooleanProperty newYoBooleanProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoBooleanProperty(variableName);
+      else
+         return null;
+   }
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
+   @Override
+   public YoIntegerProperty newYoIntegerProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoIntegerProperty(variableName);
+      else
+         return null;
+   }
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
+   @Override
+   public YoLongProperty newYoLongProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoLongProperty(variableName);
+      else
+         return null;
+   }
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
+   @Override
+   public <E extends Enum<E>> YoEnumAsStringProperty<E> newYoEnumProperty(String variableName)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.newYoEnumProperty(variableName);
+      else
+         return null;
+   }
+
    /** {@inheritDoc} */
+   @Override
+   public void addSessionChangedListener(SessionChangeListener listener)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addSessionChangedListener(listener));
+   }
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
+   @Override
+   public boolean removeSessionChangedListener(SessionChangeListener listener)
+   {
+      if (visualizerControls != null)
+         return visualizerControls.removeSessionChangedListener(listener);
+      else
+         return false;
+   }
+
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public void waitUntilVisualizerFullyUp()
    {
@@ -1102,7 +1276,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          visualizerControls.waitUntilVisualizerFullyUp();
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public void waitUntilVisualizerDown()
    {
@@ -1147,7 +1327,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       simulationSessionControls.shutdownSession();
    }
 
-   /** {@inheritDoc} */
+   /**
+    * {@inheritDoc}
+    * <p>
+    * The visualizer has to be running for this method to be effective. See
+    * {@link #start(boolean, boolean, boolean)} and {@link #setVisualizerEnabled(boolean)}.
+    * </p>
+    */
    @Override
    public void requestVisualizerShutdown()
    {
@@ -1155,6 +1341,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          visualizerControls.requestVisualizerShutdown();
    }
 
+   /** {@inheritDoc} */
    @Override
    public void addSessionShutdownListener(Runnable listener)
    {
@@ -1165,7 +1352,18 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    @Override
    public void addVisualizerShutdownListener(Runnable listener)
    {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addVisualizerShutdownListener(listener));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public boolean isVisualizerShutdown()
+   {
       if (visualizerControls != null)
-         visualizerControls.addVisualizerShutdownListener(listener);
+         return visualizerControls.isVisualizerShutdown();
+      else if (visualizerEnabled)
+         return false; // It has not been started yet.
+      else
+         return true; // The visualizer will not be created this time.
    }
 }

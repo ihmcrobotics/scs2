@@ -34,6 +34,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.robot.SensorDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.SphericalJointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
 import us.ihmc.scs2.definition.state.JointState;
@@ -54,6 +55,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRigidBody;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSixDoFJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSphericalJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -255,9 +257,10 @@ public class Robot implements RobotInterface
    {
       for (int i = 0; i < allJoints.size(); i++)
       {
+         SimJointBasics jointToUpdate = allJoints.get(i);
          JointStateReadOnly initialState = allJointInitialStates.get(i);
          if (initialState != null)
-            initialState.getAllStates(allJoints.get(i));
+            initialState.getAllStates(jointToUpdate);
       }
       rootBody.updateFramesRecursively();
    }
@@ -374,6 +377,8 @@ public class Robot implements RobotInterface
             return new SimPrismaticJoint((PrismaticJointDefinition) definition, predecessor);
          if (definition instanceof RevoluteJointDefinition)
             return new SimRevoluteJoint((RevoluteJointDefinition) definition, predecessor);
+         if (definition instanceof SphericalJointDefinition)
+            return new SimSphericalJoint((SphericalJointDefinition) definition, predecessor);
          if (definition instanceof CrossFourBarJointDefinition)
             return new SimCrossFourBarJoint((CrossFourBarJointDefinition) definition, predecessor);
          throw new UnsupportedOperationException("Unsupported joint definition: " + definition.getClass().getSimpleName());

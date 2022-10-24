@@ -64,8 +64,15 @@ public class BulletFlyingBallNoSCS2Test
          Vector3D expected = heightAfterSeconds(initialPosition, initialVelocity, seconds, gravity);
           
          BulletTools.toEuclid(btMultiBody.getBasePos(), actual); 
-         EuclidCoreTestTools.assertTuple3DEquals(expected, actual, EPSILON);
-
+         BulletTools.toEuclid(expectedFloat, expectedTest);
+         //EuclidCoreTestTools.assertEquals(expected, actual, EPSILON);
+         EuclidCoreTestTools.assertTuple3DEquals(expectedTest, actual, EPSILON);
+         
+         System.out.println(output + " " + i + " " + btMultiBody.getBasePos().z + " " + expected.getZ() + " : " + expectedFloat.z);
+         
+         prevPosition.set(btMultiBody.getBasePos().x, btMultiBody.getBasePos().y, btMultiBody.getBasePos().z);
+         prevVelocity.set(btMultiBody.getBaseVel().x, btMultiBody.getBaseVel().y, btMultiBody.getBaseVel().z);
+         
          seconds += dt;
       }
       

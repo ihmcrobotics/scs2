@@ -41,7 +41,7 @@ public class LinkedYoEnumTest<E extends Enum<E>> extends LinkedYoVariableTest<Yo
       {
          YoEnum<?> linkedVariable = SharedMemoryRandomTools.nextYoEnum(random, new YoRegistry("Dummy"));
          YoEnumBuffer buffer = SharedMemoryRandomTools.nextYoEnumBuffer(random, new YoRegistry("Dummy"));
-         LinkedYoEnum linkedYoEnum = new LinkedYoEnum(linkedVariable, buffer);
+         LinkedYoEnum linkedYoEnum = new LinkedYoEnum(linkedVariable, buffer, null);
 
          assertTrue(linkedVariable == linkedYoEnum.getLinkedYoVariable());
          assertTrue(buffer == linkedYoEnum.getBuffer());
@@ -68,7 +68,7 @@ public class LinkedYoEnumTest<E extends Enum<E>> extends LinkedYoVariableTest<Yo
       {
          YoEnum<?> linkedVariable = nextYoVariable(random, i);
          YoEnumBuffer<?> buffer = (YoEnumBuffer<?>) SharedMemoryRandomTools.nextYoVariableBuffer(random, nextYoVariable(random, i));
-         LinkedYoEnum<?> linkedYoEnum = new LinkedYoEnum(linkedVariable, buffer);
+         LinkedYoEnum<?> linkedYoEnum = new LinkedYoEnum(linkedVariable, buffer, null);
 
          EnumPullRequest<?> pullRequest = linkedYoEnum.toPullRequest();
          assertTrue(linkedVariable == pullRequest.getVariableToUpdate());
@@ -89,7 +89,7 @@ public class LinkedYoEnumTest<E extends Enum<E>> extends LinkedYoVariableTest<Yo
       {
          YoEnum<?> linkedVariable = nextYoVariable(random, i);
          YoEnumBuffer<?> buffer = (YoEnumBuffer<?>) SharedMemoryRandomTools.nextYoVariableBuffer(random, nextYoVariable(random, i));
-         LinkedYoEnum<?> linkedYoEnum = new LinkedYoEnum(linkedVariable, buffer);
+         LinkedYoEnum<?> linkedYoEnum = new LinkedYoEnum(linkedVariable, buffer, null);
 
          EnumPushRequest<?> pullRequest = linkedYoEnum.toPushRequest();
          assertTrue(buffer.getYoVariable() == pullRequest.getVariableToUpdate());

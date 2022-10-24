@@ -4,10 +4,8 @@ import java.lang.ref.WeakReference;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.IntegerPropertyBase;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleIntegerProperty;
 import us.ihmc.scs2.sharedMemory.LinkedYoInteger;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.variable.YoInteger;
@@ -18,8 +16,6 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
    private final YoInteger yoInteger;
    private final Object bean;
    private final YoVariableChangedListener propertyUpdater = new YoIntegerPropertyUpdater(this);
-
-   private SimpleIntegerProperty lastUserInput;
 
    private LinkedYoInteger linkedBuffer;
 
@@ -36,20 +32,18 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
       yoInteger.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoInteger linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
-         linkedBuffer.addUser(userObject);
+      {
+         linkedBuffer.addUser(this);
+         pullYoIntegerValue();
+      }
    }
 
    @Override
@@ -61,11 +55,20 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
    @Override
    public void finalize()
    {
+      dispose();
+   }
+
+   @Override
+   public void dispose()
+   {
       try
       {
          yoInteger.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+         {
+            linkedBuffer.removeUser(this);
+            pullYoIntegerValue();
+         }
       }
       finally
       {
@@ -75,15 +78,8 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
    @Override
    public void set(int newValue)
    {
-      if (lastUserInput != null)
-         lastUserInput.set(newValue);
       super.set(newValue);
       yoInteger.set(newValue);
-   }
-
-   public void setAndPush(int newValue)
-   {
-      set(newValue);
       if (linkedBuffer != null)
          linkedBuffer.push();
    }
@@ -116,17 +112,9 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
             return;
 
          updatingThis.setTrue();
-         setAndPush(newValue.intValue());
+         set(newValue.intValue());
          updatingThis.setFalse();
       });
-   }
-
-   @Override
-   public IntegerProperty userInputProperty()
-   {
-      if (lastUserInput == null)
-         lastUserInput = new SimpleIntegerProperty(this, getName() + "LastUserInput", get());
-      return lastUserInput;
    }
 
    @Override

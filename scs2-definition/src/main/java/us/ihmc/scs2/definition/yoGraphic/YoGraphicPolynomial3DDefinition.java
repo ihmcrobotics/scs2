@@ -1,50 +1,44 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 
 public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
 {
-   private List<String> coefficientsX, coefficientsY, coefficientsZ;
-   private String numberOfCoefficientsX, numberOfCoefficientsY, numberOfCoefficientsZ;
-   private String startTime, endTime;
-   private String size;
+   private YoListDefinition coefficientsX;
+   private YoListDefinition coefficientsY;
+   private YoListDefinition coefficientsZ;
+   private String referenceFrame;
 
-   @XmlElement(name = "coefficientX")
-   public void setCoefficientsX(List<String> coefficientsX)
+   private String startTime, endTime;
+
+   private String size;
+   private String timeResolution;
+   private String numberOfDivisions;
+
+   @XmlElement(name = "coefficientsX")
+   public void setCoefficientsX(YoListDefinition coefficientsX)
    {
       this.coefficientsX = coefficientsX;
    }
 
-   @XmlElement(name = "coefficientY")
-   public void setCoefficientsY(List<String> coefficientsY)
+   @XmlElement(name = "coefficientsY")
+   public void setCoefficientsY(YoListDefinition coefficientsY)
    {
       this.coefficientsY = coefficientsY;
    }
 
-   @XmlElement(name = "coefficientZ")
-   public void setCoefficientsZ(List<String> coefficientsZ)
+   @XmlElement(name = "coefficientsZ")
+   public void setCoefficientsZ(YoListDefinition coefficientsZ)
    {
       this.coefficientsZ = coefficientsZ;
    }
 
-   @XmlElement
-   public void setNumberOfCoefficientsX(String numberOfCoefficientsX)
+   @XmlElement(name = "referenceFrame")
+   public void setReferenceFrame(String referenceFrame)
    {
-      this.numberOfCoefficientsX = numberOfCoefficientsX;
-   }
-
-   @XmlElement
-   public void setNumberOfCoefficientsY(String numberOfCoefficientsY)
-   {
-      this.numberOfCoefficientsY = numberOfCoefficientsY;
-   }
-
-   @XmlElement
-   public void setNumberOfCoefficientsZ(String numberOfCoefficientsZ)
-   {
-      this.numberOfCoefficientsZ = numberOfCoefficientsZ;
+      this.referenceFrame = referenceFrame;
    }
 
    public void setStartTime(double startTime)
@@ -80,34 +74,46 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       this.size = size;
    }
 
-   public List<String> getCoefficientsX()
+   public void setTimeResolution(int timeResolution)
+   {
+      setTimeResolution(Integer.toString(timeResolution));
+   }
+
+   @XmlElement
+   public void setTimeResolution(String timeResolution)
+   {
+      this.timeResolution = timeResolution;
+   }
+
+   public void setNumberOfDivisions(int numberOfDivisions)
+   {
+      setNumberOfDivisions(Integer.toString(numberOfDivisions));
+   }
+
+   @XmlElement
+   public void setNumberOfDivisions(String numberOfDivisions)
+   {
+      this.numberOfDivisions = numberOfDivisions;
+   }
+
+   public YoListDefinition getCoefficientsX()
    {
       return coefficientsX;
    }
 
-   public List<String> getCoefficientsY()
+   public YoListDefinition getCoefficientsY()
    {
       return coefficientsY;
    }
 
-   public List<String> getCoefficientsZ()
+   public YoListDefinition getCoefficientsZ()
    {
       return coefficientsZ;
    }
 
-   public String getNumberOfCoefficientsX()
+   public String getReferenceFrame()
    {
-      return numberOfCoefficientsX;
-   }
-
-   public String getNumberOfCoefficientsY()
-   {
-      return numberOfCoefficientsY;
-   }
-
-   public String getNumberOfCoefficientsZ()
-   {
-      return numberOfCoefficientsZ;
+      return referenceFrame;
    }
 
    public String getStartTime()
@@ -125,6 +131,16 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       return size;
    }
 
+   public String getTimeResolution()
+   {
+      return timeResolution;
+   }
+
+   public String getNumberOfDivisions()
+   {
+      return numberOfDivisions;
+   }
+
    @Override
    public boolean equals(Object object)
    {
@@ -140,24 +156,25 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       {
          YoGraphicPolynomial3DDefinition other = (YoGraphicPolynomial3DDefinition) object;
 
-         if (coefficientsX == null ? other.coefficientsX != null : !coefficientsX.equals(other.coefficientsX))
+         if (!Objects.equals(coefficientsX, other.coefficientsX))
             return false;
-         if (coefficientsY == null ? other.coefficientsY != null : !coefficientsY.equals(other.coefficientsY))
+         if (!Objects.equals(coefficientsY, other.coefficientsY))
             return false;
-         if (coefficientsZ == null ? other.coefficientsZ != null : !coefficientsZ.equals(other.coefficientsZ))
+         if (!Objects.equals(coefficientsZ, other.coefficientsZ))
             return false;
-         if (numberOfCoefficientsX == null ? other.numberOfCoefficientsX != null : !numberOfCoefficientsX.equals(other.numberOfCoefficientsX))
+         if (!Objects.equals(referenceFrame, other.referenceFrame))
             return false;
-         if (numberOfCoefficientsY == null ? other.numberOfCoefficientsY != null : !numberOfCoefficientsY.equals(other.numberOfCoefficientsY))
+         if (!Objects.equals(startTime, other.startTime))
             return false;
-         if (numberOfCoefficientsZ == null ? other.numberOfCoefficientsZ != null : !numberOfCoefficientsZ.equals(other.numberOfCoefficientsZ))
+         if (!Objects.equals(endTime, other.endTime))
             return false;
-         if (startTime == null ? other.startTime != null : !startTime.equals(other.startTime))
+         if (!Objects.equals(size, other.size))
             return false;
-         if (endTime == null ? other.endTime != null : !endTime.equals(other.endTime))
+         if (!Objects.equals(timeResolution, other.timeResolution))
             return false;
-         if (size == null ? other.size != null : !size.equals(other.size))
+         if (!Objects.equals(numberOfDivisions, other.numberOfDivisions))
             return false;
+         
          return true;
       }
       else

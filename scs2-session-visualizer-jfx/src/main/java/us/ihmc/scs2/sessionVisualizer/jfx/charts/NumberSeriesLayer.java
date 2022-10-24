@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -22,8 +23,10 @@ import javafx.css.Styleable;
 import javafx.css.StyleableDoubleProperty;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleablePropertyFactory;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.chart.InvisibleNumberAxis;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
@@ -105,7 +108,7 @@ public class NumberSeriesLayer extends ImageView
    private final ChartRenderManager renderManager;
 
    private final ObjectProperty<ChartStyle> chartStyleProperty = new SimpleObjectProperty<>(this, "chartStyle", ChartStyle.RAW);
-   private WritableImage writableImage = null;
+   private PixelBuffer<IntBuffer> pixelBuffer = null;
    private AtomicBoolean renderNewImage = new AtomicBoolean(true);
    private AtomicBoolean isRenderingImage = new AtomicBoolean(false);
    private AtomicBoolean isUpdatingImage = new AtomicBoolean(false);
@@ -166,12 +169,15 @@ public class NumberSeriesLayer extends ImageView
 
       if (renderNewImage.getAndSet(false))
       {
-         writableImage = new WritableImage(width, height);
-         setImage(writableImage);
+         pixelBuffer = new PixelBuffer<>(width,
+                                         height,
+                                         IntBuffer.wrap(((DataBufferInt) imageToRender.getRaster().getDataBuffer()).getData()),
+                                         PixelFormat.getIntArgbPreInstance());
+         setImage(new WritableImage(pixelBuffer));
       }
 
-      int[] data = ((DataBufferInt) imageToRender.getRaster().getDataBuffer()).getData();
-      writableImage.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), data, 0, width);
+      Rectangle2D dirtyRegion = new Rectangle2D(0, 0, width, height);
+      pixelBuffer.updateBuffer(b -> dirtyRegion);
 
       isRenderingImage.set(false);
    }

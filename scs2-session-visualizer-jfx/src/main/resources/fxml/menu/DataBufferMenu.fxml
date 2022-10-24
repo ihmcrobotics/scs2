@@ -34,7 +34,7 @@
             </FontAwesomeIconView>
          </graphic>
       </MenuItem>
-      <CustomMenuItem mnemonicParsing="false" text="Unspecified Action">
+      <CustomMenuItem fx:id="bufferSizeMenuItem" mnemonicParsing="false" text="Unspecified Action">
          <content>
             <HBox alignment="CENTER" spacing="5.0">
                <children>
@@ -50,7 +50,7 @@
             </HBox>
          </content>
       </CustomMenuItem>
-      <CustomMenuItem mnemonicParsing="false" text="Unspecified Action">
+      <CustomMenuItem fx:id="bufferRecordTickPeriodMenuItem" mnemonicParsing="false" text="Unspecified Action">
          <content>
             <HBox alignment="CENTER" spacing="5.0">
                <children>
@@ -66,7 +66,7 @@
             </HBox>
          </content>
       </CustomMenuItem>
-      <CustomMenuItem mnemonicParsing="false" text="Unspecified Action">
+      <CustomMenuItem fx:id="numberPrecisionMenuItem" mnemonicParsing="false" text="Unspecified Action">
          <content>
             <HBox alignment="CENTER" spacing="5.0">
                <children>

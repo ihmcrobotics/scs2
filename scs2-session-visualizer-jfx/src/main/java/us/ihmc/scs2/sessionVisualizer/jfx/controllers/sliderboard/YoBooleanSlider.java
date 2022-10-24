@@ -26,7 +26,7 @@ public class YoBooleanSlider implements YoVariableSlider
    public YoBooleanSlider(YoBoolean yoBoolean, LinkedYoRegistry linkedYoRegistry)
    {
       yoBooleanProperty = new YoBooleanProperty(yoBoolean, this);
-      yoBooleanProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoBoolean));
+      yoBooleanProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoBoolean, yoBooleanProperty));
    }
 
    @Override
@@ -82,7 +82,7 @@ public class YoBooleanSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoBooleanSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoBooleanProperty.setAndPush(currentSliderValue);
+            yoBooleanProperty.set(currentSliderValue);
             updating.setFalse();
          });
       };
@@ -153,7 +153,7 @@ public class YoBooleanSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoBooleanSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoBooleanProperty.setAndPush(yoBooleanValue);
+            yoBooleanProperty.set(yoBooleanValue);
             updating.setFalse();
          });
       };
@@ -199,7 +199,7 @@ public class YoBooleanSlider implements YoVariableSlider
    @Override
    public void dispose()
    {
-      yoBooleanProperty.finalize();
+      yoBooleanProperty.dispose();
       cleanupTasks.forEach(Runnable::run);
    }
 }

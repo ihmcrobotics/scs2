@@ -4,9 +4,9 @@ import us.ihmc.yoVariables.variable.YoLong;
 
 public class LinkedYoLong extends LinkedYoVariable<YoLong>
 {
-   LinkedYoLong(YoLong linkedVariable, YoLongBuffer buffer)
+   LinkedYoLong(YoLong linkedVariable, YoLongBuffer buffer, Object initialUser)
    {
-      super(linkedVariable, buffer);
+      super(linkedVariable, buffer, initialUser);
    }
 
    @Override

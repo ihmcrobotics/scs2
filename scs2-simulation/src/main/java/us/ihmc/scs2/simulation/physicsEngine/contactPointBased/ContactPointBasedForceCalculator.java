@@ -28,7 +28,7 @@ public class ContactPointBasedForceCalculator
 
    private final ReferenceFrame inertialFrame;
 
-   private boolean hasPrintedErrorMessageAboutMultipleCollisions = false; 
+   private boolean hasPrintedErrorMessageAboutMultipleCollisions = false;
 
    public ContactPointBasedForceCalculator(ReferenceFrame inertialFrame, YoRegistry parentRegistry)
    {
@@ -41,6 +41,27 @@ public class ContactPointBasedForceCalculator
    public void setParameters(ContactPointBasedContactParametersReadOnly parameters)
    {
       this.parameters.set(parameters);
+   }
+
+   public void reset(List<? extends RobotInterface> robots)
+   {
+      for (RobotInterface robot : robots)
+      {
+         for (SimJointBasics joint : robot.getJointsToConsider())
+         {
+            if (joint.getAuxiliaryData().getGroundContactPoints().isEmpty())
+               continue;
+
+            for (GroundContactPoint gcp : joint.getAuxiliaryData().getGroundContactPoints())
+            {
+               gcp.getInContact().set(false);
+               gcp.getIsSlipping().set(false);
+               gcp.getWrench().setToZero();
+               gcp.getTouchdownPose().setToZero();
+               gcp.getContactNormal().setToZero();
+            }
+         }
+      }
    }
 
    public void resolveContactForces(List<? extends RobotInterface> robots, CollidableHolder staticCollidableHolder)
@@ -213,8 +234,8 @@ public class ContactPointBasedForceCalculator
 
       forceParallel.sub(forceWorld, forceNormal);
 
-      double parallelSpringForce = forceParallel.length();
-      double normalSpringForce = forceNormal.length();
+      double parallelSpringForce = forceParallel.norm();
+      double normalSpringForce = forceNormal.norm();
 
       double ratio = parallelSpringForce / normalSpringForce;
 
@@ -237,7 +258,7 @@ public class ContactPointBasedForceCalculator
 
          // Move touch-down values along the perp direction to follow the slipping.
 
-         double len = forceParallel.length();
+         double len = forceParallel.norm();
          if (len > 1e-7)
             forceParallel.scale(1.0 / len);
 

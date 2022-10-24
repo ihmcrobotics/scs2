@@ -165,6 +165,20 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
    }
 
    @Override
+   public double computeActuatedJointQdd(double qdd)
+   {
+      if (!Double.isFinite(qdd))
+         throw new IllegalStateException("Invalid joint acceleration: " + qdd);
+
+      double actuatedJointQdd = super.computeActuatedJointQdd(qdd);
+
+      if (!Double.isFinite(actuatedJointQdd))
+         throw new IllegalStateException("Invalid joint acceleration: " + actuatedJointQdd);
+
+      return actuatedJointQdd;
+   }
+
+   @Override
    public double getDamping()
    {
       return damping.getValue();

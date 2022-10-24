@@ -50,7 +50,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
    private final ContactPointBasedForceCalculator forceCalculator;
 
-   private boolean initialize = true;
+   private boolean hasBeenInitialized = false;
 
    public ContactPointBasedPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
    {
@@ -61,11 +61,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    }
 
    @Override
-   public boolean initialize(Vector3DReadOnly gravity)
+   public void initialize(Vector3DReadOnly gravity)
    {
-      if (!initialize)
-         return false;
-
       for (ContactPointBasedRobot robot : robotList)
       {
          robot.initializeState();
@@ -75,8 +72,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
          robot.updateSensors();
          robot.getControllerManager().initializeControllers();
       }
-      initialize = false;
-      return true;
+      forceCalculator.reset(robotList);
+      hasBeenInitialized = true;
    }
 
    private final Wrench tempWrench = new Wrench();
@@ -84,8 +81,11 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    @Override
    public void simulate(double currentTime, double dt, Vector3DReadOnly gravity)
    {
-      if (initialize(gravity))
+      if (!hasBeenInitialized)
+      {
+         initialize(gravity);
          return;
+      }
 
       for (ContactPointBasedRobot robot : robotList)
       {
@@ -145,9 +145,9 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
          robot.getAllJoints().forEach(joint ->
          {
-            if (joint.getJointTwist().getAngularPart().length() > MAX_ROT_ACCEL)
+            if (joint.getJointTwist().getAngularPart().norm() > MAX_ROT_ACCEL)
                throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
-            if (joint.getJointTwist().getLinearPart().length() > MAX_TRANS_ACCEL)
+            if (joint.getJointTwist().getLinearPart().norm() > MAX_TRANS_ACCEL)
                throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
          });
 

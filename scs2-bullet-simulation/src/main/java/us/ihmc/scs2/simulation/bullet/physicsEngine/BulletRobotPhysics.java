@@ -9,7 +9,6 @@ import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 
 public class BulletRobotPhysics
 {
-   private final RobotInterface owner;
    private final ReferenceFrame inertialFrame;
 
    private final RigidBodyWrenchRegistry rigidBodyWrenchRegistry = new RigidBodyWrenchRegistry();
@@ -18,7 +17,6 @@ public class BulletRobotPhysics
 
    public BulletRobotPhysics(RobotInterface owner)
    {
-      this.owner = owner;
       inertialFrame = owner.getInertialFrame();
 
       SimRigidBodyBasics rootBody = owner.getRootBody();

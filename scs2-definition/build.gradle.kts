@@ -12,12 +12,12 @@ ihmc {
 }
 
 mainDependencies {
-   api("us.ihmc:euclid:0.17.2")
-   api("us.ihmc:euclid-shape:0.17.2")
-   api("us.ihmc:euclid-frame:0.17.2")
-   api("us.ihmc:ihmc-commons:0.30.6")
-   api("us.ihmc:ihmc-yovariables:0.9.13")
-   api("us.ihmc:mecano:0.11.1")
+   api("us.ihmc:euclid:0.19.0")
+   api("us.ihmc:euclid-shape:0.19.0")
+   api("us.ihmc:euclid-frame:0.19.0")
+   api("us.ihmc:ihmc-commons:0.31.0")
+   api("us.ihmc:ihmc-yovariables:0.9.16")
+   api("us.ihmc:mecano:17-0.11.5")
 }
 
 testDependencies {

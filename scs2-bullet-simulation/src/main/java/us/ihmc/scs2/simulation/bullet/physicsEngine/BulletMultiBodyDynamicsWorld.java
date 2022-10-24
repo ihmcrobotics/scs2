@@ -15,6 +15,9 @@ import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import org.bytedeco.bullet.LinearMath.btVector3;
 
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletContactSolverInfoParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
 
 public class BulletMultiBodyDynamicsWorld
 {

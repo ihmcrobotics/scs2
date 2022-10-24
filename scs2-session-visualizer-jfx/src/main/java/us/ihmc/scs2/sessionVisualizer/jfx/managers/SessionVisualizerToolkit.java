@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -18,6 +19,7 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -41,9 +43,9 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final CameraSensorsManager cameraSensorsManager;
 
    private final BackgroundExecutorManager backgroundExecutorManager = new BackgroundExecutorManager(4);
-   private final EnvironmentManager environmentManager = new EnvironmentManager(backgroundExecutorManager);
    private final ReferenceFrameManager referenceFrameManager = new ReferenceFrameManager(yoManager, backgroundExecutorManager);
    private final YoRobotFXManager yoRobotFXManager;
+   private final EnvironmentManager environmentManager;
    private final SecondaryWindowManager secondaryWindowManager;
 
    private final Stage mainWindow;
@@ -53,6 +55,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final ObjectProperty<Session> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
    private final ObservableList<RobotDefinition> sessionRobotDefinitions = FXCollections.observableArrayList();
    private final ObservableList<TerrainObjectDefinition> sessionTerrainObjectDefinitions = FXCollections.observableArrayList();
+   private final ConcurrentLinkedQueue<SessionChangeListener> sessionChangeListeners = new ConcurrentLinkedQueue<>();
 
    public SessionVisualizerToolkit(Stage mainWindow, SubScene mainScene3D, Group mainView3DRoot) throws Exception
    {
@@ -75,6 +78,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoCompositeSearchManager = new YoCompositeSearchManager(messager, topics, yoManager, backgroundExecutorManager);
       keyFrameManager = new KeyFrameManager(messager, topics);
       yoRobotFXManager = new YoRobotFXManager(messager, topics, yoManager, referenceFrameManager, backgroundExecutorManager);
+      environmentManager = new EnvironmentManager(messager, topics, backgroundExecutorManager);
       secondaryWindowManager = new SecondaryWindowManager(this);
       cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, messager, topics, yoRobotFXManager);
 
@@ -98,7 +102,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
    public void startSession(Session session, Runnable sessionLoadedCallback)
    {
-      if (activeSessionProperty.get() != null)
+      Session oldSession = activeSessionProperty.get();
+      if (oldSession != null)
       {
          LogTools.warn("Session already in progress. Stop the current session before starting a new one.");
          return;
@@ -143,6 +148,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
          {
             if (sessionLoadedCallback != null)
                sessionLoadedCallback.run();
+            sessionChangeListeners.forEach(listener -> listener.sessionChanged(oldSession, session));
          }
       });
 
@@ -151,7 +157,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
    public void stopSession(boolean shutdownSession)
    {
-      if (activeSessionProperty.get() == null)
+      Session oldSession = activeSessionProperty.get();
+      if (oldSession == null)
          return;
 
       activeSessionProperty.set(null);
@@ -173,6 +180,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
       if (shutdownSession)
          messager.submitMessage(topics.getSessionCurrentState(), SessionState.INACTIVE);
+      sessionChangeListeners.forEach(listener -> listener.sessionChanged(oldSession, null));
    }
 
    public boolean hasActiveSession()
@@ -183,6 +191,16 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public Session getSession()
    {
       return activeSessionProperty.get();
+   }
+
+   public void addSessionChangedListener(SessionChangeListener listener)
+   {
+      sessionChangeListeners.add(listener);
+   }
+
+   public boolean removeSessionChangedListener(SessionChangeListener listener)
+   {
+      return sessionChangeListeners.remove(listener);
    }
 
    @Override

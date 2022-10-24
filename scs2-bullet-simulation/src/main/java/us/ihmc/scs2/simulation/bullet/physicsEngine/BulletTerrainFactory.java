@@ -7,7 +7,7 @@ import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 
-public class BulletTerrainFactory
+public interface BulletTerrainFactory
 {
    public static BulletTerrainObject newInstance(TerrainObjectDefinition terrainObjectDefinition)
    {

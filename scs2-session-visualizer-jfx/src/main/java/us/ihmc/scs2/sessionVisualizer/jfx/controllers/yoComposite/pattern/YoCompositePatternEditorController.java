@@ -42,7 +42,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.UIElement;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupModelEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
@@ -202,11 +202,11 @@ public class YoCompositePatternEditorController implements UIElement
          startEditingComponentIdentifier(index);
          return NEW_COMPONENT_IDENTIFIER + index;
       };
-      ContextMenuTools.setupContextMenu(componentIdentifiersListView,
+      MenuTools.setupContextMenu(componentIdentifiersListView,
                                         addBeforeMenuItemFactory(addAction),
                                         addAfterMenuItemFactory(addAction),
                                         removeMenuItemFactory(false));
-      ContextMenuTools.setupContextMenu(chartGroupModelEditorListView,
+      MenuTools.setupContextMenu(chartGroupModelEditorListView,
                                         addBeforeMenuItemFactory(() -> newYoChartGroupModelEditor()),
                                         addAfterMenuItemFactory(() -> newYoChartGroupModelEditor()),
                                         removeMenuItemFactory(false));

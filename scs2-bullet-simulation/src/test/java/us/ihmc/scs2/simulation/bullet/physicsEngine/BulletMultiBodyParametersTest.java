@@ -6,6 +6,7 @@ import java.util.Random;
 import org.bytedeco.bullet.BulletDynamics.btMultiBody;
 import org.bytedeco.bullet.LinearMath.btVector3;
 import org.junit.jupiter.api.Test;
+import us.ihmc.log.LogTools;
 
 public class BulletMultiBodyParametersTest
 {

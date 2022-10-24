@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
@@ -41,6 +43,7 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic2DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
@@ -627,15 +630,29 @@ public class YoGraphicTools
                                          YoPolynomialFX3D yoGraphicFXToPack)
    {
       toYoGraphicFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
-      yoGraphicFXToPack.setCoefficientsX(CompositePropertyTools.toDoublePropertyList(yoVariableDatabase, definition.getCoefficientsX()));
-      yoGraphicFXToPack.setCoefficientsY(CompositePropertyTools.toDoublePropertyList(yoVariableDatabase, definition.getCoefficientsY()));
-      yoGraphicFXToPack.setCoefficientsZ(CompositePropertyTools.toDoublePropertyList(yoVariableDatabase, definition.getCoefficientsZ()));
-      yoGraphicFXToPack.setNumberOfCoefficientsX(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfCoefficientsX()));
-      yoGraphicFXToPack.setNumberOfCoefficientsY(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfCoefficientsY()));
-      yoGraphicFXToPack.setNumberOfCoefficientsZ(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfCoefficientsZ()));
+      YoListDefinition coefficientsX = definition.getCoefficientsX();
+      YoListDefinition coefficientsY = definition.getCoefficientsY();
+      YoListDefinition coefficientsZ = definition.getCoefficientsZ();
+      yoGraphicFXToPack.setCoefficientsX(CompositePropertyTools.toDoublePropertyList(yoVariableDatabase,
+                                                                                     coefficientsX == null ? null : coefficientsX.getElements()));
+      yoGraphicFXToPack.setCoefficientsY(CompositePropertyTools.toDoublePropertyList(yoVariableDatabase,
+                                                                                     coefficientsY == null ? null : coefficientsY.getElements()));
+      yoGraphicFXToPack.setCoefficientsZ(CompositePropertyTools.toDoublePropertyList(yoVariableDatabase,
+                                                                                     coefficientsZ == null ? null : coefficientsZ.getElements()));
+      yoGraphicFXToPack.setNumberOfCoefficientsX(CompositePropertyTools.toIntegerProperty(yoVariableDatabase,
+                                                                                          coefficientsX == null ? null : coefficientsX.getSize()));
+      yoGraphicFXToPack.setNumberOfCoefficientsY(CompositePropertyTools.toIntegerProperty(yoVariableDatabase,
+                                                                                          coefficientsY == null ? null : coefficientsY.getSize()));
+      yoGraphicFXToPack.setNumberOfCoefficientsZ(CompositePropertyTools.toIntegerProperty(yoVariableDatabase,
+                                                                                          coefficientsZ == null ? null : coefficientsZ.getSize()));
+      yoGraphicFXToPack.setReferenceFrame(CompositePropertyTools.toReferenceFrameProperty(yoVariableDatabase,
+                                                                                          referenceFrameManager,
+                                                                                          definition.getReferenceFrame()));
       yoGraphicFXToPack.setStartTime(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getStartTime()));
       yoGraphicFXToPack.setEndTime(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getEndTime()));
       yoGraphicFXToPack.setSize(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getSize()));
+      yoGraphicFXToPack.setTimeResolution(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getTimeResolution()));
+      yoGraphicFXToPack.setNumberOfDivisions(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfDivisions()));
    }
 
    public static YoCoordinateSystemFX3D toYoCoordinateSystemFX3D(YoVariableDatabase yoVariableDatabase,
@@ -688,9 +705,9 @@ public class YoGraphicTools
    }
 
    public static YoConvexPolytopeFX3D toYoConvexPolytopeFX3D(YoVariableDatabase yoVariableDatabase,
-                                                               YoGraphicFXResourceManager resourceManager,
-                                                               ReferenceFrameManager referenceFrameManager,
-                                                               YoGraphicConvexPolytope3DDefinition definition)
+                                                             YoGraphicFXResourceManager resourceManager,
+                                                             ReferenceFrameManager referenceFrameManager,
+                                                             YoGraphicConvexPolytope3DDefinition definition)
    {
       YoConvexPolytopeFX3D yoGraphicFX = new YoConvexPolytopeFX3D();
       toYoConvexPolytopeFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFX);
@@ -698,10 +715,10 @@ public class YoGraphicTools
    }
 
    public static void toYoConvexPolytopeFX3D(YoVariableDatabase yoVariableDatabase,
-                                              YoGraphicFXResourceManager resourceManager,
-                                              ReferenceFrameManager referenceFrameManager,
-                                              YoGraphicConvexPolytope3DDefinition definition,
-                                              YoConvexPolytopeFX3D yoGraphicFXToPack)
+                                             YoGraphicFXResourceManager resourceManager,
+                                             ReferenceFrameManager referenceFrameManager,
+                                             YoGraphicConvexPolytope3DDefinition definition,
+                                             YoConvexPolytopeFX3D yoGraphicFXToPack)
    {
       toYoGraphicFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
       yoGraphicFXToPack.setPosition(CompositePropertyTools.toTuple3DProperty(yoVariableDatabase, referenceFrameManager, definition.getPosition()));
@@ -1125,7 +1142,9 @@ public class YoGraphicTools
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
       yoGraphicFX.setThickness(geometryDefinition.getTopZ() - geometryDefinition.getBottomZ());
-      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices().stream().map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
+      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices()
+                                                .stream()
+                                                .map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
                                                 .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getPolygonVertices().size());
       return yoGraphicFX;
@@ -1140,8 +1159,11 @@ public class YoGraphicTools
       yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
-      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope().getVertices().stream()
-                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).collect(Collectors.toList()));
+      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope()
+                                                .getVertices()
+                                                .stream()
+                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ()))
+                                                .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getConvexPolytope().getNumberOfVertices());
       return yoGraphicFX;
    }
@@ -1432,17 +1454,25 @@ public class YoGraphicTools
 
       definition.setName(yoGraphicFX.getName());
       definition.setVisible(yoGraphicFX.isVisible());
-      definition.setCoefficientsX(CompositePropertyTools.toDoublePropertyNames(yoGraphicFX.getCoefficientsX()));
-      definition.setCoefficientsY(CompositePropertyTools.toDoublePropertyNames(yoGraphicFX.getCoefficientsY()));
-      definition.setCoefficientsZ(CompositePropertyTools.toDoublePropertyNames(yoGraphicFX.getCoefficientsZ()));
-      definition.setNumberOfCoefficientsX(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfCoefficientsX()));
-      definition.setNumberOfCoefficientsY(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfCoefficientsY()));
-      definition.setNumberOfCoefficientsZ(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfCoefficientsZ()));
+      definition.setCoefficientsX(toYoDoubleListDefinition(yoGraphicFX.getCoefficientsX(), yoGraphicFX.getNumberOfCoefficientsX()));
+      definition.setCoefficientsY(toYoDoubleListDefinition(yoGraphicFX.getCoefficientsY(), yoGraphicFX.getNumberOfCoefficientsY()));
+      definition.setCoefficientsZ(toYoDoubleListDefinition(yoGraphicFX.getCoefficientsZ(), yoGraphicFX.getNumberOfCoefficientsZ()));
+      definition.setReferenceFrame(CompositePropertyTools.toReferenceFramePropertyName(yoGraphicFX.getReferenceFrame()));
       definition.setStartTime(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStartTime()));
       definition.setEndTime(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getEndTime()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
+      definition.setTimeResolution(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getTimeResolution()));
+      definition.setNumberOfDivisions(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfDivisions()));
       definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
 
+      return definition;
+   }
+
+   public static YoListDefinition toYoDoubleListDefinition(List<? extends DoubleProperty> elements, IntegerProperty size)
+   {
+      YoListDefinition definition = new YoListDefinition();
+      definition.setElements(CompositePropertyTools.toDoublePropertyNames(elements));
+      definition.setSize(CompositePropertyTools.toIntegerPropertyName(size));
       return definition;
    }
 

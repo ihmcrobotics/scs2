@@ -4,10 +4,8 @@ import java.lang.ref.WeakReference;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.DoublePropertyBase;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleDoubleProperty;
 import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -18,8 +16,6 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
    private final YoDouble yoDouble;
    private final Object bean;
    private final YoVariableChangedListener propertyUpdater = new YoDoublePropertyUpdater(this);
-
-   private SimpleDoubleProperty lastUserInput;
 
    private LinkedYoDouble linkedBuffer;
 
@@ -36,20 +32,18 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
       yoDouble.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoDouble linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
-         linkedBuffer.addUser(userObject);
+      {
+         linkedBuffer.addUser(this);
+         pullYoDoubleValue();
+      }
    }
 
    @Override
@@ -61,11 +55,17 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
    @Override
    public void finalize()
    {
+      dispose();
+   }
+
+   @Override
+   public void dispose()
+   {
       try
       {
          yoDouble.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+            linkedBuffer.removeUser(this);
       }
       finally
       {
@@ -75,15 +75,8 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
    @Override
    public void set(double newValue)
    {
-      if (lastUserInput != null)
-         lastUserInput.set(newValue);
       super.set(newValue);
       yoDouble.set(newValue);
-   }
-
-   public void setAndPush(double newValue)
-   {
-      set(newValue);
       if (linkedBuffer != null)
          linkedBuffer.push();
    }
@@ -116,17 +109,9 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
             return;
 
          updatingThis.setTrue();
-         setAndPush(newValue.doubleValue());
+         set(newValue.doubleValue());
          updatingThis.setFalse();
       });
-   }
-
-   @Override
-   public DoubleProperty userInputProperty()
-   {
-      if (lastUserInput == null)
-         lastUserInput = new SimpleDoubleProperty(this, getName() + "LastUserInput", get());
-      return lastUserInput;
    }
 
    @Override

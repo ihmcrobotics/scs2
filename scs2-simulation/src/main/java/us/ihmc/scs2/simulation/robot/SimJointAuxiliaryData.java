@@ -60,13 +60,6 @@ public class SimJointAuxiliaryData
          wrenchSensors.get(i).update(physicsOutput);
       for (int i = 0; i < cameraSensors.size(); i++)
          cameraSensors.get(i).update(physicsOutput);
-         
-      //kinematicPoints.forEach(kp -> kp.update());
-      //externalWrenchPoints.forEach(ewp -> ewp.update());
-      //groundContactPoints.forEach(gcp -> gcp.update());
-      //imuSensors.forEach(imu -> imu.update(physicsOutput));
-      //wrenchSensors.forEach(wrench -> wrench.update(physicsOutput));
-      //cameraSensors.forEach(camera -> camera.update(physicsOutput));
    }
 
    public KinematicPoint addKinematicPoint(String name)

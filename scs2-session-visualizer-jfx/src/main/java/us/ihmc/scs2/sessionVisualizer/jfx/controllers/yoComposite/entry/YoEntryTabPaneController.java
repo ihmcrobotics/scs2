@@ -31,7 +31,7 @@ import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
@@ -59,7 +59,7 @@ public class YoEntryTabPaneController
       initialListViewController.nameProperty().bindBidirectional(initialTabHeader.textProperty());
 
       tabToControllerMap.put(initialTab, initialListViewController);
-      ContextMenuTools.setupContextMenu(yoEntryTabPane,
+      MenuTools.setupContextMenu(yoEntryTabPane,
                                         TabPaneTools.addBeforeMenuItemFactory(this::newEmptyTab),
                                         TabPaneTools.addAfterMenuItemFactory(this::newEmptyTab),
                                         TabPaneTools.removeMenuItemFactory(),

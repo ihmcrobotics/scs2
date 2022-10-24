@@ -473,6 +473,7 @@ public class SharedMemoryIOTools
       });
 
       Mat5.writeToFile(matFile, outputFile);
+      rootStruct.close();
    }
 
    private static void writeBuffer(Object buffer, Matrix matrix, int start, int length)

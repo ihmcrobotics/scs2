@@ -8,6 +8,7 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
@@ -18,7 +19,9 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -34,6 +37,8 @@ public class SessionVisualizerTopics
    private Topic<Object> forgetRecordable;
    private Topic<Boolean> showAdvancedControls;
    private Topic<Boolean> showOverheadPlotter;
+   private Topic<NewRobotVisualRequest> robotVisualRequest;
+   private Topic<NewTerrainVisualRequest> terrainVisualRequest;
    private Topic<NewWindowRequest> openWindowRequest;
    private Topic<Boolean> sessionVisualizerCloseRequest;
 
@@ -52,6 +57,7 @@ public class SessionVisualizerTopics
    private Topic<File> yoGraphicLoadRequest;
    private Topic<File> yoGraphicSaveRequest;
    private Topic<YoGraphicDefinition> addYoGraphicRequest;
+   private Topic<YoTuple2DDefinition> plotter2DTrackCoordinateRequest;
 
    private Topic<Pair<Window, Double>> yoChartZoomFactor;
    private Topic<Pair<Window, Boolean>> yoChartRequestZoomIn, yoChartRequestZoomOut;
@@ -107,6 +113,8 @@ public class SessionVisualizerTopics
       forgetRecordable = SessionVisualizerMessagerAPI.ForgetRecordable;
       showAdvancedControls = SessionVisualizerMessagerAPI.ShowAdvancedControls;
       showOverheadPlotter = SessionVisualizerMessagerAPI.ShowOverheadPlotter;
+      robotVisualRequest = SessionVisualizerMessagerAPI.RobotVisualRequest;
+      terrainVisualRequest = SessionVisualizerMessagerAPI.TerrainVisualRequest;
       openWindowRequest = SessionVisualizerMessagerAPI.OpenWindowRequest;
       sessionVisualizerCloseRequest = SessionVisualizerMessagerAPI.SessionVisualizerCloseRequest;
 
@@ -127,6 +135,7 @@ public class SessionVisualizerTopics
       yoGraphicLoadRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicLoadRequest;
       yoGraphicSaveRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicSaveRequest;
       addYoGraphicRequest = SessionVisualizerMessagerAPI.YoGraphic.AddYoGraphicRequest;
+      plotter2DTrackCoordinateRequest = SessionVisualizerMessagerAPI.YoGraphic.Plotter2DTrackCoordinateRequest;
 
       yoChartZoomFactor = SessionVisualizerMessagerAPI.YoChart.YoChartZoomFactor;
       yoChartRequestZoomIn = SessionVisualizerMessagerAPI.YoChart.YoChartRequestZoomIn;
@@ -215,6 +224,16 @@ public class SessionVisualizerTopics
       return showOverheadPlotter;
    }
 
+   public Topic<NewRobotVisualRequest> getRobotVisualRequest()
+   {
+      return robotVisualRequest;
+   }
+
+   public Topic<NewTerrainVisualRequest> getTerrainVisualRequest()
+   {
+      return terrainVisualRequest;
+   }
+
    public Topic<NewWindowRequest> getOpenWindowRequest()
    {
       return openWindowRequest;
@@ -298,6 +317,11 @@ public class SessionVisualizerTopics
    public Topic<YoGraphicDefinition> getAddYoGraphicRequest()
    {
       return addYoGraphicRequest;
+   }
+
+   public Topic<YoTuple2DDefinition> getPlotter2DTrackCoordinateRequest()
+   {
+      return plotter2DTrackCoordinateRequest;
    }
 
    public Topic<Pair<Window, Double>> getYoChartZoomFactor()

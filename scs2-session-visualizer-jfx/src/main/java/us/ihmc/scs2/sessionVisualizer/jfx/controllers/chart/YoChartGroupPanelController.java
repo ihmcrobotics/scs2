@@ -122,6 +122,7 @@ public class YoChartGroupPanelController implements VisualizerController
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       messager.submitMessage(topics.getRegisterRecordable(), mainPane);
+      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m -> mainPane.setDisable(m));
 
       toolkit.getWindow().iconifiedProperty().addListener((o, oldValue, newValue) ->
       {
@@ -264,7 +265,8 @@ public class YoChartGroupPanelController implements VisualizerController
       {
          int excess = chartControllers.size() - preferredNumberOfCharts;
 
-         ArrayDeque<YoChartPanelController> emptyCharts = chartControllers.stream().filter(YoChartPanelController::isEmpty)
+         ArrayDeque<YoChartPanelController> emptyCharts = chartControllers.stream()
+                                                                          .filter(YoChartPanelController::isEmpty)
                                                                           .collect(Collectors.toCollection(ArrayDeque::new));
 
          if (!emptyCharts.isEmpty())
@@ -624,14 +626,19 @@ public class YoChartGroupPanelController implements VisualizerController
 
    public List<YoChartPanelController> controllersInConfigurations(List<? extends ChartGroupModel> configurations)
    {
-      return configurations.stream().flatMap(config -> config.getChartIdentifiers().stream()).distinct().map(this::getChartController)
+      return configurations.stream()
+                           .flatMap(config -> config.getChartIdentifiers().stream())
+                           .distinct()
+                           .map(this::getChartController)
                            .collect(Collectors.toList());
    }
 
    private List<ChartGroupLayout> shiftConfigurationsToSelectedChart(YoChartPanelController selectedChart, List<ChartGroupLayout> layouts)
    {
       ChartIdentifier selectedId = getChartIdentifier(selectedChart);
-      return layouts.stream().map(config -> config.shift(selectedId.getRow(), selectedId.getColumn())).filter(this::doesConfigurationFit)
+      return layouts.stream()
+                    .map(config -> config.shift(selectedId.getRow(), selectedId.getColumn()))
+                    .filter(this::doesConfigurationFit)
                     .collect(Collectors.toList());
 
    }
@@ -697,7 +704,8 @@ public class YoChartGroupPanelController implements VisualizerController
       definition.setName(chartGroupName.get());
       definition.setNumberOfRows(numberOfRows.get());
       definition.setNumberOfColumns(numberOfCols.get());
-      definition.setChartConfigurations(chartControllers.stream().map(chart -> chart.toYoChartConfigurationDefinition(getChartIdentifier(chart)))
+      definition.setChartConfigurations(chartControllers.stream()
+                                                        .map(chart -> chart.toYoChartConfigurationDefinition(getChartIdentifier(chart)))
                                                         .collect(Collectors.toList()));
       return definition;
    }

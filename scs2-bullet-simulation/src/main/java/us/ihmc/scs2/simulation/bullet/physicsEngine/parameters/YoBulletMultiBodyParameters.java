@@ -1,4 +1,4 @@
-package us.ihmc.scs2.simulation.bullet.physicsEngine;
+package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;

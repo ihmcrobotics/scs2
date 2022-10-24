@@ -4,10 +4,8 @@ import java.lang.ref.WeakReference;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import javafx.beans.property.LongProperty;
 import javafx.beans.property.LongPropertyBase;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleLongProperty;
 import us.ihmc.scs2.sharedMemory.LinkedYoLong;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.variable.YoLong;
@@ -18,8 +16,6 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
    private final YoLong yoLong;
    private final Object bean;
    private final YoVariableChangedListener propertyUpdater = new YoLongPropertyUpdater(this);
-
-   private SimpleLongProperty lastUserInput;
 
    private LinkedYoLong linkedBuffer;
 
@@ -36,20 +32,18 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
       yoLong.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoLong linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
-         linkedBuffer.addUser(userObject);
+      {
+         linkedBuffer.addUser(this);
+         pullYoLongValue();
+      }
    }
 
    @Override
@@ -61,11 +55,20 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
    @Override
    public void finalize()
    {
+      dispose();
+   }
+
+   @Override
+   public void dispose()
+   {
       try
       {
          yoLong.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+         {
+            linkedBuffer.removeUser(this);
+            pullYoLongValue();
+         }
       }
       finally
       {
@@ -75,15 +78,8 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
    @Override
    public void set(long newValue)
    {
-      if (lastUserInput != null)
-         lastUserInput.set(newValue);
       super.set(newValue);
       yoLong.set(newValue);
-   }
-
-   public void setAndPush(long newValue)
-   {
-      set(newValue);
       if (linkedBuffer != null)
          linkedBuffer.push();
    }
@@ -116,17 +112,9 @@ public class YoLongProperty extends LongPropertyBase implements YoVariableProper
             return;
 
          updatingThis.setTrue();
-         setAndPush(newValue.longValue());
+         set(newValue.longValue());
          updatingThis.setFalse();
       });
-   }
-
-   @Override
-   public LongProperty userInputProperty()
-   {
-      if (lastUserInput == null)
-         lastUserInput = new SimpleLongProperty(this, getName() + "LastUserInput", get());
-      return lastUserInput;
    }
 
    @Override

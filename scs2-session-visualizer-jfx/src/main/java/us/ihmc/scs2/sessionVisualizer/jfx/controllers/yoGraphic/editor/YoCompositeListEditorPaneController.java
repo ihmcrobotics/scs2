@@ -54,6 +54,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoCompositeListTextField;
@@ -62,7 +63,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextFie
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
@@ -204,7 +205,7 @@ public class YoCompositeListEditorPaneController
       });
 
       listView.setOnDragDetected(this::handleDragDetected);
-      ContextMenuTools.setupContextMenu(listView,
+      MenuTools.setupContextMenu(listView,
                                         addBeforeMenuItemFactory(this::newYoCompositeEditor),
                                         addAfterMenuItemFactory(this::newYoCompositeEditor),
                                         removeMenuItemFactory(false));
@@ -293,6 +294,31 @@ public class YoCompositeListEditorPaneController
       }
 
       numberOfCompositesTextField.setText(numberOfComposites);
+   }
+
+   public void setInputSingletonComposites(YoListDefinition input)
+   {
+      ObservableList<YoCompositeEditorPaneController> listViewItems = listView.getItems();
+
+      if (input.getElements() == null)
+      {
+         listViewItems.clear();
+      }
+      else
+      {
+         while (listViewItems.size() < input.getElements().size())
+            listViewItems.add(newYoCompositeEditor());
+
+         while (listViewItems.size() > input.getElements().size())
+            listViewItems.remove(listViewItems.size() - 1);
+
+         for (int i = 0; i < listViewItems.size(); i++)
+         {
+            listViewItems.get(i).setInput(input.getElements().get(i));
+         }
+      }
+
+      numberOfCompositesTextField.setText(input.getSize());
    }
 
    public void setInputSingletonComposites(List<String> input, String numberOfComposites)

@@ -20,6 +20,8 @@ import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;

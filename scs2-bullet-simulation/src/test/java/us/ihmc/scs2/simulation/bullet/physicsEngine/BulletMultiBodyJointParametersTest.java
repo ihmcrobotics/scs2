@@ -8,6 +8,8 @@ import org.bytedeco.bullet.LinearMath.btQuaternion;
 import org.bytedeco.bullet.LinearMath.btVector3;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
 
 public class BulletMultiBodyJointParametersTest
 {

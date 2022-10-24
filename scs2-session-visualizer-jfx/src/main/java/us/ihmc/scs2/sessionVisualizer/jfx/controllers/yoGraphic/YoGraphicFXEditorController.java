@@ -9,6 +9,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableBooleanValue;
@@ -17,10 +18,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeListEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoReferenceFrameTextField;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
@@ -73,7 +77,17 @@ public abstract class YoGraphicFXEditorController<G extends YoGraphicFX> impleme
       textField.textProperty().addListener(this::updateHasChangesPendingProperty);
       inputsValidityProperty = Bindings.and(inputsValidityProperty, yoDoubleTextField.getValidityProperty());
    }
-   
+
+   protected void setupReferenceFramePropertyEditor(TextField textField, ImageView validImageView, BiConsumer<G, Property<ReferenceFrame>> setter)
+   {
+      ReferenceFrameManager referenceFrameManager = toolkit.getReferenceFrameManager();
+      YoReferenceFrameTextField yoReferenceFrameTextField = new YoReferenceFrameTextField(textField, referenceFrameManager, validImageView);
+      yoReferenceFrameTextField.setupAutoCompletion();
+      yoReferenceFrameTextField.supplierProperty().addListener((o, oldValue, newValue) -> setter.accept(yoGraphicToEdit, newValue));
+      textField.textProperty().addListener(this::updateHasChangesPendingProperty);
+      inputsValidityProperty = Bindings.and(inputsValidityProperty, yoReferenceFrameTextField.getValidityProperty());
+   }
+
    protected void setupTuple2DPropertyEditor(YoCompositeEditorPaneController editor,
                                              String entryName,
                                              boolean setupReferenceFrame,

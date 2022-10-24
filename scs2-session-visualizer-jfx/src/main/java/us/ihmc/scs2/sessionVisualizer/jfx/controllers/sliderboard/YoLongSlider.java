@@ -32,7 +32,7 @@ public class YoLongSlider implements YoVariableSlider
    public YoLongSlider(YoLong yoLong, LinkedYoRegistry linkedYoRegistry)
    {
       yoLongProperty = new YoLongProperty(yoLong, this);
-      yoLongProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoLong));
+      yoLongProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoLong, yoLongProperty));
    }
 
    @Override
@@ -105,7 +105,7 @@ public class YoLongSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoLongSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoLongProperty.setAndPush(virtualSlider.valueProperty().getValue().longValue());
+            yoLongProperty.set(virtualSlider.valueProperty().getValue().longValue());
             updating.setFalse();
          });
       };
@@ -191,7 +191,7 @@ public class YoLongSlider implements YoVariableSlider
          JavaFXMissingTools.runLater(YoLongSlider.this.getClass(), () ->
          {
             updating.setTrue();
-            yoLongProperty.setAndPush(yoLongValue);
+            yoLongProperty.set(yoLongValue);
             updating.setFalse();
          });
       };
@@ -240,7 +240,7 @@ public class YoLongSlider implements YoVariableSlider
    @Override
    public void dispose()
    {
-      yoLongProperty.finalize();
+      yoLongProperty.dispose();
       cleanupTasks.forEach(Runnable::run);
    }
 }

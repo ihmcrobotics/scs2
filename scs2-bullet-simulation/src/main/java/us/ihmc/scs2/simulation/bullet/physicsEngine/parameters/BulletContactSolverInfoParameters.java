@@ -1,7 +1,8 @@
-package us.ihmc.scs2.simulation.bullet.physicsEngine;
+package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
 public class BulletContactSolverInfoParameters
 {
+   // @formatter:off
    private double tau;                                               //m_tau
    private double damping;                                           //m_damping - global non-contact constraint damping, can be locally overridden by constraints during 'getInfo2'.
    private double friction;                                          //m_friction
@@ -27,6 +28,7 @@ public class BulletContactSolverInfoParameters
    private double singleAxisRollingFrictionThreshold;                //m_singleAxisRollingFrictionThreshold - if the velocity is above this threshold, it will use a single constraint row (axis), otherwise 3 rows.
    private double leastSquaresResidualThreshold;                     //m_leastSquaresResidualThreshold
    private double restitutionVelocityThreshold;                      //m_restitutionVelocityThreshold - if the relative velocity is below this threshold, there is zero restitution
+   // @formatter:on
    
    public static int SOLVER_RANDMIZE_ORDER = 1;
    public static int SOLVER_FRICTION_SEPARATE = 2;
@@ -69,13 +71,13 @@ public class BulletContactSolverInfoParameters
       bulletContactSolverInfoParameters.setSingleAxisRollingFrictionThreshold(1e30f);
       bulletContactSolverInfoParameters.setLeastSquaresResidualThreshold(0);
       bulletContactSolverInfoParameters.setRestitutionVelocityThreshold(0.2);
-      
+
       return bulletContactSolverInfoParameters;
    }
-   
+
    public BulletContactSolverInfoParameters()
    {
- 
+
    }
 
    public double getTau()

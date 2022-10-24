@@ -14,6 +14,9 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletContactSolverInfoParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
+import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
@@ -169,7 +172,7 @@ public class BulletCoefficientOfRestitutionTest
          differenceFinalVelocity.set(finalVelocity1);
          differenceFinalVelocity.sub(finalVelocity2);
          
-         double calculatedCoefficientOfRestitution = differenceFinalVelocity.length() / differenceInitialVelocity.length();
+         double calculatedCoefficientOfRestitution = differenceFinalVelocity.norm() / differenceInitialVelocity.norm();
 
          assertEquals(coefficientOfRestitution * coefficientOfRestitution, calculatedCoefficientOfRestitution, EPSILON);
       }

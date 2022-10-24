@@ -54,5 +54,4 @@ public interface SimRigidBodyBasics extends RigidBodyBasics, SimRigidBodyReadOnl
          ((SimJointBasics) childrenJoints.get(childIndex)).updateAuxiliaryDataRecursively(physicsOutput);
       }
    }
-
 }

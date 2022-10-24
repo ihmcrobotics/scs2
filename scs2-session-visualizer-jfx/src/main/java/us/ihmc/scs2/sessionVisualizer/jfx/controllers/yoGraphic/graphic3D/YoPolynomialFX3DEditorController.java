@@ -16,9 +16,13 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
    @FXML
    private YoCompositeListEditorPaneController coefficientsXListEditorController, coefficientsYListEditorController, coefficientsZListEditorController;
    @FXML
+   private JFXTextField referenceFrameSearchTextField;
+   @FXML
    private JFXTextField startTimeTextField, endTimeTextField;
    @FXML
    private JFXTextField sizeTextField;
+   @FXML
+   private ImageView referenceFrameValidImageView;
    @FXML
    private ImageView startTimeValidImageView, endTimeValidImageView;
    @FXML
@@ -41,13 +45,14 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
       setupDoublePropertyListEditor(coefficientsYListEditorController,
                                     "Coefficent Y",
                                     "Coefficients Y",
-                                    yoGraphicToEdit::setNumberOfCoefficientsX,
+                                    yoGraphicToEdit::setNumberOfCoefficientsY,
                                     yoGraphicToEdit::setCoefficientsY);
       setupDoublePropertyListEditor(coefficientsZListEditorController,
                                     "Coefficent Z",
                                     "Coefficients Z",
-                                    yoGraphicToEdit::setNumberOfCoefficientsX,
+                                    yoGraphicToEdit::setNumberOfCoefficientsZ,
                                     yoGraphicToEdit::setCoefficientsZ);
+      setupReferenceFramePropertyEditor(referenceFrameSearchTextField, referenceFrameValidImageView, YoPolynomialFX3D::setReferenceFrame);
       setupDoublePropertyEditor(startTimeTextField, startTimeValidImageView, YoPolynomialFX3D::setStartTime);
       setupDoublePropertyEditor(endTimeTextField, endTimeValidImageView, YoPolynomialFX3D::setEndTime);
       setupDoublePropertyEditor(sizeTextField, sizeValidImageView, YoPolynomialFX3D::setSize);
@@ -67,10 +72,11 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
    @Override
    public void resetFields()
    {
-      coefficientsXListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsX(), definitionBeforeEdits.getNumberOfCoefficientsX());
-      coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY(), definitionBeforeEdits.getNumberOfCoefficientsY());
-      coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ(), definitionBeforeEdits.getNumberOfCoefficientsZ());
+      coefficientsXListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsX());
+      coefficientsYListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsY());
+      coefficientsZListEditorController.setInputSingletonComposites(definitionBeforeEdits.getCoefficientsZ());
       styleEditorController.setInput(definitionBeforeEdits);
+      referenceFrameSearchTextField.setText(definitionBeforeEdits.getReferenceFrame());
       startTimeTextField.setText(definitionBeforeEdits.getStartTime());
       endTimeTextField.setText(definitionBeforeEdits.getEndTime());
       sizeTextField.setText(definitionBeforeEdits.getSize());

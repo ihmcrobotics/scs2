@@ -104,6 +104,11 @@ public class LinkedYoRegistry extends LinkedBuffer
 
    public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink)
    {
+      return linkYoVariable(variableToLink, null);
+   }
+
+   public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink, Object initialUser)
+   {
       if (isDisposed)
          return null;
 
@@ -112,7 +117,7 @@ public class LinkedYoRegistry extends LinkedBuffer
       if (linkedYoVariable == null)
       {
          YoVariableBuffer yoVariableBuffer = yoRegistryBuffer.findYoVariableBuffer(variableToLink);
-         linkedYoVariable = yoVariableBuffer.newLinkedYoVariable(variableToLink);
+         linkedYoVariable = yoVariableBuffer.newLinkedYoVariable(variableToLink, initialUser);
          linkedYoVariable.addPushRequestListener(pushRequestForwarder);
          linkedYoVariables.add(linkedYoVariable);
       }

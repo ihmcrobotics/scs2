@@ -11,6 +11,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.shape.DrawMode;
 import javafx.util.Duration;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -23,7 +24,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.RigidBodyFrameNodeFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
-import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.SimJointAuxiliaryData;
@@ -33,7 +33,6 @@ import us.ihmc.scs2.simulation.robot.trackers.KinematicPoint;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoRobotFX
 {
@@ -108,8 +107,7 @@ public class YoRobotFX
       {
          if (var.getName().startsWith("q_"))
          { // Only link the YoVariables for the joint angles and root joint configuration.
-            LinkedYoVariable<YoVariable> linkYoVariable = robotLinkedYoRegistry.linkYoVariable(var);
-            linkYoVariable.addUser(this);
+            robotLinkedYoRegistry.linkYoVariable(var, this);
          }
       });
 
@@ -146,8 +144,7 @@ public class YoRobotFX
 
       for (YoDouble variable : offsetVariables)
       {
-         LinkedYoVariable<YoDouble> linkYoVariable = robotLinkedYoRegistry.linkYoVariable(variable);
-         linkYoVariable.addUser(this);
+         robotLinkedYoRegistry.linkYoVariable(variable, this);
       }
    }
 
@@ -162,6 +159,11 @@ public class YoRobotFX
             initialize = false;
          }
       }
+   }
+
+   public void setDrawMode(DrawMode drawMode)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> JavaFXMissingTools.setDrawModeRecursive(rootNode, drawMode));
    }
 
    public RigidBodyReadOnly getRootBody()
