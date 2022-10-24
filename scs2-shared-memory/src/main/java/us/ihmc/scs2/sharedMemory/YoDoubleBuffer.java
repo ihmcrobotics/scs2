@@ -53,9 +53,9 @@ public class YoDoubleBuffer extends YoVariableBuffer<YoDouble>
    }
 
    @Override
-   LinkedYoDouble newLinkedYoVariable(YoDouble variableToLink)
+   LinkedYoDouble newLinkedYoVariable(YoDouble variableToLink, Object initialUser)
    {
-      return new LinkedYoDouble(variableToLink, this);
+      return new LinkedYoDouble(variableToLink, this, initialUser);
    }
 
    @Override

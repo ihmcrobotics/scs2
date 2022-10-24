@@ -50,7 +50,7 @@ public abstract class Session
    private static final int DEFAULT_INITIAL_BUFFER_SIZE = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.initialsize", 8192);
    private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.recordtickperiod", 1);
    private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = SessionPropertiesHelper.loadBooleanProperty("scs2.session.runrealtime", false);
-   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 2.0);
+   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 1.0);
    private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = SessionPropertiesHelper.loadLongProperty("scs2.session.buffer.publishperiod",
                                                                                                       (long) (1.0 / 30.0 * 1.0e9));
 
@@ -897,6 +897,7 @@ public abstract class Session
       {
          pendingBufferIndexRequest.submit(bufferIndexRequest);
          processBufferRequests(true);
+         sharedBuffer.readBuffer();
       }
    }
 
@@ -924,6 +925,7 @@ public abstract class Session
       {
          pendingIncrementBufferIndexRequest.submit(incrementBufferIndexRequest);
          processBufferRequests(true);
+         sharedBuffer.readBuffer();
       }
    }
 
@@ -951,6 +953,7 @@ public abstract class Session
       {
          pendingDecrementBufferIndexRequest.submit(decrementBufferIndexRequest);
          processBufferRequests(true);
+         sharedBuffer.readBuffer();
       }
    }
 
@@ -1327,10 +1330,8 @@ public abstract class Session
       if (!sessionInitialized)
       {
          initializeSession();
-         // Not sure why we wouldn't want that when starting in RUNNING.
          // When running simulation, the session starts in PAUSE, writing in the buffer allows to write the robot initial state.
-         if (currentMode == SessionMode.PAUSE || currentMode == SessionMode.PLAYBACK)
-            sharedBuffer.writeBuffer();
+         sharedBuffer.writeBuffer();
          sessionInitialized = true;
       }
 

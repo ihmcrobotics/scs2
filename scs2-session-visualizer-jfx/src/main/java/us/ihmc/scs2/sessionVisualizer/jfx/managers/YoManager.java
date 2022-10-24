@@ -95,9 +95,9 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       return linkedYoVariableFactory.newLinkedYoRegistry(registry);
    }
 
-   public LinkedYoVariable<?> newLinkedYoVariable(YoVariable yoVariable)
+   public LinkedYoVariable<?> newLinkedYoVariable(YoVariable yoVariable, Object initialUser)
    {
-      return linkedYoVariableFactory.newLinkedYoVariable(yoVariable);
+      return linkedYoVariableFactory.newLinkedYoVariable(yoVariable, initialUser);
    }
 
    public YoRegistry getRootRegistry()
@@ -158,7 +158,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       }
 
       YoDoubleProperty property = new YoDoubleProperty(variable);
-      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable, property));
       return property;
    }
 
@@ -178,7 +178,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       }
 
       YoIntegerProperty property = new YoIntegerProperty(variable);
-      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable, property));
       return property;
    }
 
@@ -198,7 +198,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       }
 
       YoLongProperty property = new YoLongProperty(variable);
-      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable, property));
       return property;
    }
 
@@ -218,7 +218,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       }
 
       YoBooleanProperty property = new YoBooleanProperty(variable);
-      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable, property));
       return property;
    }
 
@@ -239,7 +239,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       }
 
       YoEnumAsStringProperty<E> property = new YoEnumAsStringProperty<>(variable);
-      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable));
+      property.setLinkedBuffer(linkedRootRegistry.linkYoVariable(variable, property));
       return property;
    }
 

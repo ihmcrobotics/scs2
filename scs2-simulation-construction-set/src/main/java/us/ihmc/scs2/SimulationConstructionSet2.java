@@ -4,7 +4,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import javafx.application.Platform;
@@ -33,6 +32,7 @@ import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.SimulationSessionControls;
+import us.ihmc.scs2.simulation.SimulationTerminalCondition;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
 import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParameters;
@@ -761,14 +761,14 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
-   public void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
+   public void addExternalTerminalCondition(SimulationTerminalCondition... externalTerminalConditions)
    {
       simulationSessionControls.addExternalTerminalCondition(externalTerminalConditions);
    }
 
    /** {@inheritDoc} */
    @Override
-   public boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+   public boolean removeExternalTerminalCondition(SimulationTerminalCondition externalTerminalCondition)
    {
       return simulationSessionControls.removeExternalTerminalCondition(externalTerminalCondition);
    }
@@ -1011,6 +1011,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void showOverheadPlotter2D(boolean show)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.showOverheadPlotter2D(show));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestPlotter2DCoordinateTracking(xVariableName, yVariableName, frameName));
    }
 
    /** {@inheritDoc} */

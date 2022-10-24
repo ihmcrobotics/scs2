@@ -151,7 +151,7 @@ public class YoIntegerBufferTest
       {
          YoIntegerBuffer yoIntegerBuffer = SharedMemoryRandomTools.nextYoIntegerBuffer(random, new YoRegistry("Dummy"));
          YoInteger linkedInteger = new YoInteger("linked", new YoRegistry("Dummy"));
-         LinkedYoInteger linkedYoVariable = yoIntegerBuffer.newLinkedYoVariable(linkedInteger);
+         LinkedYoInteger linkedYoVariable = yoIntegerBuffer.newLinkedYoVariable(linkedInteger, null);
          assertTrue(linkedInteger == linkedYoVariable.getLinkedYoVariable());
          assertTrue(yoIntegerBuffer == linkedYoVariable.getBuffer());
       }

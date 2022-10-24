@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
@@ -21,6 +22,7 @@ import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -139,6 +141,23 @@ public class VideoRecordingManager
             {
                try
                {
+                  if (!request.getFile().exists())
+                  {
+                     File parent = request.getFile().getCanonicalFile().getParentFile();
+
+                     if (parent != null && !parent.mkdirs() && !parent.isDirectory())
+                     {
+                        throw new IOException("Unable to create parent directory of " + request.getFile());
+                     }
+                  }
+
+                  if (!request.getFile().getName().toLowerCase().endsWith(SessionVisualizerIOTools.videoFileExtension))
+                  {
+                     LogTools.warn("Improper filename: {}, expected to end with the filename extension: \"{}\"",
+                                   request.getFile().getName(),
+                                   SessionVisualizerIOTools.videoFileExtension);
+                  }
+
                   movieBuilder = new MP4H264MovieBuilder(request.getFile(), request.getWidth(), request.getHeight(), (int) request.getFrameRate(), settings);
                }
                catch (IOException e)

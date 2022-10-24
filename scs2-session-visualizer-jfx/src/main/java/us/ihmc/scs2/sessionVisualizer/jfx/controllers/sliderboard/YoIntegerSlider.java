@@ -32,7 +32,7 @@ public class YoIntegerSlider implements YoVariableSlider
    public YoIntegerSlider(YoInteger yoInteger, LinkedYoRegistry linkedYoRegistry)
    {
       yoIntegerProperty = new YoIntegerProperty(yoInteger, this);
-      yoIntegerProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoInteger));
+      yoIntegerProperty.setLinkedBuffer(linkedYoRegistry.linkYoVariable(yoInteger, yoIntegerProperty));
    }
 
    @Override

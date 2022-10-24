@@ -9,9 +9,13 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    private YoListDefinition coefficientsX;
    private YoListDefinition coefficientsY;
    private YoListDefinition coefficientsZ;
+   private String referenceFrame;
 
    private String startTime, endTime;
+
    private String size;
+   private String timeResolution;
+   private String numberOfDivisions;
 
    @XmlElement(name = "coefficientsX")
    public void setCoefficientsX(YoListDefinition coefficientsX)
@@ -29,6 +33,12 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    public void setCoefficientsZ(YoListDefinition coefficientsZ)
    {
       this.coefficientsZ = coefficientsZ;
+   }
+
+   @XmlElement(name = "referenceFrame")
+   public void setReferenceFrame(String referenceFrame)
+   {
+      this.referenceFrame = referenceFrame;
    }
 
    public void setStartTime(double startTime)
@@ -64,6 +74,28 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       this.size = size;
    }
 
+   public void setTimeResolution(int timeResolution)
+   {
+      setTimeResolution(Integer.toString(timeResolution));
+   }
+
+   @XmlElement
+   public void setTimeResolution(String timeResolution)
+   {
+      this.timeResolution = timeResolution;
+   }
+
+   public void setNumberOfDivisions(int numberOfDivisions)
+   {
+      setNumberOfDivisions(Integer.toString(numberOfDivisions));
+   }
+
+   @XmlElement
+   public void setNumberOfDivisions(String numberOfDivisions)
+   {
+      this.numberOfDivisions = numberOfDivisions;
+   }
+
    public YoListDefinition getCoefficientsX()
    {
       return coefficientsX;
@@ -79,6 +111,11 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       return coefficientsZ;
    }
 
+   public String getReferenceFrame()
+   {
+      return referenceFrame;
+   }
+
    public String getStartTime()
    {
       return startTime;
@@ -92,6 +129,16 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    public String getSize()
    {
       return size;
+   }
+
+   public String getTimeResolution()
+   {
+      return timeResolution;
+   }
+
+   public String getNumberOfDivisions()
+   {
+      return numberOfDivisions;
    }
 
    @Override
@@ -115,12 +162,19 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
             return false;
          if (!Objects.equals(coefficientsZ, other.coefficientsZ))
             return false;
-         if (startTime == null ? other.startTime != null : !startTime.equals(other.startTime))
+         if (!Objects.equals(referenceFrame, other.referenceFrame))
             return false;
-         if (endTime == null ? other.endTime != null : !endTime.equals(other.endTime))
+         if (!Objects.equals(startTime, other.startTime))
             return false;
-         if (size == null ? other.size != null : !size.equals(other.size))
+         if (!Objects.equals(endTime, other.endTime))
             return false;
+         if (!Objects.equals(size, other.size))
+            return false;
+         if (!Objects.equals(timeResolution, other.timeResolution))
+            return false;
+         if (!Objects.equals(numberOfDivisions, other.numberOfDivisions))
+            return false;
+         
          return true;
       }
       else

@@ -7,6 +7,7 @@ import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.simulation.SimulationTerminalCondition.TerminalState;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -275,13 +276,46 @@ public interface SimulationSessionControls
 
    /**
     * Adds custom terminal condition(s) that will be used to identify when to terminate the next call
-    * to the next simulation. The simulation is considered successful when it terminates by triggering
-    * of the terminal conditions.
+    * to the next simulation. The simulation is considered <b>successful</b> when it terminates by
+    * triggering of the terminal conditions.
     * 
     * @param externalTerminalConditions the custom conditions to be considered for the next
     *                                   simulations.
     */
-   void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions);
+   default void addExternalTerminalCondition(BooleanSupplier... externalTerminalConditions)
+   {
+      if (externalTerminalConditions == null)
+         return;
+
+      addExternalTerminalCondition(() ->
+      {
+         for (int i = 0; i < externalTerminalConditions.length; i++)
+         {
+            if (externalTerminalConditions[i].getAsBoolean())
+               return TerminalState.SUCCESS;
+         }
+         return null;
+      });
+   }
+
+   /**
+    * Adds custom terminal condition(s) that will be used to identify when to terminate the next call
+    * to the next simulation.
+    * <p>
+    * The simulation ends when at least one condition returned value is not {@code null}, and the
+    * returned value also indicates whether the simulation was successful or not.
+    * </p>
+    * 
+    * @param externalTerminalConditions the custom conditions to be considered for the next
+    *                                   simulations.
+    */
+   void addExternalTerminalCondition(SimulationTerminalCondition... externalTerminalConditions);
+
+   @Deprecated
+   default boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition)
+   {
+      throw new UnsupportedOperationException("For backward compatibility, remove me!");
+   }
 
    /**
     * Removes a custom condition previously registered.
@@ -290,7 +324,7 @@ public interface SimulationSessionControls
     * @return {@code true} if the condition was successfully removed, {@code false} if it could not be
     *         found.
     */
-   boolean removeExternalTerminalCondition(BooleanSupplier externalTerminalCondition);
+   boolean removeExternalTerminalCondition(SimulationTerminalCondition externalTerminalCondition);
 
    /**
     * Removes all custom conditions previously added.

@@ -49,7 +49,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
@@ -178,7 +178,7 @@ public class RemoteSessionManagerController implements SessionControlsController
          }
       });
 
-      ContextMenuTools.setupContextMenu(sessionTreeTableView,
+      MenuTools.setupContextMenu(sessionTreeTableView,
                                         TreeTableViewTools.removeMenuItemFactory(false,
                                                                                  sessionInfo -> registeredStaticDescriptions.contains(sessionInfo.getDescription()),
                                                                                  sessionInfo -> registeredStaticDescriptions.remove(sessionInfo.getDescription())));

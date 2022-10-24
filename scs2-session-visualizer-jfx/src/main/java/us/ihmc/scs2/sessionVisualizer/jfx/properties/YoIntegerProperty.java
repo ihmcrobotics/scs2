@@ -32,20 +32,18 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
       yoInteger.addListener(propertyUpdater);
    }
 
-   private Object userObject;
-
    public void setLinkedBuffer(LinkedYoInteger linkedBuffer)
    {
       if (this.linkedBuffer != null)
-         this.linkedBuffer.removeUser(userObject);
+         this.linkedBuffer.removeUser(this);
 
       this.linkedBuffer = linkedBuffer;
 
-      if (userObject == null)
-         userObject = new Object();
-
       if (linkedBuffer != null)
-         linkedBuffer.addUser(userObject);
+      {
+         linkedBuffer.addUser(this);
+         pullYoIntegerValue();
+      }
    }
 
    @Override
@@ -67,7 +65,10 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
       {
          yoInteger.removeListener(propertyUpdater);
          if (linkedBuffer != null)
-            linkedBuffer.removeUser(userObject);
+         {
+            linkedBuffer.removeUser(this);
+            pullYoIntegerValue();
+         }
       }
       finally
       {

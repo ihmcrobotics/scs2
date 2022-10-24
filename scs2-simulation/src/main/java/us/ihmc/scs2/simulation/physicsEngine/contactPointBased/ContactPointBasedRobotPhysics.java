@@ -19,6 +19,8 @@ import us.ihmc.scs2.simulation.robot.controller.RobotOneDoFJointDampingCalculato
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
+import us.ihmc.scs2.simulation.screwTools.SimJointStateType;
+import us.ihmc.scs2.simulation.screwTools.SimMultiBodySystemTools;
 import us.ihmc.scs2.simulation.screwTools.SingleRobotFirstOrderIntegrator;
 
 public class ContactPointBasedRobotPhysics
@@ -119,16 +121,16 @@ public class ContactPointBasedRobotPhysics
       List<? extends SimJointBasics> joints = owner.getJointsToConsider();
       DMatrixRMaj jointAccelerationMatrix = forwardDynamicsCalculator.getJointAccelerationMatrix();
       DMatrixRMaj jointTauMatrix = forwardDynamicsCalculator.getJointTauMatrix();
-      int startIndex = 0;
-
-      for (int jointIndex = 0; jointIndex < joints.size(); jointIndex++)
-      {
-         SimJointBasics joint = joints.get(jointIndex);
-         if (!joint.isPinned())
-            startIndex = joint.setJointAcceleration(startIndex, jointAccelerationMatrix);
-         else
-            startIndex = joint.setJointTau(startIndex, jointTauMatrix);
-      }
+      SimMultiBodySystemTools.insertJointsStateWithBackup(joints,
+                                                          SimJointBasics::isPinned,
+                                                          SimJointStateType.EFFORT,
+                                                          jointTauMatrix,
+                                                          Double.POSITIVE_INFINITY,
+                                                          false,
+                                                          SimJointStateType.ACCELERATION,
+                                                          jointAccelerationMatrix,
+                                                          1.0e12,
+                                                          true);
    }
 
    public void integrateState(double dt)

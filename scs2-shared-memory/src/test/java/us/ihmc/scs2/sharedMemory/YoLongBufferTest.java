@@ -151,7 +151,7 @@ public class YoLongBufferTest
       {
          YoLongBuffer yoLongBuffer = SharedMemoryRandomTools.nextYoLongBuffer(random, new YoRegistry("Dummy"));
          YoLong linkedLong = new YoLong("linked", new YoRegistry("Dummy"));
-         LinkedYoLong linkedYoVariable = yoLongBuffer.newLinkedYoVariable(linkedLong);
+         LinkedYoLong linkedYoVariable = yoLongBuffer.newLinkedYoVariable(linkedLong, null);
          assertTrue(linkedLong == linkedYoVariable.getLinkedYoVariable());
          assertTrue(yoLongBuffer == linkedYoVariable.getBuffer());
       }

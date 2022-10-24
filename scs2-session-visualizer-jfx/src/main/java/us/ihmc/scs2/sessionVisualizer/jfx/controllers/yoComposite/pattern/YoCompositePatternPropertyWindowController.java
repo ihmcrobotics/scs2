@@ -42,7 +42,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ContextMenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
@@ -143,7 +143,7 @@ public class YoCompositePatternPropertyWindowController
          if (change.wasRemoved())
             removePattern(change.getElementRemoved());
       });
-      ContextMenuTools.setupContextMenu(yoCompositePatternListView,
+      MenuTools.setupContextMenu(yoCompositePatternListView,
                                         addBeforeMenuItemFactory(this::newEmptyPattern),
                                         addAfterMenuItemFactory(this::newEmptyPattern),
                                         removeMenuItemFactory(false));
