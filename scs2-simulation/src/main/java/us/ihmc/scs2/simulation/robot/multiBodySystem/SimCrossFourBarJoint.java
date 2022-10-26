@@ -4,6 +4,7 @@ import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.CrossFourBarJointBasics;
+import us.ihmc.mecano.multiBodySystem.interfaces.RevoluteJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.spatial.interfaces.TwistReadOnly;
 import us.ihmc.mecano.tools.MecanoFactories;
@@ -139,6 +140,20 @@ public class SimCrossFourBarJoint extends YoCrossFourBarJoint implements SimOneD
    public SimRigidBodyBasics getSuccessor()
    {
       return (SimRigidBodyBasics) super.getSuccessor();
+   }
+
+   @Override
+   public void resetState()
+   {
+      setQ(0.0);
+      for (RevoluteJointBasics joint : getFourBarFunction().getLoopJoints())
+      {
+         joint.setQd(0.0);
+         joint.setQdd(0.0);
+         joint.setTau(0.0);
+      }
+      setDeltaQd(0.0);
+      updateFrame();
    }
 
    @Override

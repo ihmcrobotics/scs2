@@ -28,6 +28,8 @@ import us.ihmc.scs2.simulation.robot.trackers.KinematicPoint;
 
 public interface SimJointBasics extends JointBasics, SimJointReadOnly
 {
+   void resetState();
+
    void setPinned(boolean isPinned);
 
    @Override

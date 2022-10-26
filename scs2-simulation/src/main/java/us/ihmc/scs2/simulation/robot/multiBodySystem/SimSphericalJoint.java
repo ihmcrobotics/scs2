@@ -75,6 +75,16 @@ public class SimSphericalJoint extends YoSphericalJoint implements SimJointBasic
          throw new IllegalArgumentException("Can only set a " + SimRigidBodyBasics.class.getSimpleName() + " as successor of a " + getClass().getSimpleName());
    }
 
+   @Override
+   public void resetState()
+   {
+      getJointOrientation().setToZero();
+      getJointAngularVelocity().setToZero();
+      getJointAngularDeltaVelocity().setToZero();
+      getJointAngularAcceleration().setToZero();
+      getJointTorque().setToZero();
+   }
+
    public FixedFrameVector3DBasics getJointAngularDeltaVelocity()
    {
       return jointAngularDeltaVelocity;

@@ -115,6 +115,16 @@ public class SimSixDoFJoint extends YoSixDoFJoint implements SimJointBasics, Sim
    }
 
    @Override
+   public void resetState()
+   {
+      getJointPose().setToZero();
+      getJointTwist().setToZero();
+      getJointDeltaTwist().setToZero();
+      getJointAcceleration().setToZero();
+      getJointWrench().setToZero();
+   }
+
+   @Override
    public FixedFrameTwistBasics getJointDeltaTwist()
    {
       return jointDeltaTwist;
