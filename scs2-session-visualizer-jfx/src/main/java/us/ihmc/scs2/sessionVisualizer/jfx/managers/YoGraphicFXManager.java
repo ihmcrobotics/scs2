@@ -181,9 +181,11 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       LogTools.info("Saving file: " + file);
       try
       {
-         XMLTools.saveYoGraphicListDefinition(new FileOutputStream(file),
-                                              YoGraphicTools.toYoGraphicListDefinition(root.getItemChildren().stream().filter(item -> item != sessionRoot)
-                                                                                           .collect(Collectors.toList())));
+         YoGraphicListDefinition yoGraphicListDefinition = YoGraphicTools.toYoGraphicListDefinition(root.getItemChildren()
+                                                                                                        .stream()
+                                                                                                        .filter(item -> item != sessionRoot)
+                                                                                                        .collect(Collectors.toList()));
+         XMLTools.saveYoGraphicListDefinition(new FileOutputStream(file), yoGraphicListDefinition);
       }
       catch (Exception e)
       {
