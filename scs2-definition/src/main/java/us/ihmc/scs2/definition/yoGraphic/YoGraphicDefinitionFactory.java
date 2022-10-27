@@ -12,6 +12,7 @@ import us.ihmc.euclid.referenceFrame.interfaces.FrameQuaternionReadOnly;
 import us.ihmc.euclid.referenceFrame.interfaces.FrameTuple2DReadOnly;
 import us.ihmc.euclid.referenceFrame.interfaces.FrameTuple3DReadOnly;
 import us.ihmc.euclid.referenceFrame.interfaces.FrameYawPitchRollReadOnly;
+import us.ihmc.euclid.tuple2D.interfaces.Point2DReadOnly;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -26,6 +27,7 @@ import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
 import us.ihmc.yoVariables.euclid.YoQuaternion;
 import us.ihmc.yoVariables.euclid.YoTuple2D;
 import us.ihmc.yoVariables.euclid.YoTuple3D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameConvexPolygon2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePose3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameQuaternion;
@@ -374,6 +376,42 @@ public class YoGraphicDefinitionFactory
       definition.setGraphicName(graphicType.getGraphicName());
       definition.setSize(size);
       definition.setStrokeColor(strokeColor);
+      return definition;
+   }
+
+   public static YoGraphicPolygonExtruded3DDefinition newYoGraphicPolygonExtruded3DDefinition(String name,
+                                                                                              YoFramePose3D pose,
+                                                                                              YoFrameConvexPolygon2D polygon,
+                                                                                              double thickness,
+                                                                                              ColorDefinition color)
+   {
+      YoGraphicPolygonExtruded3DDefinition definition = new YoGraphicPolygonExtruded3DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPosition(newYoTuple3DDefinition(pose.getPosition()));
+      definition.setOrientation(newYoQuaternionDefinition(pose.getOrientation()));
+      definition.setVertices(polygon.getVertexBuffer().stream().map(v -> newYoTuple2DDefinition(v)).toList());
+      definition.setNumberOfVertices(toPropertyName(polygon.getYoNumberOfVertices()));
+      definition.setThickness(thickness);
+      definition.setColor(color);
+      return definition;
+   }
+
+   public static YoGraphicPolygonExtruded3DDefinition newYoGraphicPolygonExtruded3DDefinition(String name,
+                                                                                              YoFramePose3D pose,
+                                                                                              List<? extends Point2DReadOnly> vertices,
+                                                                                              double thickness,
+                                                                                              ColorDefinition color)
+   {
+      YoGraphicPolygonExtruded3DDefinition definition = new YoGraphicPolygonExtruded3DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPosition(newYoTuple3DDefinition(pose.getPosition()));
+      definition.setOrientation(newYoQuaternionDefinition(pose.getOrientation()));
+      definition.setVertices(vertices.stream().map(v -> newYoTuple2DDefinition(v)).toList());
+      definition.setNumberOfVertices(vertices.size());
+      definition.setThickness(thickness);
+      definition.setColor(color);
       return definition;
    }
 

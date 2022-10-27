@@ -348,6 +348,10 @@ public class YoGraphicTools
          if (yoGraphicFX != null)
             yoGroupFX.addYoGraphicFXItem(yoGraphicFX);
       }
+      // If the group definition is not visible, we override the descendants to not be visible by setting the visible property after they were added.. 
+      // Without this, when adding a visible item, the group visible property would be overridden.
+      if (!definition.isVisible())
+         yoGroupFX.setVisible(false);
       return yoGroupFX;
    }
 

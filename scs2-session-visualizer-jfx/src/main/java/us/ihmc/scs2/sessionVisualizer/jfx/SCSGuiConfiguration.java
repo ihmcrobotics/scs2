@@ -475,7 +475,7 @@ public class SCSGuiConfiguration
       {
          if (definition.isMaximized())
          {
-            stage.setMaximized(true);
+            JavaFXMissingTools.runNFramesLater(1, () -> stage.setMaximized(true));
          }
          else
          {

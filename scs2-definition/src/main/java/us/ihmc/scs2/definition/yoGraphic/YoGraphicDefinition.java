@@ -5,7 +5,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 public abstract class YoGraphicDefinition
 {
    protected String name;
-   protected boolean visible;
+   protected boolean visible = true;
 
    public YoGraphicDefinition()
    {

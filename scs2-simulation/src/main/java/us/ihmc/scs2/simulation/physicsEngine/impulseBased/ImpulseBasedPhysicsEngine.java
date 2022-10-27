@@ -144,6 +144,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       for (ImpulseBasedRobot robot : robotList)
       {
+         robot.resetDT();
+         robot.resetState();
          robot.initializeState();
          robot.resetCalculators();
          // Fill out the joint accelerations so the accelerometers can get initialized.
@@ -151,6 +153,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
          robot.updateSensors();
          robot.getControllerManager().initializeControllers();
       }
+      collisionDetectionPlugin.clear();
+
       hasBeenInitialized = true;
    }
 
