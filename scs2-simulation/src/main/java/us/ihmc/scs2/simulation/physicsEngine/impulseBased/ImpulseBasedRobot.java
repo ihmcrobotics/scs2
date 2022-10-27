@@ -88,6 +88,11 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
       robotPhysics.writeJointDeltaVelocities();
    }
 
+   public void resetDT()
+   {
+      robotPhysics.getPhysicsOutput().setDT(0);
+   }
+
    public void integrateState(double dt)
    {
       robotPhysics.integrateState(dt);
