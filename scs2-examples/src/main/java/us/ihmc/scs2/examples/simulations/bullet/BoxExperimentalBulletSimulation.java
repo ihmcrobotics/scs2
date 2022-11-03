@@ -21,8 +21,12 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class BoxExperimentalBulletSimulation
 {
-
    public BoxExperimentalBulletSimulation()
+   {
+      SessionVisualizer.startSessionVisualizer(createSession());
+   }
+
+   public static SimulationSession createSession()
    {
       double boxXLength = 0.2;
       double boxYWidth = 0.12;
@@ -86,8 +90,7 @@ public class BoxExperimentalBulletSimulation
                                                                                          new MaterialDefinition(ColorDefinitions.DarkKhaki())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
       simulationSession.addTerrainObject(terrain);
-
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

@@ -21,9 +21,14 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 
 public class CollidingSpheresNoGravityExperimentalBulletSimulation
 {
-   private final boolean BULLET_PHYSICS_ENGINE = true;
+   private static final boolean BULLET_PHYSICS_ENGINE = true;
 
    public CollidingSpheresNoGravityExperimentalBulletSimulation()
+   {
+      SessionVisualizer.startSessionVisualizer(createSession());
+   }
+
+   public static SimulationSession createSession()
    {
       double radius1 = 0.2;
       double mass1 = 1.0;
@@ -81,8 +86,7 @@ public class CollidingSpheresNoGravityExperimentalBulletSimulation
       simulationSession.addRobot(sphereRobot2);
       simulationSession.setGravity(0.0, 0.0, 0.0);
       simulationSession.setSessionDTSeconds(0.0001);
-
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

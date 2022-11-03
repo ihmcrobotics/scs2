@@ -26,14 +26,28 @@ public class NewtonsCradleExperimentalBulletSimulation
 {
    private static final String NEWTONS_CRADLE = "NewtonsCradle";
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = true;
-   private final int numberOfBalls = 6;
-   private final double ballRadius = 0.05;
+   private static final int numberOfBalls = 6;
+   private static final double ballRadius = 0.05;
 
-   private final double stringLength = 0.6;
-   private final double stringRadius = 0.002;
-   private final double ballMass = 0.2;
+   private static final double stringLength = 0.6;
+   private static final double stringRadius = 0.002;
+   private static final double ballMass = 0.2;
 
    public NewtonsCradleExperimentalBulletSimulation()
+   {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
+   }
+
+   public static SimulationSession createSession()
    {
       RobotDefinition robotDefinition = new RobotDefinition(NEWTONS_CRADLE);
       double ballRadiusOfGyration = ballRadius * 0.6;
@@ -94,19 +108,10 @@ public class NewtonsCradleExperimentalBulletSimulation
                                                                                                                            jointParameters,
                                                                                                                            contactSolverInfoParameters));
       simulationSession.addRobot(robotDefinition);
-
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      return simulationSession;
    }
 
-   private String getBallBodyName(int i)
+   private static String getBallBodyName(int i)
    {
       return "ball" + i;
    }
