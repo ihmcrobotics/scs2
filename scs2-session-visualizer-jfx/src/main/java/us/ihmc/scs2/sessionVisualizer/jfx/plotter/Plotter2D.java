@@ -30,6 +30,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXToEuclidConversions;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPolygonFX2D;
 
 public class Plotter2D extends Region
 {
@@ -192,7 +193,8 @@ public class Plotter2D extends Region
                   activeTooltip.set(tooltip);
             };
             tooltip.showingProperty().addListener(tooltipShowingListener);
-            node.setPickOnBounds(true);
+            if (!(yoGraphicFX instanceof YoPolygonFX2D)) // The JavaFX bounding box for Polygon/Path is artificially over-grown
+               node.setPickOnBounds(true);
             installedTooltips.put(node, tooltip);
             Tooltip.install(node, tooltip);
          }
