@@ -2,10 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,14 +19,11 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
@@ -54,7 +48,6 @@ import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
-import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -64,6 +57,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.TableSizeQuickAccess;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartChange;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartChangeListener;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
@@ -81,12 +77,9 @@ public class YoChartGroupPanelController implements VisualizerController
    private final StringProperty userDefinedChartGroupName = new SimpleStringProperty(this, "userDefinedChartGroupName", null);
    private final StringProperty automatedChartGroupName = new SimpleStringProperty(this, "automatedChartGroupName", null);
 
-   private final Property<ChartGroupSize> currentSize = new SimpleObjectProperty<>(this, "currentSizeProperty", new ChartGroupSize(0, 0));
    private final GridPane gridPane = new GridPane();
-   private final ObservableList<YoChartPanelController> chartControllers = FXCollections.observableArrayList();
    private final BooleanProperty isRunning = new SimpleBooleanProperty(this, "isRunning", false);
-
-   private final Property<ChartGroupSize> maxSize = new SimpleObjectProperty<>(this, "maxSizeProperty", new ChartGroupSize(6, 6));
+   private final ChartTable2D chartTable2D = new ChartTable2D(() -> createNewChartPanel(isRunning.get()));
 
    @FXML
    private AnchorPane mainPane;
@@ -186,46 +179,38 @@ public class YoChartGroupPanelController implements VisualizerController
             allVariableNames.remove(change.getElementRemoved().getName());
       };
 
-      chartControllers.addListener((ListChangeListener<YoChartPanelController>) change ->
+      chartTable2D.addListener(new ChartChangeListener()
       {
-         while (change.next())
+         @Override
+         public void onChange(ChartChange c)
          {
-            if (change.wasPermutated())
-               continue;
-            if (change.wasAdded())
-               change.getAddedSubList().forEach(controller -> controller.getPlottedVariables().addListener(plottedVariableChangeListener));
-            if (change.wasRemoved())
-               change.getRemoved().forEach(controller -> controller.getPlottedVariables().removeListener(plottedVariableChangeListener));
+            YoChartPanelController chart = c.getChart();
+
+            switch (c.type())
+            {
+               case ADD:
+                  gridPane.add(chart.getMainPane(), c.toCol(), c.toRow());
+                  chart.getPlottedVariables().addListener(plottedVariableChangeListener);
+                  break;
+               case REMOVE:
+                  gridPane.getChildren().remove(chart.getMainPane());
+                  chart.getPlottedVariables().removeListener(plottedVariableChangeListener);
+                  break;
+               case MOVE:
+                  GridPane.setConstraints(chart.getMainPane(), c.toCol(), c.toRow());
+                  break;
+               default:
+                  throw new IllegalStateException("Unexpected change type: " + c.type());
+            }
          }
       });
    }
 
    public void setChartGroupConfiguration(YoChartGroupConfigurationDefinition definition)
    {
-      if (!maxSize.getValue().contains(definition.getNumberOfRows(), definition.getNumberOfColumns()))
-      {
-         LogTools.warn("Cannot set from configuration, required number of rows/columns is too large.");
+      if (!chartTable2D.set(definition))
          return;
-      }
-
-      clear();
       userDefinedChartGroupName.set(definition.getName());
-      currentSize.setValue(new ChartGroupSize(definition.getNumberOfRows(), definition.getNumberOfColumns()));
-      updateChartLayout();
-      if (definition.getChartConfigurations() != null)
-      {
-         for (YoChartConfigurationDefinition chartConfiguration : definition.getChartConfigurations())
-         {
-            YoChartPanelController chartController = getChartController(new ChartIdentifier(chartConfiguration.getIdentifier()));
-            chartController.setChartConfiguration(chartConfiguration);
-         }
-      }
-   }
-
-   private void clear()
-   {
-      new ArrayList<>(chartControllers).forEach(this::closeAndDisposeChart);
-      currentSize.setValue(new ChartGroupSize(0, 0));
    }
 
    private boolean isMessagerSetup = false;
@@ -253,148 +238,16 @@ public class YoChartGroupPanelController implements VisualizerController
       });
    }
 
-   private void updateChartLayout()
-   {
-      int preferredNumberOfCharts = currentSize.getValue().getNumberOfCharts();
-
-      if (chartControllers.size() > preferredNumberOfCharts)
-      {
-         int excess = chartControllers.size() - preferredNumberOfCharts;
-
-         ArrayDeque<YoChartPanelController> emptyCharts = chartControllers.stream()
-                                                                          .filter(YoChartPanelController::isEmpty)
-                                                                          .collect(Collectors.toCollection(ArrayDeque::new));
-
-         if (!emptyCharts.isEmpty())
-         {
-            while (emptyCharts.size() > excess)
-               emptyCharts.removeFirst();
-
-            emptyCharts.forEach(this::closeAndDisposeChart);
-         }
-      }
-
-      if (chartControllers.size() > preferredNumberOfCharts)
-      { // Increase the number of rows to prevent graph deletion
-         int excess = chartControllers.size() - preferredNumberOfCharts;
-         int numberOfRowsToAdd = (excess / currentSize.getValue().numberOfCols) + 1;
-         currentSize.setValue(currentSize.getValue().addRows(numberOfRowsToAdd));
-         preferredNumberOfCharts = currentSize.getValue().getNumberOfCharts();
-      }
-
-      while (chartControllers.size() < preferredNumberOfCharts)
-      {
-         YoChartPanelController newController = createNewChartPanel(isRunning.get());
-         gridPane.getChildren().add(newController.getMainPane());
-         chartControllers.add(newController);
-      }
-
-      updateConstraint();
-   }
-
-   private void updateConstraint()
-   {
-      int row = 0;
-      int col = 0;
-
-      for (YoChartPanelController chart : chartControllers)
-      {
-         GridPane.setConstraints(chart.getMainPane(), col, row);
-         col++;
-         if (col == currentSize.getValue().numberOfCols)
-         {
-            row++;
-            col = 0;
-         }
-      }
-   }
-
-   private void removeEmptyRowsAndColumns()
-   {
-      if (chartControllers.isEmpty())
-         return;
-
-      int lastRow = chartControllers.stream().mapToInt(chart -> GridPane.getRowIndex(chart.getMainPane()).intValue()).max().getAsInt();
-      int lastColumn = chartControllers.stream().mapToInt(chart -> GridPane.getColumnIndex(chart.getMainPane()).intValue()).max().getAsInt();
-
-      for (int row = lastRow; row >= 0; row--)
-      {
-         int rowFinal = row;
-         boolean isEmpty = chartControllers.stream().noneMatch(chart -> GridPane.getRowIndex(chart.getMainPane()) == rowFinal);
-
-         if (isEmpty)
-         {
-            for (YoChartPanelController chart : chartControllers)
-            {
-               int chartRow = GridPane.getRowIndex(chart.getMainPane());
-               if (chartRow > row)
-                  GridPane.setRowIndex(chart.getMainPane(), chartRow - 1);
-            }
-         }
-      }
-
-      for (int column = lastColumn; column >= 0; column--)
-      {
-         int columnFinal = column;
-         boolean isEmpty = chartControllers.stream().noneMatch(chart -> GridPane.getColumnIndex(chart.getMainPane()) == columnFinal);
-
-         if (isEmpty)
-         {
-            for (YoChartPanelController chart : chartControllers)
-            {
-               int chartColumn = GridPane.getColumnIndex(chart.getMainPane());
-               if (chartColumn > column)
-                  GridPane.setColumnIndex(chart.getMainPane(), chartColumn - 1);
-            }
-         }
-      }
-   }
-
    private void handleCloseChart(ActionEvent event, YoChartPanelController chartToClose)
    {
-      closeAndDisposeChart(chartToClose);
+      chartTable2D.removeChart(getChartIdentifier(chartToClose));
+      chartTable2D.removeNullRowsAndColumns();
       event.consume();
-   }
-
-   private void closeAndDisposeChart(YoChartPanelController chartToClose)
-   {
-      chartToClose.closeAndDispose();
-      gridPane.getChildren().remove(chartToClose.getMainPane());
-      chartControllers.remove(chartToClose);
-      removeEmptyRowsAndColumns();
-      currentSize.getValue().computeRowsFromNumberOfCharts(chartControllers.size());
-   }
-
-   private void closeEmptyCharts()
-   {
-      Iterator<YoChartPanelController> chartControllersIterator = chartControllers.iterator();
-
-      while (chartControllersIterator.hasNext())
-      {
-         YoChartPanelController controller = chartControllersIterator.next();
-         if (controller.isEmpty())
-         {
-            chartControllersIterator.remove();
-            closeAndDisposeChart(controller);
-         }
-      }
    }
 
    public YoChartPanelController getChartController(ChartIdentifier chartIdentifier)
    {
-      return getChartController(chartIdentifier.getRow(), chartIdentifier.getColumn());
-   }
-
-   public YoChartPanelController getChartController(int row, int column)
-   {
-      for (YoChartPanelController controller : chartControllers)
-      {
-         AnchorPane node = controller.getMainPane();
-         if (GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == column)
-            return controller;
-      }
-
-      return null;
+      return chartTable2D.get(chartIdentifier.getRow(), chartIdentifier.getColumn());
    }
 
    public ChartIdentifier getChartIdentifier(YoChartPanelController controller)
@@ -441,19 +294,19 @@ public class YoChartGroupPanelController implements VisualizerController
    {
       isRunning.set(true);
       setupMessager();
-      chartControllers.forEach(YoChartPanelController::start);
+      chartTable2D.forEachChart(YoChartPanelController::start);
    }
 
    public void stop()
    {
       isRunning.set(false);
-      chartControllers.forEach(YoChartPanelController::stop);
+      chartTable2D.forEachChart(YoChartPanelController::stop);
    }
 
    public void closeAndDispose()
    {
       isRunning.set(false);
-      clear();
+      chartTable2D.clear();
       scheduleMessagerCleanup();
    }
 
@@ -462,7 +315,7 @@ public class YoChartGroupPanelController implements VisualizerController
    {
       Popup popup = new Popup();
       popup.autoHideProperty().set(true);
-      TableSizeQuickAccess tableSizeQuickAccess = new TableSizeQuickAccess("Select graph table size:", currentSize.getValue(), maxSize.getValue());
+      TableSizeQuickAccess tableSizeQuickAccess = new TableSizeQuickAccess("Select graph table size:", chartTable2D.getSize(), chartTable2D.getMaxSize());
       AnchorPane rootNode = tableSizeQuickAccess.getMainPane();
       Pane backgroundPane = new Pane();
       backgroundPane.setStyle("-fx-background-radius:10;-fx-background-color:rgba(79,132,186,0.5);"); // TODO Needs to be extracted to CSS
@@ -474,18 +327,18 @@ public class YoChartGroupPanelController implements VisualizerController
       AnchorPane.setRightAnchor(backgroundPane, -5.0);
       rootNode.setOnMouseClicked(e ->
       {
-         currentSize.setValue(new ChartGroupSize(tableSizeQuickAccess.selectedRowsProperty().get(), tableSizeQuickAccess.selectedColumnsProperty().get()));
-         updateChartLayout();
+         chartTable2D.resize(new ChartTable2DSize(tableSizeQuickAccess.selectedRowsProperty().get(), tableSizeQuickAccess.selectedColumnsProperty().get()));
          popup.hide();
       });
       tableSizeQuickAccess.getClearAllButton().setOnMouseClicked(e ->
       {
-         clear();
+         chartTable2D.clear();
          popup.hide();
       });
       tableSizeQuickAccess.getClearEmptyButton().setOnMouseClicked(e ->
       {
-         closeEmptyCharts();
+         chartTable2D.removeEmptyCharts();
+         chartTable2D.removeNullRowsAndColumns();
          popup.hide();
       });
       popup.getContent().add(rootNode);
@@ -498,9 +351,9 @@ public class YoChartGroupPanelController implements VisualizerController
       event.consume();
    }
 
-   public Property<ChartGroupSize> maxSizeProperty()
+   public Property<ChartTable2DSize> maxSizeProperty()
    {
-      return maxSize;
+      return chartTable2D.maxSizeProperty();
    }
 
    public void setUserDefinedChartGroupName(String name)
@@ -530,7 +383,7 @@ public class YoChartGroupPanelController implements VisualizerController
    {
       if (acceptDragEventForDrop(event))
       {
-         chartControllers.forEach(c -> c.setSelectionHighlight(false));
+         chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
       }
       event.consume();
    }
@@ -565,7 +418,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
                label.setOnMouseEntered(e ->
                {
-                  chartControllers.forEach(c -> c.setSelectionHighlight(false));
+                  chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
                   controllersInConfiguration(layout).forEach(c -> c.setSelectionHighlight(true));
                });
 
@@ -592,7 +445,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private void applyLayout(ChartGroupLayout layout)
    {
-      chartControllers.forEach(c -> c.setSelectionHighlight(false));
+      chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
 
       for (ChartIdentifier chartIdentifier : layout.getChartIdentifiers())
       {
@@ -639,7 +492,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private boolean doesConfigurationFit(ChartGroupModel configuration)
    {
-      return currentSize.getValue().contains(configuration.rowEnd(), configuration.columnEnd());
+      return chartTable2D.getSize().contains(configuration.rowEnd(), configuration.columnEnd());
    }
 
    public void loadChartGroupConfiguration(Window source, File file)
@@ -688,53 +541,9 @@ public class YoChartGroupPanelController implements VisualizerController
    {
       YoChartGroupConfigurationDefinition definition = new YoChartGroupConfigurationDefinition();
       definition.setName(chartGroupName.get());
-      definition.setNumberOfRows(currentSize.getValue().numberOfRows);
-      definition.setNumberOfColumns(currentSize.getValue().numberOfCols);
-      definition.setChartConfigurations(chartControllers.stream()
-                                                        .map(chart -> chart.toYoChartConfigurationDefinition(getChartIdentifier(chart)))
-                                                        .collect(Collectors.toList()));
+      definition.setNumberOfRows(chartTable2D.getSize().getNumberOfRows());
+      definition.setNumberOfColumns(chartTable2D.getSize().getNumberOfCols());
+      definition.setChartConfigurations(chartTable2D.toChartDefinitions());
       return definition;
-   }
-
-   public static class ChartGroupSize
-   {
-      private final int numberOfRows;
-      private final int numberOfCols;
-
-      public ChartGroupSize(int numberOfRows, int numberOfCols)
-      {
-         this.numberOfRows = numberOfRows;
-         this.numberOfCols = numberOfCols;
-      }
-
-      public int getNumberOfRows()
-      {
-         return numberOfRows;
-      }
-
-      public int getNumberOfCols()
-      {
-         return numberOfCols;
-      }
-
-      private int getNumberOfCharts()
-      {
-         return numberOfRows * numberOfCols;
-      }
-
-      private ChartGroupSize addRows(int rowsToAdd)
-      {
-         return new ChartGroupSize(numberOfRows + rowsToAdd, numberOfCols);
-      }
-
-      private ChartGroupSize computeRowsFromNumberOfCharts(int numberOfCharts)
-      {
-         return new ChartGroupSize(numberOfCharts / numberOfCols, numberOfCols);
-      }
-
-      private boolean contains(int row, int col)
-      {
-         return row < numberOfRows && col < numberOfCols;
-      }
    }
 }

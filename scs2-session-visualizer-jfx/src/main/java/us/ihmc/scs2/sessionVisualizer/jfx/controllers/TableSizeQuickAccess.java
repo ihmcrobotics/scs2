@@ -17,7 +17,7 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController.ChartGroupSize;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 
 public class TableSizeQuickAccess
 {
@@ -31,12 +31,12 @@ public class TableSizeQuickAccess
    private final Rectangle[][] boxes;
    private final JFXButton clearAllButton, clearEmptyButton;
 
-   private final ChartGroupSize maxSize;
+   private final ChartTable2DSize maxSize;
 
    private final IntegerProperty selectedRowsProperty = new SimpleIntegerProperty(this, "selectedRows", -1);
    private final IntegerProperty selectedColumnsProperty = new SimpleIntegerProperty(this, "selectedColumns", -1);
 
-   public TableSizeQuickAccess(String title, ChartGroupSize currentSize, ChartGroupSize maxSize)
+   public TableSizeQuickAccess(String title, ChartTable2DSize currentSize, ChartTable2DSize maxSize)
    {
       this.maxSize = maxSize;
       anchorPane.getChildren().add(vBox);
