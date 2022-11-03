@@ -19,10 +19,10 @@ import com.jfoenix.controls.JFXButton;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
@@ -81,14 +81,12 @@ public class YoChartGroupPanelController implements VisualizerController
    private final StringProperty userDefinedChartGroupName = new SimpleStringProperty(this, "userDefinedChartGroupName", null);
    private final StringProperty automatedChartGroupName = new SimpleStringProperty(this, "automatedChartGroupName", null);
 
-   private final IntegerProperty numberOfRows = new SimpleIntegerProperty(this, "numberOfRows", 0);
-   private final IntegerProperty numberOfCols = new SimpleIntegerProperty(this, "numberOfCols", 0);
+   private final Property<ChartGroupSize> currentSize = new SimpleObjectProperty<>(this, "currentSizeProperty", new ChartGroupSize(0, 0));
    private final GridPane gridPane = new GridPane();
    private final ObservableList<YoChartPanelController> chartControllers = FXCollections.observableArrayList();
    private final BooleanProperty isRunning = new SimpleBooleanProperty(this, "isRunning", false);
 
-   private final IntegerProperty maximumRowNumberProperty = new SimpleIntegerProperty(this, "maximumRow", 6);
-   private final IntegerProperty maximumColNumberProperty = new SimpleIntegerProperty(this, "maximumColumn", 6);
+   private final Property<ChartGroupSize> maxSize = new SimpleObjectProperty<>(this, "maxSizeProperty", new ChartGroupSize(6, 6));
 
    @FXML
    private AnchorPane mainPane;
@@ -204,7 +202,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    public void setChartGroupConfiguration(YoChartGroupConfigurationDefinition definition)
    {
-      if (definition.getNumberOfRows() > maximumRowNumberProperty.get() || definition.getNumberOfColumns() > maximumColNumberProperty.get())
+      if (!maxSize.getValue().contains(definition.getNumberOfRows(), definition.getNumberOfColumns()))
       {
          LogTools.warn("Cannot set from configuration, required number of rows/columns is too large.");
          return;
@@ -212,8 +210,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
       clear();
       userDefinedChartGroupName.set(definition.getName());
-      numberOfRows.set(definition.getNumberOfRows());
-      numberOfCols.set(definition.getNumberOfColumns());
+      currentSize.setValue(new ChartGroupSize(definition.getNumberOfRows(), definition.getNumberOfColumns()));
       updateChartLayout();
       if (definition.getChartConfigurations() != null)
       {
@@ -228,8 +225,7 @@ public class YoChartGroupPanelController implements VisualizerController
    private void clear()
    {
       new ArrayList<>(chartControllers).forEach(this::closeAndDisposeChart);
-      numberOfRows.set(0);
-      numberOfCols.set(0);
+      currentSize.setValue(new ChartGroupSize(0, 0));
    }
 
    private boolean isMessagerSetup = false;
@@ -259,7 +255,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private void updateChartLayout()
    {
-      int preferredNumberOfCharts = numberOfRows.get() * numberOfCols.get();
+      int preferredNumberOfCharts = currentSize.getValue().getNumberOfCharts();
 
       if (chartControllers.size() > preferredNumberOfCharts)
       {
@@ -281,9 +277,9 @@ public class YoChartGroupPanelController implements VisualizerController
       if (chartControllers.size() > preferredNumberOfCharts)
       { // Increase the number of rows to prevent graph deletion
          int excess = chartControllers.size() - preferredNumberOfCharts;
-         int numberOfRowsToAdd = (excess / numberOfCols.get()) + 1;
-         numberOfRows.set(numberOfRows.get() + numberOfRowsToAdd);
-         preferredNumberOfCharts = numberOfRows.get() * numberOfCols.get();
+         int numberOfRowsToAdd = (excess / currentSize.getValue().numberOfCols) + 1;
+         currentSize.setValue(currentSize.getValue().addRows(numberOfRowsToAdd));
+         preferredNumberOfCharts = currentSize.getValue().getNumberOfCharts();
       }
 
       while (chartControllers.size() < preferredNumberOfCharts)
@@ -305,7 +301,7 @@ public class YoChartGroupPanelController implements VisualizerController
       {
          GridPane.setConstraints(chart.getMainPane(), col, row);
          col++;
-         if (col == numberOfCols.get())
+         if (col == currentSize.getValue().numberOfCols)
          {
             row++;
             col = 0;
@@ -366,7 +362,7 @@ public class YoChartGroupPanelController implements VisualizerController
       gridPane.getChildren().remove(chartToClose.getMainPane());
       chartControllers.remove(chartToClose);
       removeEmptyRowsAndColumns();
-      numberOfRows.set(chartControllers.size() / numberOfCols.intValue());
+      currentSize.getValue().computeRowsFromNumberOfCharts(chartControllers.size());
    }
 
    private void closeEmptyCharts()
@@ -466,11 +462,7 @@ public class YoChartGroupPanelController implements VisualizerController
    {
       Popup popup = new Popup();
       popup.autoHideProperty().set(true);
-      TableSizeQuickAccess tableSizeQuickAccess = new TableSizeQuickAccess("Select graph table size:",
-                                                                           numberOfRows.get(),
-                                                                           numberOfCols.get(),
-                                                                           maximumRowNumberProperty.get(),
-                                                                           maximumColNumberProperty.get());
+      TableSizeQuickAccess tableSizeQuickAccess = new TableSizeQuickAccess("Select graph table size:", currentSize.getValue(), maxSize.getValue());
       AnchorPane rootNode = tableSizeQuickAccess.getMainPane();
       Pane backgroundPane = new Pane();
       backgroundPane.setStyle("-fx-background-radius:10;-fx-background-color:rgba(79,132,186,0.5);"); // TODO Needs to be extracted to CSS
@@ -482,8 +474,7 @@ public class YoChartGroupPanelController implements VisualizerController
       AnchorPane.setRightAnchor(backgroundPane, -5.0);
       rootNode.setOnMouseClicked(e ->
       {
-         numberOfRows.set(tableSizeQuickAccess.selectedRowsProperty().get());
-         numberOfCols.set(tableSizeQuickAccess.selectedColumnsProperty().get());
+         currentSize.setValue(new ChartGroupSize(tableSizeQuickAccess.selectedRowsProperty().get(), tableSizeQuickAccess.selectedColumnsProperty().get()));
          updateChartLayout();
          popup.hide();
       });
@@ -507,14 +498,9 @@ public class YoChartGroupPanelController implements VisualizerController
       event.consume();
    }
 
-   public IntegerProperty maximumRowProperty()
+   public Property<ChartGroupSize> maxSizeProperty()
    {
-      return maximumRowNumberProperty;
-   }
-
-   public IntegerProperty maximumColProperty()
-   {
-      return maximumColNumberProperty;
+      return maxSize;
    }
 
    public void setUserDefinedChartGroupName(String name)
@@ -653,7 +639,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private boolean doesConfigurationFit(ChartGroupModel configuration)
    {
-      return configuration.rowEnd() < numberOfRows.get() && configuration.columnEnd() < numberOfCols.get();
+      return currentSize.getValue().contains(configuration.rowEnd(), configuration.columnEnd());
    }
 
    public void loadChartGroupConfiguration(Window source, File file)
@@ -702,11 +688,53 @@ public class YoChartGroupPanelController implements VisualizerController
    {
       YoChartGroupConfigurationDefinition definition = new YoChartGroupConfigurationDefinition();
       definition.setName(chartGroupName.get());
-      definition.setNumberOfRows(numberOfRows.get());
-      definition.setNumberOfColumns(numberOfCols.get());
+      definition.setNumberOfRows(currentSize.getValue().numberOfRows);
+      definition.setNumberOfColumns(currentSize.getValue().numberOfCols);
       definition.setChartConfigurations(chartControllers.stream()
                                                         .map(chart -> chart.toYoChartConfigurationDefinition(getChartIdentifier(chart)))
                                                         .collect(Collectors.toList()));
       return definition;
+   }
+
+   public static class ChartGroupSize
+   {
+      private final int numberOfRows;
+      private final int numberOfCols;
+
+      public ChartGroupSize(int numberOfRows, int numberOfCols)
+      {
+         this.numberOfRows = numberOfRows;
+         this.numberOfCols = numberOfCols;
+      }
+
+      public int getNumberOfRows()
+      {
+         return numberOfRows;
+      }
+
+      public int getNumberOfCols()
+      {
+         return numberOfCols;
+      }
+
+      private int getNumberOfCharts()
+      {
+         return numberOfRows * numberOfCols;
+      }
+
+      private ChartGroupSize addRows(int rowsToAdd)
+      {
+         return new ChartGroupSize(numberOfRows + rowsToAdd, numberOfCols);
+      }
+
+      private ChartGroupSize computeRowsFromNumberOfCharts(int numberOfCharts)
+      {
+         return new ChartGroupSize(numberOfCharts / numberOfCols, numberOfCols);
+      }
+
+      private boolean contains(int row, int col)
+      {
+         return row < numberOfRows && col < numberOfCols;
+      }
    }
 }
