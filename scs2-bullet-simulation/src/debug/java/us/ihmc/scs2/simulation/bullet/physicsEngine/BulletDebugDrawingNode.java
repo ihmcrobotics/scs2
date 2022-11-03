@@ -1,6 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import javafx.scene.Group;
@@ -37,7 +38,7 @@ public class BulletDebugDrawingNode extends Group
       updateDebugDrawings.set(true);
       showDebugDrawings.set(true);
 
-      btIDebugDraw = new btIDebugDraw((Pointer) null)
+      btIDebugDraw = new btIDebugDraw()
       {
          @Override
          public void drawLine(btVector3 from, btVector3 to, btVector3 color)
@@ -74,13 +75,13 @@ public class BulletDebugDrawingNode extends Group
          }
 
          @Override
-         public void reportErrorWarning(String warningString)
+         public void reportErrorWarning(BytePointer warningString)
          {
-            LogTools.error("Bullet: {}", warningString);
+            LogTools.error("Bullet: {}", warningString.getString().trim());
          }
 
          @Override
-         public void draw3dText(btVector3 location, String textString)
+         public void draw3dText(btVector3 location, BytePointer textString)
          {
 
          }
