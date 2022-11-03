@@ -48,6 +48,8 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
    public YoPolynomialFX3D()
    {
       polynomialNode.getTransforms().add(affine);
+      polynomialNode.idProperty().bind(nameProperty());
+      polynomialNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoPolynomialFX3D(ReferenceFrame worldFrame)
@@ -110,8 +112,9 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       {
          return;
       }
-      else if (Double.isNaN(newPolynomialLocal.startTime) || Double.isNaN(newPolynomialLocal.endTime) || newPolynomialLocal.coefficientsX == null
-            || newPolynomialLocal.coefficientsX.length == 0 || newPolynomialLocal.coefficientsY.length == 0 || newPolynomialLocal.coefficientsZ.length == 0)
+      else if (newPolynomialLocal.coefficientsX == null || newPolynomialLocal.coefficientsY == null || newPolynomialLocal.coefficientsZ == null
+            || newPolynomialLocal.coefficientsX.length == 0 || newPolynomialLocal.coefficientsY.length == 0 || newPolynomialLocal.coefficientsZ.length == 0
+            || newPolynomialLocal.containsNaN())
       {
          newMeshViews = new MeshView[0];
          return;
@@ -162,6 +165,38 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       private double[] coefficientsX, coefficientsY, coefficientsZ;
       private double startTime = Double.NaN, endTime = Double.NaN;
       private double size = Double.NaN;
+
+      public boolean containsNaN()
+      {
+         if (coefficientsX != null)
+         {
+            for (double coeff : coefficientsX)
+            {
+               if (Double.isNaN(coeff))
+                  return true;
+            }
+         }
+
+         if (coefficientsY != null)
+         {
+            for (double coeff : coefficientsY)
+            {
+               if (Double.isNaN(coeff))
+                  return true;
+            }
+         }
+
+         if (coefficientsZ != null)
+         {
+            for (double coeff : coefficientsZ)
+            {
+               if (Double.isNaN(coeff))
+                  return true;
+            }
+         }
+
+         return Double.isNaN(startTime) || Double.isNaN(endTime) || Double.isNaN(size);
+      }
 
       @Override
       public boolean equals(Object object)

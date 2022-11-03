@@ -31,6 +31,8 @@ public class YoPointFX3D extends YoGraphicFX3D
    {
       pointNode.getTransforms().addAll(translate, scale);
       setGraphicResource(YoGraphicFXResourceManager.DEFAULT_POINT3D_GRAPHIC_RESOURCE);
+      pointNode.idProperty().bind(nameProperty());
+      pointNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoPointFX3D(ReferenceFrame worldFrame)
@@ -63,6 +65,14 @@ public class YoPointFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (position.containsNaN() || (size != null && Double.isNaN(size.get())))
+      {
+         scale.setX(0);
+         scale.setY(0);
+         scale.setZ(0);
+         return;
+      }
+
       Point3D positionInWorld = position.toPoint3DInWorld();
       translate.setX(positionInWorld.getX());
       translate.setY(positionInWorld.getY());

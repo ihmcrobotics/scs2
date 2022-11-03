@@ -22,6 +22,7 @@ public class YoPolygonFX2D extends YoGraphicFX2D
    public YoPolygonFX2D()
    {
       polygonNode.idProperty().bind(nameProperty());
+      polygonNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoPolygonFX2D(ReferenceFrame worldFrame)

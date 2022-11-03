@@ -2,7 +2,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -45,6 +44,7 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
       polytopeNode.setMaterial(material);
       polytopeNode.getTransforms().add(affine);
       polytopeNode.idProperty().bind(nameProperty());
+      polytopeNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoConvexPolytopeFX3D(ReferenceFrame worldFrame)
@@ -57,6 +57,13 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (position.containsNaN() || orientation.containsNaN())
+      {
+         oldData = null;
+         polytopeNode.setMesh(null);
+         return;
+      }
+
       newData = newPolytopeData(vertices, numberOfVertices);
 
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
@@ -87,13 +94,20 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
 
       if (numberOfVertices != null && numberOfVertices.get() >= 0 && numberOfVertices.get() < vertices.size())
          vertices = vertices.subList(0, numberOfVertices.get());
-      data.vertices = vertices.stream().map(Point3D::new).collect(Collectors.toList());
+      data.vertices = new ArrayList<>();
+
+      for (Tuple3DProperty vertex : vertices)
+      {
+         if (vertex.containsNaN())
+            break;
+         data.vertices.add(new Point3D(vertex));
+      }
       return data;
    }
 
    private static class PolytopeData
    {
-      private List<Point3DReadOnly> vertices;
+      private List<Point3DReadOnly> vertices = new ArrayList<>();
 
       @Override
       public boolean equals(Object object)
