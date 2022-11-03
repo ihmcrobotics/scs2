@@ -17,6 +17,7 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController.ChartGroupSize;
 
 public class TableSizeQuickAccess
 {
@@ -30,16 +31,14 @@ public class TableSizeQuickAccess
    private final Rectangle[][] boxes;
    private final JFXButton clearAllButton, clearEmptyButton;
 
-   private final int maxNumberOfRows;
-   private final int maxNumberOfColumns;
+   private final ChartGroupSize maxSize;
 
    private final IntegerProperty selectedRowsProperty = new SimpleIntegerProperty(this, "selectedRows", -1);
    private final IntegerProperty selectedColumnsProperty = new SimpleIntegerProperty(this, "selectedColumns", -1);
 
-   public TableSizeQuickAccess(String title, int currentNumberOfRows, int currentNumberOfColumns, int maxNumberOfRows, int maxNumberOfColumns)
+   public TableSizeQuickAccess(String title, ChartGroupSize currentSize, ChartGroupSize maxSize)
    {
-      this.maxNumberOfRows = maxNumberOfRows;
-      this.maxNumberOfColumns = maxNumberOfColumns;
+      this.maxSize = maxSize;
       anchorPane.getChildren().add(vBox);
       AnchorPane.setTopAnchor(vBox, 5.0);
       AnchorPane.setLeftAnchor(vBox, 5.0);
@@ -71,14 +70,14 @@ public class TableSizeQuickAccess
       });
       gridPane.setOnMouseMoved(e -> tooltip.show(gridPane, e.getScreenX() + 10, e.getScreenY() + 20));
 
-      boxes = new Rectangle[maxNumberOfRows][maxNumberOfColumns];
+      boxes = new Rectangle[maxSize.getNumberOfRows()][maxSize.getNumberOfCols()];
 
-      for (int row = 0; row < maxNumberOfRows; row++)
+      for (int row = 0; row < maxSize.getNumberOfRows(); row++)
       {
-         for (int col = 0; col < maxNumberOfColumns; col++)
+         for (int col = 0; col < maxSize.getNumberOfCols(); col++)
          {
             Paint boxPaint;
-            if (row < currentNumberOfRows && col < currentNumberOfColumns)
+            if (row < currentSize.getNumberOfRows() && col < currentSize.getNumberOfCols())
                boxPaint = Paint.valueOf("#b5b576"); // Light gray-ish yellow
             else
                boxPaint = Paint.valueOf("#a0a4a8"); // Light gray
@@ -114,15 +113,15 @@ public class TableSizeQuickAccess
             rowBoxes[col].setStyle(SELECTED);
          }
 
-         for (int col = lastSelectedCol + 1; col < maxNumberOfColumns; col++)
+         for (int col = lastSelectedCol + 1; col < maxSize.getNumberOfCols(); col++)
          {
             rowBoxes[col].setStyle(UNSELECTED);
          }
       }
 
-      for (int row = lastSelectedRow + 1; row < maxNumberOfRows; row++)
+      for (int row = lastSelectedRow + 1; row < maxSize.getNumberOfRows(); row++)
       {
-         for (int col = 0; col < maxNumberOfColumns; col++)
+         for (int col = 0; col < maxSize.getNumberOfCols(); col++)
          {
             boxes[row][col].setStyle(UNSELECTED);
          }
