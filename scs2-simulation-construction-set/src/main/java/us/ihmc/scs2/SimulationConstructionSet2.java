@@ -688,6 +688,9 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       if (simulationSession.isSessionShutdown())
          return false;
 
+      if (!isSimulationThreadRunning())
+         pause();
+
       boolean started = simulationSession.startSessionThread();
 
       if (visualizerEnabled && visualizerControls == null)

@@ -81,6 +81,12 @@ public abstract class RobotExtension implements RobotInterface
    }
 
    @Override
+   public void resetState()
+   {
+      robot.resetState();
+   }
+
+   @Override
    public void initializeState()
    {
       robot.initializeState();

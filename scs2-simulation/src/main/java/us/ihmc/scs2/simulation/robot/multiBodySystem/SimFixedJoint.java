@@ -61,6 +61,12 @@ public class SimFixedJoint extends FixedJoint implements SimJointBasics
    }
 
    @Override
+   public void resetState()
+   {
+      // Nothing to do
+   }
+
+   @Override
    public SimRigidBodyBasics getPredecessor()
    {
       return (SimRigidBodyBasics) super.getPredecessor();

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -297,8 +298,11 @@ public class YoGraphicTools
             return toYoBoxFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicBox3DDefinition) definition);
          else if (definition instanceof YoGraphicSTPBox3DDefinition)
             return toYoSTPBoxFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicSTPBox3DDefinition) definition);
-         else
-            throw new UnsupportedOperationException("Unhandled graphic type: " + definition.getClass().getSimpleName());
+         else if (definition instanceof YoGraphicEllipsoid3DDefinition)
+            return toYoEllipsoidFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicEllipsoid3DDefinition) definition);
+
+         LogTools.error("Unhandled graphic type: {}", definition.getClass().getSimpleName());
+         return null;
       }
       catch (NullPointerException e)
       {
@@ -348,6 +352,10 @@ public class YoGraphicTools
          if (yoGraphicFX != null)
             yoGroupFX.addYoGraphicFXItem(yoGraphicFX);
       }
+      // If the group definition is not visible, we override the descendants to not be visible by setting the visible property after they were added.. 
+      // Without this, when adding a visible item, the group visible property would be overridden.
+      if (!definition.isVisible())
+         yoGroupFX.setVisible(false);
       return yoGroupFX;
    }
 
@@ -1203,7 +1211,7 @@ public class YoGraphicTools
 
    public static YoGraphicListDefinition toYoGraphicListDefinition(Collection<? extends YoGraphicFXItem> yoGraphicFXs)
    {
-      return new YoGraphicListDefinition(yoGraphicFXs.stream().map(YoGraphicTools::toYoGraphicDefinition).collect(Collectors.toList()));
+      return new YoGraphicListDefinition(yoGraphicFXs.stream().map(YoGraphicTools::toYoGraphicDefinition).filter(Objects::nonNull).toList());
    }
 
    public static YoGraphicDefinition toYoGraphicDefinition(YoGraphicFXItem yoGraphicFX)
@@ -1242,8 +1250,11 @@ public class YoGraphicTools
          return toYoGraphicBox3DDefinition((YoBoxFX3D) yoGraphicFX);
       else if (yoGraphicFX instanceof YoSTPBoxFX3D)
          return toYoGraphicSTPBox3DDefinition((YoSTPBoxFX3D) yoGraphicFX);
-      else
-         throw new UnsupportedOperationException("Unsupported " + YoGraphicFX.class.getSimpleName() + ": " + yoGraphicFX.getClass().getSimpleName());
+      else if (yoGraphicFX instanceof YoEllipsoidFX3D)
+         return toYoGraphicEllipsoid3DDefinition((YoEllipsoidFX3D) yoGraphicFX);
+
+      LogTools.error("Unsupported {}: {}", YoGraphicFX.class.getSimpleName(), yoGraphicFX.getClass().getSimpleName());
+      return null;
    }
 
    public static YoGraphicGroupDefinition toYoGraphicGroupDefinition(YoGroupFX yoGraphicFX)

@@ -253,6 +253,16 @@ public class Robot implements RobotInterface
    }
 
    @Override
+   public void resetState()
+   {
+      for (int i = 0; i < allJoints.size(); i++)
+      {
+         allJoints.get(i).resetState();
+      }
+      rootBody.updateFramesRecursively();
+   }
+
+   @Override
    public void initializeState()
    {
       for (int i = 0; i < allJoints.size(); i++)

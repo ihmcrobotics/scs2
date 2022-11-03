@@ -125,6 +125,8 @@ public interface RobotInterface extends SimMultiBodySystemBasics
       getControllerManager().addThrottledController(controllerDefinition, period, timeUnit);
    }
 
+   void resetState();
+
    void initializeState();
 
    default void updateFrames()
