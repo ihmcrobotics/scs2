@@ -66,7 +66,7 @@ public class SecondaryWindowController implements VisualizerController
       VBox.setVgrow(chartGroupPane, Priority.ALWAYS);
       Scene scene = new Scene(mainNode, 1024, 768);
       stage.setScene(scene);
-      String windowTitlePrefix = "Chart Window";
+      String windowTitlePrefix = "Chart";
       stage.setTitle(windowTitlePrefix);
       chartGroupController.chartGroupNameProperty().addListener((o, oldValue, newValue) ->
       {
