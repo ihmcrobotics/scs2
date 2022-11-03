@@ -289,6 +289,10 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    public void setChartConfiguration(YoChartConfigurationDefinition definition)
    {
       clear();
+
+      if (definition == null)
+         return;
+
       if (definition.getYoVariables() != null)
       {
          definition.getYoVariables().forEach(this::addYoVariableToPlot);
@@ -538,7 +542,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       else if (event.isMiddleButtonDown() && event.getPickResult().getIntersectedNode() instanceof Text)
       { // TODO The legend's name needs to be unique within a single graph
          String pickedName = ((Text) event.getPickResult().getIntersectedNode()).getText();
-         Optional<YoVariableChartPackage> chartData = charts.values().stream().filter(dataPackage -> dataPackage.series.getSeriesName().equals(pickedName))
+         Optional<YoVariableChartPackage> chartData = charts.values()
+                                                            .stream()
+                                                            .filter(dataPackage -> dataPackage.series.getSeriesName().equals(pickedName))
                                                             .findFirst();
          if (chartData.isPresent())
          {
@@ -585,7 +591,10 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
             {
                Text legend = (Text) intersectedNode;
                String yoVariableName = legend.getText().split("\\s+")[0];
-               YoVariable yoVariableSelected = charts.keySet().stream().filter(yoVariable -> yoVariable.getName().equals(yoVariableName)).findFirst()
+               YoVariable yoVariableSelected = charts.keySet()
+                                                     .stream()
+                                                     .filter(yoVariable -> yoVariable.getName().equals(yoVariableName))
+                                                     .findFirst()
                                                      .orElse(null);
                if (yoVariableSelected == null)
                   return;
@@ -780,7 +789,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       definition.setIdentifier(ChartTools.toYoChartIdentifierDefinition(chartIdentifier));
       definition.setChartStyle(dynamicLineChart.getChartStyle().name());
       definition.setYoVariables(charts.keySet().stream().map(YoVariable::getFullNameString).collect(Collectors.toList()));
-      definition.setYBounds(charts.values().stream().map(pack -> ChartTools.toChartDoubleBoundsDefinition(pack.getSeries().getCustomYBounds()))
+      definition.setYBounds(charts.values()
+                                  .stream()
+                                  .map(pack -> ChartTools.toChartDoubleBoundsDefinition(pack.getSeries().getCustomYBounds()))
                                   .collect(Collectors.toList()));
       definition.setNegates(charts.values().stream().map(pack -> pack.getSeries().isNegated()).collect(Collectors.toList()));
       return definition;
