@@ -10,16 +10,21 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
+import us.ihmc.yoVariables.euclid.YoTuple2D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple2D;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 public interface SessionVisualizerControls
 {
@@ -36,6 +41,17 @@ public interface SessionVisualizerControls
    void setCameraOrientation(double latitude, double longitude);
 
    /**
+    * Convenience methods to set the camera position.
+    * 
+    * @param position the new camera position. Not modified.
+    * @see #setCameraPosition(double, double, double)
+    */
+   default void setCameraPosition(Point3DReadOnly position)
+   {
+      setCameraPosition(position.getX(), position.getY(), position.getZ());
+   }
+
+   /**
     * Sets the camera position without moving the focus point.
     * <p>
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
@@ -47,6 +63,17 @@ public interface SessionVisualizerControls
     * @param z the new z-coordinate for the camera position.
     */
    void setCameraPosition(double x, double y, double z);
+
+   /**
+    * Convenience methods to set the camera position.
+    * 
+    * @param position the new focus position. Not modified.
+    * @see #setCameraFocusPosition(double, double, double)
+    */
+   default void setCameraFocusPosition(Point3DReadOnly position)
+   {
+      setCameraFocusPosition(position.getX(), position.getY(), position.getZ());
+   }
 
    /**
     * Sets the position of the focus point, i.e. what the camera is looking at.
@@ -86,6 +113,41 @@ public interface SessionVisualizerControls
     * @param show whether the plotter 2D should be visible or not.
     */
    void showOverheadPlotter2D(boolean show);
+
+   /**
+    * Requests the plotter to track the {@code YoVariable} coordinates.
+    * 
+    * @param position the position to track.
+    */
+   default void requestPlotter2DCoordinateTracking(YoFrameTuple2D position)
+   {
+      requestPlotter2DCoordinateTracking(position, position.getReferenceFrame().getNameId());
+   }
+
+   /**
+    * Requests the plotter to track the {@code YoVariable} coordinates.
+    * 
+    * @param position  the position to track.
+    * @param frameName the name of the reference frame in which the coordinates are expressed. If
+    *                  {@code null}, world frame is used.
+    */
+   default void requestPlotter2DCoordinateTracking(YoTuple2D position, String frameName)
+   {
+      requestPlotter2DCoordinateTracking(position.getYoX(), position.getYoY(), frameName);
+   }
+
+   /**
+    * Requests the plotter to track the {@code YoVariable} coordinates.
+    * 
+    * @param xVariable the {@code YoVariable} to track for the x-coordinate.
+    * @param yVariable the {@code YoVariable} to track for the y-coordinate.
+    * @param frameName the name of the reference frame in which the coordinates are expressed. If
+    *                  {@code null}, world frame is used.
+    */
+   default void requestPlotter2DCoordinateTracking(YoDouble xVariable, YoDouble yVariable, String frameName)
+   {
+      requestPlotter2DCoordinateTracking(xVariable.getFullNameString(), yVariable.getFullNameString(), frameName);
+   }
 
    /**
     * Requests the plotter to track the {@code YoVariable} coordinates.
