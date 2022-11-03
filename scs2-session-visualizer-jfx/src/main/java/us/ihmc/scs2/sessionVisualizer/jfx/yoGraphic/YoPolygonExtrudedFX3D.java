@@ -48,6 +48,7 @@ public class YoPolygonExtrudedFX3D extends YoGraphicFX3D
       polygonNode.setMaterial(material);
       polygonNode.getTransforms().add(affine);
       polygonNode.idProperty().bind(nameProperty());
+      polygonNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoPolygonExtrudedFX3D(ReferenceFrame worldFrame)
@@ -60,6 +61,13 @@ public class YoPolygonExtrudedFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (position.containsNaN() || orientation.containsNaN())
+      {
+         affine.setToIdentity();
+         affine.appendScale(0, 0, 0);
+         return;
+      }
+
       newData = newPolygonData(vertices, numberOfVertices, thickness);
 
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
@@ -133,7 +141,7 @@ public class YoPolygonExtrudedFX3D extends YoGraphicFX3D
       {
          return;
       }
-      else if (newDataLocal.vertices == null)
+      else if (newDataLocal.vertices == null || Double.isNaN(newDataLocal.thickness) || newDataLocal.thickness < 1.0e-5)
       {
          clearMesh = true;
          return;

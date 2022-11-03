@@ -30,6 +30,7 @@ public class YoRampFX3D extends YoGraphicFX3D
       rampNode.setMaterial(material);
       rampNode.getTransforms().addAll(affine, scale);
       rampNode.idProperty().bind(nameProperty());
+      rampNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoRampFX3D(ReferenceFrame worldFrame)
@@ -42,7 +43,14 @@ public class YoRampFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
-      // TODO Auto-generated method stub
+      if (position.containsNaN() || orientation.containsNaN() || size.containsNaN())
+      {
+         affine.setToIdentity();
+         scale.setX(0.0);
+         scale.setY(0.0);
+         scale.setZ(0.0);
+      }
+
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
       if (color == null)
          color = () -> null;

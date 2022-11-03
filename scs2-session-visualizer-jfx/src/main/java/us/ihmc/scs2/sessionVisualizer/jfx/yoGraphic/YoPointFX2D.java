@@ -36,6 +36,8 @@ public class YoPointFX2D extends YoGraphicFX2D
    public YoPointFX2D()
    {
       pointNode.getTransforms().addAll(translate, scale);
+      pointNode.idProperty().bind(nameProperty());
+      pointNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
       setGraphicResource(YoGraphicFXResourceManager.DEFAULT_POINT2D_GRAPHIC_RESOURCE);
    }
 
@@ -76,6 +78,15 @@ public class YoPointFX2D extends YoGraphicFX2D
    @Override
    public void render()
    {
+      if (position.containsNaN())
+      {
+         translate.setX(Double.NEGATIVE_INFINITY);
+         translate.setY(Double.NEGATIVE_INFINITY);
+         scale.setX(0.0);
+         scale.setY(0.0);
+         return;
+      }
+
       Point2D positionInWorld = position.toPoint2DInWorld();
       translate.setX(positionInWorld.getX());
       translate.setY(positionInWorld.getY());

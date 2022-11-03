@@ -47,6 +47,9 @@ public class YoGroupFX implements YoGraphicFXItem
 
    private YoGroupFX(String name, boolean isRoot)
    {
+      group2D.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
+      group3D.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
+
       if (isRoot)
       {
          nameProperty.set(name);

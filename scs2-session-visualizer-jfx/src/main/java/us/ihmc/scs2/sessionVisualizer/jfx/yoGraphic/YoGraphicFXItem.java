@@ -7,6 +7,8 @@ import javafx.collections.ObservableSet;
 
 public interface YoGraphicFXItem
 {
+   public static final String YO_GRAPHICFX_ITEM_KEY = YoGraphicFXItem.class.getSimpleName();
+
    StringProperty nameProperty();
 
    default void setName(String name)

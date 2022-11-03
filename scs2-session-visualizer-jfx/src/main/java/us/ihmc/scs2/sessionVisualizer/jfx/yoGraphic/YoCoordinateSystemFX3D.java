@@ -47,6 +47,8 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
    public YoCoordinateSystemFX3D()
    {
       coordinateSystemNode.getTransforms().add(affine);
+      coordinateSystemNode.idProperty().bind(nameProperty());
+      coordinateSystemNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoCoordinateSystemFX3D(ReferenceFrame worldFrame)
@@ -59,6 +61,14 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (position.containsNaN() || orientation.containsNaN())
+      {
+         newNodes = null;
+         oldData = null;
+         coordinateSystemNode.getChildren().clear();
+         return;
+      }
+
       newData = newCoordinateSystemData(bodyLength, bodyRadius, headLength, headRadius);
 
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
@@ -74,7 +84,9 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
       }
    }
 
-   static CoordinateSystemData newCoordinateSystemData(DoubleProperty bodyLength, DoubleProperty bodyRadius, DoubleProperty headLength,
+   static CoordinateSystemData newCoordinateSystemData(DoubleProperty bodyLength,
+                                                       DoubleProperty bodyRadius,
+                                                       DoubleProperty headLength,
                                                        DoubleProperty headRadius)
    {
       CoordinateSystemData data = new CoordinateSystemData();
