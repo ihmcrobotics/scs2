@@ -31,6 +31,30 @@ public class FallingSphereExperimentalBulletSimulation
 {
    public FallingSphereExperimentalBulletSimulation()
    {
+      SimulationSession simulationSession = createSession();
+
+      BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine) simulationSession.getPhysicsEngine();
+      btMultiBodyDynamicsWorld multiBodyDynamicsWorld = bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld();
+
+      int size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
+      for (int i = 0; i < size; i++)
+      {
+         btCollisionShape collisionShape = multiBodyDynamicsWorld.getCollisionObjectArray().get(i).getCollisionShape();
+         System.out.println(i + " before Visualizer " + collisionShape.getShapeType());
+      }
+
+      SessionVisualizer.startSessionVisualizer(simulationSession);
+
+      size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
+      for (int i = 0; i < size; i++)
+      {
+         btCollisionShape collisionShape = multiBodyDynamicsWorld.getCollisionObjectArray().get(i).getCollisionShape();
+         System.out.println(i + " after Visualizer " + collisionShape.getShapeType());
+      }
+   }
+
+   public static SimulationSession createSession()
+   {
       double radius1 = 0.3;
       double mass1 = 2.0;
       double radiusOfGyrationPercent1 = 1.0;
@@ -65,26 +89,7 @@ public class FallingSphereExperimentalBulletSimulation
       simulationSession.submitBufferSizeRequest(245760);
       simulationSession.setBufferRecordTickPeriod(8);
       //simulationSession.setSessionDTSeconds(0.000001);
-
-      BulletPhysicsEngine bulletPhysicsEngine = (BulletPhysicsEngine) simulationSession.getPhysicsEngine();
-      btMultiBodyDynamicsWorld multiBodyDynamicsWorld = bulletPhysicsEngine.getBulletMultiBodyDynamicsWorld().getBtMultiBodyDynamicsWorld();
-
-      int size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
-      for (int i = 0; i < size; i++)
-      {
-         btCollisionShape collisionShape = multiBodyDynamicsWorld.getCollisionObjectArray().get(i).getCollisionShape();
-         System.out.println(i + " before Visualizer " + collisionShape.getShapeType());
-      }
-
-      SessionVisualizer.startSessionVisualizer(simulationSession);
-
-      size = multiBodyDynamicsWorld.getCollisionObjectArray().size();
-      for (int i = 0; i < size; i++)
-      {
-         btCollisionShape collisionShape = multiBodyDynamicsWorld.getCollisionObjectArray().get(i).getCollisionShape();
-         System.out.println(i + " after Visualizer " + collisionShape.getShapeType());
-      }
-
+      return simulationSession;
    }
 
    public static void main(String[] args)
