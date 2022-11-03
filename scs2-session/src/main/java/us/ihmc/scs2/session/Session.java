@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,6 +114,15 @@ public abstract class Session
     * Timer used to measured the total time spent in each call of {@link #finalizeRunTick(boolean)}.
     */
    private final YoTimer runFinalizeTimer = new YoTimer("runFinalizeTimer", TimeUnit.MILLISECONDS, runRegistry);
+   /**
+    * Real-time rate when this session is in {@link SessionMode#RUNNING}.
+    * <ul>
+    * <li>a value of less than 1 indicates that this session is slower than real-time.
+    * <li>a value of 1 indicates that this session runs at real-time.
+    * <li>a value of more than 1 indicates that this session is faster than real-time.
+    * </ul>
+    */
+   private final YoDouble runRealtimeRate = new YoDouble("runRealtimeRate", runRegistry);
 
    /** Registry gathering debug variables related to {@link #playbackTick()}. */
    protected final YoRegistry playbackRegistry = new YoRegistry("playbackStatistics");
@@ -212,7 +221,7 @@ public abstract class Session
    protected boolean firstRunTick = true;
    protected boolean firstPauseTick = true;
 
-   protected final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2, new DaemonThreadFactory("SCS2-Session-Thread"));
+   protected final ExecutorService executorService = Executors.newFixedThreadPool(2, new DaemonThreadFactory("SCS2-Session-Thread"));
    protected PeriodicTaskWrapper activePeriodicTask;
 
    private final EnumMap<SessionMode, Runnable> sessionModeToTaskMap = new EnumMap<>(SessionMode.class);
@@ -241,7 +250,7 @@ public abstract class Session
 
    /**
     * Attempts to retrieve the simple name of the main class calling this method.
-    * 
+    *
     * @return the simple name of the main calling this method.
     */
    public static String retrieveCallerName()
@@ -255,7 +264,7 @@ public abstract class Session
     * Configures this session to communicate with the given messager. The session will register
     * listeners and publishers using the API defined in {@link YoSharedBufferMessagerAPI} and
     * {@link SessionMessagerAPI}.
-    * 
+    *
     * @param messager the messager to configure this session with.
     */
    public void setupWithMessager(Messager messager)
@@ -274,7 +283,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param sessionMode the target mode.
     */
    public void setSessionMode(SessionMode sessionMode)
@@ -288,7 +297,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param sessionMode the new active session mode.
     * @param transition  the transition to schedule termination of the given {@code sessionMode} and
     *                    transition to the following mode.
@@ -303,7 +312,7 @@ public abstract class Session
 
    /**
     * Adds a listener to be notified whenever this session just changed mode.
-    * 
+    *
     * @param listener the listener to add.
     * @see SessionMode
     */
@@ -314,7 +323,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -326,7 +335,7 @@ public abstract class Session
 
    /**
     * Adds a listener to be notified whenever this session is about to change mode.
-    * 
+    *
     * @param listener the listener to add.
     * @see SessionMode
     */
@@ -337,7 +346,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -349,7 +358,7 @@ public abstract class Session
 
    /**
     * Adds a listener to be notified whenever this session is about to shutdown.
-    * 
+    *
     * @param listener the listener to add.
     */
    public void addShutdownListener(Runnable listener)
@@ -359,7 +368,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -371,7 +380,7 @@ public abstract class Session
 
    /**
     * Adds a listener to be notified on a regular basis about this session's general parameters.
-    * 
+    *
     * @param listener the listener to add.
     * @see SessionProperties
     */
@@ -382,7 +391,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -394,7 +403,7 @@ public abstract class Session
 
    /**
     * Adds a listener to be notified on a regular basis about this session's buffer properties.
-    * 
+    *
     * @param listener the listener to add.
     * @see YoBufferPropertiesReadOnly
     */
@@ -405,7 +414,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -418,7 +427,7 @@ public abstract class Session
    /**
     * Adds a listener to be notified if an exception is being thrown while this session is in running
     * mode
-    * 
+    *
     * @param listener the listener to add.
     * @see SessionMode
     */
@@ -429,7 +438,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -442,7 +451,7 @@ public abstract class Session
    /**
     * Adds a listener to be notified if an exception is being thrown while this session is in playback
     * mode
-    * 
+    *
     * @param listener the listener to add.
     * @see SessionMode
     */
@@ -453,7 +462,7 @@ public abstract class Session
 
    /**
     * Removes a listener previously registered to this session.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
     *         found.
@@ -469,7 +478,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param sessionDTSeconds the time increment in seconds per running tick.
     * @see SessionMode
     */
@@ -484,7 +493,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param sessionDTSeconds the time increment in nanoseconds per running tick.
     * @see SessionMode
     */
@@ -507,7 +516,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param bufferSize the initial size of the buffer. Default value
     *                   {@value #DEFAULT_INITIAL_BUFFER_SIZE}.
     * @return {@code true} if the request is going through, {@code false} if it is being ignored.
@@ -529,7 +538,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
     *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     * @return {@code true} if the request is going through, {@code false} if it is being ignored.
@@ -548,7 +557,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param runAtRealTimeRate {@code true} to cap the running mode at real-time rate, {@code false} to
     *                          let the running mode run as fast as possible. Default value
     *                          {@value #DEFAULT_RUN_AT_REALTIME_RATE}.
@@ -568,7 +577,7 @@ public abstract class Session
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
-    * 
+    *
     * @param realTimeRate the real-time factor for playing back data in the buffer. Default value
     *                     {@value #DEFAULT_PLAYBACK_REALTIME_RATE}.
     */
@@ -587,7 +596,7 @@ public abstract class Session
     * <p>
     * A larger value allows to store data over longer period of time.
     * </p>
-    * 
+    *
     * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
     *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     */
@@ -606,7 +615,7 @@ public abstract class Session
     * increase the speed at which we can read the log, also useful for the remote session to reduce the
     * computational induced by the GUI while receiving a high-bandwidth stream of data.
     * </p>
-    * 
+    *
     * @param publishPeriod period in nanoseconds at which the buffer data is publish while in
     *                      {@link SessionMode#RUNNING} mode. Default value
     *                      {@value #DEFAULT_BUFFER_PUBLISH_PERIOD}.
@@ -625,7 +634,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise. This request will cancel any other requests submitted at the same time.
     * </p>
-    * 
+    *
     * @param cropBufferRequest the request.
     * @see CropBufferRequest
     */
@@ -644,7 +653,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param fillBufferRequest the request.
     */
    public void submitFillBufferRequest(FillBufferRequest fillBufferRequest)
@@ -665,7 +674,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferSizeRequest
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
@@ -684,7 +693,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferIndexRequest the current index to go to.
     */
    public void submitBufferIndexRequest(Integer bufferIndexRequest)
@@ -702,7 +711,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param incrementBufferIndexRequest the increment to apply to the current buffer index.
     */
    public void submitIncrementBufferIndexRequest(Integer incrementBufferIndexRequest)
@@ -720,7 +729,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param decrementBufferIndexRequest the decrement to apply to the current buffer index.
     */
    public void submitDecrementBufferIndexRequest(Integer decrementBufferIndexRequest)
@@ -741,7 +750,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferInPointIndexRequest the new index for the in-point.
     */
    public void submitBufferInPointIndexRequest(Integer bufferInPointIndexRequest)
@@ -762,7 +771,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferOutPointIndexRequest the new index for the out-point.
     */
    public void submitBufferOutPointIndexRequest(Integer bufferOutPointIndexRequest)
@@ -779,7 +788,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param sessionDataExportRequest the request.
     * @see SessionDataExportRequest
     */
@@ -798,7 +807,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise. This request will cancel any other requests submitted at the same time.
     * </p>
-    * 
+    *
     * @param cropBufferRequest the request.
     * @see CropBufferRequest
     */
@@ -826,7 +835,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param fillBufferRequest the request.
     */
    public void submitFillBufferRequestAndWait(FillBufferRequest fillBufferRequest)
@@ -856,7 +865,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferSizeRequest
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
@@ -884,7 +893,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferIndexRequest the current index to go to.
     */
    public void submitBufferIndexRequestAndWait(Integer bufferIndexRequest)
@@ -912,7 +921,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param incrementBufferIndexRequest the increment to apply to the current buffer index.
     */
    public void submitIncrementBufferIndexRequestAndWait(Integer incrementBufferIndexRequest)
@@ -940,7 +949,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param decrementBufferIndexRequest the decrement to apply to the current buffer index.
     */
    public void submitDecrementBufferIndexRequestAndWait(Integer decrementBufferIndexRequest)
@@ -971,7 +980,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferInPointIndexRequest the new index for the in-point.
     */
    public void submitBufferInPointIndexRequestAndWait(Integer bufferInPointIndexRequest)
@@ -1001,7 +1010,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param bufferOutPointIndexRequest the new index for the out-point.
     */
    public void submitBufferOutPointIndexRequestAndWait(Integer bufferOutPointIndexRequest)
@@ -1027,7 +1036,7 @@ public abstract class Session
     * This request is only processed if the session is in {@link SessionMode#PAUSE}, it will be ignored
     * otherwise.
     * </p>
-    * 
+    *
     * @param sessionDataExportRequest the request.
     * @see SessionDataExportRequest
     */
@@ -1046,7 +1055,7 @@ public abstract class Session
 
    /**
     * Starts the internal thread of this session running the current session mode.
-    * 
+    *
     * @return {@code true} if the thread has started, {@code false} if it could not be started, e.g. it
     *         was already started or the session was shutdown.
     */
@@ -1079,7 +1088,7 @@ public abstract class Session
     * <p>
     * This is a blocking operation and will return only when done.
     * </p>
-    * 
+    *
     * @return {@code true} if the thread has stopped, {@code false} if it could not be stopped, e.g. it
     *         was already stopped or the session was shutdown.
     */
@@ -1232,7 +1241,7 @@ public abstract class Session
    /**
     * Overrides this method to implement any specific transition action to be executed right before the
     * new mode starts running.
-    * 
+    *
     * @param previousMode the previous mode. At this point, it is not longer running.
     * @param newMode      the new mode to run next, it is not yet running.
     */
@@ -1367,7 +1376,7 @@ public abstract class Session
     * If {@link #doSpecificRunTick()} results in an exception being thrown, the session mode will be
     * automatically changed to {@link SessionMode#PAUSE}.
     * </p>
-    * 
+    *
     * @return {@code true} if the tick was run successfully, {@code false} if an exception was caught
     *         in {@link #doSpecificRunTick()}, e.g. the simulation failed or the controller crashed.
     */
@@ -1375,6 +1384,7 @@ public abstract class Session
    {
       runTimer.start();
       runActualDT.update();
+      runRealtimeRate.set((double) sessionDTNanoseconds.get() / runActualDT.getTimerValue(TimeUnit.NANOSECONDS));
 
       doGeneric(SessionMode.RUNNING);
 
@@ -1452,7 +1462,7 @@ public abstract class Session
     * {@link #bufferRecordTickPeriod} ticks, unless the given flag {@code forceWriteBuffer} is set to
     * {@code true}.
     * </p>
-    * 
+    *
     * @param forceWriteBuffer when {@code true} the buffer will be updated regardless of the
     *                         {@code nextRunBufferRecordTickCounter} value.
     */
@@ -1490,7 +1500,7 @@ public abstract class Session
    /**
     * Indicates whether the last call of {@link #runTick()} has resulted in writing the
     * {@code YoVariable}s into the buffer.
-    * 
+    *
     * @return {@code true} if the buffer was updated, {@code false} otherwise.
     */
    public boolean hasWrittenBufferInLastRunTick()
@@ -1645,7 +1655,7 @@ public abstract class Session
    /**
     * Prepares the buffer for a pause tick, this is mainly about fetching the user requested changes
     * onto the buffer.
-    * 
+    *
     * @return whether the buffer has been modified and should be read at the end of the pause tick.
     */
    protected boolean initializePauseTick()
@@ -1666,7 +1676,7 @@ public abstract class Session
     * But if you really want to, you can override this method to perform custom operations during a
     * pause tick.
     * </p>
-    * 
+    *
     * @return whether the buffer has been modified and should be read at the end of the pause tick.
     */
    protected boolean doSpecificPauseTick()
@@ -1676,7 +1686,7 @@ public abstract class Session
 
    /**
     * Performs buffer operations to finalize a pause tick and publishes data to publisher.
-    * 
+    *
     * @param shouldReadBuffer whether to read the buffer at the current index and update the
     *                         {@link YoVariable} values.
     */
@@ -1698,7 +1708,7 @@ public abstract class Session
 
    /**
     * Submits the given buffer properties to all the listeners.
-    * 
+    *
     * @param bufferProperties the properties to be submitted to the listeners.
     */
    protected void publishBufferProperties(YoBufferPropertiesReadOnly bufferProperties)
@@ -1715,7 +1725,7 @@ public abstract class Session
     * Operations handled here are: changing indices (current, in-point, out-point), resizing, cropping,
     * filling.
     * </p>
-    * 
+    *
     * @param bufferChangesPermitted indicates whether all operations onto the buffer are permitted
     *                               ({@code true)} or only a minimal subset is permitted
     *                               ({@code false}). When in {@link SessionMode#RUNNING} or
@@ -1798,7 +1808,7 @@ public abstract class Session
 
    /**
     * Gets the variable holding the current time (in seconds) in this session.
-    * 
+    *
     * @return the current time (in seconds) variable.
     */
    public YoDouble getTime()
@@ -1808,7 +1818,7 @@ public abstract class Session
 
    /**
     * Gets this session's root registry.
-    * 
+    *
     * @return the root registry.
     */
    public YoRegistry getRootRegistry()
@@ -1818,7 +1828,7 @@ public abstract class Session
 
    /**
     * Returns whether this session's thread has been started.
-    * 
+    *
     * @return {@code true} if the session thread has been started.
     */
    public boolean hasSessionStarted()
@@ -1828,7 +1838,7 @@ public abstract class Session
 
    /**
     * Returns whether this session has been shutdown and is thus unusable.
-    * 
+    *
     * @return {@code true} if this session has been shutdown.
     */
    public boolean isSessionShutdown()
@@ -1838,7 +1848,7 @@ public abstract class Session
 
    /**
     * Gets the current mode of this session.
-    * 
+    *
     * @return the active mode.
     */
    public SessionMode getActiveMode()
@@ -1848,7 +1858,7 @@ public abstract class Session
 
    /**
     * Whether the {@link SessionMode#RUNNING} mode is capped to run no faster that real-time.
-    * 
+    *
     * @return {@code true} if the running mode is capped to run no faster than real-time.
     */
    public boolean getRunAtRealTimeRate()
@@ -1858,7 +1868,7 @@ public abstract class Session
 
    /**
     * The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data.
-    * 
+    *
     * @return real-time factor used for the playback.
     */
    public double getPlaybackRealTimeRate()
@@ -1869,7 +1879,7 @@ public abstract class Session
    /**
     * The number of times {@link #runTick()} should be called before saving the {@link YoVariable} data
     * into the buffer.
-    * 
+    *
     * @return the period, in number of run ticks, at which the {@link YoVariable}s are saved into the
     *         buffer.
     */
@@ -1880,7 +1890,7 @@ public abstract class Session
 
    /**
     * The period in seconds at which data from the {@link YoVariable}s is written into the buffer.
-    * 
+    *
     * @return the period, in seconds, at which the {@link YoVariable}s are saved into the buffer.
     */
    public double getBufferRecordTimePeriod()
@@ -1890,7 +1900,7 @@ public abstract class Session
 
    /**
     * The time increment in seconds corresponding to the execution of one run tick.
-    * 
+    *
     * @return the time increment in seconds per running tick.
     */
    public double getSessionDTSeconds()
@@ -1900,7 +1910,7 @@ public abstract class Session
 
    /**
     * The time increment in nanoseconds corresponding to the execution of one run tick.
-    * 
+    *
     * @return the time increment in nanoseconds per running tick.
     */
    public long getSessionDTNanoseconds()
@@ -1911,7 +1921,7 @@ public abstract class Session
    /**
     * The period at which the buffer is published to the listeners. The is mainly to control the GUI
     * refresh rate.
-    * 
+    *
     * @return the buffer publish period in nanoseconds.
     */
    public long getDesiredBufferPublishPeriod()
@@ -1921,7 +1931,7 @@ public abstract class Session
 
    /**
     * Gets the session name.
-    * 
+    *
     * @return the session name.
     */
    public abstract String getSessionName();
@@ -1929,7 +1939,7 @@ public abstract class Session
    /**
     * The inertial frame. It is expected to be a root frame that is different to
     * {@link ReferenceFrame#getWorldFrame()}.
-    * 
+    *
     * @return this session inertial frame.
     */
    public final ReferenceFrame getInertialFrame()
@@ -1943,7 +1953,7 @@ public abstract class Session
     * <p>
     * This list is notably used by the GUI to visualize the robots.
     * </p>
-    * 
+    *
     * @return the robot definition list.
     */
    public abstract List<RobotDefinition> getRobotDefinitions();
@@ -1954,7 +1964,7 @@ public abstract class Session
     * <p>
     * This list is notably used by the GUI to visualize the environment.
     * </p>
-    * 
+    *
     * @return the terrain object definition list.
     */
    public abstract List<TerrainObjectDefinition> getTerrainObjectDefinitions();
@@ -1964,7 +1974,7 @@ public abstract class Session
     * <p>
     * This list is notably used by the GUI to instantiate yoGraphics.
     * </p>
-    * 
+    *
     * @return the yoGraphic definition list.
     */
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
@@ -1979,7 +1989,7 @@ public abstract class Session
     */
    /**
     * Override me to allow exporting robot states.
-    * 
+    *
     * @param initialState when {@code true}, the state of the robot as of before performing the
     *                     run-tick operations.
     */
@@ -1994,7 +2004,7 @@ public abstract class Session
     * It is not recommended to access and operate directly on the buffer, prefer using
     * {@link #getLinkedYoVariableFactory()}.
     * </p>
-    * 
+    *
     * @return the internal buffer.
     */
    public YoSharedBuffer getBuffer()
@@ -2004,7 +2014,7 @@ public abstract class Session
 
    /**
     * Gets the current buffer properties.
-    * 
+    *
     * @return the read-only properties of the buffer.
     */
    public YoBufferPropertiesReadOnly getBufferProperties()
@@ -2015,7 +2025,7 @@ public abstract class Session
    /**
     * Gets the factory for creating {@link LinkedYoVariable}s that can be used to operate safely with
     * this session buffer.
-    * 
+    *
     * @return the linked yoVariable factory.
     */
    public LinkedYoVariableFactory getLinkedYoVariableFactory()
@@ -2153,14 +2163,14 @@ public abstract class Session
    {
       /**
        * The next mode to switch to once {@link #isDone()} returns {@code true}.
-       * 
+       *
        * @return the mode to transition to once the current mode is done.
        */
       SessionMode getNextMode();
 
       /**
        * Tests whether the current mode is done.
-       * 
+       *
        * @return {@code true} if the current mode is done and should be terminated.
        */
       boolean isDone();
@@ -2175,7 +2185,7 @@ public abstract class Session
 
       /**
        * Factory for a creating a condition based transition.
-       * 
+       *
        * @param doneCondition the condition used to determine when the current mode is done and should be
        *                      terminated.
        * @param nextMode      the mode to switch to once the current mode is done.
@@ -2213,7 +2223,7 @@ public abstract class Session
        * <p>
        * This method is called right after the new mode has been scheduled with the executor.
        * </p>
-       * 
+       *
        * @param previousMode the mode that was running previously. It has been stopped at this time.
        * @param newMode      the mode that is about to run. It has been schedule with the executor and may
        *                     have started to run already.
@@ -2229,25 +2239,28 @@ public abstract class Session
     */
    public static class PeriodicTaskWrapper implements Runnable
    {
-      private static final int ONE_MILLION = 1000000;
-
+      protected Thread owner;
       /** The task to run periodically. */
-      private final Runnable task;
+      protected final Runnable task;
       /** The period at which the task should be run. */
-      private final long periodInNanos;
-      /** Whether the task is being run or not. */
-      private final AtomicBoolean running = new AtomicBoolean(true);
-      /** Indicates whether the task is done running or not. */
-      private final AtomicBoolean isDone = new AtomicBoolean(false);
-      private final CountDownLatch startedLatch = new CountDownLatch(1);
-      private final CountDownLatch doneLatch = new CountDownLatch(1);
+      protected final long desiredPeriodInNanos;
 
-      private Thread owner;
+      /** Variable to track the next absolute desired time to run the task. */
+      private long desiredTimeNanos = Long.MIN_VALUE;
+      /** Variable to track the current measured time spent running the task. */
+      private long currentTimeNanos = Long.MIN_VALUE;
+
+      /** Whether the task is being run or not. */
+      protected final AtomicBoolean running = new AtomicBoolean(true);
+      /** Indicates whether the task is done running or not. */
+      protected final AtomicBoolean isDone = new AtomicBoolean(false);
+      protected final CountDownLatch startedLatch = new CountDownLatch(1);
+      protected final CountDownLatch doneLatch = new CountDownLatch(1);
 
       public PeriodicTaskWrapper(Runnable task, long period, TimeUnit timeUnit)
       {
          this.task = task;
-         periodInNanos = timeUnit.toNanos(period);
+         desiredPeriodInNanos = timeUnit.toNanos(period);
       }
 
       public void stop()
@@ -2302,28 +2315,8 @@ public abstract class Session
          {
             while (running.get())
             {
-               long timeElapsed = System.nanoTime();
-               task.run();
-               timeElapsed = System.nanoTime() - timeElapsed;
-
+               singleExecuteAndSleep();
                startedLatch.countDown();
-
-               if (timeElapsed < periodInNanos)
-               {
-                  long nanos = periodInNanos - timeElapsed;
-                  long millis = nanos / ONE_MILLION;
-                  nanos -= millis * ONE_MILLION;
-
-                  try
-                  {
-                     Thread.sleep(millis, (int) nanos);
-                  }
-                  catch (InterruptedException e)
-                  {
-                     e.printStackTrace();
-                     running.set(false);
-                  }
-               }
             }
          }
          catch (Throwable e)
@@ -2333,6 +2326,39 @@ public abstract class Session
 
          isDone.set(true);
          doneLatch.countDown();
+      }
+
+      public void singleExecuteAndSleep()
+      {
+         long startTime = System.nanoTime();
+         task.run();
+         // Using absolute timing provides better average accuracy when trying to run at a given rate.
+         desiredTimeNanos += desiredPeriodInNanos;
+         long currentTimeAdjusted = currentTimeNanos + System.nanoTime() - startTime;
+
+         if (currentTimeAdjusted < desiredTimeNanos)
+         {
+            sleep(desiredTimeNanos - currentTimeAdjusted);
+         }
+         currentTimeNanos += System.nanoTime() - startTime;
+      }
+
+      protected static final int ONE_MILLION = 1000000;
+
+      protected void sleep(long nanos)
+      {
+         long millis = nanos / ONE_MILLION;
+         nanos -= millis * ONE_MILLION;
+
+         try
+         {
+            Thread.sleep(millis, (int) nanos);
+         }
+         catch (InterruptedException e)
+         {
+            e.printStackTrace();
+            running.set(false);
+         }
       }
    }
 
