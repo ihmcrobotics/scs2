@@ -37,13 +37,13 @@ public class YoVariableDatabase
    private final Map<String, YoVariable> previousSearchResults = new HashMap<>();
    private final Map<String, String> fromSearchToBestSubname = new HashMap<>();
 
-   private final SimilarityScore<Double> seachEngine;
+   private final SimilarityScore<Double> searchEngine;
 
    public YoVariableDatabase(YoRegistry rootRegistry, LinkedYoRegistry linkedRootRegistry)
    {
       this.rootRegistry = rootRegistry;
       this.linkedRootRegistry = linkedRootRegistry;
-      seachEngine = new SimilarityScore<Double>()
+      searchEngine = new SimilarityScore<Double>()
       {
          SimilarityScore<Integer> caseSensitiveSearchEngine = new LongestCommonSubsequence();
 
@@ -241,7 +241,7 @@ public class YoVariableDatabase
                                                                                                               .collect(Collectors.toList()));
 
       List<Number> score = new ArrayList<>();
-      List<T> searchResult = YoVariableTools.search(correctTypeVariables, YoVariable::getFullNameString, fullnameToSearch, seachEngine, 1, score);
+      List<T> searchResult = YoVariableTools.search(correctTypeVariables, YoVariable::getFullNameString, fullnameToSearch, searchEngine, 1, score);
 
       if (searchResult != null)
       {
@@ -310,7 +310,7 @@ public class YoVariableDatabase
    {
       List<T> registryVariables = registry.getVariables().stream().filter(type::isInstance).map(type::cast).collect(Collectors.toList());
       List<Number> score = new ArrayList<>();
-      List<T> searchResult = YoVariableTools.search(registryVariables, YoVariable::getName, variableFullname.getShortName(), seachEngine, 1, score);
+      List<T> searchResult = YoVariableTools.search(registryVariables, YoVariable::getName, variableFullname.getShortName(), searchEngine, 1, score);
       if (searchResult != null)
       {
          T bestYoVariable = searchResult.get(0);
