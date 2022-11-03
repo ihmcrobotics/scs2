@@ -13,7 +13,7 @@ public class FallingBoxBulletSimulation
 {
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
 
-   public static void main(String[] args)
+   public static SimulationSession createSession()
    {
       BoxRobotDefinition definition = new BoxRobotDefinition();
       SixDoFJointState initialJointState = new SixDoFJointState();
@@ -24,7 +24,12 @@ public class FallingBoxBulletSimulation
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addRobot(definition);
       simulationSession.addTerrainObject(new SlopeGroundDefinition(Math.toRadians(0.0)));
+      return simulationSession;
+   }
 
+   public static void main(String[] args)
+   {
+      SimulationSession simulationSession = createSession();
       if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
