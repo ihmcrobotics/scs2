@@ -31,6 +31,20 @@ public class ConnectedShapesExperimentalBulletSimulation
 
    public ConnectedShapesExperimentalBulletSimulation()
    {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
+   }
+
+   public static SimulationSession createSession()
+   {
       Vector3D boxSize1 = new Vector3D(0.5, 0.3, 0.3);
       double boxMass1 = 1.0;
       double radiusOfGyrationPercent = 0.8;
@@ -89,16 +103,7 @@ public class ConnectedShapesExperimentalBulletSimulation
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addRobot(robotDefinition);
       simulationSession.addTerrainObject(terrain);
-
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      return simulationSession;
    }
 
    public static void main(String[] args)

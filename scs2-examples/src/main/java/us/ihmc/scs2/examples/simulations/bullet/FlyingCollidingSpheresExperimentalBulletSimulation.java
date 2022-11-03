@@ -21,6 +21,11 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
 {
    public FlyingCollidingSpheresExperimentalBulletSimulation()
    {
+      SessionVisualizer.startSessionVisualizer(createSession());
+   }
+
+   public static SimulationSession createSession()
+   {
       double radius1 = 0.2;
       double mass1 = 1.0;
       double radiusOfGyrationPercent1 = 1.0;
@@ -62,8 +67,7 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
       simulationSession.setBufferRecordTickPeriod(8);
 
       SimulationEnergyStatistics.setupSimulationEnergyStatistics(simulationSession);
-
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

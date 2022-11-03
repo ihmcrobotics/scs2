@@ -16,7 +16,7 @@ public class MobileBulletSimulation
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
    private static final double DT = 1.0 / 250.0;
 
-   public static void main(String[] args)
+   public static SimulationSession createSession()
    {
       MobileBulletDefinition definition = new MobileBulletDefinition();
       definition.addControllerDefinition((controllerInput, controllerOutput) -> new Controller()
@@ -58,7 +58,12 @@ public class MobileBulletSimulation
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(parameters, jointParameters));
       simulationSession.addRobot(definition);
       simulationSession.setSessionDTSeconds(DT);
+      return simulationSession;
+   }
 
+   public static void main(String[] args)
+   {
+      SimulationSession simulationSession = createSession();
       if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);

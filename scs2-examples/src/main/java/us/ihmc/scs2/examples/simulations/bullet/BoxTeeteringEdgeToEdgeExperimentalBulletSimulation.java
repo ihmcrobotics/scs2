@@ -25,6 +25,20 @@ public class BoxTeeteringEdgeToEdgeExperimentalBulletSimulation
 
    public BoxTeeteringEdgeToEdgeExperimentalBulletSimulation()
    {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
+   }
+
+   public static SimulationSession createSession()
+   {
       double boxXLength = 0.2;
       double boxYWidth = 0.12;
       double boxZHeight = 0.4;
@@ -66,16 +80,7 @@ public class BoxTeeteringEdgeToEdgeExperimentalBulletSimulation
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addRobot(boxRobot);
       simulationSession.addTerrainObject(terrain);
-
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      return simulationSession;
    }
 
    public static void main(String[] args)

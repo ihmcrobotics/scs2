@@ -29,12 +29,26 @@ public class PrismaticSpringBulletSimulation
    private static final String SPRING_PENDULUM = "SpringPendulum";
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
 
-   private final double ballRadius = 0.04;
-   private final double stringLength = 0.4;
-   private final double stringRadius = 0.005;
-   private final double ballMass = 0.3;
+   private static final double ballRadius = 0.04;
+   private static final double stringLength = 0.4;
+   private static final double stringRadius = 0.005;
+   private static final double ballMass = 0.3;
 
    public PrismaticSpringBulletSimulation()
+   {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
+   }
+
+   public static SimulationSession createSession()
    {
       RobotDefinition robotDefinition = new RobotDefinition(SPRING_PENDULUM);
       double ballRadiusOfGyration = ballRadius * 0.6;
@@ -112,16 +126,7 @@ public class PrismaticSpringBulletSimulation
 
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addRobot(robotDefinition);
-
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      return simulationSession;
    }
 
    public static void main(String[] args)
