@@ -50,7 +50,7 @@ public class BulletMultiBodyDynamicsWorld
 
    public void setGravity(Tuple3DReadOnly gravity)
    {
-      btGravity.setValue(gravity.getX32(), gravity.getY32(), gravity.getZ32());
+      btGravity.setValue(gravity.getX(), gravity.getY(), gravity.getZ());
       btMultiBodyDynamicsWorld.setGravity(btGravity);
    }
 
