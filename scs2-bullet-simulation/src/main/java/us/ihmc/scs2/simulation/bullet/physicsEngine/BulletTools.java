@@ -71,22 +71,22 @@ public class BulletTools
 
    public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, btQuaternion bulletQuaternion)
    {
-      bulletQuaternion.setValue(euclidQuaternion.getX32(), euclidQuaternion.getY32(), euclidQuaternion.getZ32(), euclidQuaternion.getS32());
+      bulletQuaternion.setValue(euclidQuaternion.getX(), euclidQuaternion.getY(), euclidQuaternion.getZ(), euclidQuaternion.getS());
    }
 
    public static void toBullet(Tuple3DReadOnly euclidTuple, btVector3 bulletVector3)
    {
-      bulletVector3.setValue(euclidTuple.getX32(), euclidTuple.getY32(), euclidTuple.getZ32());
+      bulletVector3.setValue(euclidTuple.getX(), euclidTuple.getY(), euclidTuple.getZ());
    }
 
-   public static void toEuclid(btVector3 bulletVector3, Vector3DBasics euclidVector3D32)
+   public static void toEuclid(btVector3 bulletVector3, Vector3DBasics euclidVector3D)
    {
-      euclidVector3D32.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
+      euclidVector3D.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
    }
 
-   public static void toEuclid(btVector3 bulletVector3, Point3DBasics euclidPoint3D32)
+   public static void toEuclid(btVector3 bulletVector3, Point3DBasics euclidPoint3D)
    {
-      euclidPoint3D32.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
+      euclidPoint3D.set(bulletVector3.getX(), bulletVector3.getY(), bulletVector3.getZ());
    }
 
    public static btTriangleMesh convertTriangleMesh3D(RigidBodyTransformReadOnly meshPose, TriangleMesh3DDefinition triangleMesh3DDefinition)
@@ -117,9 +117,9 @@ public class BulletTools
             meshPose.transform(vertices[triangleIndices[i + 2]], v2);
          }
 
-         btTriangleMesh.addTriangle(new btVector3(v0.getX32(), v0.getY32(), v0.getZ32()),
-                                    new btVector3(v1.getX32(), v1.getY32(), v1.getZ32()),
-                                    new btVector3(v2.getX32(), v2.getY32(), v2.getZ32()));
+         btTriangleMesh.addTriangle(new btVector3(v0.getX(), v0.getY(), v0.getZ()),
+                                    new btVector3(v1.getX(), v1.getY(), v1.getZ()),
+                                    new btVector3(v2.getX(), v2.getY(), v2.getZ()));
       }
       //btTriangleMesh.releaseOwnership();
 
@@ -207,7 +207,7 @@ public class BulletTools
          {
             for (Vertex3DReadOnly vertex : face.getVertices())
             {
-               convexHullShape.addPoint(new btVector3(vertex.getX32(), vertex.getY32(), vertex.getZ32()));
+               convexHullShape.addPoint(new btVector3(vertex.getX(), vertex.getY(), vertex.getZ()));
             }
          }
          btCollisionShape = convexHullShape;
