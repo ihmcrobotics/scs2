@@ -247,10 +247,14 @@ public class YoVariableDatabase
       {
          T bestYoVariable = searchResult.get(0);
          String bestFullname = bestYoVariable.getFullNameString();
-         String commonPrefix = YoGeometryNameTools.getCommonPrefix(fullnameToSearch, bestFullname);
+         
          String commonSuffix = YoGeometryNameTools.getCommonSuffix(fullnameToSearch, bestFullname);
-         String searchSubname = fullnameToSearch.substring(commonPrefix.length(), fullnameToSearch.length() - commonSuffix.length());
-         String bestSubname = bestFullname.substring(commonPrefix.length(), bestFullname.length() - commonSuffix.length());
+         String searchSubname = fullnameToSearch.substring(0, fullnameToSearch.length() - commonSuffix.length());
+         String bestSubname = bestFullname.substring(0, bestFullname.length() - commonSuffix.length());
+
+         String commonPrefix = YoGeometryNameTools.getCommonPrefix(searchSubname, bestSubname);
+         searchSubname = fullnameToSearch.substring(commonPrefix.length(), searchSubname.length());
+         bestSubname = bestFullname.substring(commonPrefix.length(), bestSubname.length());
 
          LogTools.info("Score: " + score.get(0) + ", difference: [" + searchSubname + ", " + bestSubname + "], field: " + fullnameToSearch + ", result: "
                + bestFullname);
