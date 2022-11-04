@@ -50,8 +50,8 @@ public class BulletFlyingBallSimulationTest
 
    public SimulationSession createSession()
    {
-      Point3D initialPosition = new Point3D(0, 0, 0);
-      Vector3D initialVelocity = new Vector3D(0.0, 0.0, 0);
+      Point3D initialPosition = new Point3D(0.0, 0.0, 0.0);
+      Vector3D initialVelocity = new Vector3D(0.0, 0.0, 0.0);
 
       double dt = 0.01;
 
