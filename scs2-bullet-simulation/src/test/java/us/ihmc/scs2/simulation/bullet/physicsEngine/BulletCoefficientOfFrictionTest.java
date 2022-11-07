@@ -39,92 +39,92 @@ public class BulletCoefficientOfFrictionTest
    private static final boolean VISUALIZE = false;
    private static final int ITERATIONS = 100;
 
-      @Test
-      public void testCoefficientOfFriction() throws Throwable
+   @Test
+   public void testCoefficientOfFriction() throws Throwable
+   {
+      Vector3D boxSize = new Vector3D(0.4, 0.4, 0.4);
+
+      double angleOfGround = 34.0;
+      Double friction = 0.7;
+      double groundHeight = 0.01;
+      double groundPitch = Math.toRadians(angleOfGround);
+      String name = "box";
+      double dt = 0.01;
+
+      RobotDefinition boxRobot = newBoxRobot(name, boxSize, 150.0, 0.8, ColorDefinitions.DarkCyan());
+      SixDoFJointState initialState = new SixDoFJointState();
+      Point3D initialPosition = new Point3D(0, 0, calculateZ(groundPitch));
+      initialState.setConfiguration(new YawPitchRoll(0, groundPitch, 0), initialPosition);
+      initialState.setVelocity(new Vector3D(0, 0, 0), new Vector3D(0, 0, 0));
+      boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialState);
+
+      boxRobot.getRigidBodyDefinition("boxRigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxSize)));
+
+      GeometryDefinition terrainGeometry = new Box3DDefinition(100.0, 100.0, groundHeight);
+      RigidBodyTransform terrainPose = new RigidBodyTransform();
+      terrainPose.appendPitchRotation(groundPitch);
+      terrainPose.appendTranslation(0, 0, 0);
+      TerrainObjectDefinition terrain = new TerrainObjectDefinition(new VisualDefinition(terrainPose,
+                                                                                         terrainGeometry,
+                                                                                         new MaterialDefinition(ColorDefinitions.Lavender())),
+                                                                    new CollisionShapeDefinition(terrainPose, terrainGeometry));
+
+      BulletMultiBodyJointParameters bulletMultiBodyJointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
+      bulletMultiBodyJointParameters.setJointFriction(friction);
+
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
+                                                                                                                           bulletMultiBodyJointParameters));
+      int numberOfSimulationTicks = 1000;
+      simulationSession.addRobot(boxRobot);
+      simulationSession.addTerrainObject(terrain);
+      simulationSession.setSessionDTSeconds(dt);
+
+      SessionVisualizerControls visualizerControls = null;
+
+      if (VISUALIZE)
       {
-         Vector3D boxSize = new Vector3D(0.4, 0.4, 0.4);
-   
-         double angleOfGround = 34.0;
-         Double friction = 0.7;
-         double groundHeight = 0.01;
-         double groundPitch = Math.toRadians(angleOfGround);
-         String name = "box";
-         double dt = 0.01;
-   
-         RobotDefinition boxRobot = newBoxRobot(name, boxSize, 150.0, 0.8, ColorDefinitions.DarkCyan());
-         SixDoFJointState initialState = new SixDoFJointState();
-         Point3D initialPosition = new Point3D(0, 0, calculateZ(groundPitch));
-         initialState.setConfiguration(new YawPitchRoll(0, groundPitch, 0), initialPosition);
-         initialState.setVelocity(new Vector3D(0, 0, 0), new Vector3D(0, 0, 0));
-         boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialState);
-   
-         boxRobot.getRigidBodyDefinition("boxRigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxSize)));
-   
-         GeometryDefinition terrainGeometry = new Box3DDefinition(100.0, 100.0, groundHeight);
-         RigidBodyTransform terrainPose = new RigidBodyTransform();
-         terrainPose.appendPitchRotation(groundPitch);
-         terrainPose.appendTranslation(0, 0, 0);
-         TerrainObjectDefinition terrain = new TerrainObjectDefinition(new VisualDefinition(terrainPose,
-                                                                                            terrainGeometry,
-                                                                                            new MaterialDefinition(ColorDefinitions.Lavender())),
-                                                                       new CollisionShapeDefinition(terrainPose, terrainGeometry));
-   
-         BulletMultiBodyJointParameters bulletMultiBodyJointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
-         bulletMultiBodyJointParameters.setJointFriction(friction);
-   
-         SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
-                                                                                                                              bulletMultiBodyJointParameters));
-         int numberOfSimulationTicks = 1000;
-         simulationSession.addRobot(boxRobot);
-         simulationSession.addTerrainObject(terrain);
-         simulationSession.setSessionDTSeconds(dt);
-   
-         SessionVisualizerControls visualizerControls = null;
-   
+         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
+         visualizerControls.waitUntilVisualizerFullyUp();
+      }
+
+      YoPoint3D expectedPosition = new YoPoint3D("expectedSpherePosition", simulationSession.getRootRegistry());
+      SimFloatingRootJoint floatingRootJoint = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(0).getJoint(name);
+
+      MutableObject<Throwable> caughtException = new MutableObject<>(null);
+      simulationSession.addRunThrowableListener(t -> caughtException.setValue(t));
+      simulationSession.addAfterPhysicsCallback(new TimeConsumer()
+      {
+         @Override
+         public void accept(double time)
+         {
+            expectedPosition.set(initialPosition);
+            if (friction > Math.abs(Math.tan(angleOfGround)))
+               EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
+            else
+            {
+               if (time > 0.5)
+               {
+                  Assertions.assertNotEquals(expectedPosition.getZ(), floatingRootJoint.getJointPose().getPosition().getZ());
+               }
+
+            }
+         }
+      });
+
+      try
+      {
+         simulationSession.getSimulationSessionControls().simulateNow(numberOfSimulationTicks);
+         if (caughtException.getValue() != null)
+            throw caughtException.getValue();
+      }
+      finally
+      {
          if (VISUALIZE)
          {
-            visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
-            visualizerControls.waitUntilVisualizerFullyUp();
-         }
-   
-         YoPoint3D expectedPosition = new YoPoint3D("expectedSpherePosition", simulationSession.getRootRegistry());
-         SimFloatingRootJoint floatingRootJoint = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(0).getJoint(name);
-   
-         MutableObject<Throwable> caughtException = new MutableObject<>(null);
-         simulationSession.addRunThrowableListener(t -> caughtException.setValue(t));
-         simulationSession.addAfterPhysicsCallback(new TimeConsumer()
-         {
-            @Override
-            public void accept(double time)
-            {
-               expectedPosition.set(initialPosition);
-               if (friction > Math.abs(Math.tan(angleOfGround)))
-                  EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
-               else
-               {
-                  if (time > 0.5)
-                  {
-                     Assertions.assertNotEquals(expectedPosition.getZ(), floatingRootJoint.getJointPose().getPosition().getZ());
-                  }
-   
-               }
-            }
-         });
-   
-         try
-         {
-            simulationSession.getSimulationSessionControls().simulateNow(numberOfSimulationTicks);
-            if (caughtException.getValue() != null)
-               throw caughtException.getValue();
-         }
-         finally
-         {
-            if (VISUALIZE)
-            {
-               visualizerControls.waitUntilVisualizerDown();
-            }
+            visualizerControls.waitUntilVisualizerDown();
          }
       }
+   }
 
    @Test
    public void testCoefficientOfFrictionRandom() throws Throwable
