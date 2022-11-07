@@ -1,5 +1,7 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
+import org.bytedeco.bullet.global.BulletDynamics;
+
 public class BulletContactSolverInfoParameters
 {
    // @formatter:off
@@ -30,19 +32,6 @@ public class BulletContactSolverInfoParameters
    private double restitutionVelocityThreshold;                      //m_restitutionVelocityThreshold - if the relative velocity is below this threshold, there is zero restitution
    // @formatter:on
 
-   public static int SOLVER_RANDMIZE_ORDER = 1;
-   public static int SOLVER_FRICTION_SEPARATE = 2;
-   public static int SOLVER_USE_WARMSTARTING = 4;
-   public static int SOLVER_USE_2_FRICTION_DIRECTIONS = 16;
-   public static int SOLVER_ENABLE_FRICTION_DIRECTION_CACHING = 32;
-   public static int SOLVER_DISABLE_VELOCITY_DEPENDENT_FRICTION_DIRECTION = 64;
-   public static int SOLVER_CACHE_FRIENDLY = 128;
-   public static int SOLVER_SIMD = 256;
-   public static int SOLVER_INTERLEAVE_CONTACT_AND_FRICTION_CONSTRAINTS = 512;
-   public static int SOLVER_ALLOW_ZERO_LENGTH_FRICTION_DIRECTIONS = 1024;
-   public static int SOLVER_DISABLE_IMPLICIT_CONE_FRICTION = 2048;
-   public static int SOLVER_USE_ARTICULATED_WARMSTARTING = 4096;
-
    public static BulletContactSolverInfoParameters defaultBulletContactSolverInfoParameters()
    {
       BulletContactSolverInfoParameters bulletContactSolverInfoParameters = new BulletContactSolverInfoParameters();
@@ -64,7 +53,9 @@ public class BulletContactSolverInfoParameters
       bulletContactSolverInfoParameters.setSplitImpulseTurnErp(0.1);
       bulletContactSolverInfoParameters.setLinearSlop(0.0);
       bulletContactSolverInfoParameters.setWarmstartingFactor(0.85);
-      bulletContactSolverInfoParameters.setSolverMode(SOLVER_USE_WARMSTARTING | SOLVER_SIMD | SOLVER_USE_2_FRICTION_DIRECTIONS);
+      bulletContactSolverInfoParameters.setSolverMode(BulletDynamics.SOLVER_USE_WARMSTARTING
+                                                      | BulletDynamics.SOLVER_SIMD
+                                                      | BulletDynamics.SOLVER_USE_2_FRICTION_DIRECTIONS);
       bulletContactSolverInfoParameters.setRestingContactRestitutionThreshold(2);
       bulletContactSolverInfoParameters.setMinimumSolverBatchSize(128);
       bulletContactSolverInfoParameters.setMaxGyroscopicForce(100.0);
