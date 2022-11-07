@@ -53,9 +53,9 @@ public class BulletCoefficientOfFrictionTest
 
       RobotDefinition boxRobot = newBoxRobot(name, boxSize, 150.0, 0.8, ColorDefinitions.DarkCyan());
       SixDoFJointState initialState = new SixDoFJointState();
-      Point3D initialPosition = new Point3D(0, 0, calculateZ(groundPitch));
-      initialState.setConfiguration(new YawPitchRoll(0, groundPitch, 0), initialPosition);
-      initialState.setVelocity(new Vector3D(0, 0, 0), new Vector3D(0, 0, 0));
+      Point3D initialPosition = new Point3D(0.0, 0.0, calculateZ(groundPitch));
+      initialState.setConfiguration(new YawPitchRoll(0.0, groundPitch, 0.0), initialPosition);
+      initialState.setVelocity(new Vector3D(0.0, 0.0, 0.0), new Vector3D(0.0, 0.0, 0.0));
       boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialState);
 
       boxRobot.getRigidBodyDefinition("boxRigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxSize)));
@@ -63,7 +63,7 @@ public class BulletCoefficientOfFrictionTest
       GeometryDefinition terrainGeometry = new Box3DDefinition(100.0, 100.0, groundHeight);
       RigidBodyTransform terrainPose = new RigidBodyTransform();
       terrainPose.appendPitchRotation(groundPitch);
-      terrainPose.appendTranslation(0, 0, 0);
+      terrainPose.appendTranslation(0.0, 0.0, 0.0);
       TerrainObjectDefinition terrain = new TerrainObjectDefinition(new VisualDefinition(terrainPose,
                                                                                          terrainGeometry,
                                                                                          new MaterialDefinition(ColorDefinitions.Lavender())),
@@ -127,7 +127,7 @@ public class BulletCoefficientOfFrictionTest
    }
 
    @Test
-   public void testCoefficientOfFrictionRandom() throws Throwable
+   public void testCoefficientOfFrictionRandom()
    {
       Random random = new Random(1254147);
       
@@ -138,14 +138,14 @@ public class BulletCoefficientOfFrictionTest
       for (int i = 0; i <= ITERATIONS; i++)
       {
          double angleOfGround = random.nextDouble() * 100 / 2;
-         Double friction = random.nextDouble();
+         double friction = random.nextDouble();
          double groundPitch = Math.toRadians(angleOfGround);
 
          RobotDefinition boxRobot = newBoxRobot(name, boxSize, 150.0, 0.8, null);
          SixDoFJointState initialState = new SixDoFJointState();
-         Point3D initialPosition = new Point3D(0, 0, calculateZ(groundPitch));
+         Point3D initialPosition = new Point3D(0.0, 0.0, calculateZ(groundPitch));
          initialState.setConfiguration(new YawPitchRoll(0, groundPitch, 0), initialPosition);
-         initialState.setVelocity(new Vector3D(0, 0, 0), new Vector3D(0, 0, 0));
+         initialState.setVelocity(new Vector3D(0.0, 0.0, 0.0), new Vector3D(0.0, 0.0, 0.0));
          boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialState);
 
          boxRobot.getRigidBodyDefinition("boxRigidBody").addCollisionShapeDefinition(new CollisionShapeDefinition(new Box3DDefinition(boxSize)));
@@ -153,15 +153,16 @@ public class BulletCoefficientOfFrictionTest
          GeometryDefinition terrainGeometry = new Box3DDefinition(100.0, 100.0, groundHeight);
          RigidBodyTransform terrainPose = new RigidBodyTransform();
          terrainPose.appendPitchRotation(groundPitch);
-         terrainPose.appendTranslation(0, 0, 0);
+         terrainPose.appendTranslation(0.0, 0.0, 0.0);
          TerrainObjectDefinition terrain = new TerrainObjectDefinition();
          terrain.addCollisionShapeDefinition(new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
          BulletMultiBodyJointParameters bulletMultiBodyJointParameters = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
          bulletMultiBodyJointParameters.setJointFriction(friction);
 
-         SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
-                                                                                                                              bulletMultiBodyJointParameters));
+         SimulationSession simulationSession
+               = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(BulletMultiBodyParameters.defaultBulletMultiBodyParameters(),
+                                                                                                bulletMultiBodyJointParameters));
          int numberOfSimulationTicks = 1000;
          simulationSession.addRobot(boxRobot);
          simulationSession.addTerrainObject(terrain);
@@ -186,8 +187,8 @@ public class BulletCoefficientOfFrictionTest
    
    public static double calculateZ(double angleOfGround)
    {
-      double a1 = 50 * Math.sin(angleOfGround);
-      double b1 = 50 * Math.cos(angleOfGround);
+      double a1 = 50.0 * Math.sin(angleOfGround);
+      double b1 = 50.0 * Math.cos(angleOfGround);
       double a2 = b1 * Math.tan(angleOfGround - 0.00412);
       return a1 - a2;
    }
