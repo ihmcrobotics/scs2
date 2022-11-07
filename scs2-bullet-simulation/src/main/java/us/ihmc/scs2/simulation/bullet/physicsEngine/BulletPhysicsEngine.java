@@ -33,6 +33,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final ReferenceFrame inertialFrame;
    private final List<BulletRobot> robotList = new ArrayList<>();
+   private final List<BulletTerrainObject> terrainObjectList = new ArrayList<>();
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
    private final YoRegistry rootRegistry;
@@ -156,6 +157,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
       {
          robot.pullStateFromBullet(dt);
       }
+      for (BulletTerrainObject terrainObject : terrainObjectList)
+      {
+         terrainObject.pullStateFromBullet();
+      }
+
       runPullStateFromBullet.stop();
 
       runUpdateFramesSensorsTimer.start();
@@ -194,6 +200,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
    @Override
    public void dispose()
    {
+      robotList.clear(); // Clear references so they can be deallocated
+      terrainObjectList.clear(); // Clear references so they can be deallocated
       bulletMultiBodyDynamicsWorld.dispose();
    }
 
@@ -201,6 +209,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
       BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrainObjectDefinition);
+      terrainObjectList.add(bulletTerrainObject);
       terrainObjectDefinitions.add(terrainObjectDefinition);
       bulletMultiBodyDynamicsWorld.addBulletTerrainObject(bulletTerrainObject);
    }
@@ -215,6 +224,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
    public List<? extends Robot> getRobots()
    {
       return robotList.stream().map(BulletRobot::getRobot).collect(Collectors.toList());
+   }
+
+   public List<BulletTerrainObject> getTerrainObjects()
+   {
+      return terrainObjectList;
    }
 
    @Override

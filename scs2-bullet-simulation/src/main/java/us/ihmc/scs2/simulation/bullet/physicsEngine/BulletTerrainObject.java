@@ -30,14 +30,22 @@ public class BulletTerrainObject
    private final btCompoundShape btCollisionShape;
    private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
    private final btVector3 localInertia = new btVector3();
+   private double friction;
 
    public BulletTerrainObject(double mass, btCompoundShape bulletCompoundCollisionShape, ArrayList<btCollisionShape> btCollisionShapes)
    {
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 
       btRigidBody = new btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
+      btRigidBody.setFriction(1.0);
+      friction = btRigidBody.getFriction();
       btCollisionShape = bulletCompoundCollisionShape;
       this.setBtCollisionShapes(btCollisionShapes);
+   }
+
+   public void pullStateFromBullet()
+   {
+      friction = btRigidBody.getFriction();
    }
 
    public btRigidBody getBtRigidBody()
