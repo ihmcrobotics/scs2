@@ -219,7 +219,7 @@ public abstract class YoBCF2000InputController
          String yoVariableName = legend.getText().split("\\s+")[0];
          if (!yoVariableName.equals(yoVariable.getName()))
             return;
-         Dragboard dragBoard = legend.startDragAndDrop(TransferMode.ANY);
+         Dragboard dragBoard = legend.startDragAndDrop(TransferMode.COPY);
          ClipboardContent clipboardContent = new ClipboardContent();
          clipboardContent.put(DragAndDropTools.YO_COMPOSITE_REFERENCE, Arrays.asList(YoCompositeTools.YO_VARIABLE, yoVariable.getFullNameString()));
          dragBoard.setContent(clipboardContent);

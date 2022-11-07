@@ -327,7 +327,7 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 
       List<YoComposite> yoComposites = yoCompositeListView.getSelectionModel().getSelectedItems();
 
-      Dragboard dragBoard = yoCompositeListView.startDragAndDrop(TransferMode.ANY);
+      Dragboard dragBoard = yoCompositeListView.startDragAndDrop(TransferMode.COPY);
       ClipboardContent clipboardContent = new ClipboardContent();
 
       if (yoComposites.size() == 1)

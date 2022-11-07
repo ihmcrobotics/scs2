@@ -31,8 +31,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.YoCompo
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
@@ -204,7 +204,7 @@ public class YoEntryListViewController
 
       YoComposite yoComposite = yoEntryListView.getSelectionModel().getSelectedItem();
 
-      Dragboard dragBoard = yoEntryListView.startDragAndDrop(TransferMode.ANY);
+      Dragboard dragBoard = yoEntryListView.startDragAndDrop(TransferMode.COPY);
       ClipboardContent clipboardContent = new ClipboardContent();
       clipboardContent.put(DragAndDropTools.YO_COMPOSITE_REFERENCE, Arrays.asList(yoComposite.getPattern().getType(), yoComposite.getFullname()));
       dragBoard.setContent(clipboardContent);

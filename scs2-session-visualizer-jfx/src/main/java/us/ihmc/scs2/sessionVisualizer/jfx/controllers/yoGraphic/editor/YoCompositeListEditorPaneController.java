@@ -615,7 +615,7 @@ public class YoCompositeListEditorPaneController
 
       if (listView.getItems().size() > selectedItems.size())
       {
-         Dragboard dragBoard = listView.startDragAndDrop(TransferMode.ANY);
+         Dragboard dragBoard = listView.startDragAndDrop(TransferMode.COPY);
          ClipboardContent clipboardContent = new ClipboardContent();
          clipboardContent.put(YO_COMPOSITE_CELL, "Dummy");
          dragBoard.setContent(clipboardContent);
