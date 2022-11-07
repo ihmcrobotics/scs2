@@ -41,8 +41,8 @@ public class BulletToolsTest
    private final btTransform bulletAffine = new btTransform();
    private final btVector3 vector1 = new btVector3();
    private final btQuaternion bulletQuaternion = new btQuaternion();
-   private final Vector3DBasics euclidVector3D32 = new Vector3D();
-   private final Point3DBasics euclidPoint3D32 = new Point3D();
+   private final Vector3DBasics euclidVector3D = new Vector3D();
+   private final Point3DBasics euclidPoint3D = new Point3D();
 
    @Test
    public void testRigidBodyTransformToMatrix4()
@@ -76,17 +76,17 @@ public class BulletToolsTest
 
       for (int i = 0; i < ITERATIONS; i++)
       {
-         vector1.setX(random.nextFloat());
-         vector1.setY(random.nextFloat());
-         vector1.setZ(random.nextFloat());
+         vector1.setX(random.nextDouble());
+         vector1.setY(random.nextDouble());
+         vector1.setZ(random.nextDouble());
 
-         bulletQuaternion.setRotation(vector1, random.nextFloat());
+         bulletQuaternion.setRotation(vector1, random.nextDouble());
 
          bulletAffine.setRotation(bulletQuaternion);
 
-         translation.setX(random.nextFloat());
-         translation.setY(random.nextFloat());
-         translation.setZ(random.nextFloat());
+         translation.setX(random.nextDouble());
+         translation.setY(random.nextDouble());
+         translation.setZ(random.nextDouble());
          bulletAffine.setOrigin(translation);
 
          BulletTools.toEuclid(bulletAffine, rigidBodyTransformToPack);
@@ -148,15 +148,15 @@ public class BulletToolsTest
 
       for (int i = 0; i < ITERATIONS; i++)
       {
-         vector1.setX(random.nextFloat());
-         vector1.setY(random.nextFloat());
-         vector1.setZ(random.nextFloat());
+         vector1.setX(random.nextDouble());
+         vector1.setY(random.nextDouble());
+         vector1.setZ(random.nextDouble());
 
-         BulletTools.toEuclid(vector1, euclidVector3D32);
+         BulletTools.toEuclid(vector1, euclidVector3D);
 
-         assertEquals(euclidVector3D32.getX(), vector1.getX(), EPSILON);
-         assertEquals(euclidVector3D32.getY(), vector1.getY(), EPSILON);
-         assertEquals(euclidVector3D32.getZ(), vector1.getZ(), EPSILON);
+         assertEquals(euclidVector3D.getX(), vector1.getX(), EPSILON);
+         assertEquals(euclidVector3D.getY(), vector1.getY(), EPSILON);
+         assertEquals(euclidVector3D.getZ(), vector1.getZ(), EPSILON);
       }
    }
 
@@ -167,15 +167,15 @@ public class BulletToolsTest
 
       for (int i = 0; i < ITERATIONS; i++)
       {
-         vector1.setX(random.nextFloat());
-         vector1.setY(random.nextFloat());
-         vector1.setZ(random.nextFloat());
+         vector1.setX(random.nextDouble());
+         vector1.setY(random.nextDouble());
+         vector1.setZ(random.nextDouble());
 
-         BulletTools.toEuclid(vector1, euclidPoint3D32);
+         BulletTools.toEuclid(vector1, euclidPoint3D);
 
-         assertEquals(euclidPoint3D32.getX(), vector1.getX(), EPSILON);
-         assertEquals(euclidPoint3D32.getY(), vector1.getY(), EPSILON);
-         assertEquals(euclidPoint3D32.getZ(), vector1.getZ(), EPSILON);
+         assertEquals(euclidPoint3D.getX(), vector1.getX(), EPSILON);
+         assertEquals(euclidPoint3D.getY(), vector1.getY(), EPSILON);
+         assertEquals(euclidPoint3D.getZ(), vector1.getZ(), EPSILON);
       }
    }
 

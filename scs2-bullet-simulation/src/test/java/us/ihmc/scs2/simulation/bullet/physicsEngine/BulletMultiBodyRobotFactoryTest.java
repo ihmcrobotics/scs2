@@ -451,16 +451,16 @@ public class BulletMultiBodyRobotFactoryTest
 
    private static void assertVector3DEqualsVector3(Vector3D vector3D, btVector3 vector3)
    {
-      assertEquals(vector3D.getX32(), vector3.getX());
-      assertEquals(vector3D.getY32(), vector3.getY());
-      assertEquals(vector3D.getZ32(), vector3.getZ());
+      assertEquals(vector3D.getX(), vector3.getX());
+      assertEquals(vector3D.getY(), vector3.getY());
+      assertEquals(vector3D.getZ(), vector3.getZ());
    }
 
    private static void assertVector3DBasicsEqualsBtVector3(Vector3DBasics vector3DBasics, btVector3 btVector3)
    {
-      assertEquals(vector3DBasics.getX32(), btVector3.getX());
-      assertEquals(vector3DBasics.getY32(), btVector3.getY());
-      assertEquals(vector3DBasics.getZ32(), btVector3.getZ());
+      assertEquals(vector3DBasics.getX(), btVector3.getX());
+      assertEquals(vector3DBasics.getY(), btVector3.getY());
+      assertEquals(vector3DBasics.getZ(), btVector3.getZ());
    }
 
    private static void assertCollisionShapesSame(List<CollisionShapeDefinition> collisionShapes,
