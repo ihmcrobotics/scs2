@@ -20,10 +20,12 @@ public class BulletMultiBodyParameters
       multiBodyParameters.setUseGyroTerm(true);
       multiBodyParameters.setUseGlobalVelocities(false);
       multiBodyParameters.setUseRK4Integration(false);
-      multiBodyParameters.setLinearDamping(0.04);
-      multiBodyParameters.setAngularDamping(0.04);
-      multiBodyParameters.setMaxAppliedImpulse(1000.0);
-      multiBodyParameters.setMaxCoordinateVelocity(100.0);
+      // These are declared as floats because Bullet source code declares them as floats
+      // and we assert they are equal
+      multiBodyParameters.setLinearDamping(0.04f);
+      multiBodyParameters.setAngularDamping(0.04f);
+      multiBodyParameters.setMaxAppliedImpulse(1000.0f);
+      multiBodyParameters.setMaxCoordinateVelocity(100.0f);
       return multiBodyParameters;
    }
 
