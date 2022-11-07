@@ -12,7 +12,7 @@ ihmc {
    configurePublications()
 }
 
-val javaCPPVersion = "1.5.8-SNAPSHOT"
+val javaCPPVersion = "1.5.8"
 
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
