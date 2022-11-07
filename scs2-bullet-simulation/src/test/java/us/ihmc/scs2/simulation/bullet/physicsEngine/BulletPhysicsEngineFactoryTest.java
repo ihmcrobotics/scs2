@@ -86,6 +86,7 @@ public class BulletPhysicsEngineFactoryTest
          bulletPhysicsEngineWithParameters.dispose();
       }
 
+      simulationSession.shutdownSession();
    }
 
    private static void assetParametersEqual(BulletMultiBodyParameters parameters,

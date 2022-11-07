@@ -124,6 +124,8 @@ public class BulletCoefficientOfFrictionTest
             visualizerControls.waitUntilVisualizerDown();
          }
       }
+
+      simulationSession.shutdownSession();
    }
 
    @Test

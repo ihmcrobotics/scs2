@@ -155,6 +155,8 @@ public class BulletFlyingBallSimulationTest
             visualizerControls.waitUntilVisualizerDown();
          }
       }
+
+      simulationSession.shutdownSession();
    }
 
    private static Vector3D heightAfterSeconds(Point3D initialPosition, Vector3D initialVelocity, double seconds, double gravity)
