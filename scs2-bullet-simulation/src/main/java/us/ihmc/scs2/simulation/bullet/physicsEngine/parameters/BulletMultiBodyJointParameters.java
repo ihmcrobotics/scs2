@@ -23,7 +23,7 @@ public class BulletMultiBodyJointParameters
       //The constraint solver can discard solving contacts, if the distance is above this threshold. 0 by default.
       //Note: that using contacts with positive distance can improve stability. It increases, however, the chance of colliding with degerate contacts, such as 'interior' triangle edges
       //Note: when this parameter is set to zero, the simulation doesn't work well - need to investigate further what this should be defaulted as
-      bulletMultiBodyJointParameters.setJointContactProcessingThreshold(9.9999998E17);
+      bulletMultiBodyJointParameters.setJointContactProcessingThreshold(1.0E30);
       return bulletMultiBodyJointParameters;
    }
 
