@@ -2,6 +2,8 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,6 +15,7 @@ import javax.xml.bind.Unmarshaller;
 
 import com.jfoenix.controls.JFXButton;
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -32,16 +35,21 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.transform.Scale;
 import javafx.stage.Popup;
 import javafx.stage.Window;
 import javafx.util.Pair;
@@ -66,6 +74,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoChartGroupPanelController implements VisualizerController
@@ -270,6 +279,8 @@ public class YoChartGroupPanelController implements VisualizerController
          chartNode.setOnDragExited(e -> handleDragExited(e, controller));
 
          controller.getCloseButton().setOnAction(e -> handleCloseChart(e, controller));
+         controller.getChartMoveIcon().setOnDragDetected(e -> startChartMove(e, controller));
+         controller.getChartMoveIcon().setOnDragDone(e -> finishChartMove(e, controller));
 
          setGrowProperty(graphNode);
 
@@ -368,20 +379,27 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private void handleDragEntered(DragEvent event, YoChartPanelController controller)
    {
-      if (acceptDragEventForDrop(event))
+      if (acceptDragEventForDrop(event, controller))
       {
-         List<YoComposite> yoComposites = DragAndDropTools.retrieveYoCompositesFromDragBoard(event.getDragboard(), yoCompositeSearchManager);
-         List<ChartGroupLayout> configurations = ChartGroupTools.toChartGroupLayouts(yoComposites);
-         configurations = shiftConfigurationsToSelectedChart(controller, configurations);
-         List<YoChartPanelController> controllers = controllersInConfigurations(configurations);
-         controllers.forEach(c -> c.setSelectionHighlight(true));
+         if (event.getTransferMode() == TransferMode.MOVE)
+         {
+            controller.setSelectionHighlight(true);
+         }
+         else
+         {
+            List<YoComposite> yoComposites = DragAndDropTools.retrieveYoCompositesFromDragBoard(event.getDragboard(), yoCompositeSearchManager);
+            List<ChartGroupLayout> configurations = ChartGroupTools.toChartGroupLayouts(yoComposites);
+            configurations = shiftConfigurationsToSelectedChart(controller, configurations);
+            List<YoChartPanelController> controllers = controllersInConfigurations(configurations);
+            controllers.forEach(c -> c.setSelectionHighlight(true));
+         }
       }
       event.consume();
    }
 
    private void handleDragExited(DragEvent event, YoChartPanelController controller)
    {
-      if (acceptDragEventForDrop(event))
+      if (acceptDragEventForDrop(event, controller))
       {
          chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
       }
@@ -390,9 +408,12 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private void handleDragOver(DragEvent event, YoChartPanelController controller)
    {
-      if (acceptDragEventForDrop(event))
+      if (acceptDragEventForDrop(event, controller))
       {
-         event.acceptTransferModes(TransferMode.ANY);
+         if (controller.isEmpty())
+            event.acceptTransferModes(TransferMode.ANY);
+         else
+            event.acceptTransferModes(TransferMode.COPY);
       }
       event.consume();
    }
@@ -404,43 +425,95 @@ public class YoChartGroupPanelController implements VisualizerController
 
       if (yoComposites != null)
       {
-         List<ChartGroupLayout> layouts = ChartGroupTools.toChartGroupLayouts(yoComposites);
-         layouts = shiftConfigurationsToSelectedChart(controller, layouts);
-
-         if (layouts.size() > 1)
-         {
-            ContextMenu contextMenu = new ContextMenu();
-
-            for (ChartGroupLayout layout : layouts)
-            {
-               Label label = new Label(layout.getName());
-               CustomMenuItem menuItem = new CustomMenuItem(label);
-
-               label.setOnMouseEntered(e ->
-               {
-                  chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
-                  controllersInConfiguration(layout).forEach(c -> c.setSelectionHighlight(true));
-               });
-
-               menuItem.setOnAction(e -> applyLayout(layout));
-               contextMenu.getItems().add(menuItem);
-            }
-
-            contextMenu.show(mainPane, event.getScreenX(), event.getScreenY());
-         }
-         else if (layouts.size() == 1)
-         {
-            applyLayout(layouts.get(0));
+         if (event.getTransferMode() == TransferMode.MOVE)
+         { // We're moving a chart, dropping all variables in a single chart
+            yoComposites.forEach(yoComposite -> yoComposite.getYoComponents().forEach(controller::addYoVariableToPlot));
          }
          else
          {
-            yoComposites.forEach(yoComposite -> yoComposite.getYoComponents().forEach(controller::addYoVariableToPlot));
+            List<ChartGroupLayout> layouts = ChartGroupTools.toChartGroupLayouts(yoComposites);
+            layouts = shiftConfigurationsToSelectedChart(controller, layouts);
+
+            if (layouts.size() > 1)
+            {
+               ContextMenu contextMenu = new ContextMenu();
+
+               for (ChartGroupLayout layout : layouts)
+               {
+                  Label label = new Label(layout.getName());
+                  CustomMenuItem menuItem = new CustomMenuItem(label);
+
+                  label.setOnMouseEntered(e ->
+                  {
+                     chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
+                     controllersInConfiguration(layout).forEach(c -> c.setSelectionHighlight(true));
+                  });
+
+                  menuItem.setOnAction(e -> applyLayout(layout));
+                  contextMenu.getItems().add(menuItem);
+               }
+
+               contextMenu.show(mainPane, event.getScreenX(), event.getScreenY());
+            }
+            else if (layouts.size() == 1)
+            {
+               applyLayout(layouts.get(0));
+            }
+            else
+            {
+               yoComposites.forEach(yoComposite -> yoComposite.getYoComponents().forEach(controller::addYoVariableToPlot));
+            }
          }
 
          success = true;
       }
       event.setDropCompleted(success);
       event.consume();
+   }
+
+   private void startChartMove(MouseEvent event, YoChartPanelController controller)
+   {
+      if (!event.isPrimaryButtonDown())
+         return;
+
+      List<YoVariable> yoVariables = new ArrayList<>(controller.getPlottedVariables());
+
+      FontAwesomeIconView chartMoveIcon = controller.getChartMoveIcon();
+      Dragboard dragBoard = chartMoveIcon.startDragAndDrop(TransferMode.MOVE);
+      SnapshotParameters params = new SnapshotParameters();
+      params.setTransform(new Scale(0.5, 0.5));
+      dragBoard.setDragView(controller.getMainPane().snapshot(params, null));
+      ClipboardContent clipboardContent = new ClipboardContent();
+
+      if (yoVariables.size() == 1)
+      {
+         YoVariable yoVariable = yoVariables.get(0);
+         if (yoVariable == null)
+            return;
+         clipboardContent.put(DragAndDropTools.YO_COMPOSITE_REFERENCE, Arrays.asList(YoCompositeTools.YO_VARIABLE, yoVariable.getFullNameString()));
+      }
+      else
+      {
+         List<String> content = new ArrayList<>();
+         for (YoVariable yoVariable : yoVariables)
+         {
+            content.add(YoCompositeTools.YO_VARIABLE);
+            content.add(yoVariable.getFullNameString());
+         }
+         clipboardContent.put(DragAndDropTools.YO_COMPOSITE_LIST_REFERENCE, content);
+      }
+      dragBoard.setContent(clipboardContent);
+      event.consume();
+   }
+
+   private void finishChartMove(DragEvent event, YoChartPanelController controller)
+   {
+      if (!event.isAccepted())
+         return;
+      if (event.getTransferMode() != TransferMode.MOVE)
+         return;
+
+      controller.clear();
    }
 
    private void applyLayout(ChartGroupLayout layout)
@@ -482,9 +555,12 @@ public class YoChartGroupPanelController implements VisualizerController
 
    }
 
-   private boolean acceptDragEventForDrop(DragEvent event)
+   private boolean acceptDragEventForDrop(DragEvent event, YoChartPanelController controller)
    {
-      if (event.getGestureSource() == mainPane)
+      if (event.getGestureSource() == mainPane || event.getGestureSource() == controller.getChartMoveIcon())
+         return false;
+
+      if (event.getTransferMode() == TransferMode.MOVE && !controller.isEmpty())
          return false;
 
       return DragAndDropTools.retrieveYoCompositesFromDragBoard(event.getDragboard(), yoCompositeSearchManager) != null;
