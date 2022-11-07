@@ -179,6 +179,8 @@ public class BulletCoefficientOfFrictionTest
          {
             Assertions.assertNotEquals(expectedPosition.getZ(), floatingRootJoint.getJointPose().getPosition().getZ());
          }
+
+         simulationSession.shutdownSession();
       }
    }
    
