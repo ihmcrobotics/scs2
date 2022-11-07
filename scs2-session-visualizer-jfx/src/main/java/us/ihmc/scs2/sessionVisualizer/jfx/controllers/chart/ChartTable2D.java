@@ -91,9 +91,12 @@ public class ChartTable2D
    {
       YoChartConfigurationDefinition[][] tableDefinition = new YoChartConfigurationDefinition[definition.getNumberOfRows()][definition.getNumberOfColumns()];
 
-      for (YoChartConfigurationDefinition chartDefinition : definition.getChartConfigurations())
+      if (definition.getChartConfigurations() != null)
       {
-         tableDefinition[chartDefinition.getIdentifier().getRow()][chartDefinition.getIdentifier().getColumn()] = chartDefinition;
+         for (YoChartConfigurationDefinition chartDefinition : definition.getChartConfigurations())
+         {
+            tableDefinition[chartDefinition.getIdentifier().getRow()][chartDefinition.getIdentifier().getColumn()] = chartDefinition;
+         }
       }
 
       return tableDefinition;
