@@ -170,6 +170,8 @@ public class BulletCoefficientOfRestitutionTest
       {
          System.out.println("No Collision");
       }
+
+      simulationSession.shutdownSession();
    }
 
    private static RobotDefinition createSphereRobot(double radius,
