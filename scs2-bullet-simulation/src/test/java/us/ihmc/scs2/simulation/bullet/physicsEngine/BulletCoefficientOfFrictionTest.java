@@ -34,6 +34,13 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyPa
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 
+/**
+ * Test that a box on a slope slides or not based on the friction of the box and the angle of the ground.
+ *
+ * The coeficient of friction calculated by Bullet is CoF_ObjectA * CoF_ObjectB.
+ *
+ * Bullet gives different responses based on how the DT is set. The test worked best when DT was set to 0.0001.
+ */
 public class BulletCoefficientOfFrictionTest
 {
    private static final double EPSILON = 0.01;

@@ -20,6 +20,33 @@ import us.ihmc.scs2.simulation.parameters.ContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 
+/**
+ * Test coefficient of restitution. To set the restitution of the btMultiBodies, you would
+ * create a BulletMultiBodyJointParameters object and setJointRestitution to a value between
+ * 0 and 1 then pass the object as a parameter to the BulletPhysicsEngine. The
+ * BulletPhysicsEngine will set the restitution value of all joints for all btMultiBodies to
+ * the value in the BulletMultiBodyJointParameters object. The default value is 0.0. When
+ * two bodies collide, Bullet multiples the restitution of each object to generate an impact
+ * coefficient of restitution.  So if two balls each have restitution equal to 0.5 then at
+ * impact the coefficient of restitution will be 0.5 * 0.5 = 0.25.
+ *
+ * There are other parameters that can be set to make the coefficient of restitution more accurate.
+ *
+ * The parameters below apply to btRigidBody. Currently, we only have the ability to set
+ * Terrain Objects as a btRigidBody. So these parameters would only need to be set if you have
+ * something colliding with a Terrain object and you want the restitution to be more accurate.
+ *
+ *          bulletContactSolverInfoParameters.setSplitImpulse(1);
+ *          bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0f);
+ *          bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001f);
+ *          bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0);
+ *
+ * The parameters below apply to btMultiBody.
+ *          bulletMultiBodyParameters.setLinearDamping(0.0);
+ *          bulletMultiBodyParameters.setAngularDamping(0.0);
+ *          bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);
+ *
+ */
 public class BulletCoefficientOfRestitutionTest
 {
    private static final int ITERATIONS = 100;
