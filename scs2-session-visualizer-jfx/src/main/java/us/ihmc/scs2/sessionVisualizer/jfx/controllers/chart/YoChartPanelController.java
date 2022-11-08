@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import com.jfoenix.controls.JFXButton;
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -102,6 +103,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private AnchorPane chartMainPane;
    @FXML
    private JFXButton closeButton;
+   @FXML
+   private FontAwesomeIconView chartMoveIcon;
 
    private final InvisibleNumberAxis xAxis = new InvisibleNumberAxis(0.0, 0.0, 1000.0);
    private final InvisibleNumberAxis yAxis = new InvisibleNumberAxis();
@@ -120,7 +123,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private ChartDataManager chartDataManager;
    private final ObservableList<YoNumberSeries> yoNumberSeriesList = FXCollections.observableArrayList();
    private final ObservableMap<YoVariable, YoVariableChartPackage> charts = FXCollections.observableMap(new LinkedHashMap<>());
-   private final ObservableSet<YoVariable> plottedVariables = FXCollections.observableSet(new HashSet<>());
+   private final ObservableSet<YoVariable> plottedVariables = FXCollections.observableSet(new LinkedHashSet<>());
    private YoBufferPropertiesReadOnly lastBufferProperties = null;
    private AtomicReference<YoBufferPropertiesReadOnly> newBufferProperties;
    private final TopicListener<int[]> keyFrameMarkerListener = newKeyFrames -> updateKeyFrameMarkers(newKeyFrames);
@@ -289,6 +292,10 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    public void setChartConfiguration(YoChartConfigurationDefinition definition)
    {
       clear();
+
+      if (definition == null)
+         return;
+
       if (definition.getYoVariables() != null)
       {
          definition.getYoVariables().forEach(this::addYoVariableToPlot);
@@ -538,7 +545,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       else if (event.isMiddleButtonDown() && event.getPickResult().getIntersectedNode() instanceof Text)
       { // TODO The legend's name needs to be unique within a single graph
          String pickedName = ((Text) event.getPickResult().getIntersectedNode()).getText();
-         Optional<YoVariableChartPackage> chartData = charts.values().stream().filter(dataPackage -> dataPackage.series.getSeriesName().equals(pickedName))
+         Optional<YoVariableChartPackage> chartData = charts.values()
+                                                            .stream()
+                                                            .filter(dataPackage -> dataPackage.series.getSeriesName().equals(pickedName))
                                                             .findFirst();
          if (chartData.isPresent())
          {
@@ -585,7 +594,10 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
             {
                Text legend = (Text) intersectedNode;
                String yoVariableName = legend.getText().split("\\s+")[0];
-               YoVariable yoVariableSelected = charts.keySet().stream().filter(yoVariable -> yoVariable.getName().equals(yoVariableName)).findFirst()
+               YoVariable yoVariableSelected = charts.keySet()
+                                                     .stream()
+                                                     .filter(yoVariable -> yoVariable.getName().equals(yoVariableName))
+                                                     .findFirst()
                                                      .orElse(null);
                if (yoVariableSelected == null)
                   return;
@@ -684,7 +696,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
          YoVariable yoVariableSelected = charts.keySet().stream().filter(yoVariable -> yoVariable.getName().equals(yoVariableName)).findFirst().orElse(null);
          if (yoVariableSelected == null)
             return;
-         Dragboard dragBoard = legend.startDragAndDrop(TransferMode.ANY);
+         Dragboard dragBoard = legend.startDragAndDrop(TransferMode.COPY);
          ClipboardContent clipboardContent = new ClipboardContent();
          clipboardContent.put(DragAndDropTools.YO_COMPOSITE_REFERENCE, Arrays.asList(YoCompositeTools.YO_VARIABLE, yoVariableSelected.getFullNameString()));
          dragBoard.setContent(clipboardContent);
@@ -718,7 +730,12 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    public void handleDragOver(DragEvent event)
    {
       if (!event.isAccepted() && acceptDragEventForDrop(event))
-         event.acceptTransferModes(TransferMode.ANY);
+      {
+         if (isEmpty())
+            event.acceptTransferModes(TransferMode.ANY);
+         else
+            event.acceptTransferModes(TransferMode.COPY);
+      }
       event.consume();
    }
 
@@ -742,7 +759,10 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
 
    private boolean acceptDragEventForDrop(DragEvent event)
    {
-      if (event.getGestureSource() == dynamicLineChart)
+      if (event.getGestureSource() == dynamicLineChart || event.getGestureSource() == chartMoveIcon)
+         return false;
+
+      if (event.getTransferMode() == TransferMode.MOVE && !isEmpty())
          return false;
 
       Dragboard dragboard = event.getDragboard();
@@ -757,6 +777,11 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    public Button getCloseButton()
    {
       return closeButton;
+   }
+
+   public FontAwesomeIconView getChartMoveIcon()
+   {
+      return chartMoveIcon;
    }
 
    public AnchorPane getMainPane()
@@ -780,7 +805,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       definition.setIdentifier(ChartTools.toYoChartIdentifierDefinition(chartIdentifier));
       definition.setChartStyle(dynamicLineChart.getChartStyle().name());
       definition.setYoVariables(charts.keySet().stream().map(YoVariable::getFullNameString).collect(Collectors.toList()));
-      definition.setYBounds(charts.values().stream().map(pack -> ChartTools.toChartDoubleBoundsDefinition(pack.getSeries().getCustomYBounds()))
+      definition.setYBounds(charts.values()
+                                  .stream()
+                                  .map(pack -> ChartTools.toChartDoubleBoundsDefinition(pack.getSeries().getCustomYBounds()))
                                   .collect(Collectors.toList()));
       definition.setNegates(charts.values().stream().map(pack -> pack.getSeries().isNegated()).collect(Collectors.toList()));
       return definition;

@@ -40,6 +40,7 @@ public class YoConeFX3D extends YoGraphicFX3D
       coneNode.setMaterial(material);
       coneNode.getTransforms().addAll(translate, rotate);
       coneNode.idProperty().bind(nameProperty());
+      coneNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoConeFX3D(ReferenceFrame worldFrame)
@@ -52,6 +53,13 @@ public class YoConeFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (position.containsNaN() || axis.containsNaN())
+      {
+         oldData = null;
+         coneNode.setMesh(null);
+         return;
+      }
+
       newData = newConeData(height, radius);
 
       if (color == null)
@@ -95,9 +103,10 @@ public class YoConeFX3D extends YoGraphicFX3D
       {
          return;
       }
-      else if (newDataLocal.containsNaN() || EuclidCoreTools.isZero(newDataLocal.radius, 1.0e-5))
+      else if (newDataLocal.containsNaN() || EuclidCoreTools.isZero(newDataLocal.height, 1.0e-5) || EuclidCoreTools.isZero(newDataLocal.radius, 1.0e-5))
       {
          clearMesh = true;
+         oldData = null;
          return;
       }
       else if (newDataLocal.equals(oldData))

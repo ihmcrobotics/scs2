@@ -40,6 +40,7 @@ public class YoCylinderFX3D extends YoGraphicFX3D
       cylinderNode.setMaterial(material);
       cylinderNode.getTransforms().addAll(translate, rotate);
       cylinderNode.idProperty().bind(nameProperty());
+      cylinderNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoCylinderFX3D(ReferenceFrame worldFrame)
@@ -52,6 +53,13 @@ public class YoCylinderFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (center.containsNaN() || axis.containsNaN())
+      {
+         oldData = null;
+         cylinderNode.setMesh(null);
+         return;
+      }
+
       newData = newCylinderData(length, radius);
 
       if (color == null)
@@ -95,9 +103,10 @@ public class YoCylinderFX3D extends YoGraphicFX3D
       {
          return;
       }
-      else if (newDataLocal.containsNaN() || EuclidCoreTools.isZero(newDataLocal.radius, 1.0e-5))
+      else if (newDataLocal.containsNaN() || EuclidCoreTools.isZero(newDataLocal.length, 1.0e-5) || EuclidCoreTools.isZero(newDataLocal.radius, 1.0e-5))
       {
          clearMesh = true;
+         oldData = null;
          return;
       }
       else if (newDataLocal.equals(oldData))

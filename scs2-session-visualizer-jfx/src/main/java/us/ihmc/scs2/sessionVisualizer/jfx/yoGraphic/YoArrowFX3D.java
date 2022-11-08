@@ -52,6 +52,7 @@ public class YoArrowFX3D extends YoGraphicFX3D
       head.getTransforms().addAll(new Translate(0.0, 0.0, 1.0), headScale);
 
       arrow.getTransforms().addAll(arrowAffine);
+      arrow.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoArrowFX3D(ReferenceFrame worldFrame)
@@ -66,6 +67,13 @@ public class YoArrowFX3D extends YoGraphicFX3D
    {
       material.setDiffuseColor(color.get());
 
+      if (origin.containsNaN() || direction.containsNaN() || Double.isNaN(bodyRadius.get()) || Double.isNaN(bodyLength.get()))
+      {
+         arrowAffine.setToIdentity();
+         arrowAffine.appendScale(0, 0, 0);
+         return;
+      }
+
       Vector3DReadOnly directionLocal = direction.toVector3DInWorld();
       AxisAngle axisAngle = EuclidGeometryTools.axisAngleFromZUpToVector3D(directionLocal);
 
@@ -76,6 +84,14 @@ public class YoArrowFX3D extends YoGraphicFX3D
       double arrowScaleZ = scaleLength ? bodyLength.get() * directionMagnitude : bodyLength.get();
 
       arrowAffine.appendScale(arrowScaleXY, arrowScaleXY, arrowScaleZ);
+
+      if (Double.isNaN(headRadius.get()) || Double.isNaN(headLength.get()))
+      {
+         headScale.setX(0.0);
+         headScale.setY(0.0);
+         headScale.setZ(0.0);
+         return;
+      }
 
       double headScaleXY = scaleRadius ? headRadius.get() * directionMagnitude : headRadius.get();
       double headScaleZ = scaleLength ? headLength.get() * directionMagnitude : headLength.get();

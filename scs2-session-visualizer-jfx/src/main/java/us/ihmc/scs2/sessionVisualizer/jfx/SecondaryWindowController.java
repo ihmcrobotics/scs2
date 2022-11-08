@@ -12,6 +12,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SecondaryWindowControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
@@ -57,8 +58,7 @@ public class SecondaryWindowController implements VisualizerController
 
       chartGroupController.initialize(toolkit);
       chartGroupController.start();
-      chartGroupController.maximumRowProperty().set(9);
-      chartGroupController.maximumColProperty().set(6);
+      chartGroupController.maxSizeProperty().setValue(new ChartTable2DSize(9, 6));
 
       SessionVisualizerIOTools.addSCSIconToWindow(stage);
 
@@ -66,7 +66,7 @@ public class SecondaryWindowController implements VisualizerController
       VBox.setVgrow(chartGroupPane, Priority.ALWAYS);
       Scene scene = new Scene(mainNode, 1024, 768);
       stage.setScene(scene);
-      String windowTitlePrefix = "Chart Window";
+      String windowTitlePrefix = "Chart";
       stage.setTitle(windowTitlePrefix);
       chartGroupController.chartGroupNameProperty().addListener((o, oldValue, newValue) ->
       {

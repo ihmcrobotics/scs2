@@ -2,19 +2,29 @@
 
 <?import com.jfoenix.controls.JFXButton?>
 <?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
 
 <AnchorPane fx:id="chartMainPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="269.0" prefWidth="600.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartPanelController">
    <children>
-      <JFXButton fx:id="closeButton" contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" styleClass="chart-close-button" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="2.0">
-         <graphic>
-            <FontAwesomeIconView styleClass="chart-close-button-icon-view" />
-         </graphic>
-      </JFXButton>
-      <JFXButton fx:id="chartOptionButton" contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" layoutX="10.0" layoutY="10.0" onAction="#openChartOptionDialog" styleClass="chart-option-button" AnchorPane.rightAnchor="23.0" AnchorPane.topAnchor="2.0">
-         <graphic>
-            <FontAwesomeIconView styleClass="chart-option-button-icon-view" />
-         </graphic>
-      </JFXButton>
+      <HBox alignment="CENTER" spacing="4.0" AnchorPane.rightAnchor="2.0" AnchorPane.topAnchor="2.0">
+         <children>
+            <FontAwesomeIconView fx:id="chartMoveIcon" glyphName="ARROWS" styleClass="chart-move-icon-view" />
+            <JFXButton fx:id="chartOptionButton" contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" onAction="#openChartOptionDialog" styleClass="chart-option-button">
+               <graphic>
+                  <FontAwesomeIconView styleClass="chart-option-button-icon-view" />
+               </graphic>
+            </JFXButton>
+            <JFXButton fx:id="closeButton" contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" styleClass="chart-close-button">
+               <graphic>
+                  <FontAwesomeIconView styleClass="chart-close-button-icon-view" />
+               </graphic>
+            </JFXButton>
+         </children>
+         <padding>
+            <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
+         </padding>
+      </HBox>
    </children>
 </AnchorPane>
