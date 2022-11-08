@@ -30,7 +30,7 @@ public class BulletMultiBodyDynamicsWorld
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
    private final btVector3 btGravity = new btVector3();
-   private btContactSolverInfo btContactSolverInfo;
+   private final btContactSolverInfo btContactSolverInfo;
 
    public BulletMultiBodyDynamicsWorld()
    {

@@ -12,7 +12,7 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBody
 public class BulletMultiBodyRobot
 {
    private final btMultiBody btMultiBody;
-   private HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
+   private final HashMap<String, Integer> jointNameToBulletJointIndexMap;
    private final ArrayList<BulletMultiBodyLinkCollider> allBulletMultiBodyLinkColliders = new ArrayList<>();
    private final ArrayList<btMultiBodyConstraint> allBtMultiBodyConstraints = new ArrayList<>();
 
@@ -96,5 +96,4 @@ public class BulletMultiBodyRobot
          bulletMultiBodyLinkCollider.setContactProcessingThreshold(bulletMultiBodyJointParameters.getJointContactProcessingThreshold());
       }
    }
-
 }

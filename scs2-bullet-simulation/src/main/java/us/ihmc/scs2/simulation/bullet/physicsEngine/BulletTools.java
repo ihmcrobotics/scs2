@@ -24,6 +24,7 @@ import us.ihmc.euclid.tuple3D.Point3D32;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
+import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
@@ -36,7 +37,6 @@ import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 
 public class BulletTools
 {
-
    public static void toBullet(RigidBodyTransform rigidBodyTransform, btTransform bulletAffineToPack)
    {
       bulletAffineToPack.getOrigin().setValue(rigidBodyTransform.getTranslationX(),
@@ -69,7 +69,7 @@ public class BulletTools
       rigidBodyTransform.getTranslation().setZ(bulletAffine.getOrigin().getZ());
    }
 
-   public static void toBullet(us.ihmc.euclid.tuple4D.Quaternion euclidQuaternion, btQuaternion bulletQuaternion)
+   public static void toBullet(Quaternion euclidQuaternion, btQuaternion bulletQuaternion)
    {
       bulletQuaternion.setValue(euclidQuaternion.getX(), euclidQuaternion.getY(), euclidQuaternion.getZ(), euclidQuaternion.getS());
    }
@@ -219,10 +219,8 @@ public class BulletTools
       return btCollisionShape;
    }
 
-   ;
-
    public enum eFeatherstoneJointType
    {
       eRevolute, ePrismatic, eSpherical, ePlanar, eFixed, eInvalid
-   };
+   }
 }
