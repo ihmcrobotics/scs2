@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-import us.ihmc.log.LogTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -33,14 +30,10 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 public class BulletPhysicsEngine implements PhysicsEngine
 {
-   static
-   {
-      Bullet.init();
-      LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
-   }
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final ReferenceFrame inertialFrame;
    private final List<BulletRobot> robotList = new ArrayList<>();
+   private final List<BulletTerrainObject> terrainObjectList = new ArrayList<>();
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
    private final YoRegistry rootRegistry;
@@ -80,7 +73,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       setGlobalBulletMultiBodyParameters(BulletMultiBodyParameters.defaultBulletMultiBodyParameters());
       setGlobalBulletMultiBodyJointParameters(BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters());
       setGlobalContactSolverInfoParameters(BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters());
-      
+
       hasGlobalBulletSimulationParameters.set(false);
 
       bulletMultiBodyDynamicsWorld = new BulletMultiBodyDynamicsWorld();
@@ -109,7 +102,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       }
 
       //set yoVariable Tick Expected Time Rate in milliseconds
-      runTickExpectedTimeRate.set(dt * 1000);
+      runTickExpectedTimeRate.set(dt * 1000.0);
 
       runBulletPhysicsEngineSimulateTimer.start();
 
@@ -123,7 +116,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
          globalMultiBodyJointParameters.setUpdateGlobalMultiBodyJointParameters(false);
          bulletMultiBodyDynamicsWorld.updateAllMultiBodyJointParameters(globalMultiBodyJointParameters);
       }
-      if(globalContactSolverInfoParameters.getUpdateGlobalContactSolverInfoParameters())
+      if (globalContactSolverInfoParameters.getUpdateGlobalContactSolverInfoParameters())
       {
          globalContactSolverInfoParameters.setUpdateGlobalContactSolverInfoParameters(false);
          bulletMultiBodyDynamicsWorld.updateContactSolverInfoParameters(globalContactSolverInfoParameters);
@@ -151,11 +144,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
       bulletMultiBodyDynamicsWorld.setGravity(gravity);
 
       if (hasGlobalBulletSimulationParameters.getValue())
-         bulletMultiBodyDynamicsWorld.stepSimulation((float) globalBulletSimulationParameters.getTimeStamp(),
+         bulletMultiBodyDynamicsWorld.stepSimulation(globalBulletSimulationParameters.getTimeStamp(),
                                                      globalBulletSimulationParameters.getMaxSubSteps(),
-                                                     (float) globalBulletSimulationParameters.getFixedTimeStep());
+                                                     globalBulletSimulationParameters.getFixedTimeStep());
       else
-         bulletMultiBodyDynamicsWorld.stepSimulation((float) dt, 1, (float) dt);
+         bulletMultiBodyDynamicsWorld.stepSimulation(dt, 1, dt);
 
       runBulletStepSimulateTimer.stop();
 
@@ -164,6 +157,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
       {
          robot.pullStateFromBullet(dt);
       }
+      for (BulletTerrainObject terrainObject : terrainObjectList)
+      {
+         terrainObject.pullStateFromBullet();
+      }
+
       runPullStateFromBullet.stop();
 
       runUpdateFramesSensorsTimer.start();
@@ -202,6 +200,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
    @Override
    public void dispose()
    {
+      robotList.clear(); // Clear references so they can be deallocated
+      terrainObjectList.clear(); // Clear references so they can be deallocated
       bulletMultiBodyDynamicsWorld.dispose();
    }
 
@@ -209,6 +209,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
       BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrainObjectDefinition);
+      terrainObjectList.add(bulletTerrainObject);
       terrainObjectDefinitions.add(terrainObjectDefinition);
       bulletMultiBodyDynamicsWorld.addBulletTerrainObject(bulletTerrainObject);
    }
@@ -223,6 +224,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
    public List<? extends Robot> getRobots()
    {
       return robotList.stream().map(BulletRobot::getRobot).collect(Collectors.toList());
+   }
+
+   public List<BulletTerrainObject> getTerrainObjects()
+   {
+      return terrainObjectList;
    }
 
    @Override
@@ -289,7 +295,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       globalContactSolverInfoParameters.set(bulletContactSolverInfoParameters);
    }
-   
+
    public YoBulletContactSolverInfoParameters getGlobalContactSolverInfoParameters()
    {
       return globalContactSolverInfoParameters;

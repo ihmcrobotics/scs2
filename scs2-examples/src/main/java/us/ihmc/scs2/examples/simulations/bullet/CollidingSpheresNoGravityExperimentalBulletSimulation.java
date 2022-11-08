@@ -21,9 +21,14 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 
 public class CollidingSpheresNoGravityExperimentalBulletSimulation
 {
-   private final boolean BULLET_PHYSICS_ENGINE = true;
+   private static final boolean BULLET_PHYSICS_ENGINE = true;
 
    public CollidingSpheresNoGravityExperimentalBulletSimulation()
+   {
+      SessionVisualizer.startSessionVisualizer(createSession());
+   }
+
+   public static SimulationSession createSession()
    {
       double radius1 = 0.2;
       double mass1 = 1.0;
@@ -58,8 +63,8 @@ public class CollidingSpheresNoGravityExperimentalBulletSimulation
       bulletMultiBodyJointParameter.setJointRestitution(0);
       BulletContactSolverInfoParameters bulletContactSolverInfoParameters = BulletContactSolverInfoParameters.defaultBulletContactSolverInfoParameters();
       bulletContactSolverInfoParameters.setSplitImpulse(1);
-      bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0f);
-      bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001f);
+      bulletContactSolverInfoParameters.setSplitImpulseTurnErp(1.0);
+      bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.0000001);
       bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0);
       bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0);
 
@@ -81,8 +86,7 @@ public class CollidingSpheresNoGravityExperimentalBulletSimulation
       simulationSession.addRobot(sphereRobot2);
       simulationSession.setGravity(0.0, 0.0, 0.0);
       simulationSession.setSessionDTSeconds(0.0001);
-
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

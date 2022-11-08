@@ -22,8 +22,22 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 public class BoxTeeteringEdgeToEdgeExperimentalBulletSimulation
 {
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-   
+
    public BoxTeeteringEdgeToEdgeExperimentalBulletSimulation()
+   {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
+   }
+
+   public static SimulationSession createSession()
    {
       double boxXLength = 0.2;
       double boxYWidth = 0.12;
@@ -52,7 +66,7 @@ public class BoxTeeteringEdgeToEdgeExperimentalBulletSimulation
                                                                 new Point3D(0.0,
                                                                             groundWidth / 2.0 - 0.002,
                                                                             boxZHeight / 2.0 * 1.05 + boxYWidth / 2.0 * Math.sin(Math.abs(initialBoxRoll))));
-      
+
       initialJointState.setVelocity(null, new Vector3D(initialVelocity, 0, 0));
       boxRobot.getRootJointDefinitions().get(0).setInitialJointState(initialJointState);
 
@@ -62,20 +76,11 @@ public class BoxTeeteringEdgeToEdgeExperimentalBulletSimulation
                                                                                          terrainGeometry,
                                                                                          new MaterialDefinition(ColorDefinitions.DarkKhaki())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
-      
+
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addRobot(boxRobot);
       simulationSession.addTerrainObject(terrain);
-
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      return simulationSession;
    }
 
    public static void main(String[] args)

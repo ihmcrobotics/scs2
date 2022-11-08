@@ -2,9 +2,9 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyParameters;
@@ -12,13 +12,13 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBody
 public class BulletMultiBodyRobot
 {
    private final btMultiBody btMultiBody;
-   private HashMap<String, Integer> jointNameToBulletJointIndexMap = new HashMap<String, Integer>();
+   private final HashMap<String, Integer> jointNameToBulletJointIndexMap;
    private final ArrayList<BulletMultiBodyLinkCollider> allBulletMultiBodyLinkColliders = new ArrayList<>();
    private final ArrayList<btMultiBodyConstraint> allBtMultiBodyConstraints = new ArrayList<>();
 
    public BulletMultiBodyRobot(int numberOfLinks,
-                               float rootBodyMass,
-                               Vector3 rootBodyIntertia,
+                               double rootBodyMass,
+                               btVector3 rootBodyIntertia,
                                boolean fixedBase,
                                boolean canSleep,
                                HashMap<String, Integer> jointNameToBulletJointIndexMap)
@@ -78,10 +78,10 @@ public class BulletMultiBodyRobot
       btMultiBody.setUseGyroTerm(bulletMultiBodyParameters.getUseGyroTerm());
       btMultiBody.useGlobalVelocities(bulletMultiBodyParameters.getUseGlobalVelocities());
       btMultiBody.useRK4Integration(bulletMultiBodyParameters.getUseRK4Integration());
-      btMultiBody.setLinearDamping((float) bulletMultiBodyParameters.getLinearDamping());
-      btMultiBody.setAngularDamping((float) bulletMultiBodyParameters.getAngularDamping());
-      btMultiBody.setMaxAppliedImpulse((float) bulletMultiBodyParameters.getMaxAppliedImpulse());
-      btMultiBody.setMaxCoordinateVelocity((float) bulletMultiBodyParameters.getMaxCoordinateVelocity());
+      btMultiBody.setLinearDamping(bulletMultiBodyParameters.getLinearDamping());
+      btMultiBody.setAngularDamping(bulletMultiBodyParameters.getAngularDamping());
+      btMultiBody.setMaxAppliedImpulse(bulletMultiBodyParameters.getMaxAppliedImpulse());
+      btMultiBody.setMaxCoordinateVelocity(bulletMultiBodyParameters.getMaxCoordinateVelocity());
    }
 
    public void setMultiBodyJointParameters(YoBulletMultiBodyJointParameters bulletMultiBodyJointParameters)
@@ -96,5 +96,4 @@ public class BulletMultiBodyRobot
          bulletMultiBodyLinkCollider.setContactProcessingThreshold(bulletMultiBodyJointParameters.getJointContactProcessingThreshold());
       }
    }
-
 }

@@ -14,6 +14,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 public class YoTimer
 {
    private final YoDouble timer;
+   private final TimeUnit timerUnit;
    private final double scaleFromNanoseconds;
 
    private long start = -1;
@@ -28,6 +29,7 @@ public class YoTimer
     */
    public YoTimer(String namePrefix, TimeUnit timerUnit, YoRegistry registry)
    {
+      this.timerUnit = timerUnit;
       timer = new YoDouble(namePrefix + "[" + timeUnitSuffix(timerUnit) + "]", registry);
       scaleFromNanoseconds = scaleFromNanoseconds(timerUnit);
    }
@@ -216,5 +218,21 @@ public class YoTimer
    public YoDouble getTimer()
    {
       return timer;
+   }
+
+   /**
+    * Gets the timer's current value in the desired time unit.
+    * 
+    * @param timeUnit the desired unit for the returned time.
+    * @return the current timer value.
+    */
+   public double getTimerValue(TimeUnit timeUnit)
+   {
+      if (timerUnit == timeUnit)
+         return timer.getValue();
+      else if (timeUnit == TimeUnit.NANOSECONDS)
+         return timer.getValue() / scaleFromNanoseconds;
+      else
+         return timer.getValue() / scaleFromNanoseconds * scaleFromNanoseconds(timeUnit);
    }
 }

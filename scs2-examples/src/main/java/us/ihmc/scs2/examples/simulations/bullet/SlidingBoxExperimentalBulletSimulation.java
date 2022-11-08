@@ -24,6 +24,11 @@ public class SlidingBoxExperimentalBulletSimulation
 {
    public SlidingBoxExperimentalBulletSimulation()
    {
+      SessionVisualizer.startSessionVisualizer(createSession());
+   }
+
+   public static SimulationSession createSession()
+   {
       Vector3D boxSize = new Vector3D(0.4, 0.4, 0.4);
 
       double groundPitch = Math.toRadians(34);
@@ -54,7 +59,7 @@ public class SlidingBoxExperimentalBulletSimulation
                                                                                                                            bulletMultiBodyJointParameter));
       simulationSession.addRobot(boxRobot);
       simulationSession.addTerrainObject(terrain);
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

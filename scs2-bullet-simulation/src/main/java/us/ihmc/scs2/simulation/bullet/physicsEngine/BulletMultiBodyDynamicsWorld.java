@@ -1,20 +1,19 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
-
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.CollisionConstants;
-import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
-import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraint;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyConstraintSolver;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
-
+import org.bytedeco.bullet.BulletCollision.btDbvtBroadphase;
+import org.bytedeco.bullet.BulletCollision.btDefaultCollisionConfiguration;
+import org.bytedeco.bullet.BulletCollision.btCollisionDispatcher;
+import org.bytedeco.bullet.BulletCollision.btCollisionObject;
+import org.bytedeco.bullet.BulletCollision.btCollisionConfiguration;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraintSolver;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyDynamicsWorld;
+import org.bytedeco.bullet.BulletCollision.btBroadphaseInterface;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyConstraint;
+import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.bullet.global.BulletCollision;
+import org.bytedeco.bullet.BulletDynamics.btContactSolverInfo;
+import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletContactSolverInfoParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.YoBulletMultiBodyJointParameters;
@@ -27,10 +26,11 @@ public class BulletMultiBodyDynamicsWorld
    private final btBroadphaseInterface btBroadphaseInterface;
    private final btMultiBodyConstraintSolver btMultiBodyConstraintSolver;
    private final btMultiBodyDynamicsWorld btMultiBodyDynamicsWorld;
-   private btIDebugDraw btIDebugDraw;
+   private btIDebugDraw btDebugDraw;
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
-   private final Vector3 btGravity = new Vector3();
+   private final btVector3 btGravity = new btVector3();
+   private final btContactSolverInfo btContactSolverInfo;
 
    public BulletMultiBodyDynamicsWorld()
    {
@@ -38,30 +38,33 @@ public class BulletMultiBodyDynamicsWorld
       btCollisionDispatcher = new btCollisionDispatcher(btCollisionConfiguration);
       btBroadphaseInterface = new btDbvtBroadphase();
       btMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
-      btIDebugDraw = null;
+      btDebugDraw = null;
+      
       btMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(btCollisionDispatcher,
                                                               btBroadphaseInterface,
                                                               btMultiBodyConstraintSolver,
                                                               btCollisionConfiguration);
+      
+      btContactSolverInfo = btMultiBodyDynamicsWorld.getSolverInfo();
    }
 
    public void setGravity(Tuple3DReadOnly gravity)
    {
-      btGravity.set(gravity.getX32(), gravity.getY32(), gravity.getZ32());
+      btGravity.setValue(gravity.getX(), gravity.getY(), gravity.getZ());
       btMultiBodyDynamicsWorld.setGravity(btGravity);
    }
 
-   public int stepSimulation(float timeStep, int maxSubSteps, float fixedTimeStep)
+   public int stepSimulation(double timeStep, int maxSubSteps, double fixedTimeStep)
    {
       return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
    }
 
-   public int stepSimulation(float timeStep, int maxSubSteps)
+   public int stepSimulation(double timeStep, int maxSubSteps)
    {
-      return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps);
+      return btMultiBodyDynamicsWorld.stepSimulation(timeStep, maxSubSteps, timeStep);
    }
 
-   public int stepSimulation(float timeStep)
+   public int stepSimulation(double timeStep)
    {
       return btMultiBodyDynamicsWorld.stepSimulation(timeStep);
    }
@@ -73,14 +76,14 @@ public class BulletMultiBodyDynamicsWorld
 
    public void dispose()
    {
-      if (!btMultiBodyDynamicsWorld.isDisposed())
+      if (!btMultiBodyDynamicsWorld.isNull())
       {
          for (BulletTerrainObject bulletTerrainObject : terrainObjects)
          {
-            bulletTerrainObject.getBtRigidBody().getCollisionShape().dispose();
-            bulletTerrainObject.getBtRigidBody().getMotionState().dispose();
+            bulletTerrainObject.getBtRigidBody().getCollisionShape().deallocate();
+            bulletTerrainObject.getBtRigidBody().getMotionState().deallocate();
             btMultiBodyDynamicsWorld.removeRigidBody(bulletTerrainObject.getBtRigidBody());
-            bulletTerrainObject.getBtRigidBody().dispose();
+            bulletTerrainObject.getBtRigidBody().deallocate();
          }
 
          for (BulletMultiBodyRobot bulletMultiBodyRobot : multiBodyRobots)
@@ -93,42 +96,42 @@ public class BulletMultiBodyDynamicsWorld
             for (btMultiBodyConstraint bulletMultiBodyConstraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
             {
                btMultiBodyDynamicsWorld.removeMultiBodyConstraint(bulletMultiBodyConstraint);
-               bulletMultiBodyConstraint.dispose();
+               bulletMultiBodyConstraint.deallocate();
             }
 
             btMultiBodyDynamicsWorld.removeMultiBody(bulletMultiBodyRobot.getBtMultiBody());
             for (BulletMultiBodyLinkCollider multiBodyLinkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
             {
                btMultiBodyDynamicsWorld.removeCollisionObject(multiBodyLinkCollider.getBtMultiBodyLinkCollider());
-               multiBodyLinkCollider.getBtMultiBodyLinkCollider().getCollisionShape().dispose();
-               multiBodyLinkCollider.getBtMultiBodyLinkCollider().dispose();
+               multiBodyLinkCollider.getBtMultiBodyLinkCollider().getCollisionShape().deallocate();
+               multiBodyLinkCollider.getBtMultiBodyLinkCollider().deallocate();
             }
             for (int i = 0; bulletMultiBodyRobot.getBtMultiBody().getNumLinks() < i; i++)
             {
-               bulletMultiBodyRobot.getBtMultiBody().getLink(i).dispose();
+               bulletMultiBodyRobot.getBtMultiBody().getLink(i).deallocate();
             }
-            bulletMultiBodyRobot.getBtMultiBody().dispose();
+            bulletMultiBodyRobot.getBtMultiBody().deallocate();
          }
 
-         if (btIDebugDraw != null)
+         if (btDebugDraw != null)
          {
-            btIDebugDraw.dispose();
+            btDebugDraw.deallocate();
          }
 
-         btMultiBodyDynamicsWorld.dispose();
-         btMultiBodyConstraintSolver.dispose();
-         btBroadphaseInterface.dispose();
-         btCollisionDispatcher.dispose();
-         btCollisionConfiguration.dispose();
+         btMultiBodyDynamicsWorld.deallocate();
+         btMultiBodyConstraintSolver.deallocate();
+         btBroadphaseInterface.deallocate();
+         btCollisionDispatcher.deallocate();
+         btCollisionConfiguration.deallocate();
       }
    }
 
    public void addBulletMultiBodyRobot(BulletMultiBodyRobot bulletMultiBodyRobot)
    {
-      //add Bullet Multibody to array
+      // add Bullet Multibody to array
       multiBodyRobots.add(bulletMultiBodyRobot);
 
-      //add Bullet Multibody collisionObjects to multiBodyDynamicsWorld
+      // add Bullet Multibody collisionObjects to multiBodyDynamicsWorld
       for (BulletMultiBodyLinkCollider linkCollider : bulletMultiBodyRobot.getBulletMultiBodyLinkColliderArray())
       {
          btMultiBodyDynamicsWorld.addCollisionObject(linkCollider.getBtMultiBodyLinkCollider(),
@@ -136,13 +139,13 @@ public class BulletMultiBodyDynamicsWorld
                                                      linkCollider.getCollisionGroupMask());
       }
 
-      //add Bullet Multibody constraints to multiBodyDynamicsWorld
+      // add Bullet Multibody constraints to multiBodyDynamicsWorld
       for (btMultiBodyConstraint constraint : bulletMultiBodyRobot.getBtMultiBodyConstraintArray())
       {
          btMultiBodyDynamicsWorld.addMultiBodyConstraint(constraint);
       }
 
-      //add Bullet Multibody to multiBodyDynamicsWorld
+      // add Bullet Multibody to multiBodyDynamicsWorld
       btMultiBodyDynamicsWorld.addMultiBody(bulletMultiBodyRobot.getBtMultiBody());
    }
 
@@ -152,9 +155,8 @@ public class BulletMultiBodyDynamicsWorld
       btMultiBodyDynamicsWorld.addRigidBody(bulletTerrainObject.getBtRigidBody(),
                                             bulletTerrainObject.getCollisionGroup(),
                                             bulletTerrainObject.getCollisionGroupMask());
-      bulletTerrainObject.getBtRigidBody()
-                         .setCollisionFlags(bulletTerrainObject.getBtRigidBody().getCollisionFlags() | btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT);
-      bulletTerrainObject.getBtRigidBody().setActivationState(CollisionConstants.DISABLE_DEACTIVATION);
+      bulletTerrainObject.getBtRigidBody().setCollisionFlags(bulletTerrainObject.getBtRigidBody().getCollisionFlags() | btCollisionObject.CF_KINEMATIC_OBJECT);
+      bulletTerrainObject.getBtRigidBody().setActivationState(BulletCollision.DISABLE_DEACTIVATION);
    }
 
    public void updateAllMultiBodyParameters(YoBulletMultiBodyParameters multiBodyParameters)
@@ -173,45 +175,45 @@ public class BulletMultiBodyDynamicsWorld
       }
    }
 
-   public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
+   public void setBtDebugDrawer(btIDebugDraw btDebugDraw)
    {
-      if (!btMultiBodyDynamicsWorld.isDisposed())
-         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
-      this.btIDebugDraw = btIDebugDraw;
+      if (!btMultiBodyDynamicsWorld.isNull())
+         btMultiBodyDynamicsWorld.setDebugDrawer(btDebugDraw);
+      this.btDebugDraw = btDebugDraw;
    }
 
    public void debugDrawWorld()
    {
-      if (!btMultiBodyDynamicsWorld.isDisposed())
+      if (!btMultiBodyDynamicsWorld.isNull())
          btMultiBodyDynamicsWorld.debugDrawWorld();
    }
 
    public void updateContactSolverInfoParameters(YoBulletContactSolverInfoParameters globalContactSolverInfoParameters)
    {
-      btMultiBodyDynamicsWorld.getSolverInfo().setTau((float)globalContactSolverInfoParameters.getTau());
-      btMultiBodyDynamicsWorld.getSolverInfo().setDamping((float)globalContactSolverInfoParameters.getDamping());
-      btMultiBodyDynamicsWorld.getSolverInfo().setFriction((float)globalContactSolverInfoParameters.getFriction());
-      btMultiBodyDynamicsWorld.getSolverInfo().setTimeStep((float)globalContactSolverInfoParameters.getTimeStep());
-      btMultiBodyDynamicsWorld.getSolverInfo().setRestitution((float)globalContactSolverInfoParameters.getRestitution());
-      btMultiBodyDynamicsWorld.getSolverInfo().setMaxErrorReduction((float)globalContactSolverInfoParameters.getMaxErrorReduction());
-      btMultiBodyDynamicsWorld.getSolverInfo().setNumIterations(globalContactSolverInfoParameters.getNumberOfIterations());
-      btMultiBodyDynamicsWorld.getSolverInfo().setErp((float)globalContactSolverInfoParameters.getErrorReductionForNonContactConstraints());
-      btMultiBodyDynamicsWorld.getSolverInfo().setErp2((float)globalContactSolverInfoParameters.getErrorReductionForContactConstraints());
-      btMultiBodyDynamicsWorld.getSolverInfo().setGlobalCfm((float)globalContactSolverInfoParameters.getConstraintForceMixingForContactsAndNonContacts());
-      btMultiBodyDynamicsWorld.getSolverInfo().setFrictionERP((float)globalContactSolverInfoParameters.getErrorReductionForFrictionConstraints());
-      btMultiBodyDynamicsWorld.getSolverInfo().setFrictionCFM((float)globalContactSolverInfoParameters.getConstraintForceMixingForFrictionConstraints());
-      btMultiBodyDynamicsWorld.getSolverInfo().setSor((float)globalContactSolverInfoParameters.getSuccessiveOverRelaxationTerm());
-      btMultiBodyDynamicsWorld.getSolverInfo().setSplitImpulse(globalContactSolverInfoParameters.getSplitImpulse());
-      btMultiBodyDynamicsWorld.getSolverInfo().setSplitImpulsePenetrationThreshold((float)globalContactSolverInfoParameters.getSplitImpulsePenetrationThreshold());
-      btMultiBodyDynamicsWorld.getSolverInfo().setSplitImpulseTurnErp((float)globalContactSolverInfoParameters.getSplitImpulseTurnErp());
-      btMultiBodyDynamicsWorld.getSolverInfo().setLinearSlop((float)globalContactSolverInfoParameters.getLinearSlop());
-      btMultiBodyDynamicsWorld.getSolverInfo().setWarmstartingFactor((float)globalContactSolverInfoParameters.getWarmstartingFactor());
-      btMultiBodyDynamicsWorld.getSolverInfo().setSolverMode(globalContactSolverInfoParameters.getSolverMode());
-      btMultiBodyDynamicsWorld.getSolverInfo().setRestingContactRestitutionThreshold(globalContactSolverInfoParameters.getRestingContactRestitutionThreshold());
-      btMultiBodyDynamicsWorld.getSolverInfo().setMinimumSolverBatchSize(globalContactSolverInfoParameters.getMinimumSolverBatchSize());
-      btMultiBodyDynamicsWorld.getSolverInfo().setMaxGyroscopicForce((float)globalContactSolverInfoParameters.getMaxGyroscopicForce());
-      btMultiBodyDynamicsWorld.getSolverInfo().setSingleAxisRollingFrictionThreshold((float)globalContactSolverInfoParameters.getSingleAxisRollingFrictionThreshold());
-      btMultiBodyDynamicsWorld.getSolverInfo().setLeastSquaresResidualThreshold((float)globalContactSolverInfoParameters.getLeastSquaresResidualThreshold());
-      btMultiBodyDynamicsWorld.getSolverInfo().setRestitutionVelocityThreshold((float)globalContactSolverInfoParameters.getRestitutionVelocityThreshold());
+      btContactSolverInfo.m_tau(globalContactSolverInfoParameters.getTau());
+      btContactSolverInfo.m_damping(globalContactSolverInfoParameters.getDamping());
+      btContactSolverInfo.m_friction(globalContactSolverInfoParameters.getFriction());
+      btContactSolverInfo.m_timeStep(globalContactSolverInfoParameters.getTimeStep());
+      btContactSolverInfo.m_restitution(globalContactSolverInfoParameters.getRestitution());
+      btContactSolverInfo.m_maxErrorReduction(globalContactSolverInfoParameters.getMaxErrorReduction());
+      btContactSolverInfo.m_numIterations(globalContactSolverInfoParameters.getNumberOfIterations());
+      btContactSolverInfo.m_erp(globalContactSolverInfoParameters.getErrorReductionForNonContactConstraints());
+      btContactSolverInfo.m_erp2(globalContactSolverInfoParameters.getErrorReductionForContactConstraints());
+      btContactSolverInfo.m_globalCfm(globalContactSolverInfoParameters.getConstraintForceMixingForContactsAndNonContacts());
+      btContactSolverInfo.m_frictionERP(globalContactSolverInfoParameters.getErrorReductionForFrictionConstraints());
+      btContactSolverInfo.m_frictionCFM(globalContactSolverInfoParameters.getConstraintForceMixingForFrictionConstraints());
+      btContactSolverInfo.m_sor(globalContactSolverInfoParameters.getSuccessiveOverRelaxationTerm());
+      btContactSolverInfo.m_splitImpulse(globalContactSolverInfoParameters.getSplitImpulse());
+      btContactSolverInfo.m_splitImpulsePenetrationThreshold(globalContactSolverInfoParameters.getSplitImpulsePenetrationThreshold());
+      btContactSolverInfo.m_splitImpulseTurnErp(globalContactSolverInfoParameters.getSplitImpulseTurnErp());
+      btContactSolverInfo.m_linearSlop(globalContactSolverInfoParameters.getLinearSlop());
+      btContactSolverInfo.m_warmstartingFactor(globalContactSolverInfoParameters.getWarmstartingFactor());
+      btContactSolverInfo.m_solverMode(globalContactSolverInfoParameters.getSolverMode());
+      btContactSolverInfo.m_restingContactRestitutionThreshold(globalContactSolverInfoParameters.getRestingContactRestitutionThreshold());
+      btContactSolverInfo.m_minimumSolverBatchSize(globalContactSolverInfoParameters.getMinimumSolverBatchSize());
+      btContactSolverInfo.m_maxGyroscopicForce(globalContactSolverInfoParameters.getMaxGyroscopicForce());
+      btContactSolverInfo.m_singleAxisRollingFrictionThreshold(globalContactSolverInfoParameters.getSingleAxisRollingFrictionThreshold());
+      btContactSolverInfo.m_leastSquaresResidualThreshold(globalContactSolverInfoParameters.getLeastSquaresResidualThreshold());
+      btContactSolverInfo.m_restitutionVelocityThreshold(globalContactSolverInfoParameters.getRestitutionVelocityThreshold());
    }
 }

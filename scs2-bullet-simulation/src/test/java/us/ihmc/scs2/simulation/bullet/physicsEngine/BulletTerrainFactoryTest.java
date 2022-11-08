@@ -4,22 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
+import org.bytedeco.bullet.BulletCollision.btBoxShape;
+import org.bytedeco.bullet.BulletCollision.btCapsuleShapeZ;
+import org.bytedeco.bullet.BulletCollision.btCompoundShape;
+import org.bytedeco.bullet.BulletCollision.btConeShapeZ;
+import org.bytedeco.bullet.BulletCollision.btCylinderShapeZ;
+import org.bytedeco.bullet.BulletCollision.btSphereShape;
+import org.bytedeco.bullet.LinearMath.btTransform;
+import org.bytedeco.bullet.LinearMath.btVector3;
 import org.junit.jupiter.api.Test;
-
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.collision.BroadphaseNativeTypes;
-import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
-import com.badlogic.gdx.physics.bullet.collision.btCapsuleShapeZ;
-import com.badlogic.gdx.physics.bullet.collision.btCompoundShape;
-import com.badlogic.gdx.physics.bullet.collision.btConeShapeZ;
-import com.badlogic.gdx.physics.bullet.collision.btCylinderShapeZ;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
-import com.badlogic.gdx.physics.bullet.linearmath.LinearMath;
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
@@ -33,16 +28,10 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 
 public class BulletTerrainFactoryTest
 {
-   static
-   {
-      Bullet.init();
-      LogTools.info("Loaded Bullet version {}", LinearMath.btGetVersion());
-   }
-
    private static final double EPSILON = 1e-5;
    private static final int ITERATIONS = 1000;
 
-   private static final Vector3 boxVertex = new Vector3();
+   private static final btVector3 boxVertex = new btVector3();
 
    @Test
    public void testNewInstance()
@@ -59,24 +48,24 @@ public class BulletTerrainFactoryTest
                                                                        new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
-         btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
+         btCompoundShape compoundShape = new btCompoundShape(bulletTerrainObject.getBtRigidBody().getCollisionShape());
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
          assertEquals(bulletTerrainObject.getCollisionGroup(), 1);
          assertEquals(bulletTerrainObject.getCollisionGroupMask(), -1);
 
-         Matrix4 childTransform = compoundShape.getChildTransform(0);
+         btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
-         btBoxShape btBoxShape = (btBoxShape) compoundShape.getChildShape(0);
+         btBoxShape btBoxShape = new btBoxShape(compoundShape.getChildShape(0));
 
          for (int j = 0; j < btBoxShape.getNumEdges(); j++)
          {
             btBoxShape.getVertex(j, boxVertex);
 
-            assertEquals(Math.abs(boxVertex.x), (float) terrainGeometry.getSizeX() / 2.0f, EPSILON);
-            assertEquals(Math.abs(boxVertex.y), (float) terrainGeometry.getSizeY() / 2.0f, EPSILON);
-            assertEquals(Math.abs(boxVertex.z), (float) terrainGeometry.getSizeZ() / 2.0f, EPSILON);
+            assertEquals(Math.abs(boxVertex.getX()), terrainGeometry.getSizeX() / 2.0, EPSILON);
+            assertEquals(Math.abs(boxVertex.getY()), terrainGeometry.getSizeY() / 2.0, EPSILON);
+            assertEquals(Math.abs(boxVertex.getZ()), terrainGeometry.getSizeZ() / 2.0, EPSILON);
          }
       }
 
@@ -90,15 +79,15 @@ public class BulletTerrainFactoryTest
                                                                        new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
-         btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
+         btCompoundShape compoundShape = new btCompoundShape(bulletTerrainObject.getBtRigidBody().getCollisionShape());
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
 
-         Matrix4 childTransform = compoundShape.getChildTransform(0);
+         btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
-         btSphereShape sphereShape = (btSphereShape) compoundShape.getChildShape(0);
-         assertEquals(sphereShape.getRadius(), (float) terrainGeometry.getRadius());
+         btSphereShape sphereShape = new btSphereShape(compoundShape.getChildShape(0));
+         assertEquals(sphereShape.getRadius(), terrainGeometry.getRadius());
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -111,17 +100,17 @@ public class BulletTerrainFactoryTest
                                                                        new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
-         btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
+         btCompoundShape compoundShape = new btCompoundShape(bulletTerrainObject.getBtRigidBody().getCollisionShape());
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
 
-         Matrix4 childTransform = compoundShape.getChildTransform(0);
+         btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
-         btCylinderShapeZ cylinderShape = (btCylinderShapeZ) compoundShape.getChildShape(0);
+         btCylinderShapeZ cylinderShape = new btCylinderShapeZ(compoundShape.getChildShape(0));
 
-         assertEquals(cylinderShape.getRadius(), (float) terrainGeometry.getRadius(), EPSILON);
-         assertEquals(cylinderShape.getHalfExtentsWithMargin().z, (float) terrainGeometry.getLength() / 2.0f, EPSILON);
+         assertEquals(cylinderShape.getRadius(), terrainGeometry.getRadius(), EPSILON);
+         assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), terrainGeometry.getLength() / 2.0, EPSILON);
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -134,16 +123,16 @@ public class BulletTerrainFactoryTest
                                                                        new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
-         btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
+         btCompoundShape compoundShape = new btCompoundShape(bulletTerrainObject.getBtRigidBody().getCollisionShape());
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE.ordinal());
 
-         Matrix4 childTransform = compoundShape.getChildTransform(0);
+         btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
-         btConeShapeZ coneShape = (btConeShapeZ) compoundShape.getChildShape(0);
-         assertEquals(coneShape.getRadius(), (float) terrainGeometry.getRadius(), EPSILON);
-         assertEquals(coneShape.getHeight(), (float) terrainGeometry.getHeight(), EPSILON);
+         btConeShapeZ coneShape = new btConeShapeZ(compoundShape.getChildShape(0));
+         assertEquals(coneShape.getRadius(), terrainGeometry.getRadius(), EPSILON);
+         assertEquals(coneShape.getHeight(), terrainGeometry.getHeight(), EPSILON);
       }
 
       for (int i = 0; i < ITERATIONS; i++)
@@ -156,34 +145,34 @@ public class BulletTerrainFactoryTest
                                                                        new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
          BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrain);
-         btCompoundShape compoundShape = (btCompoundShape) bulletTerrainObject.getBtRigidBody().getCollisionShape();
+         btCompoundShape compoundShape = new btCompoundShape(bulletTerrainObject.getBtRigidBody().getCollisionShape());
 
-         assertEquals(compoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE);
+         assertEquals(compoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE.ordinal());
 
-         Matrix4 childTransform = compoundShape.getChildTransform(0);
+         btTransform childTransform = compoundShape.getChildTransform(0);
          assertChildTransformEqualToTerrainPose(terrainPose, childTransform);
 
-         btCapsuleShapeZ capsuleShape = (btCapsuleShapeZ) compoundShape.getChildShape(0);
-         assertEquals(capsuleShape.getRadius(), (float) terrainGeometry.getRadiusX(), EPSILON);
-         assertEquals(capsuleShape.getRadius(), (float) terrainGeometry.getRadiusY(), EPSILON);
-         assertEquals(capsuleShape.getRadius(), (float) terrainGeometry.getRadiusZ(), EPSILON);
-         assertEquals(capsuleShape.getHalfHeight(), (float) terrainGeometry.getLength() / 2.0f, EPSILON);
+         btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ(compoundShape.getChildShape(0));
+         assertEquals(capsuleShape.getRadius(), terrainGeometry.getRadiusX(), EPSILON);
+         assertEquals(capsuleShape.getRadius(), terrainGeometry.getRadiusY(), EPSILON);
+         assertEquals(capsuleShape.getRadius(), terrainGeometry.getRadiusZ(), EPSILON);
+         assertEquals(capsuleShape.getHalfHeight(), terrainGeometry.getLength() / 2.0, EPSILON);
       }
    }
 
-   private static void assertChildTransformEqualToTerrainPose(RigidBodyTransform terrainPose, Matrix4 childTransform)
+   private static void assertChildTransformEqualToTerrainPose(RigidBodyTransform terrainPose, btTransform childTransform)
    {
-      assertEquals(childTransform.val[Matrix4.M00], (float) terrainPose.getM00(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M01], (float) terrainPose.getM01(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M02], (float) terrainPose.getM02(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M10], (float) terrainPose.getM10(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M11], (float) terrainPose.getM11(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M12], (float) terrainPose.getM12(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M20], (float) terrainPose.getM20(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M21], (float) terrainPose.getM21(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M22], (float) terrainPose.getM22(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M03], (float) terrainPose.getM03(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M13], (float) terrainPose.getM13(), EPSILON);
-      assertEquals(childTransform.val[Matrix4.M23], (float) terrainPose.getM23(), EPSILON);
+      assertEquals(childTransform.getOrigin().getX(), terrainPose.getTranslation().getX(), EPSILON);
+      assertEquals(childTransform.getOrigin().getY(), terrainPose.getTranslation().getY(), EPSILON);
+      assertEquals(childTransform.getOrigin().getZ(), terrainPose.getTranslation().getZ(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(0).getX(), terrainPose.getRotation().getM00(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(0).getY(), terrainPose.getRotation().getM01(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(0).getZ(), terrainPose.getRotation().getM02(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(1).getX(), terrainPose.getRotation().getM10(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(1).getY(), terrainPose.getRotation().getM11(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(1).getZ(), terrainPose.getRotation().getM12(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(2).getX(), terrainPose.getRotation().getM20(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(2).getY(), terrainPose.getRotation().getM21(), EPSILON);
+      assertEquals(childTransform.getBasis().getRow(2).getZ(), terrainPose.getRotation().getM22(), EPSILON);
    }
 }

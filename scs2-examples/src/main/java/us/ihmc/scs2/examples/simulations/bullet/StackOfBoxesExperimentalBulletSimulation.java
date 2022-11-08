@@ -33,6 +33,20 @@ public class StackOfBoxesExperimentalBulletSimulation
 
    public StackOfBoxesExperimentalBulletSimulation()
    {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+      {
+         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+         sessionVisualizer.getToolkit().getSession().runTick();
+      }
+      else
+      {
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+      }
+   }
+
+   public static SimulationSession createSession()
+   {
       double groundWidth = 5.0;
       double groundLength = 5.0;
 
@@ -117,16 +131,7 @@ public class StackOfBoxesExperimentalBulletSimulation
       SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory());
       simulationSession.addTerrainObject(terrain);
       robotDefinitions.forEach(simulationSession::addRobot);
-
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      return simulationSession;
    }
 
    public static void main(String[] args)

@@ -114,6 +114,15 @@ public abstract class Session
     * Timer used to measured the total time spent in each call of {@link #finalizeRunTick(boolean)}.
     */
    private final YoTimer runFinalizeTimer = new YoTimer("runFinalizeTimer", TimeUnit.MILLISECONDS, runRegistry);
+   /**
+    * Real-time rate when this session is in {@link SessionMode#RUNNING}.
+    * <ul>
+    * <li>a value of less than 1 indicates that this session is slower than real-time.
+    * <li>a value of 1 indicates that this session runs at real-time.
+    * <li>a value of more than 1 indicates that this session is faster than real-time.
+    * </ul>
+    */
+   private final YoDouble runRealtimeRate = new YoDouble("runRealtimeRate", runRegistry);
 
    /** Registry gathering debug variables related to {@link #playbackTick()}. */
    protected final YoRegistry playbackRegistry = new YoRegistry("playbackStatistics");
@@ -1375,6 +1384,7 @@ public abstract class Session
    {
       runTimer.start();
       runActualDT.update();
+      runRealtimeRate.set((double) sessionDTNanoseconds.get() / runActualDT.getTimerValue(TimeUnit.NANOSECONDS));
 
       doGeneric(SessionMode.RUNNING);
 

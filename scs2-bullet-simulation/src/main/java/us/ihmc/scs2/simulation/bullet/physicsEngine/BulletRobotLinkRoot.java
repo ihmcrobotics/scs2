@@ -43,6 +43,9 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
    }
 
+   private final Vector3D linearVelocity = new Vector3D();
+   private final Vector3D angularVelocity = new Vector3D();
+
    @Override
    public void pushStateToBullet()
    {
@@ -50,11 +53,11 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
 
       MovingReferenceFrame bodyFixedFrame = rootSimFloatingRootJoint.getSuccessor().getBodyFixedFrame();
 
-      Vector3D linearVelocity = new Vector3D(bodyFixedFrame.getTwistOfFrame().getLinearPart());
+      linearVelocity.set(bodyFixedFrame.getTwistOfFrame().getLinearPart());
       bodyFixedFrame.transformFromThisToDesiredFrame(bodyFixedFrame.getRootFrame(), linearVelocity);
       getBulletMultiBodyLinkCollider().setBaseVel(linearVelocity);
 
-      Vector3D angularVelocity = new Vector3D(bodyFixedFrame.getTwistOfFrame().getAngularPart());
+      angularVelocity.set(bodyFixedFrame.getTwistOfFrame().getAngularPart());
       bodyFixedFrame.transformFromThisToDesiredFrame(bodyFixedFrame.getRootFrame(), angularVelocity);
       getBulletMultiBodyLinkCollider().setBaseOmega(angularVelocity);
    }
@@ -114,13 +117,14 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
                                rootSimFloatingRootJoint.getJointAcceleration());
    }
 
-   public static void computeJointTwist(double dt, Pose3DReadOnly previousPose, Pose3DReadOnly currentPose, FixedFrameTwistBasics twistToPack)
+   private final Vector4D qDot = new Vector4D();
+
+   public void computeJointTwist(double dt, Pose3DReadOnly previousPose, Pose3DReadOnly currentPose, FixedFrameTwistBasics twistToPack)
    {
       twistToPack.getLinearPart().sub(currentPose.getPosition(), previousPose.getPosition());
       twistToPack.getLinearPart().scale(1.0 / dt);
       currentPose.getOrientation().inverseTransform(twistToPack.getLinearPart());
 
-      Vector4D qDot = new Vector4D();
       qDot.sub(currentPose.getOrientation(), previousPose.getOrientation());
       qDot.scale(1.0 / dt);
       computeAngularVelocityInBodyFixedFrame(currentPose.getOrientation(), qDot, twistToPack.getAngularPart());
@@ -150,9 +154,10 @@ public class BulletRobotLinkRoot extends BulletRobotLinkBasics
       accelerationToPack.addCrossToLinearPart(currentTwist.getLinearPart(), currentTwist.getAngularPart());
    }
 
-   public static void computeAngularVelocityInBodyFixedFrame(QuaternionReadOnly q, Vector4DReadOnly qDot, Vector3DBasics angularVelocityToPack)
+   private final Vector4D pureQuatForMultiply = new Vector4D();
+
+   public void computeAngularVelocityInBodyFixedFrame(QuaternionReadOnly q, Vector4DReadOnly qDot, Vector3DBasics angularVelocityToPack)
    {
-      Vector4D pureQuatForMultiply = new Vector4D();
       QuaternionTools.multiplyConjugateLeft(q, qDot, pureQuatForMultiply);
       angularVelocityToPack.set(pureQuatForMultiply.getX(), pureQuatForMultiply.getY(), pureQuatForMultiply.getZ());
       angularVelocityToPack.scale(2.0);

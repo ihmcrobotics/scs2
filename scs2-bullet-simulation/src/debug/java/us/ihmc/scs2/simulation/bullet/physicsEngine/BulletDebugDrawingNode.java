@@ -1,7 +1,8 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
+import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -14,8 +15,8 @@ import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class BulletDebugDrawingNode extends Group
 {
-   private final com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw btIDebugDraw;
-   private int debugMode = com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw.DebugDrawModes.DBG_DrawWireframe; // TODO: Provide options in combo box
+   private int debugMode = btIDebugDraw.DBG_DrawWireframe; // TODO: Provide options to user
+   private final btIDebugDraw btDebugDraw;
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
    private PrivateAnimationTimer animationTimer;
@@ -36,10 +37,10 @@ public class BulletDebugDrawingNode extends Group
       updateDebugDrawings.set(true);
       showDebugDrawings.set(true);
 
-      btIDebugDraw = new btIDebugDraw()
+      btDebugDraw = new btIDebugDraw()
       {
          @Override
-         public void drawLine(Vector3 from, Vector3 to, Vector3 color)
+         public void drawLine(btVector3 from, btVector3 to, btVector3 color)
          {
             if (lineDraws >= maxLineDrawsPerModel)
             {
@@ -49,7 +50,7 @@ public class BulletDebugDrawingNode extends Group
 
             BulletTools.toEuclid(from, fromEuclid);
             BulletTools.toEuclid(to, toEuclid);
-            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
+            Color colorJavaFX = new Color(color.getX(), color.getY(), color.getZ(), 1.0);
 
             meshHelper.addLine(fromEuclid, toEuclid, 0.002, colorJavaFX);
 
@@ -57,9 +58,9 @@ public class BulletDebugDrawingNode extends Group
          }
 
          @Override
-         public void drawContactPoint(Vector3 pointOnB, Vector3 normalOnB, float distance, int lifeTime, Vector3 color)
+         public void drawContactPoint(btVector3 pointOnB, btVector3 normalOnB, double distance, int lifeTime, btVector3 color)
          {
-            Color colorJavaFX = new Color(color.x, color.y, color.z, 1.0);
+            Color colorJavaFX = new Color(color.getX(), color.getY(), color.getZ(), 1.0);
             BulletTools.toEuclid(pointOnB, pointOnEuclid);
             meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
             BulletTools.toEuclid(normalOnB, pointOnEuclid);
@@ -67,19 +68,19 @@ public class BulletDebugDrawingNode extends Group
          }
 
          @Override
-         public void drawTriangle(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 color, float alpha)
+         public void drawTriangle(btVector3 v0, btVector3 v1, btVector3 v2, btVector3 color, double alpha)
          {
 
          }
 
          @Override
-         public void reportErrorWarning(String warningString)
+         public void reportErrorWarning(BytePointer warningString)
          {
-            LogTools.error("Bullet: {}", warningString);
+            LogTools.error("Bullet: {}", warningString.getString().trim());
          }
 
          @Override
-         public void draw3dText(Vector3 location, String textString)
+         public void draw3dText(btVector3 location, BytePointer textString)
          {
 
          }
@@ -96,7 +97,7 @@ public class BulletDebugDrawingNode extends Group
             return debugMode;
          }
       };
-      bulletMultiBodyDynamicsWorld.setBtDebugDrawer(btIDebugDraw);
+      bulletMultiBodyDynamicsWorld.setBtDebugDrawer(btDebugDraw);
    }
 
    public void initializeWithJavaFX()
@@ -107,7 +108,6 @@ public class BulletDebugDrawingNode extends Group
 
    public void update(long now)
    {
-
       if (!showDebugDrawings.getBooleanValue())
       {
          getChildren().clear();

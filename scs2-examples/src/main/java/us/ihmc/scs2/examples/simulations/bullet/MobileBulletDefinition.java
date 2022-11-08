@@ -29,7 +29,6 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 
-
 public class MobileBulletDefinition extends RobotDefinition
 {
    private static final String MOBILE = "mobile";
@@ -60,7 +59,6 @@ public class MobileBulletDefinition extends RobotDefinition
       RigidBodyDefinition crossBarLvl1 = createCrossBar("crossBarLvl1", jointsLevel1[2], M1, L1, R1, Ixx1, Iyy1, Izz1);
       jointLvl1DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel1).map(JointDefinition::getName).toArray(String[]::new));
 
-      
       RigidBodyDefinition crossBarLvl2;
 
       for (int i = 0; i < 4; i++)
@@ -76,7 +74,7 @@ public class MobileBulletDefinition extends RobotDefinition
             yOffset = L1;
          else // i == 3
             yOffset = -L1;
-         
+
          OneDoFJointDefinition jointsLevel2[] = createGimbal("jointLvl2_" + i, crossBarLvl1, new Vector3D(xOffset, yOffset, -L1 / 2.0));
          crossBarLvl2 = createCrossBar("crossBarLvl2_" + i, jointsLevel2[2], M2, L2, R2, Ixx2, Iyy2, Izz2);
          jointLvl2DampingControllerDefinition.addJointsToControl(Stream.of(jointsLevel2).map(JointDefinition::getName).toArray(String[]::new));
@@ -146,7 +144,13 @@ public class MobileBulletDefinition extends RobotDefinition
    /**
     * Creates a cross bar link from the given parameters.
     */
-   private RigidBodyDefinition createCrossBar(String name, JointDefinition parentJoint, double mass, double length, double radius, double Ixx, double Iyy,
+   private RigidBodyDefinition createCrossBar(String name,
+                                              JointDefinition parentJoint,
+                                              double mass,
+                                              double length,
+                                              double radius,
+                                              double Ixx,
+                                              double Iyy,
                                               double Izz)
    {
       RigidBodyDefinition crossBar = new RigidBodyDefinition(name);
@@ -181,7 +185,7 @@ public class MobileBulletDefinition extends RobotDefinition
       crossBar.addVisualDefinition(new VisualDefinition(crossBarTip2, sphere2, redMaterial));
       crossBar.addVisualDefinition(new VisualDefinition(crossBarTip3, sphere2, redMaterial));
       crossBar.addVisualDefinition(new VisualDefinition(crossBarTip4, sphere2, redMaterial));
-      
+
       CollisionShapeDefinition collisionShapeVericalBarPose = new CollisionShapeDefinition(verticalBarPose, cylinder1);
       crossBar.addCollisionShapeDefinition(collisionShapeVericalBarPose);
       CollisionShapeDefinition collisionShapeCrossBarCenter1 = new CollisionShapeDefinition(crossBarCenter1, cylinder2);
@@ -243,7 +247,7 @@ public class MobileBulletDefinition extends RobotDefinition
       toyVisualPose.getTranslation().setZ(-stringLength);
       MaterialDefinition toyMaterialDefinition = new MaterialDefinition(ColorDefinition.rgb(new Random().nextInt()));
       toyRigidbody.addVisualDefinition(new VisualDefinition(toyVisualPose, toyGeometryDefinition, toyMaterialDefinition));
-      
+
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(toyVisualPose, toyGeometryDefinition);
       toyRigidbody.addCollisionShapeDefinition(collisionShapeDefinition);
 

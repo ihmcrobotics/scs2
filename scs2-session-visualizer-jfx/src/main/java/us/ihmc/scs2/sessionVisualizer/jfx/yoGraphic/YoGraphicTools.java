@@ -298,8 +298,11 @@ public class YoGraphicTools
             return toYoBoxFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicBox3DDefinition) definition);
          else if (definition instanceof YoGraphicSTPBox3DDefinition)
             return toYoSTPBoxFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicSTPBox3DDefinition) definition);
-         else
-            throw new UnsupportedOperationException("Unhandled graphic type: " + definition.getClass().getSimpleName());
+         else if (definition instanceof YoGraphicEllipsoid3DDefinition)
+            return toYoEllipsoidFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicEllipsoid3DDefinition) definition);
+
+         LogTools.error("Unhandled graphic type: {}", definition.getClass().getSimpleName());
+         return null;
       }
       catch (NullPointerException e)
       {

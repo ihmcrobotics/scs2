@@ -1,23 +1,25 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.*;
-import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
-import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
+import java.util.ArrayList;
+import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.BulletCollision.btCompoundShape;
+import org.bytedeco.bullet.LinearMath.btDefaultMotionState;
+import org.bytedeco.bullet.LinearMath.btTransform;
+import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.bullet.BulletDynamics.btRigidBody;
 
 public class BulletTerrainObject
 {
-   private final btMotionState btMotionState = new btMotionState()
+   private final btDefaultMotionState btMotionState = new btDefaultMotionState()
    {
       @Override
-      public void setWorldTransform(Matrix4 transformToWorld)
+      public void setWorldTransform(btTransform transformToWorld)
       {
          // Should be always 0, the child shapes are statically placed
       }
 
       @Override
-      public void getWorldTransform(Matrix4 transformToWorld)
+      public void getWorldTransform(btTransform transformToWorld)
       {
          // Should be always 0, the child shapes are statically placed
       }
@@ -25,15 +27,25 @@ public class BulletTerrainObject
    private final btRigidBody btRigidBody;
    private final int collisionGroup = 1; // group 1 is rigid and static bodies
    private final int collisionGroupMask = -1; // Allows interaction with all groups (including custom groups)
+   private final btCompoundShape btCollisionShape;
+   private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+   private final btVector3 localInertia = new btVector3();
+   private double friction;
 
-   public BulletTerrainObject(float mass, btCollisionShape bulletCompoundCollisionShape)
+   public BulletTerrainObject(double mass, btCompoundShape bulletCompoundCollisionShape, ArrayList<btCollisionShape> btCollisionShapes)
    {
-      Vector3 localInertia = new Vector3();
       bulletCompoundCollisionShape.calculateLocalInertia(mass, localInertia);
 
       btRigidBody = new btRigidBody(mass, btMotionState, bulletCompoundCollisionShape, localInertia);
-      
-      btRigidBody.setFriction(1f);
+      btRigidBody.setFriction(1.0);
+      friction = btRigidBody.getFriction();
+      btCollisionShape = bulletCompoundCollisionShape;
+      this.setBtCollisionShapes(btCollisionShapes);
+   }
+
+   public void pullStateFromBullet()
+   {
+      friction = btRigidBody.getFriction();
    }
 
    public btRigidBody getBtRigidBody()
@@ -51,4 +63,18 @@ public class BulletTerrainObject
       return collisionGroupMask;
    }
 
+   public btCompoundShape getBtCollisionShape()
+   {
+      return btCollisionShape;
+   }
+
+   public ArrayList<btCollisionShape> getBtCollisionShapes()
+   {
+      return btCollisionShapes;
+   }
+
+   public void setBtCollisionShapes(ArrayList<btCollisionShape> btCollisionShapes)
+   {
+      this.btCollisionShapes = btCollisionShapes;
+   }
 }
