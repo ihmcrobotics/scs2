@@ -18,6 +18,7 @@ public class YoLineFX2D extends YoGraphicFX2D
    public YoLineFX2D()
    {
       lineNode.idProperty().bind(nameProperty());
+      lineNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoLineFX2D(ReferenceFrame worldFrame)
@@ -44,7 +45,13 @@ public class YoLineFX2D extends YoGraphicFX2D
 
       if (origin == null || (direction == null && destination == null))
       {
-         lineNode.setStartX(Double.NaN);
+         handleNaN();
+         return;
+      }
+
+      if (origin.containsNaN())
+      {
+         handleNaN();
          return;
       }
 
@@ -54,16 +61,37 @@ public class YoLineFX2D extends YoGraphicFX2D
 
       if (direction != null)
       {
+
+         if (direction.containsNaN())
+         {
+            handleNaN();
+            return;
+         }
+
          Vector2D directionInWorld = direction.toVector2DInWorld();
          lineNode.setEndX(originInWorld.getX() + directionInWorld.getX());
          lineNode.setEndY(originInWorld.getY() + directionInWorld.getY());
       }
       else
       {
+         if (destination.containsNaN())
+         {
+            handleNaN();
+            return;
+         }
+
          Point2D destinationInWorld = destination.toPoint2DInWorld();
          lineNode.setEndX(destinationInWorld.getX());
          lineNode.setEndY(destinationInWorld.getY());
       }
+   }
+
+   private void handleNaN()
+   {
+      lineNode.setStartX(Double.NEGATIVE_INFINITY);
+      lineNode.setStartY(Double.NEGATIVE_INFINITY);
+      lineNode.setEndX(Double.NEGATIVE_INFINITY);
+      lineNode.setEndY(Double.NEGATIVE_INFINITY);
    }
 
    public void setOrigin(Tuple2DProperty origin)

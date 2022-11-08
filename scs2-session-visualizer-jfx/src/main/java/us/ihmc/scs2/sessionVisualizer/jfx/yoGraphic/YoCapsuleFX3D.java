@@ -40,6 +40,7 @@ public class YoCapsuleFX3D extends YoGraphicFX3D
       capsuleNode.setMaterial(material);
       capsuleNode.getTransforms().addAll(translate, rotate);
       capsuleNode.idProperty().bind(nameProperty());
+      capsuleNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoCapsuleFX3D(ReferenceFrame worldFrame)
@@ -52,6 +53,13 @@ public class YoCapsuleFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (center.containsNaN() || axis.containsNaN())
+      {
+         oldData = null;
+         capsuleNode.setMesh(null);
+         return;
+      }
+
       newData = newCapsuleData(length, radius);
 
       if (color == null)
@@ -98,6 +106,7 @@ public class YoCapsuleFX3D extends YoGraphicFX3D
       else if (newDataLocal.containsNaN() || EuclidCoreTools.isZero(newDataLocal.radius, 1.0e-5))
       {
          clearMesh = true;
+         oldData = null;
          return;
       }
       else if (newDataLocal.equals(oldData))

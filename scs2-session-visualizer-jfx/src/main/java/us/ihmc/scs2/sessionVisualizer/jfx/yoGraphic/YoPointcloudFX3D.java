@@ -41,6 +41,8 @@ public class YoPointcloudFX3D extends YoGraphicFX3D
    public YoPointcloudFX3D()
    {
       numberOfPointsProperty.addListener((observable, oldValue, newValue) -> refreshGraphicsProperty.set(true));
+      pointcloudNode.idProperty().bind(nameProperty());
+      pointcloudNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoPointcloudFX3D(ReferenceFrame worldFrame)
@@ -80,10 +82,20 @@ public class YoPointcloudFX3D extends YoGraphicFX3D
       for (int i = 0; i < numberOfPointsProperty.get(); i++)
       {
          Translate translate = translates.get(i);
-         Point3D position = points.get(i).toPoint3DInWorld();
-         translate.setX(position.getX());
-         translate.setY(position.getY());
-         translate.setZ(position.getZ());
+
+         if (points.get(i).containsNaN())
+         {
+            translate.setX(Double.NEGATIVE_INFINITY);
+            translate.setY(Double.NEGATIVE_INFINITY);
+            translate.setZ(Double.NEGATIVE_INFINITY);
+         }
+         else
+         {
+            Point3D position = points.get(i).toPoint3DInWorld();
+            translate.setX(position.getX());
+            translate.setY(position.getY());
+            translate.setZ(position.getZ());
+         }
       }
    }
 

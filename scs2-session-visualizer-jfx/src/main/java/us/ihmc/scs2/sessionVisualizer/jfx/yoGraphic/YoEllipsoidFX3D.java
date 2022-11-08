@@ -34,11 +34,19 @@ public class YoEllipsoidFX3D extends YoGraphicFX3D
       position.setReferenceFrame(worldFrame);
       orientation.setReferenceFrame(worldFrame);
       radii.setReferenceFrame(worldFrame);
+      ellipsoidNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    @Override
    public void render()
    {
+      if (position.containsNaN() || orientation.containsNaN())
+      {
+         affine.setToIdentity();
+         affine.appendScale(0, 0, 0);
+         return;
+      }
+
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
       affine.appendScale(radii.getX(), radii.getY(), radii.getZ());
 

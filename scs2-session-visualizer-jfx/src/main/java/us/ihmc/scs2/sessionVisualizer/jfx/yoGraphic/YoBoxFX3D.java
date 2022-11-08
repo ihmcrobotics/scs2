@@ -26,6 +26,7 @@ public class YoBoxFX3D extends YoGraphicFX3D
       boxNode.setMaterial(material);
       boxNode.getTransforms().add(affine);
       boxNode.idProperty().bind(nameProperty());
+      boxNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
    public YoBoxFX3D(ReferenceFrame worldFrame)
@@ -39,6 +40,14 @@ public class YoBoxFX3D extends YoGraphicFX3D
    @Override
    public void render()
    {
+      if (position.containsNaN() || orientation.containsNaN() || size.containsNaN())
+      {
+         affine.setToIdentity();
+         affine.appendTranslation(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);
+         affine.appendScale(0, 0, 0);
+         return;
+      }
+
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
       if (color == null)
          color = () -> null;

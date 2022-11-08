@@ -261,6 +261,48 @@ public abstract class Session
    }
 
    /**
+    * Attempts to retrieve the name of the test calling this method.
+    *
+    * @return the name of the test calling this method.
+    */
+   public static String retrieveCallingTestName()
+   {
+      StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+
+      StackTraceElement callingElement = null;
+
+      for (StackTraceElement candidate : stackTrace)
+      {
+         String moduleName = candidate.getModuleName();
+         String className = candidate.getClassName();
+
+         if (moduleName != null && moduleName.equals("java.base"))
+            break;
+         if (className.startsWith("jdk.internal"))
+            break;
+         if (className.startsWith("sun.reflect"))
+            break;
+         if (className.startsWith("java.lang"))
+            break;
+         if (className.startsWith("org.junit"))
+            break;
+         callingElement = candidate;
+      }
+
+      if (callingElement == null)
+      {
+         return "Unknown test simulation";
+      }
+      else
+      {
+         String className = callingElement.getClassName();
+         String methodName = callingElement.getMethodName();
+         String classSimpleName = className.substring(className.lastIndexOf(".") + 1);
+         return classSimpleName + "-" + methodName;
+      }
+   }
+
+   /**
     * Configures this session to communicate with the given messager. The session will register
     * listeners and publishers using the API defined in {@link YoSharedBufferMessagerAPI} and
     * {@link SessionMessagerAPI}.
