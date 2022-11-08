@@ -13,6 +13,7 @@ import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
@@ -129,12 +130,12 @@ public class BulletMultiBodyRobotFactory
       }
    }
 
-   private static btQuaternion rotationFromParentBullet = new btQuaternion();
-   private static us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion();
-   private static RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
-   private static btVector3 parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet = new btVector3();
-   private static RigidBodyTransform parentJointAfterFrameToLinkCenterOfMassTransformEuclid = new RigidBodyTransform();
-   private static btVector3 parentJointAfterFrameToLinkCenterOfMassTranslationBullet = new btVector3();
+   private static final btQuaternion rotationFromParentBullet = new btQuaternion();
+   private static final Quaternion euclidRotationFromParent = new Quaternion();
+   private static final RigidBodyTransform parentLinkCenterOfMassToParentJointBeforeJointFrameTransformEuclid = new RigidBodyTransform();
+   private static final btVector3 parentLinkCenterOfMassToParentJointBeforeJointFrameTranslationBullet = new btVector3();
+   private static final RigidBodyTransform parentJointAfterFrameToLinkCenterOfMassTransformEuclid = new RigidBodyTransform();
+   private static final btVector3 parentJointAfterFrameToLinkCenterOfMassTranslationBullet = new btVector3();
 
    private static btMultibodyLink setupBtMultibodyLink(BulletMultiBodyRobot bulletMultiBodyRobot,
                                                        JointBasics joint,
@@ -311,8 +312,8 @@ public class BulletMultiBodyRobotFactory
       return bulletMultiBodyLinkCollider.getBtMultiBodyLinkCollider();
    }
 
-   private static btTransform bulletCollisionShapeLocalTransform = new btTransform();
-   private static RigidBodyTransform collisionShapeDefinitionToCenterOfMassFrameTransformEuclid = new RigidBodyTransform();
+   private static final btTransform bulletCollisionShapeLocalTransform = new btTransform();
+   private static final RigidBodyTransform collisionShapeDefinitionToCenterOfMassFrameTransformEuclid = new RigidBodyTransform();
 
    public static btTransform bulletCollisionShapeLocalTransform(CollisionShapeDefinition shapeDefinition, ReferenceFrame linkCenterOfMassFrame)
    {

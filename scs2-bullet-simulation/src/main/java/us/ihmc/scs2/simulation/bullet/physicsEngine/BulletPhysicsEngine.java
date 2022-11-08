@@ -102,7 +102,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
       }
 
       //set yoVariable Tick Expected Time Rate in milliseconds
-      runTickExpectedTimeRate.set(dt * 1000);
+      runTickExpectedTimeRate.set(dt * 1000.0);
 
       runBulletPhysicsEngineSimulateTimer.start();
 

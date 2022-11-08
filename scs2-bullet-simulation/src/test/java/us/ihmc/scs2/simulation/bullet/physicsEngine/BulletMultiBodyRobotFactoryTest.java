@@ -27,6 +27,7 @@ import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
+import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
@@ -154,7 +155,7 @@ public class BulletMultiBodyRobotFactoryTest
       btCompoundShape baseColliderCompoundShape = new btCompoundShape(baseCollider.getCollisionShape());
       assertEquals(baseColliderCompoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       btCylinderShape cylinderShape = new btCylinderShape(baseColliderCompoundShape.getChildShape(0));
-      assertEquals(cylinderShape.getRadius(), 0.11);
+      assertEquals(cylinderShape.getRadius(), 0.1175);
       assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.06 / 2.0);
       assertEquals(baseColliderCompoundShape.getChildShape(1).getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       cylinderShape = new btCylinderShape(baseColliderCompoundShape.getChildShape(1));
@@ -381,7 +382,7 @@ public class BulletMultiBodyRobotFactoryTest
       OneDoFJointDefinition oneDoFJointDefinition = (OneDoFJointDefinition) jointDefinition;
       Vector3D jointAxis = oneDoFJointDefinition.getAxis();
       btMultibodyLink link = btMultiBody.getLink(index);
-      us.ihmc.euclid.tuple4D.Quaternion euclidRotationFromParent = new us.ihmc.euclid.tuple4D.Quaternion(jointDefinition.getTransformToParent().getRotation());
+      Quaternion euclidRotationFromParent = new Quaternion(jointDefinition.getTransformToParent().getRotation());
       euclidRotationFromParent.invert();
       assertQuaternionEqualsBtQuaternion(euclidRotationFromParent, link.m_zeroRotParentToThis());
 
@@ -435,7 +436,7 @@ public class BulletMultiBodyRobotFactoryTest
       assertEquals(bulletCollisionShapeLocalTransform.getBasis().getRow(2).getZ(), rigidBodyTransform.getRotation().getM22(), EPSILON, name + " - M22 is not as expected");
    }
 
-   private static void assertQuaternionEqualsBtQuaternion(us.ihmc.euclid.tuple4D.Quaternion quaterion, btQuaternion btQuaternion)
+   private static void assertQuaternionEqualsBtQuaternion(Quaternion quaterion, btQuaternion btQuaternion)
    {
       assertEquals(quaterion.getX(), btQuaternion.getX(), EPSILON);
       assertEquals(quaterion.getY(), btQuaternion.getY(), EPSILON);
@@ -587,7 +588,7 @@ public class BulletMultiBodyRobotFactoryTest
       rigidBodyDefinition.getInertiaPose().getTranslation().set(0.012, 0.0, 0.027);
 
       CollisionShapeDefinition collisionShapeDefinition1 = new CollisionShapeDefinition(new YawPitchRollTransformDefinition(0.046, 0.0, 0.01, 0.0, -0.0, 1.571),
-                                                                                        new Cylinder3DDefinition(0.06, 0.11));
+                                                                                        new Cylinder3DDefinition(0.06, 0.1175));
       collisionShapeDefinition1.setCollisionGroup(899);
       collisionShapeDefinition1.setCollisionMask(64);
       rigidBodyDefinition.addCollisionShapeDefinition(collisionShapeDefinition1);
