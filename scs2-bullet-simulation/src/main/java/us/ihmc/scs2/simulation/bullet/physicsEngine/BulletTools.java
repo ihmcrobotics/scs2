@@ -121,7 +121,6 @@ public class BulletTools
                                     new btVector3(v1.getX(), v1.getY(), v1.getZ()),
                                     new btVector3(v2.getX(), v2.getY(), v2.getZ()));
       }
-      //btTriangleMesh.releaseOwnership();
 
       return btTriangleMesh;
    }
