@@ -46,5 +46,4 @@ public class BulletRobotPhysics
    {
       return rigidBodyWrenchRegistry;
    }
-
 }

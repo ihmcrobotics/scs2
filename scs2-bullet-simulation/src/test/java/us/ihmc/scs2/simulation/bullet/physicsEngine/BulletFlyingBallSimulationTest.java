@@ -31,17 +31,27 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.variable.YoDouble;
 
+/**
+ * Tests the ballistics equation:
+ *
+ * H(time) = -1/2 * g * t2 + V(initial) * t + H(initial)
+ *
+ * and asserts that the Orbital Energy remains constant.
+ */
 public class BulletFlyingBallSimulationTest
 {
    private static final double EPSILON = 0.01;
    private static final boolean BULLET_PHYSICS_ENGINE = true;
    private static final boolean VISUALIZE = false;
+   private static final int numberOfSimulationTicks = 1000;
+   private YoPoint3D expectedPosition;
+   private SimFloatingRootJoint floatingRootJoint;
+   private YoDouble orbitalEnergyVariable;
 
-   @Test
-   public void testFlyingBall() throws Throwable
+   public SimulationSession createSession()
    {
-      Point3D initialPosition = new Point3D(0, 0, 0);
-      Vector3D initialVelocity = new Vector3D(0.0, 0.0, 0);
+      Point3D initialPosition = new Point3D(0.0, 0.0, 0.0);
+      Vector3D initialVelocity = new Vector3D(0.0, 0.0, 0.0);
 
       double dt = 0.01;
 
@@ -73,10 +83,10 @@ public class BulletFlyingBallSimulationTest
       if (BULLET_PHYSICS_ENGINE)
       {
          BulletMultiBodyParameters bulletMultiBodyParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
-         BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
          bulletMultiBodyParameters.setLinearDamping(0);
          bulletMultiBodyParameters.setMaxCoordinateVelocity(10000000);
          bulletMultiBodyParameters.setUseRK4Integration(true);
+         BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
          simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters,
                                                                                                             bulletMultiBodyJointParameter));
       }
@@ -85,29 +95,27 @@ public class BulletFlyingBallSimulationTest
          simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory());
       }
 
-      int numberOfSimulationTicks = 1000;
       simulationSession.addRobot(sphereRobot);
       simulationSession.setSessionDTSeconds(dt);
       simulationSession.initializeBufferSize(2 * numberOfSimulationTicks);
       SimulationEnergyStatistics.setupSimulationEnergyStatistics(simulationSession);
 
-      YoPoint3D expectedPosition = new YoPoint3D("expectedSpherePosition", simulationSession.getRootRegistry());
+      expectedPosition = new YoPoint3D("expectedSpherePosition", simulationSession.getRootRegistry());
       FrameVector3DReadOnly gravity = simulationSession.getGravity();
 
-      SessionVisualizerControls visualizerControls = null;
+      floatingRootJoint = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(0).getJoint(name);
 
-      if (VISUALIZE)
-      {
-         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
-         visualizerControls.waitUntilVisualizerFullyUp();
-      }
+      orbitalEnergyVariable = (YoDouble) simulationSession.getRootRegistry().findVariable(name + "OrbitalEnergy");
 
-      SimFloatingRootJoint floatingRootJoint = (SimFloatingRootJoint) simulationSession.getPhysicsEngine().getRobots().get(0).getJoint(name);
+      simulationSession.addAfterPhysicsCallback(time -> expectedPosition.set(heightAfterSeconds(initialPosition, initialVelocity, time, gravity.getZ())));
+      return simulationSession;
+   }
 
-      YoDouble orbitalEnergyVariable = (YoDouble) simulationSession.getRootRegistry().findVariable(name + "OrbitalEnergy");
+   @Test
+   public void testFlyingBall() throws Throwable
+   {
+      SimulationSession simulationSession = createSession();
 
-      MutableObject<Throwable> caughtException = new MutableObject<>(null);
-      simulationSession.addRunThrowableListener(t -> caughtException.setValue(t));
       simulationSession.addAfterPhysicsCallback(new TimeConsumer()
       {
          double initialOrbitalEnergy = 0;
@@ -115,7 +123,6 @@ public class BulletFlyingBallSimulationTest
          @Override
          public void accept(double time)
          {
-            expectedPosition.set(heightAfterSeconds(initialPosition, initialVelocity, time, gravity.getZ()));
             EuclidCoreTestTools.assertEquals(expectedPosition, floatingRootJoint.getJointPose().getPosition(), EPSILON);
 
             //orbital energy should remain constant
@@ -125,10 +132,20 @@ public class BulletFlyingBallSimulationTest
          }
       });
 
+      MutableObject<Throwable> caughtException = new MutableObject<>(null);
+      simulationSession.addRunThrowableListener(t -> caughtException.setValue(t));
+
+      SessionVisualizerControls visualizerControls = null;
+      if (VISUALIZE)
+      {
+         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession);
+         visualizerControls.waitUntilVisualizerFullyUp();
+      }
+
       try
       {
          simulationSession.getSimulationSessionControls().simulateNow(numberOfSimulationTicks);
-         if (caughtException.getValue()!= null)
+         if (caughtException.getValue() != null)
             throw caughtException.getValue();
       }
       finally
@@ -138,9 +155,11 @@ public class BulletFlyingBallSimulationTest
             visualizerControls.waitUntilVisualizerDown();
          }
       }
+
+      simulationSession.shutdownSession();
    }
 
-   private Vector3D heightAfterSeconds(Point3D initialPosition, Vector3D initialVelocity, double seconds, double gravity)
+   private static Vector3D heightAfterSeconds(Point3D initialPosition, Vector3D initialVelocity, double seconds, double gravity)
    {
       //H(time) = -1/2 * g * t^2 + V(initial) * t + H(initial)
       Vector3D height = new Vector3D();

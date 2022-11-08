@@ -26,8 +26,17 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
 {
    private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-   
+
    public SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation()
+   {
+      SimulationSession simulationSession = createSession();
+      if (VISUALIZE_WITH_DEBUG_DRAWING)
+         BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
+      else
+         SessionVisualizer.startSessionVisualizer(simulationSession);
+   }
+
+   public static SimulationSession createSession()
    {
       double boxXLength = 0.2;
       double boxYWidth = 0.12;
@@ -111,11 +120,7 @@ public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
       simulationSession.addTerrainObject(terrain);
 
       simulationSession.initializeBufferSize(24000);
-      
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-         BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-      else
-         SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

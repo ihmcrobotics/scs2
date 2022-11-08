@@ -29,11 +29,16 @@ public class BulletPhysicsEngineFactoryTest
 
       YoBulletMultiBodyParameters globalBulletMultiBodyParameters = bulletPhysicsEngine.getGlobalBulletMultiBodyParameters();
       BulletMultiBodyParameters defaultParameters = BulletMultiBodyParameters.defaultBulletMultiBodyParameters();
-      
+
       YoBulletSimulationParameters globalBulletSimulationParameters = bulletPhysicsEngine.getGlobalSimulationParameters();
       BulletSimulationParameters defaultSimulationParameters = new BulletSimulationParameters();
-      
-      assetParametersEqual(defaultParameters, defaultJointParameters, defaultSimulationParameters, globalBulletMultiBodyParameters, globalBulletMultiBodyJointParameters, globalBulletSimulationParameters);
+
+      assetParametersEqual(defaultParameters,
+                           defaultJointParameters,
+                           defaultSimulationParameters,
+                           globalBulletMultiBodyParameters,
+                           globalBulletMultiBodyJointParameters,
+                           globalBulletSimulationParameters);
 
       bulletPhysicsEngine.dispose();
 
@@ -70,10 +75,10 @@ public class BulletPhysicsEngineFactoryTest
          BulletSimulationParameters simulationParameters = new BulletSimulationParameters(random.nextDouble(), random.nextInt(), random.nextDouble());
          bulletPhysicsEngineWithParameters.setGlobalSimulationParameters(simulationParameters);
          YoBulletSimulationParameters globalBulletSimulationParametersFromPhysicsEngine = bulletPhysicsEngineWithParameters.getGlobalSimulationParameters();
-         
+
          assetParametersEqual(parameters,
                               jointParameters,
-                              simulationParameters, 
+                              simulationParameters,
                               globalBulletMultiBodyParametersFromPhysicsEngine,
                               globalBulletMultiBodyJointParametersFromPhysicsEngine,
                               globalBulletSimulationParametersFromPhysicsEngine);
@@ -81,13 +86,14 @@ public class BulletPhysicsEngineFactoryTest
          bulletPhysicsEngineWithParameters.dispose();
       }
 
+      simulationSession.shutdownSession();
    }
 
    private static void assetParametersEqual(BulletMultiBodyParameters parameters,
                                             BulletMultiBodyJointParameters jointParameters,
                                             BulletSimulationParameters simulationParameters,
                                             YoBulletMultiBodyParameters globalBulletMultiBodyParameters,
-                                            YoBulletMultiBodyJointParameters globalBulletMultiBodyJointParameters, 
+                                            YoBulletMultiBodyJointParameters globalBulletMultiBodyJointParameters,
                                             YoBulletSimulationParameters globalBulletSimulationParameters)
    {
       assertEquals(globalBulletMultiBodyParameters.getAngularDamping(), parameters.getAngularDamping());
@@ -101,8 +107,7 @@ public class BulletPhysicsEngineFactoryTest
       assertEquals(globalBulletMultiBodyParameters.getUseRK4Integration(), parameters.getUseRK4Integration());
       assertFalse(globalBulletMultiBodyParameters.getUpdateGlobalMultiBodyParameters());
 
-      assertEquals(globalBulletMultiBodyJointParameters.getJointContactProcessingThreshold(),
-                   jointParameters.getJointContactProcessingThreshold());
+      assertEquals(globalBulletMultiBodyJointParameters.getJointContactProcessingThreshold(), jointParameters.getJointContactProcessingThreshold());
       assertEquals(globalBulletMultiBodyJointParameters.getJointDisableParentCollision(), jointParameters.getJointDisableParentCollision());
       assertEquals(globalBulletMultiBodyJointParameters.getJointFriction(), jointParameters.getJointFriction());
       assertEquals(globalBulletMultiBodyJointParameters.getJointHitFraction(), jointParameters.getJointHitFraction());
@@ -110,7 +115,7 @@ public class BulletPhysicsEngineFactoryTest
       assertEquals(globalBulletMultiBodyJointParameters.getJointRollingFriction(), jointParameters.getJointRollingFriction());
       assertEquals(globalBulletMultiBodyJointParameters.getJointSpinningFriction(), jointParameters.getJointSpinningFriction());
       assertFalse(globalBulletMultiBodyJointParameters.getUpdateGlobalMultiBodyJointParameters());
-      
+
       assertEquals(globalBulletSimulationParameters.getTimeStamp(), simulationParameters.getTimeStep());
       assertEquals(globalBulletSimulationParameters.getMaxSubSteps(), simulationParameters.getMaxSubSteps());
       assertEquals(globalBulletSimulationParameters.getFixedTimeStep(), simulationParameters.getFixedTimeStep());

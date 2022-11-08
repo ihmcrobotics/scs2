@@ -1,6 +1,6 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
-import com.badlogic.gdx.physics.bullet.dynamics.btSolverMode;
+import org.bytedeco.bullet.global.BulletDynamics;
 
 public class BulletContactSolverInfoParameters
 {
@@ -38,28 +38,29 @@ public class BulletContactSolverInfoParameters
       bulletContactSolverInfoParameters.setTau(0.6);
       bulletContactSolverInfoParameters.setDamping(1.0);
       bulletContactSolverInfoParameters.setFriction(0.3);
-      bulletContactSolverInfoParameters.setTimeStep(1f / 60f);
+      bulletContactSolverInfoParameters.setTimeStep(1.0 / 60.0);
       bulletContactSolverInfoParameters.setRestitution(0.0);
       bulletContactSolverInfoParameters.setMaxErrorReduction(20.0);
       bulletContactSolverInfoParameters.setNumberOfIterations(10);
       bulletContactSolverInfoParameters.setErrorReductionForNonContactConstraints(0.2);
       bulletContactSolverInfoParameters.setErrorReductionForContactConstraints(0.2);
-      bulletContactSolverInfoParameters.setConstraintForceMixingForContactsAndNonContacts(0);
+      bulletContactSolverInfoParameters.setConstraintForceMixingForContactsAndNonContacts(0.0);
       bulletContactSolverInfoParameters.setErrorReductionForFrictionConstraints(0.2);
-      bulletContactSolverInfoParameters.setConstraintForceMixingForFrictionConstraints(0);
-      bulletContactSolverInfoParameters.setSuccessiveOverRelaxationTerm(1);
+      bulletContactSolverInfoParameters.setConstraintForceMixingForFrictionConstraints(0.0);
+      bulletContactSolverInfoParameters.setSuccessiveOverRelaxationTerm(1.0);
       bulletContactSolverInfoParameters.setSplitImpulse(1);
       bulletContactSolverInfoParameters.setSplitImpulsePenetrationThreshold(-0.04);
       bulletContactSolverInfoParameters.setSplitImpulseTurnErp(0.1);
       bulletContactSolverInfoParameters.setLinearSlop(0.0);
       bulletContactSolverInfoParameters.setWarmstartingFactor(0.85);
-      bulletContactSolverInfoParameters.setSolverMode(btSolverMode.SOLVER_USE_WARMSTARTING | btSolverMode.SOLVER_SIMD
-            | btSolverMode.SOLVER_USE_2_FRICTION_DIRECTIONS);
+      bulletContactSolverInfoParameters.setSolverMode(BulletDynamics.SOLVER_USE_WARMSTARTING
+                                                      | BulletDynamics.SOLVER_SIMD
+                                                      | BulletDynamics.SOLVER_USE_2_FRICTION_DIRECTIONS);
       bulletContactSolverInfoParameters.setRestingContactRestitutionThreshold(2);
       bulletContactSolverInfoParameters.setMinimumSolverBatchSize(128);
       bulletContactSolverInfoParameters.setMaxGyroscopicForce(100.0);
-      bulletContactSolverInfoParameters.setSingleAxisRollingFrictionThreshold(1e30f);
-      bulletContactSolverInfoParameters.setLeastSquaresResidualThreshold(0);
+      bulletContactSolverInfoParameters.setSingleAxisRollingFrictionThreshold(1e30);
+      bulletContactSolverInfoParameters.setLeastSquaresResidualThreshold(0.0);
       bulletContactSolverInfoParameters.setRestitutionVelocityThreshold(0.2);
 
       return bulletContactSolverInfoParameters;

@@ -1,0 +1,84 @@
+package us.ihmc.scs2.simulation.bullet.physicsEngine;
+
+import org.bytedeco.bullet.global.BulletCollision;
+
+public enum BulletBroadphaseNativeTypes
+{
+   // polyhedral convex shapes
+   BOX_SHAPE_PROXYTYPE(BulletCollision.BOX_SHAPE_PROXYTYPE),
+   TRIANGLE_SHAPE_PROXYTYPE(BulletCollision.TRIANGLE_SHAPE_PROXYTYPE),
+   TETRAHEDRAL_SHAPE_PROXYTYPE(BulletCollision.TETRAHEDRAL_SHAPE_PROXYTYPE),
+   CONVEX_TRIANGLEMESH_SHAPE_PROXYTYPE(BulletCollision.CONVEX_TRIANGLEMESH_SHAPE_PROXYTYPE),
+   CONVEX_HULL_SHAPE_PROXYTYPE(BulletCollision.CONVEX_HULL_SHAPE_PROXYTYPE),
+   CONVEX_POINT_CLOUD_SHAPE_PROXYTYPE(BulletCollision.CONVEX_POINT_CLOUD_SHAPE_PROXYTYPE),
+   CUSTOM_POLYHEDRAL_SHAPE_TYPE(BulletCollision.CUSTOM_POLYHEDRAL_SHAPE_TYPE),
+
+   //implicit convex shapes
+   IMPLICIT_CONVEX_SHAPES_START_HERE(BulletCollision.IMPLICIT_CONVEX_SHAPES_START_HERE),
+   SPHERE_SHAPE_PROXYTYPE(BulletCollision.SPHERE_SHAPE_PROXYTYPE),
+   MULTI_SPHERE_SHAPE_PROXYTYPE(BulletCollision.MULTI_SPHERE_SHAPE_PROXYTYPE),
+   CAPSULE_SHAPE_PROXYTYPE(BulletCollision.CAPSULE_SHAPE_PROXYTYPE),
+   CONE_SHAPE_PROXYTYPE(BulletCollision.CONE_SHAPE_PROXYTYPE),
+   CONVEX_SHAPE_PROXYTYPE(BulletCollision.CONVEX_SHAPE_PROXYTYPE),
+   CYLINDER_SHAPE_PROXYTYPE(BulletCollision.CYLINDER_SHAPE_PROXYTYPE),
+   UNIFORM_SCALING_SHAPE_PROXYTYPE(BulletCollision.UNIFORM_SCALING_SHAPE_PROXYTYPE),
+   MINKOWSKI_SUM_SHAPE_PROXYTYPE(BulletCollision.MINKOWSKI_SUM_SHAPE_PROXYTYPE),
+   MINKOWSKI_DIFFERENCE_SHAPE_PROXYTYPE(BulletCollision.MINKOWSKI_DIFFERENCE_SHAPE_PROXYTYPE),
+   BOX_2D_SHAPE_PROXYTYPE(BulletCollision.BOX_2D_SHAPE_PROXYTYPE),
+   CONVEX_2D_SHAPE_PROXYTYPE(BulletCollision.CONVEX_2D_SHAPE_PROXYTYPE),
+   CUSTOM_CONVEX_SHAPE_TYPE(BulletCollision.CUSTOM_CONVEX_SHAPE_TYPE),
+
+   //concave shapes
+   CONCAVE_SHAPES_START_HERE(BulletCollision.CONCAVE_SHAPES_START_HERE),
+   //keep all the convex shapetype below here, for the check IsConvexShape in broadphase proxy!
+   TRIANGLE_MESH_SHAPE_PROXYTYPE(BulletCollision.TRIANGLE_MESH_SHAPE_PROXYTYPE),
+   SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE(BulletCollision.SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE),
+   //used for demo integration FAST/Swift collision library and Bullet
+   FAST_CONCAVE_MESH_PROXYTYPE(BulletCollision.FAST_CONCAVE_MESH_PROXYTYPE),
+   //terrain
+   TERRAIN_SHAPE_PROXYTYPE(BulletCollision.TERRAIN_SHAPE_PROXYTYPE),
+   //Used for GIMPACT Trimesh integration
+   GIMPACT_SHAPE_PROXYTYPE(BulletCollision.GIMPACT_SHAPE_PROXYTYPE),
+
+   //Multimaterial mesh
+   MULTIMATERIAL_TRIANGLE_MESH_PROXYTYPE(BulletCollision.MULTIMATERIAL_TRIANGLE_MESH_PROXYTYPE),
+
+   EMPTY_SHAPE_PROXYTYPE(BulletCollision.EMPTY_SHAPE_PROXYTYPE),
+   STATIC_PLANE_PROXYTYPE(BulletCollision.STATIC_PLANE_PROXYTYPE),
+   CUSTOM_CONCAVE_SHAPE_TYPE(BulletCollision.CUSTOM_CONCAVE_SHAPE_TYPE),
+   SDF_SHAPE_PROXYTYPE(BulletCollision.SDF_SHAPE_PROXYTYPE),
+   CONCAVE_SHAPES_END_HERE(BulletCollision.CONCAVE_SHAPES_END_HERE),
+
+   COMPOUND_SHAPE_PROXYTYPE(BulletCollision.COMPOUND_SHAPE_PROXYTYPE),
+
+   SOFTBODY_SHAPE_PROXYTYPE(BulletCollision.SOFTBODY_SHAPE_PROXYTYPE),
+   HFFLUID_SHAPE_PROXYTYPE(BulletCollision.HFFLUID_SHAPE_PROXYTYPE),
+   HFFLUID_BUOYANT_CONVEX_SHAPE_PROXYTYPE(BulletCollision.HFFLUID_BUOYANT_CONVEX_SHAPE_PROXYTYPE),
+   INVALID_SHAPE_PROXYTYPE(BulletCollision.INVALID_SHAPE_PROXYTYPE),
+
+   MAX_BROADPHASE_COLLISION_TYPES(BulletCollision.MAX_BROADPHASE_COLLISION_TYPES),
+
+   NOT_DEFINED_TYPE(-1);
+
+   private final int nativeValue;
+
+   BulletBroadphaseNativeTypes(int nativeValue)
+   {
+      this.nativeValue = nativeValue;
+   }
+
+   public int getNativeValue()
+   {
+      return nativeValue;
+   }
+
+   public static BulletBroadphaseNativeTypes fromNativeValue(int nativeValue)
+   {
+      for (BulletBroadphaseNativeTypes value : values())
+      {
+         if (value.getNativeValue() == nativeValue)
+            return value;
+      }
+      return NOT_DEFINED_TYPE;
+   }
+}

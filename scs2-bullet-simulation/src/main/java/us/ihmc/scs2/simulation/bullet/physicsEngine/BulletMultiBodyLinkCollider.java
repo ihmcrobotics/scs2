@@ -1,14 +1,15 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBody;
-import com.badlogic.gdx.physics.bullet.dynamics.btMultiBodyLinkCollider;
-import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
+import org.bytedeco.bullet.LinearMath.btTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import java.util.ArrayList;
+import org.bytedeco.bullet.BulletCollision.btCollisionShape;
+import org.bytedeco.bullet.BulletCollision.btCompoundShape;
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider;
+import org.bytedeco.bullet.LinearMath.btVector3;
 
 public class BulletMultiBodyLinkCollider
 {
@@ -16,13 +17,15 @@ public class BulletMultiBodyLinkCollider
    private final btMultiBody btMultiBody;
    private final String jointName;
    private final int linkColliderIndex;
-   private final Matrix4 bulletTempConversionMatrix4 = new Matrix4();
-   private final Vector3 bulletTempConversionVector3 = new Vector3();
+   private final btTransform bulletTempConversionBtTransform = new btTransform();
+   private final btVector3 bulletTempConversionVector3 = new btVector3();
    private final btVector3 linkForce;
    private final btVector3 linkTorque;
    private int collisionGroup;
    private int collisionGroupMask;
-   
+   private btCompoundShape shape;
+   private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
+
    public BulletMultiBodyLinkCollider(btMultiBody btMultibody, int index, String jointName)
    {
       btMultiBodyLinkCollider = new btMultiBodyLinkCollider(btMultibody, index);
@@ -31,10 +34,10 @@ public class BulletMultiBodyLinkCollider
       this.collisionGroup = 2;
       this.collisionGroupMask = 1 + 2;
 
-      btMultiBody = btMultiBodyLinkCollider.getMultiBody();
+      btMultiBody = btMultiBodyLinkCollider.m_multiBody();
 
-      linkForce = btMultiBody.getLink(linkColliderIndex).getAppliedConstraintForce();
-      linkTorque = btMultiBody.getLink(linkColliderIndex).getAppliedConstraintTorque();
+      linkForce = btMultiBody.getLink(linkColliderIndex).m_appliedConstraintForce();
+      linkTorque = btMultiBody.getLink(linkColliderIndex).m_appliedConstraintTorque();
    }
 
    public void setCollisionGroupMask(int collisionGroup, int collisionGroupMask)
@@ -43,39 +46,41 @@ public class BulletMultiBodyLinkCollider
       this.collisionGroupMask = collisionGroupMask;
    }
 
-   public void setCollisionShape(btCollisionShape shape)
+   public void setCollisionShape(btCompoundShape shape, ArrayList<btCollisionShape> btCollisionShapes)
    {
+      this.setShape(shape);
+      this.setBtCollisionShapes(btCollisionShapes);
       btMultiBodyLinkCollider.setCollisionShape(shape);
    }
 
    public void setFriction(double friction)
    {
-      btMultiBodyLinkCollider.setFriction((float) friction);
+      btMultiBodyLinkCollider.setFriction(friction);
    }
 
    public void setRestitution(double restitution)
    {
-      btMultiBodyLinkCollider.setRestitution((float) restitution);
+      btMultiBodyLinkCollider.setRestitution(restitution);
    }
 
    public void setHitFraction(double hitFraction)
    {
-      btMultiBodyLinkCollider.setHitFraction((float) hitFraction);
+      btMultiBodyLinkCollider.setHitFraction(hitFraction);
    }
 
    public void setRollingFriction(double rollingFriction)
    {
-      btMultiBodyLinkCollider.setRollingFriction((float) rollingFriction);
+      btMultiBodyLinkCollider.setRollingFriction(rollingFriction);
    }
 
    public void setSpinningFriction(double spinningFriction)
    {
-      btMultiBodyLinkCollider.setSpinningFriction((float) spinningFriction);
+      btMultiBodyLinkCollider.setSpinningFriction(spinningFriction);
    }
 
    public void setContactProcessingThreshold(double contactProcessingThreshold)
    {
-      btMultiBodyLinkCollider.setContactProcessingThreshold((float) contactProcessingThreshold);
+      btMultiBodyLinkCollider.setContactProcessingThreshold(contactProcessingThreshold);
    }
 
    public btMultiBodyLinkCollider getBtMultiBodyLinkCollider()
@@ -100,40 +105,39 @@ public class BulletMultiBodyLinkCollider
 
    public void getWorldTransform(RigidBodyTransform jointSuccessorBodyFixedFrameToWorldEuclid)
    {
-      btMultiBodyLinkCollider.getWorldTransform(bulletTempConversionMatrix4);
-      BulletTools.toEuclid(bulletTempConversionMatrix4, jointSuccessorBodyFixedFrameToWorldEuclid);
+      BulletTools.toEuclid(btMultiBodyLinkCollider.getWorldTransform(), jointSuccessorBodyFixedFrameToWorldEuclid);
    }
 
    public void setWorldTransform(RigidBodyTransform bulletColliderCenterOfMassTransformToWorldEuclid)
    {
-      BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletTempConversionMatrix4);
-      btMultiBodyLinkCollider.setWorldTransform(bulletTempConversionMatrix4);
+      BulletTools.toBullet(bulletColliderCenterOfMassTransformToWorldEuclid, bulletTempConversionBtTransform);
+      btMultiBodyLinkCollider.setWorldTransform(bulletTempConversionBtTransform);
 
       if (linkColliderIndex == -1)
-         btMultiBody.setBaseWorldTransform(bulletTempConversionMatrix4);
+         btMultiBody.setBaseWorldTransform(bulletTempConversionBtTransform);
    }
 
    public void setJointPos(double jointPosition)
    {
-      btMultiBody.setJointPos(linkColliderIndex, (float) jointPosition);
+      btMultiBody.setJointPos(linkColliderIndex, jointPosition);
    }
 
    public void setJointVel(double jointVelocity)
    {
-      btMultiBody.setJointVel(linkColliderIndex, (float) jointVelocity);
+      btMultiBody.setJointVel(linkColliderIndex, jointVelocity);
    }
 
    public void addJointTorque(double jointTau)
    {
-      btMultiBody.addJointTorque(linkColliderIndex, (float) jointTau);
+      btMultiBody.addJointTorque(linkColliderIndex, jointTau);
    }
 
-   public float getJointPos()
+   public double getJointPos()
    {
       return btMultiBody.getJointPos(linkColliderIndex);
    }
 
-   public float getJointVel()
+   public double getJointVel()
    {
       return btMultiBody.getJointVel(linkColliderIndex);
    }
@@ -141,12 +145,12 @@ public class BulletMultiBodyLinkCollider
    public void getAppliedConstraintForce(Vector3D force)
    {
 
-      force.set((double) linkForce.getX(), (double) linkForce.getY(), (double) linkForce.getZ());
+      force.set(linkForce.getX(), linkForce.getY(), linkForce.getZ());
    }
 
    public void getAppliedConstraintTorque(Vector3D torque)
    {
-      torque.set((double) linkTorque.getX(), (double) linkTorque.getY(), (double) linkTorque.getZ());
+      torque.set(linkTorque.getX(), linkTorque.getY(), linkTorque.getZ());
    }
 
    public void setBaseVel(Vector3DReadOnly linearVelocityEuclid)
@@ -169,5 +173,25 @@ public class BulletMultiBodyLinkCollider
    public void getBaseOmega(Vector3D bulletBaseAngularVelocityEuclid)
    {
       BulletTools.toEuclid(btMultiBody.getBaseOmega(), bulletBaseAngularVelocityEuclid);
+   }
+
+   public btCompoundShape getShape()
+   {
+      return shape;
+   }
+
+   public void setShape(btCompoundShape shape)
+   {
+      this.shape = shape;
+   }
+
+   public ArrayList<btCollisionShape> getBtCollisionShapes()
+   {
+      return btCollisionShapes;
+   }
+
+   public void setBtCollisionShapes(ArrayList<btCollisionShape> btCollisionShapes)
+   {
+      this.btCollisionShapes = btCollisionShapes;
    }
 }

@@ -6,9 +6,9 @@ import us.ihmc.yoVariables.variable.YoInteger;
 
 public class YoBulletSimulationParameters
 {
-   private YoDouble timeStamp;
-   private YoInteger maxSubSteps;
-   private YoDouble fixedTimeStep;
+   private final YoDouble timeStamp;
+   private final YoInteger maxSubSteps;
+   private final YoDouble fixedTimeStep;
 
    public YoBulletSimulationParameters(String prefix, YoRegistry registry)
    {

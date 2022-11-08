@@ -1,23 +1,21 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
-import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoBulletMultiBodyParameters
 {
    private boolean updateGlobalMultiBodyParameters;
-   private YoBoolean canSleep;
-   private YoBoolean hasSelfCollision;
-   private YoBoolean useGyroTerm;
-   private YoBoolean useGlobalVelocities;
-   private YoBoolean useRK4Intergration;
-   private YoDouble linearDamping;
-   private YoDouble angularDamping;
-   private YoDouble maxAppliedImpulse;
-   private YoDouble maxCoordinateVelocity;
+   private final YoBoolean canSleep;
+   private final YoBoolean hasSelfCollision;
+   private final YoBoolean useGyroTerm;
+   private final YoBoolean useGlobalVelocities;
+   private final YoBoolean useRK4Intergration;
+   private final YoDouble linearDamping;
+   private final YoDouble angularDamping;
+   private final YoDouble maxAppliedImpulse;
+   private final YoDouble maxCoordinateVelocity;
 
    public YoBulletMultiBodyParameters(String prefix, YoRegistry registry)
    {
@@ -67,86 +65,15 @@ public class YoBulletMultiBodyParameters
       maxCoordinateVelocity = new YoDouble(bulletRobotMaxCoordinateVelocity, registry);
       updateGlobalMultiBodyParameters = false;
 
-      canSleep.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      hasSelfCollision.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      useGyroTerm.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      useGlobalVelocities.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      useRK4Intergration.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      angularDamping.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      linearDamping.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      maxAppliedImpulse.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
-
-      maxCoordinateVelocity.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyParameters = true;
-         }
-      });
+      canSleep.addListener(v -> updateGlobalMultiBodyParameters = true);
+      hasSelfCollision.addListener(v -> updateGlobalMultiBodyParameters = true);
+      useGyroTerm.addListener(v -> updateGlobalMultiBodyParameters = true);
+      useGlobalVelocities.addListener(v -> updateGlobalMultiBodyParameters = true);
+      useRK4Intergration.addListener(v -> updateGlobalMultiBodyParameters = true);
+      angularDamping.addListener(v -> updateGlobalMultiBodyParameters = true);
+      linearDamping.addListener(v -> updateGlobalMultiBodyParameters = true);
+      maxAppliedImpulse.addListener(v -> updateGlobalMultiBodyParameters = true);
+      maxCoordinateVelocity.addListener(v -> updateGlobalMultiBodyParameters = true);
    }
 
    public void set(BulletMultiBodyParameters parameters)

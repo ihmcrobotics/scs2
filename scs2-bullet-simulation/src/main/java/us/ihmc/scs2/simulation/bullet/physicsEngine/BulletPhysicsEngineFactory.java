@@ -32,7 +32,7 @@ public interface BulletPhysicsEngineFactory
          return physicsEngine;
       };
    }
-   
+
    static PhysicsEngineFactory newBulletPhysicsEngineFactory(BulletMultiBodyParameters bulletMultiBodyParameters,
                                                              BulletMultiBodyJointParameters bulletMultiBodyJointParameters,
                                                              BulletContactSolverInfoParameters bulletContactSolverInfoParameters)

@@ -21,6 +21,11 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
 {
    public FlyingCollidingSpheresExperimentalBulletSimulation()
    {
+      SessionVisualizer.startSessionVisualizer(createSession());
+   }
+
+   public static SimulationSession createSession()
+   {
       double radius1 = 0.2;
       double mass1 = 1.0;
       double radiusOfGyrationPercent1 = 1.0;
@@ -54,15 +59,15 @@ public class FlyingCollidingSpheresExperimentalBulletSimulation
       bulletMultiBodyParameters.setUseRK4Integration(true);
       BulletMultiBodyJointParameters bulletMultiBodyJointParameter = BulletMultiBodyJointParameters.defaultBulletMultiBodyJointParameters();
 
-      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters, bulletMultiBodyJointParameter));
+      SimulationSession simulationSession = new SimulationSession(BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory(bulletMultiBodyParameters,
+                                                                                                                           bulletMultiBodyJointParameter));
       simulationSession.addRobot(sphereRobot1);
       simulationSession.addRobot(sphereRobot2);
       simulationSession.submitBufferSizeRequest(245760);
       simulationSession.setBufferRecordTickPeriod(8);
 
       SimulationEnergyStatistics.setupSimulationEnergyStatistics(simulationSession);
-
-      SessionVisualizer.startSessionVisualizer(simulationSession);
+      return simulationSession;
    }
 
    public static void main(String[] args)

@@ -1,21 +1,19 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
-import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoBulletMultiBodyJointParameters
 {
    private boolean updateGlobalMultiBodyJointParameters;
-   private YoBoolean jointDisableParentCollision;
-   private YoDouble jointFriction;
-   private YoDouble jointRestitution;
-   private YoDouble jointHitFraction;
-   private YoDouble jointRollingFriction;
-   private YoDouble jointSpinningFriction;
-   private YoDouble jointContactProcessingThreshold;
+   private final YoBoolean jointDisableParentCollision;
+   private final YoDouble jointFriction;
+   private final YoDouble jointRestitution;
+   private final YoDouble jointHitFraction;
+   private final YoDouble jointRollingFriction;
+   private final YoDouble jointSpinningFriction;
+   private final YoDouble jointContactProcessingThreshold;
 
    public YoBulletMultiBodyJointParameters(String prefix, YoRegistry registry)
    {
@@ -57,68 +55,13 @@ public class YoBulletMultiBodyJointParameters
       jointContactProcessingThreshold = new YoDouble(bulletRobotJointContactProcessingThreshold, registry);
       updateGlobalMultiBodyJointParameters = false;
 
-      jointDisableParentCollision.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
-
-      jointFriction.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
-
-      jointRestitution.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
-
-      jointHitFraction.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
-
-      jointRollingFriction.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
-
-      jointSpinningFriction.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
-
-      jointContactProcessingThreshold.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            updateGlobalMultiBodyJointParameters = true;
-         }
-      });
+      jointDisableParentCollision.addListener(v -> updateGlobalMultiBodyJointParameters = true);
+      jointFriction.addListener(v -> updateGlobalMultiBodyJointParameters = true);
+      jointRestitution.addListener(v -> updateGlobalMultiBodyJointParameters = true);
+      jointHitFraction.addListener(v -> updateGlobalMultiBodyJointParameters = true);
+      jointRollingFriction.addListener(v -> updateGlobalMultiBodyJointParameters = true);
+      jointSpinningFriction.addListener(v -> updateGlobalMultiBodyJointParameters = true);
+      jointContactProcessingThreshold.addListener(v -> updateGlobalMultiBodyJointParameters = true);
    }
 
    public void set(BulletMultiBodyJointParameters parameters)
