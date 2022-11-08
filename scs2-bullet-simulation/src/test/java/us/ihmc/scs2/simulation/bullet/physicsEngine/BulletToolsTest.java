@@ -28,7 +28,6 @@ import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletTools.BroadphaseNativeTypes;
 
 public class BulletToolsTest
 {
@@ -190,7 +189,7 @@ public class BulletToolsTest
          CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(boxGeometryDefinition);
          btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
-         assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
 
          btBoxShape btBoxShape = (btBoxShape) btCollisionShape;
 
@@ -210,7 +209,7 @@ public class BulletToolsTest
          CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(sphereGeometryDefinition);
          btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
-         assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
 
          btSphereShape sphereShape = (btSphereShape) btCollisionShape;
 
@@ -223,7 +222,7 @@ public class BulletToolsTest
          CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(cylinderGeometryDefinition);
          btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
-         assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
 
          btCylinderShapeZ cylinderShape = (btCylinderShapeZ) btCollisionShape;
 
@@ -238,7 +237,7 @@ public class BulletToolsTest
 
          btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
-         assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE.ordinal());
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE.ordinal());
 
          btConeShapeZ coneShape = (btConeShapeZ) btCollisionShape;
          assertEquals(coneShape.getRadius(), coneGeometryDefinition.getRadius(), EPSILON);
@@ -251,7 +250,7 @@ public class BulletToolsTest
          CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(capsuleGeometryDefinition);
          btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
-         assertEquals(btCollisionShape.getShapeType(), BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE.ordinal());
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE.ordinal());
 
          btCapsuleShapeZ capsuleShape = (btCapsuleShapeZ) btCollisionShape;
          assertEquals(capsuleShape.getRadius(), capsuleGeometryDefinition.getRadiusX(), EPSILON);

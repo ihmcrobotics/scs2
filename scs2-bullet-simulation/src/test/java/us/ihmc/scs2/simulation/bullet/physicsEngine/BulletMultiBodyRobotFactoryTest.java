@@ -46,7 +46,6 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.state.OneDoFJointState;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
-import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletTools.BroadphaseNativeTypes;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletTools.eFeatherstoneJointType;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
@@ -145,28 +144,28 @@ public class BulletMultiBodyRobotFactoryTest
       assertEquals(bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(1).getCollisionGroupMask(), 3);
 
       btVector3 linkAxis = bulletMultiBodyRobot.getBtMultiBody().getLink(0).getAxisTop(0);
-      assertEquals(linkAxis.getX(), 0);
-      assertEquals(linkAxis.getY(), 0);
-      assertEquals(linkAxis.getZ(), 1);
+      assertEquals(linkAxis.getX(), 0.0);
+      assertEquals(linkAxis.getY(), 0.0);
+      assertEquals(linkAxis.getZ(), 1.0);
 
       btMultiBodyLinkCollider baseCollider = bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(0).getBtMultiBodyLinkCollider();
       btMultiBodyLinkCollider linkCollider = bulletMultiBodyRobot.getBulletMultiBodyLinkCollider(1).getBtMultiBodyLinkCollider();
 
       btCompoundShape baseColliderCompoundShape = new btCompoundShape(baseCollider.getCollisionShape());
-      assertEquals(baseColliderCompoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
+      assertEquals(baseColliderCompoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       btCylinderShape cylinderShape = new btCylinderShape(baseColliderCompoundShape.getChildShape(0));
       assertEquals(cylinderShape.getRadius(), 0.11);
       assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.06 / 2.0);
-      assertEquals(baseColliderCompoundShape.getChildShape(1).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
+      assertEquals(baseColliderCompoundShape.getChildShape(1).getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       cylinderShape = new btCylinderShape(baseColliderCompoundShape.getChildShape(1));
       assertEquals(cylinderShape.getRadius(), 0.12);
       assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.04 / 2.0);
-      assertEquals(baseColliderCompoundShape.getChildShape(2).getShapeType(), BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
+      assertEquals(baseColliderCompoundShape.getChildShape(2).getShapeType(), BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE.ordinal());
       cylinderShape = new btCylinderShape(baseColliderCompoundShape.getChildShape(2));
       assertEquals(cylinderShape.getRadius(), 0.16);
       assertEquals(cylinderShape.getHalfExtentsWithMargin().getZ(), 0.05 / 2.0);
       btCompoundShape linkColliderCompoundShape = new btCompoundShape(linkCollider.getCollisionShape());
-      assertEquals(linkColliderCompoundShape.getChildShape(0).getShapeType(), BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
+      assertEquals(linkColliderCompoundShape.getChildShape(0).getShapeType(), BulletBroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE.ordinal());
       btBoxShape boxShape = new btBoxShape(linkColliderCompoundShape.getChildShape(0));
       boxShape.getVertex(0, boxVertex);
       assertEquals(Math.abs(boxVertex.getX()), 0.03 / 2.0, EPSILON);
@@ -464,38 +463,38 @@ public class BulletMultiBodyRobotFactoryTest
    {
       for (int j = 0; j < collisionShapes.size(); j++)
       {
-         BroadphaseNativeTypes shapeType;
+         BulletBroadphaseNativeTypes shapeType;
          switch (collisionShapes.get(j).getGeometryDefinition().getName())
          {
             case "sphere":
-               shapeType = BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE;
+               shapeType = BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE;
                break;
             case "cylinder":
-               shapeType = BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE;
+               shapeType = BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE;
                break;
             case "box":
-               shapeType = BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE;
+               shapeType = BulletBroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE;
                break;
             case "cone":
-               shapeType = BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE;
+               shapeType = BulletBroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE;
                break;
             case "capsule":
-               shapeType = BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE;
+               shapeType = BulletBroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE;
                break;
             default:
-               shapeType = BroadphaseNativeTypes.NOT_DEFINED_TYPE;
+               shapeType = BulletBroadphaseNativeTypes.NOT_DEFINED_TYPE;
                break;
          }
 
-         if (shapeType == BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE)
+         if (shapeType == BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE)
          {
             Sphere3DDefinition sphereShape = (Sphere3DDefinition) collisionShapes.get(j).getGeometryDefinition();
-            btSphereShape btSphereShape = (btSphereShape) compoundShape.getChildShape(j);
+            btSphereShape btSphereShape = new btSphereShape(compoundShape.getChildShape(j));
 
             assertEquals(sphereShape.getRadius(), btSphereShape.getRadius());
 
          }
-         else if (shapeType == BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE)
+         else if (shapeType == BulletBroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE)
          {
             Cylinder3DDefinition cylinderShape = (Cylinder3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btCylinderShape btCylinderShape = new btCylinderShape(compoundShape.getChildShape(j));
@@ -504,7 +503,7 @@ public class BulletMultiBodyRobotFactoryTest
             assertEquals(btCylinderShape.getHalfExtentsWithMargin().getZ(), cylinderShape.getLength() / 2.0, EPSILON);
 
          }
-         else if (shapeType == BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE)
+         else if (shapeType == BulletBroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE)
          {
             Box3DDefinition boxShape = (Box3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btBoxShape btBoxShape = new btBoxShape(compoundShape.getChildShape(j));
@@ -518,7 +517,7 @@ public class BulletMultiBodyRobotFactoryTest
                assertEquals(Math.abs(boxVertex.getZ()), boxShape.getSizeZ() / 2.0, EPSILON);
             }
          }
-         else if (shapeType == BroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE)
+         else if (shapeType == BulletBroadphaseNativeTypes.CONE_SHAPE_PROXYTYPE)
          {
             Cone3DDefinition coneShape = (Cone3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btConeShapeZ btConeShape = new btConeShapeZ(compoundShape.getChildShape(j));
@@ -526,7 +525,7 @@ public class BulletMultiBodyRobotFactoryTest
             assertEquals(btConeShape.getRadius(), coneShape.getRadius(), EPSILON);
             assertEquals(btConeShape.getHeight(), coneShape.getHeight(), EPSILON);
          }
-         else if (shapeType == BroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE)
+         else if (shapeType == BulletBroadphaseNativeTypes.CAPSULE_SHAPE_PROXYTYPE)
          {
             Capsule3DDefinition capsuleShape = (Capsule3DDefinition) collisionShapes.get(j).getGeometryDefinition();
             btCapsuleShapeZ btCapsuleShapeZ = new btCapsuleShapeZ(compoundShape.getChildShape(j));
@@ -543,7 +542,7 @@ public class BulletMultiBodyRobotFactoryTest
                                                                           collisionShapes.get(j).getOriginPose().getTranslation()));
 
          assertMatrix4EqualsRigidBodyTransform(collisionShapes.get(j).getName(), compoundShapeChildTransform, collisionShapeRigidBodyTransform);
-         assertEquals(compoundShape.getChildShape(j).getShapeType(), shapeType);
+         assertEquals(BulletBroadphaseNativeTypes.fromNativeValue(compoundShape.getChildShape(j).getShapeType()), shapeType);
       }
    }
 
