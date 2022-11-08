@@ -26,7 +26,7 @@ public class BulletMultiBodyDynamicsWorld
    private final btBroadphaseInterface btBroadphaseInterface;
    private final btMultiBodyConstraintSolver btMultiBodyConstraintSolver;
    private final btMultiBodyDynamicsWorld btMultiBodyDynamicsWorld;
-   private btIDebugDraw btIDebugDraw;
+   private btIDebugDraw btDebugDraw;
    private final ArrayList<BulletTerrainObject> terrainObjects = new ArrayList<>();
    private final ArrayList<BulletMultiBodyRobot> multiBodyRobots = new ArrayList<>();
    private final btVector3 btGravity = new btVector3();
@@ -38,7 +38,7 @@ public class BulletMultiBodyDynamicsWorld
       btCollisionDispatcher = new btCollisionDispatcher(btCollisionConfiguration);
       btBroadphaseInterface = new btDbvtBroadphase();
       btMultiBodyConstraintSolver = new btMultiBodyConstraintSolver();
-      btIDebugDraw = null;
+      btDebugDraw = null;
       
       btMultiBodyDynamicsWorld = new btMultiBodyDynamicsWorld(btCollisionDispatcher,
                                                               btBroadphaseInterface,
@@ -113,9 +113,9 @@ public class BulletMultiBodyDynamicsWorld
             bulletMultiBodyRobot.getBtMultiBody().deallocate();
          }
 
-         if (btIDebugDraw != null)
+         if (btDebugDraw != null)
          {
-            btIDebugDraw.deallocate();
+            btDebugDraw.deallocate();
          }
 
          btMultiBodyDynamicsWorld.deallocate();
@@ -175,18 +175,11 @@ public class BulletMultiBodyDynamicsWorld
       }
    }
 
-   public void setBtDebugDrawer(btIDebugDraw btIDebugDraw)
+   public void setBtDebugDrawer(btIDebugDraw btDebugDraw)
    {
-      //TODO: it looks like the setDebugDrawer method might not be working. After setting it, 
-      //      I checked btMultiBodyDynamicsWorld.getDebugDrawer() and it is null. However, the btIDebugDraw object
-      //      is not null and the methods can be accessed.
       if (!btMultiBodyDynamicsWorld.isNull())
-         btMultiBodyDynamicsWorld.setDebugDrawer(btIDebugDraw);
-      this.btIDebugDraw = btIDebugDraw;
-      
-//      System.out.println("Debug Mode is: " + btIDebugDraw.getDebugMode());
-//      if (btMultiBodyDynamicsWorld.getDebugDrawer() == null)
-//         System.out.println("btMultiBodyDynamicsWorld.getDebugDrawer() is null"); 
+         btMultiBodyDynamicsWorld.setDebugDrawer(btDebugDraw);
+      this.btDebugDraw = btDebugDraw;
    }
 
    public void debugDrawWorld()
