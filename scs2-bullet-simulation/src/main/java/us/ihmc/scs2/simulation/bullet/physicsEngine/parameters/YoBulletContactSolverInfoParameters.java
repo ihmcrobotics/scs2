@@ -1,39 +1,37 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine.parameters;
 
-import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoBulletContactSolverInfoParameters
 {
    private boolean updateGlobalContactSolverInfoParameters;
-   private YoDouble tau;
-   private YoDouble damping;
-   private YoDouble friction;
-   private YoDouble timeStep;
-   private YoDouble restitution;
-   private YoInteger numberOfIterations;
-   private YoDouble maxErrorReduction;
-   private YoDouble successiveOverRelaxationTerm;
-   private YoDouble errorReductionForNonContactConstraints;
-   private YoDouble errorReductionForContactConstraints;
-   private YoDouble constraintForceMixingForContactsAndNonContacts;
-   private YoDouble errorReductionForFrictionConstraints;
-   private YoDouble constraintForceMixingForFrictionConstraints;
-   private YoInteger splitImpulse;
-   private YoDouble splitImpulsePenetrationThreshold;
-   private YoDouble splitImpulseTurnErp;
-   private YoDouble linearSlop;
-   private YoDouble warmstartingFactor;
-   private YoInteger solverMode;
-   private YoInteger restingContactRestitutionThreshold;
-   private YoInteger minimumSolverBatchSize;
-   private YoDouble maxGyroscopicForce;
-   private YoDouble singleAxisRollingFrictionThreshold;
-   private YoDouble leastSquaresResidualThreshold;
-   private YoDouble restitutionVelocityThreshold;
+   private final YoDouble tau;
+   private final YoDouble damping;
+   private final YoDouble friction;
+   private final YoDouble timeStep;
+   private final YoDouble restitution;
+   private final YoInteger numberOfIterations;
+   private final YoDouble maxErrorReduction;
+   private final YoDouble successiveOverRelaxationTerm;
+   private final YoDouble errorReductionForNonContactConstraints;
+   private final YoDouble errorReductionForContactConstraints;
+   private final YoDouble constraintForceMixingForContactsAndNonContacts;
+   private final YoDouble errorReductionForFrictionConstraints;
+   private final YoDouble constraintForceMixingForFrictionConstraints;
+   private final YoInteger splitImpulse;
+   private final YoDouble splitImpulsePenetrationThreshold;
+   private final YoDouble splitImpulseTurnErp;
+   private final YoDouble linearSlop;
+   private final YoDouble warmstartingFactor;
+   private final YoInteger solverMode;
+   private final YoInteger restingContactRestitutionThreshold;
+   private final YoInteger minimumSolverBatchSize;
+   private final YoDouble maxGyroscopicForce;
+   private final YoDouble singleAxisRollingFrictionThreshold;
+   private final YoDouble leastSquaresResidualThreshold;
+   private final YoDouble restitutionVelocityThreshold;
 
    public YoBulletContactSolverInfoParameters(String prefix, YoRegistry registry)
    {
@@ -147,230 +145,31 @@ public class YoBulletContactSolverInfoParameters
       restitutionVelocityThreshold = new YoDouble(bulletContactSolverInfoRestitutionVelocityThreshold, registry);
       setUpdateGlobalContactSolverInfoParameters(false);
       
-      tau.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      damping.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      friction.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      timeStep.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      restitution.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      numberOfIterations.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      maxErrorReduction.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      successiveOverRelaxationTerm.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      errorReductionForNonContactConstraints.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      errorReductionForContactConstraints.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-
-      constraintForceMixingForContactsAndNonContacts.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      errorReductionForFrictionConstraints.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      constraintForceMixingForFrictionConstraints.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      splitImpulse.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      splitImpulsePenetrationThreshold.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      splitImpulseTurnErp.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      linearSlop.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      warmstartingFactor.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      solverMode.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      restingContactRestitutionThreshold.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      minimumSolverBatchSize.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      maxGyroscopicForce.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      singleAxisRollingFrictionThreshold.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      leastSquaresResidualThreshold.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
-      
-      restitutionVelocityThreshold.addListener(new YoVariableChangedListener()
-      {
-         @Override
-         public void changed(YoVariable v)
-         {
-            setUpdateGlobalContactSolverInfoParameters(true);
-         }
-      });
+      tau.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      damping.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      friction.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      timeStep.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      restitution.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      numberOfIterations.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      maxErrorReduction.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      successiveOverRelaxationTerm.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      errorReductionForNonContactConstraints.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      errorReductionForContactConstraints.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      constraintForceMixingForContactsAndNonContacts.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      errorReductionForFrictionConstraints.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      constraintForceMixingForFrictionConstraints.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      splitImpulse.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      splitImpulsePenetrationThreshold.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      splitImpulseTurnErp.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      linearSlop.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      warmstartingFactor.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      solverMode.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      restingContactRestitutionThreshold.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      minimumSolverBatchSize.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      maxGyroscopicForce.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      singleAxisRollingFrictionThreshold.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      leastSquaresResidualThreshold.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
+      restitutionVelocityThreshold.addListener(v -> setUpdateGlobalContactSolverInfoParameters(true));
    }
 
    public void set(BulletContactSolverInfoParameters parameters)
