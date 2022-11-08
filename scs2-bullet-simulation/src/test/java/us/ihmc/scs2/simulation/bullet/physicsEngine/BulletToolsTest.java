@@ -57,15 +57,15 @@ public class BulletToolsTest
          assertEquals(bulletAffineToPack.getOrigin().getX(), rigidBodyTransform.getTranslationX(), EPSILON);
          assertEquals(bulletAffineToPack.getOrigin().getY(), rigidBodyTransform.getTranslationY(), EPSILON);
          assertEquals(bulletAffineToPack.getOrigin().getZ(), rigidBodyTransform.getTranslationZ(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(0).getX(), rigidBodyTransform.getM00(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(0).getY(), rigidBodyTransform.getM01(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(0).getZ(), rigidBodyTransform.getM02(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(1).getX(), rigidBodyTransform.getM10(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(1).getY(), rigidBodyTransform.getM11(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(1).getZ(), rigidBodyTransform.getM12(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(2).getX(), rigidBodyTransform.getM20(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(2).getY(), rigidBodyTransform.getM21(), EPSILON);
-         assertEquals(bulletAffineToPack.getBasis().getRow(2).getZ(), rigidBodyTransform.getM22(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(0).getX(), rigidBodyTransform.getRotation().getM00(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(0).getY(), rigidBodyTransform.getRotation().getM01(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(0).getZ(), rigidBodyTransform.getRotation().getM02(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(1).getX(), rigidBodyTransform.getRotation().getM10(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(1).getY(), rigidBodyTransform.getRotation().getM11(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(1).getZ(), rigidBodyTransform.getRotation().getM12(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(2).getX(), rigidBodyTransform.getRotation().getM20(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(2).getY(), rigidBodyTransform.getRotation().getM21(), EPSILON);
+         assertEquals(bulletAffineToPack.getBasis().getRow(2).getZ(), rigidBodyTransform.getRotation().getM22(), EPSILON);
       }
    }
 
