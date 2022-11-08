@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -156,7 +155,11 @@ public class CompositePropertyTools
             LogTools.warn("Incompatible variable name, searching similar variables");
             yoDouble = yoVariableDatabase.searchSimilar(field, 0.90, YoDouble.class);
          }
-         Objects.requireNonNull(yoDouble, "Could not find the YoVariable: " + field);
+         if (yoDouble == null)
+         {
+            LogTools.error("Could not find the YoVariable: {}", field);
+            return new SimpleDoubleProperty(Double.NaN);
+         }
          YoDoubleProperty yoDoubleProperty = new YoDoubleProperty(yoDouble);
          yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble, yoDoubleProperty));
          return yoDoubleProperty;
@@ -181,7 +184,11 @@ public class CompositePropertyTools
             LogTools.warn("Incompatible variable name, searching similar variables");
             yoInteger = yoVariableDatabase.searchSimilar(field, 0.90, YoInteger.class);
          }
-         Objects.requireNonNull(yoInteger, "Could not find the YoVariable: " + field);
+         if (yoInteger == null)
+         {
+            LogTools.error("Could not find the YoVariable: {}", field);
+            return new SimpleIntegerProperty(-1);
+         }
          YoIntegerProperty yoIntegerProperty = new YoIntegerProperty(yoInteger);
          yoIntegerProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoInteger, yoIntegerProperty));
          return yoIntegerProperty;
