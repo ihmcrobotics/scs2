@@ -2,7 +2,6 @@ package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import org.bytedeco.bullet.LinearMath.btVector3;
 import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -16,8 +15,8 @@ import us.ihmc.yoVariables.variable.YoBoolean;
 
 public class BulletDebugDrawingNode extends Group
 {
-   private btIDebugDraw btIDebugDraw;
-   private int debugMode = btIDebugDraw.DBG_DrawWireframe; // TODO: Provide options in combo box
+   private int debugMode = btIDebugDraw.DBG_DrawWireframe; // TODO: Provide options to user
+   private final btIDebugDraw btDebugDraw;
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
    private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
    private PrivateAnimationTimer animationTimer;
@@ -38,7 +37,7 @@ public class BulletDebugDrawingNode extends Group
       updateDebugDrawings.set(true);
       showDebugDrawings.set(true);
 
-      btIDebugDraw = new btIDebugDraw()
+      btDebugDraw = new btIDebugDraw()
       {
          @Override
          public void drawLine(btVector3 from, btVector3 to, btVector3 color)
@@ -98,7 +97,7 @@ public class BulletDebugDrawingNode extends Group
             return debugMode;
          }
       };
-      bulletMultiBodyDynamicsWorld.setBtDebugDrawer(btIDebugDraw);
+      bulletMultiBodyDynamicsWorld.setBtDebugDrawer(btDebugDraw);
    }
 
    public void initializeWithJavaFX()
@@ -109,7 +108,6 @@ public class BulletDebugDrawingNode extends Group
 
    public void update(long now)
    {
-
       if (!showDebugDrawings.getBooleanValue())
       {
          getChildren().clear();
