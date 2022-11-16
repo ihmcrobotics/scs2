@@ -219,7 +219,7 @@ public class YawPitchRollTransformDefinition implements RigidBodyTransformBasics
    @Override
    public String toString(String format)
    {
-      return "[(x,y,z)=" + translation + ", (y,p,r)="
+      return "[(x,y,z)=" + translation.toString(format) + ", (y,p,r)="
             + EuclidCoreIOTools.getStringOf("(", ")]", ", ", format, orientation.getYaw(), orientation.getPitch(), orientation.getRoll());
    }
 
