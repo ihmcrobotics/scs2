@@ -79,6 +79,8 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 
 public class SDFTools
 {
+   public static final String SDF_DEFAULT_KEYWORD = "__default__";
+
    private static final double DEFAULT_MASS = 0.0;
    private static final double DEFAULT_IXX = 0.0;
    private static final double DEFAULT_IYY = 0.0;
@@ -131,7 +133,9 @@ public class SDFTools
       return sdfRoot;
    }
 
-   /** Otherwise, iteration later on will result in NullPointerException if there are none of something. */
+   /**
+    * Otherwise, iteration later on will result in NullPointerException if there are none of something.
+    */
    public static void ensureListsNotNull(SDFRoot sdfRoot)
    {
       if (sdfRoot.getModels() == null)
@@ -522,7 +526,7 @@ public class SDFTools
 
       for (SensorDefinition definition : definitions)
       {
-         if (definition.getName() != null && !definition.getName().isEmpty())
+         if (definition.getName() != null && !definition.getName().isEmpty() && !definition.getName().equals(SDF_DEFAULT_KEYWORD))
             definition.setName(sdfSensor.getName() + "_" + definition.getName());
          else
             definition.setName(sdfSensor.getName());
