@@ -66,21 +66,28 @@ public class RobotModelLoader
       SubtreeStreams.fromChildren(OneDoFJointBasics.class, robot.getRootBody()).forEach(oneDoFJoint ->
       {
          OneDoFState jointState = (OneDoFState) jointNameToState.get(oneDoFJoint.getName());
-         jointStateUpdaters.add(() ->
+
+         if (jointState != null)
          {
-            oneDoFJoint.setQ(jointState.getQ());
-            oneDoFJoint.setQd(jointState.getQd());
-         });
+            jointStateUpdaters.add(() ->
+            {
+               oneDoFJoint.setQ(jointState.getQ());
+               oneDoFJoint.setQd(jointState.getQd());
+            });
+         }
       });
 
       SixDoFJointBasics floatingJoint = (SixDoFJointBasics) robot.getRootBody().getChildrenJoints().get(0);
       SixDoFState jointState = (SixDoFState) jointNameToState.get(floatingJoint.getSuccessor().getName());
 
-      jointStateUpdaters.add(() ->
+      if (jointState != null)
       {
-         floatingJoint.getJointPose().set(jointState.getTranslation(), jointState.getRotation());
-         floatingJoint.getJointTwist().set(jointState.getTwistAngularPart(), jointState.getTwistLinearPart());
-      });
+         jointStateUpdaters.add(() ->
+         {
+            floatingJoint.getJointPose().set(jointState.getTranslation(), jointState.getRotation());
+            floatingJoint.getJointTwist().set(jointState.getTwistAngularPart(), jointState.getTwistLinearPart());
+         });
+      }
 
       rootRegistry.addChild(robot.getRegistry());
 
