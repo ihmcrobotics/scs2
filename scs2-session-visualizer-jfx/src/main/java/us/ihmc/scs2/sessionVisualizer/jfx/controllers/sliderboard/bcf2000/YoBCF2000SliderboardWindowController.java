@@ -172,6 +172,15 @@ public class YoBCF2000SliderboardWindowController
       messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSaveConfiguration(), this::save);
    }
 
+   @FXML
+   public void importYoSliderboard()
+   {
+      File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(window);
+
+      if (result != null)
+         load(result);
+   }
+
    public void load(File file)
    {
       LogTools.info("Loading from file: " + file);
@@ -185,6 +194,15 @@ public class YoBCF2000SliderboardWindowController
       {
          e.printStackTrace();
       }
+   }
+
+   @FXML
+   public void exportYoSliderboard()
+   {
+      File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(window);
+
+      if (result != null)
+         save(result);
    }
 
    public void save(File file)
@@ -203,7 +221,9 @@ public class YoBCF2000SliderboardWindowController
 
    public void setInput(YoSliderboardListDefinition input)
    {
-      List<YoSliderboardDefinition> yoSliderboards = input.getYoSliderboards().stream().filter(yoSliderboard -> BCF2000.equals(yoSliderboard.getType()))
+      List<YoSliderboardDefinition> yoSliderboards = input.getYoSliderboards()
+                                                          .stream()
+                                                          .filter(yoSliderboard -> BCF2000.equals(yoSliderboard.getType()))
                                                           .collect(Collectors.toList());
 
       if (yoSliderboards == null || yoSliderboards.isEmpty())
