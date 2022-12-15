@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
+import org.apache.commons.lang3.SystemUtils;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -377,7 +379,7 @@ public class SessionVisualizerIOTools
       boolean hasExtension = !extensions.isEmpty();
 
       FileChooser fileChooser = fileChooser(title, extensionFilter);
-      if (hasExtension)
+      if (hasExtension && !SystemUtils.IS_OS_WINDOWS)
          fileChooser.setInitialFileName(extensions.get(0));
       File result = fileChooser.showSaveDialog(owner);
 
