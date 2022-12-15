@@ -120,6 +120,7 @@ public abstract class YoBCF2000InputController
 
    protected void clear()
    {
+      yoVariableSlider = null;
       backgroundStyle.set(DEFAULT_BACKGROUND);
       yoVariableDropLabel.setText(defaultText);
    }
