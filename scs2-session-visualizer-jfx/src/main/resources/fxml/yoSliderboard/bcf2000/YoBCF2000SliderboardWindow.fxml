@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
@@ -7,6 +10,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -111,18 +115,42 @@
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </VBox.margin>
             </GridPane>
-            <Label fx:id="connectionStateLabel" alignment="BOTTOM_RIGHT" contentDisplay="RIGHT" graphicTextGap="8.0" maxWidth="1.7976931348623157E308" style="-fx-background-color: derive( -fx-background, -5%);" text="Not connected" VBox.vgrow="NEVER">
-               <graphic>
-                  <ImageView fx:id="connectionStateImageView" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
-                     <image>
-                        <Image url="@../../../icons/invalid-icon.png" />
-                     </image>
-                  </ImageView>
-               </graphic>
-               <padding>
-                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-               </padding>
-            </Label>
+            <HBox spacing="10.0" style="-fx-background-color: derive( -fx-background, -5%);" VBox.vgrow="NEVER">
+               <children>
+                  <JFXButton fx:id="exportButton" minWidth="-Infinity" onAction="#exportYoSliderboard" styleClass="graphic-editor-button" text="Export...">
+                     <graphic>
+                        <FontAwesomeIconView>
+                           <styleClass>
+                              <String fx:value="graphic-editor-icon-view" />
+                              <String fx:value="save-icon-view" />
+                           </styleClass>
+                        </FontAwesomeIconView>
+                     </graphic>
+                  </JFXButton>
+                  <JFXButton fx:id="importButton" minWidth="-Infinity" onAction="#importYoSliderboard" styleClass="graphic-editor-button" text="Import...">
+                     <graphic>
+                        <FontAwesomeIconView>
+                           <styleClass>
+                              <String fx:value="graphic-editor-icon-view" />
+                              <String fx:value="load-icon-view" />
+                           </styleClass>
+                        </FontAwesomeIconView>
+                     </graphic>
+                  </JFXButton>
+                  <Label fx:id="connectionStateLabel" alignment="BOTTOM_RIGHT" contentDisplay="RIGHT" graphicTextGap="8.0" maxWidth="1.7976931348623157E308" text="Not connected" HBox.hgrow="ALWAYS">
+                     <graphic>
+                        <ImageView fx:id="connectionStateImageView" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@../../../icons/invalid-icon.png" />
+                           </image>
+                        </ImageView>
+                     </graphic>
+                     <padding>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </Label>
+               </children>
+            </HBox>
          </children>
       </VBox>
    </children>
