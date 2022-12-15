@@ -32,7 +32,16 @@ public class YoBCF2000ButtonController extends YoBCF2000InputController
       yoManager = toolkit.getYoManager();
       super.initialize(toolkit, rootPane, button, YoBoolean.class::isInstance);
 
+      clear();
+   }
+
+   @Override
+   protected void clear()
+   {
+      super.clear();
+
       button.setDisable(true);
+      yoBooleanSlider = null;
    }
 
    public void setInput(YoButtonDefinition definition)
@@ -67,23 +76,20 @@ public class YoBCF2000ButtonController extends YoBCF2000InputController
          yoBooleanSlider.getYoBooleanProperty().unbind();
       }
 
-      if (yoVariable != null && yoVariable instanceof YoBoolean)
-      {
-         button.setDisable(false);
-
-         yoBooleanSlider = (YoBooleanSlider) YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
-         if (sliderVariable != null)
-            yoBooleanSlider.bindSliderVariable(sliderVariable);
-         yoBooleanSlider.getYoBooleanProperty().bindBooleanProperty(button.selectedProperty());
-
-         setupYoVariableSlider(yoBooleanSlider);
-      }
-      else
+      if (yoVariable == null || !(yoVariable instanceof YoBoolean))
       {
          clear();
-         button.setDisable(true);
-         yoBooleanSlider = null;
+         return;
       }
+
+      button.setDisable(false);
+
+      yoBooleanSlider = (YoBooleanSlider) YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
+      if (sliderVariable != null)
+         yoBooleanSlider.bindSliderVariable(sliderVariable);
+      yoBooleanSlider.getYoBooleanProperty().bindBooleanProperty(button.selectedProperty());
+
+      setupYoVariableSlider(yoBooleanSlider);
    }
 
    public void close()

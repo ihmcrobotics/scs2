@@ -37,12 +37,20 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
       this.sliderVariable = sliderVariable;
       yoManager = toolkit.getYoManager();
       super.initialize(toolkit, rootPane, yoVariableDropLabel);
+      clear();
+   }
 
+   @Override
+   protected void clear()
+   {
+      super.clear();
+
+      slider.setDisable(true);
       sliderMaxTextField.setText("");
       sliderMinTextField.setText("");
       sliderMaxTextField.setDisable(true);
       sliderMinTextField.setDisable(true);
-      slider.setDisable(true);
+      yoVariableSlider = null;
    }
 
    public void setInput(YoSliderDefinition definition)
@@ -81,32 +89,27 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
          yoVariableSlider.dispose();
       }
 
-      if (yoVariable != null)
-      {
-         slider.setDisable(false);
-
-         yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
-         yoVariableSlider.bindMinTextField(sliderMinTextField);
-         yoVariableSlider.bindMaxTextField(sliderMaxTextField);
-         if (sliderVariable != null)
-            yoVariableSlider.bindSliderVariable(sliderVariable);
-         yoVariableSlider.bindVirtualSlider(slider);
-
-         if (minValue != null && !sliderMinTextField.isDisabled())
-            sliderMinTextField.setText(minValue);
-         if (maxValue != null && !sliderMaxTextField.isDisabled())
-            sliderMaxTextField.setText(maxValue);
-
-         setupYoVariableSlider(yoVariableSlider);
-      }
-      else
+      if (yoVariable == null)
       {
          clear();
-         slider.setDisable(true);
-         yoVariableSlider = null;
-         sliderMaxTextField.setText("");
-         sliderMinTextField.setText("");
+         return;
       }
+
+      slider.setDisable(false);
+
+      yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
+      yoVariableSlider.bindMinTextField(sliderMinTextField);
+      yoVariableSlider.bindMaxTextField(sliderMaxTextField);
+      if (sliderVariable != null)
+         yoVariableSlider.bindSliderVariable(sliderVariable);
+      yoVariableSlider.bindVirtualSlider(slider);
+
+      if (minValue != null && !sliderMinTextField.isDisabled())
+         sliderMinTextField.setText(minValue);
+      if (maxValue != null && !sliderMaxTextField.isDisabled())
+         sliderMaxTextField.setText(maxValue);
+
+      setupYoVariableSlider(yoVariableSlider);
    }
 
    public void close()

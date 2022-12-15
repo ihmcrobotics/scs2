@@ -37,12 +37,21 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
       this.sliderVariable = sliderVariable;
       yoManager = toolkit.getYoManager();
       super.initialize(toolkit, rootPane, yoVariableDropLabel);
+      clear();
+   }
+
+   @Override
+   protected void clear()
+   {
+      super.clear();
+      spinner.setProgress(0);
+      spinner.setDisable(true);
 
       knobMaxTextField.setText("");
       knobMinTextField.setText("");
       knobMaxTextField.setDisable(true);
       knobMinTextField.setDisable(true);
-      spinner.setDisable(true);
+      yoVariableSlider = null;
    }
 
    public void setInput(YoKnobDefinition definition)
@@ -81,31 +90,26 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
          yoVariableSlider.dispose();
       }
 
-      if (yoVariable != null)
-      {
-         spinner.setDisable(false);
-
-         yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
-         yoVariableSlider.bindMinTextField(knobMinTextField);
-         yoVariableSlider.bindMaxTextField(knobMaxTextField);
-         if (sliderVariable != null)
-            yoVariableSlider.bindSliderVariable(sliderVariable);
-         yoVariableSlider.bindVirtualKnob(spinner);
-
-         if (minValue != null && !knobMinTextField.isDisabled())
-            knobMinTextField.setText(minValue);
-         if (maxValue != null && !knobMaxTextField.isDisabled())
-            knobMaxTextField.setText(maxValue);
-         setupYoVariableSlider(yoVariableSlider);
-      }
-      else
+      if (yoVariable == null)
       {
          clear();
-         spinner.setDisable(true);
-         yoVariableSlider = null;
-         knobMaxTextField.setText("");
-         knobMinTextField.setText("");
+         return;
       }
+
+      spinner.setDisable(false);
+
+      yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
+      yoVariableSlider.bindMinTextField(knobMinTextField);
+      yoVariableSlider.bindMaxTextField(knobMaxTextField);
+      if (sliderVariable != null)
+         yoVariableSlider.bindSliderVariable(sliderVariable);
+      yoVariableSlider.bindVirtualKnob(spinner);
+
+      if (minValue != null && !knobMinTextField.isDisabled())
+         knobMinTextField.setText(minValue);
+      if (maxValue != null && !knobMaxTextField.isDisabled())
+         knobMaxTextField.setText(maxValue);
+      setupYoVariableSlider(yoVariableSlider);
    }
 
    public void close()
