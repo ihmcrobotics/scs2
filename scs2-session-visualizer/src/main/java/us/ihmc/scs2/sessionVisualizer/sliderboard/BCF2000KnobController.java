@@ -7,24 +7,20 @@ import javax.sound.midi.ShortMessage;
 import us.ihmc.commons.MathTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Knob;
 
-public class BCF2000KnobController
+public class BCF2000KnobController extends BCF2000SingleChannelController
 {
    private final Knob knob;
-   private final Receiver midiOut;
-
-   private final SliderboardVariable controlVariable;
 
    private int currentKnobValue = -1;
    private int newKnobValue = -1;
 
    public BCF2000KnobController(Knob knob, Receiver midiOut)
    {
+      super(new SliderboardVariable(knob.getMin(), knob.getMax()), midiOut);
       this.knob = knob;
-      this.midiOut = midiOut;
-
-      controlVariable = new SliderboardVariable(knob.getMin(), knob.getMax());
    }
 
+   @Override
    public boolean handleMessage(ShortMessage message, long timestamp)
    {
       if (knob.getChannel() != message.getData1()) // Should it use getChannel instead
@@ -34,12 +30,14 @@ public class BCF2000KnobController
       return true;
    }
 
+   @Override
    public void moveSlider()
    {
       currentKnobValue = controlVariable.getValue(); // TODO Not sure if that's the best way
       moveSlider(controlVariable.getValue());
    }
 
+   @Override
    public void moveSlider(int value)
    {
       if (value == -1)
@@ -57,6 +55,7 @@ public class BCF2000KnobController
       }
    }
 
+   @Override
    public void update()
    {
       if (newKnobValue != -1)
@@ -73,10 +72,5 @@ public class BCF2000KnobController
       {
          moveSlider();
       }
-   }
-
-   public SliderboardVariable getControlVariable()
-   {
-      return controlVariable;
    }
 }

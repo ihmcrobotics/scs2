@@ -7,24 +7,21 @@ import javax.sound.midi.ShortMessage;
 import us.ihmc.commons.MathTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Slider;
 
-public class BCF2000SliderController
+public class BCF2000SliderController extends BCF2000SingleChannelController
 {
    private final Slider slider;
-   private final Receiver midiOut;
-
-   private final SliderboardVariable controlVariable;
 
    private int currentSliderValue = -1;
    private int newSliderValue = -1;
 
    public BCF2000SliderController(Slider slider, Receiver midiOut)
    {
-      this.slider = slider;
-      this.midiOut = midiOut;
+      super(new SliderboardVariable(slider.getMin(), slider.getMax()), midiOut);
 
-      controlVariable = new SliderboardVariable(slider.getMin(), slider.getMax());
+      this.slider = slider;
    }
 
+   @Override
    public boolean handleMessage(ShortMessage message, long timestamp)
    {
       if (slider.getChannel() != message.getData1()) // Should it use getChannel instead
@@ -34,12 +31,14 @@ public class BCF2000SliderController
       return true;
    }
 
+   @Override
    public void moveSlider()
    {
       currentSliderValue = controlVariable.getValue(); // TODO Not sure if that's the best way
       moveSlider(controlVariable.getValue());
    }
 
+   @Override
    public void moveSlider(int value)
    {
       if (value == -1)
@@ -57,6 +56,7 @@ public class BCF2000SliderController
       }
    }
 
+   @Override
    public void update()
    {
       if (newSliderValue != -1)
@@ -73,10 +73,5 @@ public class BCF2000SliderController
       {
          moveSlider();
       }
-   }
-
-   public SliderboardVariable getControlVariable()
-   {
-      return controlVariable;
    }
 }
