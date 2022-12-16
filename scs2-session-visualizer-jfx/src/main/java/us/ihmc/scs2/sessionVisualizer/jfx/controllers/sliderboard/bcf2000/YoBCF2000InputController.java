@@ -111,6 +111,11 @@ public abstract class YoBCF2000InputController
 
    public abstract void setYoVariableInput(YoVariable yoVariable);
 
+   public boolean isEmpty()
+   {
+      return yoVariableSlider == null;
+   }
+
    protected void setupYoVariableSlider(YoVariableSlider yoVariableSlider)
    {
       this.yoVariableSlider = yoVariableSlider;
@@ -118,7 +123,7 @@ public abstract class YoBCF2000InputController
       yoVariableDropLabel.setText(yoVariableSlider.getYoVariable().getName());
    }
 
-   protected void clear()
+   public void clear()
    {
       yoVariableSlider = null;
       backgroundStyle.set(DEFAULT_BACKGROUND);

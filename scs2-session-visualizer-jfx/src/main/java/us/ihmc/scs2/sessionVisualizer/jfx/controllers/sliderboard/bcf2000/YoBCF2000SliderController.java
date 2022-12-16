@@ -41,8 +41,12 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
    }
 
    @Override
-   protected void clear()
+   public void clear()
    {
+      if (yoVariableSlider != null)
+         yoVariableSlider.dispose();
+      yoVariableSlider = null;
+
       super.clear();
 
       slider.setDisable(true);
@@ -50,7 +54,6 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
       sliderMinTextField.setText("");
       sliderMaxTextField.setDisable(true);
       sliderMinTextField.setDisable(true);
-      yoVariableSlider = null;
    }
 
    public void setInput(YoSliderDefinition definition)
@@ -85,9 +88,7 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
    private void setYoVariableInput(YoVariable yoVariable, String minValue, String maxValue)
    {
       if (yoVariableSlider != null)
-      {
          yoVariableSlider.dispose();
-      }
 
       if (yoVariable == null)
       {
@@ -110,11 +111,6 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
          sliderMaxTextField.setText(maxValue);
 
       setupYoVariableSlider(yoVariableSlider);
-   }
-
-   public void close()
-   {
-      setYoVariableInput(null);
    }
 
    public YoSliderDefinition toYoSliderDefinition()

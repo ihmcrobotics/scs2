@@ -41,8 +41,12 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
    }
 
    @Override
-   protected void clear()
+   public void clear()
    {
+      if (yoVariableSlider != null)
+         yoVariableSlider.dispose();
+      yoVariableSlider = null;
+
       super.clear();
       spinner.setProgress(0);
       spinner.setDisable(true);
@@ -51,7 +55,7 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
       knobMinTextField.setText("");
       knobMaxTextField.setDisable(true);
       knobMinTextField.setDisable(true);
-      yoVariableSlider = null;
+
    }
 
    public void setInput(YoKnobDefinition definition)
@@ -86,9 +90,7 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
    private void setYoVariableInput(YoVariable yoVariable, String minValue, String maxValue)
    {
       if (yoVariableSlider != null)
-      {
          yoVariableSlider.dispose();
-      }
 
       if (yoVariable == null)
       {
@@ -110,14 +112,6 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
       if (maxValue != null && !knobMaxTextField.isDisabled())
          knobMaxTextField.setText(maxValue);
       setupYoVariableSlider(yoVariableSlider);
-   }
-
-   public void close()
-   {
-      if (yoVariableSlider != null)
-      {
-         setYoVariableInput(null);
-      }
    }
 
    public YoKnobDefinition toYoKnobDefinition()

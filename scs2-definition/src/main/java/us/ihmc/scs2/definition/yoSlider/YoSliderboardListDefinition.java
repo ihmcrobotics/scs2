@@ -1,5 +1,6 @@
 package us.ihmc.scs2.definition.yoSlider;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -12,6 +13,11 @@ public class YoSliderboardListDefinition
 
    public YoSliderboardListDefinition()
    {
+   }
+
+   public YoSliderboardListDefinition(String name, YoSliderboardDefinition yoSliderboard)
+   {
+      this(null, Collections.singletonList(yoSliderboard));
    }
 
    public YoSliderboardListDefinition(String name, List<YoSliderboardDefinition> yoSliderboards)

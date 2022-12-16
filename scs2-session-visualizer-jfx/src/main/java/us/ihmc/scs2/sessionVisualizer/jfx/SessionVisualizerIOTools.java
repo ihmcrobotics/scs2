@@ -134,6 +134,7 @@ public class SessionVisualizerIOTools
    public static final Path GRAPHIC_3D_CUSTOM_GRAPHICS = Paths.get(SCS2_HOME.toString(), "yoGraphic");
    // YoSliderboard resources:
    public static final URL YO_SLIDERBOARD_BCF2000_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_BCF2000, "YoBCF2000SliderboardWindow");
+   public static final URL YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_BCF2000, "YoMultiBCF2000SliderboardWindow");
 
    public static final URL MAIN_WINDOW_URL = getFXMLResource("MainWindow");
    public static final URL SECONDARY_WINDOW_URL = getFXMLResource("SecondaryWindow");

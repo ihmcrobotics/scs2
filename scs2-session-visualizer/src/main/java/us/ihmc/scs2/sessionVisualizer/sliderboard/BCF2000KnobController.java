@@ -34,6 +34,12 @@ public class BCF2000KnobController
       return true;
    }
 
+   public void moveSlider()
+   {
+      currentKnobValue = controlVariable.getValue(); // TODO Not sure if that's the best way
+      moveSlider(controlVariable.getValue());
+   }
+
    public void moveSlider(int value)
    {
       if (value == -1)
@@ -65,8 +71,7 @@ public class BCF2000KnobController
       }
       else if (controlVariable.getValue() != currentKnobValue)
       {
-         currentKnobValue = controlVariable.getValue(); // TODO Not sure if that's the best way
-         moveSlider(controlVariable.getValue());
+         moveSlider();
       }
    }
 
