@@ -26,6 +26,7 @@ public class BCF2000SliderboardController
    {
       KNOB_1, KNOB_2, KNOB_3, KNOB_4, KNOB_5, KNOB_6, KNOB_7, KNOB_8;
 
+      public static final Knob[] values = values();
       private static final int CHANNEL_OFFSET = 1;
 
       private final int channel;
@@ -54,7 +55,7 @@ public class BCF2000SliderboardController
       {
          if (channel < CHANNEL_OFFSET || channel > CHANNEL_OFFSET + 7)
             return null;
-         return values()[channel - CHANNEL_OFFSET];
+         return values[channel - CHANNEL_OFFSET];
       }
    };
 
@@ -62,6 +63,7 @@ public class BCF2000SliderboardController
    {
       SLIDER_1, SLIDER_2, SLIDER_3, SLIDER_4, SLIDER_5, SLIDER_6, SLIDER_7, SLIDER_8;
 
+      public static final Slider[] values = values();
       private static final int CHANNEL_OFFSET = 81;
 
       private final int channel;
@@ -90,7 +92,7 @@ public class BCF2000SliderboardController
       {
          if (channel < CHANNEL_OFFSET || channel > CHANNEL_OFFSET + 7)
             return null;
-         return values()[channel - CHANNEL_OFFSET];
+         return values[channel - CHANNEL_OFFSET];
       }
    };
 
@@ -115,6 +117,7 @@ public class BCF2000SliderboardController
       BUTTON_15,
       BUTTON_16;
 
+      public static final Button[] values = values();
       private static final int CHANNEL_OFFSET = 65;
 
       private final int channel;
@@ -133,7 +136,7 @@ public class BCF2000SliderboardController
       {
          if (channel < CHANNEL_OFFSET || channel > CHANNEL_OFFSET + 15)
             return null;
-         return values()[channel - CHANNEL_OFFSET];
+         return values[channel - CHANNEL_OFFSET];
       }
    }
 
@@ -141,6 +144,7 @@ public class BCF2000SliderboardController
    {
       BUTTON_1, BUTTON_2, BUTTON_3, BUTTON_4, BUTTON_5, BUTTON_6, BUTTON_7, BUTTON_8;
 
+      public static final KnobButton[] values = values();
       private static final int CHANNEL_OFFSET = 32;
 
       private final int channel;
@@ -159,7 +163,7 @@ public class BCF2000SliderboardController
       {
          if (channel < CHANNEL_OFFSET || channel > CHANNEL_OFFSET + 7)
             return null;
-         return values()[channel - CHANNEL_OFFSET];
+         return values[channel - CHANNEL_OFFSET];
       }
    }
 
@@ -222,17 +226,17 @@ public class BCF2000SliderboardController
 
       midiIn.setReceiver(receiver);
 
-      for (Slider slider : Slider.values())
+      for (Slider slider : Slider.values)
       {
          sliderControllers[slider.ordinal()] = new BCF2000SliderController(slider, midiOut);
       }
 
-      for (Button button : Button.values())
+      for (Button button : Button.values)
       {
          buttonControllers[button.ordinal()] = new BCF2000ButtonController(button, midiOut);
       }
-      
-      for (Knob knob : Knob.values())
+
+      for (Knob knob : Knob.values)
       {
          knobControllers[knob.ordinal()] = new BCF2000KnobController(knob, midiOut);
       }
@@ -273,13 +277,34 @@ public class BCF2000SliderboardController
 
    public void start()
    {
+      if (currentTask != null)
+         return;
+
+      for (int i = 0; i < sliderControllers.length; i++)
+      {
+         sliderControllers[i].moveSlider();
+      }
+
+      for (int i = 0; i < buttonControllers.length; i++)
+      {
+         buttonControllers[i].moveSlider();
+      }
+
+      for (int i = 0; i < knobControllers.length; i++)
+      {
+         knobControllers[i].moveSlider();
+      }
+
       currentTask = executor.scheduleAtFixedRate(this::update, 0, 20, TimeUnit.MILLISECONDS);
    }
 
    public void stop()
    {
       if (currentTask != null)
+      {
          currentTask.cancel(false);
+         currentTask = null;
+      }
    }
 
    public void closeAndDispose()

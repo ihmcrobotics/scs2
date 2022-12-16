@@ -34,6 +34,12 @@ public class BCF2000SliderController
       return true;
    }
 
+   public void moveSlider()
+   {
+      currentSliderValue = controlVariable.getValue(); // TODO Not sure if that's the best way
+      moveSlider(controlVariable.getValue());
+   }
+
    public void moveSlider(int value)
    {
       if (value == -1)
@@ -65,8 +71,7 @@ public class BCF2000SliderController
       }
       else if (controlVariable.getValue() != currentSliderValue)
       {
-         currentSliderValue = controlVariable.getValue(); // TODO Not sure if that's the best way
-         moveSlider(controlVariable.getValue());
+         moveSlider();
       }
    }
 

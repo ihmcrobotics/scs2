@@ -4,27 +4,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.WindowEvent;
-import javafx.util.Duration;
+import javafx.stage.Window;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
@@ -65,15 +58,19 @@ public class YoBCF2000SliderboardWindowController
    @FXML
    private ImageView connectionStateImageView;
 
+   private final StringProperty nameProperty = new SimpleStringProperty(this, "name", null);
+
    private List<YoBCF2000KnobController> knobControllers;
    private List<YoBCF2000ButtonController> buttonControllers;
    private List<YoBCF2000SliderController> sliderControllers;
+   private List<YoBCF2000InputController> allInputControllers;
 
-   private Stage window;
    private BCF2000SliderboardController sliderboard;
+   private Window owner;
 
-   public void initialize(SessionVisualizerToolkit toolkit)
+   public void initialize(Window owner, SessionVisualizerToolkit toolkit)
    {
+      this.owner = owner;
       knobControllers = Arrays.asList(knob0Controller,
                                       knob1Controller,
                                       knob2Controller,
@@ -106,6 +103,10 @@ public class YoBCF2000SliderboardWindowController
                                         slider5Controller,
                                         slider6Controller,
                                         slider7Controller);
+      allInputControllers = new ArrayList<>();
+      allInputControllers.addAll(knobControllers);
+      allInputControllers.addAll(buttonControllers);
+      allInputControllers.addAll(sliderControllers);
 
       sliderboard = BCF2000SliderboardController.searchAndConnectToDevice();
 
@@ -142,25 +143,6 @@ public class YoBCF2000SliderboardWindowController
          yoSliderController.initialize(toolkit, slider);
       }
 
-      if (sliderboard != null)
-         sliderboard.start();
-
-      window = new Stage(StageStyle.UTILITY);
-      window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
-      {
-         if (e.getCode() == KeyCode.ESCAPE)
-            window.close();
-      });
-
-      toolkit.getMainWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
-      {
-         if (!e.isConsumed())
-            window.close();
-      });
-      window.setTitle("YoSliderboard controller");
-      window.setScene(new Scene(mainAnchorPane));
-      window.initOwner(toolkit.getMainWindow());
-
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
@@ -175,7 +157,7 @@ public class YoBCF2000SliderboardWindowController
    @FXML
    public void importYoSliderboard()
    {
-      File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(window);
+      File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
 
       if (result != null)
          load(result);
@@ -188,7 +170,9 @@ public class YoBCF2000SliderboardWindowController
       try
       {
          YoSliderboardListDefinition definition = XMLTools.loadYoSliderboardListDefinition(new FileInputStream(file));
-         setInput(definition);
+         if (definition.getYoSliderboards() == null || definition.getYoSliderboards().isEmpty())
+            return;
+         setInput(definition.getYoSliderboards().get(0));
       }
       catch (IOException | JAXBException e)
       {
@@ -199,7 +183,7 @@ public class YoBCF2000SliderboardWindowController
    @FXML
    public void exportYoSliderboard()
    {
-      File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(window);
+      File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
 
       if (result != null)
          save(result);
@@ -211,7 +195,7 @@ public class YoBCF2000SliderboardWindowController
 
       try
       {
-         XMLTools.saveYoSliderboardListDefinition(new FileOutputStream(file), toYoSliderboardListDefinition());
+         XMLTools.saveYoSliderboardListDefinition(new FileOutputStream(file), new YoSliderboardListDefinition(null, toYoSliderboardDefinition()));
       }
       catch (IOException | JAXBException e)
       {
@@ -219,77 +203,88 @@ public class YoBCF2000SliderboardWindowController
       }
    }
 
-   public void setInput(YoSliderboardListDefinition input)
+   public void setInput(YoSliderboardDefinition input)
    {
-      List<YoSliderboardDefinition> yoSliderboards = input.getYoSliderboards()
-                                                          .stream()
-                                                          .filter(yoSliderboard -> BCF2000.equals(yoSliderboard.getType()))
-                                                          .collect(Collectors.toList());
-
-      if (yoSliderboards == null || yoSliderboards.isEmpty())
-         return;
-
-      YoSliderboardDefinition yoSliderboard = yoSliderboards.get(0);
-      if (yoSliderboard.getKnobs() != null)
+      if (input.getName() != null)
       {
-         for (int i = 0; i < Math.min(knobControllers.size(), yoSliderboard.getKnobs().size()); i++)
+         nameProperty.set(input.getName());
+      }
+
+      if (input.getKnobs() != null)
+      {
+         for (int i = 0; i < Math.min(knobControllers.size(), input.getKnobs().size()); i++)
          {
-            knobControllers.get(i).setInput(yoSliderboard.getKnobs().get(i));
+            knobControllers.get(i).setInput(input.getKnobs().get(i));
          }
       }
-      if (yoSliderboard.getButtons() != null)
+      if (input.getButtons() != null)
       {
-         for (int i = 0; i < Math.min(buttonControllers.size(), yoSliderboard.getButtons().size()); i++)
+         for (int i = 0; i < Math.min(buttonControllers.size(), input.getButtons().size()); i++)
          {
-            buttonControllers.get(i).setInput(yoSliderboard.getButtons().get(i));
+            buttonControllers.get(i).setInput(input.getButtons().get(i));
          }
       }
-      if (yoSliderboard.getSliders() != null)
+      if (input.getSliders() != null)
       {
-         for (int i = 0; i < Math.min(sliderControllers.size(), yoSliderboard.getSliders().size()); i++)
+         for (int i = 0; i < Math.min(sliderControllers.size(), input.getSliders().size()); i++)
          {
-            sliderControllers.get(i).setInput(yoSliderboard.getSliders().get(i));
+            sliderControllers.get(i).setInput(input.getSliders().get(i));
          }
       }
    }
 
-   public void showWindow()
+   public void clear()
    {
-      window.setOpacity(0.0);
-      window.toFront();
-      window.show();
-      Timeline timeline = new Timeline();
-      KeyFrame key = new KeyFrame(Duration.seconds(0.125), new KeyValue(window.opacityProperty(), 1.0));
-      timeline.getKeyFrames().add(key);
-      timeline.play();
+      for (YoBCF2000InputController controller : allInputControllers)
+      {
+         controller.clear();
+      }
+   }
+
+   public void start()
+   {
+      if (sliderboard != null)
+         sliderboard.start();
+   }
+
+   public void stop()
+   {
+      if (sliderboard != null)
+         sliderboard.stop();
    }
 
    public void close()
    {
-      for (YoBCF2000ButtonController yoButtonController : buttonControllers)
-         yoButtonController.close();
-      for (YoBCF2000KnobController yoKnobController : knobControllers)
-         yoKnobController.close();
-      for (YoBCF2000SliderController yoSliderController : sliderControllers)
-         yoSliderController.close();
+      clear();
 
       if (sliderboard != null)
          sliderboard.closeAndDispose();
-      window.close();
    }
 
-   public Stage getWindow()
+   public StringProperty nameProperty()
    {
-      return window;
+      return nameProperty;
    }
 
-   public YoSliderboardListDefinition toYoSliderboardListDefinition()
+   public YoSliderboardDefinition toYoSliderboardDefinition()
    {
       YoSliderboardDefinition definition = new YoSliderboardDefinition();
+      definition.setName(nameProperty.get());
       definition.setType(BCF2000);
       definition.setKnobs(knobControllers.stream().map(YoBCF2000KnobController::toYoKnobDefinition).collect(Collectors.toList()));
       definition.setButtons(buttonControllers.stream().map(YoBCF2000ButtonController::toYoButtonDefinition).collect(Collectors.toList()));
       definition.setSliders(sliderControllers.stream().map(YoBCF2000SliderController::toYoSliderDefinition).collect(Collectors.toList()));
-      return new YoSliderboardListDefinition(null, Collections.singletonList(definition));
+      return definition;
+   }
+
+   public boolean isEmpty()
+   {
+      for (YoBCF2000InputController controller : allInputControllers)
+      {
+         if (!controller.isEmpty())
+            return false;
+      }
+
+      return true;
    }
 }

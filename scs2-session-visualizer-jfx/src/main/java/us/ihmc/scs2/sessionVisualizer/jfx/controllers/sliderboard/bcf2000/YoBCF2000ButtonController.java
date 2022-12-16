@@ -36,12 +36,15 @@ public class YoBCF2000ButtonController extends YoBCF2000InputController
    }
 
    @Override
-   protected void clear()
+   public void clear()
    {
+      if (yoBooleanSlider != null)
+         yoBooleanSlider.dispose();
+      yoBooleanSlider = null;
+
       super.clear();
 
       button.setDisable(true);
-      yoBooleanSlider = null;
    }
 
    public void setInput(YoButtonDefinition definition)
@@ -71,10 +74,7 @@ public class YoBCF2000ButtonController extends YoBCF2000InputController
    public void setYoVariableInput(YoVariable yoVariable)
    {
       if (yoBooleanSlider != null)
-      {
          yoBooleanSlider.dispose();
-         yoBooleanSlider.getYoBooleanProperty().unbind();
-      }
 
       if (yoVariable == null || !(yoVariable instanceof YoBoolean))
       {
@@ -90,14 +90,6 @@ public class YoBCF2000ButtonController extends YoBCF2000InputController
       yoBooleanSlider.getYoBooleanProperty().bindBooleanProperty(button.selectedProperty());
 
       setupYoVariableSlider(yoBooleanSlider);
-   }
-
-   public void close()
-   {
-      if (yoBooleanSlider != null)
-      {
-         setYoVariableInput(null);
-      }
    }
 
    public YoButtonDefinition toYoButtonDefinition()
