@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.sliderboard;
 
+import java.lang.reflect.Array;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -177,6 +178,7 @@ public class BCF2000SliderboardController
    private final BCF2000SliderController[] sliderControllers = new BCF2000SliderController[8];
    private final BCF2000ButtonController[] buttonControllers = new BCF2000ButtonController[16];
    private final BCF2000KnobController[] knobControllers = new BCF2000KnobController[8];
+   private final BCF2000ChannelController[] allControllers;
 
    private final Receiver receiver = new Receiver()
    {
@@ -240,6 +242,29 @@ public class BCF2000SliderboardController
       {
          knobControllers[knob.ordinal()] = new BCF2000KnobController(knob, midiOut);
       }
+
+      allControllers = combineArrays(sliderControllers, buttonControllers, knobControllers);
+   }
+
+   @SuppressWarnings("unchecked")
+   private static <T> T[] combineArrays(T[]... inputArrays)
+   {
+      int outputLength = 0;
+      for (T[] inputArray : inputArrays)
+      {
+         outputLength += inputArray.length;
+      }
+
+      T[] outputArray = (T[]) Array.newInstance(inputArrays[0][0].getClass(), outputLength);
+
+      int start = 0;
+      for (T[] inputArray : inputArrays)
+      {
+         System.arraycopy(inputArray, 0, outputArray, start, inputArray.length);
+         start += inputArray.length;
+      }
+
+      return outputArray;
    }
 
    public SliderboardVariable getSlider(Slider slider)
@@ -259,19 +284,9 @@ public class BCF2000SliderboardController
 
    public void update()
    {
-      for (int i = 0; i < sliderControllers.length; i++)
+      for (BCF2000ChannelController controller : allControllers)
       {
-         sliderControllers[i].update();
-      }
-
-      for (int i = 0; i < buttonControllers.length; i++)
-      {
-         buttonControllers[i].update();
-      }
-
-      for (int i = 0; i < knobControllers.length; i++)
-      {
-         knobControllers[i].update();
+         controller.update();
       }
    }
 
@@ -280,19 +295,9 @@ public class BCF2000SliderboardController
       if (currentTask != null)
          return;
 
-      for (int i = 0; i < sliderControllers.length; i++)
+      for (BCF2000ChannelController controller : allControllers)
       {
-         sliderControllers[i].moveSlider();
-      }
-
-      for (int i = 0; i < buttonControllers.length; i++)
-      {
-         buttonControllers[i].moveSlider();
-      }
-
-      for (int i = 0; i < knobControllers.length; i++)
-      {
-         knobControllers[i].moveSlider();
+         controller.enable();
       }
 
       currentTask = executor.scheduleAtFixedRate(this::update, 0, 20, TimeUnit.MILLISECONDS);
@@ -304,6 +309,11 @@ public class BCF2000SliderboardController
       {
          currentTask.cancel(false);
          currentTask = null;
+      }
+
+      for (BCF2000ChannelController controller : allControllers)
+      {
+         controller.disable();
       }
    }
 
