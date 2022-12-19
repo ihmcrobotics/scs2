@@ -243,11 +243,11 @@ public class BCF2000SliderboardController
          knobControllers[knob.ordinal()] = new BCF2000KnobController(knob, midiOut);
       }
 
-      allControllers = combineArrays(sliderControllers, buttonControllers, knobControllers);
+      allControllers = combineArrays(BCF2000ChannelController.class, sliderControllers, buttonControllers, knobControllers);
    }
 
    @SuppressWarnings("unchecked")
-   private static <T> T[] combineArrays(T[]... inputArrays)
+   private static <T> T[] combineArrays(Class<T> componentType, T[]... inputArrays)
    {
       int outputLength = 0;
       for (T[] inputArray : inputArrays)
@@ -255,13 +255,15 @@ public class BCF2000SliderboardController
          outputLength += inputArray.length;
       }
 
-      T[] outputArray = (T[]) Array.newInstance(inputArrays[0][0].getClass(), outputLength);
+      T[] outputArray = (T[]) Array.newInstance(componentType, outputLength);
 
-      int start = 0;
+      int outputIndex = 0;
       for (T[] inputArray : inputArrays)
       {
-         System.arraycopy(inputArray, 0, outputArray, start, inputArray.length);
-         start += inputArray.length;
+         for (int i = 0; i < inputArray.length; i++)
+         {
+            outputArray[outputIndex++] = inputArray[i];
+         }
       }
 
       return outputArray;
