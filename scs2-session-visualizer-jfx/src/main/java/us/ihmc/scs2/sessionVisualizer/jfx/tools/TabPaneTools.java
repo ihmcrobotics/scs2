@@ -127,7 +127,10 @@ public class TabPaneTools
          {
             Tab newTab = addAction.apply(selectedIndex);
             if (newTab != null)
+            {
                tabs.add(selectedIndex, newTab);
+               tabPane.getSelectionModel().select(selectedIndex);
+            }
          });
 
          return addBefore;
@@ -154,7 +157,10 @@ public class TabPaneTools
          {
             Tab newTab = addAction.apply(selectedIndex + 1);
             if (newTab != null)
+            {
                tabs.add(selectedIndex + 1, newTab);
+               tabPane.getSelectionModel().select(selectedIndex + 1);
+            }
          });
 
          return addAfter;
