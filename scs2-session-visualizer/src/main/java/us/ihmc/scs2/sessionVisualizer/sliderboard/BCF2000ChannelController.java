@@ -27,6 +27,9 @@ public abstract class BCF2000ChannelController
 
    public boolean handleMessage(ShortMessage message, long timestamp)
    {
+      if (!enable)
+         return false;
+
       if (channel != message.getData1()) // Should it use getChannel instead
          return false;
 
@@ -74,7 +77,7 @@ public abstract class BCF2000ChannelController
 
    public void pushValueToDevice(int value)
    {
-      if (value == -1)
+      if (!enable || value == -1)
          return;
 
       currentDeviceValue = value; // TODO Not sure if that's the best way
