@@ -15,6 +15,11 @@ import us.ihmc.messager.MessagerAPIFactory.TypedTopicTheme;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
@@ -59,6 +64,8 @@ public class SessionVisualizerMessagerAPI
    private static final TopicTheme Precision = apiFactory.createTopicTheme("Precision");
    private static final TopicTheme Disable = apiFactory.createTopicTheme("Disable");
    private static final TopicTheme Add = apiFactory.createTopicTheme("add");
+   private static final TopicTheme Set = apiFactory.createTopicTheme("set");
+   private static final TopicTheme Remove = apiFactory.createTopicTheme("remove");
 
    public static final Topic<Boolean> DisableUserControls = APIRoot.child(User).child(Controls).topic(Disable);
    public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = APIRoot.child(Video).topic(Request);
@@ -163,9 +170,25 @@ public class SessionVisualizerMessagerAPI
    public static class YoSliderboard
    {
       private static final CategoryTheme YoSliderboard = apiFactory.createCategoryTheme("YoSliderboard");
+      private static final CategoryTheme Multi = apiFactory.createCategoryTheme("Multi");
+      private static final CategoryTheme Single = apiFactory.createCategoryTheme("Single");
+      private static final CategoryTheme Button = apiFactory.createCategoryTheme("Button");
+      private static final CategoryTheme Knob = apiFactory.createCategoryTheme("Knob");
+      private static final CategoryTheme Slider = apiFactory.createCategoryTheme("Slider");
 
-      public static final Topic<File> YoSliderboardSaveConfiguration = APIRoot.child(YoSliderboard).child(Configuration).topic(Save);
-      public static final Topic<File> YoSliderboardLoadConfiguration = APIRoot.child(YoSliderboard).child(Configuration).topic(Load);
+      public static final Topic<File> YoMultiSliderboardSave = APIRoot.child(YoSliderboard).child(Multi).child(Configuration).topic(Save);
+      public static final Topic<File> YoMultiSliderboardLoad = APIRoot.child(YoSliderboard).child(Multi).child(Configuration).topic(Load);
+      public static final Topic<Boolean> YoMultiSliderboardClearAll = APIRoot.child(Multi).child(YoSliderboard).topic(Remove);
+      public static final Topic<YoSliderboardListDefinition> YoMultiSliderboardSet = APIRoot.child(Multi).child(YoSliderboard).topic(Set);
+      public static final Topic<YoSliderboardDefinition> YoSliderboardSet = APIRoot.child(YoSliderboard).child(Single).topic(Set);
+      public static final Topic<String> YoSliderboardRemove = APIRoot.child(YoSliderboard).child(Single).topic(Remove);
+
+      public static final Topic<Pair<String, YoButtonDefinition>> YoSliderboardSetButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Set);
+      public static final Topic<Pair<String, YoKnobDefinition>> YoSliderboardSetKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Set);
+      public static final Topic<Pair<String, YoSliderDefinition>> YoSliderboardSetSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Set);
+      public static final Topic<Pair<String, Integer>> YoSliderboardRemoveButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Remove);
+      public static final Topic<Pair<String, Integer>> YoSliderboardRemoveKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Remove);
+      public static final Topic<Pair<String, Integer>> YoSliderboardRemoveSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Remove);
    }
 
    public static class SessionAPI

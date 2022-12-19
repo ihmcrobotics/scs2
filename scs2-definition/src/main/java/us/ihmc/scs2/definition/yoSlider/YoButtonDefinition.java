@@ -1,10 +1,24 @@
 package us.ihmc.scs2.definition.yoSlider;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 
 public class YoButtonDefinition
 {
+
    private String variableName;
+   private int index = -1;
+
+   public YoButtonDefinition()
+   {
+   }
+
+   public YoButtonDefinition(String variableName, int index)
+   {
+      this.variableName = variableName;
+      this.index = index;
+   }
 
    @XmlAttribute
    public void setVariableName(String variableName)
@@ -12,9 +26,20 @@ public class YoButtonDefinition
       this.variableName = variableName;
    }
 
+   @XmlAttribute
+   public void setIndex(int index)
+   {
+      this.index = index;
+   }
+
    public String getVariableName()
    {
       return variableName;
+   }
+
+   public int getIndex()
+   {
+      return index;
    }
 
    @Override
@@ -28,7 +53,9 @@ public class YoButtonDefinition
       {
          YoButtonDefinition other = (YoButtonDefinition) object;
 
-         if (variableName == null ? other.variableName != null : variableName.equals(other.variableName))
+         if (!Objects.equals(variableName, other.variableName))
+            return false;
+         if (index != other.index)
             return false;
          return true;
       }
@@ -41,6 +68,6 @@ public class YoButtonDefinition
    @Override
    public String toString()
    {
-      return "variableName:" + variableName;
+      return "variableName:" + variableName + ", index:" + index;
    }
 }

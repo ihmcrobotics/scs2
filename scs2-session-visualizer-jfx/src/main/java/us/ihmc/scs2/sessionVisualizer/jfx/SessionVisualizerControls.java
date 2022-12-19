@@ -1,9 +1,15 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+
+import javax.xml.bind.JAXBException;
 
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -11,15 +17,22 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.yoVariables.euclid.YoTuple2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple2D;
@@ -323,6 +336,109 @@ public interface SessionVisualizerControls
     *                     {@link YoRegistry#findVariable(String)}.
     */
    void addYoEntry(String groupName, Collection<String> variableNames);
+
+   default void loadSliderboards(InputStream inputStream)
+   {
+      try
+      {
+         setSliderboards(XMLTools.loadYoSliderboardListDefinition(inputStream));
+      }
+      catch (JAXBException | IOException e)
+      {
+         LogTools.error("Failed to load sliderboard configuration: {}, {}", e.getClass().getSimpleName(), e.getMessage());
+      }
+   }
+
+   void setSliderboards(YoSliderboardListDefinition sliderboardListDefinition);
+
+   void clearAllSliderboards();
+
+   default void setDefaultSliderboard(YoSliderboardDefinition sliderboardConfiguration)
+   {
+      sliderboardConfiguration.setName(DEFAULT_SLIDERBOARD_NAME);
+      setSliderboard(sliderboardConfiguration);
+   }
+
+   default void clearDefaultSliderboard()
+   {
+      removeSliderboard(DEFAULT_SLIDERBOARD_NAME);
+   }
+
+   void setSliderboard(YoSliderboardDefinition sliderboardConfiguration);
+
+   void removeSliderboard(String sliderboardName);
+
+   default void setDefaultSliderboardButton(int buttonIndex, String variableName)
+   {
+      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, new YoButtonDefinition(variableName, buttonIndex));
+   }
+
+   default void setDefaultSliderboardButton(YoButtonDefinition buttonDefinition)
+   {
+      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonDefinition);
+   }
+
+   default void setSliderboardButton(String sliderboardName, int buttonIndex, String variableName)
+   {
+      setSliderboardButton(sliderboardName, new YoButtonDefinition(variableName, buttonIndex));
+   }
+
+   void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition);
+
+   default void removeDefaultSliderboardButton(int buttonIndex)
+   {
+      removeSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonIndex);
+   }
+
+   void removeSliderboardButton(String sliderboardName, int buttonIndex);
+
+   default void setDefaultSliderboardKnob(int knobIndex, String variableName)
+   {
+      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, new YoKnobDefinition(variableName, knobIndex));
+   }
+
+   default void setDefaultSliderboardKnob(YoKnobDefinition knobDefinition)
+   {
+      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobDefinition);
+   }
+
+   default void setSliderboardKnob(String sliderboardName, int knobIndex, String variableName)
+   {
+      setSliderboardKnob(sliderboardName, new YoKnobDefinition(variableName, knobIndex));
+   }
+
+   void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition);
+
+   default void removeDefaultSliderboardKnob(int knobIndex)
+   {
+      removeSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobIndex);
+   }
+
+   void removeSliderboardKnob(String sliderboardName, int knobIndex);
+
+   default void setDefaultSliderboardSlider(int sliderIndex, String variableName)
+   {
+      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, new YoSliderDefinition(variableName, sliderIndex));
+   }
+
+   default void setDefaultSliderboardSlider(YoSliderDefinition sliderDefinition)
+   {
+      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderDefinition);
+   }
+
+   default void setSliderboardSlider(String sliderboardName, int sliderIndex, String variableName)
+   {
+      setSliderboardSlider(sliderboardName, new YoSliderDefinition(variableName, sliderIndex));
+   }
+
+   void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition);
+
+   default void removeDefaultSliderboardSlider(int sliderIndex)
+   {
+      removeSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderIndex);
+   }
+
+   void removeSliderboardSlider(String sliderboardName, int sliderIndex);
 
    /**
     * Captures a video of the 3D scene from the playback data.
