@@ -18,12 +18,13 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Window;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
@@ -125,33 +126,23 @@ public class YoBCF2000SliderboardWindowController
       for (int i = 0; i < knobControllers.size(); i++)
       {
          YoBCF2000KnobController yoKnobController = knobControllers.get(i);
-         SliderboardVariable knob = sliderboard == null ? null : sliderboard.getKnob(Knob.values()[i]);
-         yoKnobController.initialize(toolkit, knob);
+         SliderboardVariable knob = sliderboard == null ? null : sliderboard.getKnob(Knob.values[i]);
+         yoKnobController.initialize(toolkit, Knob.values[i], knob);
       }
 
       for (int i = 0; i < buttonControllers.size(); i++)
       {
          YoBCF2000ButtonController yoButtonController = buttonControllers.get(i);
-         SliderboardVariable button = sliderboard == null ? null : sliderboard.getButton(Button.values()[i]);
-         yoButtonController.initialize(toolkit, button);
+         SliderboardVariable button = sliderboard == null ? null : sliderboard.getButton(Button.values[i]);
+         yoButtonController.initialize(toolkit, Button.values[i], button);
       }
 
       for (int i = 0; i < sliderControllers.size(); i++)
       {
          YoBCF2000SliderController yoSliderController = sliderControllers.get(i);
-         SliderboardVariable slider = sliderboard == null ? null : sliderboard.getSlider(Slider.values()[i]);
-         yoSliderController.initialize(toolkit, slider);
+         SliderboardVariable slider = sliderboard == null ? null : sliderboard.getSlider(Slider.values[i]);
+         yoSliderController.initialize(toolkit, Slider.values[i], slider);
       }
-
-      JavaFXMessager messager = toolkit.getMessager();
-      SessionVisualizerTopics topics = toolkit.getTopics();
-
-      File configurationFile = messager.createInput(topics.getYoSliderboardLoadConfiguration()).get();
-      if (configurationFile != null)
-         load(configurationFile);
-
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardLoadConfiguration(), this::load);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSaveConfiguration(), this::save);
    }
 
    @FXML
@@ -205,32 +196,120 @@ public class YoBCF2000SliderboardWindowController
 
    public void setInput(YoSliderboardDefinition input)
    {
+      clear();
+
       if (input.getName() != null)
       {
          nameProperty.set(input.getName());
       }
 
-      if (input.getKnobs() != null)
+      List<YoKnobDefinition> knobs = input.getKnobs();
+      if (knobs != null)
       {
-         for (int i = 0; i < Math.min(knobControllers.size(), input.getKnobs().size()); i++)
+         for (int i = 0; i < knobs.size(); i++)
          {
-            knobControllers.get(i).setInput(input.getKnobs().get(i));
+            YoKnobDefinition knob = knobs.get(i);
+            if (knob.getIndex() == -1)
+               knobControllers.get(i).setInput(knob);
+            else
+               knobControllers.get(knob.getIndex()).setInput(knob);
          }
       }
-      if (input.getButtons() != null)
+
+      List<YoButtonDefinition> buttons = input.getButtons();
+      if (buttons != null)
       {
-         for (int i = 0; i < Math.min(buttonControllers.size(), input.getButtons().size()); i++)
+         for (int i = 0; i < buttons.size(); i++)
          {
-            buttonControllers.get(i).setInput(input.getButtons().get(i));
+            YoButtonDefinition button = buttons.get(i);
+            if (button.getIndex() == -1)
+               buttonControllers.get(i).setInput(button);
+            else
+               buttonControllers.get(button.getIndex()).setInput(button);
          }
       }
-      if (input.getSliders() != null)
+
+      List<YoSliderDefinition> sliders = input.getSliders();
+      if (sliders != null)
       {
-         for (int i = 0; i < Math.min(sliderControllers.size(), input.getSliders().size()); i++)
+         for (int i = 0; i < sliders.size(); i++)
          {
-            sliderControllers.get(i).setInput(input.getSliders().get(i));
+            YoSliderDefinition slider = sliders.get(i);
+            if (slider.getIndex() == -1)
+               sliderControllers.get(i).setInput(slider);
+            else
+               sliderControllers.get(slider.getIndex()).setInput(slider);
          }
       }
+   }
+
+   public void setButtonInput(YoButtonDefinition buttonDefinition)
+   {
+      if (buttonDefinition.getIndex() < 0 || buttonDefinition.getIndex() >= buttonControllers.size())
+      {
+         LogTools.error("Illegal button index: {}, expected in range: [0, {}[", buttonDefinition.getIndex(), buttonControllers.size());
+         return;
+      }
+
+      YoBCF2000ButtonController buttonController = buttonControllers.get(buttonDefinition.getIndex());
+      buttonController.setInput(buttonDefinition);
+   }
+
+   public void removeButtonInput(int buttonIndex)
+   {
+      if (buttonIndex < 0 || buttonIndex >= buttonControllers.size())
+      {
+         LogTools.error("Illegal button index: {}, expected in range: [0, {}[", buttonIndex, buttonControllers.size());
+         return;
+      }
+
+      buttonControllers.get(buttonIndex).clear();
+   }
+
+   public void setKnobInput(YoKnobDefinition knobDefinition)
+   {
+      if (knobDefinition.getIndex() < 0 || knobDefinition.getIndex() >= knobControllers.size())
+      {
+         LogTools.error("Illegal knob index: {}, expected in range: [0, {}[", knobDefinition.getIndex(), knobControllers.size());
+         return;
+      }
+
+      YoBCF2000KnobController knobController = knobControllers.get(knobDefinition.getIndex());
+      knobController.setInput(knobDefinition);
+   }
+
+   public void removeKnobInput(int knobIndex)
+   {
+      if (knobIndex < 0 || knobIndex >= knobControllers.size())
+      {
+         LogTools.error("Illegal knob index: {}, expected in range: [0, {}[", knobIndex, knobControllers.size());
+         return;
+      }
+
+      knobControllers.get(knobIndex).clear();
+   }
+
+   public void setSliderInput(YoSliderDefinition sliderDefinition)
+   {
+      if (sliderDefinition.getIndex() < 0 || sliderDefinition.getIndex() >= sliderControllers.size())
+      {
+         LogTools.error("Illegal slider index: {}, expected in range: [0, {}[", sliderDefinition.getIndex(), sliderControllers.size());
+         return;
+      }
+
+      YoBCF2000SliderController sliderController = sliderControllers.get(sliderDefinition.getIndex());
+      sliderController.setInput(sliderDefinition);
+   }
+
+   public void removeSliderInput(int sliderIndex)
+   {
+      if (sliderIndex < 0 || sliderIndex >= sliderControllers.size())
+      {
+         LogTools.error("Illegal slider index: {}, expected in range: [0, {}[", sliderIndex, sliderControllers.size());
+         return;
+      }
+
+      sliderControllers.get(sliderIndex).clear();
    }
 
    public void clear()

@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoSlider;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAttribute;
 
 public class YoSliderDefinition
@@ -7,11 +9,27 @@ public class YoSliderDefinition
    private String variableName;
    private String minValue;
    private String maxValue;
+   private int index = -1;
+
+   public YoSliderDefinition()
+   {
+   }
+
+   public YoSliderDefinition(String variableName, int index)
+   {
+      this.variableName = variableName;
+      this.index = index;
+   }
 
    @XmlAttribute
    public void setVariableName(String variableName)
    {
       this.variableName = variableName;
+   }
+
+   public void setMinValue(double minValue)
+   {
+      this.minValue = Double.toString(minValue);
    }
 
    @XmlAttribute
@@ -20,10 +38,21 @@ public class YoSliderDefinition
       this.minValue = minValue;
    }
 
+   public void setMaxValue(double maxValue)
+   {
+      this.maxValue = Double.toString(maxValue);
+   }
+
    @XmlAttribute
    public void setMaxValue(String maxValue)
    {
       this.maxValue = maxValue;
+   }
+
+   @XmlAttribute
+   public void setIndex(int index)
+   {
+      this.index = index;
    }
 
    public String getVariableName()
@@ -41,6 +70,11 @@ public class YoSliderDefinition
       return maxValue;
    }
 
+   public int getIndex()
+   {
+      return index;
+   }
+
    @Override
    public boolean equals(Object object)
    {
@@ -52,11 +86,13 @@ public class YoSliderDefinition
       {
          YoSliderDefinition other = (YoSliderDefinition) object;
 
-         if (variableName == null ? other.variableName != null : variableName.equals(other.variableName))
+         if (!Objects.equals(variableName, other.variableName))
             return false;
-         if (minValue == null ? other.minValue != null : minValue.equals(other.minValue))
+         if (!Objects.equals(minValue, other.minValue))
             return false;
-         if (maxValue == null ? other.maxValue != null : maxValue.equals(other.maxValue))
+         if (!Objects.equals(maxValue, other.maxValue))
+            return false;
+         if (index != other.index)
             return false;
          return true;
       }
@@ -69,6 +105,6 @@ public class YoSliderDefinition
    @Override
    public String toString()
    {
-      return "variableName:" + variableName + ", minValue:" + minValue + ", maxValue:" + maxValue;
+      return "variableName:" + variableName + ", minValue:" + minValue + ", maxValue:" + maxValue + ", index:" + index;
    }
 }

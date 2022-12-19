@@ -269,7 +269,7 @@ public class MultiSessionManager
       messager.submitMessage(topics.getShowOverheadPlotter(), configuration.getShowOverheadPlotter());
       messager.submitMessage(topics.getShowAdvancedControls(), configuration.getShowAdvancedControls());
       if (configuration.hasYoSliderboardConfiguration())
-         messager.submitMessage(topics.getYoSliderboardLoadConfiguration(), configuration.getYoSliderboardConfigurationFile());
+         messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile());
    }
 
    public void loadSessionConfiguration(File configurationFile)

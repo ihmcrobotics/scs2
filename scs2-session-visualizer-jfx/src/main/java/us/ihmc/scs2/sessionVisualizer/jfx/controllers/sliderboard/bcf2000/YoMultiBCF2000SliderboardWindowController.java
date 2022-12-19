@@ -33,10 +33,15 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
@@ -45,6 +50,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 
 public class YoMultiBCF2000SliderboardWindowController
 {
+   /**
+    * The name used for the default sliderboard. The default sliderboard is created when no
+    * configuration is set or loaded from file. It is typically the first tab when multi sliderboards
+    * have been created.
+    */
+   public static final String DEFAULT_SLIDERBOARD_NAME = "Default";
    @FXML
    private TabPane sliderboardTabPane;
    @FXML
@@ -88,7 +99,7 @@ public class YoMultiBCF2000SliderboardWindowController
                   if (removedTab == initialTab)
                   {
                      JavaFXMissingTools.runLater(getClass(), () -> sliderboardTabPane.getTabs().add(initialTab));
-                     initialTabHeader.setText("Default");
+                     initialTabHeader.setText(DEFAULT_SLIDERBOARD_NAME);
                      initialSliderboardPaneController.clear();
                   }
                   else
@@ -108,6 +119,26 @@ public class YoMultiBCF2000SliderboardWindowController
             tabToControllerMap.get(newValue).start();
       });
 
+      JavaFXMessager messager = toolkit.getMessager();
+      SessionVisualizerTopics topics = toolkit.getTopics();
+
+      File configurationFile = messager.createInput(topics.getYoMultiSliderboardLoad()).get();
+      if (configurationFile != null)
+         load(configurationFile);
+
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSave(), this::save);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardLoad(), this::load);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardClearAll(), m -> clear());
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSet(), this::setInput);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSet(), this::setSliderboard);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemove(), this::closeSliderboard);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetButton(), m -> setButtonInput(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetKnob(), m -> setKnobInput(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetSlider(), m -> setSliderInput(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveButton(), m -> removeButtonInput(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveKnob(), m -> removeKnobInput(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveSlider(), m -> removeSliderInput(m.getKey(), m.getValue()));
+
       window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
          if (e.getCode() == KeyCode.ESCAPE)
@@ -122,6 +153,114 @@ public class YoMultiBCF2000SliderboardWindowController
       window.setTitle("YoSliderboard controller");
       window.setScene(new Scene(sliderboardTabPane));
       window.initOwner(toolkit.getMainWindow());
+   }
+
+   public void setInput(YoSliderboardListDefinition input)
+   {
+      if (input.getYoSliderboards() == null || input.getYoSliderboards().isEmpty())
+         return;
+
+      ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
+      tabs.retainAll(initialTab);
+
+      while (tabs.size() < input.getYoSliderboards().size())
+         tabs.add(newSliderboardTab());
+
+      List<YoSliderboardDefinition> sliderboards = input.getYoSliderboards();
+      for (int i = 0; i < sliderboards.size(); i++)
+      {
+         tabToControllerMap.get(tabs.get(i)).setInput(sliderboards.get(i));
+      }
+   }
+
+   public void setSliderboard(YoSliderboardDefinition sliderboardDefinition)
+   {
+      Tab tab = findTabByName(sliderboardDefinition.getName());
+      if (tab == null)
+      {
+         tab = newSliderboardTab();
+         sliderboardTabPane.getTabs().add(tab);
+      }
+      tabToControllerMap.get(tab).setInput(sliderboardDefinition);
+   }
+
+   public void closeSliderboard(String name)
+   {
+      Tab tabToRemove = findTabByName(name);
+      if (tabToRemove != null)
+         sliderboardTabPane.getTabs().remove(tabToRemove);
+   }
+
+   public void setButtonInput(String sliderboardName, YoButtonDefinition buttonDefinition)
+   {
+      Tab tab = findTabByName(sliderboardName);
+      if (tab == null)
+      {
+         tab = newSliderboardTab();
+         sliderboardTabPane.getTabs().add(tab);
+      }
+      tabToControllerMap.get(tab).setButtonInput(buttonDefinition);
+   }
+
+   public void removeButtonInput(String sliderboardName, int buttonIndex)
+   {
+      Tab tab = findTabByName(sliderboardName);
+      if (tab == null)
+         return;
+      tabToControllerMap.get(tab).removeButtonInput(buttonIndex);
+   }
+
+   public void setKnobInput(String sliderboardName, YoKnobDefinition knobDefinition)
+   {
+      Tab tab = findTabByName(sliderboardName);
+      if (tab == null)
+      {
+         tab = newSliderboardTab();
+         sliderboardTabPane.getTabs().add(tab);
+      }
+      tabToControllerMap.get(tab).setKnobInput(knobDefinition);
+   }
+
+   public void removeKnobInput(String sliderboardName, int knobIndex)
+   {
+      Tab tab = findTabByName(sliderboardName);
+      if (tab == null)
+         return;
+      tabToControllerMap.get(tab).removeKnobInput(knobIndex);
+   }
+
+   public void setSliderInput(String sliderboardName, YoSliderDefinition sliderDefinition)
+   {
+      Tab tab = findTabByName(sliderboardName);
+      if (tab == null)
+      {
+         tab = newSliderboardTab();
+         sliderboardTabPane.getTabs().add(tab);
+      }
+      tabToControllerMap.get(tab).setSliderInput(sliderDefinition);
+   }
+
+   public void removeSliderInput(String sliderboardName, int sliderIndex)
+   {
+      Tab tab = findTabByName(sliderboardName);
+      if (tab == null)
+         return;
+      tabToControllerMap.get(tab).removeSliderInput(sliderIndex);
+   }
+
+   private Tab findTabByName(String name)
+   {
+      if (name == null)
+         return null;
+
+      for (Tab tab : sliderboardTabPane.getTabs())
+      {
+         if (name.equals(tabToControllerMap.get(tab).nameProperty().get()))
+         {
+            return tab;
+         }
+      }
+      return null;
    }
 
    public void showWindow()
@@ -164,25 +303,7 @@ public class YoMultiBCF2000SliderboardWindowController
       }
    }
 
-   private void setInput(YoSliderboardListDefinition input)
-   {
-      if (input.getYoSliderboards() == null || input.getYoSliderboards().isEmpty())
-         return;
-
-      ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
-      tabs.retainAll(initialTab);
-
-      while (tabs.size() < input.getYoSliderboards().size())
-         tabs.add(newSliderboardTab());
-
-      List<YoSliderboardDefinition> sliderboards = input.getYoSliderboards();
-      for (int i = 0; i < sliderboards.size(); i++)
-      {
-         tabToControllerMap.get(tabs.get(i)).setInput(sliderboards.get(i));
-      }
-   }
-
-   public void close()
+   public void clear()
    {
       for (Tab tab : sliderboardTabPane.getTabs())
       {
@@ -192,6 +313,10 @@ public class YoMultiBCF2000SliderboardWindowController
       sliderboardTabPane.getTabs().clear();
       tabToControllerMap.clear();
       tabToControllerMap.put(initialTab, initialSliderboardPaneController);
+   }
+
+   public void close()
+   {
       window.close();
    }
 

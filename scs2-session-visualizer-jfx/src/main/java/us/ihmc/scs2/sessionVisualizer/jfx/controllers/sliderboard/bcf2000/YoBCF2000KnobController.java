@@ -11,6 +11,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoVariableSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -31,9 +32,11 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
 
    private YoVariableSlider yoVariableSlider;
    private YoManager yoManager;
+   private BCF2000SliderboardController.Knob knobChannel;
 
-   public void initialize(SessionVisualizerToolkit toolkit, SliderboardVariable sliderVariable)
+   public void initialize(SessionVisualizerToolkit toolkit, BCF2000SliderboardController.Knob knobChannel, SliderboardVariable sliderVariable)
    {
+      this.knobChannel = knobChannel;
       this.sliderVariable = sliderVariable;
       yoManager = toolkit.getYoManager();
       super.initialize(toolkit, rootPane, yoVariableDropLabel);
@@ -62,7 +65,7 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
    {
       if (definition == null)
       {
-         setYoVariableInput(null);
+         clear();
          return;
       }
 
@@ -116,6 +119,8 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
 
    public YoKnobDefinition toYoKnobDefinition()
    {
-      return yoVariableSlider == null ? new YoKnobDefinition() : yoVariableSlider.toYoKnobDefinition();
+      YoKnobDefinition definition = yoVariableSlider == null ? new YoKnobDefinition() : yoVariableSlider.toYoKnobDefinition();
+      definition.setIndex(knobChannel.ordinal());
+      return definition;
    }
 }

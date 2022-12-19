@@ -15,6 +15,11 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
@@ -1052,6 +1057,66 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));
+   }
+
+   @Override
+   public void clearAllSliderboards()
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearAllSliderboards());
+   }
+
+   @Override
+   public void setSliderboards(YoSliderboardListDefinition sliderboardListDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboards(sliderboardListDefinition));
+   }
+
+   @Override
+   public void setSliderboard(YoSliderboardDefinition sliderboardConfiguration)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboard(sliderboardConfiguration));
+   }
+
+   @Override
+   public void removeSliderboard(String sliderboardName)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboard(sliderboardName));
+   }
+
+   @Override
+   public void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardButton(sliderboardName, buttonDefinition));
+   }
+
+   @Override
+   public void removeSliderboardButton(String sliderboardName, int buttonIndex)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboardButton(sliderboardName, buttonIndex));
+   }
+
+   @Override
+   public void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardKnob(sliderboardName, knobDefinition));
+   }
+
+   @Override
+   public void removeSliderboardKnob(String sliderboardName, int knobIndex)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboardSlider(sliderboardName, knobIndex));
+   }
+
+   @Override
+   public void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardSlider(sliderboardName, sliderDefinition));
+   }
+
+   @Override
+   public void removeSliderboardSlider(String sliderboardName, int sliderIndex)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboardSlider(sliderboardName, sliderIndex));
    }
 
    /**
