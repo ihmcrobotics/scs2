@@ -16,22 +16,12 @@ public class BulletTerrainObject
    private final btCompoundShape btCollisionShape;
    private ArrayList<btCollisionShape> btCollisionShapes = new ArrayList<>();
    private final btVector3 localInertia = new btVector3();
-   // For debugging
+   // We store this as a field so we can check it in a debugger
    private double friction;
    private final RigidBodyTransform transformToWorld = new RigidBodyTransform();
-   // FIXME: These callbacks aren't available until this is merged: https://github.com/bytedeco/javacpp-presets/pull/1297
+   // This is not actually needed, we just create a new one to pass in.
+   // The motion state callbacks will also not work until Bytedeco releases 1.5.9
    private final btDefaultMotionState btMotionState = new btDefaultMotionState();
-//   {
-//      @Override
-//      public void setWorldTransform(btTransform transformToWorld)
-//      {
-//      }
-//
-//      @Override
-//      public void getWorldTransform(btTransform transformToWorld)
-//      {
-//      }
-//   };
 
    public BulletTerrainObject(double mass, btCompoundShape bulletCompoundCollisionShape, ArrayList<btCollisionShape> btCollisionShapes)
    {
