@@ -208,10 +208,16 @@ public class BulletPhysicsEngine implements PhysicsEngine
    @Override
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
+      addAndGetTerrainObject(terrainObjectDefinition);
+   }
+
+   public BulletTerrainObject addAndGetTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
+   {
       BulletTerrainObject bulletTerrainObject = BulletTerrainFactory.newInstance(terrainObjectDefinition);
       terrainObjectList.add(bulletTerrainObject);
       terrainObjectDefinitions.add(terrainObjectDefinition);
       bulletMultiBodyDynamicsWorld.addBulletTerrainObject(bulletTerrainObject);
+      return bulletTerrainObject;
    }
 
    @Override
