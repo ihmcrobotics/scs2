@@ -74,6 +74,11 @@ public class BulletTools
       bulletQuaternion.setValue(euclidQuaternion.getX(), euclidQuaternion.getY(), euclidQuaternion.getZ(), euclidQuaternion.getS());
    }
 
+   public static void toEuclid(btQuaternion bulletQuaternion, Quaternion euclidQuaternion)
+   {
+      euclidQuaternion.set(bulletQuaternion.getX(), bulletQuaternion.getY(), bulletQuaternion.getZ(), bulletQuaternion.getW());
+   }
+
    public static void toBullet(Tuple3DReadOnly euclidTuple, btVector3 bulletVector3)
    {
       bulletVector3.setValue(euclidTuple.getX(), euclidTuple.getY(), euclidTuple.getZ());
