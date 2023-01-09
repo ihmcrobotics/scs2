@@ -16,11 +16,10 @@ import javax.sound.midi.Transmitter;
 
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 
 public class BCF2000SliderboardController
 {
-   public static final String BCF2000 = "BCF2000";
-
    public static boolean DEBUG = true;
 
    public enum Knob
@@ -334,7 +333,7 @@ public class BCF2000SliderboardController
    {
       String name = info.getName();
       String description = info.getDescription();
-      return name.contains(BCF2000) || description.contains(BCF2000);
+      return name.contains(YoSliderboardDefinition.BCF2000) || description.contains(YoSliderboardDefinition.BCF2000);
    }
 
    public static BCF2000SliderboardController searchAndConnectToDevice()

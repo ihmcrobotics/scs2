@@ -4,11 +4,46 @@ import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
+/**
+ * Definition for a slider of a sliderboard.
+ * <p>
+ * For the BCF2000 sliderboard, there are 8 sliders indexed here from 0 (left slider) to 7 (right
+ * slider).
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ * @see YoSliderboardDefinition
+ */
 public class YoSliderDefinition
 {
+   /**
+    * The fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) of the
+    * {@code YoVariable} to link to the slider.
+    */
    private String variableName;
+   /**
+    * The lowest value as a {@code String} of the variable when the slider is at its lowest.
+    * <p>
+    * If this is {@code null}, a valid arbitrary lower value will be determined at runtime.
+    * </p>
+    */
    private String minValue;
+   /**
+    * The highest value as a {@code String} of the variable when the slider is at its highest.
+    * <p>
+    * If this is {@code null}, a valid arbitrary lower value will be determined at runtime.
+    * </p>
+    */
    private String maxValue;
+   /**
+    * The index in [0, 7] of the slider. For the BCF2000:
+    * <ul>
+    * <li>0 is the left most slider.
+    * <li>7 is the right most slider.
+    * <li>when -1 is given, the position of {@code this} in {@link YoSliderboardDefinition#getKnobs()}
+    * is used to determine the slider index.
+    * </ul>
+    */
    private int index = -1;
 
    public YoSliderDefinition()

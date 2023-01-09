@@ -1,17 +1,39 @@
 package us.ihmc.scs2.definition.yoSlider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
+/**
+ * Definition of a sliderboard.
+ * 
+ * @author Sylvain Bertrand
+ */
 public class YoSliderboardDefinition
 {
+   /**
+    * Name of this sliderboard definition to facilitate retrieval and can be used to display in GUIs.
+    */
    private String name;
-   private String type;
-   private List<YoKnobDefinition> knobs;
-   private List<YoButtonDefinition> buttons;
-   private List<YoSliderDefinition> sliders;
+
+   /**
+    * Type value for the BCF2000.
+    */
+   public static final String BCF2000 = "BCF2000";
+
+   /**
+    * The type of sliderboard to use with this definition.
+    */
+   private String type = BCF2000;
+   private List<YoKnobDefinition> knobs = new ArrayList<>();
+   private List<YoButtonDefinition> buttons = new ArrayList<>();
+   private List<YoSliderDefinition> sliders = new ArrayList<>();
+
+   public YoSliderboardDefinition()
+   {
+   }
 
    @XmlAttribute
    public void setName(String name)

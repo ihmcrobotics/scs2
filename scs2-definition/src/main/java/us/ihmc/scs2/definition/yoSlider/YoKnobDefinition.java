@@ -4,11 +4,45 @@ import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
+/**
+ * Definition for a knob of a sliderboard.
+ * <p>
+ * For the BCF2000 sliderboard, there are 8 knobs indexed here from 0 (left knob) to 7 (right knob).
+ * </p>
+ *
+ * @author Sylvain Bertrand
+ * @see YoSliderboardDefinition
+ */
 public class YoKnobDefinition
 {
+   /**
+    * The fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) of the
+    * {@code YoVariable} to link to the knob.
+    */
    private String variableName;
+   /**
+    * The lowest value as a {@code String} of the variable when the knob is at its lowest.
+    * <p>
+    * If this is {@code null}, a valid arbitrary lower value will be determined at runtime.
+    * </p>
+    */
    private String minValue;
+   /**
+    * The highest value as a {@code String} of the variable when the knob is at its highest.
+    * <p>
+    * If this is {@code null}, a valid arbitrary lower value will be determined at runtime.
+    * </p>
+    */
    private String maxValue;
+   /**
+    * The index in [0, 7] of the knob. For the BCF2000:
+    * <ul>
+    * <li>0 is the left most knob.
+    * <li>7 is the right most knob.
+    * <li>when -1 is given, the position of {@code this} in {@link YoSliderboardDefinition#getKnobs()}
+    * is used to determine the knob index.
+    * </ul>
+    */
    private int index = -1;
 
    public YoKnobDefinition()

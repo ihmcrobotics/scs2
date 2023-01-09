@@ -4,10 +4,37 @@ import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
+/**
+ * Definition for a button of a sliderboard.
+ * <p>
+ * For the BCF2000, there are 16 buttons indexed here from 0 (top row left button) to 15 (bottom row
+ * right button).
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ * @see YoSliderboardDefinition
+ */
 public class YoButtonDefinition
 {
-
+   /**
+    * The fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) of the
+    * {@code YoBoolean} to link to the knob.
+    * <p>
+    * Note that is the variable is not of type boolean, this definition will be ignored.
+    * </p>
+    */
    private String variableName;
+   /**
+    * The index in [0, 15] of the button. For the BCF2000:
+    * <ul>
+    * <li>0 is the top row left most button.
+    * <li>7 is the top row right most button.
+    * <li>8 is the bottom row left most button.
+    * <li>15 is the bottom row right most button.
+    * <li>when -1 is given, the position of {@code this} in
+    * {@link YoSliderboardDefinition#getButtons()} is used to determine the button index.
+    * </ul>
+    */
    private int index = -1;
 
    public YoButtonDefinition()
