@@ -1,5 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000;
 
+import static us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition.BCF2000;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -35,7 +37,6 @@ import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 
 public class YoBCF2000SliderboardWindowController
 {
-   private static final String BCF2000 = BCF2000SliderboardController.BCF2000;
    private static final String CONNECTED_STRING = "Connected to BCF2000 sliderboard";
    private static final String NOT_CONNECTED_STRING = "Not connected to BCF2000 sliderboard";
 
