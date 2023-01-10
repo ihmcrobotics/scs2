@@ -109,9 +109,19 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
       yoVariableSlider.bindVirtualSlider(slider);
 
       if (minValue != null && !sliderMinTextField.isDisabled())
-         sliderMinTextField.setText(minValue);
+      {
+         if (isMinValid(yoVariable, minValue))
+            sliderMinTextField.setText(minValue);
+         else
+            LogTools.warn("Discarding invalid minValue (={}) for slider bound to the variable {}", minValue, yoVariable);
+      }
       if (maxValue != null && !sliderMaxTextField.isDisabled())
-         sliderMaxTextField.setText(maxValue);
+      {
+         if (isMaxValid(yoVariable, maxValue))
+            sliderMaxTextField.setText(maxValue);
+         else
+            LogTools.warn("Discarding invalid maxValue (={}) for slider bound to the variable {}", maxValue, yoVariable);
+      }
 
       setupYoVariableSlider(yoVariableSlider);
    }

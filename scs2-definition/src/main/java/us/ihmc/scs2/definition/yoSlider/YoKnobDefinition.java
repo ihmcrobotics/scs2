@@ -40,7 +40,8 @@ public class YoKnobDefinition
     * <li>0 is the left most knob.
     * <li>7 is the right most knob.
     * <li>when -1 is given, the position of {@code this} in {@link YoSliderboardDefinition#getKnobs()}
-    * is used to determine the knob index.
+    * is used to determine the knob index. This is for backward compatibility, prefer defining the
+    * actual index.
     * </ul>
     */
    private int index = -1;
@@ -53,6 +54,19 @@ public class YoKnobDefinition
    {
       this.variableName = variableName;
       this.index = index;
+   }
+
+   public YoKnobDefinition(YoKnobDefinition other)
+   {
+      set(other);
+   }
+
+   public void set(YoKnobDefinition other)
+   {
+      variableName = other.variableName;
+      minValue = other.minValue;
+      maxValue = other.maxValue;
+      index = other.index;
    }
 
    @XmlAttribute

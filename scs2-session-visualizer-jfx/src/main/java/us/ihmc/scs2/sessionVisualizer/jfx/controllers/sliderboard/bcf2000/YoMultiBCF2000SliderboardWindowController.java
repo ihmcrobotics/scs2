@@ -12,6 +12,8 @@ import java.util.function.Function;
 
 import javax.xml.bind.JAXBException;
 
+import com.google.common.base.Objects;
+
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -33,7 +35,6 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -41,7 +42,6 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
@@ -119,26 +119,6 @@ public class YoMultiBCF2000SliderboardWindowController
             tabToControllerMap.get(newValue).start();
       });
 
-      JavaFXMessager messager = toolkit.getMessager();
-      SessionVisualizerTopics topics = toolkit.getTopics();
-
-      File configurationFile = messager.createInput(topics.getYoMultiSliderboardLoad()).get();
-      if (configurationFile != null)
-         load(configurationFile);
-
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSave(), this::save);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardLoad(), this::load);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardClearAll(), m -> clear());
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSet(), this::setInput);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSet(), this::setSliderboard);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemove(), this::closeSliderboard);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetButton(), m -> setButtonInput(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetKnob(), m -> setKnobInput(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetSlider(), m -> setSliderInput(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveButton(), m -> removeButtonInput(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveKnob(), m -> removeKnobInput(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveSlider(), m -> removeSliderInput(m.getKey(), m.getValue()));
-
       window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
          if (e.getCode() == KeyCode.ESCAPE)
@@ -160,6 +140,7 @@ public class YoMultiBCF2000SliderboardWindowController
       if (input.getYoSliderboards() == null || input.getYoSliderboards().isEmpty())
          return;
 
+      // FIXME The initialTab is not properly handled 
       ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
       tabs.retainAll(initialTab);
 
@@ -169,7 +150,11 @@ public class YoMultiBCF2000SliderboardWindowController
       List<YoSliderboardDefinition> sliderboards = input.getYoSliderboards();
       for (int i = 0; i < sliderboards.size(); i++)
       {
-         tabToControllerMap.get(tabs.get(i)).setInput(sliderboards.get(i));
+         YoSliderboardDefinition sliderboard = sliderboards.get(i);
+         if (Objects.equal(DEFAULT_SLIDERBOARD_NAME, sliderboard.getName()))
+            initialSliderboardPaneController.setInput(sliderboard);
+         else
+            tabToControllerMap.get(tabs.get(i)).setInput(sliderboard);
       }
    }
 
@@ -274,35 +259,6 @@ public class YoMultiBCF2000SliderboardWindowController
       timeline.play();
    }
 
-   public void load(File file)
-   {
-      LogTools.info("Loading from file: " + file);
-
-      try
-      {
-         YoSliderboardListDefinition definition = XMLTools.loadYoSliderboardListDefinition(new FileInputStream(file));
-         setInput(definition);
-      }
-      catch (IOException | JAXBException e)
-      {
-         e.printStackTrace();
-      }
-   }
-
-   public void save(File file)
-   {
-      LogTools.info("Saving to file: " + file);
-
-      try
-      {
-         XMLTools.saveYoSliderboardListDefinition(new FileOutputStream(file), toYoSliderboardListDefinition());
-      }
-      catch (IOException | JAXBException e)
-      {
-         e.printStackTrace();
-      }
-   }
-
    public void clear()
    {
       for (Tab tab : sliderboardTabPane.getTabs())
@@ -340,7 +296,7 @@ public class YoMultiBCF2000SliderboardWindowController
 
          menuItem.setOnAction(e ->
          {
-            File result = SessionVisualizerIOTools.yoEntryConfigurationSaveFileDialog(owner);
+            File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
             if (result != null)
                tabToControllerMap.get(selectedTab).save(result);
          });
@@ -364,7 +320,7 @@ public class YoMultiBCF2000SliderboardWindowController
 
          menuItem.setOnAction(e ->
          {
-            File result = SessionVisualizerIOTools.yoEntryConfigurationSaveFileDialog(owner);
+            File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
             if (result != null)
                exportAllTabs(result);
          });
@@ -388,7 +344,7 @@ public class YoMultiBCF2000SliderboardWindowController
 
          menuItem.setOnAction(e ->
          {
-            File result = SessionVisualizerIOTools.yoEntryConfigurationOpenFileDialog(owner);
+            File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
             if (result != null)
                importTabsAt(result, selectedTab);
          });
@@ -475,7 +431,7 @@ public class YoMultiBCF2000SliderboardWindowController
       return tabToControllerMap.get(query).isEmpty();
    }
 
-   private YoSliderboardListDefinition toYoSliderboardListDefinition()
+   public YoSliderboardListDefinition toYoSliderboardListDefinition()
    {
       YoSliderboardListDefinition definition = new YoSliderboardListDefinition();
       definition.setYoSliderboards(new ArrayList<>());

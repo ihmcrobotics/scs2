@@ -111,9 +111,19 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
       yoVariableSlider.bindVirtualKnob(spinner);
 
       if (minValue != null && !knobMinTextField.isDisabled())
-         knobMinTextField.setText(minValue);
+      {
+         if (isMinValid(yoVariable, minValue))
+            knobMinTextField.setText(minValue);
+         else
+            LogTools.warn("Discarding invalid minValue (={}) for knob bound to the variable {}", minValue, yoVariable);
+      }
       if (maxValue != null && !knobMaxTextField.isDisabled())
-         knobMaxTextField.setText(maxValue);
+      {
+         if (isMaxValid(yoVariable, maxValue))
+            knobMaxTextField.setText(maxValue);
+         else
+            LogTools.warn("Discarding invalid maxValue (={}) for knob bound to the variable {}", maxValue, yoVariable);
+      }
       setupYoVariableSlider(yoVariableSlider);
    }
 
