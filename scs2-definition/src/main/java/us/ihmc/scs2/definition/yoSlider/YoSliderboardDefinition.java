@@ -46,6 +46,29 @@ public class YoSliderboardDefinition
       this.type = type;
    }
 
+   public YoSliderboardDefinition(YoSliderboardDefinition other)
+   {
+      set(other);
+   }
+
+   public void set(YoSliderboardDefinition other)
+   {
+      name = other.name;
+      type = other.type;
+      if (other.knobs != null)
+         knobs = other.knobs.stream().map(YoKnobDefinition::new).toList();
+      else
+         knobs = null;
+      if (other.buttons != null)
+         buttons = other.buttons.stream().map(YoButtonDefinition::new).toList();
+      else
+         buttons = null;
+      if (other.sliders != null)
+         sliders = other.sliders.stream().map(YoSliderDefinition::new).toList();
+      else
+         sliders = null;
+   }
+
    @XmlAttribute
    public void setName(String name)
    {

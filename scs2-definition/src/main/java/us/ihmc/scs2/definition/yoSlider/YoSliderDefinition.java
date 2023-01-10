@@ -41,7 +41,8 @@ public class YoSliderDefinition
     * <li>0 is the left most slider.
     * <li>7 is the right most slider.
     * <li>when -1 is given, the position of {@code this} in {@link YoSliderboardDefinition#getKnobs()}
-    * is used to determine the slider index.
+    * is used to determine the slider index. This is for backward compatibility, prefer defining the
+    * actual index.
     * </ul>
     */
    private int index = -1;
@@ -62,6 +63,19 @@ public class YoSliderDefinition
       this.index = index;
       setMinValue(minValue);
       setMaxValue(maxValue);
+   }
+
+   public YoSliderDefinition(YoSliderDefinition other)
+   {
+      set(other);
+   }
+
+   public void set(YoSliderDefinition other)
+   {
+      variableName = other.variableName;
+      minValue = other.minValue;
+      maxValue = other.maxValue;
+      index = other.index;
    }
 
    @XmlAttribute

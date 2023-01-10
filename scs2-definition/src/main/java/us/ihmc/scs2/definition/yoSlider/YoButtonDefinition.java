@@ -32,7 +32,8 @@ public class YoButtonDefinition
     * <li>8 is the bottom row left most button.
     * <li>15 is the bottom row right most button.
     * <li>when -1 is given, the position of {@code this} in
-    * {@link YoSliderboardDefinition#getButtons()} is used to determine the button index.
+    * {@link YoSliderboardDefinition#getButtons()} is used to determine the button index. This is for
+    * backward compatibility, prefer defining the actual index.
     * </ul>
     */
    private int index = -1;
@@ -45,6 +46,17 @@ public class YoButtonDefinition
    {
       this.variableName = variableName;
       this.index = index;
+   }
+
+   public YoButtonDefinition(YoButtonDefinition other)
+   {
+      set(other);
+   }
+
+   public void set(YoButtonDefinition other)
+   {
+      variableName = other.variableName;
+      index = other.index;
    }
 
    @XmlAttribute
