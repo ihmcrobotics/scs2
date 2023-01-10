@@ -56,6 +56,14 @@ public class YoSliderDefinition
       this.index = index;
    }
 
+   public YoSliderDefinition(String variableName, int index, double minValue, double maxValue)
+   {
+      this.variableName = variableName;
+      this.index = index;
+      setMinValue(minValue);
+      setMaxValue(maxValue);
+   }
+
    @XmlAttribute
    public void setVariableName(String variableName)
    {
