@@ -35,6 +35,17 @@ public class YoSliderboardDefinition
    {
    }
 
+   public YoSliderboardDefinition(String name)
+   {
+      this.name = name;
+   }
+
+   public YoSliderboardDefinition(String name, String type)
+   {
+      this.name = name;
+      this.type = type;
+   }
+
    @XmlAttribute
    public void setName(String name)
    {
