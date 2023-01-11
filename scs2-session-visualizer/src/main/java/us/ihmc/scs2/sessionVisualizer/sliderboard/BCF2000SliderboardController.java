@@ -368,6 +368,25 @@ public class BCF2000SliderboardController
          return null;
    }
 
+   public static void closeMidiDevices()
+   {
+      MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
+
+      for (MidiDevice.Info info : infos)
+      {
+         if (!isBCF2000Sliderboard(info))
+            continue;
+
+         MidiDevice midiDevice = getDevice(info);
+
+         if (midiDevice != null && midiDevice.isOpen())
+         {
+            midiDevice.close();
+            continue;
+         }
+      }
+   }
+
    private static Transmitter connectToMidiInDevice(MidiDevice.Info info)
    {
       MidiDevice midiDevice = getDevice(info);

@@ -18,6 +18,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -47,6 +48,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 
 public class YoMultiBCF2000SliderboardWindowController
 {
@@ -70,6 +72,8 @@ public class YoMultiBCF2000SliderboardWindowController
    private Stage window;
    private Window owner;
 
+   private final List<Runnable> cleanupTasks = new ArrayList<>();
+
    public void initialize(SessionVisualizerToolkit toolkit)
    {
       this.toolkit = toolkit;
@@ -88,7 +92,7 @@ public class YoMultiBCF2000SliderboardWindowController
                                  exportAllTabMenuItemFactory(),
                                  importTabMenuItemFactory());
 
-      sliderboardTabPane.getTabs().addListener((ListChangeListener<Tab>) change ->
+      ListChangeListener<Tab> preserveInitialTabListener = (ListChangeListener<Tab>) change ->
       {
          while (change.next())
          {
@@ -109,15 +113,19 @@ public class YoMultiBCF2000SliderboardWindowController
                }
             }
          }
-      });
+      };
+      sliderboardTabPane.getTabs().addListener(preserveInitialTabListener);
+      cleanupTasks.add(() -> sliderboardTabPane.getTabs().removeListener(preserveInitialTabListener));
 
-      sliderboardTabPane.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+      ChangeListener<? super Tab> controllerScheduler = (o, oldValue, newValue) ->
       {
          if (oldValue != null)
             tabToControllerMap.get(oldValue).stop();
          if (newValue != null)
             tabToControllerMap.get(newValue).start();
-      });
+      };
+      sliderboardTabPane.getSelectionModel().selectedItemProperty().addListener(controllerScheduler);
+      cleanupTasks.add(() -> sliderboardTabPane.getSelectionModel().selectedItemProperty().removeListener(controllerScheduler));
 
       window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
@@ -130,6 +138,18 @@ public class YoMultiBCF2000SliderboardWindowController
          if (!e.isConsumed())
             window.close();
       });
+
+      window.addEventHandler(WindowEvent.WINDOW_HIDING, e ->
+      {
+         LogTools.info("Stopping sliderboard binding.");
+         tabToControllerMap.get(sliderboardTabPane.getSelectionModel().getSelectedItem()).stop();
+      });
+      window.addEventHandler(WindowEvent.WINDOW_SHOWING, e ->
+      {
+         LogTools.info("Starting sliderboard binding.");
+         tabToControllerMap.get(sliderboardTabPane.getSelectionModel().getSelectedItem()).start();
+      });
+
       window.setTitle("YoSliderboard controller");
       window.setScene(new Scene(sliderboardTabPane));
       window.initOwner(toolkit.getMainWindow());
@@ -263,7 +283,8 @@ public class YoMultiBCF2000SliderboardWindowController
    {
       for (Tab tab : sliderboardTabPane.getTabs())
       {
-         tabToControllerMap.get(tab).close();
+         YoBCF2000SliderboardWindowController controller = tabToControllerMap.get(tab);
+         controller.close();
       }
 
       sliderboardTabPane.getTabs().clear();
@@ -273,7 +294,12 @@ public class YoMultiBCF2000SliderboardWindowController
 
    public void close()
    {
+      cleanupTasks.forEach(Runnable::run);
+      cleanupTasks.clear();
+      clear();
       window.close();
+      // FIXME We should keep track of the device we're using and avoid randomly all devices
+      BCF2000SliderboardController.closeMidiDevices();
    }
 
    public Stage getWindow()
