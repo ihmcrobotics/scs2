@@ -16,8 +16,12 @@ import javax.xml.bind.annotation.XmlAttribute;
 public class YoKnobDefinition
 {
    /**
-    * The fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) of the
-    * {@code YoVariable} to link to the knob.
+    * The name of the {@code YoVariable} to link to the knob.
+    * <p>
+    * It can be either the fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) or
+    * the simple name (without namespace, e.g. {@code "myVariable"}). In case of name duplicates
+    * between {@code YoVariable}s, prefer using the fullname to guarantee which variable is linked.
+    * </p>
     */
    private String variableName;
    /**
