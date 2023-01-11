@@ -20,7 +20,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 
 public class BCF2000SliderboardController
 {
-   public static boolean DEBUG = true;
+   public static boolean DEBUG = false;
 
    public enum Knob
    {
