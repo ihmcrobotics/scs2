@@ -15,11 +15,14 @@ public class SliderboardExampleSimulation
       initialJointState.setConfiguration(new Pose3D(0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
       definition.getRootJointDefinitions().get(0).setInitialJointState(initialJointState);
 
-      SimulationConstructionSet2 scs = new SimulationConstructionSet2();
+      SimulationConstructionSet2 scs = new SimulationConstructionSet2(SimulationConstructionSet2.impulseBasedPhysicsEngineFactory());
       scs.addRobot(definition);
       scs.addTerrainObject(new SlopeGroundDefinition());
 
+      scs.clearAllSliderboards();
       scs.setSliderboard(createSliderboard());
+      scs.setSliderboardButton("AnotherSliderboard", 0, "is_rootJoint_pinned");
+      scs.setDefaultSliderboardKnob(0, "qd_rootJoint_wZ");
 
       scs.start(true, false, false);
    }
@@ -30,7 +33,7 @@ public class SliderboardExampleSimulation
       sliderboard.getSliders().add(new YoSliderDefinition("q_rootJoint_yaw", -1, -Math.PI, Math.PI));
       sliderboard.getSliders().add(new YoSliderDefinition("q_rootJoint_pitch", -1, -Math.PI / 2.0, Math.PI / 2.0));
       sliderboard.getSliders().add(new YoSliderDefinition("q_rootJoint_roll", -1, -Math.PI, Math.PI));
-      sliderboard.getSliders().add(new YoSliderDefinition("root.gravityZ", -1, -Math.PI, Math.PI));
+      sliderboard.getSliders().add(new YoSliderDefinition("root.gravityZ", -1, -10, 10));
       return sliderboard;
    }
 }

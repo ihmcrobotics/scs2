@@ -32,6 +32,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -706,10 +707,25 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          {
             visualizerControls.waitUntilVisualizerFullyUp();
 
-            while (!pendingVisualizerTasks.isEmpty())
-               pendingVisualizerTasks.poll().run();
+            // Executing the visualizer tasks 1-by-1 in sync with the JavaFX thread.
+            // This way, the tasks should be executed in the same order as they were submitted.
+            new ObservedAnimationTimer("VisualizerTasksExecutor")
+            {
+               @Override
+               public void handleImpl(long now)
+               {
+                  if (!pendingVisualizerTasks.isEmpty())
+                  {
+                     pendingVisualizerTasks.poll().run();
+                  }
 
-            pendingVisualizerTasks = null;
+                  if (pendingVisualizerTasks.isEmpty())
+                  {
+                     pendingVisualizerTasks = null;
+                     stop();
+                  }
+               }
+            }.start();
          }
 
          if (shutdownSessionOnVisualizerClose)
