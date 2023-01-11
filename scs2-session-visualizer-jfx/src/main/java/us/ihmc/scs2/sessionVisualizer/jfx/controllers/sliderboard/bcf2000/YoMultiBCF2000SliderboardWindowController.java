@@ -443,6 +443,7 @@ public class YoMultiBCF2000SliderboardWindowController
             Tab newEmptyTab = newSliderboardTab();
             tabToControllerMap.get(newEmptyTab).setInput(yoEntryLists.get(i));
             tabs.add(insertionIndex, newEmptyTab);
+            sliderboardTabPane.getSelectionModel().select(insertionIndex);
             insertionIndex++;
          }
       }
