@@ -335,6 +335,7 @@ public class YoBCF2000SliderboardWindowController
 
    public void close()
    {
+      stop();
       clear();
 
       if (sliderboard != null)
