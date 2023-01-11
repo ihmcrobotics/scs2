@@ -50,6 +50,9 @@ public interface SessionVisualizerControls
     * 
     * @param latitude  controls the look up/down angle while keeping the focus point unchanged.
     * @param longitude controls the look left/right angle while keeping the focus point unchanged.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    void setCameraOrientation(double latitude, double longitude);
 
@@ -58,6 +61,9 @@ public interface SessionVisualizerControls
     * 
     * @param position the new camera position. Not modified.
     * @see #setCameraPosition(double, double, double)
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    default void setCameraPosition(Point3DReadOnly position)
    {
@@ -74,6 +80,9 @@ public interface SessionVisualizerControls
     * @param x the new x-coordinate for the camera position.
     * @param y the new y-coordinate for the camera position.
     * @param z the new z-coordinate for the camera position.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    void setCameraPosition(double x, double y, double z);
 
@@ -82,6 +91,9 @@ public interface SessionVisualizerControls
     * 
     * @param position the new focus position. Not modified.
     * @see #setCameraFocusPosition(double, double, double)
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    default void setCameraFocusPosition(Point3DReadOnly position)
    {
@@ -98,6 +110,9 @@ public interface SessionVisualizerControls
     * @param x the new x-coordinate for the focus point.
     * @param y the new y-coordinate for the focus point.
     * @param z the new z-coordinate for the focus point.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    void setCameraFocusPosition(double x, double y, double z);
 
@@ -109,6 +124,9 @@ public interface SessionVisualizerControls
     * </p>
     * 
     * @param distanceFromFocus the new distance between the camera and the focus point.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    void setCameraZoom(double distanceFromFocus);
 
@@ -117,6 +135,9 @@ public interface SessionVisualizerControls
     * 
     * @param robotName     the name of the robot to track.
     * @param rigidBodyName the name of the body to track.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
     */
    void requestCameraRigidBodyTracking(String robotName, String rigidBodyName);
 
@@ -124,6 +145,9 @@ public interface SessionVisualizerControls
     * Requests to show the overhead view next to the 3D viewport where 2D graphics are displayed.
     * 
     * @param show whether the plotter 2D should be visible or not.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *      controls: 2D plotter navigation</a>
     */
    void showOverheadPlotter2D(boolean show);
 
@@ -131,6 +155,9 @@ public interface SessionVisualizerControls
     * Requests the plotter to track the {@code YoVariable} coordinates.
     * 
     * @param position the position to track.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *      controls: 2D plotter navigation</a>
     */
    default void requestPlotter2DCoordinateTracking(YoFrameTuple2D position)
    {
@@ -143,6 +170,9 @@ public interface SessionVisualizerControls
     * @param position  the position to track.
     * @param frameName the name of the reference frame in which the coordinates are expressed. If
     *                  {@code null}, world frame is used.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *      controls: 2D plotter navigation</a>
     */
    default void requestPlotter2DCoordinateTracking(YoTuple2D position, String frameName)
    {
@@ -156,6 +186,9 @@ public interface SessionVisualizerControls
     * @param yVariable the {@code YoVariable} to track for the y-coordinate.
     * @param frameName the name of the reference frame in which the coordinates are expressed. If
     *                  {@code null}, world frame is used.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *      controls: 2D plotter navigation</a>
     */
    default void requestPlotter2DCoordinateTracking(YoDouble xVariable, YoDouble yVariable, String frameName)
    {
@@ -171,6 +204,9 @@ public interface SessionVisualizerControls
     *                      a double value.
     * @param frameName     the name of the reference frame in which the coordinates are expressed. If
     *                      {@code null}, world frame is used.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *      controls: 2D plotter navigation</a>
     */
    void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName);
 
