@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.robot.urdf;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,15 +21,14 @@ import javax.xml.bind.Unmarshaller;
 
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
-import us.ihmc.euclid.matrix.interfaces.Matrix3DBasics;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.log.LogTools;
+import us.ihmc.mecano.tools.MecanoTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
@@ -86,6 +87,15 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 
+/**
+ * This class gathers tools for parsing a URDF file and for converting a parsed {@code URDFModel}
+ * into a {@link RobotDefinition}.
+ * <p>
+ * {@link RobotDefinition} is a template for creating a robot to be simulated in SCS2.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 public class URDFTools
 {
    private static final Vector3D DEFAULT_ORIGIN_XYZ = new Vector3D();
@@ -105,11 +115,29 @@ public class URDFTools
    private static final double DEFAULT_EFFORT_LIMIT = Double.POSITIVE_INFINITY;
    private static final double DEFAULT_VELOCITY_LIMIT = Double.POSITIVE_INFINITY;
 
+   /**
+    * Parse a {@link URDFModel} from the given URDF file.
+    * 
+    * @param urdfFile the URDF file to be loaded.
+    * @return the model.
+    * @throws JAXBException
+    */
    public static URDFModel loadURDFModel(File urdfFile) throws JAXBException
    {
       return loadURDFModel(urdfFile, Collections.emptyList());
    }
 
+   /**
+    * Parse a {@link URDFModel} from the given URDF file.
+    * 
+    * @param urdfFile            the URDF file to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are not in the same directory as the {@code urdfFile}'s parent
+    *                            directory. Paths can either be relative to the {@code urdfFile}'s
+    *                            parent directory or absolute.
+    * @return the model.
+    * @throws JAXBException
+    */
    public static URDFModel loadURDFModel(File urdfFile, Collection<String> resourceDirectories) throws JAXBException
    {
       Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
@@ -130,6 +158,21 @@ public class URDFTools
       return urdfModel;
    }
 
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    * 
+    * @param inputStream         the stream to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @return the model.
+    * @throws JAXBException
+    */
    public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
       JAXBContext context = JAXBContext.newInstance(URDFModel.class);
@@ -141,11 +184,47 @@ public class URDFTools
       return urdfModel;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Tests and resolve all filename referenced in the {@code urdfModel} such that they can later be
+    * easily loaded.
+    * </p>
+    * <p>
+    * This method attempt to locate every single file reference in the URDF model using the given
+    * {@code resourceDirectories}.
+    * </p>
+    * 
+    * @param urdfModel           the model to resolve internal references to files.
+    * @param resourceDirectories the paths the resources could be located in.
+    * @see SDFTools#tryToConvertToPath(String, Collection, ClassLoader)
+    */
    public static void resolvePaths(URDFModel urdfModel, Collection<String> resourceDirectories)
    {
       resolvePaths(urdfModel, resourceDirectories, null);
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Tests and resolve all filename referenced in the {@code urdfModel} such that they can later be
+    * easily loaded.
+    * </p>
+    * <p>
+    * This method attempt to locate every single file reference in the URDF model using the given
+    * {@code resourceDirectories}.
+    * </p>
+    * 
+    * @param urdfModel           the model to resolve internal references to files.
+    * @param resourceDirectories the paths the resources could be located in.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @see SDFTools#tryToConvertToPath(String, Collection, ClassLoader)
+    */
    public static void resolvePaths(URDFModel urdfModel, Collection<String> resourceDirectories, ClassLoader resourceClassLoader)
    {
       if (resourceClassLoader == null)
@@ -159,17 +238,82 @@ public class URDFTools
       }
    }
 
+   /**
+    * Redirection to {@link SDFTools#tryToConvertToPath(String, Collection, ClassLoader)}.
+    */
    public static String tryToConvertToPath(String filename, Collection<String> resourceDirectories, ClassLoader resourceClassLoader)
    {
       return SDFTools.tryToConvertToPath(filename, resourceDirectories, resourceClassLoader);
    }
 
+   /**
+    * Converts the given URDF model into a {@code RobotDefinition} which root joint is a 6-DoF floating
+    * joint.
+    * <p>
+    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
+    * specified here.
+    * </p>
+    * 
+    * @param urdfModel the URDF model to convert.
+    * @return the robot definition which can be used to create a robot to be simulated in SCS2.
+    */
    public static RobotDefinition toFloatingRobotDefinition(URDFModel urdfModel)
+   {
+      return toFloatingRobotDefinition(urdfModel, null);
+   }
+
+   /**
+    * Converts the given URDF model into a {@code RobotDefinition} which root joint is a 6-DoF floating
+    * joint.
+    * <p>
+    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
+    * specified here.
+    * </p>
+    * 
+    * @param urdfModel the URDF model to convert.
+    * @return the robot definition which can be used to create a robot to be simulated in SCS2.
+    */
+   public static RobotDefinition toFloatingRobotDefinition(URDFModel urdfModel, Predicate<FixedJointDefinition> simplifyKinematicsFilter)
    {
       return toRobotDefinition(new SixDoFJointDefinition(), urdfModel);
    }
 
+   /**
+    * Converts the given URDF model into a {@code RobotDefinition} while specifying the root joint
+    * type.
+    * <p>
+    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
+    * specified here.
+    * </p>
+    * 
+    * @param rootJointDefinition      the definition to use for the robot's root joint.
+    * @param urdfModel                the URDF model to convert.
+    * @param simplifyKinematicsFilter filter for controlling the robot kinematics simplification.
+    * @return the robot definition which can be used to create a robot to be simulated in SCS2.
+    * @see #simplifyKinematics(JointDefinition, Predicate)
+    */
    public static RobotDefinition toRobotDefinition(JointDefinition rootJointDefinition, URDFModel urdfModel)
+   {
+      return toRobotDefinition(rootJointDefinition, urdfModel, null);
+   }
+
+   /**
+    * Converts the given URDF model into a {@code RobotDefinition} while specifying the root joint
+    * type.
+    * <p>
+    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
+    * specified here.
+    * </p>
+    * 
+    * @param rootJointDefinition      the definition to use for the robot's root joint.
+    * @param urdfModel                the URDF model to convert.
+    * @param simplifyKinematicsFilter filter for controlling the robot kinematics simplification.
+    * @return the robot definition which can be used to create a robot to be simulated in SCS2.
+    * @see #simplifyKinematics(JointDefinition, Predicate)
+    */
+   public static RobotDefinition toRobotDefinition(JointDefinition rootJointDefinition,
+                                                   URDFModel urdfModel,
+                                                   Predicate<FixedJointDefinition> simplifyKinematicsFilter)
    {
       List<URDFLink> urdfLinks = urdfModel.getLinks();
       List<URDFJoint> urdfJoints = urdfModel.getJoints();
@@ -188,8 +332,8 @@ public class URDFTools
       RigidBodyDefinition rootBodyDefinition = new RigidBodyDefinition("rootBody");
       rootBodyDefinition.addChildJoint(rootJointDefinition);
       jointDefinitions.add(rootJointDefinition); // This is required for sensors that are attached to the successor of the root joint.
-      addSensor(urdfGazebos, jointDefinitions);
-      simplifyKinematics(rootJointDefinition);
+      addSensors(urdfGazebos, jointDefinitions);
+      simplifyKinematics(rootJointDefinition, simplifyKinematicsFilter);
       correctTransforms(rootJointDefinition);
 
       RobotDefinition robotDefinition = new RobotDefinition(urdfModel.getName());
@@ -198,14 +342,25 @@ public class URDFTools
       return robotDefinition;
    }
 
-   public static void addSensor(List<URDFGazebo> urdfGazebos, List<JointDefinition> jointDefinitions)
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Searches the URDF Gazebo references for sensors, for instance IMUs and cameras, to convert into
+    * {@link SensorDefinition} and add to the corresponding joints.
+    * </p>
+    * 
+    * @param urdfGazebos      the list of parsed Gazebo references from a URDF file.
+    * @param jointDefinitions the list of parsed and converted joints from the same URDF file.
+    */
+   public static void addSensors(List<URDFGazebo> urdfGazebos, List<JointDefinition> jointDefinitions)
    {
       if (urdfGazebos == null || urdfGazebos.isEmpty())
          return;
 
       Map<String, JointDefinition> jointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(JointDefinition::getName, Function.identity()));
-      Map<String, JointDefinition> linkNameToJointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(joint -> joint.getSuccessor().getName(),
-                                                                                                                     Function.identity()));
+      Map<String, JointDefinition> linkNameToJointDefinitionMap = jointDefinitions.stream()
+                                                                                  .collect(Collectors.toMap(joint -> joint.getSuccessor().getName(),
+                                                                                                            Function.identity()));
 
       for (URDFGazebo urdfGazebo : urdfGazebos)
       {
@@ -228,7 +383,51 @@ public class URDFTools
       }
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
+    * {@link FixedJointDefinition}.
+    * </p>
+    * <p>
+    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
+    * <ul>
+    * <li>the fixed joint successor's physical properties (mass, inertia) are combined to the joint's
+    * predecessor.
+    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
+    * of each sensor so they remain at the same physical location on the robot.
+    * </ul>
+    * </p>
+    * 
+    * @param joint the first joint from which to simplify the kinematics.
+    */
    public static void simplifyKinematics(JointDefinition joint)
+   {
+      simplifyKinematics(joint, null);
+   }
+
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
+    * {@link FixedJointDefinition}.
+    * </p>
+    * <p>
+    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
+    * <ul>
+    * <li>the fixed joint successor's physical properties (mass, inertia) and visuals are combined to
+    * the joint's predecessor.
+    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
+    * of each sensor so they remain at the same physical location on the robot.
+    * </ul>
+    * </p>
+    * 
+    * @param joint  the first joint from which to simplify the kinematics.
+    * @param filter a fixed joint is only removed if: the filter is {@code null} or
+    *               {@code filter.test(joint)} is {@code true}. If a filter is provided, any fixed
+    *               joint for which it returns {@code false} will <b>not</b> be removed.
+    */
+   public static void simplifyKinematics(JointDefinition joint, Predicate<FixedJointDefinition> filter)
    {
       // The children list may shrink or grow depending the simplyKinematics(joint.child)
       // Also, if a child is a fixed-joint, the successor of this joint will be replaced with a new one, so can't save the successor as a local variable.
@@ -247,7 +446,7 @@ public class URDFTools
       if (parentJoint == null)
          return;
 
-      if (joint instanceof FixedJointDefinition)
+      if (joint instanceof FixedJointDefinition fixedJoint && (filter == null || filter.test(fixedJoint)))
       {
          RigidBodyDefinition rigidBody = joint.getSuccessor();
          YawPitchRollTransformDefinition transformToParentJoint = joint.getTransformToParent();
@@ -291,6 +490,22 @@ public class URDFTools
       }
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Creates a new rigid-body which physical properties equals the sum of {@code rigidBodyA} and
+    * {@code rigidBody}. In addition, the visuals are added to the merged body.
+    * </p>
+    * <p>
+    * Note the following property:
+    * {@code merge("bodyAB", bodyA, bodyB) == merge("bodyAB", bodyB, bodyA)}.
+    * </p>
+    * 
+    * @param name       the name of the merged rigid-body.
+    * @param rigidBodyA the first rigid-body to merge.
+    * @param rigidBodyB the second rigid-body to merge.
+    * @return the merged body.
+    */
    public static RigidBodyDefinition merge(String name, RigidBodyDefinition rigidBodyA, RigidBodyDefinition rigidBodyB)
    {
       double mergedMass = rigidBodyA.getMass() + rigidBodyB.getMass();
@@ -302,12 +517,12 @@ public class URDFTools
       Vector3D translationInertiaA = new Vector3D();
       translationInertiaA.sub(mergedCoM, rigidBodyA.getCenterOfMassOffset());
       Matrix3D inertiaA = new Matrix3D(rigidBodyA.getMomentOfInertia());
-      translateMomentOfInertia(rigidBodyA.getMass(), translationInertiaA, inertiaA);
+      MecanoTools.translateMomentOfInertia(rigidBodyA.getMass(), null, false, translationInertiaA, inertiaA);
 
       Vector3D translationInertiaB = new Vector3D();
       translationInertiaB.sub(mergedCoM, rigidBodyB.getCenterOfMassOffset());
       Matrix3D inertiaB = new Matrix3D(rigidBodyB.getMomentOfInertia());
-      translateMomentOfInertia(rigidBodyB.getMass(), translationInertiaB, inertiaB);
+      MecanoTools.translateMomentOfInertia(rigidBodyB.getMass(), null, false, translationInertiaB, inertiaB);
 
       Matrix3D mergedInertia = new Matrix3D();
       mergedInertia.add(inertiaA);
@@ -326,43 +541,31 @@ public class URDFTools
       return merged;
    }
 
-   public static void translateMomentOfInertia(double mass, Tuple3DReadOnly translation, Matrix3DBasics momentOfInertiaToTransform)
-   {
-      double xp = translation.getX();
-      double yp = translation.getY();
-      double zp = translation.getZ();
-
-      double xp_xp = xp * xp;
-      double yp_yp = yp * yp;
-      double zp_zp = zp * zp;
-
-      double txx = mass * (yp_yp + zp_zp);
-      double tyy = mass * (xp_xp + zp_zp);
-      double tzz = mass * (xp_xp + yp_yp);
-
-      double txy = -mass * xp * yp;
-      double txz = -mass * xp * zp;
-      double tyz = -mass * yp * zp;
-
-      double m00 = momentOfInertiaToTransform.getM00() + txx;
-      double m01 = momentOfInertiaToTransform.getM01() + txy;
-      double m02 = momentOfInertiaToTransform.getM02() + txz;
-      double m10 = momentOfInertiaToTransform.getM10() + txy;
-      double m11 = momentOfInertiaToTransform.getM11() + tyy;
-      double m12 = momentOfInertiaToTransform.getM12() + tyz;
-      double m20 = momentOfInertiaToTransform.getM20() + txz;
-      double m21 = momentOfInertiaToTransform.getM21() + tyz;
-      double m22 = momentOfInertiaToTransform.getM22() + tzz;
-
-      momentOfInertiaToTransform.set(m00, m01, m02, m10, m11, m12, m20, m21, m22);
-   }
-
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Connects the kinematics of rigid-bodies and joints that were just converted.
+    * </p>
+    * <p>
+    * This method essentially retrieves the parents ({@link RigidBodyDefinition#getParentJoint()}),
+    * children {@link RigidBodyDefinition#getChildrenJoints()}, predecessors
+    * ({@link JointDefinition#getPredecessor()}), and successors
+    * ({@link JointDefinition#getSuccessor()}).
+    * </p>
+    * 
+    * @param rigidBodyDefinitions the rigid-bodies to retrieve the parent and children joints for.
+    * @param jointDefinitions     the joints to retrieve the predecessors and successors for.
+    * @param urdfJoints           the parsed URDF joints used to identify relationship between joints
+    *                             and rigid-bodies.
+    * @return the root body, i.e. the only rigid-body without a parent joint.
+    */
    public static RigidBodyDefinition connectKinematics(List<RigidBodyDefinition> rigidBodyDefinitions,
                                                        List<JointDefinition> jointDefinitions,
                                                        List<URDFJoint> urdfJoints)
    {
-      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream().collect(Collectors.toMap(RigidBodyDefinition::getName,
-                                                                                                                       Function.identity()));
+      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream()
+                                                                                    .collect(Collectors.toMap(RigidBodyDefinition::getName,
+                                                                                                              Function.identity()));
       Map<String, JointDefinition> jointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(JointDefinition::getName, Function.identity()));
 
       if (urdfJoints != null)
@@ -402,6 +605,21 @@ public class URDFTools
       }
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Recursive method that performs the following modifications will preserving the robot's physical
+    * qualities:
+    * <ul>
+    * <li>adjust orientations such that the joint poses are z-up when the robot is at the zero joint
+    * configuration.
+    * <li>transform the moment of inertia for all rigid-body such that their inertia pose is only a
+    * translation.
+    * </ul>
+    * </p>
+    * 
+    * @param jointDefinition starting point for the recursion.
+    */
    public static void correctTransforms(JointDefinition jointDefinition)
    {
       Orientation3DBasics jointRotation = jointDefinition.getTransformToParent().getRotation();
@@ -435,6 +653,19 @@ public class URDFTools
       jointRotation.setToZero();
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF link into a {@link RigidBodyDefinition}.
+    * </p>
+    * <p>
+    * The parent and children joints are not configured at this stage.
+    * </p>
+    * 
+    * @param urdfLink the parsed URDF link to convert.
+    * @return the rigid-body definition.
+    * @see #connectKinematics(List, List, List)
+    */
    public static RigidBodyDefinition toRigidBodyDefinition(URDFLink urdfLink)
    {
       RigidBodyDefinition definition = new RigidBodyDefinition(urdfLink.getName());
@@ -460,6 +691,20 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF joint into a {@link JointDefinition}.
+    * </p>
+    * <p>
+    * The predecessor, successor, and sensors are not configured at this stage.
+    * </p>
+    * 
+    * @param urdfJoint the parsed URDF joint to convert.
+    * @return the joint definition.
+    * @see #addSensors(List, List)
+    * @see #connectKinematics(List, List, List)
+    */
    public static JointDefinition toJointDefinition(URDFJoint urdfJoint)
    {
       switch (urdfJoint.getType())
@@ -481,6 +726,11 @@ public class URDFTools
       }
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toJointDefinition(URDFJoint)
+    */
    public static RevoluteJointDefinition toRevoluteJointDefinition(URDFJoint urdfJoint, boolean ignorePositionLimits)
    {
       RevoluteJointDefinition definition = new RevoluteJointDefinition(urdfJoint.getName());
@@ -493,6 +743,11 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toJointDefinition(URDFJoint)
+    */
    public static PrismaticJointDefinition toPrismaticJointDefinition(URDFJoint urdfJoint)
    {
       PrismaticJointDefinition definition = new PrismaticJointDefinition(urdfJoint.getName());
@@ -505,6 +760,11 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toJointDefinition(URDFJoint)
+    */
    public static FixedJointDefinition toFixedJointDefinition(URDFJoint urdfJoint)
    {
       FixedJointDefinition definition = new FixedJointDefinition(urdfJoint.getName());
@@ -515,6 +775,11 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toJointDefinition(URDFJoint)
+    */
    public static SixDoFJointDefinition toSixDoFJointDefinition(URDFJoint urdfJoint)
    {
       SixDoFJointDefinition definition = new SixDoFJointDefinition(urdfJoint.getName());
@@ -524,6 +789,11 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toJointDefinition(URDFJoint)
+    */
    public static PlanarJointDefinition toPlanarJointDefinition(URDFJoint urdfJoint)
    {
       PlanarJointDefinition definition = new PlanarJointDefinition(urdfJoint.getName());
@@ -539,6 +809,15 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF sensor into a {@link SensorDefinition}.
+    * </p>
+    * 
+    * @param urdfSensor the parsed URDF sensor to convert.
+    * @return the sensor definition.
+    */
    public static List<SensorDefinition> toSensorDefinition(URDFSensor urdfSensor)
    {
       List<SensorDefinition> definitions = new ArrayList<>();
@@ -580,11 +859,21 @@ public class URDFTools
       return definitions;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toSensorDefinition(URDFSensor)
+    */
    public static List<CameraSensorDefinition> toCameraSensorDefinition(List<URDFCamera> urdfCameras)
    {
       return urdfCameras.stream().map(URDFTools::toCameraSensorDefinition).collect(Collectors.toList());
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toSensorDefinition(URDFSensor)
+    */
    public static CameraSensorDefinition toCameraSensorDefinition(URDFCamera urdfCamera)
    {
       CameraSensorDefinition definition = new CameraSensorDefinition();
@@ -598,6 +887,11 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toSensorDefinition(URDFSensor)
+    */
    public static LidarSensorDefinition toLidarSensorDefinition(URDFRay urdfRay)
    {
       LidarSensorDefinition definition = new LidarSensorDefinition();
@@ -641,6 +935,11 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * 
+    * @see #toSensorDefinition(URDFSensor)
+    */
    public static IMUSensorDefinition toIMUSensorDefinition(URDFIMU urdfIMU)
    {
       IMUSensorDefinition definition = new IMUSensorDefinition();
@@ -669,6 +968,15 @@ public class URDFTools
       return definition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF visual into a {@link VisualDefinition}.
+    * </p>
+    * 
+    * @param urdfVisual the parsed URDF visual to convert.
+    * @return the visual definition.
+    */
    public static VisualDefinition toVisualDefinition(URDFVisual urdfVisual)
    {
       if (urdfVisual == null)
@@ -682,6 +990,15 @@ public class URDFTools
       return visualDefinition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF geometry into a {@link GeometryDefinition}.
+    * </p>
+    * 
+    * @param urdfGeometry the parsed URDF geometry to convert.
+    * @return the geometry definition.
+    */
    public static GeometryDefinition toGeometryDefinition(URDFGeometry urdfGeometry)
    {
       return toGeometryDefinition(urdfGeometry, Collections.emptyList());
@@ -719,6 +1036,15 @@ public class URDFTools
       throw new IllegalArgumentException("The given URDF Geometry is empty.");
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF material into a {@link MaterialDefinition}.
+    * </p>
+    * 
+    * @param urdfMaterial the parsed URDF material to convert.
+    * @return the material definition.
+    */
    public static MaterialDefinition toMaterialDefinition(URDFMaterial urdfMaterial)
    {
       if (urdfMaterial == null)
@@ -731,6 +1057,15 @@ public class URDFTools
       return materialDefinition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF texture into a {@link TextureDefinition}.
+    * </p>
+    * 
+    * @param urdfTexture the parsed URDF texture to convert.
+    * @return the texture definition.
+    */
    public static TextureDefinition toTextureDefinition(URDFTexture urdfTexture)
    {
       if (urdfTexture == null)
@@ -741,6 +1076,15 @@ public class URDFTools
       return textureDefinition;
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF color into a {@link ColorDefinition}.
+    * </p>
+    * 
+    * @param urdfColor the parsed URDF color to convert.
+    * @return the color definition.
+    */
    public static ColorDefinition toColorDefinition(URDFColor urdfColor)
    {
       if (urdfColor == null)
