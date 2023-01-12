@@ -186,9 +186,9 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<String, YoButtonDefinition>> YoSliderboardSetButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Set);
       public static final Topic<Pair<String, YoKnobDefinition>> YoSliderboardSetKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Set);
       public static final Topic<Pair<String, YoSliderDefinition>> YoSliderboardSetSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Set);
-      public static final Topic<Pair<String, Integer>> YoSliderboardRemoveButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Remove);
-      public static final Topic<Pair<String, Integer>> YoSliderboardRemoveKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Remove);
-      public static final Topic<Pair<String, Integer>> YoSliderboardRemoveSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Remove);
+      public static final Topic<Pair<String, Integer>> YoSliderboardClearButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Remove);
+      public static final Topic<Pair<String, Integer>> YoSliderboardClearKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Remove);
+      public static final Topic<Pair<String, Integer>> YoSliderboardClearSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Remove);
    }
 
    public static class SessionAPI

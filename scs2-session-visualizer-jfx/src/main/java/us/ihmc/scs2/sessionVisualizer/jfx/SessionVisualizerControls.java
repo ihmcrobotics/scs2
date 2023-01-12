@@ -3,6 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -19,6 +20,7 @@ import javafx.stage.Window;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
@@ -27,6 +29,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -214,6 +217,7 @@ public interface SessionVisualizerControls
     * Adds a static graphic to the 3D scene.
     * 
     * @param visualDefinition the visual to be added to the 3D scene.
+    * @see VisualDefinitionFactory
     */
    void addStaticVisual(VisualDefinition visualDefinition);
 
@@ -221,6 +225,7 @@ public interface SessionVisualizerControls
     * Adds a collection of static graphic to the 3D scene.
     * 
     * @param visualDefinitions the collection of visuals to be added to the 3D scene.
+    * @see VisualDefinitionFactory
     */
    default void addStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
    {
@@ -235,6 +240,7 @@ public interface SessionVisualizerControls
     * {@link #addStaticVisual(VisualDefinition)}.
     * 
     * @param visualDefinition the visual to remove from the 3D scene.
+    * @see VisualDefinitionFactory
     */
    void removeStaticVisual(VisualDefinition visualDefinition);
 
@@ -257,6 +263,8 @@ public interface SessionVisualizerControls
     * 
     * @param yoGraphicDefinition the definition of the graphic to be added.
     * @see SCS1GraphicConversionTools
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
+    *      controls: YoGraphic</a>
     */
    void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
@@ -265,6 +273,8 @@ public interface SessionVisualizerControls
     * 
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
     * @see SCS1GraphicConversionTools
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
+    *      controls: YoGraphic</a>
     */
    default void addYoGraphics(Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
@@ -281,6 +291,8 @@ public interface SessionVisualizerControls
     *                            {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
     * @see SCS1GraphicConversionTools
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
+    *      controls: YoGraphic</a>
     */
    default void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
    {
@@ -307,6 +319,8 @@ public interface SessionVisualizerControls
     *                             {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
     * @see SCS1GraphicConversionTools
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
+    *      controls: YoGraphic</a>
     */
    default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
@@ -333,6 +347,8 @@ public interface SessionVisualizerControls
     * 
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
+    *      controls: Side pane</a>
     */
    default void addYoEntry(String variableName)
    {
@@ -344,6 +360,8 @@ public interface SessionVisualizerControls
     * 
     * @param variableNames the name of the variables to add. The variables will be looked up using
     *                      {@link YoRegistry#findVariable(String)}.
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
+    *      controls: Side pane</a>
     */
    default void addYoEntry(Collection<String> variableNames)
    {
@@ -357,6 +375,8 @@ public interface SessionVisualizerControls
     * @param groupName    the name of the tab.
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
+    *      controls: Side pane</a>
     */
    default void addYoEntry(String groupName, String variableName)
    {
@@ -370,9 +390,17 @@ public interface SessionVisualizerControls
     * @param groupName    the name of the tab.
     * @param variableName the name of the variables to add. The variables will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
+    * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
+    *      controls: Side pane</a>
     */
    void addYoEntry(String groupName, Collection<String> variableNames);
 
+   /**
+    * Loads a sliderboard configuration from an input stream and overrides the current configuration.
+    * 
+    * @param inputStream the input stream used to load the sliderboard configuration.
+    * @see FileInputStream
+    */
    default void loadSliderboards(InputStream inputStream)
    {
       try
@@ -385,96 +413,304 @@ public interface SessionVisualizerControls
       }
    }
 
+   /**
+    * Overrides the current sliderboard configuration with the given list of sliderboards.
+    * 
+    * @param sliderboardListDefinition the list of sliderboard configurations to use.
+    */
    void setSliderboards(YoSliderboardListDefinition sliderboardListDefinition);
 
+   /**
+    * Clears the current sliderboard configuration.
+    * <p>
+    * After calling this method, only the default sliderboard remains and it is empty.
+    * </p>
+    */
    void clearAllSliderboards();
 
-   default void setDefaultSliderboard(YoSliderboardDefinition sliderboardConfiguration)
+   /**
+    * Sets the configuration of the default sliderboard.
+    * <p>
+    * Note that the default sliderboard named
+    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
+    * after clearing all sliderboards, in such case it is only cleared of its bindings.
+    * </p>
+    * 
+    * @param sliderboardDefinition the new configuration for the default sliderboard.
+    */
+   default void setDefaultSliderboard(YoSliderboardDefinition sliderboardDefinition)
    {
-      sliderboardConfiguration.setName(DEFAULT_SLIDERBOARD_NAME);
-      setSliderboard(sliderboardConfiguration);
+      sliderboardDefinition.setName(DEFAULT_SLIDERBOARD_NAME);
+      setSliderboard(sliderboardDefinition);
    }
 
+   /**
+    * Clears the default sliderboard configuration.
+    */
    default void clearDefaultSliderboard()
    {
       removeSliderboard(DEFAULT_SLIDERBOARD_NAME);
    }
 
+   /**
+    * Sets a sliderboard configuration.
+    * <p>
+    * The sliderboards are organized by name, i.e. {@link YoSliderboardDefinition#getName()}. If the
+    * name of the given configuration does not match any existing sliderboard, a new sliderboard is
+    * created and configured, otherwise the configuration of the matching sliderboard is overridden to
+    * the given one.
+    * </p>
+    * <p>
+    * Note that the default sliderboard named
+    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
+    * after clearing all sliderboards. If the given configuration is named
+    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
+    * sliderboard configuration overridden.
+    * </p>
+    * 
+    * @param sliderboardDefinition the sliderboard configuration to set or add, depending if there is
+    *                              an existing sliderboard matching the name or not.
+    */
    void setSliderboard(YoSliderboardDefinition sliderboardConfiguration);
 
+   /**
+    * Removes the sliderboard that matches the given name.
+    * <p>
+    * If there is no existing sliderboard matching the given name, nothing happens. If the given name
+    * is {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
+    * sliderboard is cleared but not removed.
+    * </p>
+    * 
+    * @param sliderboardName the name of the sliderboard to remove.
+    */
    void removeSliderboard(String sliderboardName);
 
+   /**
+    * Configures a button of the default sliderboard.
+    * <p>
+    * If the button was already configured, then its configuration is overridden.
+    * </p>
+    * 
+    * @param buttonIndex  the position of the button on the sliderboard. The first button has an index
+    *                     of 0.
+    * @param variableName the name of the {@code YoVariable} the button should be bound to. The
+    *                     {@code YoVariable} has to be a {@code YoBoolean}, if not, this method has no
+    *                     effect. The name can either be the fullname (including namespace) or the
+    *                     simple name of the variable.
+    */
    default void setDefaultSliderboardButton(int buttonIndex, String variableName)
    {
       setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, new YoButtonDefinition(variableName, buttonIndex));
    }
 
+   /**
+    * Configures a button of the default sliderboard.
+    * <p>
+    * If the button was already configured, then its configuration is overridden.
+    * </p>
+    * 
+    * @param buttonDefinition the new configuration for the button.
+    */
    default void setDefaultSliderboardButton(YoButtonDefinition buttonDefinition)
    {
       setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonDefinition);
    }
 
+   /**
+    * Configures a button of a sliderboard.
+    * 
+    * @param sliderboardName used to retrieve the sliderboard for which the button is to be configured.
+    *                        If no sliderboard could be found, a new empty sliderboard is created and
+    *                        added to the current list of available sliderboards.
+    * @param buttonIndex     the position of the button on the sliderboard. The first button has an
+    *                        index of 0.
+    * @param variableName    the name of the {@code YoVariable} the button should be bound to. The
+    *                        {@code YoVariable} has to be a {@code YoBoolean}, if not, this method has
+    *                        no effect. The name can either be the fullname (including namespace) or
+    *                        the simple name of the variable.
+    */
    default void setSliderboardButton(String sliderboardName, int buttonIndex, String variableName)
    {
       setSliderboardButton(sliderboardName, new YoButtonDefinition(variableName, buttonIndex));
    }
 
+   /**
+    * Configures a button of a sliderboard.
+    * 
+    * @param sliderboardName  used to retrieve the sliderboard for which the button is to be
+    *                         configured. If no sliderboard could be found, a new empty sliderboard is
+    *                         created and added to the current list of available sliderboards.
+    * @param buttonDefinition the new configuration for the button.
+    */
    void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition);
 
-   default void removeDefaultSliderboardButton(int buttonIndex)
+   /**
+    * Clears the configuration of a button of the default sliderboard.
+    * 
+    * @param buttonIndex the position of the button on the sliderboard. The first button has an index
+    *                    of 0.
+    */
+   default void clearDefaultSliderboardButton(int buttonIndex)
    {
-      removeSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonIndex);
+      clearSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonIndex);
    }
 
-   void removeSliderboardButton(String sliderboardName, int buttonIndex);
+   /**
+    * Clears the configuration of a button.
+    * 
+    * @param sliderboardName used to retrieve the sliderboard for which the button is to be cleared. If
+    *                        no sliderboard could be found, this method has no effect.
+    * @param buttonIndex     the position of the button on the sliderboard. The first button has an
+    *                        index of 0.
+    */
+   void clearSliderboardButton(String sliderboardName, int buttonIndex);
 
+   /**
+    * Configures a knob of the default sliderboard.
+    * <p>
+    * If the knob was already configured, then its configuration is overridden.
+    * </p>
+    * 
+    * @param knobIndex    the position of the knob on the sliderboard. The first knob has an index of
+    *                     0.
+    * @param variableName the name of the {@code YoVariable} the knob should be bound to. The name can
+    *                     either be the fullname (including namespace) or the simple name of the
+    *                     variable.
+    */
    default void setDefaultSliderboardKnob(int knobIndex, String variableName)
    {
       setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, new YoKnobDefinition(variableName, knobIndex));
    }
 
+   /**
+    * Configures a knob of the default sliderboard.
+    * <p>
+    * If the knob was already configured, then its configuration is overridden.
+    * </p>
+    * 
+    * @param knobDefinition the new configuration for the knob.
+    */
    default void setDefaultSliderboardKnob(YoKnobDefinition knobDefinition)
    {
       setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobDefinition);
    }
 
+   /**
+    * Configures a knob of a sliderboard.
+    * 
+    * @param sliderboardName used to retrieve the sliderboard for which the knob is to be configured.
+    *                        If no sliderboard could be found, a new empty sliderboard is created and
+    *                        added to the current list of available sliderboards.
+    * @param knobIndex       the position of the knob on the sliderboard. The first knob has an index
+    *                        of 0.
+    * @param variableName    the name of the {@code YoVariable} the knob should be bound to. The name
+    *                        can either be the fullname (including namespace) or the simple name of the
+    *                        variable.
+    */
    default void setSliderboardKnob(String sliderboardName, int knobIndex, String variableName)
    {
       setSliderboardKnob(sliderboardName, new YoKnobDefinition(variableName, knobIndex));
    }
 
+   /**
+    * Configures a knob of a sliderboard.
+    * 
+    * @param sliderboardName used to retrieve the sliderboard for which the knob is to be configured.
+    *                        If no sliderboard could be found, a new empty sliderboard is created and
+    *                        added to the current list of available sliderboards.
+    * @param knobDefinition  the new configuration for the knob.
+    */
    void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition);
 
-   default void removeDefaultSliderboardKnob(int knobIndex)
+   /**
+    * Clears the configuration of a knob of the default sliderboard.
+    * 
+    * @param knobIndex the position of the knob on the sliderboard. The first knob has an index of 0.
+    */
+   default void clearDefaultSliderboardKnob(int knobIndex)
    {
-      removeSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobIndex);
+      clearSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobIndex);
    }
 
-   void removeSliderboardKnob(String sliderboardName, int knobIndex);
+   /**
+    * Clears the configuration of a knob.
+    * 
+    * @param sliderboardName used to retrieve the sliderboard for which the knob is to be cleared. If
+    *                        no sliderboard could be found, this method has no effect
+    * @param knobIndex       the position of the knob on the sliderboard. The first knob has an index
+    *                        of 0.
+    */
+   void clearSliderboardKnob(String sliderboardName, int knobIndex);
 
+   /**
+    * Configures a slider of the default sliderboard.
+    * <p>
+    * If the slider was already configured, then its configuration is overridden.
+    * </p>
+    * 
+    * @param sliderIndex  the position of the slider on the sliderboard. The first slider has an index
+    *                     of 0.
+    * @param variableName the name of the {@code YoVariable} the slider should be bound to. The name
+    *                     can either be the fullname (including namespace) or the simple name of the
+    *                     variable.
+    */
    default void setDefaultSliderboardSlider(int sliderIndex, String variableName)
    {
       setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, new YoSliderDefinition(variableName, sliderIndex));
    }
 
+   /**
+    * Configures a slider of the default sliderboard.
+    * <p>
+    * If the slider was already configured, then its configuration is overridden.
+    * </p>
+    * 
+    * @param sliderDefinition the new configuration for the slider.
+    */
    default void setDefaultSliderboardSlider(YoSliderDefinition sliderDefinition)
    {
       setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderDefinition);
    }
 
+   /**
+    * Configures a slider of a sliderboard.
+    * 
+    * @param sliderboardName used to retrieve the sliderboard for which the slider is to be configured.
+    *                        If no sliderboard could be found, a new empty sliderboard is created and
+    *                        added to the current list of available sliderboards.
+    * @param sliderIndex     the position of the slider on the sliderboard. The first slider has an
+    *                        index of 0.
+    * @param variableName    the name of the {@code YoVariable} the slider should be bound to. The name
+    *                        can either be the fullname (including namespace) or the simple name of the
+    *                        variable.
+    */
    default void setSliderboardSlider(String sliderboardName, int sliderIndex, String variableName)
    {
       setSliderboardSlider(sliderboardName, new YoSliderDefinition(variableName, sliderIndex));
    }
 
+   /**
+    * Configures a slider of a sliderboard.
+    * 
+    * @param sliderboardName  used to retrieve the sliderboard for which the slider is to be
+    *                         configured. If no sliderboard could be found, a new empty sliderboard is
+    *                         created and added to the current list of available sliderboards.
+    * @param sliderDefinition the new configuration for the slider.
+    */
    void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition);
 
-   default void removeDefaultSliderboardSlider(int sliderIndex)
+   default void clearDefaultSliderboardSlider(int sliderIndex)
    {
-      removeSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderIndex);
+      clearSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderIndex);
    }
 
-   void removeSliderboardSlider(String sliderboardName, int sliderIndex);
+   /**
+    * Clears the configuration of a slider of the default sliderboard.
+    * 
+    * @param sliderIndex the position of the slider on the sliderboard. The first slider has an index
+    *                    of 0.
+    */
+   void clearSliderboardSlider(String sliderboardName, int sliderIndex);
 
    /**
     * Captures a video of the 3D scene from the playback data.

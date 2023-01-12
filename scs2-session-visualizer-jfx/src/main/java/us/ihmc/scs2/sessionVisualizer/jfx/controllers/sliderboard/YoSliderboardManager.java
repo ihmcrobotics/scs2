@@ -65,9 +65,9 @@ public class YoSliderboardManager implements Manager
       messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetButton(), m -> handleSetButtonRequest(m.getKey(), m.getValue()));
       messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetKnob(), m -> handleSetKnobRequest(m.getKey(), m.getValue()));
       messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetSlider(), m -> handleSetSliderRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveButton(), m -> handleRemoveButtonRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveKnob(), m -> handleRemoveKnobRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemoveSlider(), m -> handleRemoveSliderRequest(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearButton(), m -> handleClearButtonRequest(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearKnob(), m -> handleClearKnobRequest(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearSlider(), m -> handleClearSliderRequest(m.getKey(), m.getValue()));
    }
 
    private void handleSaveRequest(File file)
@@ -235,7 +235,7 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleRemoveButtonRequest(String sliderboardName, int buttonIndex)
+   private void handleClearButtonRequest(String sliderboardName, int buttonIndex)
    {
       if (bcf2000Sliderboard.getValue() != null)
       {
@@ -264,7 +264,7 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleRemoveKnobRequest(String sliderboardName, int knobIndex)
+   private void handleClearKnobRequest(String sliderboardName, int knobIndex)
    {
       if (bcf2000Sliderboard.getValue() != null)
       {
@@ -293,7 +293,7 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleRemoveSliderRequest(String sliderboardName, int sliderIndex)
+   private void handleClearSliderRequest(String sliderboardName, int sliderIndex)
    {
       if (bcf2000Sliderboard.getValue() != null)
       {

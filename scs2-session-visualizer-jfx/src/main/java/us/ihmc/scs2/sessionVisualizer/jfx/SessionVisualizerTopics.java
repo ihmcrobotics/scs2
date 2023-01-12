@@ -83,9 +83,9 @@ public class SessionVisualizerTopics
    private Topic<Pair<String, YoButtonDefinition>> yoSliderboardSetButton;
    private Topic<Pair<String, YoKnobDefinition>> yoSliderboardSetKnob;
    private Topic<Pair<String, YoSliderDefinition>> yoSliderboardSetSlider;
-   private Topic<Pair<String, Integer>> yoSliderboardRemoveButton;
-   private Topic<Pair<String, Integer>> yoSliderboardRemoveKnob;
-   private Topic<Pair<String, Integer>> yoSliderboardRemoveSlider;
+   private Topic<Pair<String, Integer>> yoSliderboardClearButton;
+   private Topic<Pair<String, Integer>> yoSliderboardClearKnob;
+   private Topic<Pair<String, Integer>> yoSliderboardClearSlider;
 
    private Topic<Integer> controlsNumberPrecision;
 
@@ -171,9 +171,9 @@ public class SessionVisualizerTopics
       yoSliderboardSetButton = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSetButton;
       yoSliderboardSetKnob = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSetKnob;
       yoSliderboardSetSlider = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSetSlider;
-      yoSliderboardRemoveButton = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardRemoveButton;
-      yoSliderboardRemoveKnob = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardRemoveKnob;
-      yoSliderboardRemoveSlider = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardRemoveSlider;
+      yoSliderboardClearButton = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardClearButton;
+      yoSliderboardClearKnob = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardClearKnob;
+      yoSliderboardClearSlider = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardClearSlider;
 
       controlsNumberPrecision = SessionVisualizerMessagerAPI.ControlsNumberPrecision;
 
@@ -434,19 +434,19 @@ public class SessionVisualizerTopics
       return yoSliderboardSetSlider;
    }
 
-   public Topic<Pair<String, Integer>> getYoSliderboardRemoveButton()
+   public Topic<Pair<String, Integer>> getYoSliderboardClearButton()
    {
-      return yoSliderboardRemoveButton;
+      return yoSliderboardClearButton;
    }
 
-   public Topic<Pair<String, Integer>> getYoSliderboardRemoveKnob()
+   public Topic<Pair<String, Integer>> getYoSliderboardClearKnob()
    {
-      return yoSliderboardRemoveKnob;
+      return yoSliderboardClearKnob;
    }
 
-   public Topic<Pair<String, Integer>> getYoSliderboardRemoveSlider()
+   public Topic<Pair<String, Integer>> getYoSliderboardClearSlider()
    {
-      return yoSliderboardRemoveSlider;
+      return yoSliderboardClearSlider;
    }
 
    public Topic<Integer> getControlsNumberPrecision()
