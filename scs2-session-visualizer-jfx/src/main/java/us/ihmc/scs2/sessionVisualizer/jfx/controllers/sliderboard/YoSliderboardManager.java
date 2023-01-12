@@ -12,8 +12,10 @@ import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Window;
+import javafx.util.Pair;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
@@ -51,23 +53,66 @@ public class YoSliderboardManager implements Manager
       handleSaveRequest(configuration.getYoSliderboardConfigurationFile());
    }
 
+   private final TopicListener<File> saveRequestListener = m -> handleSaveRequest(m);
+   private final TopicListener<File> loadRequestListener = m -> handleLoadRequest(m);
+   private final TopicListener<Boolean> clearAllRequestListener = m -> handleClearRequest(m);
+   private final TopicListener<YoSliderboardListDefinition> setMultiRequestListener = m -> handleSetRequest(m);
+   private final TopicListener<YoSliderboardDefinition> setSingleRequestListener = m -> handleSetRequest(m);
+   private final TopicListener<String> removeRequestListener = m -> handleRemoveRequest(m);
+   private final TopicListener<Pair<String, YoButtonDefinition>> setButtonRequestListener = m -> handleSetButtonRequest(m.getKey(), m.getValue());
+   private final TopicListener<Pair<String, YoKnobDefinition>> setKnobRequestListener = m -> handleSetKnobRequest(m.getKey(), m.getValue());
+   private final TopicListener<Pair<String, YoSliderDefinition>> setSliderRequestListener = m -> handleSetSliderRequest(m.getKey(), m.getValue());
+   private final TopicListener<Pair<String, Integer>> clearButtonRequestListener = m -> handleClearButtonRequest(m.getKey(), m.getValue());
+   private final TopicListener<Pair<String, Integer>> clearKnobRequestListener = m -> handleClearKnobRequest(m.getKey(), m.getValue());
+   private final TopicListener<Pair<String, Integer>> clearSliderRequestListener = m -> handleClearSliderRequest(m.getKey(), m.getValue());
+
    @Override
    public void startSession(Session session)
    {
       initialConfiguration = null;
 
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSave(), m -> handleSaveRequest(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardLoad(), m -> handleLoadRequest(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardClearAll(), m -> handleClearRequest(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSet(), m -> handleSetRequest(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSet(), m -> handleSetRequest(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemove(), m -> handleRemoveRequest(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetButton(), m -> handleSetButtonRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetKnob(), m -> handleSetKnobRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetSlider(), m -> handleSetSliderRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearButton(), m -> handleClearButtonRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearKnob(), m -> handleClearKnobRequest(m.getKey(), m.getValue()));
-      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearSlider(), m -> handleClearSliderRequest(m.getKey(), m.getValue()));
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSave(), saveRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardLoad(), loadRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardClearAll(), clearAllRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSet(), setMultiRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSet(), setSingleRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardRemove(), removeRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetButton(), setButtonRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetKnob(), setKnobRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardSetSlider(), setSliderRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearButton(), clearButtonRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearKnob(), clearKnobRequestListener);
+      messager.registerJavaFXSyncedTopicListener(topics.getYoSliderboardClearSlider(), clearSliderRequestListener);
+   }
+
+   @Override
+   public void stopSession()
+   {
+      messager.removeJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSave(), saveRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoMultiSliderboardLoad(), loadRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoMultiSliderboardClearAll(), clearAllRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoMultiSliderboardSet(), setMultiRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardSet(), setSingleRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardRemove(), removeRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardSetButton(), setButtonRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardSetKnob(), setKnobRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardSetSlider(), setSliderRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardClearButton(), clearButtonRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardClearKnob(), clearKnobRequestListener);
+      messager.removeJavaFXSyncedTopicListener(topics.getYoSliderboardClearSlider(), clearSliderRequestListener);
+
+      if (bcf2000Sliderboard.getValue() != null)
+      {
+         bcf2000Sliderboard.getValue().close();
+         bcf2000Sliderboard.setValue(null);
+      }
+   }
+
+   @Override
+   public boolean isSessionLoaded()
+   {
+      // TODO Should probably return something else here.
+      return false;
    }
 
    private void handleSaveRequest(File file)
@@ -336,23 +381,6 @@ public class YoSliderboardManager implements Manager
             return i;
       }
       return -1;
-   }
-
-   @Override
-   public void stopSession()
-   {
-      if (bcf2000Sliderboard.getValue() != null)
-      {
-         bcf2000Sliderboard.getValue().close();
-         bcf2000Sliderboard.setValue(null);
-      }
-   }
-
-   @Override
-   public boolean isSessionLoaded()
-   {
-      // TODO Should probably return something else here.
-      return false;
    }
 
    public void openBCF2000SliderboardWindow(Window requestSource)
