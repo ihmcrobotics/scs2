@@ -455,9 +455,9 @@ public class SessionVisualizer
       }
 
       @Override
-      public void removeSliderboardButton(String sliderboardName, int buttonIndex)
+      public void clearSliderboardButton(String sliderboardName, int buttonIndex)
       {
-         submitMessage(getTopics().getYoSliderboardRemoveButton(), new Pair<>(sliderboardName, buttonIndex));
+         submitMessage(getTopics().getYoSliderboardClearButton(), new Pair<>(sliderboardName, buttonIndex));
       }
 
       @Override
@@ -467,9 +467,9 @@ public class SessionVisualizer
       }
 
       @Override
-      public void removeSliderboardKnob(String sliderboardName, int knobIndex)
+      public void clearSliderboardKnob(String sliderboardName, int knobIndex)
       {
-         submitMessage(getTopics().getYoSliderboardRemoveKnob(), new Pair<>(sliderboardName, knobIndex));
+         submitMessage(getTopics().getYoSliderboardClearKnob(), new Pair<>(sliderboardName, knobIndex));
       }
 
       @Override
@@ -479,9 +479,9 @@ public class SessionVisualizer
       }
 
       @Override
-      public void removeSliderboardSlider(String sliderboardName, int sliderIndex)
+      public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
       {
-         submitMessage(getTopics().getYoSliderboardRemoveSlider(), new Pair<>(sliderboardName, sliderIndex));
+         submitMessage(getTopics().getYoSliderboardClearSlider(), new Pair<>(sliderboardName, sliderIndex));
       }
 
       @Override

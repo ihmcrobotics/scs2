@@ -1106,9 +1106,9 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    @Override
-   public void removeSliderboardButton(String sliderboardName, int buttonIndex)
+   public void clearSliderboardButton(String sliderboardName, int buttonIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboardButton(sliderboardName, buttonIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardButton(sliderboardName, buttonIndex));
    }
 
    @Override
@@ -1118,9 +1118,9 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    @Override
-   public void removeSliderboardKnob(String sliderboardName, int knobIndex)
+   public void clearSliderboardKnob(String sliderboardName, int knobIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboardSlider(sliderboardName, knobIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, knobIndex));
    }
 
    @Override
@@ -1130,9 +1130,9 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    @Override
-   public void removeSliderboardSlider(String sliderboardName, int sliderIndex)
+   public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboardSlider(sliderboardName, sliderIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderIndex));
    }
 
    /**
