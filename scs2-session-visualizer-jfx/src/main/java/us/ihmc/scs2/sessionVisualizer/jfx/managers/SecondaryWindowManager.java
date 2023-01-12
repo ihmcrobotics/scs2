@@ -23,7 +23,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.YoRegistryStatisticsPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -38,10 +39,10 @@ public class SecondaryWindowManager implements Manager
 
    private final Property<YoCompositePatternPropertyWindowController> yoCompositeEditor = new SimpleObjectProperty<>(this, "yoCompositeEditor", null);
    private final Property<YoGraphicPropertyWindowController> yoGraphicEditor = new SimpleObjectProperty<>(this, "yoGraphicEditor", null);
-   private final Property<YoBCF2000SliderboardWindowController> bcf2000Sliderboard = new SimpleObjectProperty<>(this, "bcf2000Sliderboard", null);
    private final Property<YoRegistryStatisticsPaneController> yoRegistryStatistics = new SimpleObjectProperty<>(this, "yoRegistryStatistics", null);
    private final List<Stage> secondaryWindows = new ArrayList<>();
    private final List<SecondaryWindowController> secondaryWindowControllers = new ArrayList<>();
+   private final YoSliderboardManager sliderboardManager;
    private final JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
 
@@ -51,18 +52,22 @@ public class SecondaryWindowManager implements Manager
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
+      sliderboardManager = new YoSliderboardManager(toolkit);
+
       messager.registerTopicListener(topics.getOpenWindowRequest(), this::openWindow);
    }
 
    @Override
    public boolean isSessionLoaded()
    {
+      // TODO Should probably return something else here and use it.
       return false;
    }
 
    @Override
    public void startSession(Session session)
    {
+      sliderboardManager.startSession(session);
    }
 
    public void loadSessionConfiguration(SCSGuiConfiguration configuration)
@@ -85,10 +90,7 @@ public class SecondaryWindowManager implements Manager
 
    public void saveSessionConfiguration(SCSGuiConfiguration configuration)
    {
-      if (bcf2000Sliderboard.getValue() != null)
-      {
-         bcf2000Sliderboard.getValue().save(configuration.getYoSliderboardConfigurationFile());
-      }
+      sliderboardManager.saveSessionConfiguration(configuration);
 
       for (SecondaryWindowController secondaryWindow : secondaryWindowControllers)
       {
@@ -111,11 +113,7 @@ public class SecondaryWindowManager implements Manager
          yoGraphicEditor.setValue(null);
       }
 
-      if (bcf2000Sliderboard.getValue() != null)
-      {
-         bcf2000Sliderboard.getValue().close();
-         bcf2000Sliderboard.setValue(null);
-      }
+      sliderboardManager.stopSession();
 
       if (yoRegistryStatistics.getValue() != null)
       {
@@ -145,7 +143,7 @@ public class SecondaryWindowManager implements Manager
             openYoGraphicEditor(request.requestSource);
             break;
          case NewWindowRequest.BCF2000_SLIDERBOARD_WINDOW_TYPE:
-            openBCF2000SliderboardWindow(request.requestSource);
+            sliderboardManager.openBCF2000SliderboardWindow(request.requestSource);
             return;
          case NewWindowRequest.REGISTRY_STATISTICS_WINDOW_TYPE:
             openRegistryStatisticsWindow(request.requestSource, (String) request.additionalData);
@@ -306,30 +304,6 @@ public class SecondaryWindowManager implements Manager
          YoGraphicPropertyWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          yoGraphicEditor.setValue(controller);
-         initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
-         controller.showWindow();
-      }
-      catch (IOException e)
-      {
-         e.printStackTrace();
-      }
-   }
-
-   public void openBCF2000SliderboardWindow(Window requestSource)
-   {
-      if (bcf2000Sliderboard.getValue() != null)
-      {
-         bcf2000Sliderboard.getValue().showWindow();
-         return;
-      }
-
-      try
-      {
-         FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_SLIDERBOARD_BCF2000_WINDOW_URL);
-         fxmlLoader.load();
-         YoBCF2000SliderboardWindowController controller = fxmlLoader.getController();
-         controller.initialize(toolkit);
-         bcf2000Sliderboard.setValue(controller);
          initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }

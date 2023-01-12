@@ -63,6 +63,7 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
    {
       try
       {
+         unbind();
          yoDouble.removeListener(propertyUpdater);
          if (linkedBuffer != null)
             linkedBuffer.removeUser(this);

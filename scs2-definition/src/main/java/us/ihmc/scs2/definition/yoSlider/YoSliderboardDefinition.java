@@ -1,17 +1,73 @@
 package us.ihmc.scs2.definition.yoSlider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
+/**
+ * Definition of a sliderboard.
+ * 
+ * @author Sylvain Bertrand
+ */
 public class YoSliderboardDefinition
 {
+   /**
+    * Name of this sliderboard definition to facilitate retrieval and can be used to display in GUIs.
+    */
    private String name;
-   private String type;
-   private List<YoKnobDefinition> knobs;
-   private List<YoButtonDefinition> buttons;
-   private List<YoSliderDefinition> sliders;
+
+   /**
+    * Type value for the BCF2000.
+    */
+   public static final String BCF2000 = "BCF2000";
+
+   /**
+    * The type of sliderboard to use with this definition.
+    */
+   private String type = BCF2000;
+   private List<YoKnobDefinition> knobs = new ArrayList<>();
+   private List<YoButtonDefinition> buttons = new ArrayList<>();
+   private List<YoSliderDefinition> sliders = new ArrayList<>();
+
+   public YoSliderboardDefinition()
+   {
+   }
+
+   public YoSliderboardDefinition(String name)
+   {
+      this.name = name;
+   }
+
+   public YoSliderboardDefinition(String name, String type)
+   {
+      this.name = name;
+      this.type = type;
+   }
+
+   public YoSliderboardDefinition(YoSliderboardDefinition other)
+   {
+      set(other);
+   }
+
+   public void set(YoSliderboardDefinition other)
+   {
+      name = other.name;
+      type = other.type;
+      if (other.knobs != null)
+         knobs = other.knobs.stream().map(YoKnobDefinition::new).toList();
+      else
+         knobs = null;
+      if (other.buttons != null)
+         buttons = other.buttons.stream().map(YoButtonDefinition::new).toList();
+      else
+         buttons = null;
+      if (other.sliders != null)
+         sliders = other.sliders.stream().map(YoSliderDefinition::new).toList();
+      else
+         sliders = null;
+   }
 
    @XmlAttribute
    public void setName(String name)

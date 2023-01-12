@@ -11,6 +11,11 @@ import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionMessagerAPI;
@@ -69,8 +74,18 @@ public class SessionVisualizerTopics
 
    private Topic<YoEntryListDefinition> yoEntryListAdd;
 
-   private Topic<File> yoSliderboardSaveConfiguration;
-   private Topic<File> yoSliderboardLoadConfiguration;
+   private Topic<File> yoMultiSliderboardSave;
+   private Topic<File> yoMultiSliderboardLoad;
+   private Topic<Boolean> yoMultiSliderboardClearAll;
+   private Topic<YoSliderboardListDefinition> yoMultiSliderboardSet;
+   private Topic<YoSliderboardDefinition> yoSliderboardSet;
+   private Topic<String> yoSliderboardRemove;
+   private Topic<Pair<String, YoButtonDefinition>> yoSliderboardSetButton;
+   private Topic<Pair<String, YoKnobDefinition>> yoSliderboardSetKnob;
+   private Topic<Pair<String, YoSliderDefinition>> yoSliderboardSetSlider;
+   private Topic<Pair<String, Integer>> yoSliderboardClearButton;
+   private Topic<Pair<String, Integer>> yoSliderboardClearKnob;
+   private Topic<Pair<String, Integer>> yoSliderboardClearSlider;
 
    private Topic<Integer> controlsNumberPrecision;
 
@@ -147,8 +162,18 @@ public class SessionVisualizerTopics
 
       yoEntryListAdd = SessionVisualizerMessagerAPI.YoEntry.YoEntryListAdd;
 
-      yoSliderboardSaveConfiguration = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSaveConfiguration;
-      yoSliderboardLoadConfiguration = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardLoadConfiguration;
+      yoMultiSliderboardSave = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardSave;
+      yoMultiSliderboardLoad = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardLoad;
+      yoMultiSliderboardClearAll = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardClearAll;
+      yoMultiSliderboardSet = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardSet;
+      yoSliderboardSet = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSet;
+      yoSliderboardRemove = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardRemove;
+      yoSliderboardSetButton = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSetButton;
+      yoSliderboardSetKnob = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSetKnob;
+      yoSliderboardSetSlider = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardSetSlider;
+      yoSliderboardClearButton = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardClearButton;
+      yoSliderboardClearKnob = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardClearKnob;
+      yoSliderboardClearSlider = SessionVisualizerMessagerAPI.YoSliderboard.YoSliderboardClearSlider;
 
       controlsNumberPrecision = SessionVisualizerMessagerAPI.ControlsNumberPrecision;
 
@@ -364,14 +389,64 @@ public class SessionVisualizerTopics
       return yoEntryListAdd;
    }
 
-   public Topic<File> getYoSliderboardLoadConfiguration()
+   public Topic<File> getYoMultiSliderboardSave()
    {
-      return yoSliderboardLoadConfiguration;
+      return yoMultiSliderboardSave;
    }
 
-   public Topic<File> getYoSliderboardSaveConfiguration()
+   public Topic<File> getYoMultiSliderboardLoad()
    {
-      return yoSliderboardSaveConfiguration;
+      return yoMultiSliderboardLoad;
+   }
+
+   public Topic<Boolean> getYoMultiSliderboardClearAll()
+   {
+      return yoMultiSliderboardClearAll;
+   }
+
+   public Topic<YoSliderboardListDefinition> getYoMultiSliderboardSet()
+   {
+      return yoMultiSliderboardSet;
+   }
+
+   public Topic<YoSliderboardDefinition> getYoSliderboardSet()
+   {
+      return yoSliderboardSet;
+   }
+
+   public Topic<String> getYoSliderboardRemove()
+   {
+      return yoSliderboardRemove;
+   }
+
+   public Topic<Pair<String, YoButtonDefinition>> getYoSliderboardSetButton()
+   {
+      return yoSliderboardSetButton;
+   }
+
+   public Topic<Pair<String, YoKnobDefinition>> getYoSliderboardSetKnob()
+   {
+      return yoSliderboardSetKnob;
+   }
+
+   public Topic<Pair<String, YoSliderDefinition>> getYoSliderboardSetSlider()
+   {
+      return yoSliderboardSetSlider;
+   }
+
+   public Topic<Pair<String, Integer>> getYoSliderboardClearButton()
+   {
+      return yoSliderboardClearButton;
+   }
+
+   public Topic<Pair<String, Integer>> getYoSliderboardClearKnob()
+   {
+      return yoSliderboardClearKnob;
+   }
+
+   public Topic<Pair<String, Integer>> getYoSliderboardClearSlider()
+   {
+      return yoSliderboardClearSlider;
    }
 
    public Topic<Integer> getControlsNumberPrecision()

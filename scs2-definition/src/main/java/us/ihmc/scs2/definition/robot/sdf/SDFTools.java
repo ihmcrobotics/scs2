@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -79,6 +80,8 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 
 public class SDFTools
 {
+   public static final String SDF_DEFAULT_KEYWORD = "__default__";
+
    private static final double DEFAULT_MASS = 0.0;
    private static final double DEFAULT_IXX = 0.0;
    private static final double DEFAULT_IYY = 0.0;
@@ -131,7 +134,9 @@ public class SDFTools
       return sdfRoot;
    }
 
-   /** Otherwise, iteration later on will result in NullPointerException if there are none of something. */
+   /**
+    * Otherwise, iteration later on will result in NullPointerException if there are none of something.
+    */
    public static void ensureListsNotNull(SDFRoot sdfRoot)
    {
       if (sdfRoot.getModels() == null)
@@ -164,6 +169,26 @@ public class SDFTools
       }
    }
 
+   /**
+    * Attempts to locate the file corresponding to the given {@code filename} considering the paths of
+    * the resource directories and the class loader.
+    * <p>
+    * When the file is located, a {@code fullname} is computed and returned such that the file can be
+    * later retrieved by using {@code resourceClassLoader.getResource(fullname)} or
+    * {@code new File(fullname)}.
+    * </p>
+    * 
+    * @param filename            the name of the file to computed the fullname of.
+    * @param resourceDirectories the directories the file could be located in.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among
+    *                            other options.
+    * @return the fullname which can be used to open the file using
+    *         {@code resourceClassLoader.getResource(fullname)} or {@code new File(fullname)}.
+    */
    public static String tryToConvertToPath(String filename, Collection<String> resourceDirectories, ClassLoader resourceClassLoader)
    {
       try
@@ -285,8 +310,9 @@ public class SDFTools
       if (sdfJoints == null)
          return rigidBodyDefinitions.get(0);
 
-      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream().collect(Collectors.toMap(RigidBodyDefinition::getName,
-                                                                                                                       Function.identity()));
+      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream()
+                                                                                    .collect(Collectors.toMap(RigidBodyDefinition::getName,
+                                                                                                              Function.identity()));
       Map<String, JointDefinition> jointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(JointDefinition::getName, Function.identity()));
 
       for (SDFJoint sdfJoint : sdfJoints)
@@ -315,8 +341,9 @@ public class SDFTools
 
    public static void addSensors(List<SDFLink> sdfLinks, List<RigidBodyDefinition> rigidBodyDefinitions)
    {
-      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream().collect(Collectors.toMap(RigidBodyDefinition::getName,
-                                                                                                                       Function.identity()));
+      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream()
+                                                                                    .collect(Collectors.toMap(RigidBodyDefinition::getName,
+                                                                                                              Function.identity()));
 
       for (SDFLink sdfLink : sdfLinks)
       {
@@ -522,7 +549,7 @@ public class SDFTools
 
       for (SensorDefinition definition : definitions)
       {
-         if (definition.getName() != null && !definition.getName().isEmpty())
+         if (definition.getName() != null && !definition.getName().isEmpty() && !definition.getName().equals(SDF_DEFAULT_KEYWORD))
             definition.setName(sdfSensor.getName() + "_" + definition.getName());
          else
             definition.setName(sdfSensor.getName());

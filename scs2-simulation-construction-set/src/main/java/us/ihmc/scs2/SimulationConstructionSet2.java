@@ -15,6 +15,11 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
@@ -27,6 +32,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -701,10 +707,25 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
          {
             visualizerControls.waitUntilVisualizerFullyUp();
 
-            while (!pendingVisualizerTasks.isEmpty())
-               pendingVisualizerTasks.poll().run();
+            // Executing the visualizer tasks 1-by-1 in sync with the JavaFX thread.
+            // This way, the tasks should be executed in the same order as they were submitted.
+            new ObservedAnimationTimer("VisualizerTasksExecutor")
+            {
+               @Override
+               public void handleImpl(long now)
+               {
+                  if (!pendingVisualizerTasks.isEmpty())
+                  {
+                     pendingVisualizerTasks.poll().run();
+                  }
 
-            pendingVisualizerTasks = null;
+                  if (pendingVisualizerTasks.isEmpty())
+                  {
+                     pendingVisualizerTasks = null;
+                     stop();
+                  }
+               }
+            }.start();
          }
 
          if (shutdownSessionOnVisualizerClose)
@@ -1052,6 +1073,66 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));
+   }
+
+   @Override
+   public void clearAllSliderboards()
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearAllSliderboards());
+   }
+
+   @Override
+   public void setSliderboards(YoSliderboardListDefinition sliderboardListDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboards(sliderboardListDefinition));
+   }
+
+   @Override
+   public void setSliderboard(YoSliderboardDefinition sliderboardConfiguration)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboard(sliderboardConfiguration));
+   }
+
+   @Override
+   public void removeSliderboard(String sliderboardName)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboard(sliderboardName));
+   }
+
+   @Override
+   public void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardButton(sliderboardName, buttonDefinition));
+   }
+
+   @Override
+   public void clearSliderboardButton(String sliderboardName, int buttonIndex)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardButton(sliderboardName, buttonIndex));
+   }
+
+   @Override
+   public void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardKnob(sliderboardName, knobDefinition));
+   }
+
+   @Override
+   public void clearSliderboardKnob(String sliderboardName, int knobIndex)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, knobIndex));
+   }
+
+   @Override
+   public void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardSlider(sliderboardName, sliderDefinition));
+   }
+
+   @Override
+   public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderIndex));
    }
 
    /**
