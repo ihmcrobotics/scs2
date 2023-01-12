@@ -63,6 +63,7 @@ public class YoIntegerProperty extends IntegerPropertyBase implements YoVariable
    {
       try
       {
+         unbind();
          yoInteger.removeListener(propertyUpdater);
          if (linkedBuffer != null)
          {

@@ -63,6 +63,7 @@ public class YoBooleanProperty extends BooleanPropertyBase implements YoVariable
    {
       try
       {
+         unbind();
          yoBoolean.removeListener(propertyUpdater);
          if (linkedBuffer != null)
             linkedBuffer.removeUser(this);

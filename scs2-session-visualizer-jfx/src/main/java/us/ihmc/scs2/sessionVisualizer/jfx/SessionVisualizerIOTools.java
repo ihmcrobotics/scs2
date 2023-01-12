@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
+import org.apache.commons.lang3.SystemUtils;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -132,6 +134,7 @@ public class SessionVisualizerIOTools
    public static final Path GRAPHIC_3D_CUSTOM_GRAPHICS = Paths.get(SCS2_HOME.toString(), "yoGraphic");
    // YoSliderboard resources:
    public static final URL YO_SLIDERBOARD_BCF2000_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_BCF2000, "YoBCF2000SliderboardWindow");
+   public static final URL YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_BCF2000, "YoMultiBCF2000SliderboardWindow");
 
    public static final URL MAIN_WINDOW_URL = getFXMLResource("MainWindow");
    public static final URL SECONDARY_WINDOW_URL = getFXMLResource("SecondaryWindow");
@@ -377,7 +380,7 @@ public class SessionVisualizerIOTools
       boolean hasExtension = !extensions.isEmpty();
 
       FileChooser fileChooser = fileChooser(title, extensionFilter);
-      if (hasExtension)
+      if (hasExtension && !SystemUtils.IS_OS_WINDOWS)
          fileChooser.setInitialFileName(extensions.get(0));
       File result = fileChooser.showSaveDialog(owner);
 

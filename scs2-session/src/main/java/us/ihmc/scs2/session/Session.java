@@ -47,12 +47,71 @@ import us.ihmc.yoVariables.variable.YoVariable;
  */
 public abstract class Session
 {
-   private static final int DEFAULT_INITIAL_BUFFER_SIZE = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.initialsize", 8192);
-   private static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.recordtickperiod", 1);
-   private static final boolean DEFAULT_RUN_AT_REALTIME_RATE = SessionPropertiesHelper.loadBooleanProperty("scs2.session.runrealtime", false);
-   private static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 1.0);
-   private static final long DEFAULT_BUFFER_PUBLISH_PERIOD = SessionPropertiesHelper.loadLongProperty("scs2.session.buffer.publishperiod",
-                                                                                                      (long) (1.0 / 30.0 * 1.0e9));
+   /**
+    * Default buffer size.
+    * <p>
+    * The buffer size can be changed via:
+    * <ul>
+    * <li>{@link #initializeBufferRecordTickPeriod(int)}
+    * <li>{@link #submitBufferSizeRequest(Integer)}
+    * <li>{@link #submitBufferSizeRequestAndWait(Integer)}
+    * <li>or it can be loaded from a previously saved configuration when using the session visualizer.
+    * </ul>
+    * The default value is loaded from the system property: <tt>"scs2.session.buffer.initialsize"</tt>.
+    * </p>
+    */
+   public static final int DEFAULT_INITIAL_BUFFER_SIZE = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.initialsize", 8192);
+   /**
+    * Default period at which {@link YoVariable}s are saved into the buffer.
+    * <p>
+    * The record period can be changed via:
+    * <ul>
+    * <li>{@link #setBufferRecordTickPeriod(int)}
+    * <li>or it can be loaded from a previously saved configuration when using the session visualizer.
+    * </ul>
+    * The default value is loaded from the system property:
+    * <tt>"scs2.session.buffer.recordtickperiod"</tt>.
+    * </p>
+    */
+   public static final int DEFAULT_BUFFER_RECORD_TICK_PERIOD = SessionPropertiesHelper.loadIntegerProperty("scs2.session.buffer.recordtickperiod", 1);
+   /**
+    * Default value for whether the {@link SessionMode#RUNNING} mode of this session should be capped
+    * to be running no faster than real-time.
+    * <p>
+    * The real-time flag can be change via:
+    * <ul>
+    * <li>{@link #submitRunAtRealTimeRate(boolean)}
+    * </ul>
+    * The default value is loaded from the system property:
+    * <tt>"scs2.session.buffer.publishperiod"</tt>.
+    * </p>
+    */
+   public static final boolean DEFAULT_RUN_AT_REALTIME_RATE = SessionPropertiesHelper.loadBooleanProperty("scs2.session.runrealtime", false);
+   /**
+    * Default value for the speed at which the {@link SessionMode#PLAYBACK} should play back the
+    * buffered data.
+    * <p>
+    * The value can be change via:
+    * <ul>
+    * <li>{@link #submitPlaybackRealTimeRate(double)}
+    * </ul>
+    * The default value is loaded from the system property: <tt>"scs2.session.playrealtime"</tt>.
+    * </p>
+    */
+   public static final double DEFAULT_PLAYBACK_REALTIME_RATE = SessionPropertiesHelper.loadDoubleProperty("scs2.session.playrealtime", 1.0);
+   /**
+    * Default value the period used to control the rate at which the GUI will be refreshed.
+    * <p>
+    * The value can be change via:
+    * <ul>
+    * <li>{@link #setDesiredBufferPublishPeriod(long)}
+    * </ul>
+    * The default value is loaded from the system property:
+    * <tt>"scs2.session.buffer.publishperiod"</tt>.
+    * </p>
+    */
+   public static final long DEFAULT_BUFFER_PUBLISH_PERIOD = SessionPropertiesHelper.loadLongProperty("scs2.session.buffer.publishperiod",
+                                                                                                     (long) (1.0 / 30.0 * 1.0e9));
 
    /** Name of the root registry for any session. */
    public static final String ROOT_REGISTRY_NAME = "root";

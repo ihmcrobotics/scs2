@@ -28,8 +28,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoVariableSlid
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.NumberFormatTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 public abstract class YoBCF2000InputController
@@ -111,6 +115,69 @@ public abstract class YoBCF2000InputController
 
    public abstract void setYoVariableInput(YoVariable yoVariable);
 
+   protected boolean isMinValid(YoVariable yoVariable, String minStringValue)
+   {
+      if (minStringValue == null || minStringValue.isBlank())
+         return false;
+
+      if (yoVariable instanceof YoDouble yoDouble)
+      {
+         Double minValue = NumberFormatTools.parseDouble(minStringValue);
+         if (minValue == null)
+            return false;
+         return minValue <= yoDouble.getValue();
+      }
+
+      try
+      {
+         if (yoVariable instanceof YoInteger yoInteger)
+            return Integer.parseInt(minStringValue) <= yoInteger.getValue();
+
+         if (yoVariable instanceof YoLong yoLong)
+            return Long.parseLong(minStringValue) <= yoLong.getValue();
+      }
+      catch (NumberFormatException e)
+      {
+         return false;
+      }
+
+      return false;
+   }
+
+   protected boolean isMaxValid(YoVariable yoVariable, String maxStringValue)
+   {
+      if (maxStringValue == null || maxStringValue.isBlank())
+         return false;
+
+      if (yoVariable instanceof YoDouble yoDouble)
+      {
+         Double maxValue = NumberFormatTools.parseDouble(maxStringValue);
+         if (maxValue == null)
+            return false;
+         return maxValue >= yoDouble.getValue();
+      }
+
+      try
+      {
+         if (yoVariable instanceof YoInteger yoInteger)
+            return Integer.parseInt(maxStringValue) >= yoInteger.getValue();
+
+         if (yoVariable instanceof YoLong yoLong)
+            return Long.parseLong(maxStringValue) >= yoLong.getValue();
+      }
+      catch (NumberFormatException e)
+      {
+         return false;
+      }
+
+      return false;
+   }
+
+   public boolean isEmpty()
+   {
+      return yoVariableSlider == null;
+   }
+
    protected void setupYoVariableSlider(YoVariableSlider yoVariableSlider)
    {
       this.yoVariableSlider = yoVariableSlider;
@@ -118,8 +185,9 @@ public abstract class YoBCF2000InputController
       yoVariableDropLabel.setText(yoVariableSlider.getYoVariable().getName());
    }
 
-   protected void clear()
+   public void clear()
    {
+      yoVariableSlider = null;
       backgroundStyle.set(DEFAULT_BACKGROUND);
       yoVariableDropLabel.setText(defaultText);
    }

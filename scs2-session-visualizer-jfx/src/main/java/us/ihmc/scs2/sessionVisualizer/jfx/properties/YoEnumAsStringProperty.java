@@ -68,6 +68,7 @@ public class YoEnumAsStringProperty<E extends Enum<E>> extends StringPropertyBas
    {
       try
       {
+         unbind();
          yoEnum.removeListener(propertyUpdater);
          if (linkedBuffer != null)
             linkedBuffer.removeUser(this);

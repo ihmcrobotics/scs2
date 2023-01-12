@@ -11,6 +11,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoVariableSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -31,25 +32,40 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
 
    private YoVariableSlider yoVariableSlider;
    private YoManager yoManager;
+   private BCF2000SliderboardController.Knob knobChannel;
 
-   public void initialize(SessionVisualizerToolkit toolkit, SliderboardVariable sliderVariable)
+   public void initialize(SessionVisualizerToolkit toolkit, BCF2000SliderboardController.Knob knobChannel, SliderboardVariable sliderVariable)
    {
+      this.knobChannel = knobChannel;
       this.sliderVariable = sliderVariable;
       yoManager = toolkit.getYoManager();
       super.initialize(toolkit, rootPane, yoVariableDropLabel);
+      clear();
+   }
+
+   @Override
+   public void clear()
+   {
+      if (yoVariableSlider != null)
+         yoVariableSlider.dispose();
+      yoVariableSlider = null;
+
+      super.clear();
+      spinner.setProgress(0);
+      spinner.setDisable(true);
 
       knobMaxTextField.setText("");
       knobMinTextField.setText("");
       knobMaxTextField.setDisable(true);
       knobMinTextField.setDisable(true);
-      spinner.setDisable(true);
+
    }
 
    public void setInput(YoKnobDefinition definition)
    {
       if (definition == null)
       {
-         setYoVariableInput(null);
+         clear();
          return;
       }
 
@@ -77,47 +93,44 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
    private void setYoVariableInput(YoVariable yoVariable, String minValue, String maxValue)
    {
       if (yoVariableSlider != null)
-      {
          yoVariableSlider.dispose();
-      }
 
-      if (yoVariable != null)
-      {
-         spinner.setDisable(false);
-
-         yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
-         yoVariableSlider.bindMinTextField(knobMinTextField);
-         yoVariableSlider.bindMaxTextField(knobMaxTextField);
-         if (sliderVariable != null)
-            yoVariableSlider.bindSliderVariable(sliderVariable);
-         yoVariableSlider.bindVirtualKnob(spinner);
-
-         if (minValue != null && !knobMinTextField.isDisabled())
-            knobMinTextField.setText(minValue);
-         if (maxValue != null && !knobMaxTextField.isDisabled())
-            knobMaxTextField.setText(maxValue);
-         setupYoVariableSlider(yoVariableSlider);
-      }
-      else
+      if (yoVariable == null)
       {
          clear();
-         spinner.setDisable(true);
-         yoVariableSlider = null;
-         knobMaxTextField.setText("");
-         knobMinTextField.setText("");
+         return;
       }
-   }
 
-   public void close()
-   {
-      if (yoVariableSlider != null)
+      spinner.setDisable(false);
+
+      yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
+      yoVariableSlider.bindMinTextField(knobMinTextField);
+      yoVariableSlider.bindMaxTextField(knobMaxTextField);
+      if (sliderVariable != null)
+         yoVariableSlider.bindSliderVariable(sliderVariable);
+      yoVariableSlider.bindVirtualKnob(spinner);
+
+      if (minValue != null && !knobMinTextField.isDisabled())
       {
-         setYoVariableInput(null);
+         if (isMinValid(yoVariable, minValue))
+            knobMinTextField.setText(minValue);
+         else
+            LogTools.warn("Discarding invalid minValue (={}) for knob bound to the variable {}", minValue, yoVariable);
       }
+      if (maxValue != null && !knobMaxTextField.isDisabled())
+      {
+         if (isMaxValid(yoVariable, maxValue))
+            knobMaxTextField.setText(maxValue);
+         else
+            LogTools.warn("Discarding invalid maxValue (={}) for knob bound to the variable {}", maxValue, yoVariable);
+      }
+      setupYoVariableSlider(yoVariableSlider);
    }
 
    public YoKnobDefinition toYoKnobDefinition()
    {
-      return yoVariableSlider == null ? new YoKnobDefinition() : yoVariableSlider.toYoKnobDefinition();
+      YoKnobDefinition definition = yoVariableSlider == null ? new YoKnobDefinition() : yoVariableSlider.toYoKnobDefinition();
+      definition.setIndex(knobChannel.ordinal());
+      return definition;
    }
 }

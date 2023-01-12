@@ -24,6 +24,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import javafx.util.Pair;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
@@ -31,6 +32,11 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
@@ -416,6 +422,66 @@ public class SessionVisualizer
       public void addYoEntry(String groupName, Collection<String> variableNames)
       {
          submitMessage(getTopics().getYoEntryListAdd(), YoEntryListDefinition.newYoVariableEntryList(groupName, variableNames));
+      }
+
+      @Override
+      public void clearAllSliderboards()
+      {
+         submitMessage(getTopics().getYoMultiSliderboardClearAll(), true);
+      }
+
+      @Override
+      public void setSliderboards(YoSliderboardListDefinition sliderboardListDefinition)
+      {
+         submitMessage(getTopics().getYoMultiSliderboardSet(), sliderboardListDefinition);
+      }
+
+      @Override
+      public void setSliderboard(YoSliderboardDefinition sliderboardConfiguration)
+      {
+         submitMessage(getTopics().getYoSliderboardSet(), sliderboardConfiguration);
+      }
+
+      @Override
+      public void removeSliderboard(String sliderboardName)
+      {
+         submitMessage(getTopics().getYoSliderboardRemove(), sliderboardName);
+      }
+
+      @Override
+      public void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition)
+      {
+         submitMessage(getTopics().getYoSliderboardSetButton(), new Pair<>(sliderboardName, buttonDefinition));
+      }
+
+      @Override
+      public void clearSliderboardButton(String sliderboardName, int buttonIndex)
+      {
+         submitMessage(getTopics().getYoSliderboardClearButton(), new Pair<>(sliderboardName, buttonIndex));
+      }
+
+      @Override
+      public void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition)
+      {
+         submitMessage(getTopics().getYoSliderboardSetKnob(), new Pair<>(sliderboardName, knobDefinition));
+      }
+
+      @Override
+      public void clearSliderboardKnob(String sliderboardName, int knobIndex)
+      {
+         submitMessage(getTopics().getYoSliderboardClearKnob(), new Pair<>(sliderboardName, knobIndex));
+      }
+
+      @Override
+      public void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition)
+      {
+         submitMessage(getTopics().getYoSliderboardSetSlider(), new Pair<>(sliderboardName, sliderDefinition));
+      }
+
+      @Override
+      public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
+      {
+         submitMessage(getTopics().getYoSliderboardClearSlider(), new Pair<>(sliderboardName, sliderIndex));
       }
 
       @Override

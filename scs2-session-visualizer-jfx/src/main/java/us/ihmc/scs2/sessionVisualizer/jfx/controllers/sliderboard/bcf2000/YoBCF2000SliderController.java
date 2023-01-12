@@ -11,6 +11,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoVariableSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -31,25 +32,38 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
 
    private YoVariableSlider yoVariableSlider;
    private YoManager yoManager;
+   private BCF2000SliderboardController.Slider sliderChannel;
 
-   public void initialize(SessionVisualizerToolkit toolkit, SliderboardVariable sliderVariable)
+   public void initialize(SessionVisualizerToolkit toolkit, BCF2000SliderboardController.Slider sliderChannel, SliderboardVariable sliderVariable)
    {
+      this.sliderChannel = sliderChannel;
       this.sliderVariable = sliderVariable;
       yoManager = toolkit.getYoManager();
       super.initialize(toolkit, rootPane, yoVariableDropLabel);
+      clear();
+   }
 
+   @Override
+   public void clear()
+   {
+      if (yoVariableSlider != null)
+         yoVariableSlider.dispose();
+      yoVariableSlider = null;
+
+      super.clear();
+
+      slider.setDisable(true);
       sliderMaxTextField.setText("");
       sliderMinTextField.setText("");
       sliderMaxTextField.setDisable(true);
       sliderMinTextField.setDisable(true);
-      slider.setDisable(true);
    }
 
    public void setInput(YoSliderDefinition definition)
    {
       if (definition == null)
       {
-         setYoVariableInput(null);
+         clear();
          return;
       }
 
@@ -77,45 +91,45 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
    private void setYoVariableInput(YoVariable yoVariable, String minValue, String maxValue)
    {
       if (yoVariableSlider != null)
-      {
          yoVariableSlider.dispose();
-      }
 
-      if (yoVariable != null)
-      {
-         slider.setDisable(false);
-
-         yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
-         yoVariableSlider.bindMinTextField(sliderMinTextField);
-         yoVariableSlider.bindMaxTextField(sliderMaxTextField);
-         if (sliderVariable != null)
-            yoVariableSlider.bindSliderVariable(sliderVariable);
-         yoVariableSlider.bindVirtualSlider(slider);
-
-         if (minValue != null && !sliderMinTextField.isDisabled())
-            sliderMinTextField.setText(minValue);
-         if (maxValue != null && !sliderMaxTextField.isDisabled())
-            sliderMaxTextField.setText(maxValue);
-
-         setupYoVariableSlider(yoVariableSlider);
-      }
-      else
+      if (yoVariable == null)
       {
          clear();
-         slider.setDisable(true);
-         yoVariableSlider = null;
-         sliderMaxTextField.setText("");
-         sliderMinTextField.setText("");
+         return;
       }
-   }
 
-   public void close()
-   {
-      setYoVariableInput(null);
+      slider.setDisable(false);
+
+      yoVariableSlider = YoVariableSlider.newYoVariableSlider(yoVariable, yoManager.getLinkedRootRegistry());
+      yoVariableSlider.bindMinTextField(sliderMinTextField);
+      yoVariableSlider.bindMaxTextField(sliderMaxTextField);
+      if (sliderVariable != null)
+         yoVariableSlider.bindSliderVariable(sliderVariable);
+      yoVariableSlider.bindVirtualSlider(slider);
+
+      if (minValue != null && !sliderMinTextField.isDisabled())
+      {
+         if (isMinValid(yoVariable, minValue))
+            sliderMinTextField.setText(minValue);
+         else
+            LogTools.warn("Discarding invalid minValue (={}) for slider bound to the variable {}", minValue, yoVariable);
+      }
+      if (maxValue != null && !sliderMaxTextField.isDisabled())
+      {
+         if (isMaxValid(yoVariable, maxValue))
+            sliderMaxTextField.setText(maxValue);
+         else
+            LogTools.warn("Discarding invalid maxValue (={}) for slider bound to the variable {}", maxValue, yoVariable);
+      }
+
+      setupYoVariableSlider(yoVariableSlider);
    }
 
    public YoSliderDefinition toYoSliderDefinition()
    {
-      return yoVariableSlider == null ? new YoSliderDefinition() : yoVariableSlider.toYoSliderDefinition();
+      YoSliderDefinition definition = yoVariableSlider == null ? new YoSliderDefinition() : yoVariableSlider.toYoSliderDefinition();
+      definition.setIndex(sliderChannel.ordinal());
+      return definition;
    }
 }
