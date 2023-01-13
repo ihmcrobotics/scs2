@@ -58,7 +58,7 @@ public class ChartTable2D
 
    public boolean set(YoChartGroupConfigurationDefinition definition)
    {
-      if (!maxSize.getValue().contains(definition.getNumberOfRows(), definition.getNumberOfColumns()))
+      if (!maxSize.getValue().contains(definition.getNumberOfRows() - 1, definition.getNumberOfColumns() - 1))
       {
          LogTools.warn("Cannot set from configuration, required number of rows/columns is too large.");
          return false;
