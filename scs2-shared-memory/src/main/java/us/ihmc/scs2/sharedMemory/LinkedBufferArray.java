@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
@@ -14,8 +15,17 @@ public class LinkedBufferArray extends LinkedBuffer
    private int size = 0;
    private LinkedBuffer[] linkedBuffers = new LinkedBuffer[8];
 
-   private final Set<LinkedBuffer> linkedBuffersWithPendingPushRequest = new HashSet<>();
-   private final PushRequestListener listener = target -> linkedBuffersWithPendingPushRequest.add(target);
+   private final AtomicReference<Set<LinkedBuffer>> linkedBuffersWithPendingPushRequest = new AtomicReference<>(null);
+   private final PushRequestListener listener = target ->
+   {
+      linkedBuffersWithPendingPushRequest.getAndUpdate(pendingSet ->
+      {
+         if (pendingSet == null)
+            pendingSet = new HashSet<>();
+         pendingSet.add(target);
+         return pendingSet;
+      });
+   };
 
    private final List<LinkedBufferChangeListener> changeListeners = new ArrayList<>();
 
@@ -182,10 +192,11 @@ public class LinkedBufferArray extends LinkedBuffer
       if (isDisposed)
          return false;
 
-      if (linkedBuffersWithPendingPushRequest.isEmpty())
+      Set<LinkedBuffer> localRequests = linkedBuffersWithPendingPushRequest.getAndSet(null);
+
+      if (localRequests == null || localRequests.isEmpty())
          return false;
-      linkedBuffersWithPendingPushRequest.forEach(buffer -> buffer.processPush(writeBuffer));
-      linkedBuffersWithPendingPushRequest.clear();
+      localRequests.forEach(buffer -> buffer.processPush(writeBuffer));
       return true;
    }
 
@@ -304,7 +315,7 @@ public class LinkedBufferArray extends LinkedBuffer
          }
       }
       linkedBuffers = null;
-      linkedBuffersWithPendingPushRequest.clear();
+      linkedBuffersWithPendingPushRequest.set(null);
       changeListeners.clear();
    }
 
