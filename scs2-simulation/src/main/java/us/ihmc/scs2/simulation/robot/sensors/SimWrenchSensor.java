@@ -182,7 +182,7 @@ public class SimWrenchSensor extends SimSensor
          start.getInertia().computeDynamicWrenchFast(null, bodyFixedFrame.getTwistOfFrame(), intermediateWrench);
 
       intermediateWrench.changeFrame(wrenchSumToPack.getReferenceFrame());
-      wrenchSumToPack.add((SpatialVectorReadOnly) intermediateWrench);
+      wrenchSumToPack.sub((SpatialVectorReadOnly) intermediateWrench);
 
       for (JointReadOnly childJoint : start.getChildrenJoints())
       {
