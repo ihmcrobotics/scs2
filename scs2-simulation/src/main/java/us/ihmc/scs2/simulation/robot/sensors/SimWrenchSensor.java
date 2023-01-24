@@ -44,6 +44,7 @@ public class SimWrenchSensor extends SimSensor
    {
       this(definition.getName(), parentJoint, definition.getTransformToJoint());
       setSamplingRate(toSamplingRate(definition.getUpdatePeriod()));
+      setSensorLocation(definition.getLocation());
    }
 
    public SimWrenchSensor(String name, SimJointBasics parentJoint, RigidBodyTransformReadOnly transformToParent)
@@ -233,6 +234,7 @@ public class SimWrenchSensor extends SimSensor
          this.sensorLocation.set(sensorLocation);
       }
    }
+   
 
    public YoEnum<SensorLocation> getSensorLocation()
    {
