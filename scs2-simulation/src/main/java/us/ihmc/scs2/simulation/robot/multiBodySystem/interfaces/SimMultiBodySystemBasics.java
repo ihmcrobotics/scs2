@@ -190,7 +190,8 @@ public interface SimMultiBodySystemBasics extends MultiBodySystemBasics, SimMult
       SimRigidBodyBasics rootBody = (SimRigidBodyBasics) MultiBodySystemReadOnly.getClosestJointToRoot(jointsToConsider).getPredecessor();
       List<? extends SimJointBasics> allJoints = SubtreeStreams.fromChildren(SimJointBasics.class, rootBody).collect(Collectors.toList());
       List<? extends SimJointBasics> jointsToIgnore = SubtreeStreams.fromChildren(SimJointBasics.class, rootBody)
-                                                                    .filter(joint -> !jointsToConsider.contains(joint)).collect(Collectors.toList());
+                                                                    .filter(joint -> !jointsToConsider.contains(joint))
+                                                                    .collect(Collectors.toList());
       JointMatrixIndexProvider jointMatrixIndexProvider = JointMatrixIndexProvider.toIndexProvider(jointsToConsider);
 
       return new SimMultiBodySystemBasics()
@@ -248,7 +249,8 @@ public interface SimMultiBodySystemBasics extends MultiBodySystemBasics, SimMult
    public static List<? extends SimJointBasics> extractJointsToConsider(SimRigidBodyBasics rootBody, List<? extends SimJointBasics> jointsToIgnore)
    {
       return SubtreeStreams.fromChildren(SimJointBasics.class, rootBody)
-                           .filter(candidate -> !MultiBodySystemReadOnly.isJointToBeIgnored(candidate, jointsToIgnore)).collect(Collectors.toList());
+                           .filter(candidate -> !MultiBodySystemReadOnly.isJointToBeIgnored(candidate, jointsToIgnore))
+                           .collect(Collectors.toList());
    }
 
    /**
@@ -266,7 +268,8 @@ public interface SimMultiBodySystemBasics extends MultiBodySystemBasics, SimMult
                                                                                                             "",
                                                                                                             new SimRigidBodyBuilder(cloneRegistry),
                                                                                                             new SimJointBuilder());
-      Set<String> namesOfJointsToConsider = SubtreeStreams.fromChildren(SimJointBasics.class, original.getRootBody()).map(JointReadOnly::getName)
+      Set<String> namesOfJointsToConsider = SubtreeStreams.fromChildren(SimJointBasics.class, original.getRootBody())
+                                                          .map(JointReadOnly::getName)
                                                           .collect(Collectors.toSet());
       List<? extends SimJointBasics> jointsToConsider = SubtreeStreams.fromChildren(SimJointBasics.class, cloneRootBody)
                                                                       .filter(joint -> namesOfJointsToConsider.contains(joint.getName()))

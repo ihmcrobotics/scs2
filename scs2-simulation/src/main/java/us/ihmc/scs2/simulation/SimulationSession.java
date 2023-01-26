@@ -545,7 +545,7 @@ public class SimulationSession extends Session
                      break;
 
                   TerminalState state = testTerminalConditions();
-                  
+
                   if (state != null)
                   {
                      if (state == TerminalState.FAILURE)
@@ -570,7 +570,7 @@ public class SimulationSession extends Session
                      break;
 
                   TerminalState state = testTerminalConditions();
-                  
+
                   if (state != null)
                   {
                      if (state == TerminalState.FAILURE)

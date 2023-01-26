@@ -86,7 +86,9 @@ public interface STPBox3DReadOnly extends STPShape3DReadOnly, Box3DReadOnly
    }
 
    @Override
-   default int intersectionWith(Point3DReadOnly pointOnLine, Vector3DReadOnly lineDirection, Point3DBasics firstIntersectionToPack,
+   default int intersectionWith(Point3DReadOnly pointOnLine,
+                                Vector3DReadOnly lineDirection,
+                                Point3DBasics firstIntersectionToPack,
                                 Point3DBasics secondIntersectionToPack)
    {
       throw new UnsupportedOperationException("Not supported for STP box 3D");

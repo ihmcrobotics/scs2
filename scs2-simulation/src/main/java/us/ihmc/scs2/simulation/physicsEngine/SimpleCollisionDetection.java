@@ -41,7 +41,9 @@ public class SimpleCollisionDetection
       this.minimumPenetration = minimumPenetration;
    }
 
-   public CollisionListResult evaluationCollisions(List<? extends CollidableHolder> dynamicCollidableHolders, CollidableHolder staticCollidableHolder, double dt)
+   public CollisionListResult evaluationCollisions(List<? extends CollidableHolder> dynamicCollidableHolders,
+                                                   CollidableHolder staticCollidableHolder,
+                                                   double dt)
    {
       allCollisions.clear();
 

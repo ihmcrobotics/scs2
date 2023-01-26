@@ -135,7 +135,8 @@ public class Robot implements RobotInterface
       jointsToIgnore = robotDefinition.getNameOfJointsToIgnore().stream().map(nameToJointMap::get).collect(Collectors.toList());
       jointsToConsider = allJoints.stream().filter(joint -> !jointsToIgnore.contains(joint)).collect(Collectors.toList());
       jointMatrixIndexProvider = JointMatrixIndexProvider.toIndexProvider(getJointsToConsider());
-      allJointInitialStates = allJoints.stream().map(joint -> robotDefinition.getJointDefinition(joint.getName()).getInitialJointState())
+      allJointInitialStates = allJoints.stream()
+                                       .map(joint -> robotDefinition.getJointDefinition(joint.getName()).getInitialJointState())
                                        .collect(Collectors.toList());
 
       controllerManager = new RobotControllerManager(this, registry);

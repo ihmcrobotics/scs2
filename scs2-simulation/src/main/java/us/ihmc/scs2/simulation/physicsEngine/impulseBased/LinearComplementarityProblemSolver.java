@@ -11,8 +11,8 @@ import gnu.trove.set.hash.TIntHashSet;
 import us.ihmc.log.LogTools;
 
 /**
- * Algorithm from: <i>"`"</i> by
- * <i>David Baraff</i>
+ * Algorithm from: <i>"Fast Contact Computation for Nonpenetrating Rigid Bodies"</i> by <i>David
+ * Baraff</i>
  * <p>
  * This class solves the following problem:
  * 

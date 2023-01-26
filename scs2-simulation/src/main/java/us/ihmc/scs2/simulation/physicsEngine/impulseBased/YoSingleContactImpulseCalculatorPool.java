@@ -11,9 +11,14 @@ public class YoSingleContactImpulseCalculatorPool
 {
    private RecyclingArrayList<YoSingleContactImpulseCalculator> pool;
 
-   public YoSingleContactImpulseCalculatorPool(int initialCapacity, String prefix, ReferenceFrame rootFrame, RigidBodyBasics rootBodyA,
-                                               ForwardDynamicsCalculator forwardDynamicsCalculatorA, RigidBodyBasics rootBodyB,
-                                               ForwardDynamicsCalculator forwardDynamicsCalculatorB, YoRegistry registry)
+   public YoSingleContactImpulseCalculatorPool(int initialCapacity,
+                                               String prefix,
+                                               ReferenceFrame rootFrame,
+                                               RigidBodyBasics rootBodyA,
+                                               ForwardDynamicsCalculator forwardDynamicsCalculatorA,
+                                               RigidBodyBasics rootBodyB,
+                                               ForwardDynamicsCalculator forwardDynamicsCalculatorB,
+                                               YoRegistry registry)
    {
       pool = new RecyclingArrayList<>(initialCapacity, SupplierBuilder.indexedSupplier(identifier ->
       {

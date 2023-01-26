@@ -27,8 +27,13 @@ public class ContactParameters implements ContactParametersBasics
    {
    }
 
-   public ContactParameters(double minimumPenetration, double coefficientOfFriction, double coefficientOfRestitution, double restitutionThreshold,
-                            double errorReductionParameter, boolean computeMomentFriction, double coulombMomentFrictionRatio)
+   public ContactParameters(double minimumPenetration,
+                            double coefficientOfFriction,
+                            double coefficientOfRestitution,
+                            double restitutionThreshold,
+                            double errorReductionParameter,
+                            boolean computeMomentFriction,
+                            double coulombMomentFrictionRatio)
    {
       this.minimumPenetration = minimumPenetration;
       this.coefficientOfFriction = coefficientOfFriction;

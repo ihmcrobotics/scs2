@@ -168,7 +168,8 @@ public interface SimMultiBodySystemReadOnly extends MultiBodySystemReadOnly
       SimRigidBodyReadOnly rootBody = (SimRigidBodyReadOnly) MultiBodySystemReadOnly.getClosestJointToRoot(jointsToConsider).getPredecessor();
       List<? extends SimJointReadOnly> allJoints = SubtreeStreams.fromChildren(SimJointReadOnly.class, rootBody).collect(Collectors.toList());
       List<? extends SimJointReadOnly> jointsToIgnore = SubtreeStreams.fromChildren(SimJointReadOnly.class, rootBody)
-                                                                    .filter(joint -> !jointsToConsider.contains(joint)).collect(Collectors.toList());
+                                                                      .filter(joint -> !jointsToConsider.contains(joint))
+                                                                      .collect(Collectors.toList());
       JointMatrixIndexProvider jointMatrixIndexProvider = JointMatrixIndexProvider.toIndexProvider(jointsToConsider);
 
       return new SimMultiBodySystemReadOnly()
@@ -226,7 +227,8 @@ public interface SimMultiBodySystemReadOnly extends MultiBodySystemReadOnly
    public static List<? extends SimJointReadOnly> extractJointsToConsider(SimRigidBodyReadOnly rootBody, List<? extends SimJointReadOnly> jointsToIgnore)
    {
       return SubtreeStreams.fromChildren(SimJointReadOnly.class, rootBody)
-                           .filter(candidate -> !MultiBodySystemReadOnly.isJointToBeIgnored(candidate, jointsToIgnore)).collect(Collectors.toList());
+                           .filter(candidate -> !MultiBodySystemReadOnly.isJointToBeIgnored(candidate, jointsToIgnore))
+                           .collect(Collectors.toList());
    }
 
    /**
@@ -240,15 +242,16 @@ public interface SimMultiBodySystemReadOnly extends MultiBodySystemReadOnly
    public static SimMultiBodySystemReadOnly clone(MultiBodySystemReadOnly original, ReferenceFrame cloneRootFrame, YoRegistry cloneRegistry)
    {
       SimRigidBodyReadOnly cloneRootBody = (SimRigidBodyReadOnly) MultiBodySystemFactories.cloneMultiBodySystem(original.getRootBody(),
-                                                                                                            cloneRootFrame,
-                                                                                                            "",
-                                                                                                            new SimRigidBodyBuilder(cloneRegistry),
-                                                                                                            new SimJointBuilder());
-      Set<String> namesOfJointsToConsider = SubtreeStreams.fromChildren(SimJointReadOnly.class, original.getRootBody()).map(JointReadOnly::getName)
+                                                                                                                cloneRootFrame,
+                                                                                                                "",
+                                                                                                                new SimRigidBodyBuilder(cloneRegistry),
+                                                                                                                new SimJointBuilder());
+      Set<String> namesOfJointsToConsider = SubtreeStreams.fromChildren(SimJointReadOnly.class, original.getRootBody())
+                                                          .map(JointReadOnly::getName)
                                                           .collect(Collectors.toSet());
       List<? extends SimJointReadOnly> jointsToConsider = SubtreeStreams.fromChildren(SimJointReadOnly.class, cloneRootBody)
-                                                                      .filter(joint -> namesOfJointsToConsider.contains(joint.getName()))
-                                                                      .collect(Collectors.toList());
+                                                                        .filter(joint -> namesOfJointsToConsider.contains(joint.getName()))
+                                                                        .collect(Collectors.toList());
       return toMultiBodySystemInput(jointsToConsider);
    }
 }

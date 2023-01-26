@@ -197,9 +197,10 @@ public class MultiContactImpulseCalculator
                   if (calculator instanceof SingleContactImpulseCalculator)
                   {
                      SingleContactImpulseCalculator contactCalculator = (SingleContactImpulseCalculator) calculator;
-                     System.out.println("Iteration " + iterationCounter + ", alpha: " + alpha + ", calc index: " + i + ", active: " + contactCalculator.isConstraintActive()
-                           + ", closing: " + contactCalculator.isContactClosing() + ", slip: " + contactCalculator.isContactSlipping() + ", impulse update: "
-                           + contactCalculator.getImpulseUpdate() + ", velocity update: " + contactCalculator.getVelocityUpdate() + ", moment: " + contactCalculator.getImpulseA().getAngularPartZ());
+                     System.out.println("Iteration " + iterationCounter + ", alpha: " + alpha + ", calc index: " + i + ", active: "
+                           + contactCalculator.isConstraintActive() + ", closing: " + contactCalculator.isContactClosing() + ", slip: "
+                           + contactCalculator.isContactSlipping() + ", impulse update: " + contactCalculator.getImpulseUpdate() + ", velocity update: "
+                           + contactCalculator.getVelocityUpdate() + ", moment: " + contactCalculator.getImpulseA().getAngularPartZ());
                   }
                   else
                   {

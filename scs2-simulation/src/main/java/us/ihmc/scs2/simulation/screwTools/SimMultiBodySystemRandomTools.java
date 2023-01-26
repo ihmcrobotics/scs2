@@ -1138,8 +1138,11 @@ public class SimMultiBodySystemRandomTools
     * @return the list of all the newly created joints.
     * @throws IllegalArgumentException if {@code start} is not the ancestor of {@code end}.
     */
-   public static List<SimRevoluteJoint> nextKinematicLoopRevoluteJoints(Random random, String prefix, SimRigidBodyBasics start, SimRigidBodyBasics end,
-                                                                     int numberOfJoints)
+   public static List<SimRevoluteJoint> nextKinematicLoopRevoluteJoints(Random random,
+                                                                        String prefix,
+                                                                        SimRigidBodyBasics start,
+                                                                        SimRigidBodyBasics end,
+                                                                        int numberOfJoints)
    {
       if (!MultiBodySystemTools.isAncestor(end, start))
          throw new IllegalArgumentException("Improper rigid-bodies configuration: the end must be a descendant of start. Given bodies: [start: "
@@ -1148,7 +1151,8 @@ public class SimMultiBodySystemRandomTools
       List<SimRevoluteJoint> loopChain = nextRevoluteJointChain(random, prefix, start, numberOfJoints);
       SimRevoluteJoint loopClosureJoint = loopChain.get(numberOfJoints - 1);
       start.updateFramesRecursively();
-      RigidBodyTransform transformFromSuccessorParentJoint = end.getParentJoint().getFrameAfterJoint()
+      RigidBodyTransform transformFromSuccessorParentJoint = end.getParentJoint()
+                                                                .getFrameAfterJoint()
                                                                 .getTransformToDesiredFrame(loopClosureJoint.getFrameAfterJoint());
 
       loopClosureJoint.setupLoopClosure(end, transformFromSuccessorParentJoint);

@@ -56,7 +56,8 @@ public class PhysicsEngineTools
       throw new UnsupportedOperationException("Unsupported shape for conversion: " + shape.getClass().getSimpleName());
    }
 
-   public static void evaluateShape3DBox3DCollision(FrameShape3DReadOnly shapeA, FrameBox3DReadOnly shapeB,
+   public static void evaluateShape3DBox3DCollision(FrameShape3DReadOnly shapeA,
+                                                    FrameBox3DReadOnly shapeB,
                                                     EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof FramePointShape3DReadOnly)
@@ -67,7 +68,8 @@ public class PhysicsEngineTools
          evaluateShape3DShape3DCollisionEPA(shapeA, shapeB, resultToPack);
    }
 
-   public static void evaluateShape3DCapsule3DCollision(FrameShape3DReadOnly shapeA, FrameCapsule3DReadOnly shapeB,
+   public static void evaluateShape3DCapsule3DCollision(FrameShape3DReadOnly shapeA,
+                                                        FrameCapsule3DReadOnly shapeB,
                                                         EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof FrameCapsule3DReadOnly)
@@ -89,7 +91,8 @@ public class PhysicsEngineTools
       }
    }
 
-   public static void evaluateShape3DCylinder3DCollision(FrameShape3DReadOnly shapeA, FrameCylinder3DReadOnly shapeB,
+   public static void evaluateShape3DCylinder3DCollision(FrameShape3DReadOnly shapeA,
+                                                         FrameCylinder3DReadOnly shapeB,
                                                          EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof FramePointShape3DReadOnly)
@@ -100,7 +103,8 @@ public class PhysicsEngineTools
          evaluateShape3DShape3DCollisionEPA(shapeA, shapeB, resultToPack);
    }
 
-   public static void evaluateShape3DEllipsoid3DCollision(FrameShape3DReadOnly shapeA, FrameEllipsoid3DReadOnly shapeB,
+   public static void evaluateShape3DEllipsoid3DCollision(FrameShape3DReadOnly shapeA,
+                                                          FrameEllipsoid3DReadOnly shapeB,
                                                           EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof FramePointShape3DReadOnly)
@@ -111,7 +115,8 @@ public class PhysicsEngineTools
          evaluateShape3DShape3DCollisionEPA(shapeA, shapeB, resultToPack);
    }
 
-   public static void evaluateShape3DPointShape3DCollision(FrameShape3DReadOnly shapeA, FramePointShape3DReadOnly shapeB,
+   public static void evaluateShape3DPointShape3DCollision(FrameShape3DReadOnly shapeA,
+                                                           FramePointShape3DReadOnly shapeB,
                                                            EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof FrameBox3DReadOnly)
@@ -155,7 +160,8 @@ public class PhysicsEngineTools
       }
    }
 
-   public static void evaluateShape3DRamp3DCollision(FrameShape3DReadOnly shapeA, FrameRamp3DReadOnly shapeB,
+   public static void evaluateShape3DRamp3DCollision(FrameShape3DReadOnly shapeA,
+                                                     FrameRamp3DReadOnly shapeB,
                                                      EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof PointShape3DReadOnly)
@@ -166,7 +172,8 @@ public class PhysicsEngineTools
          evaluateShape3DShape3DCollisionEPA(shapeA, shapeB, resultToPack);
    }
 
-   public static void evaluateShape3DSphere3DCollision(FrameShape3DReadOnly shapeA, FrameSphere3DReadOnly shapeB,
+   public static void evaluateShape3DSphere3DCollision(FrameShape3DReadOnly shapeA,
+                                                       FrameSphere3DReadOnly shapeB,
                                                        EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeA instanceof FrameBox3DReadOnly)
@@ -209,7 +216,8 @@ public class PhysicsEngineTools
       }
    }
 
-   public static void evaluateShape3DShape3DCollision(FrameShape3DReadOnly shapeA, FrameShape3DReadOnly shapeB,
+   public static void evaluateShape3DShape3DCollision(FrameShape3DReadOnly shapeA,
+                                                      FrameShape3DReadOnly shapeB,
                                                       EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       if (shapeB instanceof FrameBox3DReadOnly)
@@ -231,7 +239,8 @@ public class PhysicsEngineTools
 
    }
 
-   static void evaluateShape3DShape3DCollisionEPA(FrameShape3DReadOnly shapeA, FrameShape3DReadOnly shapeB,
+   static void evaluateShape3DShape3DCollisionEPA(FrameShape3DReadOnly shapeA,
+                                                  FrameShape3DReadOnly shapeB,
                                                   EuclidFrameShape3DCollisionResultBasics resultToPack)
    {
       new FrameExpandingPolytopeAlgorithm().evaluateCollision(shapeA, shapeB, resultToPack);

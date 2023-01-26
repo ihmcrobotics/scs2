@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 import us.ihmc.euclid.Axis3D;
+import us.ihmc.euclid.Location;
 import us.ihmc.euclid.geometry.interfaces.LineSegment3DReadOnly;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -125,7 +126,10 @@ public class STPShape3DTools
       private final Point3D faceCenter = new Point3D();
       private final Point3D edgeCenter = new Point3D();
 
-      public boolean getSupportingVertex(Box3DReadOnly box3D, double smallRadius, double largeRadius, Vector3DReadOnly supportDirection,
+      public boolean getSupportingVertex(Box3DReadOnly box3D,
+                                         double smallRadius,
+                                         double largeRadius,
+                                         Vector3DReadOnly supportDirection,
                                          Point3DBasics supportingVertexToPack)
       {
          if (box3D.getPose().hasRotation())
@@ -324,7 +328,10 @@ public class STPShape3DTools
       private final Point3D sideSphereCenter = new Point3D();
       private final Point3D edgeSphereCenter = new Point3D();
 
-      public boolean getSupportingVertex(Capsule3DReadOnly capsule3D, double smallRadius, double largeRadius, Vector3DReadOnly supportDirection,
+      public boolean getSupportingVertex(Capsule3DReadOnly capsule3D,
+                                         double smallRadius,
+                                         double largeRadius,
+                                         Vector3DReadOnly supportDirection,
                                          Point3DBasics supportingVertexToPack)
       {
          double capsuleHalfLength = capsule3D.getHalfLength();
@@ -364,7 +371,10 @@ public class STPShape3DTools
          return true;
       }
 
-      private boolean getSideSupportingVertex(Capsule3DReadOnly capsule3D, double smallRadius, double largeRadius, Vector3DReadOnly supportDirection,
+      private boolean getSideSupportingVertex(Capsule3DReadOnly capsule3D,
+                                              double smallRadius,
+                                              double largeRadius,
+                                              Vector3DReadOnly supportDirection,
                                               Point3DBasics supportingVertexToPack)
       {
          if (sideSphereCenter.containsNaN())
@@ -383,7 +393,10 @@ public class STPShape3DTools
       private final Point3D edgeSphereCenter = new Point3D();
       private final Point3D capSphereCenter = new Point3D();
 
-      public boolean getSupportingVertex(Cylinder3DReadOnly cylinder3D, double smallRadius, double largeRadius, Vector3DReadOnly supportDirection,
+      public boolean getSupportingVertex(Cylinder3DReadOnly cylinder3D,
+                                         double smallRadius,
+                                         double largeRadius,
+                                         Vector3DReadOnly supportDirection,
                                          Point3DBasics supportingVertexToPack)
       {
          double cylinderRadius = cylinder3D.getRadius();
@@ -432,7 +445,9 @@ public class STPShape3DTools
          return true;
       }
 
-      private boolean getSideSupportingVertex(Cylinder3DReadOnly cylinder3D, double largeRadius, Vector3DReadOnly supportDirection,
+      private boolean getSideSupportingVertex(Cylinder3DReadOnly cylinder3D,
+                                              double largeRadius,
+                                              Vector3DReadOnly supportDirection,
                                               Point3DBasics supportingVertexToPack)
       {
          if (sideSphereCenter.containsNaN())
@@ -444,7 +459,9 @@ public class STPShape3DTools
 
       private final Point3D validationPoint = new Point3D();
 
-      private boolean getCapSupportingVertex(Cylinder3DReadOnly cylinder3D, double largeRadius, Vector3DReadOnly supportDirection,
+      private boolean getCapSupportingVertex(Cylinder3DReadOnly cylinder3D,
+                                             double largeRadius,
+                                             Vector3DReadOnly supportDirection,
                                              Point3DBasics supportingVertexToPack)
       {
          EuclidShapeTools.supportingVertexSphere3D(supportDirection, capSphereCenter, largeRadius, supportingVertexToPack);
@@ -461,7 +478,10 @@ public class STPShape3DTools
       private final Point3D edgeTorusCenter = new Point3D();
       private final Vector3D edgeTorusAxis = new Vector3D();
 
-      public boolean getSupportingVertex(ConvexPolytope3DReadOnly convexPolytope3D, double smallRadius, double largeRadius, Vector3DReadOnly supportDirection,
+      public boolean getSupportingVertex(ConvexPolytope3DReadOnly convexPolytope3D,
+                                         double smallRadius,
+                                         double largeRadius,
+                                         Vector3DReadOnly supportDirection,
                                          Point3DBasics supportingVertexToPack)
       {
          Vertex3DReadOnly bestVertex = convexPolytope3D.getSupportingVertex(supportDirection);
@@ -502,8 +522,12 @@ public class STPShape3DTools
          return STPFace3D.newSTPFace3Ds(bestFace);
       }
 
-      private boolean getFaceSupportingVertex(Vector3DReadOnly supportDirection, List<STPFace3D> bestFaces, Vertex3DReadOnly bestVertex, double smallRadius,
-                                              double largeRadius, Point3DBasics supportingVertexToPack)
+      private boolean getFaceSupportingVertex(Vector3DReadOnly supportDirection,
+                                              List<STPFace3D> bestFaces,
+                                              Vertex3DReadOnly bestVertex,
+                                              double smallRadius,
+                                              double largeRadius,
+                                              Point3DBasics supportingVertexToPack)
       {
          for (STPFace3D stpFace : bestFaces)
          {
@@ -516,7 +540,10 @@ public class STPShape3DTools
          return false;
       }
 
-      private boolean getTriangleSupportingVertex(Vector3DReadOnly supportDirection, STPFace3D face, double smallRadius, double largeRadius,
+      private boolean getTriangleSupportingVertex(Vector3DReadOnly supportDirection,
+                                                  STPFace3D face,
+                                                  double smallRadius,
+                                                  double largeRadius,
                                                   Point3DBasics supportingVertexToPack)
       {
          EuclidGeometryTools.sphere3DPositionFromThreePoints(face.v0, face.v1, face.v2, largeRadius - smallRadius, faceSphereCenter);
@@ -524,8 +551,12 @@ public class STPShape3DTools
          return face.isPointDirectlyAboveOrBelow(supportingVertexToPack);
       }
 
-      private boolean getBestEdgeSupportingVertex(Vector3DReadOnly supportDirection, List<STPFace3D> bestFaces, Vertex3DReadOnly bestVertex, double smallRadius,
-                                                  double largeRadius, Point3DBasics supportingVertexToPack)
+      private boolean getBestEdgeSupportingVertex(Vector3DReadOnly supportDirection,
+                                                  List<STPFace3D> bestFaces,
+                                                  Vertex3DReadOnly bestVertex,
+                                                  double smallRadius,
+                                                  double largeRadius,
+                                                  Point3DBasics supportingVertexToPack)
       {
          STPHalfEdge3D bestEdge = null;
          double bestEdgeDot = Double.NEGATIVE_INFINITY;
@@ -553,7 +584,10 @@ public class STPShape3DTools
          return getEdgeSupportingVertex(supportDirection, bestEdge, smallRadius, largeRadius, supportingVertexToPack);
       }
 
-      private boolean getEdgeSupportingVertex(Vector3DReadOnly supportDirection, STPHalfEdge3D edge, double smallRadius, double largeRadius,
+      private boolean getEdgeSupportingVertex(Vector3DReadOnly supportDirection,
+                                              STPHalfEdge3D edge,
+                                              double smallRadius,
+                                              double largeRadius,
                                               Point3DBasics supportingVertexToPack)
       {
          edgeTorusCenter.add(edge.getFirstEndpoint(), edge.getSecondEndpoint());
@@ -726,7 +760,10 @@ public class STPShape3DTools
          }
       }
 
-      public boolean getSupportingVertex(Ramp3DReadOnly ramp3D, double smallRadius, double largeRadius, Vector3DReadOnly supportDirection,
+      public boolean getSupportingVertex(Ramp3DReadOnly ramp3D,
+                                         double smallRadius,
+                                         double largeRadius,
+                                         Vector3DReadOnly supportDirection,
                                          Point3DBasics supportingVertexToPack)
       {
          if (ramp3D.getPose().hasRotation())
@@ -942,8 +979,11 @@ public class STPShape3DTools
     * @return {@code true} if the two queries are on the same side of the plane,
     *         {@code false otherwise}.
     */
-   public static boolean arePoint3DsSameSideOfPlane3D(Point3DReadOnly firstQuery, Point3DReadOnly secondQuery, Point3DReadOnly firstPointOnPlane,
-                                                      Point3DReadOnly secondPointOnPlane, Vector3DReadOnly planeTangent)
+   public static boolean arePoint3DsSameSideOfPlane3D(Point3DReadOnly firstQuery,
+                                                      Point3DReadOnly secondQuery,
+                                                      Point3DReadOnly firstPointOnPlane,
+                                                      Point3DReadOnly secondPointOnPlane,
+                                                      Vector3DReadOnly planeTangent)
    {
       double firstQueryX = firstQuery.getX();
       double firstQueryY = firstQuery.getY();
@@ -1014,40 +1054,50 @@ public class STPShape3DTools
     * @return {@code true} if the two queries are on the same side of the plane,
     *         {@code false otherwise}.
     */
-   public static boolean arePoint3DsSameSideOfPlane3D(double firstQueryX, double firstQueryY, double firstQueryZ, double secondQueryX, double secondQueryY,
-                                                      double secondQueryZ, double pointOnPlaneX, double pointOnPlaneY, double pointOnPlaneZ,
-                                                      double planeFirstTangentX, double planeFirstTangentY, double planeFirstTangentZ,
-                                                      double planeSecondTangentX, double planeSecondTangentY, double planeSecondTangentZ)
+   public static boolean arePoint3DsSameSideOfPlane3D(double firstQueryX,
+                                                      double firstQueryY,
+                                                      double firstQueryZ,
+                                                      double secondQueryX,
+                                                      double secondQueryY,
+                                                      double secondQueryZ,
+                                                      double pointOnPlaneX,
+                                                      double pointOnPlaneY,
+                                                      double pointOnPlaneZ,
+                                                      double planeFirstTangentX,
+                                                      double planeFirstTangentY,
+                                                      double planeFirstTangentZ,
+                                                      double planeSecondTangentX,
+                                                      double planeSecondTangentY,
+                                                      double planeSecondTangentZ)
    {
 
       double planeNormalX = planeFirstTangentY * planeSecondTangentZ - planeFirstTangentZ * planeSecondTangentY;
       double planeNormalY = planeFirstTangentZ * planeSecondTangentX - planeFirstTangentX * planeSecondTangentZ;
       double planeNormalZ = planeFirstTangentX * planeSecondTangentY - planeFirstTangentY * planeSecondTangentX;
 
-      boolean isFirstQueryAbovePlane = EuclidGeometryTools.isPoint3DAboveOrBelowPlane3D(firstQueryX,
-                                                                                        firstQueryY,
-                                                                                        firstQueryZ,
-                                                                                        pointOnPlaneX,
-                                                                                        pointOnPlaneY,
-                                                                                        pointOnPlaneZ,
-                                                                                        planeNormalX,
-                                                                                        planeNormalY,
-                                                                                        planeNormalZ,
-                                                                                        true);
-      boolean isSecondQueryAbovePlane = EuclidGeometryTools.isPoint3DAboveOrBelowPlane3D(secondQueryX,
-                                                                                         secondQueryY,
-                                                                                         secondQueryZ,
+      boolean isFirstQueryAbovePlane = EuclidGeometryTools.whichSideOfPlane3DIsPoint3DOn(firstQueryX,
+                                                                                         firstQueryY,
+                                                                                         firstQueryZ,
                                                                                          pointOnPlaneX,
                                                                                          pointOnPlaneY,
                                                                                          pointOnPlaneZ,
                                                                                          planeNormalX,
                                                                                          planeNormalY,
-                                                                                         planeNormalZ,
-                                                                                         true);
+                                                                                         planeNormalZ) == Location.ABOVE;
+      boolean isSecondQueryAbovePlane = EuclidGeometryTools.whichSideOfPlane3DIsPoint3DOn(secondQueryX,
+                                                                                          secondQueryY,
+                                                                                          secondQueryZ,
+                                                                                          pointOnPlaneX,
+                                                                                          pointOnPlaneY,
+                                                                                          pointOnPlaneZ,
+                                                                                          planeNormalX,
+                                                                                          planeNormalY,
+                                                                                          planeNormalZ) == Location.ABOVE;
       return isFirstQueryAbovePlane == isSecondQueryAbovePlane;
    }
 
-   public static FrameBoundingBox3DReadOnly newLinkedFrameBoundingBox3DReadOnly(ReferenceFrameHolder referenceFrameHolder, Point3DReadOnly minPoint,
+   public static FrameBoundingBox3DReadOnly newLinkedFrameBoundingBox3DReadOnly(ReferenceFrameHolder referenceFrameHolder,
+                                                                                Point3DReadOnly minPoint,
                                                                                 Point3DReadOnly maxPoint)
    {
       FramePoint3DReadOnly linkedMinPoint = EuclidFrameFactories.newLinkedFramePoint3DReadOnly(referenceFrameHolder, minPoint);

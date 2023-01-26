@@ -17,7 +17,8 @@ public class RobotPhysicsOutput
 
    private double dt;
 
-   public RobotPhysicsOutput(RigidBodyAccelerationProvider accelerationProvider, RigidBodyTwistProvider deltaTwistProvider,
+   public RobotPhysicsOutput(RigidBodyAccelerationProvider accelerationProvider,
+                             RigidBodyTwistProvider deltaTwistProvider,
                              Function<RigidBodyReadOnly, WrenchReadOnly> externalWrenchProvider,
                              Function<RigidBodyReadOnly, SpatialImpulseReadOnly> externalImpulseProvider)
    {
