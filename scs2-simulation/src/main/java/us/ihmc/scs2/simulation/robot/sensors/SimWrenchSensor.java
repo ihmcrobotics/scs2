@@ -234,7 +234,6 @@ public class SimWrenchSensor extends SimSensor
          this.sensorLocation.set(sensorLocation);
       }
    }
-   
 
    public YoEnum<SensorLocation> getSensorLocation()
    {

@@ -183,7 +183,12 @@ public class SpyList<E> extends AbstractList<E>
 
       public ChangeImpl(boolean wasAdded, boolean wasRemoved, boolean wasReplaced, int index, E newElement, E oldElement)
       {
-         this(wasAdded, wasRemoved, wasReplaced, index, 1, newElement == null ? null : Collections.singletonList(newElement),
+         this(wasAdded,
+              wasRemoved,
+              wasReplaced,
+              index,
+              1,
+              newElement == null ? null : Collections.singletonList(newElement),
               oldElement == null ? null : Collections.singletonList(oldElement));
       }
 

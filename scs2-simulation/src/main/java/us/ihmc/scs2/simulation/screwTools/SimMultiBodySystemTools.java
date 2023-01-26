@@ -649,7 +649,10 @@ public class SimMultiBodySystemTools
     */
    public static SimJointReadOnly[] collectSupportAndSubtreeJoints(SimRigidBodyReadOnly... rigidBodies)
    {
-      return Stream.of(rigidBodies).map(SimMultiBodySystemTools::collectSupportAndSubtreeJoints).flatMap(Stream::of).distinct()
+      return Stream.of(rigidBodies)
+                   .map(SimMultiBodySystemTools::collectSupportAndSubtreeJoints)
+                   .flatMap(Stream::of)
+                   .distinct()
                    .toArray(SimJointReadOnly[]::new);
    }
 
@@ -822,8 +825,8 @@ public class SimMultiBodySystemTools
     * @param stateSelection   indicates what state is to be updated, i.e. it can be either
     *                         configuration, velocity, acceleration, or tau (or effort).
     * @param matrix           the matrix in which the new state of the joints is stored. The data is
-    *                         expected to be stored as a column vector starting at the first row.
-    *                         Not modified.
+    *                         expected to be stored as a column vector starting at the first row. Not
+    *                         modified.
     * @param maxMagnitude     asserts for each joint that the norm of the state being inserted is below
     *                         this value, throws an {@link IllegalArgumentException} is a state's norm
     *                         exceeds the value. This argument is ignored for

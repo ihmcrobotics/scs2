@@ -22,7 +22,9 @@ public class YoRobotJointLimitImpulseBasedCalculator extends RobotJointLimitImpu
 
       numberOfJointsAtLimit = new YoInteger("numberOfJointsAtLimit", registry);
 
-      yoJointDataMap = input.getJointsToConsider().stream().filter(OneDoFJointReadOnly.class::isInstance)
+      yoJointDataMap = input.getJointsToConsider()
+                            .stream()
+                            .filter(OneDoFJointReadOnly.class::isInstance)
                             .map(joint -> new YoJointLimitImpulseData((OneDoFJointReadOnly) joint, registry))
                             .collect(Collectors.toMap(YoJointLimitImpulseData::getJoint, Function.identity()));
    }

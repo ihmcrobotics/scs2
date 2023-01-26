@@ -7,8 +7,8 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 
 /**
- * Read-only interface for shapes that implement the sphere-torus-patches (STP) method to
- * make shapes strictly convex.
+ * Read-only interface for shapes that implement the sphere-torus-patches (STP) method to make
+ * shapes strictly convex.
  * <p>
  * This data structure was implemented initially to improve continuity when performing collision
  * detection continuously over time. The overall data structure is pretty experimental still and

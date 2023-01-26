@@ -69,8 +69,11 @@ public class CollisionTools
 
    public static List<Collidable> toCollidableRigidBody(RigidBodyDefinition definition, SimRigidBodyBasics rigidBodyInstance)
    {
-      return definition.getCollisionShapeDefinitions().stream().map(collisionShapeDefinition -> toCollidable(collisionShapeDefinition, rigidBodyInstance))
-                       .filter(Objects::nonNull).collect(Collectors.toList());
+      return definition.getCollisionShapeDefinitions()
+                       .stream()
+                       .map(collisionShapeDefinition -> toCollidable(collisionShapeDefinition, rigidBodyInstance))
+                       .filter(Objects::nonNull)
+                       .collect(Collectors.toList());
    }
 
    private static Collidable toCollidable(CollisionShapeDefinition definition, SimRigidBodyBasics rigidBody)
@@ -87,7 +90,9 @@ public class CollisionTools
 
    public static List<Collidable> toCollisionShape(TerrainObjectDefinition definition, ReferenceFrame worldFrame)
    {
-      return definition.getCollisionShapeDefinitions().stream().map(collisionShapeDefinition -> toStaticCollidable(collisionShapeDefinition, worldFrame))
+      return definition.getCollisionShapeDefinitions()
+                       .stream()
+                       .map(collisionShapeDefinition -> toStaticCollidable(collisionShapeDefinition, worldFrame))
                        .collect(Collectors.toList());
    }
 

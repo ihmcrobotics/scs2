@@ -454,7 +454,14 @@ public class ContactImpulseTools
       return cosTheta * lambda_v_0.unsafe_get(0, 0) + sinTheta * lambda_v_0.unsafe_get(1, 0) - mu * lambda_v_0.unsafe_get(2, 0) > 0.0;
    }
 
-   public static DMatrixRMaj computeSlipLambda(double beta1, double beta2, double beta3, double gamma, double mu, DMatrix M_inv, DMatrix lambda_v_0, DMatrix c,
+   public static DMatrixRMaj computeSlipLambda(double beta1,
+                                               double beta2,
+                                               double beta3,
+                                               double gamma,
+                                               double mu,
+                                               DMatrix M_inv,
+                                               DMatrix lambda_v_0,
+                                               DMatrix c,
                                                boolean verbose)
    {
       DMatrixRMaj lambdaOptMatrix = new DMatrixRMaj(3, 1);
@@ -487,8 +494,16 @@ public class ContactImpulseTools
     *                     minimize the tangential velocity, and cancel the normal velocity. Modified.
     * @param verbose      useful for debugging when this algorithm is acting up.
     */
-   public static void computeSlipLambda(double beta1, double beta2, double beta3, double gamma, double mu, DMatrix M_inv, DMatrix lambda_v_0, DMatrix c,
-                                        DMatrix lambdaToPack, boolean verbose)
+   public static void computeSlipLambda(double beta1,
+                                        double beta2,
+                                        double beta3,
+                                        double gamma,
+                                        double mu,
+                                        DMatrix M_inv,
+                                        DMatrix lambda_v_0,
+                                        DMatrix c,
+                                        DMatrix lambdaToPack,
+                                        boolean verbose)
    {
       // Initial guess using lambda_v_0
       double thetaLo0 = Math.atan2(lambda_v_0.unsafe_get(1, 0), lambda_v_0.unsafe_get(0, 0));

@@ -44,9 +44,14 @@ public class YoSingleContactImpulseCalculator extends SingleContactImpulseCalcul
    private List<JointVelocityChange> jointVelocityChangeAList;
    private List<JointVelocityChange> jointVelocityChangeBList;
 
-   public YoSingleContactImpulseCalculator(String prefix, int identifier, ReferenceFrame rootFrame, RigidBodyBasics rootBodyA,
-                                           ForwardDynamicsCalculator forwardDynamicsCalculatorA, RigidBodyBasics rootBodyB,
-                                           ForwardDynamicsCalculator forwardDynamicsCalculatorB, YoRegistry registry)
+   public YoSingleContactImpulseCalculator(String prefix,
+                                           int identifier,
+                                           ReferenceFrame rootFrame,
+                                           RigidBodyBasics rootBodyA,
+                                           ForwardDynamicsCalculator forwardDynamicsCalculatorA,
+                                           RigidBodyBasics rootBodyB,
+                                           ForwardDynamicsCalculator forwardDynamicsCalculatorB,
+                                           YoRegistry registry)
    {
       super(rootFrame, rootBodyA, forwardDynamicsCalculatorA, rootBodyB, forwardDynamicsCalculatorB);
 
@@ -203,8 +208,9 @@ public class YoSingleContactImpulseCalculator extends SingleContactImpulseCalcul
          velocityDueToOtherImpulseA.setMatchingFrame(getVelocityDueToOtherImpulseA());
 
       if (velocityChangeA != null)
-         velocityChangeA.getLinearPart().setMatchingFrame(getResponseCalculatorA().getTwistChangeProvider()
-                                                                                  .getLinearVelocityOfBodyFixedPoint(getContactingBodyA(), getPointA()));
+         velocityChangeA.getLinearPart()
+                        .setMatchingFrame(getResponseCalculatorA().getTwistChangeProvider()
+                                                                  .getLinearVelocityOfBodyFixedPoint(getContactingBodyA(), getPointA()));
 
       if (jointVelocityChangeAList != null)
       {
@@ -219,8 +225,9 @@ public class YoSingleContactImpulseCalculator extends SingleContactImpulseCalcul
       if (velocityDueToOtherImpulseB != null)
          velocityDueToOtherImpulseB.setMatchingFrame(getVelocityDueToOtherImpulseB());
       if (velocityChangeB != null)
-         velocityChangeB.getLinearPart().setMatchingFrame(getResponseCalculatorB().getTwistChangeProvider()
-                                                                                  .getLinearVelocityOfBodyFixedPoint(getContactingBodyB(), getPointB()));
+         velocityChangeB.getLinearPart()
+                        .setMatchingFrame(getResponseCalculatorB().getTwistChangeProvider()
+                                                                  .getLinearVelocityOfBodyFixedPoint(getContactingBodyB(), getPointB()));
       if (jointVelocityChangeBList != null)
       {
          if (getJointVelocityChange(1) != null)

@@ -17,7 +17,7 @@ public class SimulationEnergyStatistics
    {
       YoRegistry registry = new YoRegistry(SimulationEnergyStatistics.class.getSimpleName());
       simulationSession.getPhysicsEngine().getPhysicsEngineRegistry().addChild(registry);
-     
+
       for (Robot robot : simulationSession.getPhysicsEngine().getRobots())
       {
          simulationSession.addAfterPhysicsCallback(new RobotEnergyStatistics(robot, simulationSession.getGravity(), registry));
@@ -30,7 +30,7 @@ public class SimulationEnergyStatistics
       private final YoDouble potentialEnergy;
       private final YoDouble orbitalEnergy;
       private final Vector3DReadOnly gravity;
-      
+
       private List<? extends RigidBodyReadOnly> allRigidBodies;
 
       public RobotEnergyStatistics(Robot robot, Vector3DReadOnly gravity, YoRegistry registry)
@@ -56,7 +56,7 @@ public class SimulationEnergyStatistics
             kinetic += inertia.computeKineticCoEnergy(bodyFixedFrame.getTwistOfFrame());
             potential += -inertia.getMass() * gravity.dot(bodyFixedFrame.getTransformToRoot().getTranslation());
          }
-         
+
          kineticEnergy.set(kinetic);
          potentialEnergy.set(potential);
          orbitalEnergy.set(kinetic + potential);

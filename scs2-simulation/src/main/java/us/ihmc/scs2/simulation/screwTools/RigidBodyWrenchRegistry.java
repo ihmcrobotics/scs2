@@ -14,8 +14,8 @@ public class RigidBodyWrenchRegistry implements Function<RigidBodyReadOnly, Wren
 {
    private final Map<RigidBodyReadOnly, Wrench> rigidBodyWrenchMap = new HashMap<>();
    private final List<Wrench> wrenchCache = new ArrayList<>();
-   private final Function<RigidBodyReadOnly, Wrench> wrenchFactory = body -> {
-      
+   private final Function<RigidBodyReadOnly, Wrench> wrenchFactory = body ->
+   {
       Wrench wrench = new Wrench(body.getBodyFixedFrame(), body.getBodyFixedFrame());
       wrenchCache.add(wrench);
       return wrench;
