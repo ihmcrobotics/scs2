@@ -99,7 +99,8 @@ public class YoGraphicPropertyWindowController
 
       yoGraphicTreeView.setCellFactory(param -> new YoGraphicFXItemTreeCell(rootGroup));
       yoGraphicTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-      yoGraphicTreeView.getSelectionModel().selectedItemProperty()
+      yoGraphicTreeView.getSelectionModel()
+                       .selectedItemProperty()
                        .addListener((observable, oldValue, newValue) -> processTreeSelectionUpdate(oldValue, newValue));
       yoGraphicTreeView.setShowRoot(true);
       yoGraphicTreeView.setOnDragDetected(this::handleDragDetected);
@@ -116,20 +117,26 @@ public class YoGraphicPropertyWindowController
             activeContexMenu.set(null);
          }
 
+         FontAwesomeIconView collapseIcon = new FontAwesomeIconView(FontAwesomeIcon.MINUS_SQUARE_ALT);
+         FontAwesomeIconView expandIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS_SQUARE_ALT);
          FontAwesomeIconView addIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS);
          FontAwesomeIconView deleteIcon = new FontAwesomeIconView(FontAwesomeIcon.TIMES);
          FontAwesomeIconView duplicateIcon = new FontAwesomeIconView(FontAwesomeIcon.CLONE);
          addIcon.setFill(Color.web("#89e0c0"));
          deleteIcon.setFill(Color.web("#edafb7"));
          duplicateIcon.setFill(Color.web("#8996e0"));
+         MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
+         MenuItem expandItem = new MenuItem("Expand all", expandIcon);
          MenuItem addItem = new MenuItem("Add item...", addIcon);
          MenuItem removeItem = new MenuItem("Remove item", deleteIcon);
          MenuItem duplicateItem = new MenuItem("Duplicate item", duplicateIcon);
+         collapseItem.setOnAction(e2 -> collapseAll());
+         expandItem.setOnAction(e2 -> expandAll());
          addItem.setOnAction(e2 -> addItem());
          removeItem.setOnAction(e2 -> removeItem());
          duplicateItem.setOnAction(e2 -> duplicateItem());
 
-         ContextMenu contextMenu = new ContextMenu(addItem, removeItem, duplicateItem);
+         ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem, addItem, removeItem, duplicateItem);
          contextMenu.show(yoGraphicTreeView, e.getScreenX(), e.getScreenY());
          activeContexMenu.set(contextMenu);
       });
@@ -249,14 +256,25 @@ public class YoGraphicPropertyWindowController
       copyExpandedPropertyRecursively(oldRootItem, rootItem);
    }
 
-   private void expandTreeView(TreeItem<?> item)
+   private void collapseSubTreeView(TreeItem<?> item)
+   {
+      if (item != null && !item.isLeaf())
+      {
+         item.setExpanded(false);
+
+         for (TreeItem<?> child : item.getChildren())
+            collapseSubTreeView(child);
+      }
+   }
+
+   private void expandSubTreeView(TreeItem<?> item)
    {
       if (item != null && !item.isLeaf())
       {
          item.setExpanded(true);
 
          for (TreeItem<?> child : item.getChildren())
-            expandTreeView(child);
+            expandSubTreeView(child);
       }
    }
 
@@ -268,15 +286,18 @@ public class YoGraphicPropertyWindowController
          {
             if (reference == null)
             {
-               expandTreeView(child);
+               expandSubTreeView(child);
             }
             else
             {
-               TreeItem<?> referenceChild = reference.getChildren().stream().filter(refChild -> refChild.getValue() == child.getValue()).findFirst()
+               TreeItem<?> referenceChild = reference.getChildren()
+                                                     .stream()
+                                                     .filter(refChild -> refChild.getValue() == child.getValue())
+                                                     .findFirst()
                                                      .orElse(null);
                if (referenceChild == null)
                {
-                  expandTreeView(child);
+                  expandSubTreeView(child);
                }
                else
                {
@@ -462,6 +483,16 @@ public class YoGraphicPropertyWindowController
    {
       yoGraphicEditorPane.getChildren().clear();
       activeEditor.set(null);
+   }
+
+   public void collapseAll()
+   {
+      collapseSubTreeView(rootItem);
+   }
+
+   public void expandAll()
+   {
+      expandSubTreeView(rootItem);
    }
 
    @FXML
@@ -700,7 +731,10 @@ public class YoGraphicPropertyWindowController
 
    public void handleDragDetected(MouseEvent event)
    {
-      List<YoGraphicFXItem> items = yoGraphicTreeView.getSelectionModel().getSelectedItems().stream().map(TreeItem<YoGraphicFXItem>::getValue)
+      List<YoGraphicFXItem> items = yoGraphicTreeView.getSelectionModel()
+                                                     .getSelectedItems()
+                                                     .stream()
+                                                     .map(TreeItem<YoGraphicFXItem>::getValue)
                                                      .collect(Collectors.toList());
 
       Dragboard dragBoard = yoGraphicTreeView.startDragAndDrop(TransferMode.ANY);
