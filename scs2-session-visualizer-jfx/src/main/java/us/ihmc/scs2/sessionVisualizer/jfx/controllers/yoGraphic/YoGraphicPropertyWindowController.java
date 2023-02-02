@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.controlsfx.control.CheckTreeView;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -22,7 +21,6 @@ import javafx.animation.Timeline;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
 import javafx.fxml.FXML;
@@ -271,7 +269,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
       CheckBoxTreeItem<YoGraphicFXItem> oldRootItem = defaultRootItem;
       defaultRootItem = new CheckBoxTreeItem<>(rootGroup);
       defaultRootItem.setExpanded(true);
-      bindVisibilityProperty(defaultRootItem);
+      defaultRootItem.selectedProperty().bindBidirectional(defaultRootItem.getValue().visibleProperty());
       buildTreeRecursively(defaultRootItem);
       yoGraphicTreeView.setRoot(defaultRootItem);
       copyExpandedPropertyRecursively(oldRootItem, defaultRootItem);
@@ -329,57 +327,6 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
             }
          }
       }
-   }
-
-   private void bindVisibilityProperty(CheckBoxTreeItem<YoGraphicFXItem> treeItem)
-   {
-      treeItem.setSelected(treeItem.getValue().isVisible());
-      treeItem.setIndeterminate(areChildrenOnlyPartiallyVisible(treeItem.getValue()));
-
-      MutableBoolean isBindingUpdate = new MutableBoolean(false);
-
-      treeItem.selectedProperty().addListener((observable, oldValue, newValue) ->
-      {
-         if (isBindingUpdate.booleanValue() || treeItem.isIndeterminate() || treeItem.getValue() == null)
-            return;
-         isBindingUpdate.setTrue();
-         treeItem.getValue().setVisible(newValue);
-         isBindingUpdate.setFalse();
-      });
-
-      treeItem.valueProperty().addListener(new ChangeListener<YoGraphicFXItem>()
-      {
-         private YoGraphicFXItem currentItem = null;
-
-         private final ChangeListener<? super Boolean> fxItemVisibleListener = (o, oldValue, newValue) ->
-         {
-            if (isBindingUpdate.booleanValue())
-               return;
-            isBindingUpdate.setTrue();
-            treeItem.setSelected(newValue);
-            treeItem.setIndeterminate(areChildrenOnlyPartiallyVisible(currentItem));
-            isBindingUpdate.setFalse();
-         };
-
-         @Override
-         public void changed(ObservableValue<? extends YoGraphicFXItem> observable, YoGraphicFXItem oldFXItem, YoGraphicFXItem newFXItem)
-         {
-            oldFXItem.visibleProperty().removeListener(fxItemVisibleListener);
-            currentItem = newFXItem;
-            newFXItem.visibleProperty().addListener(fxItemVisibleListener);
-         }
-      });
-   }
-
-   private static boolean areChildrenOnlyPartiallyVisible(YoGraphicFXItem item)
-   {
-      boolean areAllChildrenVisible = item.getItemChildren().stream().allMatch(YoGraphicFXItem::isVisible);
-      if (areAllChildrenVisible)
-         return false;
-      boolean areNoChildrenVisible = item.getItemChildren().stream().noneMatch(YoGraphicFXItem::isVisible);
-      if (areNoChildrenVisible)
-         return false;
-      return true;
    }
 
    private void selectItem(TreeItem<YoGraphicFXItem> treeItem, YoGraphicFXItem itemToSelect)
@@ -558,6 +505,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
    {
       filterItems(parent, itemsToKeep.contains(parent.getValue()), itemsToKeep);
    }
+
    private static void filterItems(TreeItem<YoGraphicFXItem> parent, boolean isAncestorInSelection, Set<YoGraphicFXItem> itemsToKeep)
    {
       if (parent == null || parent.isLeaf())
@@ -841,7 +789,8 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
       for (YoGraphicFXItem child : parent.getValue().getItemChildren())
       {
          CheckBoxTreeItem<YoGraphicFXItem> childItem = new CheckBoxTreeItem<>(child);
-         bindVisibilityProperty(childItem);
+         childItem.setIndependent(true);
+         childItem.selectedProperty().bindBidirectional(childItem.getValue().visibleProperty());
          parent.getChildren().add(childItem);
          buildTreeRecursively(childItem);
       }
