@@ -1,5 +1,10 @@
 package us.ihmc.scs2.session.tools;
 
+import static us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory.newYoQuaternionDefinition;
+import static us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory.newYoTuple2DDefinition;
+import static us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory.newYoTuple3DDefinition;
+import static us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory.newYoYawPitchRollDefinition;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -39,10 +44,8 @@ import us.ihmc.graphicsDescription.yoGraphics.plotting.YoArtifactPolygon;
 import us.ihmc.graphicsDescription.yoGraphics.plotting.YoArtifactPosition;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCoordinateSystem3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicCylinder3DDefinition;
@@ -171,7 +174,7 @@ public class SCS1GraphicConversionTools
 
       for (int i = 0; i < vertexBufferSize; i++)
       {
-         YoTuple2DDefinition vertex = toYoTuple2DDefinition(yoVariables, yoVariableIndex);
+         YoTuple2DDefinition vertex = newYoTuple2DDefinition(yoVariables, yoVariableIndex);
          vertex.setReferenceFrame(null);
          vertices.add(vertex);
          yoVariableIndex += 2;
@@ -179,17 +182,17 @@ public class SCS1GraphicConversionTools
 
       definition.setVertices(vertices);
 
-      definition.setPosition(toYoTuple3DDefinition(yoVariables, yoVariableIndex));
+      definition.setPosition(newYoTuple3DDefinition(yoVariables, yoVariableIndex));
       yoVariableIndex += 3;
 
       if (yoGraphicPolygon.isUsingYawPitchRoll())
       {
-         definition.setOrientation(toYoYawPitchRollDefinition(yoVariables, yoVariableIndex));
+         definition.setOrientation(newYoYawPitchRollDefinition(yoVariables, yoVariableIndex));
          yoVariableIndex += 3;
       }
       else
       {
-         definition.setOrientation(toYoQuaternionDefinition(yoVariables, yoVariableIndex));
+         definition.setOrientation(newYoQuaternionDefinition(yoVariables, yoVariableIndex));
          yoVariableIndex += 4;
       }
 
@@ -246,17 +249,17 @@ public class SCS1GraphicConversionTools
       int yoVariableIndex = 0;
       double[] constants = yoGraphicCoordinateSystem.getConstants();
 
-      definition.setPosition(toYoTuple3DDefinition(yoVariables, yoVariableIndex));
+      definition.setPosition(newYoTuple3DDefinition(yoVariables, yoVariableIndex));
       yoVariableIndex += 3;
 
       if (yoVariables.length == 6)
       {
-         definition.setOrientation(toYoYawPitchRollDefinition(yoVariables, yoVariableIndex));
+         definition.setOrientation(newYoYawPitchRollDefinition(yoVariables, yoVariableIndex));
          yoVariableIndex += 3;
       }
       else
       {
-         definition.setOrientation(toYoQuaternionDefinition(yoVariables, yoVariableIndex));
+         definition.setOrientation(newYoQuaternionDefinition(yoVariables, yoVariableIndex));
          yoVariableIndex += 4;
       }
 
@@ -303,9 +306,9 @@ public class SCS1GraphicConversionTools
       double[] constants = yoGraphicCylinder.getConstants();
 
       // FIXME the YoGraphicCylinder only gives the position of the base and not the center.
-      definition.setCenter(toYoTuple3DDefinition(yoVariables, yoVariableIndex));
+      definition.setCenter(newYoTuple3DDefinition(yoVariables, yoVariableIndex));
       yoVariableIndex += 3;
-      definition.setAxis(toYoTuple3DDefinition(yoVariables, yoVariableIndex));
+      definition.setAxis(newYoTuple3DDefinition(yoVariables, yoVariableIndex));
       yoVariableIndex += 3;
 
       definition.setRadius(constants[0]);
@@ -349,19 +352,22 @@ public class SCS1GraphicConversionTools
          int xSize = (int) polynomialSizes[0];
          String xNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
          List<String> xCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + xSize - 1))
-                                      .map(YoVariable::getFullNameString).collect(Collectors.toList());
+                                      .map(YoVariable::getFullNameString)
+                                      .collect(Collectors.toList());
          yoVariableIndex += xSize;
 
          int ySize = (int) polynomialSizes[1];
          String yNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
          List<String> yCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + ySize - 1))
-                                      .map(YoVariable::getFullNameString).collect(Collectors.toList());
+                                      .map(YoVariable::getFullNameString)
+                                      .collect(Collectors.toList());
          yoVariableIndex += ySize;
 
          int zSize = (int) polynomialSizes[2];
          String zNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
          List<String> zCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + zSize - 1))
-                                      .map(YoVariable::getFullNameString).collect(Collectors.toList());
+                                      .map(YoVariable::getFullNameString)
+                                      .collect(Collectors.toList());
          yoVariableIndex += ySize;
 
          definition.setCoefficientsX(new YoListDefinition(xCoeffs, xNumberOfCoeffs));
@@ -391,19 +397,22 @@ public class SCS1GraphicConversionTools
             int xSize = (int) polynomialSizes[0];
             String xNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
             List<String> xCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + xSize - 1))
-                                         .map(YoVariable::getFullNameString).collect(Collectors.toList());
+                                         .map(YoVariable::getFullNameString)
+                                         .collect(Collectors.toList());
             yoVariableIndex += xSize;
 
             int ySize = (int) polynomialSizes[1];
             String yNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
             List<String> yCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + ySize - 1))
-                                         .map(YoVariable::getFullNameString).collect(Collectors.toList());
+                                         .map(YoVariable::getFullNameString)
+                                         .collect(Collectors.toList());
             yoVariableIndex += ySize;
 
             int zSize = (int) polynomialSizes[2];
             String zNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
             List<String> zCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + zSize - 1))
-                                         .map(YoVariable::getFullNameString).collect(Collectors.toList());
+                                         .map(YoVariable::getFullNameString)
+                                         .collect(Collectors.toList());
             yoVariableIndex += ySize;
 
             definition.setCoefficientsX(new YoListDefinition(xCoeffs, xNumberOfCoeffs));
@@ -457,8 +466,8 @@ public class SCS1GraphicConversionTools
       YoVariable[] yoVariables = yoGraphicVector.getVariables();
       double[] constants = yoGraphicVector.getConstants();
 
-      definition.setOrigin(toYoTuple3DDefinition(yoVariables, 0));
-      definition.setDirection(toYoTuple3DDefinition(yoVariables, 3));
+      definition.setOrigin(newYoTuple3DDefinition(yoVariables, 0));
+      definition.setDirection(newYoTuple3DDefinition(yoVariables, 3));
 
       double scale = constants[0];
       definition.setBodyLength(0.9000 * scale);
@@ -512,8 +521,8 @@ public class SCS1GraphicConversionTools
       definition.setName(yoArtifactLine2d.getName());
 
       YoVariable[] yoVariables = yoArtifactLine2d.getVariables();
-      definition.setOrigin(toYoTuple2DDefinition(yoVariables, 0));
-      definition.setDirection(toYoTuple2DDefinition(yoVariables, 2));
+      definition.setOrigin(newYoTuple2DDefinition(yoVariables, 0));
+      definition.setDirection(newYoTuple2DDefinition(yoVariables, 2));
       definition.setStrokeColor(toColorDefinition(yoArtifactLine2d.getAppearance()));
       definition.setStrokeWidth(1.5);
       definition.setVisible(yoArtifactLine2d.isVisible());
@@ -526,8 +535,8 @@ public class SCS1GraphicConversionTools
       definition.setName(yoArtifactLineSegment2d.getName());
 
       YoVariable[] yoVariables = yoArtifactLineSegment2d.getVariables();
-      definition.setOrigin(toYoTuple2DDefinition(yoVariables, 0));
-      definition.setDestination(toYoTuple2DDefinition(yoVariables, 2));
+      definition.setOrigin(newYoTuple2DDefinition(yoVariables, 0));
+      definition.setDestination(newYoTuple2DDefinition(yoVariables, 2));
       definition.setStrokeColor(toColorDefinition(yoArtifactLineSegment2d.getAppearance()));
       definition.setStrokeWidth(1.5);
       definition.setVisible(yoArtifactLineSegment2d.isVisible());
@@ -552,7 +561,7 @@ public class SCS1GraphicConversionTools
 
       for (int i = 1; i < yoVariables.length; i += 2)
       {
-         definition.getVertices().add(toYoTuple2DDefinition(yoVariables, i));
+         definition.getVertices().add(newYoTuple2DDefinition(yoVariables, i));
       }
 
       if (yoArtifactPolygon.getConstants()[0] == 1.0)
@@ -567,7 +576,7 @@ public class SCS1GraphicConversionTools
    {
       YoGraphicPoint2DDefinition definition = new YoGraphicPoint2DDefinition();
       definition.setName(yoArtifactPosition.getName());
-      definition.setPosition(toYoTuple2DDefinition(yoArtifactPosition.getVariables(), 0));
+      definition.setPosition(newYoTuple2DDefinition(yoArtifactPosition.getVariables(), 0));
       definition.setSize(2.0 * yoArtifactPosition.getConstants()[0]);
 
       boolean fill = false;
@@ -659,65 +668,5 @@ public class SCS1GraphicConversionTools
       }
 
       return definition;
-   }
-
-   public static YoTuple3DDefinition toYoTuple3DDefinition(YoVariable[] variables, int startIndex)
-   {
-      return toYoTuple3DDefinition(variables[startIndex++], variables[startIndex++], variables[startIndex]);
-   }
-
-   public static YoTuple3DDefinition toYoTuple3DDefinition(YoVariable x, YoVariable y, YoVariable z)
-   {
-      YoTuple3DDefinition position = new YoTuple3DDefinition();
-      position.setX(x.getFullNameString());
-      position.setY(y.getFullNameString());
-      position.setZ(z.getFullNameString());
-      position.setReferenceFrame(WORLD_FRAME);
-      return position;
-   }
-
-   public static YoTuple2DDefinition toYoTuple2DDefinition(YoVariable[] variables, int startIndex)
-   {
-      return toYoTuple2DDefinition(variables[startIndex++], variables[startIndex]);
-   }
-
-   public static YoTuple2DDefinition toYoTuple2DDefinition(YoVariable x, YoVariable y)
-   {
-      YoTuple2DDefinition position = new YoTuple2DDefinition();
-      position.setX(x.getFullNameString());
-      position.setY(y.getFullNameString());
-      position.setReferenceFrame(WORLD_FRAME);
-      return position;
-   }
-
-   public static YoYawPitchRollDefinition toYoYawPitchRollDefinition(YoVariable[] variables, int startIndex)
-   {
-      return toYoYawPitchRollDefinition(variables[startIndex++], variables[startIndex++], variables[startIndex]);
-   }
-
-   public static YoYawPitchRollDefinition toYoYawPitchRollDefinition(YoVariable yaw, YoVariable pitch, YoVariable roll)
-   {
-      YoYawPitchRollDefinition orientation = new YoYawPitchRollDefinition();
-      orientation.setYaw(yaw.getFullNameString());
-      orientation.setPitch(pitch.getFullNameString());
-      orientation.setRoll(roll.getFullNameString());
-      orientation.setReferenceFrame(WORLD_FRAME);
-      return orientation;
-   }
-
-   public static YoQuaternionDefinition toYoQuaternionDefinition(YoVariable[] variables, int startIndex)
-   {
-      return toYoQuaternionDefinition(variables[startIndex++], variables[startIndex++], variables[startIndex++], variables[startIndex]);
-   }
-
-   public static YoQuaternionDefinition toYoQuaternionDefinition(YoVariable qx, YoVariable qy, YoVariable qz, YoVariable qs)
-   {
-      YoQuaternionDefinition orientation = new YoQuaternionDefinition();
-      orientation.setX(qx.getFullNameString());
-      orientation.setY(qy.getFullNameString());
-      orientation.setZ(qz.getFullNameString());
-      orientation.setS(qs.getFullNameString());
-      orientation.setReferenceFrame(WORLD_FRAME);
-      return orientation;
    }
 }
