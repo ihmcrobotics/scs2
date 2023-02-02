@@ -1,7 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -376,6 +378,34 @@ public class YoGroupFX implements YoGraphicFXItem
    public boolean containsChild(String childName)
    {
       return children.stream().filter(child -> childName.equals(child.getName())).findFirst().isPresent();
+   }
+
+   public List<YoGroupFX> collectSubtreeGroups()
+   {
+      return collectSubtreeGroups(new ArrayList<>());
+   }
+
+   public List<YoGroupFX> collectSubtreeGroups(List<YoGroupFX> groupsToPack)
+   {
+      groupsToPack.add(this);
+
+      children.forEach(child -> child.collectSubtreeGroups(groupsToPack));
+      return groupsToPack;
+   }
+
+   public List<YoGraphicFXItem> collectSubtreeItems()
+   {
+      return collectSubtreeItems(new ArrayList<>());
+   }
+
+   public List<YoGraphicFXItem> collectSubtreeItems(List<YoGraphicFXItem> itemsToPack)
+   {
+      // Not using the itemChildren collection as it contains groups as well and we want to make sure 'this' is in the result.
+      itemsToPack.add(this);
+      itemsToPack.addAll(yoGraphicFX2DSet);
+      itemsToPack.addAll(yoGraphicFX3DSet);
+      children.forEach(child -> child.collectSubtreeItems(itemsToPack));
+      return itemsToPack;
    }
 
    @Override
