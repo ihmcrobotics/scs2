@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -34,6 +37,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
@@ -50,16 +54,21 @@ import javafx.util.Duration;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
-public class YoGraphicPropertyWindowController
+public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
 {
    @FXML
    private AnchorPane mainAnchorPane;
@@ -68,13 +77,20 @@ public class YoGraphicPropertyWindowController
    @FXML
    private Button addItemButton, removeItemButton;
    @FXML
+   private TextField searchTextField;
+   @FXML
    private Label yoGraphicTypeLabel;
    @FXML
    private AnchorPane yoGraphicEditorPane;
    @FXML
    private Button saveChangesButton, revertChangesButton;
 
-   private CheckBoxTreeItem<YoGraphicFXItem> rootItem;
+   private CheckBoxTreeItem<YoGraphicFXItem> defaultRootItem;
+
+   private CheckBoxTreeItem<YoGraphicFXItem> searchResult = null;
+   private List<YoGraphicFXItem> allGraphicItems;
+   private Future<CheckBoxTreeItem<YoGraphicFXItem>> backgroundSearch;
+   private BackgroundExecutorManager backgroundExecutorManager;
 
    private SessionVisualizerToolkit toolkit;
    private SessionVisualizerTopics topics;
@@ -94,6 +110,7 @@ public class YoGraphicPropertyWindowController
       messager = toolkit.getMessager();
       rootGroup = toolkit.getYoGraphicFXRootGroup();
       sessionRootGroup = toolkit.getYoGraphicFXSessionRootGroup();
+      backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
 
       initializeTreeViewAutoRefreshListener(rootGroup);
 
@@ -181,6 +198,8 @@ public class YoGraphicPropertyWindowController
          }
       });
 
+      searchTextField.textProperty().addListener((ChangeListener<String>) (observable, oldValue, newValue) -> search(newValue));
+
       window = new Stage(StageStyle.UTILITY);
       window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
@@ -192,6 +211,8 @@ public class YoGraphicPropertyWindowController
          if (!e.isConsumed())
             window.close();
       });
+      window.setOnHidden(e -> stop());
+      window.setOnShowing(e -> start());
       window.setTitle("YoGraphic properties");
       window.setScene(new Scene(mainAnchorPane));
       window.initOwner(toolkit.getMainWindow());
@@ -247,13 +268,14 @@ public class YoGraphicPropertyWindowController
    private void refreshTreeView()
    {
       unloadEditor();
-      CheckBoxTreeItem<YoGraphicFXItem> oldRootItem = rootItem;
-      rootItem = new CheckBoxTreeItem<>(rootGroup);
-      rootItem.setExpanded(true);
-      bindVisibilityProperty(rootItem);
-      buildTreeRecursively(rootItem);
-      yoGraphicTreeView.setRoot(rootItem);
-      copyExpandedPropertyRecursively(oldRootItem, rootItem);
+      CheckBoxTreeItem<YoGraphicFXItem> oldRootItem = defaultRootItem;
+      defaultRootItem = new CheckBoxTreeItem<>(rootGroup);
+      defaultRootItem.setExpanded(true);
+      bindVisibilityProperty(defaultRootItem);
+      buildTreeRecursively(defaultRootItem);
+      yoGraphicTreeView.setRoot(defaultRootItem);
+      copyExpandedPropertyRecursively(oldRootItem, defaultRootItem);
+      allGraphicItems = rootGroup.collectSubtreeItems();
    }
 
    private void collapseSubTreeView(TreeItem<?> item)
@@ -485,14 +507,110 @@ public class YoGraphicPropertyWindowController
       activeEditor.set(null);
    }
 
+   @FXML
+   public void clearSearch()
+   {
+      searchTextField.clear();
+   }
+
+   public void search(String searchQuery)
+   {
+      if (backgroundSearch != null)
+      {
+         backgroundSearch.cancel(true);
+         backgroundSearch = null;
+      }
+
+      if (searchQuery != null && !searchQuery.isEmpty())
+      {
+         backgroundSearch = backgroundExecutorManager.executeInBackground(() ->
+         {
+            if (allGraphicItems == null)
+            {
+               return null;
+            }
+
+            return createFilteredRootItem(YoVariableTools.search(allGraphicItems,
+                                                                 item -> item.getName(),
+                                                                 searchQuery,
+                                                                 YoVariableTools.fromSearchEnginesEnum(SearchEngines.DEFAULT),
+                                                                 Integer.MAX_VALUE,
+                                                                 Collectors.toSet()));
+         });
+      }
+      else
+      {
+         searchResult = defaultRootItem;
+         expandAll();
+      }
+   }
+
+   private CheckBoxTreeItem<YoGraphicFXItem> createFilteredRootItem(Set<YoGraphicFXItem> subSelection)
+   {
+      CheckBoxTreeItem<YoGraphicFXItem> root = new CheckBoxTreeItem<>(rootGroup);
+      buildTreeRecursively(root);
+      filterItems(root, subSelection);
+      TreeViewTools.expandRecursively(root);
+      return root;
+   }
+
+   private static void filterItems(TreeItem<YoGraphicFXItem> parent, Set<YoGraphicFXItem> itemsToKeep)
+   {
+      filterItems(parent, itemsToKeep.contains(parent.getValue()), itemsToKeep);
+   }
+   private static void filterItems(TreeItem<YoGraphicFXItem> parent, boolean isAncestorInSelection, Set<YoGraphicFXItem> itemsToKeep)
+   {
+      if (parent == null || parent.isLeaf())
+         return;
+
+      for (TreeItem<YoGraphicFXItem> child : parent.getChildren())
+      {
+         if (!child.getChildren().isEmpty())
+            filterItems(child, isAncestorInSelection || itemsToKeep.contains(child.getValue()), itemsToKeep);
+      }
+
+      for (int i = parent.getChildren().size() - 1; i >= 0; i--)
+      {
+         TreeItem<YoGraphicFXItem> child = parent.getChildren().get(i);
+
+         if (!child.isLeaf() || child.getValue() == null)
+            continue;
+
+         if (!isAncestorInSelection && !itemsToKeep.contains(child.getValue()))
+            parent.getChildren().remove(i);
+      }
+   }
+
+   @Override
+   public void handleImpl(long now)
+   {
+      if (backgroundSearch != null && backgroundSearch.isDone() && !backgroundSearch.isCancelled())
+      {
+         try
+         {
+            searchResult = backgroundSearch.get();
+         }
+         catch (InterruptedException | ExecutionException e)
+         {
+            e.printStackTrace();
+         }
+      }
+
+      if (searchResult != null)
+      {
+         yoGraphicTreeView.setRoot(searchResult);
+         searchResult = null;
+      }
+   }
+
    public void collapseAll()
    {
-      collapseSubTreeView(rootItem);
+      collapseSubTreeView(yoGraphicTreeView.getRoot());
    }
 
    public void expandAll()
    {
-      expandSubTreeView(rootItem);
+      expandSubTreeView(yoGraphicTreeView.getRoot());
    }
 
    @FXML
@@ -541,7 +659,7 @@ public class YoGraphicPropertyWindowController
          {
             JavaFXMissingTools.runLater(getClass(), () ->
             {
-               selectItem(rootItem, newItem);
+               selectItem(defaultRootItem, newItem);
                yoGraphicTreeView.requestFocus();
             });
          }
@@ -626,7 +744,7 @@ public class YoGraphicPropertyWindowController
          if (nextSelectedItem == null)
             yoGraphicTreeView.getSelectionModel().select(0);
          else
-            selectItem(rootItem, nextSelectedItem);
+            selectItem(defaultRootItem, nextSelectedItem);
          yoGraphicTreeView.requestFocus();
       });
    }
@@ -645,7 +763,7 @@ public class YoGraphicPropertyWindowController
 
       JavaFXMissingTools.runLater(getClass(), () ->
       {
-         selectItem(rootItem, newItem);
+         selectItem(defaultRootItem, newItem);
          yoGraphicTreeView.requestFocus();
       });
    }
