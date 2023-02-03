@@ -45,14 +45,6 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 `YoGraphic3D` represents the group of 3D graphics that will show up in the 3D view, while `YoGraphic2D` represents the group of 2D graphics that will show up in the overhead plotter. The latter can be displayed via the menu _YoGraphic > Overhead Plotter_.
 `YoGraphic`s can be created via the menu _YoGraphic > YoGraphic properties..._. You can export/import `YoGraphic` to a file via _YoComposite > Load/Save YoGraphic..._.
 
-# How to get it?
-## Executable version:
-The binaries can be downloaded from the release section of the GitHub page: <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/releases">Release page</a>.
-## From source:
-Keep in mind that this project being at the alpha stage it'll be refactored quite several times. If you still want to have it from source, I recommend not making development that depends on it. If you want to make development on top of it, that is at your own risk, development on SCS2 will not consider dependencies.
-
-You'll need to clone this repository and at times source dependencies will be required most likely including: `ihmc-javafx-toolkit`, `ihmc-robot-data-logger`, `ihmc-graphics-description`.
-
 # System properties:
 - `scs2.home`: Defines the home folder in which SCS2 is saving configuration files.
 - `scs2.session.buffer.initialsize`: Defines the default buffer size for any type of session.
