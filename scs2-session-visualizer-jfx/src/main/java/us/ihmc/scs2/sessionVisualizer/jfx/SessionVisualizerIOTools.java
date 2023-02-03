@@ -177,12 +177,12 @@ public class SessionVisualizerIOTools
 
    // SCS 1 Skybox
    public static final String SKYBOX_SCS1_FOLDER = "brightSky/";
-   public static final Image SCS1_SKYBOX_TOP_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "up.bmp"));
-   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "down.bmp"));
-   public static final Image SCS1_SKYBOX_LEFT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "west.bmp"));
-   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "east.bmp"));
-   public static final Image SCS1_SKYBOX_FRONT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "north.bmp"));
-   public static final Image SCS1_SKYBOX_BACK_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "south.bmp"));
+   public static final Image SCS1_SKYBOX_TOP_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Up.bmp"));
+   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Down.bmp"));
+   public static final Image SCS1_SKYBOX_LEFT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Left.bmp"));
+   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Right.bmp"));
+   public static final Image SCS1_SKYBOX_FRONT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Front.bmp"));
+   public static final Image SCS1_SKYBOX_BACK_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Back.bmp"));
 
    public static void addSCSIconToDialog(Dialog<?> dialog)
    {

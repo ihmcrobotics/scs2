@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,16 +14,27 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.Skybox;
+import us.ihmc.scs2.sessionVisualizer.jfx.Skybox.SkyboxTheme;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class EnvironmentManager implements Manager
 {
+   public static final SkyboxTheme SKYBOX_THEME = SessionPropertiesHelper.loadEnumPropertyOrEnvironment("scs2.session.gui.skybox.theme",
+                                                                                                        "SCS2_SKYBOX_THEME",
+                                                                                                        SkyboxTheme.class,
+                                                                                                        SkyboxTheme.CLOUDY_CROWN_MIDDAY);
+   public static final String SKYBOX_CUSTOM_PATH = SessionPropertiesHelper.loadStringPropertyOrEnvironment("scs2.session.gui.skybox.custompath",
+                                                                                                           "SCS2_SKYBOX_CUSTOM_PATH",
+                                                                                                           null);
+
    private static final int LARGE_TRIANGLE_MESH_THRESHOLD = 1000000;
 
    private final Group rootNode = new Group();
@@ -65,10 +77,29 @@ public class EnvironmentManager implements Manager
 
       skybox = new Skybox();
 
-      if (Skybox.USE_CLOUDY_CROWN_SKY_BOX)
-         skybox.setupCloudyCrown();
-      else
-         skybox.setupSCS1Skybox();
+      switch (SKYBOX_THEME)
+      {
+         case CLOUDY_CROWN_MIDDAY:
+            skybox.setupCloudyCrown();
+            break;
+         case SCS1:
+            skybox.setupSCS1Skybox();
+            break;
+         case CUSTOM:
+            if (SKYBOX_CUSTOM_PATH == null)
+            {
+               LogTools.warn("Could not load custom skybox, needs to set the path.");
+               skybox.setupCloudyCrown();
+            }
+            else
+            {
+               if (!skybox.loadSkyboxFlexible(new File(SKYBOX_CUSTOM_PATH)))
+                  skybox.setupCloudyCrown();
+            }
+            break;
+         default:
+            throw new IllegalArgumentException("Unexpected value: " + SKYBOX_THEME);
+      }
 
       skybox.setupCamera(mainCamera);
 
