@@ -553,7 +553,17 @@ public class YoGraphicDefinitionFactory
       return newYoTuple2DDefinition(frameTuple2D, frameTuple2D == null ? null : frameTuple2D.getReferenceFrame());
    }
 
-   public static YoTuple2DDefinition newYoTuple2DDefinition(YoDouble yoX, YoDouble yoY, ReferenceFrame frame)
+   public static YoTuple2DDefinition newYoTuple2DDefinition(YoVariable[] yoVariables, int startIndex)
+   {
+      return newYoTuple2DDefinition(yoVariables[startIndex++], yoVariables[startIndex]);
+   }
+
+   public static YoTuple2DDefinition newYoTuple2DDefinition(YoVariable yoX, YoVariable yoY)
+   {
+      return newYoTuple2DDefinition(yoX, yoY, null);
+   }
+
+   public static YoTuple2DDefinition newYoTuple2DDefinition(YoVariable yoX, YoVariable yoY, ReferenceFrame frame)
    {
       return newYoTuple2DDefinition(yoX, 0, yoY, 0, frame);
    }
@@ -563,7 +573,7 @@ public class YoGraphicDefinitionFactory
       return newYoTuple2DDefinition(null, x, null, y, frame);
    }
 
-   public static YoTuple2DDefinition newYoTuple2DDefinition(YoDouble yoX, double defaultX, YoDouble yoY, double defaultY, ReferenceFrame frame)
+   public static YoTuple2DDefinition newYoTuple2DDefinition(YoVariable yoX, double defaultX, YoVariable yoY, double defaultY, ReferenceFrame frame)
    {
       YoTuple2DDefinition definition = new YoTuple2DDefinition();
       definition.setX(toPropertyName(yoX, defaultX));
@@ -605,7 +615,17 @@ public class YoGraphicDefinitionFactory
       return newYoTuple3DDefinition(frameTuple3D, frameTuple3D == null ? null : frameTuple3D.getReferenceFrame());
    }
 
-   public static YoTuple3DDefinition newYoTuple3DDefinition(YoDouble yoX, YoDouble yoY, YoDouble yoZ, ReferenceFrame frame)
+   public static YoTuple3DDefinition newYoTuple3DDefinition(YoVariable[] yoVariables, int startIndex)
+   {
+      return newYoTuple3DDefinition(yoVariables[startIndex++], yoVariables[startIndex++], yoVariables[startIndex]);
+   }
+
+   public static YoTuple3DDefinition newYoTuple3DDefinition(YoVariable yoX, YoVariable yoY, YoVariable yoZ)
+   {
+      return newYoTuple3DDefinition(yoX, yoY, yoZ, null);
+   }
+
+   public static YoTuple3DDefinition newYoTuple3DDefinition(YoVariable yoX, YoVariable yoY, YoVariable yoZ, ReferenceFrame frame)
    {
       return newYoTuple3DDefinition(yoX, 0.0, yoY, 0.0, yoZ, 0.0, frame);
    }
@@ -615,11 +635,11 @@ public class YoGraphicDefinitionFactory
       return newYoTuple3DDefinition(null, x, null, y, null, z, frame);
    }
 
-   public static YoTuple3DDefinition newYoTuple3DDefinition(YoDouble yoX,
+   public static YoTuple3DDefinition newYoTuple3DDefinition(YoVariable yoX,
                                                             double defaultX,
-                                                            YoDouble yoY,
+                                                            YoVariable yoY,
                                                             double defaultY,
-                                                            YoDouble yoZ,
+                                                            YoVariable yoZ,
                                                             double defaultZ,
                                                             ReferenceFrame frame)
    {
@@ -678,7 +698,17 @@ public class YoGraphicDefinitionFactory
                                          frameYawPitchRoll == null ? null : frameYawPitchRoll.getReferenceFrame());
    }
 
-   public static YoYawPitchRollDefinition newYoYawPitchRollDefinition(YoDouble yoYaw, YoDouble yoPitch, YoDouble yoRoll, ReferenceFrame frame)
+   public static YoYawPitchRollDefinition newYoYawPitchRollDefinition(YoVariable[] yoVariables, int startIndex)
+   {
+      return newYoYawPitchRollDefinition(yoVariables[startIndex++], yoVariables[startIndex++], yoVariables[startIndex]);
+   }
+
+   public static YoYawPitchRollDefinition newYoYawPitchRollDefinition(YoVariable yoYaw, YoVariable yoPitch, YoVariable yoRoll)
+   {
+      return newYoYawPitchRollDefinition(yoYaw, yoPitch, yoRoll, null);
+   }
+
+   public static YoYawPitchRollDefinition newYoYawPitchRollDefinition(YoVariable yoYaw, YoVariable yoPitch, YoVariable yoRoll, ReferenceFrame frame)
    {
       return newYoYawPitchRollDefinition(yoYaw, 0.0, yoPitch, 0.0, yoRoll, 0.0, frame);
    }
@@ -688,11 +718,11 @@ public class YoGraphicDefinitionFactory
       return newYoYawPitchRollDefinition(null, yaw, null, pitch, null, roll, frame);
    }
 
-   public static YoYawPitchRollDefinition newYoYawPitchRollDefinition(YoDouble yoYaw,
+   public static YoYawPitchRollDefinition newYoYawPitchRollDefinition(YoVariable yoYaw,
                                                                       double defaultYaw,
-                                                                      YoDouble yoPitch,
+                                                                      YoVariable yoPitch,
                                                                       double defaultPitch,
-                                                                      YoDouble yoRoll,
+                                                                      YoVariable yoRoll,
                                                                       double defaultRoll,
                                                                       ReferenceFrame frame)
    {
@@ -742,7 +772,17 @@ public class YoGraphicDefinitionFactory
       return newYoQuaternionDefinition(frameQuaternion, frameQuaternion == null ? null : frameQuaternion.getReferenceFrame());
    }
 
-   public static YoQuaternionDefinition newYoQuaternionDefinition(YoDouble yoX, YoDouble yoY, YoDouble yoZ, YoDouble yoS, ReferenceFrame frame)
+   public static YoQuaternionDefinition newYoQuaternionDefinition(YoVariable[] yoVariables, int startIndex)
+   {
+      return newYoQuaternionDefinition(yoVariables[startIndex++], yoVariables[startIndex++], yoVariables[startIndex++], yoVariables[startIndex]);
+   }
+
+   public static YoQuaternionDefinition newYoQuaternionDefinition(YoVariable yoX, YoVariable yoY, YoVariable yoZ, YoVariable yoS)
+   {
+      return newYoQuaternionDefinition(yoX, yoY, yoZ, yoS, null);
+   }
+
+   public static YoQuaternionDefinition newYoQuaternionDefinition(YoVariable yoX, YoVariable yoY, YoVariable yoZ, YoVariable yoS, ReferenceFrame frame)
    {
       return newYoQuaternionDefinition(yoX, 0, yoY, 0, yoZ, 0, yoS, 0, frame);
    }
@@ -752,13 +792,13 @@ public class YoGraphicDefinitionFactory
       return newYoQuaternionDefinition(null, x, null, y, null, z, null, s, frame);
    }
 
-   public static YoQuaternionDefinition newYoQuaternionDefinition(YoDouble yoX,
+   public static YoQuaternionDefinition newYoQuaternionDefinition(YoVariable yoX,
                                                                   double defaultX,
-                                                                  YoDouble yoY,
+                                                                  YoVariable yoY,
                                                                   double defaultY,
-                                                                  YoDouble yoZ,
+                                                                  YoVariable yoZ,
                                                                   double defaultZ,
-                                                                  YoDouble yoS,
+                                                                  YoVariable yoS,
                                                                   double defaultS,
                                                                   ReferenceFrame frame)
    {
