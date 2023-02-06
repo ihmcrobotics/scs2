@@ -6,9 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.controlsfx.control.CheckTreeView;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -19,7 +21,6 @@ import javafx.animation.Timeline;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
 import javafx.fxml.FXML;
@@ -34,6 +35,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
@@ -50,16 +52,21 @@ import javafx.util.Duration;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
-public class YoGraphicPropertyWindowController
+public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
 {
    @FXML
    private AnchorPane mainAnchorPane;
@@ -68,13 +75,20 @@ public class YoGraphicPropertyWindowController
    @FXML
    private Button addItemButton, removeItemButton;
    @FXML
+   private TextField searchTextField;
+   @FXML
    private Label yoGraphicTypeLabel;
    @FXML
    private AnchorPane yoGraphicEditorPane;
    @FXML
    private Button saveChangesButton, revertChangesButton;
 
-   private CheckBoxTreeItem<YoGraphicFXItem> rootItem;
+   private CheckBoxTreeItem<YoGraphicFXItem> defaultRootItem;
+
+   private CheckBoxTreeItem<YoGraphicFXItem> searchResult = null;
+   private List<YoGraphicFXItem> allGraphicItems;
+   private Future<CheckBoxTreeItem<YoGraphicFXItem>> backgroundSearch;
+   private BackgroundExecutorManager backgroundExecutorManager;
 
    private SessionVisualizerToolkit toolkit;
    private SessionVisualizerTopics topics;
@@ -94,12 +108,14 @@ public class YoGraphicPropertyWindowController
       messager = toolkit.getMessager();
       rootGroup = toolkit.getYoGraphicFXRootGroup();
       sessionRootGroup = toolkit.getYoGraphicFXSessionRootGroup();
+      backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
 
       initializeTreeViewAutoRefreshListener(rootGroup);
 
       yoGraphicTreeView.setCellFactory(param -> new YoGraphicFXItemTreeCell(rootGroup));
       yoGraphicTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-      yoGraphicTreeView.getSelectionModel().selectedItemProperty()
+      yoGraphicTreeView.getSelectionModel()
+                       .selectedItemProperty()
                        .addListener((observable, oldValue, newValue) -> processTreeSelectionUpdate(oldValue, newValue));
       yoGraphicTreeView.setShowRoot(true);
       yoGraphicTreeView.setOnDragDetected(this::handleDragDetected);
@@ -116,20 +132,26 @@ public class YoGraphicPropertyWindowController
             activeContexMenu.set(null);
          }
 
+         FontAwesomeIconView collapseIcon = new FontAwesomeIconView(FontAwesomeIcon.MINUS_SQUARE_ALT);
+         FontAwesomeIconView expandIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS_SQUARE_ALT);
          FontAwesomeIconView addIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS);
          FontAwesomeIconView deleteIcon = new FontAwesomeIconView(FontAwesomeIcon.TIMES);
          FontAwesomeIconView duplicateIcon = new FontAwesomeIconView(FontAwesomeIcon.CLONE);
          addIcon.setFill(Color.web("#89e0c0"));
          deleteIcon.setFill(Color.web("#edafb7"));
          duplicateIcon.setFill(Color.web("#8996e0"));
+         MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
+         MenuItem expandItem = new MenuItem("Expand all", expandIcon);
          MenuItem addItem = new MenuItem("Add item...", addIcon);
          MenuItem removeItem = new MenuItem("Remove item", deleteIcon);
          MenuItem duplicateItem = new MenuItem("Duplicate item", duplicateIcon);
+         collapseItem.setOnAction(e2 -> collapseAll());
+         expandItem.setOnAction(e2 -> expandAll());
          addItem.setOnAction(e2 -> addItem());
          removeItem.setOnAction(e2 -> removeItem());
          duplicateItem.setOnAction(e2 -> duplicateItem());
 
-         ContextMenu contextMenu = new ContextMenu(addItem, removeItem, duplicateItem);
+         ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem, addItem, removeItem, duplicateItem);
          contextMenu.show(yoGraphicTreeView, e.getScreenX(), e.getScreenY());
          activeContexMenu.set(contextMenu);
       });
@@ -174,6 +196,8 @@ public class YoGraphicPropertyWindowController
          }
       });
 
+      searchTextField.textProperty().addListener((ChangeListener<String>) (observable, oldValue, newValue) -> search(newValue));
+
       window = new Stage(StageStyle.UTILITY);
       window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
@@ -185,6 +209,8 @@ public class YoGraphicPropertyWindowController
          if (!e.isConsumed())
             window.close();
       });
+      window.setOnHidden(e -> stop());
+      window.setOnShowing(e -> start());
       window.setTitle("YoGraphic properties");
       window.setScene(new Scene(mainAnchorPane));
       window.initOwner(toolkit.getMainWindow());
@@ -240,23 +266,35 @@ public class YoGraphicPropertyWindowController
    private void refreshTreeView()
    {
       unloadEditor();
-      CheckBoxTreeItem<YoGraphicFXItem> oldRootItem = rootItem;
-      rootItem = new CheckBoxTreeItem<>(rootGroup);
-      rootItem.setExpanded(true);
-      bindVisibilityProperty(rootItem);
-      buildTreeRecursively(rootItem);
-      yoGraphicTreeView.setRoot(rootItem);
-      copyExpandedPropertyRecursively(oldRootItem, rootItem);
+      CheckBoxTreeItem<YoGraphicFXItem> oldRootItem = defaultRootItem;
+      defaultRootItem = new CheckBoxTreeItem<>(rootGroup);
+      defaultRootItem.setExpanded(true);
+      defaultRootItem.selectedProperty().bindBidirectional(defaultRootItem.getValue().visibleProperty());
+      buildTreeRecursively(defaultRootItem);
+      yoGraphicTreeView.setRoot(defaultRootItem);
+      copyExpandedPropertyRecursively(oldRootItem, defaultRootItem);
+      allGraphicItems = rootGroup.collectSubtreeItems();
    }
 
-   private void expandTreeView(TreeItem<?> item)
+   private void collapseSubTreeView(TreeItem<?> item)
+   {
+      if (item != null && !item.isLeaf())
+      {
+         item.setExpanded(false);
+
+         for (TreeItem<?> child : item.getChildren())
+            collapseSubTreeView(child);
+      }
+   }
+
+   private void expandSubTreeView(TreeItem<?> item)
    {
       if (item != null && !item.isLeaf())
       {
          item.setExpanded(true);
 
          for (TreeItem<?> child : item.getChildren())
-            expandTreeView(child);
+            expandSubTreeView(child);
       }
    }
 
@@ -268,15 +306,18 @@ public class YoGraphicPropertyWindowController
          {
             if (reference == null)
             {
-               expandTreeView(child);
+               expandSubTreeView(child);
             }
             else
             {
-               TreeItem<?> referenceChild = reference.getChildren().stream().filter(refChild -> refChild.getValue() == child.getValue()).findFirst()
+               TreeItem<?> referenceChild = reference.getChildren()
+                                                     .stream()
+                                                     .filter(refChild -> refChild.getValue() == child.getValue())
+                                                     .findFirst()
                                                      .orElse(null);
                if (referenceChild == null)
                {
-                  expandTreeView(child);
+                  expandSubTreeView(child);
                }
                else
                {
@@ -286,57 +327,6 @@ public class YoGraphicPropertyWindowController
             }
          }
       }
-   }
-
-   private void bindVisibilityProperty(CheckBoxTreeItem<YoGraphicFXItem> treeItem)
-   {
-      treeItem.setSelected(treeItem.getValue().isVisible());
-      treeItem.setIndeterminate(areChildrenOnlyPartiallyVisible(treeItem.getValue()));
-
-      MutableBoolean isBindingUpdate = new MutableBoolean(false);
-
-      treeItem.selectedProperty().addListener((observable, oldValue, newValue) ->
-      {
-         if (isBindingUpdate.booleanValue() || treeItem.isIndeterminate() || treeItem.getValue() == null)
-            return;
-         isBindingUpdate.setTrue();
-         treeItem.getValue().setVisible(newValue);
-         isBindingUpdate.setFalse();
-      });
-
-      treeItem.valueProperty().addListener(new ChangeListener<YoGraphicFXItem>()
-      {
-         private YoGraphicFXItem currentItem = null;
-
-         private final ChangeListener<? super Boolean> fxItemVisibleListener = (o, oldValue, newValue) ->
-         {
-            if (isBindingUpdate.booleanValue())
-               return;
-            isBindingUpdate.setTrue();
-            treeItem.setSelected(newValue);
-            treeItem.setIndeterminate(areChildrenOnlyPartiallyVisible(currentItem));
-            isBindingUpdate.setFalse();
-         };
-
-         @Override
-         public void changed(ObservableValue<? extends YoGraphicFXItem> observable, YoGraphicFXItem oldFXItem, YoGraphicFXItem newFXItem)
-         {
-            oldFXItem.visibleProperty().removeListener(fxItemVisibleListener);
-            currentItem = newFXItem;
-            newFXItem.visibleProperty().addListener(fxItemVisibleListener);
-         }
-      });
-   }
-
-   private static boolean areChildrenOnlyPartiallyVisible(YoGraphicFXItem item)
-   {
-      boolean areAllChildrenVisible = item.getItemChildren().stream().allMatch(YoGraphicFXItem::isVisible);
-      if (areAllChildrenVisible)
-         return false;
-      boolean areNoChildrenVisible = item.getItemChildren().stream().noneMatch(YoGraphicFXItem::isVisible);
-      if (areNoChildrenVisible)
-         return false;
-      return true;
    }
 
    private void selectItem(TreeItem<YoGraphicFXItem> treeItem, YoGraphicFXItem itemToSelect)
@@ -465,6 +455,113 @@ public class YoGraphicPropertyWindowController
    }
 
    @FXML
+   public void clearSearch()
+   {
+      searchTextField.clear();
+   }
+
+   public void search(String searchQuery)
+   {
+      if (backgroundSearch != null)
+      {
+         backgroundSearch.cancel(true);
+         backgroundSearch = null;
+      }
+
+      if (searchQuery != null && !searchQuery.isEmpty())
+      {
+         backgroundSearch = backgroundExecutorManager.executeInBackground(() ->
+         {
+            if (allGraphicItems == null)
+            {
+               return null;
+            }
+
+            return createFilteredRootItem(YoVariableTools.search(allGraphicItems,
+                                                                 item -> item.getName(),
+                                                                 searchQuery,
+                                                                 YoVariableTools.fromSearchEnginesEnum(SearchEngines.DEFAULT),
+                                                                 Integer.MAX_VALUE,
+                                                                 Collectors.toSet()));
+         });
+      }
+      else
+      {
+         searchResult = defaultRootItem;
+         expandAll();
+      }
+   }
+
+   private CheckBoxTreeItem<YoGraphicFXItem> createFilteredRootItem(Set<YoGraphicFXItem> subSelection)
+   {
+      CheckBoxTreeItem<YoGraphicFXItem> root = new CheckBoxTreeItem<>(rootGroup);
+      buildTreeRecursively(root);
+      filterItems(root, subSelection);
+      TreeViewTools.expandRecursively(root);
+      return root;
+   }
+
+   private static void filterItems(TreeItem<YoGraphicFXItem> parent, Set<YoGraphicFXItem> itemsToKeep)
+   {
+      filterItems(parent, itemsToKeep.contains(parent.getValue()), itemsToKeep);
+   }
+
+   private static void filterItems(TreeItem<YoGraphicFXItem> parent, boolean isAncestorInSelection, Set<YoGraphicFXItem> itemsToKeep)
+   {
+      if (parent == null || parent.isLeaf())
+         return;
+
+      for (TreeItem<YoGraphicFXItem> child : parent.getChildren())
+      {
+         if (!child.getChildren().isEmpty())
+            filterItems(child, isAncestorInSelection || itemsToKeep.contains(child.getValue()), itemsToKeep);
+      }
+
+      for (int i = parent.getChildren().size() - 1; i >= 0; i--)
+      {
+         TreeItem<YoGraphicFXItem> child = parent.getChildren().get(i);
+
+         if (!child.isLeaf() || child.getValue() == null)
+            continue;
+
+         if (!isAncestorInSelection && !itemsToKeep.contains(child.getValue()))
+            parent.getChildren().remove(i);
+      }
+   }
+
+   @Override
+   public void handleImpl(long now)
+   {
+      if (backgroundSearch != null && backgroundSearch.isDone() && !backgroundSearch.isCancelled())
+      {
+         try
+         {
+            searchResult = backgroundSearch.get();
+         }
+         catch (InterruptedException | ExecutionException e)
+         {
+            e.printStackTrace();
+         }
+      }
+
+      if (searchResult != null)
+      {
+         yoGraphicTreeView.setRoot(searchResult);
+         searchResult = null;
+      }
+   }
+
+   public void collapseAll()
+   {
+      collapseSubTreeView(yoGraphicTreeView.getRoot());
+   }
+
+   public void expandAll()
+   {
+      expandSubTreeView(yoGraphicTreeView.getRoot());
+   }
+
+   @FXML
    public void addItem()
    {
       if (shouldCancelAction(null))
@@ -510,7 +607,7 @@ public class YoGraphicPropertyWindowController
          {
             JavaFXMissingTools.runLater(getClass(), () ->
             {
-               selectItem(rootItem, newItem);
+               selectItem(defaultRootItem, newItem);
                yoGraphicTreeView.requestFocus();
             });
          }
@@ -595,7 +692,7 @@ public class YoGraphicPropertyWindowController
          if (nextSelectedItem == null)
             yoGraphicTreeView.getSelectionModel().select(0);
          else
-            selectItem(rootItem, nextSelectedItem);
+            selectItem(defaultRootItem, nextSelectedItem);
          yoGraphicTreeView.requestFocus();
       });
    }
@@ -614,7 +711,7 @@ public class YoGraphicPropertyWindowController
 
       JavaFXMissingTools.runLater(getClass(), () ->
       {
-         selectItem(rootItem, newItem);
+         selectItem(defaultRootItem, newItem);
          yoGraphicTreeView.requestFocus();
       });
    }
@@ -692,7 +789,8 @@ public class YoGraphicPropertyWindowController
       for (YoGraphicFXItem child : parent.getValue().getItemChildren())
       {
          CheckBoxTreeItem<YoGraphicFXItem> childItem = new CheckBoxTreeItem<>(child);
-         bindVisibilityProperty(childItem);
+         childItem.setIndependent(true);
+         childItem.selectedProperty().bindBidirectional(childItem.getValue().visibleProperty());
          parent.getChildren().add(childItem);
          buildTreeRecursively(childItem);
       }
@@ -700,7 +798,10 @@ public class YoGraphicPropertyWindowController
 
    public void handleDragDetected(MouseEvent event)
    {
-      List<YoGraphicFXItem> items = yoGraphicTreeView.getSelectionModel().getSelectedItems().stream().map(TreeItem<YoGraphicFXItem>::getValue)
+      List<YoGraphicFXItem> items = yoGraphicTreeView.getSelectionModel()
+                                                     .getSelectedItems()
+                                                     .stream()
+                                                     .map(TreeItem<YoGraphicFXItem>::getValue)
                                                      .collect(Collectors.toList());
 
       Dragboard dragBoard = yoGraphicTreeView.startDragAndDrop(TransferMode.ANY);

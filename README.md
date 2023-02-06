@@ -45,14 +45,6 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 `YoGraphic3D` represents the group of 3D graphics that will show up in the 3D view, while `YoGraphic2D` represents the group of 2D graphics that will show up in the overhead plotter. The latter can be displayed via the menu _YoGraphic > Overhead Plotter_.
 `YoGraphic`s can be created via the menu _YoGraphic > YoGraphic properties..._. You can export/import `YoGraphic` to a file via _YoComposite > Load/Save YoGraphic..._.
 
-# How to get it?
-## Executable version:
-The binaries can be downloaded from the release section of the GitHub page: <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/releases">Release page</a>.
-## From source:
-Keep in mind that this project being at the alpha stage it'll be refactored quite several times. If you still want to have it from source, I recommend not making development that depends on it. If you want to make development on top of it, that is at your own risk, development on SCS2 will not consider dependencies.
-
-You'll need to clone this repository and at times source dependencies will be required most likely including: `ihmc-javafx-toolkit`, `ihmc-robot-data-logger`, `ihmc-graphics-description`.
-
 # System properties:
 - `scs2.home`: Defines the home folder in which SCS2 is saving configuration files.
 - `scs2.session.buffer.initialsize`: Defines the default buffer size for any type of session.
@@ -63,9 +55,13 @@ You'll need to clone this repository and at times source dependencies will be re
 - `scs2.session.gui.mainwindow.loadconfig`: Determines whether or not the main window configuration (width, height, position, maximized or not) from the configuration file. Enabled by default, can be disabled if the behavior is not desired.
 - `scs2.session.gui.mainwindow.loadconfig`: Determines whether or not the main window configuration (width, height, position, maximized or not) from the configuration file. Enabled by default, can be disabled if the behavior is not desired.
 - `scs2.session.gui.yovariable.enablefuzzysearch`: If a `YoVariable` cannot be found by name in the session registry, when loading configuration file, the fuzzy search can help retrieving it. This helps with variable rename or with variable that gets moved. Disabled by default. The search can be computationally expensive and is currently blocking the rendering thread.
+- `scs2.session.gui.skybox.theme`: Allows changing skybox theme. 3 options: `CLOUDY_CROWN_MIDDAY` (default), `SCS1`, and `CUSTOM`. When `CUSTOM` is set, the path to the skybox image file(s) is to be provided as well.
+- `scs2.session.gui.skybox.custompath`: Defines the path to load a custom skybox, not that the skybox theme is to be set to `CUSTOM` for this property to be used. The path should lead to either a single image file that contains the 6 panes to use as the skybox (looks like an unfolded box), or lead to a directory that contains 6 image files named: Top, Bottom, Left, Right, Front, and Back and which file extension can be either `*.png`, `*jpg`, or `*.bmp`.
 
 # Environment variables:
 - `SCS2_HOME`: Defines the home folder in which SCS2 is saving configuration files.
+- `SCS2_SKYBOX_THEME`: Allows changing skybox theme. 3 options: `CLOUDY_CROWN_MIDDAY` (default), `SCS1`, and `CUSTOM`. When `CUSTOM` is set, the path to the skybox image file(s) is to be provided as well.
+- `SCS2_SKYBOX_CUSTOM_PATH`: Defines the path to load a custom skybox, not that the skybox theme is to be set to `CUSTOM` for this property to be used. The path should lead to either a single image file that contains the 6 panes to use as the skybox (looks like an unfolded box), or lead to a directory that contains 6 image files named: Top, Bottom, Left, Right, Front, and Back and which file extension can be either `*.png`, `*jpg`, or `*.bmp`.
 
 # Useful Tools classes:
 - `URDFTools`: for creating a `RobotDefinition` from a URDF file.
