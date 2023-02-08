@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.prefs.Preferences;
 
 import org.apache.commons.lang3.SystemUtils;
@@ -27,6 +28,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import us.ihmc.commons.nio.FileTools;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
@@ -168,21 +170,21 @@ public class SessionVisualizerIOTools
 
    // Cloudy Crown Skybox
    public static final String SKYBOX_CLOUDY_FOLDER = "cloudy/";
-   public static final Image SKYBOX_TOP_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Up.png"));
-   public static final Image SKYBOX_BOTTOM_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Down.png"));
-   public static final Image SKYBOX_LEFT_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Left.png"));
-   public static final Image SKYBOX_RIGHT_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Right.png"));
-   public static final Image SKYBOX_FRONT_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Front.png"));
-   public static final Image SKYBOX_BACK_IMAGE = createImage(getSkyboxResource(SKYBOX_CLOUDY_FOLDER + "Back.png"));
+   public static final Image SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Up.png");
+   public static final Image SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Down.png");
+   public static final Image SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Left.png");
+   public static final Image SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Right.png");
+   public static final Image SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Front.png");
+   public static final Image SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Back.png");
 
    // SCS 1 Skybox
    public static final String SKYBOX_SCS1_FOLDER = "brightSky/";
-   public static final Image SCS1_SKYBOX_TOP_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Up.bmp"));
-   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Down.bmp"));
-   public static final Image SCS1_SKYBOX_LEFT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Left.bmp"));
-   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Right.bmp"));
-   public static final Image SCS1_SKYBOX_FRONT_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Front.bmp"));
-   public static final Image SCS1_SKYBOX_BACK_IMAGE = createImage(getSkyboxResource(SKYBOX_SCS1_FOLDER + "Back.bmp"));
+   public static final Image SCS1_SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.bmp");
+   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.bmp");
+   public static final Image SCS1_SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.bmp");
+   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.bmp");
+   public static final Image SCS1_SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.bmp");
+   public static final Image SCS1_SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.bmp");
 
    public static void addSCSIconToDialog(Dialog<?> dialog)
    {
@@ -282,26 +284,38 @@ public class SessionVisualizerIOTools
 
    public static Image loadIcon(String iconNameWithExtension)
    {
-      return createImage(getIconResource(iconNameWithExtension));
+      return createImage(iconNameWithExtension, () -> getIconResource(iconNameWithExtension));
    }
 
    public static Image loadImage(String imageNameWithExtension)
    {
-      return createImage(getImageResource(imageNameWithExtension));
+      return createImage(imageNameWithExtension, () -> getImageResource(imageNameWithExtension));
    }
 
-   public static Image createImage(InputStream is)
+   public static Image loadSkyboxImage(String skyboxImageNameWithExtension)
    {
-      Image image = new Image(is);
-      try
+      return createImage(skyboxImageNameWithExtension, () -> getSkyboxResource(skyboxImageNameWithExtension));
+   }
+
+   public static Image createImage(String name, Supplier<InputStream> isSupplier)
+   {
+      for (int i = 0; i < 3; i++)
       {
-         is.close();
+         try (InputStream is = isSupplier.get())
+         {
+            Image image = new Image(is);
+
+            if (image.getWidth() != 0.0)
+               return image;
+
+            LogTools.error("Failed to load image {}, retrying.", name);
+         }
+         catch (IOException e)
+         {
+            e.printStackTrace();
+         }
       }
-      catch (IOException e)
-      {
-         e.printStackTrace();
-      }
-      return image;
+      return null;
    }
 
    public static File scs2ConfigurationOpenFileDialog(Window owner)
