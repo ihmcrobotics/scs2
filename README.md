@@ -76,7 +76,7 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 - `YoGraphicDefinitionFactory`: for creating `YoGraphicDefinition`.
 
 # Known issues:
-See [Wiki - Known Issues](https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Known-Issues).
+See [Wiki - Known Issues](https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Known-Issues-and-workaround).
 
 # External references:
 ## Icons:
