@@ -75,6 +75,9 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 - `VisualDefinitionFactory`: for creating `VisualDefinition`.
 - `YoGraphicDefinitionFactory`: for creating `YoGraphicDefinition`.
 
+# Known issues:
+See [Wiki - Known Issues](https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Known-Issues).
+
 # External references:
 ## Icons:
 - <img src="scs2-session-visualizer-jfx/src/main/resources/icons/valid-icon.png" alt="Valid icon" width="25"/> & <img src="scs2-session-visualizer-jfx/src/main/resources/icons/invalid-icon.png" alt="Invalid icon" width="25"/> icons from <a href="https://icons8.com/icons/">Icons8</a>
