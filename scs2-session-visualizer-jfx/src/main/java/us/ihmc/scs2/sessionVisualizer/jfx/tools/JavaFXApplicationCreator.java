@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.commons.lang3.SystemUtils;
+
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -19,6 +21,11 @@ import javafx.stage.Stage;
  */
 public class JavaFXApplicationCreator extends Application
 {
+   static
+   { // Verifies settings at startup
+      verifyVSyncDisabledUbuntu();
+   }
+
    private static JavaFXApplicationCreator mainApplication;
 
    private static final CountDownLatch latch = new CountDownLatch(1);
@@ -29,6 +36,51 @@ public class JavaFXApplicationCreator extends Application
    public JavaFXApplicationCreator()
    {
       setStartUpTest(this);
+   }
+
+   /**
+    * Verifies that VSync is disabled on Linux as this is a workaround for the ongoing issue:
+    * <a href="https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8291958">Java bug ticket</a>.
+    * <p>
+    * The issue results in frame rate drop when running a multi window application.
+    * </p>
+    */
+   public static void verifyVSyncDisabledUbuntu()
+   {
+
+      if (SystemUtils.IS_OS_LINUX)
+      {
+         String prism_vsync_name = "prism.vsync";
+         String gl_vsync_name = "__GL_SYNC_TO_VBLANK";
+
+         if (System.getProperty(prism_vsync_name) == null)
+         {
+            System.setProperty(prism_vsync_name, "false");
+         }
+
+         int glSyncToVBlankIntValue;
+         String glSyncToVBlankProperty = System.getenv(gl_vsync_name);
+         if (glSyncToVBlankProperty == null)
+         {
+            glSyncToVBlankIntValue = -1;
+         }
+         else
+         {
+            try
+            {
+               glSyncToVBlankIntValue = Integer.parseInt(glSyncToVBlankProperty);
+            }
+            catch (NumberFormatException e)
+            {
+               e.printStackTrace();
+               glSyncToVBlankIntValue = -1;
+            }
+         }
+
+         if (glSyncToVBlankIntValue != 0)
+            System.err.println("%s: JavaFX performance warning: disable VSync for better multi-window performance, run with environment variable: %s=0".formatted(JavaFXApplicationCreator.class.getSimpleName(),
+                                                                                                                                                                  gl_vsync_name));
+      }
    }
 
    private void setStartUpTest(JavaFXApplicationCreator startUpTest)
