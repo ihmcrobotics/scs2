@@ -47,6 +47,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final YoRobotFXManager yoRobotFXManager;
    private final EnvironmentManager environmentManager;
    private final SecondaryWindowManager secondaryWindowManager;
+   private final SessionDataPreferenceManager sessionDataPreferenceManager;
 
    private final Stage mainWindow;
    private final SubScene mainScene3D;
@@ -80,6 +81,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoRobotFXManager = new YoRobotFXManager(messager, topics, yoManager, referenceFrameManager, backgroundExecutorManager);
       environmentManager = new EnvironmentManager(messager, topics, backgroundExecutorManager);
       secondaryWindowManager = new SecondaryWindowManager(this);
+      sessionDataPreferenceManager = new SessionDataPreferenceManager(messager, topics);
       cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, messager, topics, yoRobotFXManager);
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
@@ -323,6 +325,11 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public SecondaryWindowManager getWindowManager()
    {
       return secondaryWindowManager;
+   }
+
+   public SessionDataPreferenceManager getSessionDataPreferenceManager()
+   {
+      return sessionDataPreferenceManager;
    }
 
    public ObservableList<RobotDefinition> getSessionRobotDefinitions()
