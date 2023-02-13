@@ -276,28 +276,6 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
       allGraphicItems = rootGroup.collectSubtreeItems();
    }
 
-   private void collapseSubTreeView(TreeItem<?> item)
-   {
-      if (item != null && !item.isLeaf())
-      {
-         item.setExpanded(false);
-
-         for (TreeItem<?> child : item.getChildren())
-            collapseSubTreeView(child);
-      }
-   }
-
-   private void expandSubTreeView(TreeItem<?> item)
-   {
-      if (item != null && !item.isLeaf())
-      {
-         item.setExpanded(true);
-
-         for (TreeItem<?> child : item.getChildren())
-            expandSubTreeView(child);
-      }
-   }
-
    private void copyExpandedPropertyRecursively(TreeItem<?> reference, TreeItem<?> item)
    {
       if (item != null && !item.isLeaf())
@@ -306,7 +284,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
          {
             if (reference == null)
             {
-               expandSubTreeView(child);
+               TreeViewTools.expandRecursively(child);
             }
             else
             {
@@ -317,7 +295,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
                                                      .orElse(null);
                if (referenceChild == null)
                {
-                  expandSubTreeView(child);
+                  TreeViewTools.expandRecursively(child);
                }
                else
                {
@@ -553,12 +531,12 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
 
    public void collapseAll()
    {
-      collapseSubTreeView(yoGraphicTreeView.getRoot());
+      TreeViewTools.collapseRecursively(yoGraphicTreeView.getRoot());
    }
 
    public void expandAll()
    {
-      expandSubTreeView(yoGraphicTreeView.getRoot());
+      TreeViewTools.expandRecursively(yoGraphicTreeView.getRoot());
    }
 
    @FXML

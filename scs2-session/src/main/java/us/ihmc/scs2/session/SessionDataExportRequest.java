@@ -56,7 +56,7 @@ public class SessionDataExportRequest
 
    /**
     * [Required] Specifies the folder in which the session data is to be exported.
-    * 
+    *
     * @param file the file pointing to the directory where to export the session data.
     */
    public void setFile(File file)
@@ -66,7 +66,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether overwriting any existing file/folder during the export is permitted.
-    * 
+    *
     * @param overwrite {@code true} to allow overwriting existing file/folder. Default value
     *                  {@code true}.
     */
@@ -76,11 +76,24 @@ public class SessionDataExportRequest
    }
 
    /**
+    * [Optional] Sets the variable and registry filters.
+    * 
+    * @param sessionDataFilter the new filter.
+    * @see #setVariableFilter(Predicate)
+    * @see #setRegistryFilter(Predicate)
+    */
+   public void setSessionDataFilter(SessionDataFilterParameters sessionDataFilter)
+   {
+      setVariableFilter(sessionDataFilter.getVariableFilter());
+      setRegistryFilter(sessionDataFilter.getRegistryFilter());
+   }
+
+   /**
     * [Optional] Provides a filter to downselect the {@link YoVariable}s to be exported.
     * <p>
     * A {@link YoVariable} is exported if the given predicate returns {@code true}.
     * </p>
-    * 
+    *
     * @param variableFilter the {@link YoVariable} filter.
     */
    public void setVariableFilter(Predicate<YoVariable> variableFilter)
@@ -93,7 +106,7 @@ public class SessionDataExportRequest
     * <p>
     * A {@link YoRegistry} and its descendants are skipped if the predicate returns {@code false}.
     * </p>
-    * 
+    *
     * @param registryFilter the {@link YoRegistry} filter.
     */
    public void setRegistryFilter(Predicate<YoRegistry> registryFilter)
@@ -103,7 +116,7 @@ public class SessionDataExportRequest
 
    /**
     * Bundles the flags for exporting the robot, terrain, and yoGraphic definitions.
-    * 
+    *
     * @param export whether to export the definitions or not.
     */
    public void setExportDefinitions(boolean export)
@@ -115,7 +128,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets whether to export the robot definitions or not.
-    * 
+    *
     * @param exportRobotDefinitions {@code true} to export the robot definitions, {@code false} to
     *                               skip. Default value {@code true}.
     */
@@ -126,7 +139,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets whether to export the terrain definitions or not.
-    * 
+    *
     * @param exportRobotDefinitions {@code true} to export the terrain definitions, {@code false} to
     *                               skip. Default value {@code true}.
     */
@@ -137,7 +150,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets whether to export the yoGraphic definitions or not.
-    * 
+    *
     * @param exportRobotDefinitions {@code true} to export the yoGraphic definitions, {@code false} to
     *                               skip. Default value {@code true}.
     */
@@ -151,7 +164,7 @@ public class SessionDataExportRequest
     * <p>
     * WARNING: This is required to be able to load the data back into SCS2.
     * </p>
-    * 
+    *
     * @param exportRobotDefinitions {@code true} to export the registry definition, {@code false} to
     *                               skip. Default value {@code true}.
     */
@@ -162,7 +175,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets whether to export the current robot states or not.
-    * 
+    *
     * @param exportRobotDefinitions {@code true} to export the robot states, {@code false} to skip.
     *                               Default value {@code true}.
     */
@@ -173,7 +186,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets the output data format for the buffered data.
-    * 
+    *
     * @param exportSessionBufferDataFormat the desired format. Default value is {@link DataFormat#CSV}.
     */
    public void setExportSessionBufferDataFormat(DataFormat exportSessionBufferDataFormat)
@@ -183,7 +196,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets a callback to be notified when the export is starting.
-    * 
+    *
     * @param onExportStartCallback the callback.
     */
    public void setOnExportStartCallback(Runnable onExportStartCallback)
@@ -193,7 +206,7 @@ public class SessionDataExportRequest
 
    /**
     * Sets a callback to be notified when the export ended.
-    * 
+    *
     * @param onExportEndCallback the callback.
     */
    public void setOnExportEndCallback(Runnable onExportEndCallback)
@@ -203,7 +216,7 @@ public class SessionDataExportRequest
 
    /**
     * The destination folder where the session data is to be exported.
-    * 
+    *
     * @return the destination folder.
     */
    public File getFile()
@@ -213,7 +226,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether overwriting existing file/folder is enabled.
-    * 
+    *
     * @return {@code true} if overwriting is enabled, {@code false} otherwise.
     */
    public boolean getOverwrite()
@@ -223,7 +236,7 @@ public class SessionDataExportRequest
 
    /**
     * Gets the filter for selecting variables to export.
-    * 
+    *
     * @return the variable filter.
     */
    public Predicate<YoVariable> getVariableFilter()
@@ -233,7 +246,7 @@ public class SessionDataExportRequest
 
    /**
     * Gets the filter for selecting registries to export.
-    * 
+    *
     * @return the registry filter.
     */
    public Predicate<YoRegistry> getRegistryFilter()
@@ -243,7 +256,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether to export the robot definitions.
-    * 
+    *
     * @return {@code true} to enable export.
     */
    public boolean getExportRobotDefinitions()
@@ -253,7 +266,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether to export the terrain definitions.
-    * 
+    *
     * @return {@code true} to enable export.
     */
    public boolean getExportTerrainObjectDefinitions()
@@ -263,7 +276,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether to export the yoGraphic definitions.
-    * 
+    *
     * @return {@code true} to enable export.
     */
    public boolean getExportSessionYoGraphicDefinitions()
@@ -273,7 +286,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether to export the registry definition.
-    * 
+    *
     * @return {@code true} to enable export.
     */
    public boolean getExportSessionBufferRegistryDefinition()
@@ -283,7 +296,7 @@ public class SessionDataExportRequest
 
    /**
     * Whether to export the current robot states.
-    * 
+    *
     * @return {@code true} to enable export.
     */
    public boolean getExportRobotStateDefinitions()
@@ -293,7 +306,7 @@ public class SessionDataExportRequest
 
    /**
     * The output format for storing the buffered data.
-    * 
+    *
     * @return the output format.
     */
    public DataFormat getExportSessionBufferDataFormat()
@@ -303,7 +316,7 @@ public class SessionDataExportRequest
 
    /**
     * The callback to be notified when the export is starting.
-    * 
+    *
     * @return the callback.
     */
    public Runnable getOnExportStartCallback()
@@ -313,7 +326,7 @@ public class SessionDataExportRequest
 
    /**
     * The callback to be notified when the export ended.
-    * 
+    *
     * @return the callback.
     */
    public Runnable getOnExportEndCallback()

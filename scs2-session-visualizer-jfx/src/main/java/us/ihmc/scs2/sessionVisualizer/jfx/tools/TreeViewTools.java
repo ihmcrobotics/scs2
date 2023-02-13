@@ -4,7 +4,6 @@ import javafx.scene.control.TreeItem;
 
 public class TreeViewTools
 {
-
    public static void expandRecursively(TreeItem<?> item)
    {
       if (item == null)
@@ -14,4 +13,14 @@ public class TreeViewTools
          expandRecursively(child);
    }
 
+   public static void collapseRecursively(TreeItem<?> item)
+   {
+      if (item != null && !item.isLeaf())
+      {
+         item.setExpanded(false);
+
+         for (TreeItem<?> child : item.getChildren())
+            collapseRecursively(child);
+      }
+   }
 }

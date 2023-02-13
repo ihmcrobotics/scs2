@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +16,9 @@ import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXSlider;
 import com.jfoenix.controls.JFXToggleButton;
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -23,10 +27,13 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBoxTreeItem;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.cell.CheckBoxTreeCell;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -35,12 +42,14 @@ import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.javaFXToolkit.messager.MessageBidirectionalBinding;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.session.SessionDataExportRequest;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
@@ -49,14 +58,20 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SessionDataExportStageController implements VisualizerController
 {
+   private static final String MODIFIED_FILTER_NAME = "- Modified -";
+   private static final String NONE_FILTER_NAME = "None";
+   private static final String ALL_FILTER_NAME = "All";
+
    @FXML
    private Stage stage;
    @FXML
-   private HBox mainPane;
+   private VBox mainPane;
    @FXML
    private CheckTreeView<Object> selectedVariablesCheckTreeView;
    @FXML
    private JFXButton selectAllButton, unselectAllButton;
+   @FXML
+   private ComboBox<String> filterComboBox;
    @FXML
    private JFXSlider currentBufferIndexSlider;
    @FXML
@@ -72,8 +87,12 @@ public class SessionDataExportStageController implements VisualizerController
    @FXML
    private JFXComboBox<DataFormat> dataFormatComboBox;
 
+   private SessionDataFilterParameters currentFilter;
+   private final SessionDataCollectionBasedFilter modifiedFilter = new SessionDataCollectionBasedFilter(MODIFIED_FILTER_NAME);
    private final Property<SessionMode> currentSessionMode = new SimpleObjectProperty<>(this, "currentSessionMode", null);
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
+
+   private final ObjectProperty<ContextMenu> activeContexMenu = new SimpleObjectProperty<>(this, "activeContextMenu", null);
 
    private final List<Runnable> cleanupActions = new ArrayList<>();
 
@@ -187,12 +206,62 @@ public class SessionDataExportStageController implements VisualizerController
             }
          }
       });
+      selectedVariablesCheckTreeView.setOnContextMenuRequested(e ->
+      {
+         if (activeContexMenu.get() != null)
+         {
+            activeContexMenu.get().hide();
+            activeContexMenu.set(null);
+         }
+
+         FontAwesomeIconView collapseIcon = new FontAwesomeIconView(FontAwesomeIcon.MINUS_SQUARE_ALT);
+         FontAwesomeIconView expandIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS_SQUARE_ALT);
+         MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
+         MenuItem expandItem = new MenuItem("Expand all", expandIcon);
+         collapseItem.setOnAction(e2 -> collapseAll());
+         expandItem.setOnAction(e2 -> expandAll());
+
+         ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem);
+         contextMenu.show(selectedVariablesCheckTreeView, e.getScreenX(), e.getScreenY());
+         activeContexMenu.set(contextMenu);
+      });
+
       selectedVariablesCheckTreeView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
       selectedVariablesCheckTreeView.setShowRoot(true);
       YoRegistryChangedListener rootRegistryListener = change -> refreshTreeView();
       yoManager.getRootRegistry().addListener(rootRegistryListener);
       cleanupActions.add(() -> yoManager.getRootRegistry().removeListener(rootRegistryListener));
       refreshTreeView();
+
+      SessionDataFilterParameters allFilter = new SessionDataFilterParameters(ALL_FILTER_NAME, v -> true, null);
+      SessionDataFilterParameters noneFilter = new SessionDataFilterParameters(NONE_FILTER_NAME, v -> false, null);
+
+      filterComboBox.setItems(FXCollections.observableArrayList());
+      filterComboBox.getItems().addAll(MODIFIED_FILTER_NAME);
+      filterComboBox.getItems().addAll(ALL_FILTER_NAME);
+      filterComboBox.getItems().addAll(NONE_FILTER_NAME);
+      filterComboBox.getItems().addAll(toolkit.getSessionDataPreferenceManager().getFilterMap().keySet());
+
+      filterComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (MODIFIED_FILTER_NAME.equals(oldValue))
+            updateModifiedFilterFromTreeView();
+
+         if (MODIFIED_FILTER_NAME.equals(newValue))
+            currentFilter = modifiedFilter;
+         else if (ALL_FILTER_NAME.equals(newValue))
+            currentFilter = allFilter;
+         else if (NONE_FILTER_NAME.equals(newValue))
+            currentFilter = noneFilter;
+         else
+            currentFilter = toolkit.getSessionDataPreferenceManager().getFilterMap().get(newValue);
+
+         applyFilterToTreeItems(currentFilter);
+      });
+      filterComboBox.getSelectionModel().select(ALL_FILTER_NAME);
+
+      selectAllButton.setOnAction(e -> filterComboBox.getSelectionModel().select(ALL_FILTER_NAME));
+      unselectAllButton.setOnAction(e -> filterComboBox.getSelectionModel().select(NONE_FILTER_NAME));
 
       EventHandler<? super WindowEvent> closeWindowEventHandler = e -> close();
       owner.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, closeWindowEventHandler);
@@ -204,13 +273,51 @@ public class SessionDataExportStageController implements VisualizerController
       JavaFXMissingTools.centerWindowInOwner(stage, owner);
    }
 
+   private void applyFilterToTreeItems(SessionDataFilterParameters filter)
+   {
+      treeItemSelectedListenerEnabled = false;
+      List<TreeItem<Object>> itemsToProcess = new ArrayList<>(Arrays.asList(rootItem));
+
+      while (!itemsToProcess.isEmpty())
+      {
+         CheckBoxTreeItem<Object> item = (CheckBoxTreeItem<Object>) itemsToProcess.remove(itemsToProcess.size() - 1);
+
+         if (item.getValue() instanceof YoVariable var)
+         {
+            item.setSelected(filter.getVariableFilter().test(var));
+         }
+         else
+         {
+            itemsToProcess.addAll(item.getChildren());
+         }
+      }
+
+      treeItemSelectedListenerEnabled = true;
+   }
+
+   private boolean treeItemSelectedListenerEnabled = true;
+
+   private ChangeListener<? super Boolean> treeItemSelectedListener = (o, oldValue, newValue) ->
+   {
+      if (treeItemSelectedListenerEnabled)
+      {
+         if (!MODIFIED_FILTER_NAME.equals(filterComboBox.getSelectionModel().getSelectedItem()))
+         {
+            updateModifiedFilterFromTreeView();
+            filterComboBox.getSelectionModel().select(MODIFIED_FILTER_NAME);
+         }
+      }
+   };
+
    private void refreshTreeView()
    {
+      modifiedFilter.clear();
       rootItem = new CheckBoxTreeItem<>(yoManager.getRootRegistry());
       rootItem.setSelected(true);
       rootItem.setExpanded(true);
       buildTreeRecursively(rootItem);
       selectedVariablesCheckTreeView.setRoot(rootItem);
+      filterComboBox.getSelectionModel().select(ALL_FILTER_NAME);
    }
 
    private void buildTreeRecursively(TreeItem<Object> parent)
@@ -220,23 +327,63 @@ public class SessionDataExportStageController implements VisualizerController
       if (value instanceof YoRegistry)
       {
          YoRegistry registry = (YoRegistry) value;
-         for (YoVariable variable : registry.getVariables())
-         {
-            CheckBoxTreeItem<Object> childItem = new CheckBoxTreeItem<>(variable);
-            childItem.setSelected(true);
-            childItem.setExpanded(true);
-            parent.getChildren().add(childItem);
-         }
 
          for (YoRegistry childRegistry : registry.getChildren())
          {
             CheckBoxTreeItem<Object> childItem = new CheckBoxTreeItem<>(childRegistry);
-            childItem.setSelected(true);
+            childItem.setSelected(!childRegistry.getChildren().isEmpty() || !childRegistry.getVariables().isEmpty());
             childItem.setExpanded(true);
             parent.getChildren().add(childItem);
             buildTreeRecursively(childItem);
          }
+
+         for (YoVariable variable : registry.getVariables())
+         {
+            CheckBoxTreeItem<Object> childItem = new CheckBoxTreeItem<>(variable);
+            childItem.selectedProperty().addListener(treeItemSelectedListener);
+            childItem.setSelected(true);
+            childItem.setExpanded(true);
+            parent.getChildren().add(childItem);
+         }
       }
+   }
+
+   private void updateModifiedFilterFromTreeView()
+   {
+      modifiedFilter.yoVariableNames.clear();
+      List<TreeItem<Object>> itemsToProcess = new ArrayList<>(Arrays.asList(rootItem));
+
+      while (!itemsToProcess.isEmpty())
+      {
+         CheckBoxTreeItem<Object> item = (CheckBoxTreeItem<Object>) itemsToProcess.remove(itemsToProcess.size() - 1);
+
+         if (item.getValue() instanceof YoVariable var)
+         {
+            if (item.isSelected())
+               modifiedFilter.yoVariableNames.add(var.getFullNameString());
+         }
+         else if (item.getValue() instanceof YoRegistry reg)
+         {
+            if (reg.getChildren().isEmpty() && reg.getVariables().isEmpty())
+               item.setSelected(false);
+            else
+               itemsToProcess.addAll(item.getChildren());
+         }
+         else
+         {
+            throw new IllegalStateException("Unexpected value type: " + item.getValue().getClass().getSimpleName());
+         }
+      }
+   }
+
+   public void collapseAll()
+   {
+      TreeViewTools.collapseRecursively(rootItem);
+   }
+
+   public void expandAll()
+   {
+      TreeViewTools.expandRecursively(rootItem);
    }
 
    public Stage getStage()
@@ -343,5 +490,35 @@ public class SessionDataExportStageController implements VisualizerController
       }
 
       return fullnamesToPack;
+   }
+
+   private static class SessionDataCollectionBasedFilter extends SessionDataFilterParameters
+   {
+      private final Set<String> yoVariableNames = new LinkedHashSet<>();
+
+      private final Predicate<YoVariable> variableFilter = v -> yoVariableNames.contains(v.getFullNameString());
+      private final Predicate<YoRegistry> registryFilter = null;
+
+      public SessionDataCollectionBasedFilter(String name)
+      {
+         super(name, null, null);
+      }
+
+      private void clear()
+      {
+         yoVariableNames.clear();
+      }
+
+      @Override
+      public Predicate<YoVariable> getVariableFilter()
+      {
+         return variableFilter;
+      }
+
+      @Override
+      public Predicate<YoRegistry> getRegistryFilter()
+      {
+         return registryFilter;
+      }
    }
 }

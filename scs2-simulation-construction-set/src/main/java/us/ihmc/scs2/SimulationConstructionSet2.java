@@ -22,6 +22,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
@@ -1133,6 +1134,12 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderIndex));
+   }
+
+   @Override
+   public void addSessionDataFilterParameters(SessionDataFilterParameters filterParameters)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addSessionDataFilterParameters(filterParameters));
    }
 
    /**
