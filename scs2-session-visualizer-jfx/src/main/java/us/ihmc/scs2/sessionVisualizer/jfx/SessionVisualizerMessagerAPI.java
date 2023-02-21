@@ -21,6 +21,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -47,6 +48,8 @@ public class SessionVisualizerMessagerAPI
    private static final CategoryTheme Robot = apiFactory.createCategoryTheme("Robot");
    private static final CategoryTheme Terrain = apiFactory.createCategoryTheme("Terrain");
    private static final CategoryTheme Visual = apiFactory.createCategoryTheme("Visual");
+   private static final CategoryTheme SessionData = apiFactory.createCategoryTheme("SessionData");
+   private static final CategoryTheme Filter = apiFactory.createCategoryTheme("Filter");
 
    private static final TopicTheme Toggle = apiFactory.createTopicTheme("Toggle");
    private static final TopicTheme Next = apiFactory.createTopicTheme("Next");
@@ -84,6 +87,7 @@ public class SessionVisualizerMessagerAPI
    public static final Topic<Boolean> SessionVisualizerDefaultConfigurationLoadRequest = APIRoot.child(Configuration).child(Default).topic(Load);
    public static final Topic<File> SessionVisualizerConfigurationSaveRequest = APIRoot.child(Configuration).topic(Save);
    public static final Topic<Boolean> SessionVisualizerDefaultConfigurationSaveRequest = APIRoot.child(Configuration).child(Default).topic(Save);
+   public static final Topic<SessionDataFilterParameters> SessionDataFilterParametersAddRequest = APIRoot.child(SessionData).child(Filter).topic(Add);
 
    static
    { // Ensure that the KeyFrame is loaded before closing the API.
@@ -117,7 +121,7 @@ public class SessionVisualizerMessagerAPI
 
       private static final TypedTopicTheme<SearchEngines> SearchEngine = apiFactory.createTypedTopicTheme("SearchEngine");
       private static final TopicTheme Selected = apiFactory.createTopicTheme("Selected");
-      private static final TopicTheme Refresh = apiFactory.createTopicTheme("refresh");
+      private static final TopicTheme Refresh = apiFactory.createTopicTheme("Refresh");
 
       public static final Topic<SearchEngines> YoSearchEngine = APIRoot.child(YoSearch).topic(SearchEngine);
       public static final Topic<Integer> YoSearchMaxListSize = APIRoot.child(YoSearch).topic(Size);

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Predicate;
 
 import javax.xml.bind.JAXBException;
 
@@ -28,6 +29,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
@@ -41,6 +43,7 @@ import us.ihmc.yoVariables.euclid.YoTuple2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple2D;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public interface SessionVisualizerControls
 {
@@ -711,6 +714,25 @@ public interface SessionVisualizerControls
     *                    of 0.
     */
    void clearSliderboardSlider(String sliderboardName, int sliderIndex);
+
+   /**
+    * Registers a custom filter that can then be accessed when exporting session data via the GUI.
+    * 
+    * @param name           the name of the custom filter for easy retrieval.
+    * @param variableFilter the filter to be applied on the {@code YoVariable}. Only the variables for
+    *                       which this filter returns {@code true} will be exported.
+    */
+   default void addSessionDataFilterParameters(String name, Predicate<YoVariable> variableFilter)
+   {
+      addSessionDataFilterParameters(new SessionDataFilterParameters(name, variableFilter, null));
+   }
+
+   /**
+    * Registers a custom filter that can then be accessed when exporting session data via the GUI.
+    * 
+    * @param filterParameters the custom filter to add to this session.
+    */
+   void addSessionDataFilterParameters(SessionDataFilterParameters filterParameters);
 
    /**
     * Captures a video of the 3D scene from the playback data.
