@@ -38,6 +38,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
@@ -482,6 +483,12 @@ public class SessionVisualizer
       public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
       {
          submitMessage(getTopics().getYoSliderboardClearSlider(), new Pair<>(sliderboardName, sliderIndex));
+      }
+
+      @Override
+      public void addSessionDataFilterParameters(SessionDataFilterParameters filterParameters)
+      {
+         submitMessage(getTopics().getSessionDataFilterParametersAddRequest(), filterParameters);
       }
 
       @Override

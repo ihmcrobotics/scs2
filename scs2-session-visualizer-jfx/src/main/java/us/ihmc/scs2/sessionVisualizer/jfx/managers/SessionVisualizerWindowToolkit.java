@@ -101,4 +101,9 @@ public class SessionVisualizerWindowToolkit
    {
       return globalToolkit.getYoGraphicFXManager();
    }
+
+   public SessionDataPreferenceManager getSessionDataPreferenceManager()
+   {
+      return globalToolkit.getSessionDataPreferenceManager();
+   }
 }

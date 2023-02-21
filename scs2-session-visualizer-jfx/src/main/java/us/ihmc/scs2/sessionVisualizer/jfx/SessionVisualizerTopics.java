@@ -18,6 +18,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.session.SessionMode;
@@ -93,6 +94,8 @@ public class SessionVisualizerTopics
    private Topic<File> sessionVisualizerConfigurationSaveRequest;
    private Topic<Boolean> sessionVisualizerDefaultConfigurationLoadRequest;
    private Topic<Boolean> sessionVisualizerDefaultConfigurationSaveRequest;
+
+   private Topic<SessionDataFilterParameters> sessionDataFilterParametersAddRequest;
 
    // Session topics
    private Topic<SessionState> sessionCurrentState;
@@ -181,6 +184,8 @@ public class SessionVisualizerTopics
       sessionVisualizerConfigurationSaveRequest = SessionVisualizerMessagerAPI.SessionVisualizerConfigurationSaveRequest;
       sessionVisualizerDefaultConfigurationLoadRequest = SessionVisualizerMessagerAPI.SessionVisualizerDefaultConfigurationLoadRequest;
       sessionVisualizerDefaultConfigurationSaveRequest = SessionVisualizerMessagerAPI.SessionVisualizerDefaultConfigurationSaveRequest;
+
+      sessionDataFilterParametersAddRequest = SessionVisualizerMessagerAPI.SessionDataFilterParametersAddRequest;
 
       sessionCurrentState = SessionMessagerAPI.SessionCurrentState;
       sessionCurrentMode = SessionMessagerAPI.SessionCurrentMode;
@@ -472,6 +477,11 @@ public class SessionVisualizerTopics
    public Topic<Boolean> getSessionVisualizerDefaultConfigurationSaveRequest()
    {
       return sessionVisualizerDefaultConfigurationSaveRequest;
+   }
+
+   public Topic<SessionDataFilterParameters> getSessionDataFilterParametersAddRequest()
+   {
+      return sessionDataFilterParametersAddRequest;
    }
 
    public Topic<SessionState> getSessionCurrentState()
