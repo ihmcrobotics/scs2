@@ -715,15 +715,23 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
                @Override
                public void handleImpl(long now)
                {
-                  if (!pendingVisualizerTasks.isEmpty())
+                  if (pendingVisualizerTasks == null)
                   {
-                     pendingVisualizerTasks.poll().run();
-                  }
-
-                  if (pendingVisualizerTasks.isEmpty())
-                  {
-                     pendingVisualizerTasks = null;
                      stop();
+                     return;
+                  }
+                  else
+                  {
+                     if (!pendingVisualizerTasks.isEmpty())
+                     {
+                        pendingVisualizerTasks.poll().run();
+                     }
+
+                     if (pendingVisualizerTasks.isEmpty())
+                     {
+                        pendingVisualizerTasks = null;
+                        stop();
+                     }
                   }
                }
             }.start();
