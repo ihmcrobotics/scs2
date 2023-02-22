@@ -16,8 +16,8 @@
 <?import org.controlsfx.control.CheckTreeView?>
 
 <Stage fx:id="stage" title="Export Data" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionDataExportStageController">
-    <scene>
-        <Scene stylesheets="@../css/GeneralStylesheet.css">
+   <scene>
+      <Scene stylesheets="@../css/GeneralStylesheet.css">
          <VBox fx:id="mainPane" spacing="5.0">
             <children>
                <Label text="Select variables to export:" />
@@ -28,6 +28,7 @@
                      <JFXButton fx:id="unselectAllButton" minWidth="-Infinity" styleClass="export-data-unselect-all-button" text="Unselect all" HBox.hgrow="NEVER" />
                      <Label minWidth="-Infinity" text="Load filter:" />
                      <JFXComboBox fx:id="filterComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                     <JFXButton minWidth="-Infinity" onAction="#saveActiveFilter" styleClass="export-data-save-filter" text="Save filter" />
                   </children>
                   <padding>
                      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -35,16 +36,16 @@
                </HBox>
                <JFXSlider fx:id="currentBufferIndexSlider" />
                <GridPane hgap="5.0" vgap="5.0">
-                 <columnConstraints>
-                   <ColumnConstraints hgrow="SOMETIMES" />
-                   <ColumnConstraints hgrow="SOMETIMES" />
+                  <columnConstraints>
                      <ColumnConstraints hgrow="SOMETIMES" />
                      <ColumnConstraints hgrow="SOMETIMES" />
-                 </columnConstraints>
-                 <rowConstraints>
+                     <ColumnConstraints hgrow="SOMETIMES" />
+                     <ColumnConstraints hgrow="SOMETIMES" />
+                  </columnConstraints>
+                  <rowConstraints>
                      <RowConstraints vgrow="SOMETIMES" />
                      <RowConstraints vgrow="SOMETIMES" />
-                 </rowConstraints>
+                  </rowConstraints>
                   <children>
                      <JFXToggleButton fx:id="exportRobotDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Robot" />
                      <JFXToggleButton fx:id="exportTerrainDefinitionToggleButton" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" selected="true" size="6.0" text="Terrain" GridPane.columnIndex="1" />
@@ -68,6 +69,6 @@
                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
             </padding>
          </VBox>
-        </Scene>
-    </scene>
+      </Scene>
+   </scene>
 </Stage>

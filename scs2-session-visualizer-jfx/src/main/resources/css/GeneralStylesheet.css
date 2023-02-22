@@ -376,6 +376,11 @@
 	-jfx-button-type: RAISED;
 }
 
+.export-data-save-filter {
+	-fx-background-color: -default-pale-purple;
+	-jfx-button-type: RAISED;
+}
+
 /*******************************************************************************
  *                                                                             *
  * Session controls                                                            *
