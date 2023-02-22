@@ -62,6 +62,7 @@ public class SessionVisualizerIOTools
    public static final String yoCompositeConfigurationFileExtension = ".scs2.yoComposite";
    public static final String yoEntryConfigurationFileExtension = ".scs2.yoEntry";
    public static final String yoSliderboardConfigurationFileExtension = ".scs2.yoSliderboard";
+   public static final String yoVariableGroupConfigurationFileExtension = ".scs2.yoVariableGroup";
    public static final String videoFileExtension = ".mp4";
    public static final ExtensionFilter scs2InfoFilter = new ExtensionFilter("SCS2 Info File", "*" + SessionIOTools.infoFileExtension);
    public static final ExtensionFilter scs2ConfigurationFilter = new ExtensionFilter("SCS2 Config File", "*" + scsConfigurationFileExtension);
@@ -73,6 +74,8 @@ public class SessionVisualizerIOTools
    public static final ExtensionFilter yoEntryConfigurationFilter = new ExtensionFilter("SCS2 YoEntry File", "*" + yoEntryConfigurationFileExtension);
    public static final ExtensionFilter yoSliderboardConfigurationFilter = new ExtensionFilter("SCS2 YoSliderboard File",
                                                                                               "*" + yoSliderboardConfigurationFileExtension);
+   public static final ExtensionFilter yoVariableGroupConfigurationFilter = new ExtensionFilter("SCS2 YoVariable Group File",
+                                                                                                "*" + yoVariableGroupConfigurationFileExtension);
 
    public static final ExtensionFilter videoExtensionFilter = new ExtensionFilter("MP4", "*" + videoFileExtension);
 
@@ -376,6 +379,16 @@ public class SessionVisualizerIOTools
    public static File yoSliderboardConfigurationSaveFileDialog(Window owner)
    {
       return showSaveDialog(owner, "Save YoSliderboard", yoSliderboardConfigurationFilter);
+   }
+
+   public static File yoVariableGroupConfigurationOpenFileDialog(Window owner)
+   {
+      return showOpenDialog(owner, "Load YoVariable Group", yoVariableGroupConfigurationFilter);
+   }
+
+   public static File yoVariableGroupConfigurationSaveFileDialog(Window owner)
+   {
+      return showSaveDialog(owner, "Save YoVariable Group", yoVariableGroupConfigurationFilter);
    }
 
    public static File videoExportSaveFileDialog(Window owner)

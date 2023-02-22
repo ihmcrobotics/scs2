@@ -1,12 +1,19 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import javax.xml.bind.JAXBException;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.controlsfx.control.CheckTreeView;
@@ -41,6 +48,7 @@ import javafx.stage.WindowEvent;
 import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.javaFXToolkit.messager.MessageBidirectionalBinding;
 import us.ihmc.messager.TopicListener;
+import us.ihmc.scs2.definition.yoVariable.YoVariableGroupDefinition;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionMode;
@@ -50,6 +58,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolki
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
@@ -61,6 +70,7 @@ public class SessionDataExportStageController implements VisualizerController
    private static final String MODIFIED_FILTER_NAME = "- Modified -";
    private static final String NONE_FILTER_NAME = "None";
    private static final String ALL_FILTER_NAME = "All";
+   private static final String IMPORT_FILTER_NAME = "Import ...";
 
    @FXML
    private Stage stage;
@@ -88,6 +98,7 @@ public class SessionDataExportStageController implements VisualizerController
    private JFXComboBox<DataFormat> dataFormatComboBox;
 
    private SessionDataFilterParameters currentFilter;
+   private Map<String, SessionDataFilterParameters> filterMap;
    private final SessionDataCollectionBasedFilter modifiedFilter = new SessionDataCollectionBasedFilter(MODIFIED_FILTER_NAME);
    private final Property<SessionMode> currentSessionMode = new SimpleObjectProperty<>(this, "currentSessionMode", null);
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
@@ -236,14 +247,24 @@ public class SessionDataExportStageController implements VisualizerController
       SessionDataFilterParameters allFilter = new SessionDataFilterParameters(ALL_FILTER_NAME, v -> true, null);
       SessionDataFilterParameters noneFilter = new SessionDataFilterParameters(NONE_FILTER_NAME, v -> false, null);
 
+      filterMap = toolkit.getSessionDataPreferenceManager().getFilterMap();
+
       filterComboBox.setItems(FXCollections.observableArrayList());
       filterComboBox.getItems().addAll(MODIFIED_FILTER_NAME);
       filterComboBox.getItems().addAll(ALL_FILTER_NAME);
       filterComboBox.getItems().addAll(NONE_FILTER_NAME);
-      filterComboBox.getItems().addAll(toolkit.getSessionDataPreferenceManager().getFilterMap().keySet());
+      filterComboBox.getItems().addAll(filterMap.keySet());
+      filterComboBox.getItems().add(IMPORT_FILTER_NAME);
 
       filterComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
       {
+         if (IMPORT_FILTER_NAME.equals(newValue))
+         {
+            if (!importFilter())
+               filterComboBox.getSelectionModel().select(oldValue);
+            return;
+         }
+
          if (MODIFIED_FILTER_NAME.equals(oldValue))
             updateModifiedFilterFromTreeView();
 
@@ -254,7 +275,7 @@ public class SessionDataExportStageController implements VisualizerController
          else if (NONE_FILTER_NAME.equals(newValue))
             currentFilter = noneFilter;
          else
-            currentFilter = toolkit.getSessionDataPreferenceManager().getFilterMap().get(newValue);
+            currentFilter = filterMap.get(newValue);
 
          applyFilterToTreeItems(currentFilter);
       });
@@ -271,6 +292,54 @@ public class SessionDataExportStageController implements VisualizerController
 
       SessionVisualizerIOTools.addSCSIconToWindow(stage);
       JavaFXMissingTools.centerWindowInOwner(stage, owner);
+   }
+
+   private boolean importFilter()
+   {
+      File result = SessionVisualizerIOTools.yoVariableGroupConfigurationOpenFileDialog(stage);
+      if (result == null)
+         return false;
+
+      try
+      {
+         SessionDataCollectionBasedFilter filter = new SessionDataCollectionBasedFilter(XMLTools.loadYoVariableGroupDefinition(new FileInputStream(result)));
+         if (!filterMap.containsKey(filter.getName()))
+            filterComboBox.getItems().add(filterComboBox.getItems().size() - 1, filter.getName());
+         filterMap.put(filter.getName(), filter);
+         filterComboBox.getSelectionModel().select(filter.getName());
+         return true;
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         return false;
+      }
+
+   }
+
+   @FXML
+   private void saveActiveFilter()
+   {
+      File result = SessionVisualizerIOTools.yoVariableGroupConfigurationSaveFileDialog(stage);
+
+      if (result == null)
+         return;
+
+      try
+      {
+         updateModifiedFilterFromTreeView();
+         YoVariableGroupDefinition definition = modifiedFilter.toYoVariableGroupDefinition();
+         definition.setName(result.getName().replace(SessionVisualizerIOTools.yoVariableGroupConfigurationFileExtension, ""));
+         XMLTools.saveYoVariableGroupDefinition(new FileOutputStream(result), definition);
+         if (!filterMap.containsKey(definition.getName()))
+            filterComboBox.getItems().add(filterComboBox.getItems().size() - 1, definition.getName());
+         filterMap.put(definition.getName(), new SessionDataCollectionBasedFilter(definition));
+         filterComboBox.getSelectionModel().select(definition.getName());
+      }
+      catch (JAXBException | IOException e)
+      {
+         e.printStackTrace();
+      }
    }
 
    private void applyFilterToTreeItems(SessionDataFilterParameters filter)
@@ -494,19 +563,67 @@ public class SessionDataExportStageController implements VisualizerController
 
    private static class SessionDataCollectionBasedFilter extends SessionDataFilterParameters
    {
-      private final Set<String> yoVariableNames = new LinkedHashSet<>();
+      private final Set<String> yoVariableNames;
+      private final Set<String> yoRegistryNames;
 
-      private final Predicate<YoVariable> variableFilter = v -> yoVariableNames.contains(v.getFullNameString());
-      private final Predicate<YoRegistry> registryFilter = null;
+      private final Predicate<YoVariable> variableFilter;
+      private final Predicate<YoRegistry> registryFilter;
 
       public SessionDataCollectionBasedFilter(String name)
       {
          super(name, null, null);
+
+         yoVariableNames = new LinkedHashSet<>();
+         yoRegistryNames = null;
+
+         variableFilter = v -> yoVariableNames.contains(v.getFullNameString());
+         registryFilter = null;
+      }
+
+      public SessionDataCollectionBasedFilter(YoVariableGroupDefinition definition)
+      {
+         super(definition.getName(), null, null);
+
+         Objects.requireNonNull(definition.getName());
+
+         if (definition.getVariableNames() != null)
+         {
+            yoVariableNames = new LinkedHashSet<>(definition.getVariableNames());
+            variableFilter = v -> yoVariableNames.contains(v.getFullNameString()) || yoVariableNames.contains(v.getName());
+         }
+         else
+         {
+            yoVariableNames = null;
+            variableFilter = null;
+         }
+
+         if (definition.getRegistryNames() != null)
+         {
+            yoRegistryNames = new LinkedHashSet<>(definition.getRegistryNames());
+            registryFilter = reg -> yoRegistryNames.contains(reg.getName()) || yoRegistryNames.contains(reg.getNamespace().getName());
+         }
+         else
+         {
+            yoRegistryNames = null;
+            registryFilter = null;
+         }
       }
 
       private void clear()
       {
-         yoVariableNames.clear();
+         if (yoVariableNames != null)
+            yoVariableNames.clear();
+         if (yoRegistryNames != null)
+            yoRegistryNames.clear();
+      }
+
+      public YoVariableGroupDefinition toYoVariableGroupDefinition()
+      {
+         YoVariableGroupDefinition definition = new YoVariableGroupDefinition();
+         definition.setName(getName());
+         definition.setVariableNames(yoVariableNames != null ? yoVariableNames.stream().toList() : null);
+         definition.setRegistryNames(yoRegistryNames != null ? yoRegistryNames.stream().toList() : null);
+         return definition;
       }
 
       @Override
