@@ -8,6 +8,7 @@ import java.nio.LongBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import us.hebi.matlab.mat.format.Mat5;
 import us.hebi.matlab.mat.types.MatFile;
@@ -130,8 +131,19 @@ public class YoVariableLogCropper extends YoVariableLogReader
       }
    }
 
-   @SuppressWarnings("resource")
    public void cropMATLAB(File destination, List<YoVariable> logVariables, int from, int to, ProgressConsumer progressConsumer)
+   {
+      cropMATLAB(destination, logVariables, null, null, from, to, progressConsumer);
+   }
+
+   @SuppressWarnings("resource")
+   public void cropMATLAB(File destination,
+                          List<YoVariable> logVariables,
+                          Predicate<YoVariable> variableFilter,
+                          Predicate<YoRegistry> registryFilter,
+                          int from,
+                          int to,
+                          ProgressConsumer progressConsumer)
    {
       progressConsumer.started("Cropping data file");
       progressConsumer.info("Initializing cropper");
@@ -141,6 +153,11 @@ public class YoVariableLogCropper extends YoVariableLogReader
       {
          return;
       }
+
+      if (variableFilter != null)
+         logVariables = logVariables.stream().filter(variableFilter).toList();
+      if (registryFilter != null)
+         logVariables = logVariables.stream().filter(var -> registryFilter.test(var.getRegistry())).toList();
 
       try
       {

@@ -37,7 +37,7 @@ import javafx.scene.layout.Pane;
 import us.ihmc.scs2.definition.yoVariable.YoVariableGroupDefinition;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
@@ -45,7 +45,7 @@ import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class SessionVariableFilterPaneController implements VisualizerController
+public class SessionVariableFilterPaneController
 {
    private static final String MODIFIED_FILTER_NAME = "- Modified -";
    private static final String NONE_FILTER_NAME = "None";
@@ -73,11 +73,17 @@ public class SessionVariableFilterPaneController implements VisualizerController
    private final List<Runnable> cleanupActions = new ArrayList<>();
 
    private YoManager yoManager;
+   private Predicate<YoVariable> treeViewVariableFilter = null;
 
-   @Override
-   public void initialize(SessionVisualizerWindowToolkit toolkit)
+   public void initialize(SessionVisualizerToolkit toolkit)
+   {
+      initialize(toolkit, null);
+   }
+
+   public void initialize(SessionVisualizerToolkit toolkit, Predicate<YoVariable> treeViewVariableFilter)
    {
       yoManager = toolkit.getYoManager();
+      this.treeViewVariableFilter = treeViewVariableFilter;
 
       selectedVariablesCheckTreeView.setCellFactory(param -> new CheckBoxTreeCell<Object>()
       {
@@ -300,12 +306,17 @@ public class SessionVariableFilterPaneController implements VisualizerController
             CheckBoxTreeItem<Object> childItem = new CheckBoxTreeItem<>(childRegistry);
             childItem.setSelected(!childRegistry.getChildren().isEmpty() || !childRegistry.getVariables().isEmpty());
             childItem.setExpanded(true);
-            parent.getChildren().add(childItem);
             buildTreeRecursively(childItem);
+
+            if (!childItem.getChildren().isEmpty())
+               parent.getChildren().add(childItem);
          }
 
          for (YoVariable variable : registry.getVariables())
          {
+            if (treeViewVariableFilter != null && !treeViewVariableFilter.test(variable))
+               continue;
+
             CheckBoxTreeItem<Object> childItem = new CheckBoxTreeItem<>(variable);
             childItem.selectedProperty().addListener(treeItemSelectedListener);
             childItem.setSelected(true);
