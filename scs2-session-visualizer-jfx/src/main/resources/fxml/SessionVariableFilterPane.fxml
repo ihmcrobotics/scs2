@@ -11,7 +11,7 @@
 <VBox fx:id="mainPane" spacing="5.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController">
    <children>
       <Label text="Select variables to export:" />
-      <CheckTreeView fx:id="selectedVariablesCheckTreeView" maxHeight="1.7976931348623157E308" />
+      <CheckTreeView fx:id="selectedVariablesCheckTreeView" maxHeight="1.7976931348623157E308" prefHeight="400.0" />
       <HBox alignment="CENTER_RIGHT" spacing="5.0">
          <children>
             <JFXButton fx:id="selectAllButton" minWidth="-Infinity" styleClass="export-data-select-all-button" text="Select all" HBox.hgrow="NEVER" />

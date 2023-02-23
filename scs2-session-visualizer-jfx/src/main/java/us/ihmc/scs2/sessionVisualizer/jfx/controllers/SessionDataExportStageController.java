@@ -139,7 +139,7 @@ public class SessionDataExportStageController implements VisualizerController
       dataFormatComboBox.setItems(FXCollections.observableArrayList(DataFormat.values()));
       dataFormatComboBox.getSelectionModel().select(DataFormat.ASCII);
 
-      variableFilterPaneController.initialize(toolkit);
+      variableFilterPaneController.initialize(toolkit.getGlobalToolkit());
       cleanupActions.add(variableFilterPaneController::dispose);
 
       EventHandler<? super WindowEvent> closeWindowEventHandler = e -> close();
