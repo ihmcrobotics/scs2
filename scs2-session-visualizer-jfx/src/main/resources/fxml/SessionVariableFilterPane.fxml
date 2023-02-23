@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import org.controlsfx.control.CheckTreeView?>
+
+<VBox fx:id="mainPane" spacing="5.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController">
+   <children>
+      <Label text="Select variables to export:" />
+      <CheckTreeView fx:id="selectedVariablesCheckTreeView" maxHeight="1.7976931348623157E308" />
+      <HBox alignment="CENTER_RIGHT" spacing="5.0">
+         <children>
+            <JFXButton fx:id="selectAllButton" minWidth="-Infinity" styleClass="export-data-select-all-button" text="Select all" HBox.hgrow="NEVER" />
+            <JFXButton fx:id="unselectAllButton" minWidth="-Infinity" styleClass="export-data-unselect-all-button" text="Unselect all" HBox.hgrow="NEVER" />
+            <Label minWidth="-Infinity" text="Load filter:" />
+            <JFXComboBox fx:id="filterComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <JFXButton minWidth="-Infinity" onAction="#saveActiveFilter" styleClass="export-data-save-filter" text="Save filter" />
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+   </children>
+</VBox>
