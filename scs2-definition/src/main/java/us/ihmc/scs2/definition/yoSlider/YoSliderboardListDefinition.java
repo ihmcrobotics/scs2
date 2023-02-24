@@ -3,6 +3,7 @@ package us.ihmc.scs2.definition.yoSlider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -36,7 +37,7 @@ public class YoSliderboardListDefinition
    {
       name = other.name;
       if (other.yoSliderboards != null)
-         yoSliderboards = other.yoSliderboards.stream().map(YoSliderboardDefinition::new).toList();
+         yoSliderboards = other.yoSliderboards.stream().map(YoSliderboardDefinition::new).collect(Collectors.toList());
       else
          yoSliderboards = null;
    }
