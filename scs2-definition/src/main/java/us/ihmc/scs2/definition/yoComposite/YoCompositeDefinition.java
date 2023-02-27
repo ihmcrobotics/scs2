@@ -2,6 +2,9 @@ package us.ihmc.scs2.definition.yoComposite;
 
 import java.util.Arrays;
 
+import javax.xml.bind.annotation.XmlSeeAlso;
+
+@XmlSeeAlso({YoOrientation3DDefinition.class, YoTuple2DDefinition.class, YoTuple3DDefinition.class})
 public abstract class YoCompositeDefinition
 {
    public abstract String getType();

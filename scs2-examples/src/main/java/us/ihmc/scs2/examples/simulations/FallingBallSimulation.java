@@ -8,6 +8,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoInteger;
 
 public class FallingBallSimulation
 {
@@ -24,6 +26,17 @@ public class FallingBallSimulation
       SimulationSession simulationSession = new SimulationSession();
       simulationSession.addRobot(robotDefinition);
       simulationSession.addTerrainObject(new SlopeGroundDefinition(Math.toRadians(15.0)));
+      new YoDouble("redDouble", simulationSession.getRootRegistry());
+      new YoDouble("greenDouble", simulationSession.getRootRegistry());
+      new YoDouble("blueDouble", simulationSession.getRootRegistry());
+      new YoDouble("alphaDouble", simulationSession.getRootRegistry());
+
+      new YoInteger("redInt", simulationSession.getRootRegistry());
+      new YoInteger("greenInt", simulationSession.getRootRegistry());
+      new YoInteger("blueInt", simulationSession.getRootRegistry());
+      new YoInteger("alphaInt", simulationSession.getRootRegistry());
+
+      new YoInteger("rgbaInt", simulationSession.getRootRegistry());
 
       controls = SessionVisualizer.startSessionVisualizer(simulationSession);
       controls.addSessionChangedListener((oldSession, newSession) ->

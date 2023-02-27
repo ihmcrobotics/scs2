@@ -18,7 +18,10 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple4D.interfaces.QuaternionReadOnly;
 import us.ihmc.euclid.yawPitchRoll.interfaces.YawPitchRollReadOnly;
-import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBASingleDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
@@ -61,7 +64,7 @@ public class YoGraphicDefinitionFactory
                                                                 YoFrameTuple3D origin,
                                                                 YoFrameTuple3D direction,
                                                                 double scale,
-                                                                ColorDefinition color)
+                                                                PaintDefinition color)
    {
       return newYoGraphicArrow3D(name, origin, origin.getReferenceFrame(), direction, direction.getReferenceFrame(), scale, color);
    }
@@ -75,7 +78,7 @@ public class YoGraphicDefinitionFactory
                                                                 boolean scaleRadius,
                                                                 double bodyRadius,
                                                                 double headRadius,
-                                                                ColorDefinition color)
+                                                                PaintDefinition color)
    {
       return newYoGraphicArrow3D(name,
                                  origin,
@@ -97,7 +100,7 @@ public class YoGraphicDefinitionFactory
                                                                 YoTuple3D direction,
                                                                 ReferenceFrame directionFrame,
                                                                 double scale,
-                                                                ColorDefinition color)
+                                                                PaintDefinition color)
    {
       boolean scaleLength = true;
       double bodyLength = scale * 0.9;
@@ -130,7 +133,7 @@ public class YoGraphicDefinitionFactory
                                                                 boolean scaleRadius,
                                                                 double bodyRadius,
                                                                 double headRadius,
-                                                                ColorDefinition color)
+                                                                PaintDefinition color)
    {
       YoGraphicArrow3DDefinition definition = new YoGraphicArrow3DDefinition();
       definition.setName(name);
@@ -147,7 +150,7 @@ public class YoGraphicDefinitionFactory
       return definition;
    }
 
-   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name, YoFramePose3D pose, double scale, ColorDefinition color)
+   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name, YoFramePose3D pose, double scale, PaintDefinition color)
    {
       return newYoGraphicCoordinateSystem3D(name, pose.getPosition(), pose.getOrientation(), scale, color);
    }
@@ -156,7 +159,7 @@ public class YoGraphicDefinitionFactory
                                                                                       YoFramePoint3D position,
                                                                                       YoFrameQuaternion orientation,
                                                                                       double scale,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       double bodyLength = scale * 0.9;
       double headLength = scale * 0.1;
@@ -172,7 +175,7 @@ public class YoGraphicDefinitionFactory
                                                                                       double headLength,
                                                                                       double bodyRadius,
                                                                                       double headRadius,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       YoGraphicCoordinateSystem3DDefinition definition = new YoGraphicCoordinateSystem3DDefinition();
       definition.setName(name);
@@ -190,7 +193,7 @@ public class YoGraphicDefinitionFactory
    public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name,
                                                                                       FramePose3DReadOnly constantFramePose,
                                                                                       double scale,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       double bodyLength = scale * 0.9;
       double headLength = scale * 0.1;
@@ -213,7 +216,7 @@ public class YoGraphicDefinitionFactory
                                                                                       double headLength,
                                                                                       double bodyRadius,
                                                                                       double headRadius,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       return newYoGraphicCoordinateSystem3D(name,
                                             constantFramePose.getPosition(),
@@ -229,7 +232,7 @@ public class YoGraphicDefinitionFactory
    public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name,
                                                                                       Pose3DReadOnly constantFramePose,
                                                                                       double scale,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       double bodyLength = scale * 0.9;
       double headLength = scale * 0.1;
@@ -252,7 +255,7 @@ public class YoGraphicDefinitionFactory
                                                                                       double headLength,
                                                                                       double bodyRadius,
                                                                                       double headRadius,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       return newYoGraphicCoordinateSystem3D(name,
                                             constantPose.getPosition(),
@@ -273,7 +276,7 @@ public class YoGraphicDefinitionFactory
                                                                                       double headLength,
                                                                                       double bodyRadius,
                                                                                       double headRadius,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       return newYoGraphicCoordinateSystem3D(name,
                                             constantPose.getPosition(),
@@ -295,7 +298,7 @@ public class YoGraphicDefinitionFactory
                                                                                       double headLength,
                                                                                       double bodyRadius,
                                                                                       double headRadius,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       return newYoGraphicCoordinateSystem3D(name,
                                             constantPoint,
@@ -318,7 +321,7 @@ public class YoGraphicDefinitionFactory
                                                                                       double headLength,
                                                                                       double bodyRadius,
                                                                                       double headRadius,
-                                                                                      ColorDefinition color)
+                                                                                      PaintDefinition color)
    {
       YoGraphicCoordinateSystem3DDefinition definition = new YoGraphicCoordinateSystem3DDefinition();
       definition.setName(name);
@@ -333,7 +336,7 @@ public class YoGraphicDefinitionFactory
       return definition;
    }
 
-   public static YoGraphicPoint3DDefinition newYoGraphicPoint3D(String name, YoFrameTuple3D position, double size, ColorDefinition color)
+   public static YoGraphicPoint3DDefinition newYoGraphicPoint3D(String name, YoFrameTuple3D position, double size, PaintDefinition color)
    {
       return newYoGraphicPoint3D(name, position, position.getReferenceFrame(), size, color);
    }
@@ -342,7 +345,7 @@ public class YoGraphicDefinitionFactory
                                                                 YoTuple3D position,
                                                                 ReferenceFrame positionFrame,
                                                                 double size,
-                                                                ColorDefinition color)
+                                                                PaintDefinition color)
    {
       YoGraphicPoint3DDefinition definition = new YoGraphicPoint3DDefinition();
       definition.setName(name);
@@ -356,7 +359,7 @@ public class YoGraphicDefinitionFactory
    public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
                                                                 YoFrameTuple2D position,
                                                                 double size,
-                                                                ColorDefinition strokeColor,
+                                                                PaintDefinition strokeColor,
                                                                 DefaultPoint2DGraphic graphicType)
    {
       return newYoGraphicPoint2D(name, position, position.getReferenceFrame(), size, strokeColor, graphicType);
@@ -366,7 +369,7 @@ public class YoGraphicDefinitionFactory
                                                                 YoTuple2D position,
                                                                 ReferenceFrame positionFrame,
                                                                 double size,
-                                                                ColorDefinition strokeColor,
+                                                                PaintDefinition strokeColor,
                                                                 DefaultPoint2DGraphic graphicType)
    {
       YoGraphicPoint2DDefinition definition = new YoGraphicPoint2DDefinition();
@@ -383,7 +386,7 @@ public class YoGraphicDefinitionFactory
                                                                                               YoFramePose3D pose,
                                                                                               YoFrameConvexPolygon2D polygon,
                                                                                               double thickness,
-                                                                                              ColorDefinition color)
+                                                                                              PaintDefinition color)
    {
       YoGraphicPolygonExtruded3DDefinition definition = new YoGraphicPolygonExtruded3DDefinition();
       definition.setName(name);
@@ -401,7 +404,7 @@ public class YoGraphicDefinitionFactory
                                                                                               YoFramePose3D pose,
                                                                                               List<? extends Point2DReadOnly> vertices,
                                                                                               double thickness,
-                                                                                              ColorDefinition color)
+                                                                                              PaintDefinition color)
    {
       YoGraphicPolygonExtruded3DDefinition definition = new YoGraphicPolygonExtruded3DDefinition();
       definition.setName(name);
@@ -425,7 +428,7 @@ public class YoGraphicDefinitionFactory
                                                                           YoDouble startTime,
                                                                           YoDouble endTime,
                                                                           double size,
-                                                                          ColorDefinition color)
+                                                                          PaintDefinition color)
    {
       return newYoGraphicPolynomial3D(name,
                                       coefficientsX,
@@ -454,7 +457,7 @@ public class YoGraphicDefinitionFactory
                                                                           double size,
                                                                           int timeResolution,
                                                                           int numberOfDivisions,
-                                                                          ColorDefinition color)
+                                                                          PaintDefinition color)
    {
       return newYoGraphicPolynomial3D(name,
                                       toYoListDefinition(coefficientsX, numberOfCoefficientsX),
@@ -479,7 +482,7 @@ public class YoGraphicDefinitionFactory
                                                                           YoDouble endTime,
                                                                           double defaultEndTime,
                                                                           double size,
-                                                                          ColorDefinition color)
+                                                                          PaintDefinition color)
    {
       return newYoGraphicPolynomial3D(name,
                                       coefficientsX,
@@ -506,7 +509,7 @@ public class YoGraphicDefinitionFactory
                                                                           double size,
                                                                           int timeResolution,
                                                                           int numberOfDivisions,
-                                                                          ColorDefinition color)
+                                                                          PaintDefinition color)
    {
       YoGraphicPolynomial3DDefinition definition = new YoGraphicPolynomial3DDefinition();
       definition.setName(name);
@@ -811,6 +814,31 @@ public class YoGraphicDefinitionFactory
       return definition;
    }
 
+   public static PaintDefinition toYoColorDefinition(YoDouble red, YoDouble green, YoDouble blue)
+   {
+      return toYoColorDefinition(red, green, blue, null);
+   }
+
+   public static PaintDefinition toYoColorDefinition(YoDouble red, YoDouble green, YoDouble blue, YoDouble alpha)
+   {
+      return new YoColorRGBADoubleDefinition(toPropertyName(red, 0.0), toPropertyName(green, 0.0), toPropertyName(blue, 0.0), toPropertyName(alpha, 1.0));
+   }
+
+   public static PaintDefinition toYoColorDefinition(YoInteger red, YoInteger green, YoInteger blue)
+   {
+      return toYoColorDefinition(red, green, blue, null);
+   }
+
+   public static PaintDefinition toYoColorDefinition(YoInteger red, YoInteger green, YoInteger blue, YoInteger alpha)
+   {
+      return new YoColorRGBAIntDefinition(toPropertyName(red, 0), toPropertyName(green, 0), toPropertyName(blue, 0), toPropertyName(alpha, 255));
+   }
+
+   public static PaintDefinition toYoColorDefinition(YoInteger rgba)
+   {
+      return new YoColorRGBASingleDefinition(toPropertyName(rgba, 0));
+   }
+
    public static YoListDefinition toYoListDefinition(YoVariable[] yoVariables, YoInteger size)
    {
       return toYoListDefinition(yoVariables, null, size);
@@ -868,5 +896,10 @@ public class YoGraphicDefinitionFactory
    public static String toPropertyName(YoVariable yoVariable, double defaultValue)
    {
       return yoVariable == null ? Double.toString(defaultValue) : yoVariable.getFullNameString();
+   }
+
+   public static String toPropertyName(YoInteger yoInteger, int defaultValue)
+   {
+      return yoInteger == null ? Integer.toString(defaultValue) : yoInteger.getFullNameString();
    }
 }

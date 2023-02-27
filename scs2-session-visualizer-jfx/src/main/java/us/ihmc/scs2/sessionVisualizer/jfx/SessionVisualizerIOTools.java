@@ -162,6 +162,9 @@ public class SessionVisualizerIOTools
    public static final URL YO_GRAPHIC_ITEM_CREATOR_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicItemCreatorDialog");
    public static final URL YO_GRAPHIC_PROPERTY_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicPropertyWindow");
    public static final URL YO_COMPOSITE_EDITOR_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "YoCompositeEditorPane");
+   public static final URL SIMPLE_COLOR_EDITOR_PANE_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "SimpleColorEditorPane");
+   public static final URL YO_COLOR_RGBA_EDITOR_PANE_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "YoColorRGBAEditorPane");
+   public static final URL YO_COLOR_RGBA_SINGLE_EDITOR_PANE_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "YoColorRGBASingleEditorPane");
    public static final URL YO_GRAPHIC_ROBOT_COLLISIONS_BUTTON_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicRobotCollisionsToggleButton");
    public static final URL YO_GRAPHIC_TERRAIN_COLLISIONS_BUTTON_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicTerrainCollisionsToggleButton");
    public static final URL YO_GRAPHIC_ROBOT_MASS_PROPERTIES_BUTTON_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicRobotMassPropertiesToggleButton");

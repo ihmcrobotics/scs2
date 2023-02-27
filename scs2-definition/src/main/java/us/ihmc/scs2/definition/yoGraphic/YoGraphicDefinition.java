@@ -45,10 +45,8 @@ public abstract class YoGraphicDefinition
       {
          return true;
       }
-      else if (object instanceof YoGraphicDefinition)
+      else if (object instanceof YoGraphicDefinition other)
       {
-         YoGraphicDefinition other = (YoGraphicDefinition) object;
-
          if (name == null ? other.name != null : !name.equals(other.name))
             return false;
          if (visible != other.visible)

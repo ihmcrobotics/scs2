@@ -2,7 +2,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools.bindValidityImageView;
 
-import com.jfoenix.controls.JFXColorPicker;
 import com.jfoenix.controls.JFXRadioButton;
 
 import javafx.beans.property.BooleanProperty;
@@ -20,12 +19,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic2DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color.ColorEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
 
 public class YoGraphic2DStyleEditorPaneController
 {
@@ -36,18 +36,18 @@ public class YoGraphic2DStyleEditorPaneController
    @FXML
    private JFXRadioButton fillRadioButton;
    @FXML
-   private JFXColorPicker fillColorPicker;
+   private ColorEditorController fillColorEditorController;
    @FXML
    private JFXRadioButton strokeRadioButton;
    @FXML
-   private JFXColorPicker strokeColorPicker;
+   private ColorEditorController strokeColorEditorController;
    @FXML
    private TextField strokeWidthTextField;
    @FXML
    private ImageView strokeWidthValidImageView;
 
-   private final ObjectProperty<Color> fillColorProperty = new SimpleObjectProperty<>(this, "fillColor", null);
-   private final ObjectProperty<Color> strokeColorProperty = new SimpleObjectProperty<>(this, "strokeColor", null);
+   private final ObjectProperty<BaseColorFX> fillColorProperty = new SimpleObjectProperty<>(this, "fillColor", null);
+   private final ObjectProperty<BaseColorFX> strokeColorProperty = new SimpleObjectProperty<>(this, "strokeColor", null);
    private final BooleanProperty strokeWidthValidityProperty = new SimpleBooleanProperty(this, "strokeWidthValidityProperty", false);
    private final DoubleProperty strokeWidthProperty = new SimpleDoubleProperty(this, "strokeWidth", DEFAULT_STROKE_WIDTH);
    private ObservableBooleanValue inputsValidityProperty;
@@ -56,8 +56,10 @@ public class YoGraphic2DStyleEditorPaneController
    {
       new ToggleGroup().getToggles().addAll(fillRadioButton, strokeRadioButton);
 
-      fillColorPicker.disableProperty().bind(strokeRadioButton.selectedProperty());
-      strokeColorPicker.disableProperty().bind(fillRadioButton.selectedProperty());
+      fillColorEditorController.initialize(toolkit);
+      strokeColorEditorController.initialize(toolkit);
+      fillColorEditorController.getMainPane().disableProperty().bind(strokeRadioButton.selectedProperty());
+      strokeColorEditorController.getMainPane().disableProperty().bind(fillRadioButton.selectedProperty());
 
       YoGraphicFXControllerTools.numericalValidityBinding(strokeWidthTextField.textProperty(), strokeWidthValidityProperty);
 
@@ -75,38 +77,49 @@ public class YoGraphic2DStyleEditorPaneController
       {
          if (newValue)
          {
-            fillColorProperty.set(fillColorPicker.getValue());
+            fillColorProperty.bind(fillColorEditorController.colorProperty());
+            strokeColorProperty.unbind();
             strokeColorProperty.set(null);
          }
          else
          {
-            strokeColorProperty.set(strokeColorPicker.getValue());
+            strokeColorProperty.bind(strokeColorEditorController.colorProperty());
+            fillColorProperty.unbind();
             fillColorProperty.set(null);
          }
       });
 
-      fillColorPicker.valueProperty().addListener((o, oldValue, newValue) -> fillColorProperty.set(newValue));
-      strokeColorPicker.valueProperty().addListener((o, oldValue, newValue) -> strokeColorProperty.set(newValue));
+      // Initialize
+      if (fillRadioButton.isSelected())
+      {
+         fillColorProperty.bind(fillColorEditorController.colorProperty());
+         strokeColorProperty.unbind();
+         strokeColorProperty.set(null);
+      }
+      else
+      {
+         strokeColorProperty.bind(strokeColorEditorController.colorProperty());
+         fillColorProperty.unbind();
+         fillColorProperty.set(null);
+      }
    }
 
    public void setInput(YoGraphic2DDefinition definition)
    {
-      setInput(JavaFXVisualTools.toColor(definition.getFillColor(), null),
-               JavaFXVisualTools.toColor(definition.getStrokeColor(), null),
-               definition.getStrokeWidth());
+      setInput(definition.getFillColor(), definition.getStrokeColor(), definition.getStrokeWidth());
    }
 
-   public void setInput(Color fillColor, Color strokeColor, String strokeWidth)
+   public void setInput(PaintDefinition fillColor, PaintDefinition strokeColor, String strokeWidth)
    {
       if (fillColor != null)
       {
          fillRadioButton.setSelected(true);
-         fillColorPicker.setValue(fillColor);
+         fillColorEditorController.setInput(fillColor);
       }
       else
       {
          strokeRadioButton.setSelected(true);
-         strokeColorPicker.setValue(strokeColor);
+         strokeColorEditorController.setInput(strokeColor);
       }
 
       strokeWidthTextField.setText(strokeWidth);
@@ -132,14 +145,14 @@ public class YoGraphic2DStyleEditorPaneController
       return inputsValidityProperty;
    }
 
-   public ReadOnlyObjectProperty<Color> fillColorProperty()
+   public ReadOnlyObjectProperty<BaseColorFX> fillColorProperty()
    {
-      return fillColorProperty;
+      return fillColorEditorController.colorProperty();
    }
 
-   public ReadOnlyObjectProperty<Color> strokeColorProperty()
+   public ReadOnlyObjectProperty<BaseColorFX> strokeColorProperty()
    {
-      return strokeColorProperty;
+      return strokeColorEditorController.colorProperty();
    }
 
    public ReadOnlyDoubleProperty strokeWidthProperty()

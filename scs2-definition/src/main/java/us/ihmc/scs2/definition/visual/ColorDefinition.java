@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
 @XmlRootElement(name = "Color")
-public class ColorDefinition
+public class ColorDefinition extends PaintDefinition
 {
    private double red, green, blue, alpha;
 
@@ -225,7 +225,7 @@ public class ColorDefinition
     */
    public int getRedAsInteger()
    {
-      return (int) (red * 255.0);
+      return (int) Math.round(red * 255.0);
    }
 
    /**
@@ -245,7 +245,7 @@ public class ColorDefinition
     */
    public int getGreenAsInteger()
    {
-      return (int) (green * 255.0);
+      return (int) Math.round(green * 255.0);
    }
 
    /**
@@ -265,7 +265,7 @@ public class ColorDefinition
     */
    public int getBlueAsInteger()
    {
-      return (int) (blue * 255.0);
+      return (int) Math.round(blue * 255.0);
    }
 
    /**

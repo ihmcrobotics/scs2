@@ -113,14 +113,14 @@ public class JavaFXVisualTools
    private static final Map<String, CachedImportedModel> cachedColladaModels = new ConcurrentHashMap<>();
    private static final Map<String, CachedImportedModel> cachedOBJModels = new ConcurrentHashMap<>();
 
-   private static final Rotate ROTATE_PI_X = new Rotate(180.0, Rotate.X_AXIS);
-   private static final Color DEFAULT_COLOR = Color.DARKBLUE;
-   private static final Material DEFAULT_MATERIAL = new PhongMaterial(DEFAULT_COLOR);
-   private static final Shape3D DEFAULT_GEOMETRY = null;
-   private static final Box DEFAULT_BOX = null;
-   private static final Cylinder DEFAULT_CYLINDER = null;
-   private static final Sphere DEFAULT_SPHERE = null;
-   private static final Node[] DEFAULT_MESH_VIEWS = null;
+   public static final Rotate ROTATE_PI_X = new Rotate(180.0, Rotate.X_AXIS);
+   public static final Color DEFAULT_COLOR = Color.DARKBLUE;
+   public static final Material DEFAULT_MATERIAL = new PhongMaterial(DEFAULT_COLOR);
+   public static final Shape3D DEFAULT_GEOMETRY = null;
+   public static final Box DEFAULT_BOX = null;
+   public static final Cylinder DEFAULT_CYLINDER = null;
+   public static final Sphere DEFAULT_SPHERE = null;
+   public static final Node[] DEFAULT_MESH_VIEWS = null;
 
    public static Node collectNodes(List<VisualDefinition> visualDefinitions)
    {

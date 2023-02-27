@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<GridPane fx:id="mainPane" styleClass="graphic-editor-gridpane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic2DStyleEditorPaneController">
+<GridPane fx:id="mainPane" styleClass="graphic-editor-gridpane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic2DStyleEditorPaneController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" minWidth="-Infinity" />
       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
@@ -23,9 +23,9 @@
    </rowConstraints>
    <children>
       <JFXRadioButton fx:id="fillRadioButton" text="Fill color" />
-      <JFXColorPicker fx:id="fillColorPicker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" />
+	  <fx:include fx:id="fillColorEditor" source="ColorEditorPane.fxml" GridPane.columnIndex="1" GridPane.columnSpan="2" />
       <JFXRadioButton fx:id="strokeRadioButton" selected="true" text="Stroke color" GridPane.rowIndex="1" />
-      <JFXColorPicker fx:id="strokeColorPicker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+	  <fx:include fx:id="strokeColorEditor" source="ColorEditorPane.fxml" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" />
       <Label text="Stroke width" GridPane.rowIndex="2" />
       <JFXTextField fx:id="strokeWidthTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
       <ImageView fx:id="strokeWidthValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="2">
