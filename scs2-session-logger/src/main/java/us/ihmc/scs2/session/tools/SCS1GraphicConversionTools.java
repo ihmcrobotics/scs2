@@ -271,8 +271,9 @@ public class SCS1GraphicConversionTools
 
       if (constants.length == 3)
       {
-         definition.setColor(ColorDefinition.rgb((int) constants[1]));
-         definition.getColor().setAlpha(1.0 - constants[2]);
+         ColorDefinition color = ColorDefinition.rgb((int) constants[1]);
+         color.setAlpha(1.0 - constants[2]);
+         definition.setColor(color);
       }
       definition.setVisible(yoGraphicCoordinateSystem.isGraphicObjectShowing());
 
@@ -352,22 +353,19 @@ public class SCS1GraphicConversionTools
          int xSize = (int) polynomialSizes[0];
          String xNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
          List<String> xCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + xSize - 1))
-                                      .map(YoVariable::getFullNameString)
-                                      .collect(Collectors.toList());
+                                      .map(YoVariable::getFullNameString).collect(Collectors.toList());
          yoVariableIndex += xSize;
 
          int ySize = (int) polynomialSizes[1];
          String yNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
          List<String> yCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + ySize - 1))
-                                      .map(YoVariable::getFullNameString)
-                                      .collect(Collectors.toList());
+                                      .map(YoVariable::getFullNameString).collect(Collectors.toList());
          yoVariableIndex += ySize;
 
          int zSize = (int) polynomialSizes[2];
          String zNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
          List<String> zCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + zSize - 1))
-                                      .map(YoVariable::getFullNameString)
-                                      .collect(Collectors.toList());
+                                      .map(YoVariable::getFullNameString).collect(Collectors.toList());
          yoVariableIndex += ySize;
 
          definition.setCoefficientsX(new YoListDefinition(xCoeffs, xNumberOfCoeffs));
@@ -397,22 +395,19 @@ public class SCS1GraphicConversionTools
             int xSize = (int) polynomialSizes[0];
             String xNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
             List<String> xCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + xSize - 1))
-                                         .map(YoVariable::getFullNameString)
-                                         .collect(Collectors.toList());
+                                         .map(YoVariable::getFullNameString).collect(Collectors.toList());
             yoVariableIndex += xSize;
 
             int ySize = (int) polynomialSizes[1];
             String yNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
             List<String> yCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + ySize - 1))
-                                         .map(YoVariable::getFullNameString)
-                                         .collect(Collectors.toList());
+                                         .map(YoVariable::getFullNameString).collect(Collectors.toList());
             yoVariableIndex += ySize;
 
             int zSize = (int) polynomialSizes[2];
             String zNumberOfCoeffs = yoVariables[yoVariableIndex].getFullNameString();
             List<String> zCoeffs = Stream.of(Arrays.copyOfRange(yoVariables, yoVariableIndex + 1, yoVariableIndex + 1 + zSize - 1))
-                                         .map(YoVariable::getFullNameString)
-                                         .collect(Collectors.toList());
+                                         .map(YoVariable::getFullNameString).collect(Collectors.toList());
             yoVariableIndex += ySize;
 
             definition.setCoefficientsX(new YoListDefinition(xCoeffs, xNumberOfCoeffs));

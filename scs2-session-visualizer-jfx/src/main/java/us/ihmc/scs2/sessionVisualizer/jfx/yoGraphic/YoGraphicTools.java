@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javafx.beans.property.DoubleProperty;
@@ -44,7 +43,10 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBASingleDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic2DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
@@ -68,6 +70,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygonExtruded3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolynomial3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicRamp3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicSTPBox3DDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
@@ -76,12 +79,19 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBADoubleFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBAIntFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBASingleFX;
 
 public class YoGraphicTools
 {
    public static final String GUI_ROOT_NAME = "root";
    public static final String SESSION_ROOT_NAME = "session";
    public static final String SEPARATOR = ":";
+
+   private static final SimpleColorFX DEFAULT_COLOR = new SimpleColorFX(JavaFXVisualTools.DEFAULT_COLOR);
 
    public static List<String> collectAllExistingNamespaces(YoGroupFX group)
    {
@@ -328,11 +338,11 @@ public class YoGraphicTools
                                        YoGraphicFX2D yoGraphicFXToPack)
    {
       toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
-      Color fillColor = JavaFXVisualTools.toColor(definition.getFillColor(), null);
+      BaseColorFX fillColor = toBaseColorFX(yoVariableDatabase, definition.getFillColor());
       if (fillColor != null)
          yoGraphicFXToPack.setFillColor(fillColor);
       else
-         yoGraphicFXToPack.setStrokeColor(JavaFXVisualTools.toColor(definition.getStrokeColor()));
+         yoGraphicFXToPack.setStrokeColor(toBaseColorFX(yoVariableDatabase, definition.getStrokeColor()));
       yoGraphicFXToPack.setStrokeWidth(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getStrokeWidth()));
    }
 
@@ -454,7 +464,7 @@ public class YoGraphicTools
                                        YoGraphicFX3D yoGraphicFXToPack)
    {
       toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
-      yoGraphicFXToPack.setColor(JavaFXVisualTools.toColor(definition.getColor()));
+      yoGraphicFXToPack.setColor(toBaseColorFX(yoVariableDatabase, definition.getColor()));
    }
 
    public static YoPointFX3D toYoPointFX3D(YoVariableDatabase yoVariableDatabase,
@@ -801,6 +811,72 @@ public class YoGraphicTools
       yoGraphicFXToPack.setPosition(CompositePropertyTools.toTuple3DProperty(yoVariableDatabase, referenceFrameManager, definition.getPosition()));
       yoGraphicFXToPack.setOrientation(CompositePropertyTools.toOrientation3DProperty(yoVariableDatabase, referenceFrameManager, definition.getOrientation()));
       yoGraphicFXToPack.setSize(CompositePropertyTools.toTuple3DProperty(yoVariableDatabase, referenceFrameManager, definition.getSize()));
+   }
+
+   public static BaseColorFX toBaseColorFX(YoVariableDatabase yoVariableDatabase, PaintDefinition definition)
+   {
+      if (definition == null)
+         return DEFAULT_COLOR;
+
+      if (definition instanceof ColorDefinition simpleColor)
+      {
+         return toSimpleColorFX(simpleColor);
+      }
+      if (definition instanceof YoColorRGBASingleDefinition yoColor)
+      {
+         return toYoColorRGBASingleDefinition(yoVariableDatabase, yoColor);
+      }
+      if (definition instanceof YoColorRGBADoubleDefinition yoColor)
+      {
+         return toYoColorRGBADoubleFX(yoVariableDatabase, yoColor);
+      }
+      if (definition instanceof YoColorRGBAIntDefinition yoColor)
+      {
+         return toYoColorRGBAIntFX(yoVariableDatabase, yoColor);
+      }
+
+      LogTools.error("Problem converting definition: {}", definition);
+      return null;
+   }
+
+   public static YoColorRGBAIntFX toYoColorRGBAIntFX(YoVariableDatabase yoVariableDatabase, YoColorRGBAIntDefinition definition)
+   {
+      if (definition == null)
+         return null;
+
+      IntegerProperty redProp = CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getRed());
+      IntegerProperty greenProp = CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getGreen());
+      IntegerProperty blueProp = CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getBlue());
+      IntegerProperty alphaProp = CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getAlpha());
+      return new YoColorRGBAIntFX(redProp, greenProp, blueProp, alphaProp);
+   }
+
+   public static YoColorRGBADoubleFX toYoColorRGBADoubleFX(YoVariableDatabase yoVariableDatabase, YoColorRGBADoubleDefinition definition)
+   {
+      if (definition == null)
+         return null;
+
+      DoubleProperty redProp = CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getRed());
+      DoubleProperty greenProp = CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getGreen());
+      DoubleProperty blueProp = CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getBlue());
+      DoubleProperty alphaProp = CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getAlpha());
+      return new YoColorRGBADoubleFX(redProp, greenProp, blueProp, alphaProp);
+   }
+
+   public static YoColorRGBASingleFX toYoColorRGBASingleDefinition(YoVariableDatabase yoVariableDatabase, YoColorRGBASingleDefinition definition)
+   {
+      if (definition == null)
+         return null;
+
+      return new YoColorRGBASingleFX(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getRGBA()));
+   }
+
+   public static SimpleColorFX toSimpleColorFX(ColorDefinition definition)
+   {
+      if (definition == null)
+         return DEFAULT_COLOR;
+
+      return new SimpleColorFX(JavaFXVisualTools.toColor(definition));
    }
 
    public static YoGroupFX convertRobotCollisionShapeDefinitions(RigidBodyReadOnly rootBody, RobotDefinition robotDefinition)
@@ -1150,9 +1226,7 @@ public class YoGraphicTools
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
       yoGraphicFX.setThickness(geometryDefinition.getTopZ() - geometryDefinition.getBottomZ());
-      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices()
-                                                .stream()
-                                                .map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
+      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices().stream().map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
                                                 .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getPolygonVertices().size());
       return yoGraphicFX;
@@ -1167,11 +1241,8 @@ public class YoGraphicTools
       yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
-      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope()
-                                                .getVertices()
-                                                .stream()
-                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ()))
-                                                .collect(Collectors.toList()));
+      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope().getVertices().stream()
+                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getConvexPolytope().getNumberOfVertices());
       return yoGraphicFX;
    }
@@ -1280,8 +1351,8 @@ public class YoGraphicTools
       definition.setVisible(yoGraphicFX.isVisible());
       definition.setPosition(CompositePropertyTools.toYoTuple2DDefinition(yoGraphicFX.getPosition()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
-      definition.setFillColor(toColorDefinition(yoGraphicFX.getFillColor()));
-      definition.setStrokeColor(toColorDefinition(yoGraphicFX.getStrokeColor()));
+      definition.setFillColor(toPaintDefinition(yoGraphicFX.getFillColor()));
+      definition.setStrokeColor(toPaintDefinition(yoGraphicFX.getStrokeColor()));
       definition.setStrokeWidth(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStrokeWidth()));
       definition.setGraphicName(yoGraphicFX.getGraphicResource().getResourceName());
 
@@ -1299,8 +1370,8 @@ public class YoGraphicTools
       definition.setVisible(yoGraphicFX.isVisible());
       definition.setVertices(yoGraphicFX.getVertices().stream().map(CompositePropertyTools::toYoTuple2DDefinition).collect(Collectors.toList()));
       definition.setNumberOfVertices(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfVertices()));
-      definition.setFillColor(toColorDefinition(yoGraphicFX.getFillColor()));
-      definition.setStrokeColor(toColorDefinition(yoGraphicFX.getStrokeColor()));
+      definition.setFillColor(toPaintDefinition(yoGraphicFX.getFillColor()));
+      definition.setStrokeColor(toPaintDefinition(yoGraphicFX.getStrokeColor()));
       definition.setStrokeWidth(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStrokeWidth()));
 
       return definition;
@@ -1319,8 +1390,8 @@ public class YoGraphicTools
       definition.setNumberOfPoints(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfPoints()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
       definition.setGraphicName(yoGraphicFX.getGraphicResource().getResourceName());
-      definition.setFillColor(toColorDefinition(yoGraphicFX.getFillColor()));
-      definition.setStrokeColor(toColorDefinition(yoGraphicFX.getStrokeColor()));
+      definition.setFillColor(toPaintDefinition(yoGraphicFX.getFillColor()));
+      definition.setStrokeColor(toPaintDefinition(yoGraphicFX.getStrokeColor()));
       definition.setStrokeWidth(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStrokeWidth()));
 
       return definition;
@@ -1338,8 +1409,8 @@ public class YoGraphicTools
       definition.setOrigin(CompositePropertyTools.toYoTuple2DDefinition(yoGraphicFX.getOrigin()));
       definition.setDirection(CompositePropertyTools.toYoTuple2DDefinition(yoGraphicFX.getDirection()));
       definition.setDestination(CompositePropertyTools.toYoTuple2DDefinition(yoGraphicFX.getDestination()));
-      definition.setFillColor(toColorDefinition(yoGraphicFX.getFillColor()));
-      definition.setStrokeColor(toColorDefinition(yoGraphicFX.getStrokeColor()));
+      definition.setFillColor(toPaintDefinition(yoGraphicFX.getFillColor()));
+      definition.setStrokeColor(toPaintDefinition(yoGraphicFX.getStrokeColor()));
       definition.setStrokeWidth(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getStrokeWidth()));
 
       return definition;
@@ -1362,7 +1433,7 @@ public class YoGraphicTools
       definition.setHeadLength(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getHeadLength()));
       definition.setBodyRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getBodyRadius()));
       definition.setHeadRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getHeadRadius()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1380,7 +1451,7 @@ public class YoGraphicTools
       definition.setAxis(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getAxis()));
       definition.setLength(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getLength()));
       definition.setRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getRadius()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1398,7 +1469,7 @@ public class YoGraphicTools
       definition.setAxis(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getAxis()));
       definition.setHeight(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getHeight()));
       definition.setRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getRadius()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1416,7 +1487,7 @@ public class YoGraphicTools
       definition.setAxis(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getAxis()));
       definition.setLength(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getLength()));
       definition.setRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getRadius()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1432,7 +1503,7 @@ public class YoGraphicTools
       definition.setVisible(yoGraphicFX.isVisible());
       definition.setPosition(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getPosition()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
       definition.setGraphicName(yoGraphicFX.getGraphicResource().getResourceName());
 
       return definition;
@@ -1451,7 +1522,7 @@ public class YoGraphicTools
       definition.setNumberOfPoints(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfPoints()));
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
       definition.setGraphicName(yoGraphicFX.getGraphicResource().getResourceName());
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1474,7 +1545,7 @@ public class YoGraphicTools
       definition.setSize(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getSize()));
       definition.setTimeResolution(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getTimeResolution()));
       definition.setNumberOfDivisions(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfDivisions()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1502,7 +1573,7 @@ public class YoGraphicTools
       definition.setHeadLength(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getHeadLength()));
       definition.setBodyRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getBodyRadius()));
       definition.setHeadRadius(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getHeadRadius()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1521,7 +1592,7 @@ public class YoGraphicTools
       definition.setVertices(yoGraphicFX.getVertices().stream().map(CompositePropertyTools::toYoTuple2DDefinition).collect(Collectors.toList()));
       definition.setNumberOfVertices(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfVertices()));
       definition.setThickness(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getThickness()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1539,7 +1610,7 @@ public class YoGraphicTools
       definition.setOrientation(CompositePropertyTools.toYoOrientation3DDefinition(yoGraphicFX.getOrientation()));
       definition.setVertices(yoGraphicFX.getVertices().stream().map(CompositePropertyTools::toYoTuple3DDefinition).collect(Collectors.toList()));
       definition.setNumberOfVertices(CompositePropertyTools.toIntegerPropertyName(yoGraphicFX.getNumberOfVertices()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1556,7 +1627,7 @@ public class YoGraphicTools
       definition.setPosition(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getPosition()));
       definition.setOrientation(CompositePropertyTools.toYoOrientation3DDefinition(yoGraphicFX.getOrientation()));
       definition.setSize(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getSize()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1573,7 +1644,7 @@ public class YoGraphicTools
       definition.setPosition(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getPosition()));
       definition.setOrientation(CompositePropertyTools.toYoOrientation3DDefinition(yoGraphicFX.getOrientation()));
       definition.setRadii(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getRadii()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1592,7 +1663,7 @@ public class YoGraphicTools
       definition.setSize(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getSize()));
       definition.setMinimumMargin(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getMinimumMargin()));
       definition.setMaximumMargin(CompositePropertyTools.toDoublePropertyName(yoGraphicFX.getMaximumMargin()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
@@ -1609,20 +1680,57 @@ public class YoGraphicTools
       definition.setPosition(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getPosition()));
       definition.setOrientation(CompositePropertyTools.toYoOrientation3DDefinition(yoGraphicFX.getOrientation()));
       definition.setSize(CompositePropertyTools.toYoTuple3DDefinition(yoGraphicFX.getSize()));
-      definition.setColor(toColorDefinition(yoGraphicFX.getColor()));
+      definition.setColor(toPaintDefinition(yoGraphicFX.getColor()));
 
       return definition;
    }
 
-   public static ColorDefinition toColorDefinition(Supplier<Color> color)
+   public static PaintDefinition toPaintDefinition(BaseColorFX baseColor)
    {
-      if (color == null || color.get() == null)
+      if (baseColor == null)
+      {
          return null;
-      double red = color.get().getRed();
-      double green = color.get().getGreen();
-      double blue = color.get().getBlue();
-      double alpha = color.get().getOpacity();
-      return new ColorDefinition(red, green, blue, alpha);
+      }
+      else if (baseColor instanceof SimpleColorFX simpleColor)
+      {
+         double red = simpleColor.getRed();
+         double green = simpleColor.getGreen();
+         double blue = simpleColor.getBlue();
+         double alpha = simpleColor.getOpacity();
+         return new ColorDefinition(red, green, blue, alpha);
+      }
+      else if (baseColor instanceof YoColorRGBADoubleFX yoColor)
+      {
+         if (yoColor.getRed() == null && yoColor.getGreen() == null && yoColor.getBlue() == null && yoColor.getAlpha() == null)
+            return null;
+         String red = CompositePropertyTools.toDoublePropertyName(yoColor.getRed());
+         String green = CompositePropertyTools.toDoublePropertyName(yoColor.getGreen());
+         String blue = CompositePropertyTools.toDoublePropertyName(yoColor.getBlue());
+         String alpha = CompositePropertyTools.toDoublePropertyName(yoColor.getAlpha());
+         return new YoColorRGBADoubleDefinition(red, green, blue, alpha);
+      }
+      else if (baseColor instanceof YoColorRGBAIntFX yoColor)
+      {
+         if (yoColor.getRed() == null && yoColor.getGreen() == null && yoColor.getBlue() == null && yoColor.getAlpha() == null)
+            return null;
+         String red = CompositePropertyTools.toIntegerPropertyName(yoColor.getRed());
+         String green = CompositePropertyTools.toIntegerPropertyName(yoColor.getGreen());
+         String blue = CompositePropertyTools.toIntegerPropertyName(yoColor.getBlue());
+         String alpha = CompositePropertyTools.toIntegerPropertyName(yoColor.getAlpha());
+         return new YoColorRGBAIntDefinition(red, green, blue, alpha);
+      }
+      else if (baseColor instanceof YoColorRGBASingleFX yoColor)
+      {
+         if (yoColor.getRGBA() == null)
+            return null;
+         String rgba = CompositePropertyTools.toIntegerPropertyName(yoColor.getRGBA());
+         return new YoColorRGBASingleDefinition(rgba);
+      }
+      else
+      {
+         LogTools.error("Problem converting color: {}", baseColor);
+         return null;
+      }
    }
 
    public static List<Shape> extractShapes(Group group)

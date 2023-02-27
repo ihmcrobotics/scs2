@@ -2,22 +2,22 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import javax.xml.bind.annotation.XmlElement;
 
-import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
 
 public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
 {
-   protected ColorDefinition fillColor;
-   protected ColorDefinition strokeColor;
+   protected PaintDefinition fillColor;
+   protected PaintDefinition strokeColor;
    protected String strokeWidth;
 
    @XmlElement
-   public final void setFillColor(ColorDefinition fillColor)
+   public final void setFillColor(PaintDefinition fillColor)
    {
       this.fillColor = fillColor;
    }
 
    @XmlElement
-   public final void setStrokeColor(ColorDefinition strokeColor)
+   public final void setStrokeColor(PaintDefinition strokeColor)
    {
       this.strokeColor = strokeColor;
    }
@@ -33,12 +33,12 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
       this.strokeWidth = strokeWidth;
    }
 
-   public final ColorDefinition getFillColor()
+   public final PaintDefinition getFillColor()
    {
       return fillColor;
    }
 
-   public final ColorDefinition getStrokeColor()
+   public final PaintDefinition getStrokeColor()
    {
       return strokeColor;
    }

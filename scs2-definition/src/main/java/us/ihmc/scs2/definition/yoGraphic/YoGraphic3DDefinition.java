@@ -2,19 +2,19 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import javax.xml.bind.annotation.XmlElement;
 
-import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
 
 public abstract class YoGraphic3DDefinition extends YoGraphicDefinition
 {
-   protected ColorDefinition color;
+   protected PaintDefinition color;
 
    @XmlElement
-   public final void setColor(ColorDefinition color)
+   public final void setColor(PaintDefinition color)
    {
       this.color = color;
    }
 
-   public final ColorDefinition getColor()
+   public final PaintDefinition getColor()
    {
       return color;
    }

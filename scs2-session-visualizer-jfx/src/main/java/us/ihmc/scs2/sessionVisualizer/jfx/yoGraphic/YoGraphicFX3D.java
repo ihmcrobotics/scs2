@@ -1,30 +1,30 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.function.Supplier;
-
 import javafx.scene.paint.Color;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
 
 public abstract class YoGraphicFX3D extends YoGraphicFX
 {
    public static final Color DEFAULT_COLOR = Color.BLUE;
 
-   protected Supplier<Color> color = () -> DEFAULT_COLOR;
+   protected BaseColorFX color = new SimpleColorFX(DEFAULT_COLOR);
 
    public YoGraphicFX3D()
    {
    }
 
-   public final void setColor(Supplier<Color> color)
+   public final void setColor(BaseColorFX color)
    {
       this.color = color;
    }
 
    public final void setColor(Color color)
    {
-      this.color = () -> color;
+      this.color = new SimpleColorFX(color);
    }
 
-   public final Supplier<Color> getColor()
+   public final BaseColorFX getColor()
    {
       return color;
    }

@@ -17,6 +17,7 @@ import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
 
 public class YoCapsuleFX3D extends YoGraphicFX3D
 {
@@ -63,7 +64,7 @@ public class YoCapsuleFX3D extends YoGraphicFX3D
       newData = newCapsuleData(length, radius);
 
       if (color == null)
-         color = () -> null;
+         color = new SimpleColorFX();
       material.setDiffuseColor(color.get());
 
       if (translate != null)
