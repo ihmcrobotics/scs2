@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import gnu.trove.list.array.TIntArrayList;
 import us.hebi.matlab.mat.format.Mat5;
 import us.hebi.matlab.mat.types.MatFile;
 import us.hebi.matlab.mat.types.Matrix;
@@ -154,10 +155,35 @@ public class YoVariableLogCropper extends YoVariableLogReader
          return;
       }
 
-      if (variableFilter != null)
-         logVariables = logVariables.stream().filter(variableFilter).toList();
-      if (registryFilter != null)
-         logVariables = logVariables.stream().filter(var -> registryFilter.test(var.getRegistry())).toList();
+      TIntArrayList logVariableIndices = null;
+      List<YoVariable> logVariablesFiltered = null;
+
+      if (variableFilter != null || registryFilter != null)
+      {
+         logVariableIndices = new TIntArrayList();
+         logVariablesFiltered = new ArrayList<>();
+
+         for (int varIndex = 0; varIndex < logVariables.size(); varIndex++)
+         {
+            boolean keepVariable = true;
+            YoVariable logVariable = logVariables.get(varIndex);
+
+            if (variableFilter != null && !variableFilter.test(logVariable))
+               keepVariable = false;
+
+            if (keepVariable)
+            {
+               if (registryFilter != null && !registryFilter.test(logVariable.getRegistry()))
+                  keepVariable = false;
+            }
+
+            if (keepVariable)
+            {
+               logVariableIndices.add(varIndex);
+               logVariablesFiltered.add(logVariable);
+            }
+         }
+      }
 
       try
       {
@@ -189,21 +215,22 @@ public class YoVariableLogCropper extends YoVariableLogReader
          Struct rootStruct = Mat5.newStruct();
          YoRegistry rootRegistry = logVariables.get(0).getRegistry().getRoot();
          matFile.addArray(rootRegistry.getName(), rootStruct);
+         int numberOfYoVariables = logVariablesFiltered != null ? logVariablesFiltered.size() : logVariables.size();
 
          int dataLength = to - from + 1;
-         List<MatlabEntryWriter> matlabEntryWriters = new ArrayList<>(logVariables.size());
+         List<MatlabEntryWriter> matlabEntryWriters = new ArrayList<>(numberOfYoVariables);
 
          progressConsumer.info("Creating data structure");
 
          ProgressConsumer structSetupProgress = progressConsumer.subProgress(0.04, 0.20);
          // Setup the structure
-         for (int varIndex = 0; varIndex < logVariables.size(); varIndex++)
+         for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
          {
-            structSetupProgress.progress((double) (varIndex) / (double) (logVariables.size() - 1.0));
+            structSetupProgress.progress((double) (varIndex) / (double) (numberOfYoVariables - 1.0));
 
             Struct parentStruct = rootStruct;
 
-            YoVariable yoVariable = logVariables.get(varIndex);
+            YoVariable yoVariable = logVariablesFiltered != null ? logVariablesFiltered.get(varIndex) : logVariables.get(varIndex);
 
             if (yoVariable.getRegistry() != rootRegistry)
             {
@@ -236,16 +263,32 @@ public class YoVariableLogCropper extends YoVariableLogReader
          progressConsumer.info("Writing variable data");
          ProgressConsumer dataCopyingProgress = progressConsumer.subProgress(0.20, 1.00);
 
-         for (int i = from; i <= to; i++)
+         if (logVariablesFiltered != null)
          {
-            dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
-            LongBuffer data = readData(i).asLongBuffer();
-
-            data.get(); // Time entry
-
-            for (int varIndex = 0; varIndex < logVariables.size(); varIndex++)
+            for (int i = from; i <= to; i++)
             {
-               matlabEntryWriters.get(varIndex).accpet(i, data.get());
+               dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
+               LongBuffer data = readData(i).asLongBuffer();
+
+               for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
+               {
+                  matlabEntryWriters.get(varIndex).accept(i, data.get(logVariableIndices.get(varIndex) + 1));
+               }
+            }
+         }
+         else
+         {
+            for (int i = from; i <= to; i++)
+            {
+               dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
+               LongBuffer data = readData(i).asLongBuffer();
+
+               data.get(); // Time entry
+
+               for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
+               {
+                  matlabEntryWriters.get(varIndex).accept(i, data.get());
+               }
             }
          }
 
@@ -277,6 +320,6 @@ public class YoVariableLogCropper extends YoVariableLogReader
 
    private interface MatlabEntryWriter
    {
-      void accpet(int index, long longValue);
+      void accept(int index, long longValue);
    }
 }
