@@ -619,7 +619,8 @@ public class SCS1GraphicConversionTools
                graphic = DefaultPoint2DGraphic.SQUARE_CROSS;
                break;
             case ELLIPSOID:
-               graphic = null;
+               LogTools.warn("Ellipsoid is not supported, using CIRCLE");
+               graphic = DefaultPoint2DGraphic.CIRCLE;
                break;
          }
 
