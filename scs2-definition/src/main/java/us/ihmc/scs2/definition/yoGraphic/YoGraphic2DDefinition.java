@@ -1,7 +1,10 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 
+import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 
 public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
@@ -10,13 +13,43 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
    protected PaintDefinition strokeColor;
    protected String strokeWidth;
 
-   @XmlElement
+   // For backward compatibility.
+   @Deprecated
+   @XmlElement(name = "fillColor")
+   public final void setFillColorOld(ColorDefinition fillColor)
+   {
+      this.fillColor = fillColor;
+   }
+
+   // For backward compatibility.
+   @Deprecated
+   public ColorDefinition getFillColorOld()
+   {
+      return null;
+   }
+
+   @XmlElement(name = "fillColorNew")
    public final void setFillColor(PaintDefinition fillColor)
    {
       this.fillColor = fillColor;
    }
 
-   @XmlElement
+   // For backward compatibility.
+   @Deprecated
+   @XmlElement(name = "strokeColor")
+   public final void setStrokeColorOld(ColorDefinition strokeColor)
+   {
+      this.strokeColor = strokeColor;
+   }
+
+   // For backward compatibility.
+   @Deprecated
+   public ColorDefinition getStrokeColorOld()
+   {
+      return null;
+   }
+
+   @XmlElement(name = "strokeColorNew")
    public final void setStrokeColor(PaintDefinition strokeColor)
    {
       this.strokeColor = strokeColor;
@@ -63,11 +96,11 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
       {
          YoGraphic2DDefinition other = (YoGraphic2DDefinition) object;
 
-         if (fillColor == null ? other.fillColor != null : !fillColor.equals(other.fillColor))
+         if (!Objects.equals(fillColor, other.fillColor))
             return false;
-         if (strokeColor == null ? other.strokeColor != null : !strokeColor.equals(other.strokeColor))
+         if (!Objects.equals(strokeColor, other.strokeColor))
             return false;
-         if (strokeWidth == null ? other.strokeWidth != null : !strokeWidth.equals(other.strokeWidth))
+         if (!Objects.equals(strokeWidth, other.strokeWidth))
             return false;
 
          return true;

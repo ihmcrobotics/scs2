@@ -338,11 +338,17 @@ public class YoGraphicTools
                                        YoGraphicFX2D yoGraphicFXToPack)
    {
       toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
-      BaseColorFX fillColor = toBaseColorFX(yoVariableDatabase, definition.getFillColor());
+      BaseColorFX fillColor = toBaseColorFX(yoVariableDatabase, definition.getFillColor(), null);
       if (fillColor != null)
+      {
          yoGraphicFXToPack.setFillColor(fillColor);
+         yoGraphicFXToPack.setStrokeColor((BaseColorFX) null);
+      }
       else
+      {
+         yoGraphicFXToPack.setFillColor((BaseColorFX) null);
          yoGraphicFXToPack.setStrokeColor(toBaseColorFX(yoVariableDatabase, definition.getStrokeColor()));
+      }
       yoGraphicFXToPack.setStrokeWidth(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getStrokeWidth()));
    }
 
@@ -815,25 +821,22 @@ public class YoGraphicTools
 
    public static BaseColorFX toBaseColorFX(YoVariableDatabase yoVariableDatabase, PaintDefinition definition)
    {
+      return toBaseColorFX(yoVariableDatabase, definition, DEFAULT_COLOR);
+   }
+
+   public static BaseColorFX toBaseColorFX(YoVariableDatabase yoVariableDatabase, PaintDefinition definition, BaseColorFX defaultColor)
+   {
       if (definition == null)
-         return DEFAULT_COLOR;
+         return defaultColor;
 
       if (definition instanceof ColorDefinition simpleColor)
-      {
          return toSimpleColorFX(simpleColor);
-      }
       if (definition instanceof YoColorRGBASingleDefinition yoColor)
-      {
          return toYoColorRGBASingleDefinition(yoVariableDatabase, yoColor);
-      }
       if (definition instanceof YoColorRGBADoubleDefinition yoColor)
-      {
          return toYoColorRGBADoubleFX(yoVariableDatabase, yoColor);
-      }
       if (definition instanceof YoColorRGBAIntDefinition yoColor)
-      {
          return toYoColorRGBAIntFX(yoVariableDatabase, yoColor);
-      }
 
       LogTools.error("Problem converting definition: {}", definition);
       return null;
@@ -1226,7 +1229,9 @@ public class YoGraphicTools
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
       yoGraphicFX.setThickness(geometryDefinition.getTopZ() - geometryDefinition.getBottomZ());
-      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices().stream().map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
+      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices()
+                                                .stream()
+                                                .map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
                                                 .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getPolygonVertices().size());
       return yoGraphicFX;
@@ -1241,8 +1246,11 @@ public class YoGraphicTools
       yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
-      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope().getVertices().stream()
-                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).collect(Collectors.toList()));
+      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope()
+                                                .getVertices()
+                                                .stream()
+                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ()))
+                                                .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getConvexPolytope().getNumberOfVertices());
       return yoGraphicFX;
    }
