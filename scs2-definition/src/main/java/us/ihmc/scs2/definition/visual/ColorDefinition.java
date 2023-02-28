@@ -3,11 +3,11 @@ package us.ihmc.scs2.definition.visual;
 import java.util.Arrays;
 
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
-@XmlRootElement(name = "Color")
+@XmlType(propOrder = {"red", "green", "blue", "alpha"})
 public class ColorDefinition extends PaintDefinition
 {
    private double red, green, blue, alpha;
@@ -198,6 +198,7 @@ public class ColorDefinition extends PaintDefinition
     * @param alpha alpha component in range [0.0-1.0], 0.0 being fully transparent and 1.0 fully
     *              opaque.
     */
+   @XmlAttribute
    public void setAlpha(double alpha)
    {
       if (alpha < 0.0)

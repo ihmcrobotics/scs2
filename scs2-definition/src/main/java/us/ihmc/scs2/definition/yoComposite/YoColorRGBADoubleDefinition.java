@@ -3,9 +3,11 @@ package us.ihmc.scs2.definition.yoComposite;
 import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 
+@XmlType(propOrder = {"red", "green", "blue", "alpha"})
 public class YoColorRGBADoubleDefinition extends PaintDefinition
 {
    /**
