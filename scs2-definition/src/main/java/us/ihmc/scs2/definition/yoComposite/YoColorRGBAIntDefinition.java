@@ -121,33 +121,54 @@ public class YoColorRGBAIntDefinition extends PaintDefinition
    @Override
    public String toString()
    {
-      return "[red=" + red + ", green=" + green + ", blue=" + blue + ", alpha=" + alpha + "]";
+      if (alpha == null)
+         return "YoIntRGB(red=%s, green=%s, blue=%s)".formatted(red, green, blue);
+      else
+         return "YoIntRGBA(red=%s, green=%s, blue=%s, alpha=%s)".formatted(red, green, blue, alpha);
    }
 
    public static YoColorRGBAIntDefinition parse(String value)
    {
-      if (value == null)
-         return null;
+      value = value.trim();
 
-      value = value.replace("[", "").replace("]", "").trim();
-      value = value.substring(value.indexOf("=") + 1);
-      String red = value.substring(0, value.indexOf(","));
-      value = value.substring(value.indexOf("=") + 1);
-      String green = value.substring(0, value.indexOf(","));
-      value = value.substring(value.indexOf("=") + 1);
-      String blue = value.substring(0, value.indexOf(","));
-      value = value.substring(value.indexOf("=") + 1);
-      String alpha = value;
+      if (value.toLowerCase().startsWith("yointrgb"))
+      {
+         value = value.substring(8, value.length() - 1);
+         boolean parseAlpha = Character.toLowerCase(value.charAt(0)) == 'a';
 
-      if (red.toLowerCase().equals("null"))
-         red = null;
-      if (green.toLowerCase().equals("null"))
-         green = null;
-      if (blue.toLowerCase().equals("null"))
-         blue = null;
-      if (alpha.toLowerCase().equals("null"))
-         alpha = null;
+         value = value.substring(value.indexOf("=") + 1);
+         String red = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1);
+         String green = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1);
+         String blue;
+         String alpha;
 
-      return new YoColorRGBAIntDefinition(red, green, blue, alpha);
+         if (parseAlpha)
+         {
+            blue = value.substring(0, value.indexOf(","));
+            alpha = value.substring(value.indexOf("=") + 1);
+         }
+         else
+         {
+            blue = value;
+            alpha = null;
+         }
+
+         if (red.toLowerCase().equals("null"))
+            red = null;
+         if (green.toLowerCase().equals("null"))
+            green = null;
+         if (blue.toLowerCase().equals("null"))
+            blue = null;
+         if (parseAlpha && alpha.toLowerCase().equals("null"))
+            alpha = null;
+
+         return new YoColorRGBAIntDefinition(red, green, blue, alpha);
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown color format: " + value);
+      }
    }
 }
