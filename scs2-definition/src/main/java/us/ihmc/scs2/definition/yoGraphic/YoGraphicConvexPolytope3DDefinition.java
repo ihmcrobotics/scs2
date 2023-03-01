@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -16,6 +17,14 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
    private YoOrientation3DDefinition orientation;
    private List<YoTuple3DDefinition> vertices;
    private String numberOfVertices;
+
+   public YoGraphicConvexPolytope3DDefinition()
+   {
+      registerTuple3DField("position", this::getPosition, this::setPosition);
+      registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
+      registerListField("vertices", this::getVertices, this::setVertices);
+      registerField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
+   }
 
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
@@ -77,17 +86,15 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicConvexPolytope3DDefinition)
+      else if (object instanceof YoGraphicConvexPolytope3DDefinition other)
       {
-         YoGraphicConvexPolytope3DDefinition other = (YoGraphicConvexPolytope3DDefinition) object;
-
-         if (position == null ? other.position != null : !position.equals(other.position))
+         if (!Objects.equals(position, other.position))
             return false;
-         if (orientation == null ? other.orientation != null : !orientation.equals(other.orientation))
+         if (!Objects.equals(orientation, other.orientation))
             return false;
-         if (vertices == null ? other.vertices != null : !vertices.equals(other.vertices))
+         if (!Objects.equals(vertices, other.vertices))
             return false;
-         if (numberOfVertices == null ? other.numberOfVertices != null : !numberOfVertices.equals(other.numberOfVertices))
+         if (!Objects.equals(numberOfVertices, other.numberOfVertices))
             return false;
 
          return true;

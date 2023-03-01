@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -17,11 +18,13 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    public YoGraphicGroupDefinition()
    {
+      registerListField("children", this::getChildren, this::setChildren);
    }
 
    public YoGraphicGroupDefinition(String name)
    {
-      super(name);
+      this();
+      setName(name);
    }
 
    public YoGraphicGroupDefinition(String name, YoGraphicDefinition... children)
@@ -31,7 +34,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    public YoGraphicGroupDefinition(String name, Collection<? extends YoGraphicDefinition> children)
    {
-      super(name);
+      this(name);
 
       if (children != null)
          this.children = new ArrayList<>(children);
@@ -66,9 +69,9 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicGroupDefinition)
+      else if (object instanceof YoGraphicGroupDefinition other)
       {
-         return children.equals(((YoGraphicGroupDefinition) object).getChildren());
+         return Objects.equals(children, other.children);
       }
       else
       {

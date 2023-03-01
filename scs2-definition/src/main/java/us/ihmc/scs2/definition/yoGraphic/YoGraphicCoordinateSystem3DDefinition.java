@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -15,6 +17,16 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    private String headLength;
    private String bodyRadius;
    private String headRadius;
+
+   public YoGraphicCoordinateSystem3DDefinition()
+   {
+      registerTuple3DField("position", this::getPosition, this::setPosition);
+      registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
+      registerField("bodyLength", this::getBodyLength, this::setBodyLength);
+      registerField("headLength", this::getHeadLength, this::setHeadLength);
+      registerField("bodyRadius", this::getBodyRadius, this::setBodyRadius);
+      registerField("headRadius", this::getHeadRadius, this::setHeadRadius);
+   }
 
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
@@ -113,21 +125,19 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicCoordinateSystem3DDefinition)
+      else if (object instanceof YoGraphicCoordinateSystem3DDefinition other)
       {
-         YoGraphicCoordinateSystem3DDefinition other = (YoGraphicCoordinateSystem3DDefinition) object;
-
-         if (position == null ? other.position != null : !position.equals(other.position))
+         if (!Objects.equals(position, other.position))
             return false;
-         if (orientation == null ? other.orientation != null : !orientation.equals(other.orientation))
+         if (!Objects.equals(orientation, other.orientation))
             return false;
-         if (bodyLength == null ? other.bodyLength != null : !bodyLength.equals(other.bodyLength))
+         if (!Objects.equals(bodyLength, other.bodyLength))
             return false;
-         if (headLength == null ? other.headLength != null : !headLength.equals(other.headLength))
+         if (!Objects.equals(headLength, other.headLength))
             return false;
-         if (bodyRadius == null ? other.bodyRadius != null : !bodyRadius.equals(other.bodyRadius))
+         if (!Objects.equals(bodyRadius, other.bodyRadius))
             return false;
-         if (headRadius == null ? other.headRadius != null : !headRadius.equals(other.headRadius))
+         if (!Objects.equals(headRadius, other.headRadius))
             return false;
          return true;
       }

@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -14,6 +15,14 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
    private String numberOfPoints;
    private String size;
    private String graphicName;
+
+   public YoGraphicPointcloud2DDefinition()
+   {
+      registerListField("points", this::getPoints, this::setPoints);
+      registerField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
+      registerField("size", this::getSize, this::setSize);
+      registerField("graphicName", this::getGraphicName, this::setGraphicName);
+   }
 
    @XmlElement
    public void setPoints(List<YoTuple2DDefinition> points)
@@ -70,17 +79,15 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicPointcloud2DDefinition)
+      else if (object instanceof YoGraphicPointcloud2DDefinition other)
       {
-         YoGraphicPointcloud2DDefinition other = (YoGraphicPointcloud2DDefinition) object;
-
-         if (points == null ? other.points != null : !points.equals(other.points))
+         if (!Objects.equals(points, other.points))
             return false;
-         if (numberOfPoints == null ? other.numberOfPoints != null : !numberOfPoints.equals(other.numberOfPoints))
+         if (!Objects.equals(numberOfPoints, other.numberOfPoints))
             return false;
-         if (size == null ? other.size != null : !size.equals(other.size))
+         if (!Objects.equals(size, other.size))
             return false;
-         if (graphicName == null ? other.graphicName != null : !graphicName.equals(other.graphicName))
+         if (!Objects.equals(graphicName, other.graphicName))
             return false;
 
          return true;

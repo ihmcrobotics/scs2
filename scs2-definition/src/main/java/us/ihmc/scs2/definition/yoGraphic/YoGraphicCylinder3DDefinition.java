@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -13,6 +15,14 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
 
    private String length;
    private String radius;
+
+   public YoGraphicCylinder3DDefinition()
+   {
+      registerTuple3DField("center", this::getCenter, this::setCenter);
+      registerTuple3DField("axis", this::getAxis, this::setAxis);
+      registerField("length", this::getLength, this::setLength);
+      registerField("radius", this::getRadius, this::setRadius);
+   }
 
    @XmlElement
    public void setCenter(YoTuple3DDefinition center)
@@ -79,17 +89,15 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicCylinder3DDefinition)
+      else if (object instanceof YoGraphicCylinder3DDefinition other)
       {
-         YoGraphicCylinder3DDefinition other = (YoGraphicCylinder3DDefinition) object;
-
-         if (center == null ? other.center != null : !center.equals(other.center))
+         if (!Objects.equals(center, other.center))
             return false;
-         if (axis == null ? other.axis != null : !axis.equals(other.axis))
+         if (!Objects.equals(axis, other.axis))
             return false;
-         if (length == null ? other.length != null : !length.equals(other.length))
+         if (!Objects.equals(length, other.length))
             return false;
-         if (radius == null ? other.radius != null : !radius.equals(other.radius))
+         if (!Objects.equals(radius, other.radius))
             return false;
          return true;
       }

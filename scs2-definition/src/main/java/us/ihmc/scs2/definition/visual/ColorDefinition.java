@@ -930,7 +930,10 @@ public class ColorDefinition extends PaintDefinition
     * <li>rgb(100%, 0%, 0%) => float range 0.0% - 100.0%
     * <li>rgba(100%, 0%, 0%, 0.5) => 0.5 opacity, semi-transparent
     * <li>rgba(255, 0, 0, 0.5) => 0.5 opacity, semi-transparent
+    * <li>rgba(255, 0, 0, 127) => 127/255 opacity, semi-transparent
     * </ul>
+    * Note: a value of "1" for alpha, will be parsed in the range [0-255] (very transparent), while a
+    * value of "1.0" will be parse in the range [0.0-1.0] (opaque).
     * </p>
     * <p>
     * Accepted formats for parsing HSV colors:

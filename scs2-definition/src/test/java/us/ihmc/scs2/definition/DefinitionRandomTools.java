@@ -314,6 +314,10 @@ public class DefinitionRandomTools
          next.addChild(nextYoGraphic2DDefinition(random));
       for (int i = 0; i < numberOfGraphic3D; i++)
          next.addChild(nextYoGraphic3DDefinition(random));
+
+      if (maxDepth <= 1)
+         return next;
+
       for (int i = 0; i < numberOfSubGroup; i++)
          next.addChild(nextYoGraphicGroupDefinition(random, maxDepth - 1));
       return next;

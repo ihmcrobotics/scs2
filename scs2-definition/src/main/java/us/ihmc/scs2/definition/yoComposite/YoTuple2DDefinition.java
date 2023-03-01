@@ -18,8 +18,7 @@ public class YoTuple2DDefinition extends YoCompositeDefinition
 
    public YoTuple2DDefinition(String x, String y)
    {
-      this.x = x;
-      this.y = y;
+      this(x, y, null);
    }
 
    public YoTuple2DDefinition(String x, String y, String referenceFrame)
