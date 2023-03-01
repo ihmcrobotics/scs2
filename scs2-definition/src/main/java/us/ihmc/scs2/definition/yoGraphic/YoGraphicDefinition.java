@@ -184,7 +184,9 @@ public abstract class YoGraphicDefinition
    protected final void registerPaintField(String fieldName, Supplier<PaintDefinition> fieldPaintValueGetter, Consumer<PaintDefinition> fieldPaintValueSetter)
    {
       // FIXME
-      registerField(fieldName, () -> Objects.toString(fieldPaintValueGetter.get()), null);
+      registerField(fieldName,
+                    () -> Objects.toString(fieldPaintValueGetter.get()),
+                    value -> fieldPaintValueSetter.accept(value == null ? null : PaintDefinition.parse(value)));
    }
 
    protected final void registerField(String fieldName, DoubleSupplier fieldDoubleValueGetter, DoubleConsumer fieldDoubleValueSetter)

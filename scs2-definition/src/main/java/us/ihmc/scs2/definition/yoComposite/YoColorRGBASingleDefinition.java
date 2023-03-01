@@ -70,20 +70,25 @@ public class YoColorRGBASingleDefinition extends PaintDefinition
    @Override
    public String toString()
    {
-      return "[rgba=" + rgba + "]";
+      return "YoRGBA=%s".formatted(rgba);
    }
 
    public static YoColorRGBASingleDefinition parse(String value)
    {
-      if (value == null)
-         return null;
+      value = value.trim();
 
-      value = value.replace("[", "").replace("]", "").trim();
-      String rgba = value.substring(value.indexOf("=") + 1);
+      if (value.toLowerCase().startsWith("yorgba="))
+      {
+         String rgba = value.substring(7);
 
-      if (rgba.toLowerCase().equals("null"))
-         rgba = null;
+         if (rgba.toLowerCase().equals("null"))
+            rgba = null;
 
-      return new YoColorRGBASingleDefinition(rgba);
+         return new YoColorRGBASingleDefinition(rgba);
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown color format: " + value);
+      }
    }
 }

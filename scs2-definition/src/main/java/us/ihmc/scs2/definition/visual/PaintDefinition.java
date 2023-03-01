@@ -20,4 +20,17 @@ import us.ihmc.scs2.definition.yoComposite.YoColorRGBASingleDefinition;
 public abstract class PaintDefinition
 {
    public abstract PaintDefinition copy();
+
+   public static PaintDefinition parse(String value)
+   {
+      String valueLowerCase = value.toLowerCase().trim();
+
+      if (valueLowerCase.startsWith("yodoublergb"))
+         return YoColorRGBADoubleDefinition.parse(value);
+      if (valueLowerCase.startsWith("yointrgb"))
+         return YoColorRGBAIntDefinition.parse(value);
+      if (valueLowerCase.startsWith("yorgba"))
+         return YoColorRGBASingleDefinition.parse(value);
+      return ColorDefinition.parse(value);
+   }
 }
