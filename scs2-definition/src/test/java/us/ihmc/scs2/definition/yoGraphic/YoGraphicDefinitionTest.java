@@ -10,9 +10,29 @@ import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 import us.ihmc.scs2.definition.DefinitionRandomTools;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
 public class YoGraphicDefinitionTest
 {
+   @Test
+   public void testListToStringAndParse() throws Exception
+   {
+      Random random = new Random(23423);
+
+      for (int i = 0; i < 1000; i++)
+      {
+         int size = random.nextInt(20);
+         List<YoTuple2DDefinition> original = new ArrayList<>();
+         while (original.size() < size)
+            original.add(DefinitionRandomTools.nextYoTuple2DDefinition(random));
+
+         String listStringValue = YoGraphicDefinition.listToString(original, Object::toString);
+         List<YoTuple2DDefinition> parsed = YoGraphicDefinition.parseList(listStringValue, YoTuple2DDefinition::parse);
+
+         assertEquals(original, parsed);
+      }
+   }
+
    @Test
    public void testToStringAndParse() throws Exception
    {

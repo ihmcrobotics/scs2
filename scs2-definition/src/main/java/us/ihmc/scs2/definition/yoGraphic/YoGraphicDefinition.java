@@ -1,5 +1,6 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -152,9 +154,65 @@ public abstract class YoGraphicDefinition
       // FIXME
    }
 
+   static <T> String listToString(List<T> list, Function<T, String> elementToString)
+   {
+      StringBuilder sb = new StringBuilder("List(");
+      for (int i = 0; i < list.size(); i++)
+      {
+         if (i > 0)
+            sb.append(", ");
+         sb.append("e").append(i).append("=").append(elementToString.apply(list.get(i)));
+      }
+      sb.append(")");
+      return sb.toString();
+   }
+
+   static <T> List<T> parseList(String value, Function<String, T> elementParser)
+   {
+      value = value.trim();
+
+      if (value.startsWith("List"))
+      {
+         String elementsSustring = value.substring(5, value.length() - 1).trim();
+         ArrayList<T> list = new ArrayList<>();
+         if (elementsSustring.isEmpty())
+            return list;
+
+         elementsSustring = elementsSustring.substring(3).trim();
+
+         int nextElementIndex = 1;
+         while (true)
+         {
+            String nextElementLabel = ", e%d=".formatted(nextElementIndex);
+            int indexOfLabel = elementsSustring.indexOf(nextElementLabel);
+
+            String element;
+            if (indexOfLabel != -1)
+            {
+               element = elementsSustring.substring(0, indexOfLabel);
+               list.add(elementParser.apply(element));
+               elementsSustring = elementsSustring.substring(indexOfLabel + nextElementLabel.length());
+               nextElementIndex++;
+            }
+            else
+            {
+               list.add(elementParser.apply(elementsSustring));
+               break;
+            }
+         }
+         return list;
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown list format: " + value);
+      }
+   }
+
    protected final void registerYoListField(String fieldName, Supplier<YoListDefinition> fieldListValueGetter, Consumer<YoListDefinition> fieldListValueSetter)
    {
-      // FIXME
+      registerField(fieldName,
+                    () -> Objects.toString(fieldListValueGetter.get()),
+                    value -> fieldListValueSetter.accept(value == null ? null : YoListDefinition.parse(value)));
    }
 
    protected final void registerTuple2DField(String fieldName,
