@@ -106,10 +106,4 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return super.toString() + ", position: " + position + ", direction: " + axis + ", height: " + height + ", radius: " + radius + ", color: " + color;
-   }
 }

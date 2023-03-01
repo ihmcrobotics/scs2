@@ -82,10 +82,4 @@ public class YoGraphicEllipsoid3DDefinition extends YoGraphic3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return "position: " + position + ", orientation: " + orientation + ", size: " + radii + ", color: " + color;
-   }
 }

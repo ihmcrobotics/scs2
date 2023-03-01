@@ -109,6 +109,9 @@ public class YoYawPitchRollDefinition extends YoOrientation3DDefinition
 
    public static YoYawPitchRollDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
       if (value.startsWith(YoYawPitchRoll))

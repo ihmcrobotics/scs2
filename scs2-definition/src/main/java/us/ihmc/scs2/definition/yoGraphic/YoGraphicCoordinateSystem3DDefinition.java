@@ -146,11 +146,4 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return super.toString() + ", position: " + position + ", orientation: " + orientation + ", bodyLength: " + bodyLength + ", headLength: " + headLength
-            + ", bodyRadius: " + bodyRadius + ", headRadius: " + headRadius + ", color: " + color;
-   }
 }

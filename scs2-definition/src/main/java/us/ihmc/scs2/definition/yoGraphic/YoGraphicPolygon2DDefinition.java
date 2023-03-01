@@ -6,7 +6,6 @@ import java.util.Objects;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
 @XmlRootElement(name = "YoGraphicPolygon2D")
@@ -17,7 +16,7 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
 
    public YoGraphicPolygon2DDefinition()
    {
-      registerListField("vertices", this::getVertices, this::setVertices);
+      registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
       registerField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
    }
 
@@ -75,9 +74,16 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
    }
 
    @Override
-   public String toString()
+   public String toString(int indent)
    {
-      return "number of vertices: " + numberOfVertices + ", fillColor: " + fillColor + ", strokeColor: " + strokeColor + ", strokeWidth: " + strokeWidth
-            + ", vertices: " + EuclidCoreIOTools.getCollectionString("\n", vertices, YoTuple2DDefinition::toString);
+      String out = "%s [name=%s, visible=%b, fillColor=%s, strokeColor=%s, strokeWidth=%s, vertices=%s, numberOfVertices=%s]";
+      return out.formatted(getClass().getSimpleName(),
+                           name,
+                           visible,
+                           fillColor,
+                           strokeColor,
+                           strokeWidth,
+                           indentedListString(indent, true, vertices, Object::toString),
+                           numberOfVertices);
    }
 }

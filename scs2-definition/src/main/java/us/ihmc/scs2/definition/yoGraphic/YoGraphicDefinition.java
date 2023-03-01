@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,6 +17,7 @@ import java.util.function.Supplier;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
@@ -87,13 +89,143 @@ public abstract class YoGraphicDefinition
       }
    }
 
+   @Override
+   public final String toString()
+   {
+      return toString(0);
+   }
+
+   public String toString(int indent)
+   {
+      String out = getClass().getSimpleName() + "[";
+      boolean first = true;
+      for (FieldStringParsingInfo fieldInfo : definitionFields.values())
+      {
+         if (!first)
+            out += ", ";
+         out += fieldInfo.fieldName + "=" + fieldInfo.fieldStringValueSupplier.get();
+         first = false;
+      }
+      out += "]";
+      return out;
+   }
+
+   static <T> String indentedListString(int indent, boolean useBrace, List<T> list, Function<T, String> elementToString)
+   {
+      if (list == null)
+         return "null";
+      if (list.isEmpty())
+         return useBrace ? "{}" : "[]";
+
+      String openingCharacter = useBrace ? "{" : "[";
+      Object closingCharacter = useBrace ? "}" : "]";
+
+      String prefix = openingCharacter + "\n" + "\t".repeat(indent + 1);
+      String suffix = "\n" + "\t".repeat(indent) + closingCharacter;
+      String separator = "\n" + "\t".repeat(indent + 1);
+      return EuclidCoreIOTools.getCollectionString(prefix, suffix, separator, list, elementToString);
+   }
+
+   public final String toParsableString()
+   {
+      return getClass().getSimpleName() + "=" + name;
+   }
+
+   @SuppressWarnings("unchecked")
+   public static YoGraphicDefinition parse(String value)
+   {
+      if (value == null)
+         return null;
+
+      value = value.trim();
+
+      if (value.startsWith("YoGraphic"))
+      {
+         int equalsIndex = value.indexOf("=");
+         String className = value.substring(0, equalsIndex);
+         String name = value.substring(equalsIndex + 1);
+         Class<? extends YoGraphicDefinition> definitionClass;
+         try
+         {
+            String fullClassName = "%s.%s".formatted(YoGraphicDefinition.class.getPackageName(), className);
+            definitionClass = (Class<? extends YoGraphicDefinition>) Class.forName(fullClassName);
+            YoGraphicDefinition definition = definitionClass.getDeclaredConstructor().newInstance();
+            definition.setName(name);
+            return definition;
+         }
+         catch (Exception e)
+         {
+            throw new IllegalArgumentException("Unexpected yoGraphic definition format: " + value, e);
+         }
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unexpected yoGraphic definition format: " + value);
+      }
+   }
+
+   public static List<Map<String, String>> createSubtreeFieldValueStringMaps(YoGraphicDefinition root)
+   {
+      List<Map<String, String>> out = new ArrayList<>();
+      out.add(root.createFieldValueStringMap());
+
+      if (root instanceof YoGraphicGroupDefinition rootGroup)
+      {
+         List<YoGraphicDefinition> children = rootGroup.getChildren();
+
+         if (children != null)
+         {
+            for (int i = 0; i < children.size(); i++)
+            {
+               YoGraphicDefinition child = children.get(i);
+               if (child instanceof YoGraphicGroupDefinition subGroup)
+                  out.addAll(createSubtreeFieldValueStringMaps(subGroup));
+               else
+                  out.add(child.createFieldValueStringMap());
+            }
+         }
+      }
+      return out;
+   }
+
+   public static YoGraphicGroupDefinition parseTreeFieldValueStringMap(List<Map<String, String>> treeFieldValueStringMaps)
+   {
+      if (treeFieldValueStringMaps == null)
+         return null;
+
+      treeFieldValueStringMaps = new LinkedList<>(treeFieldValueStringMaps);
+      YoGraphicGroupDefinition parsed = new YoGraphicGroupDefinition();
+      parseGroupRecursive(parsed, treeFieldValueStringMaps);
+      return parsed;
+   }
+
+   private static void parseGroupRecursive(YoGraphicGroupDefinition start, List<Map<String, String>> treeFieldValueStringMaps)
+   {
+      start.parseFieldValueStringMap(treeFieldValueStringMaps.remove(0));
+
+      List<YoGraphicDefinition> children = start.getChildren();
+
+      if (children != null)
+      {
+         for (int i = 0; i < children.size(); i++)
+         {
+            YoGraphicDefinition child = children.get(i);
+
+            if (child instanceof YoGraphicGroupDefinition subGroup)
+               parseGroupRecursive(subGroup, treeFieldValueStringMaps);
+            else
+               child.parseFieldValueStringMap(treeFieldValueStringMaps.remove(0));
+         }
+      }
+   }
+
    /**
     * Creates a map from field name to field value as {@code String} for every field representing this
     * {@code YoGraphicDefinition}.
     * 
     * @return the map of field names to respective values.
     */
-   public Map<String, String> createFieldValueStringMap()
+   Map<String, String> createFieldValueStringMap()
    {
       LinkedHashMap<String, String> map = new LinkedHashMap<>();
 
@@ -106,7 +238,7 @@ public abstract class YoGraphicDefinition
       return map;
    }
 
-   public void parseFieldValueStringMap(Map<String, String> map)
+   void parseFieldValueStringMap(Map<String, String> map)
    {
       for (Entry<String, String> entry : map.entrySet())
       {
@@ -149,26 +281,41 @@ public abstract class YoGraphicDefinition
    @XmlTransient
    private final Map<String, FieldStringParsingInfo> definitionFields = new LinkedHashMap<>();
 
-   protected final <T> void registerListField(String fieldName, Supplier<List<T>> fieldListValueGetter, Consumer<List<T>> fieldListValueSetter)
+   protected final <T> void registerListField(String fieldName,
+                                              Supplier<List<T>> fieldListValueGetter,
+                                              Consumer<List<T>> fieldListValueSetter,
+                                              String elementLabel,
+                                              Function<T, String> elementToString,
+                                              Function<String, T> elementParser)
    {
-      // FIXME
+      registerField(fieldName, () ->
+      {
+         List<T> value = fieldListValueGetter.get();
+         return value == null ? null : listToString(value, elementLabel, elementToString);
+      }, value -> fieldListValueSetter.accept(parseList(value, elementLabel, elementParser)));
    }
 
-   static <T> String listToString(List<T> list, Function<T, String> elementToString)
+   static <T> String listToString(List<T> list, String elementLabel, Function<T, String> elementToString)
    {
+      if (list == null)
+         return null;
+
       StringBuilder sb = new StringBuilder("List(");
       for (int i = 0; i < list.size(); i++)
       {
          if (i > 0)
             sb.append(", ");
-         sb.append("e").append(i).append("=").append(elementToString.apply(list.get(i)));
+         sb.append(elementLabel).append(i).append("=").append(elementToString.apply(list.get(i)));
       }
       sb.append(")");
       return sb.toString();
    }
 
-   static <T> List<T> parseList(String value, Function<String, T> elementParser)
+   static <T> List<T> parseList(String value, String elementLabel, Function<String, T> elementParser)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
       if (value.startsWith("List"))
@@ -178,12 +325,12 @@ public abstract class YoGraphicDefinition
          if (elementsSustring.isEmpty())
             return list;
 
-         elementsSustring = elementsSustring.substring(3).trim();
+         elementsSustring = elementsSustring.substring(elementLabel.length() + 2).trim();
 
          int nextElementIndex = 1;
          while (true)
          {
-            String nextElementLabel = ", e%d=".formatted(nextElementIndex);
+            String nextElementLabel = ", %s%d=".formatted(elementLabel, nextElementIndex);
             int indexOfLabel = elementsSustring.indexOf(nextElementLabel);
 
             String element;
@@ -210,9 +357,7 @@ public abstract class YoGraphicDefinition
 
    protected final void registerYoListField(String fieldName, Supplier<YoListDefinition> fieldListValueGetter, Consumer<YoListDefinition> fieldListValueSetter)
    {
-      registerField(fieldName,
-                    () -> Objects.toString(fieldListValueGetter.get()),
-                    value -> fieldListValueSetter.accept(value == null ? null : YoListDefinition.parse(value)));
+      registerField(fieldName, () -> Objects.toString(fieldListValueGetter.get(), null), value -> fieldListValueSetter.accept(YoListDefinition.parse(value)));
    }
 
    protected final void registerTuple2DField(String fieldName,
@@ -220,8 +365,8 @@ public abstract class YoGraphicDefinition
                                              Consumer<YoTuple2DDefinition> fieldTuple2DValueSetter)
    {
       registerField(fieldName,
-                    () -> Objects.toString(fieldTuple2DValueGetter.get()),
-                    value -> fieldTuple2DValueSetter.accept(value == null ? null : YoTuple2DDefinition.parse(value)));
+                    () -> Objects.toString(fieldTuple2DValueGetter.get(), null),
+                    value -> fieldTuple2DValueSetter.accept(YoTuple2DDefinition.parse(value)));
    }
 
    protected final void registerTuple3DField(String fieldName,
@@ -229,8 +374,8 @@ public abstract class YoGraphicDefinition
                                              Consumer<YoTuple3DDefinition> fieldTuple3DValueSetter)
    {
       registerField(fieldName,
-                    () -> Objects.toString(fieldTuple3DValueGetter.get()),
-                    value -> fieldTuple3DValueSetter.accept(value == null ? null : YoTuple3DDefinition.parse(value)));
+                    () -> Objects.toString(fieldTuple3DValueGetter.get(), null),
+                    value -> fieldTuple3DValueSetter.accept(YoTuple3DDefinition.parse(value)));
    }
 
    protected final void registerOrientation3DField(String fieldName,
@@ -238,15 +383,13 @@ public abstract class YoGraphicDefinition
                                                    Consumer<YoOrientation3DDefinition> fieldOrientation3DValueSetter)
    {
       registerField(fieldName,
-                    () -> Objects.toString(fieldOrientation3DValueGetter.get()),
-                    value -> fieldOrientation3DValueSetter.accept(value == null ? null : YoOrientation3DDefinition.parse(value)));
+                    () -> Objects.toString(fieldOrientation3DValueGetter.get(), null),
+                    value -> fieldOrientation3DValueSetter.accept(YoOrientation3DDefinition.parse(value)));
    }
 
    protected final void registerPaintField(String fieldName, Supplier<PaintDefinition> fieldPaintValueGetter, Consumer<PaintDefinition> fieldPaintValueSetter)
    {
-      registerField(fieldName,
-                    () -> Objects.toString(fieldPaintValueGetter.get()),
-                    value -> fieldPaintValueSetter.accept(value == null ? null : PaintDefinition.parse(value)));
+      registerField(fieldName, () -> Objects.toString(fieldPaintValueGetter.get(), null), value -> fieldPaintValueSetter.accept(PaintDefinition.parse(value)));
    }
 
    protected final void registerField(String fieldName, DoubleSupplier fieldDoubleValueGetter, DoubleConsumer fieldDoubleValueSetter)

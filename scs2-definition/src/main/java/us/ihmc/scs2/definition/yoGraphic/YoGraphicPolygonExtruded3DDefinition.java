@@ -6,7 +6,6 @@ import java.util.Objects;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
@@ -24,7 +23,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
    {
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
-      registerListField("vertices", this::getVertices, this::setVertices);
+      registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
       registerField("numberOfVectices", this::getNumberOfVertices, this::setNumberOfVertices);
       registerField("thickness", this::getThickness, this::setThickness);
    }
@@ -127,9 +126,17 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
    }
 
    @Override
-   public String toString()
+   public String toString(int indent)
    {
-      return "position: " + position + ", orientation: " + orientation + ", number of vertices: " + numberOfVertices + ", color: " + color + ", thickness: "
-            + thickness + ", vertices: " + EuclidCoreIOTools.getCollectionString("\n", vertices, YoTuple2DDefinition::toString);
+      String out = "%s [name=%s, visible=%b, color=%s, position=%s, orientation=%s, vertices=%s, numberOfVertices=%s, thickness=%s]";
+      return out.formatted(getClass().getSimpleName(),
+                           name,
+                           visible,
+                           color,
+                           position,
+                           orientation,
+                           indentedListString(indent, true, vertices, Object::toString),
+                           numberOfVertices,
+                           thickness);
    }
 }

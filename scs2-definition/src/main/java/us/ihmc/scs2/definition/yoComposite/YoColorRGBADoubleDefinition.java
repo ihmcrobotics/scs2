@@ -129,12 +129,15 @@ public class YoColorRGBADoubleDefinition extends PaintDefinition
 
    public static YoColorRGBADoubleDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
-      if (value.toLowerCase().startsWith("yodoublergb"))
+      if (value.startsWith("YoDoubleRGB"))
       {
          value = value.substring(11, value.length() - 1);
-         boolean parseAlpha = Character.toLowerCase(value.charAt(0)) == 'a';
+         boolean parseAlpha = value.charAt(0) == 'A';
 
          value = value.substring(value.indexOf("=") + 1);
          String red = value.substring(0, value.indexOf(","));
@@ -155,13 +158,13 @@ public class YoColorRGBADoubleDefinition extends PaintDefinition
             alpha = null;
          }
 
-         if (red.toLowerCase().equals("null"))
+         if (red.equalsIgnoreCase("null"))
             red = null;
-         if (green.toLowerCase().equals("null"))
+         if (green.equalsIgnoreCase("null"))
             green = null;
-         if (blue.toLowerCase().equals("null"))
+         if (blue.equalsIgnoreCase("null"))
             blue = null;
-         if (parseAlpha && alpha.toLowerCase().equals("null"))
+         if (parseAlpha && alpha.equalsIgnoreCase("null"))
             alpha = null;
 
          return new YoColorRGBADoubleDefinition(red, green, blue, alpha);

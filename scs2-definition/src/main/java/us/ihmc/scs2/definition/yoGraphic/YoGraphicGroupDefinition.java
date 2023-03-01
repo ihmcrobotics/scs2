@@ -9,8 +9,6 @@ import java.util.Objects;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
-
 @XmlRootElement(name = "YoGraphicGroup")
 public class YoGraphicGroupDefinition extends YoGraphicDefinition
 {
@@ -18,7 +16,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    public YoGraphicGroupDefinition()
    {
-      registerListField("children", this::getChildren, this::setChildren);
+      registerListField("children", this::getChildren, this::setChildren, "child", YoGraphicDefinition::toParsableString, YoGraphicDefinition::parse);
    }
 
    public YoGraphicGroupDefinition(String name)
@@ -80,8 +78,9 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
    }
 
    @Override
-   public String toString()
+   public String toString(int indent)
    {
-      return EuclidCoreIOTools.getCollectionString("\n", children, YoGraphicDefinition::toString);
+      String out = "%s [name=%s, visible=%b, children=%s]";
+      return out.formatted(getClass().getSimpleName(), name, visible, indentedListString(indent, true, children, child -> child.toString(indent + 1)));
    }
 }

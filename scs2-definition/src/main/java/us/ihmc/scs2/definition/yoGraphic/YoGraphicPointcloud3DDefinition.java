@@ -18,7 +18,7 @@ public class YoGraphicPointcloud3DDefinition extends YoGraphic3DDefinition
 
    public YoGraphicPointcloud3DDefinition()
    {
-      registerListField("points", this::getPoints, this::setPoints);
+      registerListField("points", this::getPoints, this::setPoints, "p", Object::toString, YoTuple3DDefinition::parse);
       registerField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
       registerField("size", this::getSize, this::setSize);
       registerField("graphicName", this::getGraphicName, this::setGraphicName);
@@ -96,5 +96,19 @@ public class YoGraphicPointcloud3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
+   }
+
+   @Override
+   public String toString(int indent)
+   {
+      String out = "%s [name=%s, visible=%b, color=%s, points=%s, numberOfPoints=%s, size=%s, graphicName=%s]";
+      return out.formatted(getClass().getSimpleName(),
+                           name,
+                           visible,
+                           color,
+                           indentedListString(indent, true, points, Object::toString),
+                           numberOfPoints,
+                           size,
+                           graphicName);
    }
 }

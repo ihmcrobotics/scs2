@@ -75,13 +75,16 @@ public class YoColorRGBASingleDefinition extends PaintDefinition
 
    public static YoColorRGBASingleDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
-      if (value.toLowerCase().startsWith("yorgba="))
+      if (value.startsWith("YoRGBA="))
       {
          String rgba = value.substring(7);
 
-         if (rgba.toLowerCase().equals("null"))
+         if (rgba.equalsIgnoreCase("null"))
             rgba = null;
 
          return new YoColorRGBASingleDefinition(rgba);

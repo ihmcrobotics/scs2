@@ -106,10 +106,4 @@ public class YoGraphicCapsule3DDefinition extends YoGraphic3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return super.toString() + ", center: " + center + ", direction: " + axis + ", length: " + length + ", radius: " + radius + ", color: " + color;
-   }
 }

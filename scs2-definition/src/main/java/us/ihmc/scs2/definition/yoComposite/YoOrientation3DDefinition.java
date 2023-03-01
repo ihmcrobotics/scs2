@@ -7,6 +7,9 @@ public abstract class YoOrientation3DDefinition extends YoCompositeDefinition
 {
    public static YoOrientation3DDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
       if (value.startsWith(YoQuaternionDefinition.YoQuaternion))

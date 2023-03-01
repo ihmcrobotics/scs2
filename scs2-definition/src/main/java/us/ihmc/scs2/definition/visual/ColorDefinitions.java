@@ -453,6 +453,9 @@ public class ColorDefinitions
     */
    public static ColorDefinition parse(String webColor)
    {
+      if (webColor == null)
+         return null;
+
       String color = webColor.trim().toLowerCase();
 
       ColorDefinition namedColor = namedColorLowerCaseMap.get(color);

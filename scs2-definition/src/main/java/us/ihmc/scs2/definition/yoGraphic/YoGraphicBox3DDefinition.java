@@ -82,10 +82,4 @@ public class YoGraphicBox3DDefinition extends YoGraphic3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return "position: " + position + ", orientation: " + orientation + ", size: " + size + ", color: " + color;
-   }
 }

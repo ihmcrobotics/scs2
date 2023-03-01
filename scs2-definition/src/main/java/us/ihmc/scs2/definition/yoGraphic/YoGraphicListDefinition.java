@@ -7,8 +7,6 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
-
 @XmlRootElement(name = "YoGraphicList")
 public class YoGraphicListDefinition
 {
@@ -37,6 +35,11 @@ public class YoGraphicListDefinition
    @Override
    public String toString()
    {
-      return EuclidCoreIOTools.getCollectionString("\n", yoGraphics, YoGraphicDefinition::toString);
+      return toString(0);
+   }
+
+   public String toString(int indent)
+   {
+      return YoGraphicDefinition.indentedListString(indent, false, yoGraphics, yoGraphic -> yoGraphic.toString(indent + 1));
    }
 }
