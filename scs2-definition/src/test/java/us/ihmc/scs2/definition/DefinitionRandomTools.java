@@ -257,10 +257,21 @@ public class DefinitionRandomTools
    public static YoListDefinition nextYoListDefinition(Random random)
    {
       YoListDefinition next = new YoListDefinition();
-      int size = random.nextInt(20);
-      for (int i = 0; i < size; i++)
+      switch (random.nextInt(8))
       {
-         next.addElement(nextDoubleFieldValue(random));
+         case 0:
+            // Leave the list null
+            break;
+         case 1:
+            // Make an empty list
+            next.setElements(new ArrayList<>());
+            break;
+         default:
+            int size = random.nextInt(20) + 1;
+            for (int i = 0; i < size; i++)
+            {
+               next.addElement(nextDoubleFieldValue(random));
+            }
       }
       next.setSize(nextIntFieldValue(random, true));
       return next;

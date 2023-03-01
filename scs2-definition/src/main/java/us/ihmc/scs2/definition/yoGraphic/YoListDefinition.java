@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -156,6 +157,47 @@ public class YoListDefinition
    @Override
    public String toString()
    {
-      return "YoDoubleListDefinition [elements=" + elements + ", size=" + size + "]";
+      return "YoList(elements=" + elements + ", size=" + size + ")";
+   }
+
+   public static YoListDefinition parse(String value)
+   {
+      value = value.trim();
+
+      if (value.startsWith("YoList"))
+      {
+         String[] elements;
+
+         int elementsFirstIndex = value.indexOf("[");
+         if (elementsFirstIndex == -1)
+         {
+            elements = null;
+         }
+         else
+         {
+            String elementsSubstring = value.substring(elementsFirstIndex + 1, value.indexOf("]")).trim();
+            if (elementsSubstring.isEmpty())
+            {
+               elements = new String[0];
+            }
+            else
+            {
+               elements = value.substring(value.indexOf("=") + 2, value.lastIndexOf(",") - 1).split(",");
+               for (int i = 0; i < elements.length; i++)
+                  elements[i] = elements[i].trim();
+            }
+         }
+
+         String size = value.substring(value.lastIndexOf("=") + 1, value.length() - 1).trim();
+
+         if (size.toLowerCase().equals("null"))
+            size = null;
+
+         return new YoListDefinition(elements == null ? null : Arrays.asList(elements), size);
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown yoList format: " + value);
+      }
    }
 }
