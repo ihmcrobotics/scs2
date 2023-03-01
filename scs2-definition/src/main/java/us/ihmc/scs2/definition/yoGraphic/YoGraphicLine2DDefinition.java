@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -11,6 +13,13 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
    private YoTuple2DDefinition origin;
    private YoTuple2DDefinition direction;
    private YoTuple2DDefinition destination;
+
+   public YoGraphicLine2DDefinition()
+   {
+      registerTuple2DField("origin", this::getOrigin, this::setOrigin);
+      registerTuple2DField("direction", this::getDirection, this::setDirection);
+      registerTuple2DField("destination", this::getDestination, this::setDestination);
+   }
 
    @XmlElement
    public void setOrigin(YoTuple2DDefinition origin)
@@ -56,15 +65,13 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicLine2DDefinition)
+      else if (object instanceof YoGraphicLine2DDefinition other)
       {
-         YoGraphicLine2DDefinition other = (YoGraphicLine2DDefinition) object;
-
-         if (origin == null ? other.origin != null : !origin.equals(other.origin))
+         if (!Objects.equals(origin, other.origin))
             return false;
-         if (direction == null ? other.direction != null : !direction.equals(other.direction))
+         if (!Objects.equals(direction, other.direction))
             return false;
-         if (destination == null ? other.destination != null : !destination.equals(other.destination))
+         if (!Objects.equals(destination, other.destination))
             return false;
          return true;
       }

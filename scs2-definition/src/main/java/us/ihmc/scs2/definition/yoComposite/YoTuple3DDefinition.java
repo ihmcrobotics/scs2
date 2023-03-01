@@ -18,9 +18,7 @@ public class YoTuple3DDefinition extends YoCompositeDefinition
 
    public YoTuple3DDefinition(String x, String y, String z)
    {
-      this.x = x;
-      this.y = y;
-      this.z = z;
+      this(x, y, z, null);
    }
 
    public YoTuple3DDefinition(String x, String y, String z, String referenceFrame)

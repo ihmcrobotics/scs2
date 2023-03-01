@@ -17,6 +17,19 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    private String timeResolution;
    private String numberOfDivisions;
 
+   public YoGraphicPolynomial3DDefinition()
+   {
+      registerYoListField("coefficientsX", this::getCoefficientsX, this::setCoefficientsX);
+      registerYoListField("coefficientsY", this::getCoefficientsY, this::setCoefficientsY);
+      registerYoListField("coefficientsZ", this::getCoefficientsZ, this::setCoefficientsZ);
+      registerField("referenceFrame", this::getReferenceFrame, this::setReferenceFrame);
+      registerField("startTime", this::getStartTime, this::setStartTime);
+      registerField("endTime", this::getEndTime, this::setEndTime);
+      registerField("size", this::getSize, this::setSize);
+      registerField("timeResolution", this::getTimeResolution, this::setTimeResolution);
+      registerField("numberOfDivisions", this::getNumberOfDivisions, this::setNumberOfDivisions);
+   }
+
    @XmlElement(name = "coefficientsX")
    public void setCoefficientsX(YoListDefinition coefficientsX)
    {
@@ -152,10 +165,8 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicPolynomial3DDefinition)
+      else if (object instanceof YoGraphicPolynomial3DDefinition other)
       {
-         YoGraphicPolynomial3DDefinition other = (YoGraphicPolynomial3DDefinition) object;
-
          if (!Objects.equals(coefficientsX, other.coefficientsX))
             return false;
          if (!Objects.equals(coefficientsY, other.coefficientsY))
@@ -174,7 +185,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
             return false;
          if (!Objects.equals(numberOfDivisions, other.numberOfDivisions))
             return false;
-         
+
          return true;
       }
       else

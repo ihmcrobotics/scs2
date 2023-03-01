@@ -12,6 +12,11 @@ public abstract class YoGraphic3DDefinition extends YoGraphicDefinition
 {
    protected PaintDefinition color;
 
+   public YoGraphic3DDefinition()
+   {
+      registerPaintField("color", this::getColor, this::setColor);
+   }
+
    // For backward compatibility.
    @Deprecated
    @XmlElement(name = "color")

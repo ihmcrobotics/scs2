@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -13,6 +14,12 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
 {
    private List<YoTuple2DDefinition> vertices;
    private String numberOfVertices;
+
+   public YoGraphicPolygon2DDefinition()
+   {
+      registerListField("vertices", this::getVertices, this::setVertices);
+      registerField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
+   }
 
    @XmlElement
    public void setVertices(List<YoTuple2DDefinition> vertices)
@@ -52,13 +59,11 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicPolygon2DDefinition)
+      else if (object instanceof YoGraphicPolygon2DDefinition other)
       {
-         YoGraphicPolygon2DDefinition other = (YoGraphicPolygon2DDefinition) object;
-
-         if (vertices == null ? other.vertices != null : !vertices.equals(other.vertices))
+         if (!Objects.equals(vertices, other.vertices))
             return false;
-         if (numberOfVertices == null ? other.numberOfVertices != null : !numberOfVertices.equals(other.numberOfVertices))
+         if (!Objects.equals(numberOfVertices, other.numberOfVertices))
             return false;
 
          return true;

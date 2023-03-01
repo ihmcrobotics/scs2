@@ -535,7 +535,19 @@ public class ColorDefinitions
             double red = Integer.parseInt(rgbaArray[0]);
             double green = Integer.parseInt(rgbaArray[1]);
             double blue = Integer.parseInt(rgbaArray[2]);
-            double alpha = parseAlpha ? Double.parseDouble(rgbaArray[3]) : 1.0;
+            double alpha = 1.0;
+
+            if (parseAlpha)
+            {
+               try
+               {
+                  alpha = Integer.parseInt(rgbaArray[3]) / 255.0;
+               }
+               catch (NumberFormatException e)
+               {
+                  alpha = Double.parseDouble(rgbaArray[3]);
+               }
+            }
 
             if (parsePercent)
             {

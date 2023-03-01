@@ -12,6 +12,24 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
    private String x, y, z, s;
    private String referenceFrame;
 
+   public YoQuaternionDefinition()
+   {
+   }
+
+   public YoQuaternionDefinition(String x, String y, String z, String s)
+   {
+      this(x, y, z, s, null);
+   }
+
+   public YoQuaternionDefinition(String x, String y, String z, String s, String referenceFrame)
+   {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.s = s;
+      this.referenceFrame = referenceFrame;
+   }
+
    public void setX(double x)
    {
       this.x = Double.toString(x);

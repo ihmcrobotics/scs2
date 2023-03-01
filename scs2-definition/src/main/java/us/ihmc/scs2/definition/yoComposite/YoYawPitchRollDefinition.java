@@ -12,6 +12,23 @@ public class YoYawPitchRollDefinition extends YoOrientation3DDefinition
    private String yaw, pitch, roll;
    private String referenceFrame;
 
+   public YoYawPitchRollDefinition()
+   {
+   }
+
+   public YoYawPitchRollDefinition(String yaw, String pitch, String roll)
+   {
+      this(yaw, pitch, roll, null);
+   }
+
+   public YoYawPitchRollDefinition(String yaw, String pitch, String roll, String referenceFrame)
+   {
+      this.yaw = yaw;
+      this.pitch = pitch;
+      this.roll = roll;
+      this.referenceFrame = referenceFrame;
+   }
+
    public void setYaw(double yaw)
    {
       this.yaw = Double.toString(yaw);

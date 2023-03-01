@@ -123,4 +123,31 @@ public class YoColorRGBADoubleDefinition extends PaintDefinition
    {
       return "[red=" + red + ", green=" + green + ", blue=" + blue + ", alpha=" + alpha + "]";
    }
+
+   public static YoColorRGBADoubleDefinition parse(String value)
+   {
+      if (value == null)
+         return null;
+
+      value = value.replace("[", "").replace("]", "").trim();
+      value = value.substring(value.indexOf("=") + 1);
+      String red = value.substring(0, value.indexOf(","));
+      value = value.substring(value.indexOf("=") + 1);
+      String green = value.substring(0, value.indexOf(","));
+      value = value.substring(value.indexOf("=") + 1);
+      String blue = value.substring(0, value.indexOf(","));
+      value = value.substring(value.indexOf("=") + 1);
+      String alpha = value;
+
+      if (red.toLowerCase().equals("null"))
+         red = null;
+      if (green.toLowerCase().equals("null"))
+         green = null;
+      if (blue.toLowerCase().equals("null"))
+         blue = null;
+      if (alpha.toLowerCase().equals("null"))
+         alpha = null;
+
+      return new YoColorRGBADoubleDefinition(red, green, blue, alpha);
+   }
 }

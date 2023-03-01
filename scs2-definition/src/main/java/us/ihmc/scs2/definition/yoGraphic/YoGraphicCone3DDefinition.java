@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -13,6 +15,14 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
 
    private String height;
    private String radius;
+
+   public YoGraphicCone3DDefinition()
+   {
+      registerTuple3DField("position", this::getPosition, this::setPosition);
+      registerTuple3DField("axis", this::getAxis, this::setAxis);
+      registerField("height", this::getHeight, this::setHeight);
+      registerField("radius", this::getRadius, this::setRadius);
+   }
 
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
@@ -79,17 +89,15 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicCone3DDefinition)
+      else if (object instanceof YoGraphicCone3DDefinition other)
       {
-         YoGraphicCone3DDefinition other = (YoGraphicCone3DDefinition) object;
-
-         if (position == null ? other.position != null : !position.equals(other.position))
+         if (!Objects.equals(position, other.position))
             return false;
-         if (axis == null ? other.axis != null : !axis.equals(other.axis))
+         if (!Objects.equals(axis, other.axis))
             return false;
-         if (height == null ? other.height != null : !height.equals(other.height))
+         if (!Objects.equals(height, other.height))
             return false;
-         if (radius == null ? other.radius != null : !radius.equals(other.radius))
+         if (!Objects.equals(radius, other.radius))
             return false;
          return true;
       }

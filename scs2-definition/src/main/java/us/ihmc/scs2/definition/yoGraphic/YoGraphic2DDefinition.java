@@ -13,6 +13,13 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
    protected PaintDefinition strokeColor;
    protected String strokeWidth;
 
+   public YoGraphic2DDefinition()
+   {
+      registerPaintField("fillColor", this::getFillColor, this::setFillColor);
+      registerPaintField("strokeColor", this::getStrokeColor, this::setStrokeColor);
+      registerField("strokeWidth", this::getStrokeWidth, this::setStrokeWidth);
+   }
+
    // For backward compatibility.
    @Deprecated
    @XmlElement(name = "fillColor")
@@ -92,10 +99,8 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphic2DDefinition)
+      else if (object instanceof YoGraphic2DDefinition other)
       {
-         YoGraphic2DDefinition other = (YoGraphic2DDefinition) object;
-
          if (!Objects.equals(fillColor, other.fillColor))
             return false;
          if (!Objects.equals(strokeColor, other.strokeColor))

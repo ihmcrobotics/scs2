@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -11,6 +13,13 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
    private YoTuple2DDefinition position;
    private String size;
    private String graphicName;
+
+   public YoGraphicPoint2DDefinition()
+   {
+      registerTuple2DField("position", this::getPosition, this::setPosition);
+      registerField("size", this::getSize, this::setSize);
+      registerField("graphicName", this::getGraphicName, this::setGraphicName);
+   }
 
    @XmlElement
    public void setPosition(YoTuple2DDefinition position)
@@ -61,15 +70,13 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicPoint2DDefinition)
+      else if (object instanceof YoGraphicPoint2DDefinition other)
       {
-         YoGraphicPoint2DDefinition other = (YoGraphicPoint2DDefinition) object;
-
-         if (position == null ? other.position != null : !position.equals(other.position))
+         if (!Objects.equals(position, other.position))
             return false;
-         if (size == null ? other.size != null : !size.equals(other.size))
+         if (!Objects.equals(size, other.size))
             return false;
-         if (graphicName == null ? other.graphicName != null : !graphicName.equals(other.graphicName))
+         if (!Objects.equals(graphicName, other.graphicName))
             return false;
          return true;
       }
