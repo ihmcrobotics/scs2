@@ -92,6 +92,9 @@ public class YoTuple2DDefinition extends YoCompositeDefinition
 
    public static YoTuple2DDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
       if (value.startsWith(YoTuple2D))

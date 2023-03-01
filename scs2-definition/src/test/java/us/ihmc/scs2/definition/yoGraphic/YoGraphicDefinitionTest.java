@@ -26,65 +26,47 @@ public class YoGraphicDefinitionTest
          while (original.size() < size)
             original.add(DefinitionRandomTools.nextYoTuple2DDefinition(random));
 
-         String listStringValue = YoGraphicDefinition.listToString(original, Object::toString);
-         List<YoTuple2DDefinition> parsed = YoGraphicDefinition.parseList(listStringValue, YoTuple2DDefinition::parse);
+         String elementLabel = "dsf";
+         String listStringValue = YoGraphicDefinition.listToString(original, elementLabel, Object::toString);
+         List<YoTuple2DDefinition> parsed = YoGraphicDefinition.parseList(listStringValue, elementLabel, YoTuple2DDefinition::parse);
 
          assertEquals(original, parsed);
       }
+
+      List<YoTuple2DDefinition> original = null;
+      String elementLabel = "dsf";
+      String listStringValue = YoGraphicDefinition.listToString(original, elementLabel, Object::toString);
+      List<YoTuple2DDefinition> parsed = YoGraphicDefinition.parseList(listStringValue, elementLabel, YoTuple2DDefinition::parse);
+
+      assertEquals(original, parsed);
    }
 
    @Test
    public void testToStringAndParse() throws Exception
    {
+      Random random = new Random(345);
+
+      for (int i = 0; i < 1000; i++)
+      {
+         YoGraphicDefinition original = DefinitionRandomTools.nextYoGraphicDefinition(random);
+         YoGraphicDefinition parsed = YoGraphicDefinition.parse(original.toParsableString());
+
+         assertEquals(original.getClass(), parsed.getClass());
+         assertEquals(original.getName(), parsed.getName());
+      }
+   }
+
+   @Test
+   public void testToStringMapAndParseMap() throws Exception
+   {
       Random random = new Random(5456);
-      YoGraphicGroupDefinition originalRoot = DefinitionRandomTools.nextYoGraphicGroupDefinition(random, 5);
-      List<YoGraphicDefinition> allOriginalDefinitions = collectAllDefinitions(originalRoot);
-
-      List<YoGraphicDefinition> allCopyDefinitions = new ArrayList<>();
-
-      for (int i = 0; i < allOriginalDefinitions.size(); i++)
+      for (int i = 0; i < 1; i++)
       {
-         allCopyDefinitions.add(allOriginalDefinitions.get(i).getClass().getDeclaredConstructor().newInstance());
+         YoGraphicGroupDefinition originalRoot = DefinitionRandomTools.nextYoGraphicGroupDefinition(random, 5);
+         List<Map<String, String>> subtreeFieldValueStringMaps = YoGraphicDefinition.createSubtreeFieldValueStringMaps(originalRoot);
+         YoGraphicGroupDefinition parsedRoot = YoGraphicGroupDefinition.parseTreeFieldValueStringMap(subtreeFieldValueStringMaps);
+
+         assertEquals(originalRoot, parsedRoot);
       }
-
-      List<Map<String, String>> allFieldValueStringMaps = new ArrayList<>();
-
-      for (int i = 0; i < allOriginalDefinitions.size(); i++)
-      {
-         allFieldValueStringMaps.add(allOriginalDefinitions.get(i).createFieldValueStringMap());
-      }
-
-      for (int i = 0; i < allCopyDefinitions.size(); i++)
-      {
-         allCopyDefinitions.get(i).parseFieldValueStringMap(allFieldValueStringMaps.get(i));
-      }
-
-      for (int i = 0; i < allOriginalDefinitions.size(); i++)
-      {
-         assertEquals(allOriginalDefinitions.get(i), allCopyDefinitions.get(i));
-      }
-   }
-
-   private static List<YoGraphicDefinition> collectAllDefinitions(YoGraphicDefinition start)
-   {
-      return collectAllDefinitions(start, new ArrayList<>());
-   }
-
-   private static List<YoGraphicDefinition> collectAllDefinitions(YoGraphicDefinition start, List<YoGraphicDefinition> definitionsToPack)
-   {
-      definitionsToPack.add(start);
-
-      if (start instanceof YoGraphicGroupDefinition group)
-      {
-         List<YoGraphicDefinition> children = group.getChildren();
-         if (children != null)
-         {
-            for (int i = 0; i < children.size(); i++)
-            {
-               collectAllDefinitions(children.get(i), definitionsToPack);
-            }
-         }
-      }
-      return definitionsToPack;
    }
 }

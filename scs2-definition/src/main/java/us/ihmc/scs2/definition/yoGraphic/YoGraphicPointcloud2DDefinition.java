@@ -18,7 +18,7 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
 
    public YoGraphicPointcloud2DDefinition()
    {
-      registerListField("points", this::getPoints, this::setPoints);
+      registerListField("points", this::getPoints, this::setPoints, "p", Object::toString, YoTuple2DDefinition::parse);
       registerField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
       registerField("size", this::getSize, this::setSize);
       registerField("graphicName", this::getGraphicName, this::setGraphicName);
@@ -96,5 +96,21 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
       {
          return false;
       }
+   }
+
+   @Override
+   public String toString(int indent)
+   {
+      String out = "%s [name=%s, visible=%b, fillColor=%s, strokeColor=%s, strokeWidth=%s, points=%s, numberOfPoints=%s, size=%s, graphicName=%s]";
+      return out.formatted(getClass().getSimpleName(),
+                           name,
+                           visible,
+                           fillColor,
+                           strokeColor,
+                           strokeWidth,
+                           indentedListString(indent, true, points, Object::toString),
+                           numberOfPoints,
+                           size,
+                           graphicName);
    }
 }

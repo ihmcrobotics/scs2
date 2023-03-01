@@ -74,10 +74,4 @@ public class YoGraphicSTPBox3DDefinition extends YoGraphicBox3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return super.toString() + ", minimumMargin: " + minimumMargin + ", maximumMargin: " + maximumMargin;
-   }
 }

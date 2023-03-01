@@ -126,6 +126,9 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
 
    public static YoQuaternionDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
       if (value.startsWith(YoQuaternion))

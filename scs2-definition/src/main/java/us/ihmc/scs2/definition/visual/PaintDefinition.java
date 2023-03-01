@@ -23,13 +23,14 @@ public abstract class PaintDefinition
 
    public static PaintDefinition parse(String value)
    {
-      String valueLowerCase = value.toLowerCase().trim();
+      if (value == null)//TODO || value.equalsIgnoreCase("null"))
+         return null;
 
-      if (valueLowerCase.startsWith("yodoublergb"))
+      if (value.startsWith("YoDoubleRGB"))
          return YoColorRGBADoubleDefinition.parse(value);
-      if (valueLowerCase.startsWith("yointrgb"))
+      if (value.startsWith("YoIntRGB"))
          return YoColorRGBAIntDefinition.parse(value);
-      if (valueLowerCase.startsWith("yorgba"))
+      if (value.startsWith("YoRGBA"))
          return YoColorRGBASingleDefinition.parse(value);
       return ColorDefinition.parse(value);
    }

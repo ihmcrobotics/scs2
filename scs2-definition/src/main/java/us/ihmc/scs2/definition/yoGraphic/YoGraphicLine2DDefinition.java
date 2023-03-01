@@ -80,11 +80,4 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return "origin: " + origin + (direction != null ? (", direction: " + direction) : (", destination: " + destination)) + ", fillColor: " + fillColor
-            + ", strokeColor: " + strokeColor + ", strokeWidth: " + strokeWidth;
-   }
 }

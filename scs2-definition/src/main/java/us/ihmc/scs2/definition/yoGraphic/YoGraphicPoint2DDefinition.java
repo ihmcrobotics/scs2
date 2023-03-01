@@ -85,11 +85,4 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return "position: " + position + ", size: " + size + ", fillColor: " + fillColor + ", strokeColor: " + strokeColor + ", strokeWidth: " + strokeWidth
-            + ", graphic name: " + graphicName;
-   }
 }

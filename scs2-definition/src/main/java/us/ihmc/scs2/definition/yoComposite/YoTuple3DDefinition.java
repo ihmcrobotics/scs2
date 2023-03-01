@@ -109,6 +109,9 @@ public class YoTuple3DDefinition extends YoCompositeDefinition
 
    public static YoTuple3DDefinition parse(String value)
    {
+      if (value == null)
+         return null;
+
       value = value.trim();
 
       if (value.startsWith(YoTuple3D))

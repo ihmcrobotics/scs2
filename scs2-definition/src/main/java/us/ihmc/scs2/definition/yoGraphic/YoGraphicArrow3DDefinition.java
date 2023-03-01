@@ -176,12 +176,4 @@ public class YoGraphicArrow3DDefinition extends YoGraphic3DDefinition
          return false;
       }
    }
-
-   @Override
-   public String toString()
-   {
-      return super.toString() + ", origin: " + origin + ", direction: " + direction + ", scale length: " + scaleLength + ", scale radius: " + scaleRadius
-            + ", bodyLength: " + bodyLength + ", headLength: " + headLength + ", bodyRadius: " + bodyRadius + ", headRadius: " + headRadius + ", color: "
-            + color;
-   }
 }
