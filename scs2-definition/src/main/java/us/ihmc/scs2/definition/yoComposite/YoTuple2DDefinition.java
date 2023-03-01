@@ -89,4 +89,32 @@ public class YoTuple2DDefinition extends YoCompositeDefinition
    {
       return new String[] {x, y};
    }
+
+   public static YoTuple2DDefinition parse(String value)
+   {
+      value = value.trim();
+
+      if (value.startsWith(YoTuple2D))
+      {
+         value = value.substring(value.indexOf("=") +1).trim();
+         String x = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") +1).trim();
+         String y = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") +1).trim();
+         String frame = value.substring(0, value.length() - 1);
+
+         if (x.toLowerCase().equals("null"))
+            x = null;
+         if (y.toLowerCase().equals("null"))
+            y = null;
+         if (frame.toLowerCase().equals("null"))
+            frame = null;
+
+         return new YoTuple2DDefinition(x, y, frame);
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown tuple 2D format: " + value);
+      }
+   }
 }

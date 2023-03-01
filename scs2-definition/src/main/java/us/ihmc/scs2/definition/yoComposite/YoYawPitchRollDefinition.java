@@ -106,4 +106,36 @@ public class YoYawPitchRollDefinition extends YoOrientation3DDefinition
    {
       return new String[] {yaw, pitch, roll};
    }
+
+   public static YoYawPitchRollDefinition parse(String value)
+   {
+      value = value.trim();
+
+      if (value.startsWith(YoYawPitchRoll))
+      {
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String yaw = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String pitch = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String roll = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String frame = value.substring(0, value.length() - 1);
+
+         if (yaw.toLowerCase().equals("null"))
+            yaw = null;
+         if (pitch.toLowerCase().equals("null"))
+            pitch = null;
+         if (roll.toLowerCase().equals("null"))
+            roll = null;
+         if (frame.toLowerCase().equals("null"))
+            frame = null;
+
+         return new YoYawPitchRollDefinition(yaw, pitch, roll, frame);
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown yaw-pitch-roll format: " + value);
+      }
+   }
 }

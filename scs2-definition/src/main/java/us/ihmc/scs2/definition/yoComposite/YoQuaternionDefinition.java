@@ -123,4 +123,40 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
    {
       return new String[] {x, y, z, s};
    }
+
+   public static YoQuaternionDefinition parse(String value)
+   {
+      value = value.trim();
+
+      if (value.startsWith(YoQuaternion))
+      {
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String x = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String y = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String z = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String s = value.substring(0, value.indexOf(","));
+         value = value.substring(value.indexOf("=") + 1).trim();
+         String frame = value.substring(0, value.length() - 1);
+
+         if (x.toLowerCase().equals("null"))
+            x = null;
+         if (y.toLowerCase().equals("null"))
+            y = null;
+         if (z.toLowerCase().equals("null"))
+            z = null;
+         if (s.toLowerCase().equals("null"))
+            s = null;
+         if (frame.toLowerCase().equals("null"))
+            frame = null;
+
+         return new YoQuaternionDefinition(x, y, z, s, frame);
+      }
+      else
+      {
+         throw new IllegalArgumentException("Unknown quaternion format: " + value);
+      }
+   }
 }
