@@ -161,29 +161,31 @@ public abstract class YoGraphicDefinition
                                              Supplier<YoTuple2DDefinition> fieldTuple2DValueGetter,
                                              Consumer<YoTuple2DDefinition> fieldTuple2DValueSetter)
    {
-      // FIXME
-      registerField(fieldName, () -> Objects.toString(fieldTuple2DValueGetter.get()), null);
+      registerField(fieldName,
+                    () -> Objects.toString(fieldTuple2DValueGetter.get()),
+                    value -> fieldTuple2DValueSetter.accept(value == null ? null : YoTuple2DDefinition.parse(value)));
    }
 
    protected final void registerTuple3DField(String fieldName,
                                              Supplier<YoTuple3DDefinition> fieldTuple3DValueGetter,
                                              Consumer<YoTuple3DDefinition> fieldTuple3DValueSetter)
    {
-      // FIXME
-      registerField(fieldName, () -> Objects.toString(fieldTuple3DValueGetter.get()), null);
+      registerField(fieldName,
+                    () -> Objects.toString(fieldTuple3DValueGetter.get()),
+                    value -> fieldTuple3DValueSetter.accept(value == null ? null : YoTuple3DDefinition.parse(value)));
    }
 
    protected final void registerOrientation3DField(String fieldName,
                                                    Supplier<YoOrientation3DDefinition> fieldOrientation3DValueGetter,
                                                    Consumer<YoOrientation3DDefinition> fieldOrientation3DValueSetter)
    {
-      // FIXME
-      registerField(fieldName, () -> Objects.toString(fieldOrientation3DValueGetter.get()), null);
+      registerField(fieldName,
+                    () -> Objects.toString(fieldOrientation3DValueGetter.get()),
+                    value -> fieldOrientation3DValueSetter.accept(value == null ? null : YoOrientation3DDefinition.parse(value)));
    }
 
    protected final void registerPaintField(String fieldName, Supplier<PaintDefinition> fieldPaintValueGetter, Consumer<PaintDefinition> fieldPaintValueSetter)
    {
-      // FIXME
       registerField(fieldName,
                     () -> Objects.toString(fieldPaintValueGetter.get()),
                     value -> fieldPaintValueSetter.accept(value == null ? null : PaintDefinition.parse(value)));

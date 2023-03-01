@@ -55,12 +55,16 @@ public abstract class YoCompositeDefinition
    @Override
    public final String toString()
    {
-      String description = "[" + getType();
+      String description = getType() + "(";
       String[] ids = getComponentIdentifiers();
       String[] values = getComponentValues();
       for (int i = 0; i < ids.length; i++)
-         description += ", " + ids[i] + ": " + values[i];
-      description += ", frame: " + getReferenceFrame() + "]";
+      {
+         if (i > 0)
+            description += ", ";
+         description += "%s=%s".formatted(ids[i], values[i]);
+      }
+      description += ", frame=" + getReferenceFrame() + ")";
       return description;
    }
 }
