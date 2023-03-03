@@ -40,9 +40,24 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    public void addChild(YoGraphicDefinition child)
    {
+      if (child == null)
+         return;
+      if (child instanceof YoGraphicListDefinition list)
+         addChildren(list);
       if (children == null)
          children = new ArrayList<>();
       children.add(child);
+   }
+
+   public void addChildren(YoGraphicListDefinition list)
+   {
+      if (list == null || list.getYoGraphics() == null)
+         return;
+
+      for (int i = 0; i < list.getYoGraphics().size(); i++)
+      {
+         addChild(list.getYoGraphics().get(i));
+      }
    }
 
    @XmlElement
@@ -51,9 +66,58 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
       this.children = children;
    }
 
+   public void unwrapLists()
+   {
+      if (children == null)
+         return;
+
+      for (int i = children.size() - 1; i >= 0; i--)
+      {
+         YoGraphicDefinition child = children.get(i);
+         if (child instanceof YoGraphicListDefinition list)
+         {
+            children.remove(i);
+            if (list.getYoGraphics() != null)
+            {
+               list.unwrapNestedLists();
+               children.addAll(i, list.getYoGraphics());
+            }
+         }
+         else if (child instanceof YoGraphicGroupDefinition subGroup)
+         {
+            subGroup.unwrapLists();
+         }
+      }
+   }
+
+   public void unwrapNestedGroups()
+   {
+      if (children == null)
+         return;
+
+      for (int i = children.size() - 1; i >= 0; i--)
+      {
+         YoGraphicDefinition child = children.get(i);
+         if (child instanceof YoGraphicGroupDefinition subGroup)
+         {
+            children.remove(i);
+            if (subGroup.getChildren() != null)
+            {
+               subGroup.unwrapNestedGroups();
+               children.addAll(i, subGroup.getChildren());
+            }
+         }
+      }
+   }
+
    public List<YoGraphicDefinition> getChildren()
    {
       return children;
+   }
+
+   public boolean isEmpty()
+   {
+      return children == null || children.isEmpty();
    }
 
    @Override

@@ -1,11 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -99,11 +99,11 @@ public abstract class YoGraphicDefinition
    {
       String out = getClass().getSimpleName() + "[";
       boolean first = true;
-      for (FieldStringParsingInfo fieldInfo : definitionFields.values())
+      for (FieldInfoConverter fieldInfo : definitionFields.values())
       {
          if (!first)
             out += ", ";
-         out += fieldInfo.fieldName + "=" + fieldInfo.fieldStringValueSupplier.get();
+         out += fieldInfo.fieldName + "=" + fieldInfo.fieldValueSupplier.get();
          first = false;
       }
       out += "]";
@@ -164,44 +164,81 @@ public abstract class YoGraphicDefinition
       }
    }
 
-   public static List<Map<String, String>> createSubtreeFieldValueStringMaps(YoGraphicDefinition root)
+   public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(Collection<YoGraphicGroupDefinition> roots)
    {
-      List<Map<String, String>> out = new ArrayList<>();
-      out.add(root.createFieldValueStringMap());
-
-      if (root instanceof YoGraphicGroupDefinition rootGroup)
+      List<YoGraphicFieldsSummary> output = new ArrayList<>();
+      for (YoGraphicGroupDefinition root : roots)
       {
-         List<YoGraphicDefinition> children = rootGroup.getChildren();
+         exportSubtreeYoGraphicFieldsSummaryList(root, output);
+      }
+      return output;
+   }
 
-         if (children != null)
+   public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(YoGraphicGroupDefinition root)
+   {
+      return exportSubtreeYoGraphicFieldsSummaryList(root, null);
+   }
+
+   public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(YoGraphicGroupDefinition root, List<YoGraphicFieldsSummary> outputToPack)
+   {
+      if (root == null)
+         return null;
+
+      root.unwrapLists();
+
+      if (outputToPack == null)
+         outputToPack = new ArrayList<>();
+      outputToPack.add(root.exportYoGraphicFieldsSummary());
+
+      List<YoGraphicDefinition> children = root.getChildren();
+
+      if (children != null)
+      {
+         for (int i = 0; i < children.size(); i++)
          {
-            for (int i = 0; i < children.size(); i++)
+            YoGraphicDefinition child = children.get(i);
+            if (child instanceof YoGraphicGroupDefinition subGroup)
             {
-               YoGraphicDefinition child = children.get(i);
-               if (child instanceof YoGraphicGroupDefinition subGroup)
-                  out.addAll(createSubtreeFieldValueStringMaps(subGroup));
-               else
-                  out.add(child.createFieldValueStringMap());
+               outputToPack.addAll(exportSubtreeYoGraphicFieldsSummaryList(subGroup));
+            }
+            else if (child instanceof YoGraphicListDefinition list)
+            {
+               if (list.getYoGraphics() != null)
+               {
+                  for (int j = 0; j < list.getYoGraphics().size(); j++)
+                  {
+                     outputToPack.add(list.getYoGraphics().get(j).exportYoGraphicFieldsSummary());
+                  }
+               }
+            }
+            else
+            {
+               outputToPack.add(child.exportYoGraphicFieldsSummary());
             }
          }
       }
-      return out;
+      return outputToPack;
    }
 
-   public static YoGraphicGroupDefinition parseTreeFieldValueStringMap(List<Map<String, String>> treeFieldValueStringMaps)
+   public static List<YoGraphicGroupDefinition> parseTreeYoGraphicFieldsSummary(List<YoGraphicFieldsSummary> treeYoGraphicFieldsSummaryList)
    {
-      if (treeFieldValueStringMaps == null)
+      if (treeYoGraphicFieldsSummaryList == null)
          return null;
 
-      treeFieldValueStringMaps = new LinkedList<>(treeFieldValueStringMaps);
-      YoGraphicGroupDefinition parsed = new YoGraphicGroupDefinition();
-      parseGroupRecursive(parsed, treeFieldValueStringMaps);
+      treeYoGraphicFieldsSummaryList = new LinkedList<>(treeYoGraphicFieldsSummaryList);
+      List<YoGraphicGroupDefinition> parsed = new ArrayList<>();
+      while (!treeYoGraphicFieldsSummaryList.isEmpty())
+      {
+         YoGraphicGroupDefinition rootGroup = new YoGraphicGroupDefinition();
+         parseTreeFieldValueInfoRecursive(rootGroup, treeYoGraphicFieldsSummaryList);
+         parsed.add(rootGroup);
+      }
       return parsed;
    }
 
-   private static void parseGroupRecursive(YoGraphicGroupDefinition start, List<Map<String, String>> treeFieldValueStringMaps)
+   private static void parseTreeFieldValueInfoRecursive(YoGraphicGroupDefinition start, List<YoGraphicFieldsSummary> treeYoGraphicFieldsSummaryList)
    {
-      start.parseFieldValueStringMap(treeFieldValueStringMaps.remove(0));
+      start.parseYoGraphicFieldsInfo(treeYoGraphicFieldsSummaryList.remove(0));
 
       List<YoGraphicDefinition> children = start.getChildren();
 
@@ -212,9 +249,9 @@ public abstract class YoGraphicDefinition
             YoGraphicDefinition child = children.get(i);
 
             if (child instanceof YoGraphicGroupDefinition subGroup)
-               parseGroupRecursive(subGroup, treeFieldValueStringMaps);
+               parseTreeFieldValueInfoRecursive(subGroup, treeYoGraphicFieldsSummaryList);
             else
-               child.parseFieldValueStringMap(treeFieldValueStringMaps.remove(0));
+               child.parseYoGraphicFieldsInfo(treeYoGraphicFieldsSummaryList.remove(0));
          }
       }
    }
@@ -225,61 +262,91 @@ public abstract class YoGraphicDefinition
     * 
     * @return the map of field names to respective values.
     */
-   Map<String, String> createFieldValueStringMap()
+   YoGraphicFieldsSummary exportYoGraphicFieldsSummary()
    {
-      LinkedHashMap<String, String> map = new LinkedHashMap<>();
+      YoGraphicFieldsSummary out = new YoGraphicFieldsSummary();
 
-      for (FieldStringParsingInfo definitionField : definitionFields.values())
+      for (FieldInfoConverter definitionField : definitionFields.values())
       {
-         String value = definitionField.fieldStringValueSupplier.get();
+         String value = definitionField.fieldValueSupplier.get();
          if (value != null)
-            map.put(definitionField.fieldName, value);
+            out.add(new YoGraphicFieldInfo(definitionField.fieldName, value));
       }
-      return map;
+      return out;
    }
 
-   void parseFieldValueStringMap(Map<String, String> map)
+   void parseYoGraphicFieldsInfo(YoGraphicFieldsSummary fieldsSummary)
    {
-      for (Entry<String, String> entry : map.entrySet())
+      for (YoGraphicFieldInfo fieldNameStringValueEntry : fieldsSummary)
       {
-         FieldStringParsingInfo field = definitionFields.get(entry.getKey());
+         FieldInfoConverter field = definitionFields.get(fieldNameStringValueEntry.getFieldName());
          if (field == null)
          {
             if (DEBUG_PARSING)
-               LogTools.error("Could not find field: {} for type: {}", entry.getKey(), getClass().getSimpleName());
+               LogTools.error("Could not find field: {} for type: {}", fieldNameStringValueEntry.getFieldValue(), getClass().getSimpleName());
             continue;
          }
 
          try
          {
-            field.fieldStringValueParser.accept(entry.getValue());
+            field.fieldValueParser.accept(fieldNameStringValueEntry.getFieldValue());
          }
          catch (Exception e)
          {
             throw new RuntimeException("Error for definition: %s, field: %s, value: %s".formatted(getClass().getSimpleName(),
                                                                                                   field.fieldName,
-                                                                                                  entry.getValue()),
+                                                                                                  fieldNameStringValueEntry.getFieldValue()),
                                        e);
          }
       }
    }
 
-   private static class FieldStringParsingInfo
+   private static class FieldInfoConverter
    {
       private final String fieldName;
-      private final Supplier<String> fieldStringValueSupplier;
-      private final Consumer<String> fieldStringValueParser;
+      private final Supplier<String> fieldValueSupplier;
+      private final Consumer<String> fieldValueParser;
 
-      public FieldStringParsingInfo(String fieldName, Supplier<String> fieldStringValueSupplier, Consumer<String> fieldStringValueParser)
+      public FieldInfoConverter(String fieldName, Supplier<String> fieldValueSupplier, Consumer<String> fieldValueParser)
       {
          this.fieldName = fieldName;
-         this.fieldStringValueSupplier = fieldStringValueSupplier;
-         this.fieldStringValueParser = fieldStringValueParser;
+         this.fieldValueSupplier = fieldValueSupplier;
+         this.fieldValueParser = fieldValueParser;
+      }
+   }
+
+   public static class YoGraphicFieldInfo
+   {
+      private final String fieldName, fieldValue;
+
+      public YoGraphicFieldInfo(String fieldName, String fieldValue)
+      {
+         this.fieldName = fieldName;
+         this.fieldValue = fieldValue;
+      }
+
+      public String getFieldName()
+      {
+         return fieldName;
+      }
+
+      public String getFieldValue()
+      {
+         return fieldValue;
+      }
+   }
+
+   public static class YoGraphicFieldsSummary extends ArrayList<YoGraphicFieldInfo>
+   {
+      private static final long serialVersionUID = -1654039568977911943L;
+
+      public YoGraphicFieldsSummary()
+      {
       }
    }
 
    @XmlTransient
-   private final Map<String, FieldStringParsingInfo> definitionFields = new LinkedHashMap<>();
+   private final Map<String, FieldInfoConverter> definitionFields = new LinkedHashMap<>();
 
    protected final <T> void registerListField(String fieldName,
                                               Supplier<List<T>> fieldListValueGetter,
@@ -408,6 +475,6 @@ public abstract class YoGraphicDefinition
 
    protected final void registerField(String fieldName, Supplier<String> fieldStringValueSupplier, Consumer<String> fieldStringValueParser)
    {
-      definitionFields.put(fieldName, new FieldStringParsingInfo(fieldName, fieldStringValueSupplier, fieldStringValueParser));
+      definitionFields.put(fieldName, new FieldInfoConverter(fieldName, fieldStringValueSupplier, fieldStringValueParser));
    }
 }
