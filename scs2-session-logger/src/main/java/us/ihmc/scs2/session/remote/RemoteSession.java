@@ -18,6 +18,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
@@ -34,7 +35,7 @@ public class RemoteSession extends Session
    private final String sessionName;
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
-   private final List<YoGraphicDefinition> yoGraphicDefinitions;
+   private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
    private final Runnable robotStateUpdater;
 
    private final AtomicLong serverTimestamp = new AtomicLong(-1);
@@ -57,7 +58,9 @@ public class RemoteSession extends Session
 
       rootRegistry.addChild(handshakeParser.getRootRegistry());
       rootRegistry.addChild(debugRegistry.getYoRegistry());
-      yoGraphicDefinitions = SCS1GraphicConversionTools.toYoGraphicDefinitions(handshakeParser.getYoGraphicsListRegistry());
+      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics",
+                                                            SCS1GraphicConversionTools.toYoGraphicDefinitions(handshakeParser.getSCS1YoGraphics())));
+      yoGraphicDefinitions.addAll(handshakeParser.getSCS2YoGraphics());
 
       RobotDefinition robotDefinition = RobotModelLoader.loadModel(handshake.getModelName(),
                                                                    handshake.getModelLoaderClass(),

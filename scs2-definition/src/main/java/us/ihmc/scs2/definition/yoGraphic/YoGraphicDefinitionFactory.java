@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import us.ihmc.euclid.geometry.interfaces.Pose3DReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
@@ -18,6 +19,8 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple4D.interfaces.QuaternionReadOnly;
 import us.ihmc.euclid.yawPitchRoll.interfaces.YawPitchRollReadOnly;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;
@@ -27,12 +30,16 @@ import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
+import us.ihmc.yoVariables.euclid.YoPoint2D;
 import us.ihmc.yoVariables.euclid.YoQuaternion;
 import us.ihmc.yoVariables.euclid.YoTuple2D;
 import us.ihmc.yoVariables.euclid.YoTuple3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameConvexPolygon2D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameLineSegment2D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePose3D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameQuaternion;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple3D;
@@ -43,21 +50,254 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoGraphicDefinitionFactory
 {
+   private static final double DEFAULT_STROKE_WIDTH = 1.5;
+   public static final ColorDefinition DEFAULT_COLOR = ColorDefinitions.Gray();
+
    public enum DefaultPoint2DGraphic
    {
-      PLUS, CROSS, CIRCLE, CIRCLE_PLUS, CIRCLE_CROSS, DIAMOND, DIAMOND_PLUS, SQUARE, SQUARE_CROSS;
+      // Graphics drawn with stroke and no fill
+      PLUS(false),
+      CROSS(false),
+      CIRCLE(false),
+      CIRCLE_PLUS(false),
+      CIRCLE_CROSS(false),
+      DIAMOND(false),
+      DIAMOND_PLUS(false),
+      SQUARE(false),
+      SQUARE_CROSS(false),
+      // Graphics drawn filled and no stroke
+      CIRCLE_FILLED(true),
+      DIAMOND_FILLED(true),
+      SQUARE_FILLED(true);
 
       private final String graphicName;
+      private final boolean filled;
 
-      private DefaultPoint2DGraphic()
+      private DefaultPoint2DGraphic(boolean filled)
       {
-         this.graphicName = name().charAt(0) + name().substring(1).toLowerCase().replace("_", " ");
+         this.filled = filled;
+         this.graphicName = name().charAt(0) + name().substring(1).replace("_FILLED", "").toLowerCase().replace("_", " ");
+      }
+
+      public boolean isFilled()
+      {
+         return filled;
       }
 
       public String getGraphicName()
       {
          return graphicName;
       }
+   }
+
+   public static YoGraphicLine2DDefinition newYoGraphicLineSegment2DDefinition(String name, YoFrameLineSegment2D lineSegment, PaintDefinition strokeColor)
+   {
+      return newYoGraphicLineSegment2DDefinition(name,
+                                                 (YoFramePoint2D) lineSegment.getFirstEndpoint(),
+                                                 (YoFramePoint2D) lineSegment.getSecondEndpoint(),
+                                                 strokeColor);
+   }
+
+   public static YoGraphicLine2DDefinition newYoGraphicLineSegment2DDefinition(String name,
+                                                                               YoFrameTuple2D firstEndpoint,
+                                                                               YoFrameTuple2D secondEndpoint,
+                                                                               PaintDefinition strokeColor)
+   {
+      YoGraphicLine2DDefinition definition = new YoGraphicLine2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setOrigin(newYoTuple2DDefinition(firstEndpoint));
+      definition.setDestination(newYoTuple2DDefinition(secondEndpoint));
+      definition.setStrokeColor(strokeColor);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
+                                                                YoFrameTuple3D position,
+                                                                double size,
+                                                                PaintDefinition color,
+                                                                DefaultPoint2DGraphic graphicType)
+   {
+      return newYoGraphicPoint2D(name, position, position.getReferenceFrame(), size, color, graphicType);
+   }
+
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
+                                                                YoFrameTuple2D position,
+                                                                double size,
+                                                                PaintDefinition color,
+                                                                DefaultPoint2DGraphic graphicType)
+   {
+      return newYoGraphicPoint2D(name, position, position.getReferenceFrame(), size, color, graphicType);
+   }
+
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
+                                                                YoTuple3D position,
+                                                                ReferenceFrame positionFrame,
+                                                                double size,
+                                                                PaintDefinition color,
+                                                                DefaultPoint2DGraphic graphicType)
+   {
+      return newYoGraphicPoint2D(name, new YoPoint2D(position.getYoX(), position.getYoY()), positionFrame, size, color, graphicType);
+   }
+
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
+                                                                YoTuple2D position,
+                                                                ReferenceFrame positionFrame,
+                                                                double size,
+                                                                PaintDefinition color,
+                                                                DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPoint2DDefinition definition = new YoGraphicPoint2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPosition(newYoTuple2DDefinition(position, positionFrame));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(size);
+      if (graphicType.isFilled())
+         definition.setFillColor(color);
+      else
+         definition.setStrokeColor(color);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(YoGraphicPoint3DDefinition definition3D, DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPoint2DDefinition definition = new YoGraphicPoint2DDefinition();
+      definition.setName(definition3D.getName());
+      definition.setVisible(definition3D.isVisible());
+      definition.setPosition(new YoTuple2DDefinition(definition3D.getPosition().getX(),
+                                                     definition3D.getPosition().getY(),
+                                                     definition3D.getPosition().getReferenceFrame()));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(definition3D.getSize());
+      if (graphicType.isFilled())
+         definition.setFillColor(definition3D.getColor());
+      else
+         definition.setStrokeColor(definition3D.getColor());
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPointcloud2DDefinition newYoGraphicPointcloud2D(String name,
+                                                                          List<? extends YoFrameTuple2D> points,
+                                                                          double size,
+                                                                          PaintDefinition color,
+                                                                          DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPoints(points.stream().map(p -> newYoTuple2DDefinition(p)).collect(Collectors.toList()));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(size);
+      if (graphicType.isFilled())
+         definition.setFillColor(color);
+      else
+         definition.setStrokeColor(color);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPointcloud2DDefinition newYoGraphicPointcloud2D(String name,
+                                                                          List<? extends YoTuple2D> points,
+                                                                          ReferenceFrame frame,
+                                                                          double size,
+                                                                          PaintDefinition color,
+                                                                          DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPoints(points.stream().map(p -> newYoTuple2DDefinition(p, frame)).collect(Collectors.toList()));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(size);
+      if (graphicType.isFilled())
+         definition.setFillColor(color);
+      else
+         definition.setStrokeColor(color);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPointcloud2DDefinition newYoGraphicPointcloud2D(YoGraphicPointcloud3DDefinition definition3D, DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
+      definition.setName(definition3D.getName());
+      definition.setVisible(definition3D.isVisible());
+      definition.setPoints(definition3D.getPoints().stream()
+                                       .map(tuple3D -> new YoTuple2DDefinition(tuple3D.getX(), tuple3D.getY(), tuple3D.getReferenceFrame()))
+                                       .collect(Collectors.toList()));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(definition3D.getSize());
+      if (graphicType.isFilled())
+         definition.setFillColor(definition3D.getColor());
+      else
+         definition.setStrokeColor(definition3D.getColor());
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPointcloud2DDefinition newYoGraphicPointcloud2DFrom3D(String name,
+                                                                                List<? extends YoFrameTuple3D> points,
+                                                                                double size,
+                                                                                PaintDefinition color,
+                                                                                DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPoints(points.stream().map(p -> newYoTuple2DDefinition(p.getYoX(), p.getYoY())).collect(Collectors.toList()));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(size);
+      if (graphicType.isFilled())
+         definition.setFillColor(color);
+      else
+         definition.setStrokeColor(color);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPointcloud2DDefinition newYoGraphicPointcloud2DFrom3D(String name,
+                                                                                List<? extends YoTuple3D> points,
+                                                                                ReferenceFrame frame,
+                                                                                double size,
+                                                                                PaintDefinition color,
+                                                                                DefaultPoint2DGraphic graphicType)
+   {
+      YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPoints(points.stream().map(p -> newYoTuple2DDefinition(p.getYoX(), p.getYoY(), frame)).collect(Collectors.toList()));
+      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setSize(size);
+      if (graphicType.isFilled())
+         definition.setFillColor(color);
+      else
+         definition.setStrokeColor(color);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
+   }
+
+   public static YoGraphicPolygon2DDefinition newYoGraphicPolygon2D(String name, YoFrameConvexPolygon2D polygon, PaintDefinition strokeColor)
+   {
+      return newYoGraphicPolygon2D(name, polygon, strokeColor, false);
+   }
+
+   public static YoGraphicPolygon2DDefinition newYoGraphicPolygon2D(String name, YoFrameConvexPolygon2D polygon, PaintDefinition color, boolean fill)
+   {
+      YoGraphicPolygon2DDefinition definition = new YoGraphicPolygon2DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setVertices(polygon.getVertexBuffer().stream().map(v -> newYoTuple2DDefinition(v)).toList());
+      definition.setNumberOfVertices(toPropertyName(polygon.getYoNumberOfVertices()));
+      if (fill)
+         definition.setFillColor(color);
+      else
+         definition.setStrokeColor(color);
+      definition.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+      return definition;
    }
 
    public static YoGraphicArrow3DDefinition newYoGraphicArrow3D(String name,
@@ -150,6 +390,11 @@ public class YoGraphicDefinitionFactory
       return definition;
    }
 
+   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name, YoFramePose3D pose, double scale)
+   {
+      return newYoGraphicCoordinateSystem3D(name, pose, scale, DEFAULT_COLOR);
+   }
+
    public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name, YoFramePose3D pose, double scale, PaintDefinition color)
    {
       return newYoGraphicCoordinateSystem3D(name, pose.getPosition(), pose.getOrientation(), scale, color);
@@ -182,6 +427,54 @@ public class YoGraphicDefinitionFactory
       definition.setVisible(true);
       definition.setPosition(newYoTuple3DDefinition(position));
       definition.setOrientation(newYoQuaternionDefinition(orientation));
+      definition.setBodyLength(bodyLength);
+      definition.setHeadLength(headLength);
+      definition.setBodyRadius(bodyRadius);
+      definition.setHeadRadius(headRadius);
+      definition.setColor(color);
+      return definition;
+   }
+
+   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name, YoFramePoseUsingYawPitchRoll pose, double scale)
+   {
+      return newYoGraphicCoordinateSystem3D(name, pose, scale, DEFAULT_COLOR);
+   }
+
+   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name,
+                                                                                      YoFramePoseUsingYawPitchRoll pose,
+                                                                                      double scale,
+                                                                                      PaintDefinition color)
+   {
+      return newYoGraphicCoordinateSystem3D(name, pose.getPosition(), pose.getYawPitchRoll(), scale, color);
+   }
+
+   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name,
+                                                                                      YoFramePoint3D position,
+                                                                                      YoFrameYawPitchRoll orientation,
+                                                                                      double scale,
+                                                                                      PaintDefinition color)
+   {
+      double bodyLength = scale * 0.9;
+      double headLength = scale * 0.1;
+      double bodyRadius = scale * 0.02;
+      double headRadius = bodyRadius * 2.0;
+      return newYoGraphicCoordinateSystem3D(name, position, orientation, bodyLength, headLength, bodyRadius, headRadius, color);
+   }
+
+   public static YoGraphicCoordinateSystem3DDefinition newYoGraphicCoordinateSystem3D(String name,
+                                                                                      YoFramePoint3D position,
+                                                                                      YoFrameYawPitchRoll orientation,
+                                                                                      double bodyLength,
+                                                                                      double headLength,
+                                                                                      double bodyRadius,
+                                                                                      double headRadius,
+                                                                                      PaintDefinition color)
+   {
+      YoGraphicCoordinateSystem3DDefinition definition = new YoGraphicCoordinateSystem3DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPosition(newYoTuple3DDefinition(position));
+      definition.setOrientation(newYoYawPitchRollDefinition(orientation));
       definition.setBodyLength(bodyLength);
       definition.setHeadLength(headLength);
       definition.setBodyRadius(bodyRadius);
@@ -356,29 +649,32 @@ public class YoGraphicDefinitionFactory
       return definition;
    }
 
-   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
-                                                                YoFrameTuple2D position,
-                                                                double size,
-                                                                PaintDefinition strokeColor,
-                                                                DefaultPoint2DGraphic graphicType)
+   public static YoGraphicPointcloud3DDefinition newYoGraphicPointcloud3D(String name,
+                                                                          List<? extends YoFrameTuple3D> points,
+                                                                          double size,
+                                                                          PaintDefinition color)
    {
-      return newYoGraphicPoint2D(name, position, position.getReferenceFrame(), size, strokeColor, graphicType);
-   }
-
-   public static YoGraphicPoint2DDefinition newYoGraphicPoint2D(String name,
-                                                                YoTuple2D position,
-                                                                ReferenceFrame positionFrame,
-                                                                double size,
-                                                                PaintDefinition strokeColor,
-                                                                DefaultPoint2DGraphic graphicType)
-   {
-      YoGraphicPoint2DDefinition definition = new YoGraphicPoint2DDefinition();
+      YoGraphicPointcloud3DDefinition definition = new YoGraphicPointcloud3DDefinition();
       definition.setName(name);
       definition.setVisible(true);
-      definition.setPosition(newYoTuple2DDefinition(position, positionFrame));
-      definition.setGraphicName(graphicType.getGraphicName());
+      definition.setPoints(points.stream().map(p -> newYoTuple3DDefinition(p)).collect(Collectors.toList()));
       definition.setSize(size);
-      definition.setStrokeColor(strokeColor);
+      definition.setColor(color);
+      return definition;
+   }
+
+   public static YoGraphicPointcloud3DDefinition newYoGraphicPointcloud3D(String name,
+                                                                          List<? extends YoTuple3D> points,
+                                                                          ReferenceFrame frame,
+                                                                          double size,
+                                                                          PaintDefinition color)
+   {
+      YoGraphicPointcloud3DDefinition definition = new YoGraphicPointcloud3DDefinition();
+      definition.setName(name);
+      definition.setVisible(true);
+      definition.setPoints(points.stream().map(p -> newYoTuple3DDefinition(p, frame)).collect(Collectors.toList()));
+      definition.setSize(size);
+      definition.setColor(color);
       return definition;
    }
 
@@ -471,6 +767,18 @@ public class YoGraphicDefinitionFactory
                                       timeResolution,
                                       numberOfDivisions,
                                       color);
+   }
+
+   public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,
+                                                                          YoListDefinition coefficientsX,
+                                                                          YoListDefinition coefficientsY,
+                                                                          YoListDefinition coefficientsZ,
+                                                                          YoDouble startTime,
+                                                                          YoDouble endTime,
+                                                                          double size,
+                                                                          PaintDefinition color)
+   {
+      return newYoGraphicPolynomial3D(name, coefficientsX, coefficientsY, coefficientsZ, startTime, 0, endTime, 0, size, color);
    }
 
    public static YoGraphicPolynomial3DDefinition newYoGraphicPolynomial3D(String name,

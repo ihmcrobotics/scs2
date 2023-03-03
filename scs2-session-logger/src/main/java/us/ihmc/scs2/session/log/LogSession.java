@@ -16,6 +16,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
@@ -29,7 +30,7 @@ public class LogSession extends Session
    private final String sessionName;
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
-   private final List<YoGraphicDefinition> yoGraphicDefinitions;
+   private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
    private final Runnable robotStateUpdater;
 
    private final File logDirectory;
@@ -55,7 +56,8 @@ public class LogSession extends Session
       YoVariableHandshakeParser parser = logDataReader.getParser();
       rootRegistry.addChild(logDataReader.getYoRegistry());
       rootRegistry.addChild(parser.getRootRegistry());
-      yoGraphicDefinitions = SCS1GraphicConversionTools.toYoGraphicDefinitions(parser.getYoGraphicsListRegistry());
+      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", SCS1GraphicConversionTools.toYoGraphicDefinitions(parser.getSCS1YoGraphics())));
+      yoGraphicDefinitions.addAll(parser.getSCS2YoGraphics());
 
       sessionName = logProperties.getNameAsString();
 

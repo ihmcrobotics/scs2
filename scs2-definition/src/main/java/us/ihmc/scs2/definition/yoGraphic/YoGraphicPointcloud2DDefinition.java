@@ -36,6 +36,11 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
       this.numberOfPoints = numberOfPoints;
    }
 
+   public void setSize(double size)
+   {
+      setSize(Double.toString(size));
+   }
+
    @XmlElement
    public void setSize(String size)
    {
