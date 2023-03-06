@@ -19,9 +19,9 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
    public YoGraphicPointcloud2DDefinition()
    {
       registerListField("points", this::getPoints, this::setPoints, "p", Object::toString, YoTuple2DDefinition::parse);
-      registerField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
-      registerField("size", this::getSize, this::setSize);
-      registerField("graphicName", this::getGraphicName, this::setGraphicName);
+      registerStringField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
+      registerStringField("size", this::getSize, this::setSize);
+      registerStringField("graphicName", this::getGraphicName, this::setGraphicName);
    }
 
    @XmlElement

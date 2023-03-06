@@ -17,8 +17,8 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
    public YoGraphicPoint2DDefinition()
    {
       registerTuple2DField("position", this::getPosition, this::setPosition);
-      registerField("size", this::getSize, this::setSize);
-      registerField("graphicName", this::getGraphicName, this::setGraphicName);
+      registerStringField("size", this::getSize, this::setSize);
+      registerStringField("graphicName", this::getGraphicName, this::setGraphicName);
    }
 
    @XmlElement

@@ -27,7 +27,7 @@ public class YoGraphicDefinitionTest
             original.add(DefinitionRandomTools.nextYoTuple2DDefinition(random));
 
          String elementLabel = "dsf";
-         String listStringValue = YoGraphicDefinition.listToString(original, elementLabel, Object::toString);
+         String listStringValue = YoGraphicDefinition.listToParsableString(original, elementLabel, Object::toString);
          List<YoTuple2DDefinition> parsed = YoGraphicDefinition.parseList(listStringValue, elementLabel, YoTuple2DDefinition::parse);
 
          assertEquals(original, parsed);
@@ -35,7 +35,7 @@ public class YoGraphicDefinitionTest
 
       List<YoTuple2DDefinition> original = null;
       String elementLabel = "dsf";
-      String listStringValue = YoGraphicDefinition.listToString(original, elementLabel, Object::toString);
+      String listStringValue = YoGraphicDefinition.listToParsableString(original, elementLabel, Object::toString);
       List<YoTuple2DDefinition> parsed = YoGraphicDefinition.parseList(listStringValue, elementLabel, YoTuple2DDefinition::parse);
 
       assertEquals(original, parsed);

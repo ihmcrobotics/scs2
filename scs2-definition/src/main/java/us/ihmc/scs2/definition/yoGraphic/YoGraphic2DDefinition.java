@@ -17,7 +17,7 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
    {
       registerPaintField("fillColor", this::getFillColor, this::setFillColor);
       registerPaintField("strokeColor", this::getStrokeColor, this::setStrokeColor);
-      registerField("strokeWidth", this::getStrokeWidth, this::setStrokeWidth);
+      registerStringField("strokeWidth", this::getStrokeWidth, this::setStrokeWidth);
    }
 
    // For backward compatibility.

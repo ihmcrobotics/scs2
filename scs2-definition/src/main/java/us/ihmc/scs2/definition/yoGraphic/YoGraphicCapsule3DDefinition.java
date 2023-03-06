@@ -20,8 +20,8 @@ public class YoGraphicCapsule3DDefinition extends YoGraphic3DDefinition
    {
       registerTuple3DField("center", this::getCenter, this::setCenter);
       registerTuple3DField("axis", this::getAxis, this::setAxis);
-      registerField("length", this::getLength, this::setLength);
-      registerField("radius", this::getRadius, this::setRadius);
+      registerStringField("length", this::getLength, this::setLength);
+      registerStringField("radius", this::getRadius, this::setRadius);
    }
 
    @XmlElement

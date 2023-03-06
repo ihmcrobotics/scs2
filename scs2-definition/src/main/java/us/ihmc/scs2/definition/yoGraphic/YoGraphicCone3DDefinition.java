@@ -20,8 +20,8 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
    {
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerTuple3DField("axis", this::getAxis, this::setAxis);
-      registerField("height", this::getHeight, this::setHeight);
-      registerField("radius", this::getRadius, this::setRadius);
+      registerStringField("height", this::getHeight, this::setHeight);
+      registerStringField("radius", this::getRadius, this::setRadius);
    }
 
    @XmlElement

@@ -13,8 +13,8 @@ public class YoGraphicSTPBox3DDefinition extends YoGraphicBox3DDefinition
 
    public YoGraphicSTPBox3DDefinition()
    {
-      registerField("minimumMargin", this::getMinimumMargin, this::setMinimumMargin);
-      registerField("maximumMargin", this::getMaximumMargin, this::setMaximumMargin);
+      registerStringField("minimumMargin", this::getMinimumMargin, this::setMinimumMargin);
+      registerStringField("maximumMargin", this::getMaximumMargin, this::setMaximumMargin);
    }
 
    public void setMinimumMargin(double minimumMargin)

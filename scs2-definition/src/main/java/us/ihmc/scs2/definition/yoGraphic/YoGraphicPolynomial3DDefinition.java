@@ -22,12 +22,12 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
       registerYoListField("coefficientsX", this::getCoefficientsX, this::setCoefficientsX);
       registerYoListField("coefficientsY", this::getCoefficientsY, this::setCoefficientsY);
       registerYoListField("coefficientsZ", this::getCoefficientsZ, this::setCoefficientsZ);
-      registerField("referenceFrame", this::getReferenceFrame, this::setReferenceFrame);
-      registerField("startTime", this::getStartTime, this::setStartTime);
-      registerField("endTime", this::getEndTime, this::setEndTime);
-      registerField("size", this::getSize, this::setSize);
-      registerField("timeResolution", this::getTimeResolution, this::setTimeResolution);
-      registerField("numberOfDivisions", this::getNumberOfDivisions, this::setNumberOfDivisions);
+      registerStringField("referenceFrame", this::getReferenceFrame, this::setReferenceFrame);
+      registerStringField("startTime", this::getStartTime, this::setStartTime);
+      registerStringField("endTime", this::getEndTime, this::setEndTime);
+      registerStringField("size", this::getSize, this::setSize);
+      registerStringField("timeResolution", this::getTimeResolution, this::setTimeResolution);
+      registerStringField("numberOfDivisions", this::getNumberOfDivisions, this::setNumberOfDivisions);
    }
 
    @XmlElement(name = "coefficientsX")

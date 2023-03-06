@@ -24,8 +24,26 @@ import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
+/**
+ * Base class representing a template used to create 1+ yoGraphics. A yoGraphic is a 2D/3D graphic
+ * object which properties can be backed by yoVariables allowing the graphics to move or change
+ * during a simulation or session.
+ * <p>
+ * The {@code YoGraphicDefinition} is to be passed before initialization of a session (either before
+ * starting a simulation or when creating a yoVariable server), such that the SCS GUI can use the
+ * definitions and create the actual graphics.
+ * </p>
+ *
+ * @author Sylvain Bertrand
+ */
 public abstract class YoGraphicDefinition
 {
+   /**
+    * Whether to print additional debug information when parsing {@code YoGraphicDefinition}s.
+    * <p>
+    * Can be set to {@code true} using the program argument {@code scs2.definition.debugParsing}.
+    * </p>
+    */
    private static final boolean DEBUG_PARSING;
 
    static
@@ -37,32 +55,38 @@ public abstract class YoGraphicDefinition
       DEBUG_PARSING = debugParsingValue;
    }
 
+   /** Human readable name for this yoGraphic, it will show up in the SCS GUI. */
    protected String name;
+   /** Whether the yoGrpahic should be visible by default when created. */
    protected boolean visible = true;
 
    public YoGraphicDefinition()
    {
-      registerField("name", this::getName, this::setName);
-      registerField("visible", this::isVisible, this::setVisible);
+      registerStringField("name", this::getName, this::setName);
+      registerBooleanField("visible", this::isVisible, this::setVisible);
    }
 
+   /** Human readable name for this yoGraphic, it will show up in the SCS GUI. */
    @XmlAttribute
    public final void setName(String name)
    {
       this.name = name;
    }
 
+   /** Whether the yoGrpahic should be visible by default when created. */
    @XmlAttribute
    public final void setVisible(boolean visible)
    {
       this.visible = visible;
    }
 
+   /** Human readable name for this yoGraphic, it will show up in the SCS GUI. */
    public final String getName()
    {
       return name;
    }
 
+   /** Whether the yoGrpahic should be visible by default when created. */
    public final boolean isVisible()
    {
       return visible;
@@ -77,9 +101,7 @@ public abstract class YoGraphicDefinition
       }
       else if (object instanceof YoGraphicDefinition other)
       {
-         if (!Objects.equals(name, other.name))
-            return false;
-         if (visible != other.visible)
+         if (!Objects.equals(name, other.name) || (visible != other.visible))
             return false;
          return true;
       }
@@ -95,6 +117,13 @@ public abstract class YoGraphicDefinition
       return toString(0);
    }
 
+   /**
+    * Provides a string representation of this definition while indenting it with as many "\t" as
+    * desired.
+    *
+    * @param indent the number of tabulation to indent the resulting string.
+    * @return the string.
+    */
    public String toString(int indent)
    {
       String out = getClass().getSimpleName() + "[";
@@ -110,6 +139,16 @@ public abstract class YoGraphicDefinition
       return out;
    }
 
+   /**
+    * [For internal use] - Created an indented string representation of the given list where each of
+    * its element is on a spearate line.
+    *
+    * @param indent          the number of tabulation to indent the resulting string.
+    * @param useBrace        whether to use braces or brackets.
+    * @param list            the list to create the string of.
+    * @param elementToString the function used to get the string for each element.
+    * @return the string.
+    */
    static <T> String indentedListString(int indent, boolean useBrace, List<T> list, Function<T, String> elementToString)
    {
       if (list == null)
@@ -126,13 +165,24 @@ public abstract class YoGraphicDefinition
       return EuclidCoreIOTools.getCollectionString(prefix, suffix, separator, list, elementToString);
    }
 
-   public final String toParsableString()
+   /**
+    * [For internal use] - Creates a simple string of this definition containing only the type and the
+    * name.
+    */
+   protected final String toParsableString()
    {
       return getClass().getSimpleName() + "=" + name;
    }
 
+   /**
+    * [For internal use] - Parses a new empty yoGraphic definition from a string previously generated
+    * using {@link #toParsableString()}.
+    *
+    * @param value the string representation of the definition to create.
+    * @return the new definition which fields still need to be initialized.
+    */
    @SuppressWarnings("unchecked")
-   public static YoGraphicDefinition parse(String value)
+   static YoGraphicDefinition parse(String value)
    {
       if (value == null)
          return null;
@@ -164,6 +214,24 @@ public abstract class YoGraphicDefinition
       }
    }
 
+   /**
+    * [For serializing/deserializing] - Creates for each {@code YoGraphicDefinition} in the trees
+    * starting at the given {@code roots} a summary of its fields' name and {@code String} value and
+    * returns the result as a list.
+    * <p>
+    * This exported summary list can be used to simplify serialization of {@code YoGraphicDefinition}
+    * by using only lists and {@code String}s to represent all of the {@code YoGraphicDefinition}s in
+    * the trees starting at {@code roots}.
+    * </p>
+    * <p>
+    * The summary list can later be parsed back using {@link #parseTreeYoGraphicFieldsSummary(List)}
+    * which is expected to return a deep copy of the original trees.
+    * </p>
+    *
+    * @param roots a collection of the roots of trees to export the summary list of.
+    * @return the summary list representing the {@code YoGraphicDefinition} trees. The first item in
+    *         the returned list describes the first element of {@code roots}.
+    */
    public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(Collection<YoGraphicGroupDefinition> roots)
    {
       List<YoGraphicFieldsSummary> output = new ArrayList<>();
@@ -174,12 +242,38 @@ public abstract class YoGraphicDefinition
       return output;
    }
 
+   /**
+    * [For serializing/deserializing] - Creates for each {@code YoGraphicDefinition} in the tree
+    * starting at the given {@code root} a summary of its fields' name and {@code String} value and
+    * returns the result as a list.
+    * <p>
+    * This exported summary list can be used to simplify serialization of {@code YoGraphicDefinition}
+    * by using only lists and {@code String}s to represent all of the {@code YoGraphicDefinition}s in
+    * the tree starting at {@code root}.
+    * </p>
+    * <p>
+    * The summary list can later be parsed back using {@link #parseTreeYoGraphicFieldsSummary(List)}
+    * which is expected to return a deep copy of the original tree.
+    * </p>
+    *
+    * @param root the root of the tree to export the summary list of.
+    * @return the summary list representing the {@code YoGraphicDefinition} tree. The first item in the
+    *         returned list describes the given {@code root}.
+    */
    public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(YoGraphicGroupDefinition root)
    {
       return exportSubtreeYoGraphicFieldsSummaryList(root, null);
    }
 
-   public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(YoGraphicGroupDefinition root, List<YoGraphicFieldsSummary> outputToPack)
+   /**
+    * [For internal use] - This method is used to enable iteration for exporting
+    * {@code YoGraphicDefinition} summaries for multiple trees.
+    *
+    * @param root         the root of the tree to export the summary list of.
+    * @param outputToPack the list to which the summaries are to be added. Can be {@code null}
+    * @return {@code outputToPack} for convenience.
+    */
+   static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(YoGraphicGroupDefinition root, List<YoGraphicFieldsSummary> outputToPack)
    {
       if (root == null)
          return null;
@@ -220,6 +314,15 @@ public abstract class YoGraphicDefinition
       return outputToPack;
    }
 
+   /**
+    * [For serializing/deserializing] - Parses the given summary list into trees of
+    * {@code YoGraphicDefinition}s.
+    *
+    * @param treeYoGraphicFieldsSummaryList the summary list where each item represent one
+    *                                       {@code YoGraphicDefinition}. The first element is expected
+    *                                       to represent a {@code YoGraphicGroupDefinition}.
+    * @return the root group for each tree parsed.
+    */
    public static List<YoGraphicGroupDefinition> parseTreeYoGraphicFieldsSummary(List<YoGraphicFieldsSummary> treeYoGraphicFieldsSummaryList)
    {
       if (treeYoGraphicFieldsSummaryList == null)
@@ -236,6 +339,16 @@ public abstract class YoGraphicDefinition
       return parsed;
    }
 
+   /**
+    * [For internal use] - Parses the given summary list into a tree structure of
+    * {@code YoGraphicDefinition}. The first element in the list is expected to describe a
+    * {@code YoGraphicGroupDefinition}.
+    *
+    * @param start                          the group to start from that is also initialized with the
+    *                                       first element form the summary list.
+    * @param treeYoGraphicFieldsSummaryList the list of summaries describing every
+    *                                       {@code YoGraphicDefinition} to be created and initialized.
+    */
    private static void parseTreeFieldValueInfoRecursive(YoGraphicGroupDefinition start, List<YoGraphicFieldsSummary> treeYoGraphicFieldsSummaryList)
    {
       start.parseYoGraphicFieldsInfo(treeYoGraphicFieldsSummaryList.remove(0));
@@ -257,9 +370,9 @@ public abstract class YoGraphicDefinition
    }
 
    /**
-    * Creates a map from field name to field value as {@code String} for every field representing this
-    * {@code YoGraphicDefinition}.
-    * 
+    * [For internal use] - Creates a map from field name to field value as {@code String} for every
+    * field representing this {@code YoGraphicDefinition}.
+    *
     * @return the map of field names to respective values.
     */
    YoGraphicFieldsSummary exportYoGraphicFieldsSummary()
@@ -275,6 +388,11 @@ public abstract class YoGraphicDefinition
       return out;
    }
 
+   /**
+    * [For internal use] - Parses the values of {@code this} from the given summary.
+    *
+    * @param fieldsSummary the summary containing the field values as {@code String} for {@code this}.
+    */
    void parseYoGraphicFieldsInfo(YoGraphicFieldsSummary fieldsSummary)
    {
       for (YoGraphicFieldInfo fieldNameStringValueEntry : fieldsSummary)
@@ -301,12 +419,26 @@ public abstract class YoGraphicDefinition
       }
    }
 
+   /**
+    * [For internal use] - Convenience class for gathering the name, value as {@code String} generator,
+    * and value parser for one field of one {@code YoGraphicDefinition}.
+    *
+    * @author Sylvain Bertrand
+    */
    private static class FieldInfoConverter
    {
       private final String fieldName;
       private final Supplier<String> fieldValueSupplier;
       private final Consumer<String> fieldValueParser;
 
+      /**
+       * Creates a new converter for a field.
+       *
+       * @param fieldName          the name of the field of interest.
+       * @param fieldValueSupplier the function used to generate the {@code String} value for the field.
+       * @param fieldValueParser   the function used to parse a {@code String} into the actual field
+       *                           value.
+       */
       public FieldInfoConverter(String fieldName, Supplier<String> fieldValueSupplier, Consumer<String> fieldValueParser)
       {
          this.fieldName = fieldName;
@@ -315,6 +447,12 @@ public abstract class YoGraphicDefinition
       }
    }
 
+   /**
+    * Convenience class that pairs the name and {@code String} value for one field of a
+    * {@code YoGraphicDefinition}.
+    *
+    * @author Sylvain Bertrand
+    */
    public static class YoGraphicFieldInfo
    {
       private final String fieldName, fieldValue;
@@ -325,17 +463,33 @@ public abstract class YoGraphicDefinition
          this.fieldValue = fieldValue;
       }
 
+      /**
+       * The name of the field the value is for.
+       *
+       * @return the field name.
+       */
       public String getFieldName()
       {
          return fieldName;
       }
 
+      /**
+       * The value as a {@code String} for the field.
+       *
+       * @return the field value as a {@code String}.
+       */
       public String getFieldValue()
       {
          return fieldValue;
       }
    }
 
+   /**
+    * Convenience class for listing the name and value of all the fields of one
+    * {@code YoGraphicDefinition}
+    *
+    * @author Sylvain Bertrand
+    */
    public static class YoGraphicFieldsSummary extends ArrayList<YoGraphicFieldInfo>
    {
       private static final long serialVersionUID = -1654039568977911943L;
@@ -345,24 +499,56 @@ public abstract class YoGraphicDefinition
       }
    }
 
+   /**
+    * [For internal use] - Maps of all {@code this} fields together with converters to help with
+    * generating {@code String} values for each field and parsing back the field value from a
+    * {@code String} for each field.
+    * <p>
+    * This is used to enable summary export and parsing from summary which can be used to help with
+    * serializing/deserializing {@code YoGraphicDefinition}s.
+    * </p>
+    */
    @XmlTransient
    private final Map<String, FieldInfoConverter> definitionFields = new LinkedHashMap<>();
 
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code List}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    * @param elementLabel     label used in the generated {@code String} value of the list.
+    * @param elementToString  the {@code String} generator to use for each element.
+    * @param elementParser    the element parser to use when parsing back the {@code String} value of
+    *                         an element.
+    */
    protected final <T> void registerListField(String fieldName,
-                                              Supplier<List<T>> fieldListValueGetter,
-                                              Consumer<List<T>> fieldListValueSetter,
+                                              Supplier<List<T>> fieldValueGetter,
+                                              Consumer<List<T>> fieldValueSetter,
                                               String elementLabel,
                                               Function<T, String> elementToString,
                                               Function<String, T> elementParser)
    {
-      registerField(fieldName, () ->
+      registerStringField(fieldName, () ->
       {
-         List<T> value = fieldListValueGetter.get();
-         return value == null ? null : listToString(value, elementLabel, elementToString);
-      }, value -> fieldListValueSetter.accept(parseList(value, elementLabel, elementParser)));
+         List<T> value = fieldValueGetter.get();
+         return value == null ? null : listToParsableString(value, elementLabel, elementToString);
+      }, value -> fieldValueSetter.accept(parseList(value, elementLabel, elementParser)));
    }
 
-   static <T> String listToString(List<T> list, String elementLabel, Function<T, String> elementToString)
+   /**
+    * [For internal use] - Generates a {@code String} representation of the given {@code list} that can
+    * later be parsed back with {@link #parseList(String, String, Function)}.
+    *
+    * @param list            the list to generate the {@code String} of.
+    * @param elementLabel    the label used in front of each element {@code String} representation,
+    *                        e.g. "List(..., e11=elementAsString, ...)" where {@code elementLabel="e"}
+    *                        in this example.
+    * @param elementToString the {@code String} generator to use for each element.
+    * @return a {@code String} representation of the {@code list} of the form:
+    *         {@code "List(e0=element0AsString, e1=elementAsString,...)"}.
+    */
+   static <T> String listToParsableString(List<T> list, String elementLabel, Function<T, String> elementToString)
    {
       if (list == null)
          return null;
@@ -378,6 +564,19 @@ public abstract class YoGraphicDefinition
       return sb.toString();
    }
 
+   /**
+    * [For internal use] - Parses a list from the given {@code String} representation {@code value}. It
+    * is assumed that {@code value} was generated using
+    * {@link #listToParsableString(List, String, Function)}.
+    *
+    * @param value         the {@code String} representation of the list to be parsed.
+    * @param elementLabel  the label used in front of each element {@code String} representation, e.g.
+    *                      "List(..., e11=elementAsString, ...)" where {@code elementLabel="e"} in this
+    *                      example.
+    * @param elementParser the element parser to use when parsing back the {@code String} value of an
+    *                      element.
+    * @return the parsed list.
+    */
    static <T> List<T> parseList(String value, String elementLabel, Function<String, T> elementParser)
    {
       if (value == null)
@@ -422,59 +621,104 @@ public abstract class YoGraphicDefinition
       }
    }
 
-   protected final void registerYoListField(String fieldName, Supplier<YoListDefinition> fieldListValueGetter, Consumer<YoListDefinition> fieldListValueSetter)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code YoListDefinition}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerYoListField(String fieldName, Supplier<YoListDefinition> fieldValueGetter, Consumer<YoListDefinition> fieldValueSetter)
    {
-      registerField(fieldName, () -> Objects.toString(fieldListValueGetter.get(), null), value -> fieldListValueSetter.accept(YoListDefinition.parse(value)));
+      registerStringField(fieldName, () -> Objects.toString(fieldValueGetter.get(), null), value -> fieldValueSetter.accept(YoListDefinition.parse(value)));
    }
 
-   protected final void registerTuple2DField(String fieldName,
-                                             Supplier<YoTuple2DDefinition> fieldTuple2DValueGetter,
-                                             Consumer<YoTuple2DDefinition> fieldTuple2DValueSetter)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code YoTuple2DDefinition}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerTuple2DField(String fieldName, Supplier<YoTuple2DDefinition> fieldValueGetter, Consumer<YoTuple2DDefinition> fieldValueSetter)
    {
-      registerField(fieldName,
-                    () -> Objects.toString(fieldTuple2DValueGetter.get(), null),
-                    value -> fieldTuple2DValueSetter.accept(YoTuple2DDefinition.parse(value)));
+      registerStringField(fieldName, () -> Objects.toString(fieldValueGetter.get(), null), value -> fieldValueSetter.accept(YoTuple2DDefinition.parse(value)));
    }
 
-   protected final void registerTuple3DField(String fieldName,
-                                             Supplier<YoTuple3DDefinition> fieldTuple3DValueGetter,
-                                             Consumer<YoTuple3DDefinition> fieldTuple3DValueSetter)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code YoTuple3DDefinition}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerTuple3DField(String fieldName, Supplier<YoTuple3DDefinition> fieldValueGetter, Consumer<YoTuple3DDefinition> fieldValueSetter)
    {
-      registerField(fieldName,
-                    () -> Objects.toString(fieldTuple3DValueGetter.get(), null),
-                    value -> fieldTuple3DValueSetter.accept(YoTuple3DDefinition.parse(value)));
+      registerStringField(fieldName, () -> Objects.toString(fieldValueGetter.get(), null), value -> fieldValueSetter.accept(YoTuple3DDefinition.parse(value)));
    }
 
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type
+    * {@code YoOrientation3DDefinition}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
    protected final void registerOrientation3DField(String fieldName,
-                                                   Supplier<YoOrientation3DDefinition> fieldOrientation3DValueGetter,
-                                                   Consumer<YoOrientation3DDefinition> fieldOrientation3DValueSetter)
+                                                   Supplier<YoOrientation3DDefinition> fieldValueGetter,
+                                                   Consumer<YoOrientation3DDefinition> fieldValueSetter)
    {
-      registerField(fieldName,
-                    () -> Objects.toString(fieldOrientation3DValueGetter.get(), null),
-                    value -> fieldOrientation3DValueSetter.accept(YoOrientation3DDefinition.parse(value)));
+      registerStringField(fieldName,
+                          () -> Objects.toString(fieldValueGetter.get(), null),
+                          value -> fieldValueSetter.accept(YoOrientation3DDefinition.parse(value)));
    }
 
-   protected final void registerPaintField(String fieldName, Supplier<PaintDefinition> fieldPaintValueGetter, Consumer<PaintDefinition> fieldPaintValueSetter)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code PaintDefinition}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerPaintField(String fieldName, Supplier<PaintDefinition> fieldValueGetter, Consumer<PaintDefinition> fieldValueSetter)
    {
-      registerField(fieldName, () -> Objects.toString(fieldPaintValueGetter.get(), null), value -> fieldPaintValueSetter.accept(PaintDefinition.parse(value)));
+      registerStringField(fieldName, () -> Objects.toString(fieldValueGetter.get(), null), value -> fieldValueSetter.accept(PaintDefinition.parse(value)));
    }
 
-   protected final void registerField(String fieldName, DoubleSupplier fieldDoubleValueGetter, DoubleConsumer fieldDoubleValueSetter)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code double}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerDoubleField(String fieldName, DoubleSupplier fieldValueGetter, DoubleConsumer fieldValueSetter)
    {
-      registerField(fieldName,
-                    () -> Double.toString(fieldDoubleValueGetter.getAsDouble()),
-                    string -> fieldDoubleValueSetter.accept(Double.parseDouble(string)));
+      registerStringField(fieldName, () -> Double.toString(fieldValueGetter.getAsDouble()), string -> fieldValueSetter.accept(Double.parseDouble(string)));
    }
 
-   protected final void registerField(String fieldName, BooleanSupplier fieldBooleanValueGetter, Consumer<Boolean> fieldBooleanValueSetter)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code boolean}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerBooleanField(String fieldName, BooleanSupplier fieldValueGetter, Consumer<Boolean> fieldValueSetter)
    {
-      registerField(fieldName,
-                    () -> Boolean.toString(fieldBooleanValueGetter.getAsBoolean()),
-                    string -> fieldBooleanValueSetter.accept(Boolean.valueOf(string)));
+      registerStringField(fieldName, () -> Boolean.toString(fieldValueGetter.getAsBoolean()), string -> fieldValueSetter.accept(Boolean.valueOf(string)));
    }
 
-   protected final void registerField(String fieldName, Supplier<String> fieldStringValueSupplier, Consumer<String> fieldStringValueParser)
+   /**
+    * [For internal use] - Registers a field for {@code this} of the type {@code boolean}.
+    *
+    * @param fieldName        the name of the field.
+    * @param fieldValueGetter the getter associated to that field.
+    * @param fieldValueSetter the setter associated to that field.
+    */
+   protected final void registerStringField(String fieldName, Supplier<String> fieldValueGetter, Consumer<String> fieldValueSetter)
    {
-      definitionFields.put(fieldName, new FieldInfoConverter(fieldName, fieldStringValueSupplier, fieldStringValueParser));
+      definitionFields.put(fieldName, new FieldInfoConverter(fieldName, fieldValueGetter, fieldValueSetter));
    }
 }

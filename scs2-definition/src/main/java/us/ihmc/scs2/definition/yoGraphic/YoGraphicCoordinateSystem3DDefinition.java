@@ -22,10 +22,10 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    {
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
-      registerField("bodyLength", this::getBodyLength, this::setBodyLength);
-      registerField("headLength", this::getHeadLength, this::setHeadLength);
-      registerField("bodyRadius", this::getBodyRadius, this::setBodyRadius);
-      registerField("headRadius", this::getHeadRadius, this::setHeadRadius);
+      registerStringField("bodyLength", this::getBodyLength, this::setBodyLength);
+      registerStringField("headLength", this::getHeadLength, this::setHeadLength);
+      registerStringField("bodyRadius", this::getBodyRadius, this::setBodyRadius);
+      registerStringField("headRadius", this::getHeadRadius, this::setHeadRadius);
    }
 
    @XmlElement
