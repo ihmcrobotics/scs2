@@ -7,6 +7,14 @@ import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
+/**
+ * {@code ColorDefinition} represents a color defined as (red, green, blue, alpha) and is backed by
+ * {@code double}s all defined in the range [0.0-1.0]. The alpha value is typically used to
+ * represent the opacity.
+ * 
+ * @author Sylvain Bertrand
+ * @see ColorDefinitions
+ */
 @XmlType(propOrder = {"red", "green", "blue", "alpha"})
 public class ColorDefinition extends PaintDefinition
 {
@@ -360,6 +368,11 @@ public class ColorDefinition extends PaintDefinition
       return EuclidCoreTools.max(red, green, blue);
    }
 
+   /**
+    * Convenience method for inverting all three color components. Note that the alpha is unchanged.
+    * 
+    * @return the new inverted color.
+    */
    public ColorDefinition invert()
    {
       return new ColorDefinition(1.0 - red, 1.0 - green, 1.0 - blue, alpha);
@@ -368,26 +381,59 @@ public class ColorDefinition extends PaintDefinition
    private static final double BRIGHTNESS_SCALE = 0.7;
    private static final double SATURATION_SCALE = 0.7;
 
+   /**
+    * Computes and returns a new color that is brighter than {@code this}.
+    * 
+    * @return the new brighter color.
+    */
    public ColorDefinition brighter()
    {
       return derive(0, 1.0, 1.0 / BRIGHTNESS_SCALE, 1.0);
    }
 
+   /**
+    * Computes and returns a new color that is darker than {@code this}.
+    * 
+    * @return the new darker color.
+    */
    public ColorDefinition darker()
    {
       return derive(0, 1.0, BRIGHTNESS_SCALE, 1.0);
    }
 
+   /**
+    * Computes and returns a new color that is more saturated than {@code this}.
+    * 
+    * @return the new color more saturated.
+    */
    public ColorDefinition saturate()
    {
       return derive(0.0, 1.0 / SATURATION_SCALE, 1.0, 1.0);
    }
 
+   /**
+    * Computes and returns a new color that is less saturated than {@code this}.
+    * 
+    * @return the new color less saturated.
+    */
    public ColorDefinition desaturate()
    {
       return derive(0.0, SATURATION_SCALE, 1.0, 1.0);
    }
 
+   /**
+    * Convenience method for creating a new color based on {@code this} with modifiers applied in the
+    * HSB domain.
+    * 
+    * @param hueOffset       angle shift to add to the hue. The hue is defined in [0.0-360.0].
+    * @param saturationScale scale factor to apply to the saturation. The saturation is defined in
+    *                        [0.0-1.0]
+    * @param brightnessScale scale factor to apply to the brightness. The brightness is defined in
+    *                        [0.0-1.0]
+    * @param opacityScale    scale factor to apply to the opacity (alpha). The opacity is defined in
+    *                        [0.0-1.0]
+    * @return the new color.
+    */
    public ColorDefinition derive(double hueOffset, double saturationScale, double brightnessScale, double opacityScale)
    {
       double outputHue = getHue() + hueOffset;
