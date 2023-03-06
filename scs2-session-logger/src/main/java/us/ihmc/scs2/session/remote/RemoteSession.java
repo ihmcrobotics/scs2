@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import us.ihmc.commons.Conversions;
+import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.robotDataLogger.YoVariableClientInterface;
 import us.ihmc.robotDataLogger.handshake.LogHandshake;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
@@ -23,7 +24,6 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
-import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
 import us.ihmc.scs2.simulation.robot.Robot;
 
 public class RemoteSession extends Session
@@ -59,7 +59,7 @@ public class RemoteSession extends Session
       rootRegistry.addChild(handshakeParser.getRootRegistry());
       rootRegistry.addChild(debugRegistry.getYoRegistry());
       yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics",
-                                                            SCS1GraphicConversionTools.toYoGraphicDefinitions(handshakeParser.getSCS1YoGraphics())));
+                                                            YoGraphicConversionTools.toYoGraphicDefinitions(handshakeParser.getSCS1YoGraphics())));
       yoGraphicDefinitions.addAll(handshakeParser.getSCS2YoGraphics());
 
       RobotDefinition robotDefinition = RobotModelLoader.loadModel(handshake.getModelName(),

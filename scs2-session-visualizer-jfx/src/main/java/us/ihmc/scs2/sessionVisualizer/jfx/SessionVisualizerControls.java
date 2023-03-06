@@ -19,6 +19,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
+import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
@@ -30,7 +31,6 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
-import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
@@ -265,7 +265,7 @@ public interface SessionVisualizerControls
     * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
     * 
     * @param yoGraphicDefinition the definition of the graphic to be added.
-    * @see SCS1GraphicConversionTools
+    * @see YoGraphicConversionTools
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
@@ -275,7 +275,7 @@ public interface SessionVisualizerControls
     * Adds dynamic graphics to the 3D scene. The new graphics are added to root group.
     * 
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
-    * @see SCS1GraphicConversionTools
+    * @see YoGraphicConversionTools
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
@@ -293,7 +293,7 @@ public interface SessionVisualizerControls
     * @param namespace           the desired namespace for the new graphic. The separator used is
     *                            {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
-    * @see SCS1GraphicConversionTools
+    * @see YoGraphicConversionTools
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
@@ -321,7 +321,7 @@ public interface SessionVisualizerControls
     * @param namespace            the desired namespace for the new graphics. The separator used is
     *                             {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
-    * @see SCS1GraphicConversionTools
+    * @see YoGraphicConversionTools
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */

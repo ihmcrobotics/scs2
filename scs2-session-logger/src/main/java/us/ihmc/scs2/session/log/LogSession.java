@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import us.ihmc.commons.Conversions;
+import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
@@ -21,7 +22,6 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
-import us.ihmc.scs2.session.tools.SCS1GraphicConversionTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
 
@@ -56,7 +56,7 @@ public class LogSession extends Session
       YoVariableHandshakeParser parser = logDataReader.getParser();
       rootRegistry.addChild(logDataReader.getYoRegistry());
       rootRegistry.addChild(parser.getRootRegistry());
-      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", SCS1GraphicConversionTools.toYoGraphicDefinitions(parser.getSCS1YoGraphics())));
+      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(parser.getSCS1YoGraphics())));
       yoGraphicDefinitions.addAll(parser.getSCS2YoGraphics());
 
       sessionName = logProperties.getNameAsString();
