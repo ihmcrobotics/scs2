@@ -17,7 +17,7 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
    public YoGraphicPolygon2DDefinition()
    {
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
-      registerField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
+      registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
    }
 
    @XmlElement

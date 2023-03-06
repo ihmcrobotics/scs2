@@ -17,8 +17,8 @@ public class YoGraphicPoint3DDefinition extends YoGraphic3DDefinition
    public YoGraphicPoint3DDefinition()
    {
       registerTuple3DField("position", this::getPosition, this::setPosition);
-      registerField("size", this::getSize, this::setSize);
-      registerField("graphicName", this::getGraphicName, this::setGraphicName);
+      registerStringField("size", this::getSize, this::setSize);
+      registerStringField("graphicName", this::getGraphicName, this::setGraphicName);
    }
 
    @XmlElement

@@ -19,9 +19,9 @@ public class YoGraphicPointcloud3DDefinition extends YoGraphic3DDefinition
    public YoGraphicPointcloud3DDefinition()
    {
       registerListField("points", this::getPoints, this::setPoints, "p", Object::toString, YoTuple3DDefinition::parse);
-      registerField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
-      registerField("size", this::getSize, this::setSize);
-      registerField("graphicName", this::getGraphicName, this::setGraphicName);
+      registerStringField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
+      registerStringField("size", this::getSize, this::setSize);
+      registerStringField("graphicName", this::getGraphicName, this::setGraphicName);
    }
 
    @XmlElement

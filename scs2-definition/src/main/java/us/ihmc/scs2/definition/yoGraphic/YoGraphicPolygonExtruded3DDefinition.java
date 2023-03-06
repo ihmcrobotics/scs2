@@ -24,8 +24,8 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
-      registerField("numberOfVectices", this::getNumberOfVertices, this::setNumberOfVertices);
-      registerField("thickness", this::getThickness, this::setThickness);
+      registerStringField("numberOfVectices", this::getNumberOfVertices, this::setNumberOfVertices);
+      registerStringField("thickness", this::getThickness, this::setThickness);
    }
 
    @XmlElement

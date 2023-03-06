@@ -24,12 +24,12 @@ public class YoGraphicArrow3DDefinition extends YoGraphic3DDefinition
    {
       registerTuple3DField("origin", this::getOrigin, this::setOrigin);
       registerTuple3DField("direction", this::getDirection, this::setDirection);
-      registerField("scaleLength", this::isScaleLength, this::setScaleLength);
-      registerField("bodyLength", this::getBodyLength, this::setBodyLength);
-      registerField("headLength", this::getHeadLength, this::setHeadLength);
-      registerField("scaleRadius", this::isScaleRadius, this::setScaleRadius);
-      registerField("bodyRadius", this::getBodyRadius, this::setBodyRadius);
-      registerField("headRadius", this::getHeadRadius, this::setHeadRadius);
+      registerBooleanField("scaleLength", this::isScaleLength, this::setScaleLength);
+      registerStringField("bodyLength", this::getBodyLength, this::setBodyLength);
+      registerStringField("headLength", this::getHeadLength, this::setHeadLength);
+      registerBooleanField("scaleRadius", this::isScaleRadius, this::setScaleRadius);
+      registerStringField("bodyRadius", this::getBodyRadius, this::setBodyRadius);
+      registerStringField("headRadius", this::getHeadRadius, this::setHeadRadius);
    }
 
    @XmlElement

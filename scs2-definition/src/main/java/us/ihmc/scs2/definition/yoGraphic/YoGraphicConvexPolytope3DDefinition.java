@@ -22,7 +22,7 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple3DDefinition::parse);
-      registerField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
+      registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
    }
 
    @XmlElement
