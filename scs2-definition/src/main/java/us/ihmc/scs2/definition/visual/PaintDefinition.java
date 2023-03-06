@@ -19,11 +19,35 @@ import us.ihmc.scs2.definition.yoComposite.YoColorRGBASingleDefinition;
 @XmlSeeAlso({ColorDefinition.class, YoColorRGBADoubleDefinition.class, YoColorRGBAIntDefinition.class, YoColorRGBASingleDefinition.class})
 public abstract class PaintDefinition
 {
+   /**
+    * Returns a deep copy of {@code this}.
+    * 
+    * @return the copy.
+    */
    public abstract PaintDefinition copy();
 
+   /**
+    * Returns a {@code String} representation of this color.
+    * <p>
+    * The returned string can later be used for parsing the color back using {@link #parse(String)}.
+    * </p>
+    */
+   @Override
+   public abstract String toString();
+
+   /**
+    * Parses a new {@code PaintDefinition} from the given {@code String} representation.
+    * <p>
+    * This method tries to parse the paint using every known implementation and will return the first
+    * one that corresponds to the {@code String} representation.
+    * </p>
+    * 
+    * @param value the {@code String} representation of the paint.
+    * @return the new paint.
+    */
    public static PaintDefinition parse(String value)
    {
-      if (value == null)//TODO || value.equalsIgnoreCase("null"))
+      if (value == null || value.equalsIgnoreCase("null"))
          return null;
 
       if (value.startsWith("YoDoubleRGB"))
