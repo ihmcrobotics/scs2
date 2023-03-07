@@ -6,16 +6,20 @@ import java.util.Objects;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 /**
- * A {@code YoGraphicConvexPolytope3DDefinition} is a template for creating 3D convex polytope and which components
- * can be backed by {@code YoVariable}s.
+ * A {@code YoGraphicConvexPolytope3DDefinition} is a template for creating 3D convex polytope and
+ * which components can be backed by {@code YoVariable}s. <br>
+ * <img src=
+ * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoConvexPolytope3D.png"
+ * width=150px/>
  * <p>
- * The {@code YoGraphicConvexPolytope3DDefinition} is to be passed before initialization of a session
- * (either before starting a simulation or when creating a yoVariable server), such that the SCS GUI
- * can use the definitions and create the actual graphics.
+ * The {@code YoGraphicConvexPolytope3DDefinition} is to be passed before initialization of a
+ * session (either before starting a simulation or when creating a yoVariable server), such that the
+ * SCS GUI can use the definitions and create the actual graphics.
  * </p>
  * <p>
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
@@ -27,12 +31,25 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 @XmlRootElement(name = "YoGraphicConvexPolytope3D")
 public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
 {
-   
+   /** The position of the polytope. */
    private YoTuple3DDefinition position;
+   /** The orientation of the polytope. */
    private YoOrientation3DDefinition orientation;
+   /**
+    * The vertices of the polytope. No particular ordering is required, {@link ConvexPolytope3D} is
+    * used to guarantee the resulting shape is a convex polytope.
+    */
    private List<YoTuple3DDefinition> vertices;
+   /** The list of vertices for the polytope. */
    private String numberOfVertices;
 
+   /**
+    * Creates a new yoGraphic definition for rendering a convex polytope.
+    * <p>
+    * Its components need to be initialized. See {@link YoGraphicDefinitionFactory} for factories to
+    * facilitate creation.
+    * </p>
+    */
    public YoGraphicConvexPolytope3DDefinition()
    {
       registerTuple3DField("position", this::getPosition, this::setPosition);
@@ -41,29 +58,49 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
       registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
    }
 
+   /**
+    * Sets the position for the polytope.
+    * 
+    * @param position the position for the polytope.
+    */
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
    {
       this.position = position;
    }
 
+   /**
+    * Sets the orientation for the polytope.
+    * 
+    * @param orientation the orientation for the polytope.
+    */
    @XmlElement
    public void setOrientation(YoOrientation3DDefinition orientation)
    {
       this.orientation = orientation;
    }
 
+   /**
+    * Sets the vertices for the polytope. No particular ordering is required, {@link ConvexPolytope3D}
+    * is used to guarantee the resulting shape is a convex polytope.
+    * 
+    * @param vertices the vertices for the polytope.
+    */
    @XmlElement
    public void setVertices(List<YoTuple3DDefinition> vertices)
    {
       this.vertices = vertices;
    }
 
-   public void setNumberOfVertices(int numberOfVertices)
-   {
-      this.numberOfVertices = Integer.toString(numberOfVertices);
-   }
-
+   /**
+    * Sets the number of vertices to use from the vertices list to build the polytope.
+    * <p>
+    * Using this method allows to back the number of vertices with a {@code YoVariable} by giving the
+    * variable name/fullname.
+    * </p>
+    * 
+    * @param numberOfVertices the number of vertices to use.
+    */
    @XmlElement
    public void setNumberOfVertices(String numberOfVertices)
    {

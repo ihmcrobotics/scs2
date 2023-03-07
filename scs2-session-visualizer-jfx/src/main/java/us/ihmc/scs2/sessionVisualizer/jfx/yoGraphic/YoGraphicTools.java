@@ -223,6 +223,7 @@ public class YoGraphicTools
    {
       if (yoGraphicListDefinition.getYoGraphics() == null)
          return null;
+      yoGraphicListDefinition.unwrapNestedLists();
 
       List<YoGraphicFXItem> items = new ArrayList<>();
 
@@ -242,6 +243,9 @@ public class YoGraphicTools
                                                    ReferenceFrameManager referenceFrameManager,
                                                    YoGraphicDefinition yoGraphicDefinition)
    {
+      if (yoGraphicDefinition == null)
+         return null;
+
       YoGraphicFXItem yoGraphicFX = toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, yoGraphicDefinition);
 
       if (yoGraphicFX == null)
@@ -357,6 +361,7 @@ public class YoGraphicTools
                                        ReferenceFrameManager referenceFrameManager,
                                        YoGraphicGroupDefinition definition)
    {
+      definition.unwrapLists();
       YoGroupFX yoGroupFX = new YoGroupFX(definition.getName());
       yoGroupFX.setVisible(definition.isVisible());
       if (definition.getChildren() != null)

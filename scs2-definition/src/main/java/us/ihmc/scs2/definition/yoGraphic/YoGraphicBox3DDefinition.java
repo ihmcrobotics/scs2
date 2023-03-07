@@ -10,7 +10,10 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 /**
  * A {@code YoGraphicBox3DDefinition} is a template for creating 3D box and which components can be
- * backed by {@code YoVariable}s.
+ * backed by {@code YoVariable}s. <br>
+ * <img src=
+ * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoBoxFX3D.png"
+ * width=150px/>
  * <p>
  * The {@code YoGraphicBox3DDefinition} is to be passed before initialization of a session (either
  * before starting a simulation or when creating a yoVariable server), such that the SCS GUI can use

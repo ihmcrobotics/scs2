@@ -9,7 +9,10 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 /**
  * A {@code YoGraphicCone3DDefinition} is a template for creating 3D cone and which components can
- * be backed by {@code YoVariable}s.
+ * be backed by {@code YoVariable}s. <br>
+ * <img src=
+ * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoConeFX3D.png"
+ * width=150px/>
  * <p>
  * The {@code YoGraphicCone3DDefinition} is to be passed before initialization of a session (either
  * before starting a simulation or when creating a yoVariable server), such that the SCS GUI can use

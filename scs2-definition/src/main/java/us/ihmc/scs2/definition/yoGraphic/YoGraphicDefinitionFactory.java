@@ -61,18 +61,78 @@ public class YoGraphicDefinitionFactory
    public enum DefaultPoint2DGraphic
    {
       // Graphics drawn with stroke and no fill
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/plus_icon.png"
+       * width=150px/>
+       */
       PLUS(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/cross_icon.png"
+       * width=150px/>
+       */
       CROSS(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/circle_icon.png"
+       * width=150px/>
+       */
       CIRCLE(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/circe_plus_icon.png"
+       * width=150px/>
+       */
       CIRCLE_PLUS(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/circle_cross_icon.png"
+       * width=150px/>
+       */
       CIRCLE_CROSS(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/diamond_icon.png"
+       * width=150px/>
+       */
       DIAMOND(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/diamond_plus_icon.png"
+       * width=150px/>
+       */
       DIAMOND_PLUS(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/square_icon.png"
+       * width=150px/>
+       */
       SQUARE(false),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/square_cross_icon.png"
+       * width=150px/>
+       */
       SQUARE_CROSS(false),
       // Graphics drawn filled and no stroke
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/circle_filled_icon.png"
+       * width=150px/>
+       */
       CIRCLE_FILLED(true),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/diamond_filled_icon.png"
+       * width=150px/>
+       */
       DIAMOND_FILLED(true),
+      /**
+       * <img src=
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/square_filled_icon.png"
+       * width=150px/>
+       */
       SQUARE_FILLED(true);
 
       private final String graphicName;
@@ -101,7 +161,7 @@ public class YoGraphicDefinitionFactory
     * The yoGraphic will appear in the 2D overhead plotter.
     * </p>
     * 
-    * @param name the name for yoGraphic.
+    * @param name        the name for yoGraphic.
     * @param lineSegment the line-segment
     * @param strokeColor
     * @return
@@ -242,8 +302,7 @@ public class YoGraphicDefinitionFactory
       YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
       definition.setName(definition3D.getName());
       definition.setVisible(definition3D.isVisible());
-      definition.setPoints(definition3D.getPoints()
-                                       .stream()
+      definition.setPoints(definition3D.getPoints().stream()
                                        .map(tuple3D -> new YoTuple2DDefinition(tuple3D.getX(), tuple3D.getY(), tuple3D.getReferenceFrame()))
                                        .collect(Collectors.toList()));
       definition.setGraphicName(graphicType.getGraphicName());
