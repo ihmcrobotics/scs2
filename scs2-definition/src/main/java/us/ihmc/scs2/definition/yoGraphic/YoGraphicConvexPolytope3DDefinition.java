@@ -9,9 +9,25 @@ import javax.xml.bind.annotation.XmlRootElement;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
+/**
+ * A {@code YoGraphicConvexPolytope3DDefinition} is a template for creating 3D convex polytope and which components
+ * can be backed by {@code YoVariable}s.
+ * <p>
+ * The {@code YoGraphicConvexPolytope3DDefinition} is to be passed before initialization of a session
+ * (either before starting a simulation or when creating a yoVariable server), such that the SCS GUI
+ * can use the definitions and create the actual graphics.
+ * </p>
+ * <p>
+ * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
+ * definitions.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoGraphicConvexPolytope3D")
 public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
 {
+   
    private YoTuple3DDefinition position;
    private YoOrientation3DDefinition orientation;
    private List<YoTuple3DDefinition> vertices;

@@ -7,15 +7,40 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
+/**
+ * A {@code YoGraphicCapsule3DDefinition} is a template for creating 3D capsule and which components
+ * can be backed by {@code YoVariable}s.
+ * <p>
+ * The {@code YoGraphicCapsule3DDefinition} is to be passed before initialization of a session
+ * (either before starting a simulation or when creating a yoVariable server), such that the SCS GUI
+ * can use the definitions and create the actual graphics.
+ * </p>
+ * <p>
+ * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
+ * definitions.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoGraphicCapsule3D")
 public class YoGraphicCapsule3DDefinition extends YoGraphic3DDefinition
 {
+   /** The position of the center of the capsule. */
    private YoTuple3DDefinition center;
+   /** The axis of the capsule. */
    private YoTuple3DDefinition axis;
-
+   /** The length of the capsule. */
    private String length;
+   /** The radius of the capsule. */
    private String radius;
 
+   /**
+    * Creates a new yoGraphic definition for rendering a capsule.
+    * <p>
+    * Its components need to be initialized. See {@link YoGraphicDefinitionFactory} for factories to
+    * facilitate creation.
+    * </p>
+    */
    public YoGraphicCapsule3DDefinition()
    {
       registerTuple3DField("center", this::getCenter, this::setCenter);
@@ -24,34 +49,66 @@ public class YoGraphicCapsule3DDefinition extends YoGraphic3DDefinition
       registerStringField("radius", this::getRadius, this::setRadius);
    }
 
+   /**
+    * Sets the position of the center of the capsule.
+    * 
+    * @param center the position of the center of the capsule.
+    */
    @XmlElement
    public void setCenter(YoTuple3DDefinition center)
    {
       this.center = center;
    }
 
+   /**
+    * Sets the axis of the capsule.
+    * 
+    * @param axis the axis of the capsule.
+    */
    @XmlElement
    public void setAxis(YoTuple3DDefinition axis)
    {
       this.axis = axis;
    }
 
+   /**
+    * Sets the length of the capsule to a constant value.
+    * 
+    * @param length the length of the capsule.
+    */
    public void setLength(double length)
    {
       this.length = Double.toString(length);
    }
 
+   /**
+    * Sets the length of the capsule. It can be backed by a {@code YoVariable} by setting it to the
+    * variable's name/fullname.
+    * 
+    * @param length the length of the capsule.
+    */
    @XmlElement
    public void setLength(String length)
    {
       this.length = length;
    }
 
+   /**
+    * Sets the radius of the capsule to a constant value.
+    * 
+    * @param radius the radius of the capsule.
+    */
    public void setRadius(double radius)
    {
       this.radius = Double.toString(radius);
    }
 
+   /**
+    * Sets the radius of the capsule. It can be backed by a {@code YoVariable} by setting it to the
+    * variable's name/fullname.
+    * 
+    * @param cength the radius of the capsule.
+    */
    @XmlElement
    public void setRadius(String radius)
    {

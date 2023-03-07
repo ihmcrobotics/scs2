@@ -8,16 +8,44 @@ import javax.xml.bind.annotation.XmlRootElement;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
+/**
+ * A {@code YoGraphicCoordinateSystem3DDefinition} is a template for creating 3D coordinate system
+ * and which components can be backed by {@code YoVariable}s.
+ * <p>
+ * The {@code YoGraphicCoordinateSystem3DDefinition} is to be passed before initialization of a
+ * session (either before starting a simulation or when creating a yoVariable server), such that the
+ * SCS GUI can use the definitions and create the actual graphics.
+ * </p>
+ * <p>
+ * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
+ * definitions.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoGraphicCoordinateSystem3D")
 public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 {
+   /** The position of the coordinate system. */
    private YoTuple3DDefinition position;
+   /** The orientation of the coordinate system. */
    private YoOrientation3DDefinition orientation;
+   /** The length of the body part for each arrow. */
    private String bodyLength;
+   /** The length of the head part for each arrow. */
    private String headLength;
+   /** The radius of the body part for each arrow. */
    private String bodyRadius;
+   /** The radius of the head part for each arrow. */
    private String headRadius;
 
+   /**
+    * Creates a new yoGraphic definition for rendering an coordinate system.
+    * <p>
+    * Its components need to be initialized. See {@link YoGraphicDefinitionFactory} for factories to
+    * facilitate creation.
+    * </p>
+    */
    public YoGraphicCoordinateSystem3DDefinition()
    {
       registerTuple3DField("position", this::getPosition, this::setPosition);
@@ -28,56 +56,110 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
       registerStringField("headRadius", this::getHeadRadius, this::setHeadRadius);
    }
 
+   /**
+    * Sets the position of the coordinate system.
+    * 
+    * @param position the position of the coordinate system.
+    */
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
    {
       this.position = position;
    }
 
+   /**
+    * Sets the orientation of the coordinate system.
+    * 
+    * @param orientation the orientation of the coordinate system.
+    */
    @XmlElement
    public void setOrientation(YoOrientation3DDefinition orientation)
    {
       this.orientation = orientation;
    }
 
+   /**
+    * Sets the length of the body part for each arrow to a constant value.
+    * 
+    * @param bodyLength the length of the body part for each arrow.
+    */
    public void setBodyLength(double bodyLength)
    {
       this.bodyLength = Double.toString(bodyLength);
    }
 
+   /**
+    * Sets the length of the body part for each arrow. It can be backed by a {@code YoVariable} by
+    * setting it to the variable's name/fullname.
+    * 
+    * @param bodyLength the length of the body part for each arrow.
+    */
    @XmlElement
    public void setBodyLength(String bodyLength)
    {
       this.bodyLength = bodyLength;
    }
 
-   public void setBodyRadius(double bodyRadius)
-   {
-      this.bodyRadius = Double.toString(bodyRadius);
-   }
-
-   @XmlElement
-   public void setBodyRadius(String bodyRadius)
-   {
-      this.bodyRadius = bodyRadius;
-   }
-
+   /**
+    * Sets the length of the head part for each arrow to a constant value.
+    * 
+    * @param headLength the length of the head part for each arrow.
+    */
    public void setHeadLength(double headLength)
    {
       this.headLength = Double.toString(headLength);
    }
 
+   /**
+    * Sets the length of the head part for each arrow. It can be backed by a {@code YoVariable} by
+    * setting it to the variable's name/fullname.
+    * 
+    * @param headLength the length of the head part for each arrow.
+    */
    @XmlElement
    public void setHeadLength(String headLength)
    {
       this.headLength = headLength;
    }
 
+   /**
+    * Sets the radius of the body part for each arrow to a constant value.
+    * 
+    * @param bodyRadius the radius of the body part for each arrow.
+    */
+   public void setBodyRadius(double bodyRadius)
+   {
+      this.bodyRadius = Double.toString(bodyRadius);
+   }
+
+   /**
+    * Sets the radius of the body part for each arrow. It can be backed by a {@code YoVariable} by
+    * setting it to the variable's name/fullname.
+    * 
+    * @param bodyRadius the radius of the body part for each arrow.
+    */
+   @XmlElement
+   public void setBodyRadius(String bodyRadius)
+   {
+      this.bodyRadius = bodyRadius;
+   }
+
+   /**
+    * Sets the radius of the head part for each arrow to a constant value.
+    * 
+    * @param headRadius the radius of the head part for each arrow.
+    */
    public void setHeadRadius(double headRadius)
    {
       this.headRadius = Double.toString(headRadius);
    }
 
+   /**
+    * Sets the radius of the head part for each arrow. It can be backed by a {@code YoVariable} by
+    * setting it to the variable's name/fullname.
+    * 
+    * @param headRadius the radius of the head part for each arrow.
+    */
    @XmlElement
    public void setHeadRadius(String headRadius)
    {
