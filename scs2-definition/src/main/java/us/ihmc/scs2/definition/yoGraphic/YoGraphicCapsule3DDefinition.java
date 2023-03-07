@@ -9,7 +9,10 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 /**
  * A {@code YoGraphicCapsule3DDefinition} is a template for creating 3D capsule and which components
- * can be backed by {@code YoVariable}s.
+ * can be backed by {@code YoVariable}s. <br>
+ * <img src=
+ * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoCapsuleFX3D.png"
+ * width=150px/>
  * <p>
  * The {@code YoGraphicCapsule3DDefinition} is to be passed before initialization of a session
  * (either before starting a simulation or when creating a yoVariable server), such that the SCS GUI

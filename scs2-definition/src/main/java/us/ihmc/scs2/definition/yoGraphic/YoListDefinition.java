@@ -8,33 +8,69 @@ import java.util.Objects;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * A {@code YoListDefinition} is a template to build a list which elements can be
+ * {@code YoVariable}s and size can be controlled by a {@code YoVariable}.
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoList")
 public class YoListDefinition
 {
+   /** The elements in this list, can either be constants or {@code YoVariable}s. */
    private List<String> elements;
+   /**
+    * The size of the active part of the list, can be a constant, a {@code YoVariable}, or {@code null}
+    * to consider all the elements.
+    */
    private String size;
 
+   /**
+    * Creates a new empty list.
+    */
    public YoListDefinition()
    {
    }
 
+   /**
+    * Creates a new list and initializes its elements.
+    * 
+    * @param elements the initial list of elements.
+    */
    public YoListDefinition(List<String> elements)
    {
       this.elements = elements;
    }
 
+   /**
+    * Creates a new list and initializes its elements and size variable.
+    * 
+    * @param elements the initial list of elements.
+    * @param size     the size of the active part of the list.
+    */
    public YoListDefinition(List<String> elements, String size)
    {
       this.elements = elements;
       this.size = size;
    }
 
+   /**
+    * Sets the list elements.
+    * 
+    * @param elements the elements.
+    */
    @XmlElement
    public void setElements(List<String> elements)
    {
       this.elements = elements;
    }
 
+   /**
+    * Adds an element to the list, can be a constant or a {@code YoVariable} by giving its
+    * name/fullname.
+    * 
+    * @param element the new element.
+    */
    public void addElement(String element)
    {
       if (elements == null)
@@ -42,31 +78,61 @@ public class YoListDefinition
       elements.add(element);
    }
 
+   /**
+    * Convenience method for adding an element representing a constant value.
+    * 
+    * @param element the new element.
+    */
    public void addElement(double element)
    {
       addElement(Double.toString(element));
    }
 
+   /**
+    * Convenience method for adding an element representing a constant value.
+    * 
+    * @param element the new element.
+    */
    public void addElement(float element)
    {
       addElement(Float.toString(element));
    }
 
+   /**
+    * Convenience method for adding an element representing a constant value.
+    * 
+    * @param element the new element.
+    */
    public void addElement(boolean element)
    {
       addElement(Boolean.toString(element));
    }
 
+   /**
+    * Convenience method for adding an element representing a constant value.
+    * 
+    * @param element the new element.
+    */
    public void addElement(int element)
    {
       addElement(Integer.toString(element));
    }
 
+   /**
+    * Convenience method for adding an element representing a constant value.
+    * 
+    * @param element the new element.
+    */
    public void addElement(long element)
    {
       addElement(Long.toString(element));
    }
 
+   /**
+    * Convenience method for adding an element representing a constant value.
+    * 
+    * @param element the new element.
+    */
    public void addElement(byte element)
    {
       addElement(Byte.toString(element));
@@ -78,42 +144,78 @@ public class YoListDefinition
          addElement(element);
    }
 
+   /**
+    * Convenience method for adding a elements representing constant values.
+    * 
+    * @param elements the new elements.
+    */
    public void setElements(float[] elements)
    {
       for (float element : elements)
          addElement(element);
    }
 
+   /**
+    * Convenience method for adding a elements representing constant values.
+    * 
+    * @param elements the new elements.
+    */
    public void setElements(boolean[] elements)
    {
       for (boolean element : elements)
          addElement(element);
    }
 
+   /**
+    * Convenience method for adding a elements representing constant values.
+    * 
+    * @param elements the new elements.
+    */
    public void setElements(int[] elements)
    {
       for (int element : elements)
          addElement(element);
    }
 
+   /**
+    * Convenience method for adding a elements representing constant values.
+    * 
+    * @param elements the new elements.
+    */
    public void setElements(long[] elements)
    {
       for (long element : elements)
          addElement(element);
    }
 
+   /**
+    * Convenience method for adding a elements representing constant values.
+    * 
+    * @param elements the new elements.
+    */
    public void setElements(byte[] elements)
    {
       for (byte element : elements)
          addElement(element);
    }
 
+   /**
+    * Sets the variable for tracking the active part of the list, can be {@code null} for using all
+    * elements, a constant value, or a {@code YoVaribale} by giving its name/fullname.
+    * 
+    * @param size the size of the active part of the list.
+    */
    @XmlElement
    public void setSize(String size)
    {
       this.size = size;
    }
 
+   /**
+    * Sets the size of the list to a constant value.
+    * 
+    * @param size the size of the active part of the list.
+    */
    public void setSize(int size)
    {
       this.size = Integer.toString(size);

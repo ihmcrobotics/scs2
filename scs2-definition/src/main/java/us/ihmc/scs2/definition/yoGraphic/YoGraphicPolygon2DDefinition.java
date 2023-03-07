@@ -8,29 +8,69 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
+/**
+ * A {@code YoGraphicPolygon2DDefinition} is a template for creating 2D polygon and which components
+ * can be backed by {@code YoVariable}s. <br>
+ * <img src=
+ * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPolygonFX2D.png"
+ * width=150px/>
+ * <p>
+ * A 2D yoGraphic is rendered in the overhead plotter panel and it can be back by
+ * {@code YoVariable}s allowing it to move and change at runtime.
+ * </p>
+ * <p>
+ * The {@code YoGraphicLine2DDefinition} is to be passed before initialization of a session (either
+ * before starting a simulation or when creating a yoVariable server), such that the SCS GUI can use
+ * the definitions and create the actual graphics.
+ * </p>
+ * <p>
+ * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
+ * definitions.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoGraphicPolygon2D")
 public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
 {
+   /** The list of vertices for the polygon. */
    private List<YoTuple2DDefinition> vertices;
+   /** The number of vertices to use in the list {@link #vertices} or {@code null} to use all. */
    private String numberOfVertices;
 
+   /**
+    * Creates a new yoGraphic definition for rendering a line.
+    * <p>
+    * Its components need to be initialized. See {@link YoGraphicDefinitionFactory} for factories to
+    * facilitate creation.
+    * </p>
+    */
    public YoGraphicPolygon2DDefinition()
    {
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
       registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
    }
 
+   /**
+    * Sets the vertices for the polygon.
+    * 
+    * @param vertices the vertices for the polygon.
+    */
    @XmlElement
    public void setVertices(List<YoTuple2DDefinition> vertices)
    {
       this.vertices = vertices;
    }
 
-   public void setNumberOfVertices(int numberOfVertices)
-   {
-      this.numberOfVertices = Integer.toString(numberOfVertices);
-   }
-
+   /**
+    * Sets the number of vertices to use in the list of vertices.
+    * <p>
+    * Using this method allows to back the number of vertices with a {@code YoVariable} by giving the
+    * variable name/fullname.
+    * </p>
+    * 
+    * @param numberOfVertices the number of vertices to use.
+    */
    @XmlElement
    public void setNumberOfVertices(String numberOfVertices)
    {

@@ -137,7 +137,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
    }
 
    /**
-    * Unwraps any sub-group registered.
+    * Unwraps any sub-group registered. This is useful to flatten the hierarchy starting from this group.
     */
    public void unwrapNestedGroups()
    {
