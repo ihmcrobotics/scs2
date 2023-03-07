@@ -48,6 +48,11 @@ import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+/**
+ * This class implements factories to assist in creating new {@link YoGraphicDefinition}s.
+ * 
+ * @author Sylvain Bertrand
+ */
 public class YoGraphicDefinitionFactory
 {
    private static final double DEFAULT_STROKE_WIDTH = 1.5;
@@ -90,6 +95,17 @@ public class YoGraphicDefinitionFactory
       }
    }
 
+   /**
+    * Creates a new yoGraphic that represents the given line-segment.
+    * <p>
+    * The yoGraphic will appear in the 2D overhead plotter.
+    * </p>
+    * 
+    * @param name the name for yoGraphic.
+    * @param lineSegment the line-segment
+    * @param strokeColor
+    * @return
+    */
    public static YoGraphicLine2DDefinition newYoGraphicLineSegment2DDefinition(String name, YoFrameLineSegment2D lineSegment, PaintDefinition strokeColor)
    {
       return newYoGraphicLineSegment2DDefinition(name,
@@ -226,7 +242,8 @@ public class YoGraphicDefinitionFactory
       YoGraphicPointcloud2DDefinition definition = new YoGraphicPointcloud2DDefinition();
       definition.setName(definition3D.getName());
       definition.setVisible(definition3D.isVisible());
-      definition.setPoints(definition3D.getPoints().stream()
+      definition.setPoints(definition3D.getPoints()
+                                       .stream()
                                        .map(tuple3D -> new YoTuple2DDefinition(tuple3D.getX(), tuple3D.getY(), tuple3D.getReferenceFrame()))
                                        .collect(Collectors.toList()));
       definition.setGraphicName(graphicType.getGraphicName());

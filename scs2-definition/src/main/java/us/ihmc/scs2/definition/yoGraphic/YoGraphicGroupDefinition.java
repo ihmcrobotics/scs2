@@ -9,27 +9,56 @@ import java.util.Objects;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * A {@link YoGraphicGroupDefinition} is a template for creating a group which contains yoGraphics
+ * and sub-groups. This is useful for organizing yoGraphics in a similar way that
+ * {@code YoVariable}s are organized with {@code YoRegistry}s.
+ * <p>
+ * The group visible property is propagated down its descendants.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoGraphicGroup")
 public class YoGraphicGroupDefinition extends YoGraphicDefinition
 {
+   /** The list of children the group contains. */
    private List<YoGraphicDefinition> children;
 
+   /** Creates a new empty group. */
    public YoGraphicGroupDefinition()
    {
       registerListField("children", this::getChildren, this::setChildren, "child", YoGraphicDefinition::toParsableString, YoGraphicDefinition::parse);
    }
 
+   /**
+    * Creates a new empty group and sets its name.
+    * 
+    * @param name the group name.
+    */
    public YoGraphicGroupDefinition(String name)
    {
       this();
       setName(name);
    }
 
+   /**
+    * Creates a new group, sets its name, and adds children.
+    * 
+    * @param name     the group name.
+    * @param children the initial set of children for the group.
+    */
    public YoGraphicGroupDefinition(String name, YoGraphicDefinition... children)
    {
       this(name, Arrays.asList(children));
    }
 
+   /**
+    * Creates a new group, sets its name, and adds children.
+    * 
+    * @param name     the group name.
+    * @param children the initial set of children for the group.
+    */
    public YoGraphicGroupDefinition(String name, Collection<? extends YoGraphicDefinition> children)
    {
       this(name);
@@ -38,34 +67,51 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
          this.children = new ArrayList<>(children);
    }
 
+   /**
+    * Adds a child to the group.
+    * <p>
+    * See {@link YoGraphicDefinitionFactory} for factory methods helping with the creation of yoGraphic
+    * definitions.
+    * </p>
+    * 
+    * @param child the new child.
+    */
    public void addChild(YoGraphicDefinition child)
    {
       if (child == null)
          return;
+
       if (child instanceof YoGraphicListDefinition list)
-         addChildren(list);
+      {
+         if (list == null || list.getYoGraphics() == null)
+            return;
+
+         for (int i = 0; i < list.getYoGraphics().size(); i++)
+         {
+            addChild(list.getYoGraphics().get(i));
+         }
+         return;
+      }
+
       if (children == null)
          children = new ArrayList<>();
       children.add(child);
    }
 
-   public void addChildren(YoGraphicListDefinition list)
-   {
-      if (list == null || list.getYoGraphics() == null)
-         return;
-
-      for (int i = 0; i < list.getYoGraphics().size(); i++)
-      {
-         addChild(list.getYoGraphics().get(i));
-      }
-   }
-
+   /**
+    * Sets the children for the group.
+    * 
+    * @param children the children for the group.
+    */
    @XmlElement
    public void setChildren(List<YoGraphicDefinition> children)
    {
       this.children = children;
    }
 
+   /**
+    * Unwraps any list registered and proceeds recursively to any registered sub-group(s).
+    */
    public void unwrapLists()
    {
       if (children == null)
@@ -90,6 +136,9 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
       }
    }
 
+   /**
+    * Unwraps any sub-group registered.
+    */
    public void unwrapNestedGroups()
    {
       if (children == null)
@@ -110,14 +159,19 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
       }
    }
 
-   public List<YoGraphicDefinition> getChildren()
-   {
-      return children;
-   }
-
+   /**
+    * Returns whether the group is empty.
+    * 
+    * @return {@code true} if the list of children either {@code null} or empty.
+    */
    public boolean isEmpty()
    {
       return children == null || children.isEmpty();
+   }
+
+   public List<YoGraphicDefinition> getChildren()
+   {
+      return children;
    }
 
    @Override
