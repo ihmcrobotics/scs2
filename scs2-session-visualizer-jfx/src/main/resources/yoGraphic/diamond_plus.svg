@@ -3,10 +3,7 @@
 
  <g>
   <title>DiamondPlus</title>
-  <line stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="diamond_side1" y2= "500" x2=   "0" y1=   "0" x1= "500" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
-  <line stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="diamond_side2" y2=   "0" x2= "500" y1= "500" x1="1000" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
-  <line stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="diamond_side3" y2= "500" x2="1000" y1="1000" x1= "500" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
-  <line stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="diamond_side4" y2="1000" x2= "500" y1= "500" x1=   "0" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
+  <path stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="path" d="m0,500l500,-500l500,500l-500,500l-500,-500z" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
   <line stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="plus1" y2="1000" x2="500" y1="0" x1="500" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
   <line stroke="#000" stroke-linecap="null" stroke-linejoin="null" id="plus2" y2="500" x2="1000" y1="500" x1="0" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="none"/>
  </g>
