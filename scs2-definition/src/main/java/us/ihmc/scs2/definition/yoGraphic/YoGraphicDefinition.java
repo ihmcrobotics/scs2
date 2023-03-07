@@ -33,6 +33,10 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * starting a simulation or when creating a yoVariable server), such that the SCS GUI can use the
  * definitions and create the actual graphics.
  * </p>
+ * <p>
+ * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
+ * definitions.
+ * </p>
  *
  * @author Sylvain Bertrand
  */
