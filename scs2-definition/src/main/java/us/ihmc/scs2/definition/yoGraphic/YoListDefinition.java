@@ -190,7 +190,7 @@ public class YoListDefinition
 
          String size = value.substring(value.lastIndexOf("=") + 1, value.length() - 1).trim();
 
-         if (size.toLowerCase().equals("null"))
+         if (size.equalsIgnoreCase("null"))
             size = null;
 
          return new YoListDefinition(elements == null ? null : Arrays.asList(elements), size);
