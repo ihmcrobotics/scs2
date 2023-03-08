@@ -470,6 +470,7 @@ public class LogSessionManagerController implements SessionControlsController
          }
          catch (Exception e)
          {
+            e.printStackTrace();
             controller.error("Terminated with exception: " + e.getMessage());
             controller.done();
          }
