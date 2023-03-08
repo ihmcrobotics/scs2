@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -9,22 +11,54 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 @XmlRootElement(name = "YoGraphicRamp3D")
 public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
 {
+   /** The position of the center of the ramp. */
    private YoTuple3DDefinition position;
+   /** The orientation of the ramp. */
    private YoOrientation3DDefinition orientation;
+   /** The size of the ramp. */
    private YoTuple3DDefinition size;
 
+   /**
+    * Creates a new yoGraphic definition for rendering a ramp.
+    * <p>
+    * Its components need to be initialized. See {@link YoGraphicDefinitionFactory} for factories to
+    * facilitate creation.
+    * </p>
+    */
+   public YoGraphicRamp3DDefinition()
+   {
+      registerTuple3DField("position", this::getPosition, this::setPosition);
+      registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
+      registerTuple3DField("size", this::getSize, this::setSize);
+   }
+
+   /**
+    * Sets the position of the center of the ramp.
+    * 
+    * @param position the position of the center of the ramp.
+    */
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
    {
       this.position = position;
    }
 
+   /**
+    * Sets the orientation of the ramp.
+    * 
+    * @param orientation the orientation of the ramp.
+    */
    @XmlElement
    public void setOrientation(YoOrientation3DDefinition orientation)
    {
       this.orientation = orientation;
    }
 
+   /**
+    * Sets the size of the ramp.
+    * 
+    * @param size the size of the ramp.
+    */
    @XmlElement
    public void setSize(YoTuple3DDefinition size)
    {
@@ -57,15 +91,13 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicRamp3DDefinition)
+      else if (object instanceof YoGraphicRamp3DDefinition other)
       {
-         YoGraphicRamp3DDefinition other = (YoGraphicRamp3DDefinition) object;
-
-         if (position == null ? other.position != null : !position.equals(other.position))
+         if (!Objects.equals(position, other.position))
             return false;
-         if (orientation == null ? other.orientation != null : !orientation.equals(other.orientation))
+         if (!Objects.equals(orientation, other.orientation))
             return false;
-         if (size == null ? other.size != null : !size.equals(other.size))
+         if (!Objects.equals(size, other.size))
             return false;
 
          return true;
@@ -74,11 +106,5 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-   }
-
-   @Override
-   public String toString()
-   {
-      return "position: " + position + ", orientation: " + orientation + ", size: " + size + ", color: " + color;
    }
 }

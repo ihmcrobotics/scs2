@@ -21,7 +21,6 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
-import javafx.scene.paint.Color;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXCreatorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
@@ -33,7 +32,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public abstract class YoGroupFXEditorController<T extends YoGraphicFX> implements YoGraphicFXCreatorController<YoGroupFX>
@@ -91,9 +92,9 @@ public abstract class YoGroupFXEditorController<T extends YoGraphicFX> implement
 
       registerResetAction(() ->
       {
-         Color initialColor = getCommonValue(getField(graphicChildren, g -> ((YoGraphicFX3D) g).getColor().get()));
+         BaseColorFX initialColor = getCommonValue(getField(graphicChildren, g -> ((YoGraphicFX3D) g).getColor()));
          if (initialColor != null)
-            styleEditorController.setInput(initialColor);
+            styleEditorController.setInput(YoGraphicTools.toPaintDefinition(initialColor));
       });
    }
 

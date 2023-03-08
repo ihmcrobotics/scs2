@@ -60,6 +60,14 @@ public class YoKnobDefinition
       this.index = index;
    }
 
+   public YoKnobDefinition(String variableName, int index, double minValue, double maxValue)
+   {
+      this.variableName = variableName;
+      this.index = index;
+      setMinValue(minValue);
+      setMaxValue(maxValue);
+   }
+
    public YoKnobDefinition(YoKnobDefinition other)
    {
       set(other);

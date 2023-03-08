@@ -1,40 +1,40 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.function.Supplier;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.paint.Color;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
 
 public abstract class YoGraphicFX2D extends YoGraphicFX
 {
    public static final DoubleProperty DEFAULT_STROKE_WIDTH = new SimpleDoubleProperty(1.5);
    protected DoubleProperty strokeWidth = DEFAULT_STROKE_WIDTH;
-   protected Supplier<Color> fillColor = null;
-   protected Supplier<Color> strokeColor = () -> Color.BLUE;
+   protected BaseColorFX fillColor = null;
+   protected BaseColorFX strokeColor = new SimpleColorFX(Color.BLUE);
 
    public YoGraphicFX2D()
    {
    }
 
-   public final void setFillColor(Supplier<Color> fillColor)
+   public final void setFillColor(BaseColorFX fillColor)
    {
       this.fillColor = fillColor;
    }
 
    public final void setFillColor(Color fillColor)
    {
-      this.fillColor = () -> fillColor;
+      this.fillColor = new SimpleColorFX(fillColor);
    }
 
-   public final void setStrokeColor(Supplier<Color> strokeColor)
+   public final void setStrokeColor(BaseColorFX strokeColor)
    {
       this.strokeColor = strokeColor;
    }
 
    public final void setStrokeColor(Color strokeColor)
    {
-      this.strokeColor = () -> strokeColor;
+      this.strokeColor = new SimpleColorFX(strokeColor);
    }
 
    public final void setStrokeWidth(DoubleProperty strokeWidth)
@@ -47,12 +47,12 @@ public abstract class YoGraphicFX2D extends YoGraphicFX
       this.strokeWidth = new SimpleDoubleProperty(strokeWidth);
    }
 
-   public final Supplier<Color> getFillColor()
+   public final BaseColorFX getFillColor()
    {
       return fillColor;
    }
 
-   public final Supplier<Color> getStrokeColor()
+   public final BaseColorFX getStrokeColor()
    {
       return strokeColor;
    }

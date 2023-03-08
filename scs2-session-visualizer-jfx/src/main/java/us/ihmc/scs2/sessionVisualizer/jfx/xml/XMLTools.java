@@ -16,6 +16,7 @@ import us.ihmc.scs2.definition.yoComposite.YoCompositePatternListDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoVariableGroupDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 
@@ -87,6 +88,20 @@ public class XMLTools
       }
    }
 
+   public static YoVariableGroupDefinition loadYoVariableGroupDefinition(InputStream inputStream) throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoVariableGroupDefinition.class);
+         Unmarshaller unmarshaller = context.createUnmarshaller();
+         return (YoVariableGroupDefinition) unmarshaller.unmarshal(inputStream);
+      }
+      finally
+      {
+         inputStream.close();
+      }
+   }
+
    public static void saveSCSGuiConfigurationDefinition(OutputStream outputStream, SCSGuiConfigurationDefinition definition) throws JAXBException, IOException
    {
       try
@@ -148,6 +163,21 @@ public class XMLTools
       try
       {
          JAXBContext context = JAXBContext.newInstance(YoSliderboardListDefinition.class);
+         Marshaller marshaller = context.createMarshaller();
+         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+         marshaller.marshal(definition, outputStream);
+      }
+      finally
+      {
+         outputStream.close();
+      }
+   }
+
+   public static void saveYoVariableGroupDefinition(OutputStream outputStream, YoVariableGroupDefinition definition) throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoVariableGroupDefinition.class);
          Marshaller marshaller = context.createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);

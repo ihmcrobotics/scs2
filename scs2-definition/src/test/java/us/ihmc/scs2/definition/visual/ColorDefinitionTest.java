@@ -1,5 +1,7 @@
 package us.ihmc.scs2.definition.visual;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
@@ -7,19 +9,13 @@ import org.opentest4j.AssertionFailedError;
 
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.euclid.tools.EuclidCoreTools;
+import us.ihmc.scs2.definition.DefinitionRandomTools;
 
 public class ColorDefinitionTest
 {
    private static final double EPSILON = 1.0e-9;
    private static final double LARGE_EPSILON = 1.0 / 255.0;
    private static final int ITERATIONS = 10000;
-
-   public static void main(String[] args)
-   {
-      System.out.println(ColorDefinition.parse("AliceBlue"));
-      ;
-      System.out.println(ColorDefinitions.namedColorLowerCaseMap.size());
-   }
 
    @Test
    public void testArrayConversion()
@@ -642,6 +638,13 @@ public class ColorDefinitionTest
          ColorDefinition expected = ColorDefinitions.namedColorLowerCaseMap.get(colorName);
          assertColorDefinitionEquals(expected, ColorDefinitions.parse(colorName.toLowerCase()), EPSILON);
          assertColorDefinitionEquals(expected, ColorDefinitions.parse(colorName.toLowerCase()), EPSILON);
+      }
+
+      for (int i = 0; i < ITERATIONS; i++)
+      { // Test parsing toString output
+         ColorDefinition original = DefinitionRandomTools.nextColorDefinition(random);
+         ColorDefinition parsed = ColorDefinition.parse(original.toString());
+         assertEquals(original, parsed);
       }
    }
 

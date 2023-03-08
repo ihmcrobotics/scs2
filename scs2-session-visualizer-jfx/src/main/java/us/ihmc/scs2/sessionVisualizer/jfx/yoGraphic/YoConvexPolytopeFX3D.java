@@ -22,6 +22,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinit
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
 
 public class YoConvexPolytopeFX3D extends YoGraphicFX3D
 {
@@ -68,7 +69,7 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
 
       affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
       if (color == null)
-         color = () -> null;
+         color = new SimpleColorFX();
       material.setDiffuseColor(color.get());
 
       if (clearMesh)
