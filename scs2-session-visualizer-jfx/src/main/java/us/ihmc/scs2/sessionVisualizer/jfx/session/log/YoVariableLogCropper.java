@@ -272,7 +272,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
 
                for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
                {
-                  matlabEntryWriters.get(varIndex).accept(i, data.get(logVariableIndices.get(varIndex) + 1));
+                  matlabEntryWriters.get(varIndex).accept(i - from, data.get(logVariableIndices.get(varIndex) + 1));
                }
             }
          }
@@ -287,7 +287,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
 
                for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
                {
-                  matlabEntryWriters.get(varIndex).accept(i, data.get());
+                  matlabEntryWriters.get(varIndex).accept(i - from, data.get());
                }
             }
          }
