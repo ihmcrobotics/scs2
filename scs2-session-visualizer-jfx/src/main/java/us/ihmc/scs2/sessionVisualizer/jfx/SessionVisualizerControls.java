@@ -24,6 +24,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -266,6 +267,7 @@ public interface SessionVisualizerControls
     * 
     * @param yoGraphicDefinition the definition of the graphic to be added.
     * @see YoGraphicConversionTools
+    * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
@@ -276,6 +278,7 @@ public interface SessionVisualizerControls
     * 
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
     * @see YoGraphicConversionTools
+    * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
@@ -294,6 +297,7 @@ public interface SessionVisualizerControls
     *                            {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
     * @see YoGraphicConversionTools
+    * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
@@ -322,6 +326,7 @@ public interface SessionVisualizerControls
     *                             {@value YoGraphicTools#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
     * @see YoGraphicConversionTools
+    * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *      controls: YoGraphic</a>
     */
