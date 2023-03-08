@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition.yoComposite;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlSeeAlso;
 
@@ -70,23 +71,18 @@ public abstract class YoCompositeDefinition
       {
          return true;
       }
-      else if (object instanceof YoCompositeDefinition)
+      else if (object instanceof YoCompositeDefinition other)
       {
-         YoCompositeDefinition other = (YoCompositeDefinition) object;
-
-         if (getType() == null ? other.getType() != null : !getType().equals(other.getType()))
+         if (!Objects.equals(getType(), other.getType()))
             return false;
 
-         String[] thisIDs = getComponentIdentifiers();
-         String[] otherIDs = other.getComponentIdentifiers();
-
-         if (thisIDs == null ? otherIDs != null : !Arrays.equals(thisIDs, otherIDs))
+         if (!Arrays.equals(getComponentIdentifiers(), other.getComponentIdentifiers()))
             return false;
 
-         String[] thisValues = getComponentValues();
-         String[] otherValues = other.getComponentValues();
+         if (!Arrays.equals(getComponentValues(), other.getComponentValues()))
+            return false;
 
-         if ((thisValues == null ? otherValues != null : !Arrays.equals(thisValues, otherValues)) || (getReferenceFrame() == null ? other.getReferenceFrame() != null : !getReferenceFrame().equals(other.getReferenceFrame())))
+         if (!Objects.equals(getReferenceFrame(), other.getReferenceFrame()))
             return false;
 
          return true;
