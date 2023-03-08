@@ -9,6 +9,7 @@ import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
 
 public class YoEllipsoidFX3D extends YoGraphicFX3D
 {
@@ -51,7 +52,7 @@ public class YoEllipsoidFX3D extends YoGraphicFX3D
       affine.appendScale(radii.getX(), radii.getY(), radii.getZ());
 
       if (color == null)
-         color = () -> null;
+         color = new SimpleColorFX();
 
       material.setDiffuseColor(color.get());
    }

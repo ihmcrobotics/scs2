@@ -2,10 +2,14 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
@@ -45,12 +49,15 @@ import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.log.LogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CropSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public class LogSessionManagerController implements SessionControlsController
 {
@@ -73,6 +80,8 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private JFXButton startTrimToCurrentButton, endTrimToCurrentButton, resetTrimsButton, cropAndExportButton;
    @FXML
+   private JFXToggleButton enableVariableFilterToggleButton;
+   @FXML
    private JFXComboBox<OutputFormat> outputFormatComboxBox;
    @FXML
    private CropSlider logPositionSlider;
@@ -93,6 +102,8 @@ public class LogSessionManagerController implements SessionControlsController
    private final ObjectProperty<YoVariableLogCropper> logCropperProperty = new SimpleObjectProperty<>(this, "logCropper", null);
 
    private BackgroundExecutorManager backgroundExecutorManager;
+
+   private final ObjectProperty<SessionVariableFilterPaneController> variableFilterControllerProperty = new SimpleObjectProperty<>(null);
 
    private Stage stage;
    private SessionVisualizerTopics topics;
@@ -251,6 +262,33 @@ public class LogSessionManagerController implements SessionControlsController
 
       outputFormatComboxBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
       outputFormatComboxBox.getSelectionModel().select(OutputFormat.Default);
+      enableVariableFilterToggleButton.setDisable(true); // Only available if export format is MATLAB for now.
+
+      outputFormatComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
+         {
+            enableVariableFilterToggleButton.setSelected(false);
+            enableVariableFilterToggleButton.setDisable(true);
+         }
+         else
+         {
+            enableVariableFilterToggleButton.setDisable(false);
+         }
+      });
+
+      showTrimsButton.selectedProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (newValue && outputFormatComboxBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
+         {
+            enableVariableFilterToggleButton.setDisable(false);
+         }
+         else
+         {
+            enableVariableFilterToggleButton.setSelected(false);
+            enableVariableFilterToggleButton.setDisable(true);
+         }
+      });
 
       messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m ->
       {
@@ -258,6 +296,40 @@ public class LogSessionManagerController implements SessionControlsController
          endSessionButton.setDisable(m);
          cropControlsContainer.setDisable(m);
          logPositionSlider.setDisable(m);
+      });
+
+      enableVariableFilterToggleButton.selectedProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (newValue)
+         {
+            if (variableFilterControllerProperty.get() == null)
+            {
+               try
+               {
+                  FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SESSION_VARIABLE_FILTER_PANE_URL);
+                  loader.load();
+                  SessionVariableFilterPaneController controller = loader.getController();
+                  Set<String> logVariableSet = activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList().stream()
+                                                                    .map(YoVariable::getFullNameString).collect(Collectors.toSet());
+                  controller.initialize(toolkit, var -> logVariableSet.contains(var.getFullNameString()));
+                  variableFilterControllerProperty.set(controller);
+               }
+               catch (IOException e1)
+               {
+                  e1.printStackTrace();
+               }
+            }
+
+            cropControlsContainer.getChildren().add(variableFilterControllerProperty.get().getMainPane());
+         }
+         else
+         {
+            if (variableFilterControllerProperty.get() != null)
+               cropControlsContainer.getChildren().remove(variableFilterControllerProperty.get().getMainPane());
+         }
+
+         // Update the preferred size of the window
+         stage.sizeToScene();
       });
 
       stage.setScene(new Scene(mainPane));
@@ -365,18 +437,42 @@ public class LogSessionManagerController implements SessionControlsController
       LogCropProgressController controller = loader.getController();
       controller.initialize(cropProgressMonitorPane);
 
+      Predicate<YoVariable> variableFilter;
+      Predicate<YoRegistry> registryFilter;
+
+      if (enableVariableFilterToggleButton.isSelected())
+      {
+         SessionVariableFilterPaneController filterController = variableFilterControllerProperty.get();
+         variableFilter = filterController.buildVariableFilter();
+         registryFilter = filterController.buildRegistryFilter();
+      }
+      else
+      {
+         variableFilter = null;
+         registryFilter = null;
+      }
+
+      int from = (int) logPositionSlider.getTrimStartValue();
+      int to = (int) logPositionSlider.getTrimEndValue();
+      List<YoVariable> logVariables = activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList();
+
       backgroundExecutorManager.executeInBackground(() ->
       {
          setIsLoading(true);
          messager.submitMessage(topics.getDisableUserControls(), true);
          try
          {
-            int from = (int) logPositionSlider.getTrimStartValue();
-            int to = (int) logPositionSlider.getTrimEndValue();
+
             if (outputFormat == OutputFormat.MATLAB)
-               logCropper.cropMATLAB(destination, activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList(), from, to, controller);
+               logCropper.cropMATLAB(destination, logVariables, variableFilter, registryFilter, from, to, controller);
             else
                logCropper.crop(destination, from, to, controller);
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+            controller.error("Terminated with exception: " + e.getMessage());
+            controller.done();
          }
          finally
          {
@@ -389,6 +485,11 @@ public class LogSessionManagerController implements SessionControlsController
    @Override
    public void shutdown()
    {
+      if (variableFilterControllerProperty.get() != null)
+      {
+         variableFilterControllerProperty.get().dispose();
+         variableFilterControllerProperty.set(null);
+      }
       stage.close();
    }
 
@@ -401,6 +502,9 @@ public class LogSessionManagerController implements SessionControlsController
    @Override
    public void unloadSession()
    {
+      enableVariableFilterToggleButton.setSelected(false);
+      variableFilterControllerProperty.set(null);
+
       if (activeSessionProperty.get() != null)
       {
          activeSessionProperty.get().shutdownSession();

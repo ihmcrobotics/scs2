@@ -6,6 +6,7 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
 
 public class YoLineFX2D extends YoGraphicFX2D
 {
@@ -32,9 +33,9 @@ public class YoLineFX2D extends YoGraphicFX2D
    public void render()
    {
       if (fillColor == null)
-         fillColor = () -> null;
+         fillColor = new SimpleColorFX();
       if (strokeColor == null)
-         strokeColor = () -> null;
+         strokeColor = new SimpleColorFX();
       if (strokeWidth == null)
          strokeWidth = DEFAULT_STROKE_WIDTH;
       lineNode.setFill(fillColor.get());

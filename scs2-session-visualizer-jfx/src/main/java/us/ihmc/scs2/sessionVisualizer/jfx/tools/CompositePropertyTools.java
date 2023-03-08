@@ -333,6 +333,18 @@ public class CompositePropertyTools
       return doubleProperties.stream().map(CompositePropertyTools::toDoublePropertyName).collect(Collectors.toList());
    }
 
+   public static boolean areParsableAsDoubles(String... strings)
+   {
+      if (strings == null || strings.length == 0)
+         return false;
+      for (String string : strings)
+      {
+         if (!isParsableAsDouble(string))
+            return false;
+      }
+      return true;
+   }
+
    public static boolean isParsableAsDouble(String string)
    {
       if (string == null)
@@ -349,8 +361,23 @@ public class CompositePropertyTools
       }
    }
 
+   public static boolean areParsableAsIntegers(String... strings)
+   {
+      if (strings == null || strings.length == 0)
+         return false;
+      for (String string : strings)
+      {
+         if (!isParsableAsInteger(string))
+            return false;
+      }
+      return true;
+   }
+
    public static boolean isParsableAsInteger(String string)
    {
+      if (string == null)
+         return false;
+
       try
       {
          Integer.parseInt(string);
@@ -360,5 +387,18 @@ public class CompositePropertyTools
       {
          return false;
       }
+   }
+
+   public static boolean areAllInstanceOf(Class<?> type, Object... objects)
+   {
+      if (objects == null || objects.length == 0)
+         return false;
+
+      for (Object object : objects)
+      {
+         if (!type.isInstance(object))
+            return false;
+      }
+      return true;
    }
 }

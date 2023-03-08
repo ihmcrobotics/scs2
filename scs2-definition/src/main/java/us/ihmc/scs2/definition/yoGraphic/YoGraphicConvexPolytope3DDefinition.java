@@ -1,45 +1,106 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
+/**
+ * A {@code YoGraphicConvexPolytope3DDefinition} is a template for creating 3D convex polytope and
+ * which components can be backed by {@code YoVariable}s. <br>
+ * <img src=
+ * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoConvexPolytope3D.png"
+ * width=150px/>
+ * <p>
+ * The {@code YoGraphicConvexPolytope3DDefinition} is to be passed before initialization of a
+ * session (either before starting a simulation or when creating a yoVariable server), such that the
+ * SCS GUI can use the definitions and create the actual graphics.
+ * </p>
+ * <p>
+ * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
+ * definitions.
+ * </p>
+ * 
+ * @author Sylvain Bertrand
+ */
 @XmlRootElement(name = "YoGraphicConvexPolytope3D")
 public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
 {
+   /** The position of the polytope. */
    private YoTuple3DDefinition position;
+   /** The orientation of the polytope. */
    private YoOrientation3DDefinition orientation;
+   /**
+    * The vertices of the polytope. No particular ordering is required, {@link ConvexPolytope3D} is
+    * used to guarantee the resulting shape is a convex polytope.
+    */
    private List<YoTuple3DDefinition> vertices;
+   /** The list of vertices for the polytope. */
    private String numberOfVertices;
 
+   /**
+    * Creates a new yoGraphic definition for rendering a convex polytope.
+    * <p>
+    * Its components need to be initialized. See {@link YoGraphicDefinitionFactory} for factories to
+    * facilitate creation.
+    * </p>
+    */
+   public YoGraphicConvexPolytope3DDefinition()
+   {
+      registerTuple3DField("position", this::getPosition, this::setPosition);
+      registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
+      registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple3DDefinition::parse);
+      registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
+   }
+
+   /**
+    * Sets the position for the polytope.
+    * 
+    * @param position the position for the polytope.
+    */
    @XmlElement
    public void setPosition(YoTuple3DDefinition position)
    {
       this.position = position;
    }
 
+   /**
+    * Sets the orientation for the polytope.
+    * 
+    * @param orientation the orientation for the polytope.
+    */
    @XmlElement
    public void setOrientation(YoOrientation3DDefinition orientation)
    {
       this.orientation = orientation;
    }
 
+   /**
+    * Sets the vertices for the polytope. No particular ordering is required, {@link ConvexPolytope3D}
+    * is used to guarantee the resulting shape is a convex polytope.
+    * 
+    * @param vertices the vertices for the polytope.
+    */
    @XmlElement
    public void setVertices(List<YoTuple3DDefinition> vertices)
    {
       this.vertices = vertices;
    }
 
-   public void setNumberOfVertices(int numberOfVertices)
-   {
-      this.numberOfVertices = Integer.toString(numberOfVertices);
-   }
-
+   /**
+    * Sets the number of vertices to use from the vertices list to build the polytope.
+    * <p>
+    * Using this method allows to back the number of vertices with a {@code YoVariable} by giving the
+    * variable name/fullname.
+    * </p>
+    * 
+    * @param numberOfVertices the number of vertices to use.
+    */
    @XmlElement
    public void setNumberOfVertices(String numberOfVertices)
    {
@@ -77,17 +138,15 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
       {
          return false;
       }
-      else if (object instanceof YoGraphicConvexPolytope3DDefinition)
+      else if (object instanceof YoGraphicConvexPolytope3DDefinition other)
       {
-         YoGraphicConvexPolytope3DDefinition other = (YoGraphicConvexPolytope3DDefinition) object;
-
-         if (position == null ? other.position != null : !position.equals(other.position))
+         if (!Objects.equals(position, other.position))
             return false;
-         if (orientation == null ? other.orientation != null : !orientation.equals(other.orientation))
+         if (!Objects.equals(orientation, other.orientation))
             return false;
-         if (vertices == null ? other.vertices != null : !vertices.equals(other.vertices))
+         if (!Objects.equals(vertices, other.vertices))
             return false;
-         if (numberOfVertices == null ? other.numberOfVertices != null : !numberOfVertices.equals(other.numberOfVertices))
+         if (!Objects.equals(numberOfVertices, other.numberOfVertices))
             return false;
 
          return true;
@@ -99,9 +158,16 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
    }
 
    @Override
-   public String toString()
+   public String toString(int indent)
    {
-      return "position: " + position + ", orientation: " + orientation + ", number of vertices: " + numberOfVertices + ", color: " + color + ", thickness: "
-            + ", vertices: " + EuclidCoreIOTools.getCollectionString("\n", vertices, YoTuple3DDefinition::toString);
+      String out = "%s [name=%s, visible=%b, color=%s, position=%s, orientation=%s, vertices=%s, numberOfVertices=%s]";
+      return out.formatted(getClass().getSimpleName(),
+                           name,
+                           visible,
+                           color,
+                           position,
+                           orientation,
+                           indentedListString(indent, true, vertices, Object::toString),
+                           numberOfVertices);
    }
 }

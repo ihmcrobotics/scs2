@@ -3,12 +3,20 @@ package us.ihmc.scs2.definition.visual;
 import java.util.Arrays;
 
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
-@XmlRootElement(name = "Color")
-public class ColorDefinition
+/**
+ * {@code ColorDefinition} represents a color defined as (red, green, blue, alpha) and is backed by
+ * {@code double}s all defined in the range [0.0-1.0]. The alpha value is typically used to
+ * represent the opacity.
+ * 
+ * @author Sylvain Bertrand
+ * @see ColorDefinitions
+ */
+@XmlType(propOrder = {"red", "green", "blue", "alpha"})
+public class ColorDefinition extends PaintDefinition
 {
    private double red, green, blue, alpha;
 
@@ -198,6 +206,7 @@ public class ColorDefinition
     * @param alpha alpha component in range [0.0-1.0], 0.0 being fully transparent and 1.0 fully
     *              opaque.
     */
+   @XmlAttribute
    public void setAlpha(double alpha)
    {
       if (alpha < 0.0)
@@ -225,7 +234,7 @@ public class ColorDefinition
     */
    public int getRedAsInteger()
    {
-      return (int) (red * 255.0);
+      return (int) Math.round(red * 255.0);
    }
 
    /**
@@ -245,7 +254,7 @@ public class ColorDefinition
     */
    public int getGreenAsInteger()
    {
-      return (int) (green * 255.0);
+      return (int) Math.round(green * 255.0);
    }
 
    /**
@@ -265,7 +274,7 @@ public class ColorDefinition
     */
    public int getBlueAsInteger()
    {
-      return (int) (blue * 255.0);
+      return (int) Math.round(blue * 255.0);
    }
 
    /**
@@ -359,6 +368,11 @@ public class ColorDefinition
       return EuclidCoreTools.max(red, green, blue);
    }
 
+   /**
+    * Convenience method for inverting all three color components. Note that the alpha is unchanged.
+    * 
+    * @return the new inverted color.
+    */
    public ColorDefinition invert()
    {
       return new ColorDefinition(1.0 - red, 1.0 - green, 1.0 - blue, alpha);
@@ -367,26 +381,59 @@ public class ColorDefinition
    private static final double BRIGHTNESS_SCALE = 0.7;
    private static final double SATURATION_SCALE = 0.7;
 
+   /**
+    * Computes and returns a new color that is brighter than {@code this}.
+    * 
+    * @return the new brighter color.
+    */
    public ColorDefinition brighter()
    {
       return derive(0, 1.0, 1.0 / BRIGHTNESS_SCALE, 1.0);
    }
 
+   /**
+    * Computes and returns a new color that is darker than {@code this}.
+    * 
+    * @return the new darker color.
+    */
    public ColorDefinition darker()
    {
       return derive(0, 1.0, BRIGHTNESS_SCALE, 1.0);
    }
 
+   /**
+    * Computes and returns a new color that is more saturated than {@code this}.
+    * 
+    * @return the new color more saturated.
+    */
    public ColorDefinition saturate()
    {
       return derive(0.0, 1.0 / SATURATION_SCALE, 1.0, 1.0);
    }
 
+   /**
+    * Computes and returns a new color that is less saturated than {@code this}.
+    * 
+    * @return the new color less saturated.
+    */
    public ColorDefinition desaturate()
    {
       return derive(0.0, SATURATION_SCALE, 1.0, 1.0);
    }
 
+   /**
+    * Convenience method for creating a new color based on {@code this} with modifiers applied in the
+    * HSB domain.
+    * 
+    * @param hueOffset       angle shift to add to the hue. The hue is defined in [0.0-360.0].
+    * @param saturationScale scale factor to apply to the saturation. The saturation is defined in
+    *                        [0.0-1.0]
+    * @param brightnessScale scale factor to apply to the brightness. The brightness is defined in
+    *                        [0.0-1.0]
+    * @param opacityScale    scale factor to apply to the opacity (alpha). The opacity is defined in
+    *                        [0.0-1.0]
+    * @return the new color.
+    */
    public ColorDefinition derive(double hueOffset, double saturationScale, double brightnessScale, double opacityScale)
    {
       double outputHue = getHue() + hueOffset;
@@ -929,7 +976,10 @@ public class ColorDefinition
     * <li>rgb(100%, 0%, 0%) => float range 0.0% - 100.0%
     * <li>rgba(100%, 0%, 0%, 0.5) => 0.5 opacity, semi-transparent
     * <li>rgba(255, 0, 0, 0.5) => 0.5 opacity, semi-transparent
+    * <li>rgba(255, 0, 0, 127) => 127/255 opacity, semi-transparent
     * </ul>
+    * Note: a value of "1" for alpha, will be parsed in the range [0-255] (very transparent), while a
+    * value of "1.0" will be parse in the range [0.0-1.0] (opaque).
     * </p>
     * <p>
     * Accepted formats for parsing HSV colors:

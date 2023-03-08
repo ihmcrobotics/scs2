@@ -115,14 +115,14 @@ public class YoEntryListViewController
 
          YoComposite yoComposite = collection.getYoCompositeFromFullname(fullname);
 
-         if (yoComposite != null)
+         if (yoComposite != null && !yoEntryListView.getItems().contains(yoComposite))
          {
             yoEntryListView.getItems().add(yoComposite);
             continue;
          }
 
          yoComposite = collection.getYoCompositeFromUniqueName(fullname);
-         if (yoComposite != null)
+         if (yoComposite != null && !yoEntryListView.getItems().contains(yoComposite))
          {
             yoEntryListView.getItems().add(yoComposite);
             continue;
@@ -136,7 +136,7 @@ public class YoEntryListViewController
             if (variable != null)
             {
                yoComposite = collection.getYoCompositeFromFullname(variable.getFullNameString());
-               if (yoComposite != null)
+               if (yoComposite != null && !yoEntryListView.getItems().contains(yoComposite))
                {
                   yoEntryListView.getItems().add(yoComposite);
                   continue;

@@ -79,8 +79,12 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.MaterialScriptDefinition;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBASingleDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
@@ -184,7 +188,11 @@ public class DefinitionIOTools
          classesToBeBound.add(PlanarJointState.class);
 
          // Visuals
+         classesToBeBound.add(PaintDefinition.class);
          classesToBeBound.add(ColorDefinition.class);
+         classesToBeBound.add(YoColorRGBADoubleDefinition.class);
+         classesToBeBound.add(YoColorRGBAIntDefinition.class);
+         classesToBeBound.add(YoColorRGBASingleDefinition.class);
          classesToBeBound.add(MaterialDefinition.class);
          classesToBeBound.add(MaterialScriptDefinition.class);
          classesToBeBound.add(TextureDefinition.class);

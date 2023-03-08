@@ -62,6 +62,7 @@ public class SessionVisualizerIOTools
    public static final String yoCompositeConfigurationFileExtension = ".scs2.yoComposite";
    public static final String yoEntryConfigurationFileExtension = ".scs2.yoEntry";
    public static final String yoSliderboardConfigurationFileExtension = ".scs2.yoSliderboard";
+   public static final String yoVariableGroupConfigurationFileExtension = ".scs2.yoVariableGroup";
    public static final String videoFileExtension = ".mp4";
    public static final ExtensionFilter scs2InfoFilter = new ExtensionFilter("SCS2 Info File", "*" + SessionIOTools.infoFileExtension);
    public static final ExtensionFilter scs2ConfigurationFilter = new ExtensionFilter("SCS2 Config File", "*" + scsConfigurationFileExtension);
@@ -73,6 +74,8 @@ public class SessionVisualizerIOTools
    public static final ExtensionFilter yoEntryConfigurationFilter = new ExtensionFilter("SCS2 YoEntry File", "*" + yoEntryConfigurationFileExtension);
    public static final ExtensionFilter yoSliderboardConfigurationFilter = new ExtensionFilter("SCS2 YoSliderboard File",
                                                                                               "*" + yoSliderboardConfigurationFileExtension);
+   public static final ExtensionFilter yoVariableGroupConfigurationFilter = new ExtensionFilter("SCS2 YoVariable Group File",
+                                                                                                "*" + yoVariableGroupConfigurationFileExtension);
 
    public static final ExtensionFilter videoExtensionFilter = new ExtensionFilter("MP4", "*" + videoFileExtension);
 
@@ -145,6 +148,7 @@ public class SessionVisualizerIOTools
    public static final URL USER_SIDE_PANE_URL = getFXMLResource("UserSidePane");
    public static final URL VIDEO_PREVIEW_PANE_URL = getFXMLResource("VideoRecordingPreviewPane");
    public static final URL SESSION_DATA_EXPORT_STAGE_URL = getFXMLResource("SessionDataExportStage");
+   public static final URL SESSION_VARIABLE_FILTER_PANE_URL = getFXMLResource("SessionVariableFilterPane");
    public static final URL PLOTTER2D_OPTIONS_STAGE_URL = getFXMLResource(YO_GRAPHIC, "Plotter2DOptionsStage");
 
    public static final URL CHART_PANEL_FXML_URL = getFXMLResource(CHART, "YoChartPanel");
@@ -158,6 +162,9 @@ public class SessionVisualizerIOTools
    public static final URL YO_GRAPHIC_ITEM_CREATOR_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicItemCreatorDialog");
    public static final URL YO_GRAPHIC_PROPERTY_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicPropertyWindow");
    public static final URL YO_COMPOSITE_EDITOR_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "YoCompositeEditorPane");
+   public static final URL SIMPLE_COLOR_EDITOR_PANE_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "SimpleColorEditorPane");
+   public static final URL YO_COLOR_RGBA_EDITOR_PANE_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "YoColorRGBAEditorPane");
+   public static final URL YO_COLOR_RGBA_SINGLE_EDITOR_PANE_URL = getFXMLResource(YO_GRAPHIC_SUB_EDITOR, "YoColorRGBASingleEditorPane");
    public static final URL YO_GRAPHIC_ROBOT_COLLISIONS_BUTTON_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicRobotCollisionsToggleButton");
    public static final URL YO_GRAPHIC_TERRAIN_COLLISIONS_BUTTON_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicTerrainCollisionsToggleButton");
    public static final URL YO_GRAPHIC_ROBOT_MASS_PROPERTIES_BUTTON_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicRobotMassPropertiesToggleButton");
@@ -376,6 +383,16 @@ public class SessionVisualizerIOTools
    public static File yoSliderboardConfigurationSaveFileDialog(Window owner)
    {
       return showSaveDialog(owner, "Save YoSliderboard", yoSliderboardConfigurationFilter);
+   }
+
+   public static File yoVariableGroupConfigurationOpenFileDialog(Window owner)
+   {
+      return showOpenDialog(owner, "Load YoVariable Group", yoVariableGroupConfigurationFilter);
+   }
+
+   public static File yoVariableGroupConfigurationSaveFileDialog(Window owner)
+   {
+      return showSaveDialog(owner, "Save YoVariable Group", yoVariableGroupConfigurationFilter);
    }
 
    public static File videoExportSaveFileDialog(Window owner)

@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.yoSlider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -56,15 +57,15 @@ public class YoSliderboardDefinition
       name = other.name;
       type = other.type;
       if (other.knobs != null)
-         knobs = other.knobs.stream().map(YoKnobDefinition::new).toList();
+         knobs = other.knobs.stream().map(YoKnobDefinition::new).collect(Collectors.toList());
       else
          knobs = null;
       if (other.buttons != null)
-         buttons = other.buttons.stream().map(YoButtonDefinition::new).toList();
+         buttons = other.buttons.stream().map(YoButtonDefinition::new).collect(Collectors.toList());
       else
          buttons = null;
       if (other.sliders != null)
-         sliders = other.sliders.stream().map(YoSliderDefinition::new).toList();
+         sliders = other.sliders.stream().map(YoSliderDefinition::new).collect(Collectors.toList());
       else
          sliders = null;
    }

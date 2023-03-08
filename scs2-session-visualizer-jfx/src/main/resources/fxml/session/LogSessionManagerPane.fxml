@@ -51,41 +51,26 @@
                   <Insets bottom="20.0" />
                </padding>
             </CropSlider>
-            <GridPane fx:id="cropControlsContainer" hgap="5.0" style="-fx-border-color: -default-pale-blue;" vgap="5.0">
-              <columnConstraints>
-                <ColumnConstraints hgrow="NEVER" />
-                  <ColumnConstraints hgrow="SOMETIMES" />
-                <ColumnConstraints hgrow="NEVER" />
-              </columnConstraints>
-              <rowConstraints>
-                <RowConstraints vgrow="SOMETIMES" />
-                  <RowConstraints vgrow="SOMETIMES" />
-              </rowConstraints>
+            <VBox fx:id="cropControlsContainer">
                <children>
-                  <JFXToggleButton fx:id="showTrimsButton" size="6.0" text="Enable crop data controls" GridPane.hgrow="NEVER" />
-                  <HBox alignment="CENTER_LEFT" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" GridPane.hgrow="NEVER" GridPane.rowIndex="1">
+                  <JFXToggleButton fx:id="showTrimsButton" size="6.0" text="Enable crop data controls" />
+                  <HBox alignment="CENTER_LEFT" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0">
                      <children>
                         <Label text="Trims:" />
                         <JFXButton fx:id="startTrimToCurrentButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#snapStartTrimToCurrent" styleClass="log-trim-controls-button" text="Set Start" />
                         <JFXButton fx:id="endTrimToCurrentButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#snapEndTrimToCurrent" styleClass="log-trim-controls-button" text="Set End" />
                         <JFXButton fx:id="resetTrimsButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#resetTrims" styleClass="log-trim-controls-button" text="Reset" />
+                        <Label text="Output format:" />
+                        <JFXComboBox fx:id="outputFormatComboxBox" maxWidth="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS" />
+                        <JFXButton fx:id="cropAndExportButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#cropAndExport" styleClass="log-trim-controls-button" text="Crop &amp; Export" />
                      </children>
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </padding>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                     <children>
-                        <Label text="Output format:" />
-                        <JFXComboBox fx:id="outputFormatComboxBox" maxWidth="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS" />
-                     </children>
-                  </HBox>
-                  <JFXButton fx:id="cropAndExportButton" minHeight="-Infinity" minWidth="-Infinity" onAction="#cropAndExport" styleClass="log-trim-controls-button" text="Crop &amp; Export" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <JFXToggleButton fx:id="enableVariableFilterToggleButton" size="6.0" text="Enable variable filter controls" />
                </children>
-               <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </padding>
-            </GridPane>
+            </VBox>
             <AnchorPane fx:id="cropProgressMonitorPane" VBox.vgrow="NEVER" />
             <TitledPane fx:id="thumbnailsTitledPane" animated="false" disable="true" expanded="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" text="No video" VBox.vgrow="ALWAYS">
                <content>
