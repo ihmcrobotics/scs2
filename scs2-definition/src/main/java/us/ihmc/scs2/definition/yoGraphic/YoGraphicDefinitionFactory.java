@@ -86,7 +86,7 @@ public class YoGraphicDefinitionFactory
       CIRCLE(false),
       /**
        * <img src=
-       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/circe_plus_icon.png"
+       * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/circle_plus_icon.png"
        * width=150px/>
        */
       CIRCLE_PLUS(false),
