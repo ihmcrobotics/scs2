@@ -224,6 +224,7 @@ public class YoGraphicTools
       if (yoGraphicListDefinition.getYoGraphics() == null)
          return null;
       yoGraphicListDefinition.unwrapNestedLists();
+      yoGraphicListDefinition.mergeHomonymousGroups();
 
       List<YoGraphicFXItem> items = new ArrayList<>();
 
@@ -263,7 +264,7 @@ public class YoGraphicTools
          isValidName = !parentGroup.containsYoGraphicFX3D(yoGraphicFX.getName());
       else
          throw new RuntimeException("The following " + YoGraphicFX.class.getSimpleName() + " has unexpected hierarchy "
-               + yoGraphicFX.getClass().getSimpleName());
+                                    + yoGraphicFX.getClass().getSimpleName());
 
       if (!isValidName)
          yoGraphicFX.setName(YoGraphicFXControllerTools.createAvailableYoGraphicFXItemName(parentGroup, yoGraphicFX.getName(), yoGraphicFX.getClass()));
@@ -642,7 +643,8 @@ public class YoGraphicTools
       yoGraphicFXToPack.setPoints(CompositePropertyTools.toTuple3DPropertyList(yoVariableDatabase, referenceFrameManager, definition.getPoints()));
       yoGraphicFXToPack.setNumberOfPoints(CompositePropertyTools.toIntegerProperty(yoVariableDatabase, definition.getNumberOfPoints()));
       yoGraphicFXToPack.setSize(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getSize()));
-      yoGraphicFXToPack.setGraphicResource(resourceManager.loadGraphic3DResource(definition.getGraphicName()));
+      if (definition.getGraphicName() != null)
+         yoGraphicFXToPack.setGraphicResource(resourceManager.loadGraphic3DResource(definition.getGraphicName()));
    }
 
    public static YoPolynomialFX3D toYoPolynomialFX3D(YoVariableDatabase yoVariableDatabase,
@@ -1058,7 +1060,7 @@ public class YoGraphicTools
          return convertSphere3DDefinition(referenceFrame, originPose, (Sphere3DDefinition) geometryDefinition);
       else
          throw new UnsupportedOperationException("Unsupported " + GeometryDefinition.class.getSimpleName() + ": "
-               + geometryDefinition.getClass().getSimpleName());
+                                                 + geometryDefinition.getClass().getSimpleName());
    }
 
    public static YoGroupFX convertRobotMassPropertiesShapeDefinitions(RigidBodyReadOnly rootBody, RobotDefinition robotDefinition)
@@ -1237,7 +1239,9 @@ public class YoGraphicTools
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
       yoGraphicFX.setThickness(geometryDefinition.getTopZ() - geometryDefinition.getBottomZ());
-      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices().stream().map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
+      yoGraphicFX.setVertices(geometryDefinition.getPolygonVertices()
+                                                .stream()
+                                                .map(v -> new Tuple2DProperty(referenceFrame, v.getX(), v.getY()))
                                                 .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getPolygonVertices().size());
       return yoGraphicFX;
@@ -1252,8 +1256,11 @@ public class YoGraphicTools
       yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
-      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope().getVertices().stream()
-                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).collect(Collectors.toList()));
+      yoGraphicFX.setVertices(geometryDefinition.getConvexPolytope()
+                                                .getVertices()
+                                                .stream()
+                                                .map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ()))
+                                                .collect(Collectors.toList()));
       yoGraphicFX.setNumberOfVertices(geometryDefinition.getConvexPolytope().getNumberOfVertices());
       return yoGraphicFX;
    }
