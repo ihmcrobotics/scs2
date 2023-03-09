@@ -117,6 +117,34 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
       }
    }
 
+   public void mergeHomonymousGroups()
+   {
+      if (yoGraphics == null)
+         return;
+
+      for (int i = yoGraphics.size() - 1; i >= 0; i--)
+      {
+         YoGraphicDefinition child = yoGraphics.get(i);
+         if (child instanceof YoGraphicGroupDefinition subGroup)
+         {
+            subGroup.mergeHomonymousNestedGroups();
+
+            for (int j = yoGraphics.size() - 1; j > i; j--)
+            {
+               YoGraphicDefinition otherChild = yoGraphics.get(j);
+               if (otherChild instanceof YoGraphicGroupDefinition otherSubGroup)
+               {
+                  if (subGroup.getName().equals(otherSubGroup.getName()))
+                  {
+                     yoGraphics.remove(j);
+                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                  }
+               }
+            }
+         }
+      }
+   }
+
    public List<YoGraphicDefinition> getYoGraphics()
    {
       return yoGraphics;

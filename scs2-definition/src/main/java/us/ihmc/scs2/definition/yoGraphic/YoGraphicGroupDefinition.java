@@ -137,7 +137,8 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
    }
 
    /**
-    * Unwraps any sub-group registered. This is useful to flatten the hierarchy starting from this group.
+    * Unwraps any sub-group registered. This is useful to flatten the hierarchy starting from this
+    * group.
     */
    public void unwrapNestedGroups()
    {
@@ -154,6 +155,34 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
             {
                subGroup.unwrapNestedGroups();
                children.addAll(i, subGroup.getChildren());
+            }
+         }
+      }
+   }
+
+   public void mergeHomonymousNestedGroups()
+   {
+      if (children == null)
+         return;
+
+      for (int i = children.size() - 1; i >= 0; i--)
+      {
+         YoGraphicDefinition child = children.get(i);
+         if (child instanceof YoGraphicGroupDefinition subGroup)
+         {
+            subGroup.mergeHomonymousNestedGroups();
+
+            for (int j = children.size() - 1; j > i; j--)
+            {
+               YoGraphicDefinition otherChild = children.get(j);
+               if (otherChild instanceof YoGraphicGroupDefinition otherSubGroup)
+               {
+                  if (subGroup.getName().equals(otherSubGroup.getName()))
+                  {
+                     children.remove(j);
+                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                  }
+               }
             }
          }
       }
