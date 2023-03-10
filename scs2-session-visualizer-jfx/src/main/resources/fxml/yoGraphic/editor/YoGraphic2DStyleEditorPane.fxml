@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXColorPicker?>
 <?import com.jfoenix.controls.JFXRadioButton?>
 <?import com.jfoenix.controls.JFXTextField?>
 <?import javafx.scene.control.Label?>
@@ -22,9 +21,9 @@
       <RowConstraints vgrow="SOMETIMES" />
    </rowConstraints>
    <children>
-      <JFXRadioButton fx:id="fillRadioButton" text="Fill color" />
+      <JFXRadioButton fx:id="fillRadioButton" text="Fill" />
 	  <fx:include fx:id="fillColorEditor" source="ColorEditorPane.fxml" GridPane.columnIndex="1" GridPane.columnSpan="2" />
-      <JFXRadioButton fx:id="strokeRadioButton" selected="true" text="Stroke color" GridPane.rowIndex="1" />
+      <JFXRadioButton fx:id="strokeRadioButton" selected="true" text="Stroke" GridPane.rowIndex="1" />
 	  <fx:include fx:id="strokeColorEditor" source="ColorEditorPane.fxml" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" />
       <Label text="Stroke width" GridPane.rowIndex="2" />
       <JFXTextField fx:id="strokeWidthTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />

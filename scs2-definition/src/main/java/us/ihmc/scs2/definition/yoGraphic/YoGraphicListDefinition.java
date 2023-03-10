@@ -117,6 +117,42 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
       }
    }
 
+   /**
+    * Merges any groups sharing the same name. The operation is propagated to any group and y list
+    * registered.
+    */
+   public void mergeGroupsByName()
+   {
+      if (yoGraphics == null)
+         return;
+
+      for (int i = yoGraphics.size() - 1; i >= 0; i--)
+      {
+         YoGraphicDefinition yoGraphic = yoGraphics.get(i);
+         if (yoGraphic instanceof YoGraphicGroupDefinition subGroup)
+         {
+            subGroup.mergeNestedGroupsByName();
+
+            for (int j = yoGraphics.size() - 1; j > i; j--)
+            {
+               YoGraphicDefinition otherChild = yoGraphics.get(j);
+               if (otherChild instanceof YoGraphicGroupDefinition otherSubGroup)
+               {
+                  if (subGroup.getName().equals(otherSubGroup.getName()))
+                  {
+                     yoGraphics.remove(j);
+                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                  }
+               }
+            }
+         }
+         else if (yoGraphic instanceof YoGraphicListDefinition list)
+         {
+            list.mergeGroupsByName();
+         }
+      }
+   }
+
    public List<YoGraphicDefinition> getYoGraphics()
    {
       return yoGraphics;
