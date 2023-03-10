@@ -160,7 +160,11 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
       }
    }
 
-   public void mergeHomonymousNestedGroups()
+   /**
+    * Merges any sub-groups sharing the same name. The operation is repeated recursively through all
+    * the descendants.
+    */
+   public void mergeNestedGroupsByName()
    {
       if (children == null)
          return;
@@ -170,7 +174,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
          YoGraphicDefinition child = children.get(i);
          if (child instanceof YoGraphicGroupDefinition subGroup)
          {
-            subGroup.mergeHomonymousNestedGroups();
+            subGroup.mergeNestedGroupsByName();
 
             for (int j = children.size() - 1; j > i; j--)
             {

@@ -224,7 +224,7 @@ public class YoGraphicTools
       if (yoGraphicListDefinition.getYoGraphics() == null)
          return null;
       yoGraphicListDefinition.unwrapNestedLists();
-      yoGraphicListDefinition.mergeHomonymousGroups();
+      yoGraphicListDefinition.mergeGroupsByName();
 
       List<YoGraphicFXItem> items = new ArrayList<>();
 
