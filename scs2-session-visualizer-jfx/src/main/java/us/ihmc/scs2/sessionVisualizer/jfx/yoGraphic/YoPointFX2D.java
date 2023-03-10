@@ -47,6 +47,8 @@ public class YoPointFX2D extends YoGraphicFX2D
       position.setReferenceFrame(worldFrame);
    }
 
+   private SVGContent graphic = null;
+
    public void setGraphicResource(YoGraphicFXResource graphicResource)
    {
       this.graphicResource = graphicResource;
@@ -55,7 +57,7 @@ public class YoPointFX2D extends YoGraphicFX2D
       if (graphicResource == null || graphicResource.getResourceURL() == null)
          return;
 
-      SVGContent graphic = SVGLoader.load(graphicResource.getResourceURL());
+      graphic = SVGLoader.load(graphicResource.getResourceURL());
 
       List<Shape> shapes = YoGraphicTools.extractShapes(graphic);
       Translate graphicCentering = new Translate();
@@ -72,19 +74,29 @@ public class YoPointFX2D extends YoGraphicFX2D
          shape.idProperty().bind(nameProperty());
       }
 
-      pointNode.getChildren().add(graphic);
    }
 
    @Override
    public void render()
    {
+      // If the SVG is a path, it seems that hiding it by setting the translation to a large number and setting the scale to 0 may result in the following exception:
+      // java.lang.IllegalStateException: Trying to remove a cached item that's not in the cache
+      // Removing and adding the graphic back to the pointNode group seems to avoid that issue.
       if (position.containsNaN())
       {
-         translate.setX(Double.NEGATIVE_INFINITY);
-         translate.setY(Double.NEGATIVE_INFINITY);
-         scale.setX(0.0);
-         scale.setY(0.0);
+         pointNode.getChildren().clear();
+//         translate.setX(Double.NEGATIVE_INFINITY);
+//         translate.setY(Double.NEGATIVE_INFINITY);
+//         scale.setX(0.0);
+//         scale.setY(0.0);
          return;
+      }
+      else
+      {
+         if (pointNode.getChildren().isEmpty())
+            pointNode.getChildren().add(graphic);
+         else if (pointNode.getChildren().get(0) != graphic)
+            pointNode.getChildren().set(0, graphic);
       }
 
       Point2D positionInWorld = position.toPoint2DInWorld();
