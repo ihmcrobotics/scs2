@@ -1048,6 +1048,8 @@ public class YoGraphicTools
          return convertCone3DDefinition(referenceFrame, originPose, (Cone3DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof Cylinder3DDefinition)
          return convertCylinder3DDefinition(referenceFrame, originPose, (Cylinder3DDefinition) geometryDefinition);
+      else if (geometryDefinition instanceof Ellipsoid3DDefinition)
+         return convertEllipsoid3DDefinition(referenceFrame, originPose, (Ellipsoid3DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof ExtrudedPolygon2DDefinition)
          return convertExtrudedPolygon2DDefinition(referenceFrame, originPose, (ExtrudedPolygon2DDefinition) geometryDefinition);
       else if (geometryDefinition instanceof ConvexPolytope3DDefinition)
