@@ -290,6 +290,92 @@ public class ColorDefinitions
    }
 
    /**
+    * Creates a new opaque color from the given HSBA/HSVA values.
+    * 
+    * @param hue        the hue component in range [0-360].
+    * @param saturation the saturation component in range [0.0-1.0].
+    * @param brightness the brightness/value component in range [0.0-1.0].
+    * @param alpha      the alpha component in range [0.0-1.0], 0 being fully transparent and 255 fully
+    *                   opaque.
+    * @return the new color.
+    * @see <a href=
+    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *      representation</a>
+    */
+   public static int hsbaToRGBA(double hue, double saturation, double brightness, double alpha)
+   {
+      hue %= 360.0;
+      if (hue < 0.0)
+         hue += 360.0;
+      saturation = MathTools.clamp(saturation, 0.0, 1.0);
+      brightness = MathTools.clamp(brightness, 0.0, 1.0);
+
+      // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+      double c = brightness * saturation;
+      double hh = hue / 60.0;
+      double x = c * (1.0 - Math.abs(hh % 2 - 1.0));
+
+      double m = brightness - c;
+
+      int r, g, b, a;
+      a = (int) Math.round(alpha * 255.0);
+
+      if (hh <= 1.0)
+      {
+         r = (int) Math.round((c + m) * 255.0);
+         g = (int) Math.round((x + m) * 255.0);
+         b = (int) Math.round((0 + m) * 255.0);
+      }
+      else if (hh <= 2)
+      {
+         r = (int) Math.round((x + m) * 255.0);
+         g = (int) Math.round((c + m) * 255.0);
+         b = (int) Math.round((0 + m) * 255.0);
+      }
+      else if (hh <= 3)
+      {
+         r = (int) Math.round((0 + m) * 255.0);
+         g = (int) Math.round((c + m) * 255.0);
+         b = (int) Math.round((x + m) * 255.0);
+      }
+      else if (hh <= 4)
+      {
+         r = (int) Math.round((0 + m) * 255.0);
+         g = (int) Math.round((x + m) * 255.0);
+         b = (int) Math.round((c + m) * 255.0);
+      }
+      else if (hh <= 5)
+      {
+         r = (int) Math.round((x + m) * 255.0);
+         g = (int) Math.round((0 + m) * 255.0);
+         b = (int) Math.round((c + m) * 255.0);
+      }
+      else if (hh <= 6)
+      {
+         r = (int) Math.round((c + m) * 255.0);
+         g = (int) Math.round((0 + m) * 255.0);
+         b = (int) Math.round((x + m) * 255.0);
+      }
+      else
+      {
+         r = (int) Math.round(m * 255.0);
+         g = (int) Math.round(m * 255.0);
+         b = (int) Math.round(m * 255.0);
+      }
+
+      int rgba = (r & 0xFF) << 24;
+      rgba |= (g & 0xFF) << 16;
+      rgba |= (b & 0xFF) << 8;
+      rgba |= (a & 0xFF) << 0;
+      return rgba;
+   }
+   
+   public static void main(String[] args)
+   {
+      System.out.println(rgba(16777471));
+   }
+
+   /**
     * Creates a new opaque color from the given HSL values.
     * <p>
     * The components are assumed to be ordered as hue [0-360], saturation [0.0-1.0], and lightness
