@@ -117,17 +117,21 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
       }
    }
 
-   public void mergeHomonymousGroups()
+   /**
+    * Merges any groups sharing the same name. The operation is propagated to any group and y list
+    * registered.
+    */
+   public void mergeGroupsByName()
    {
       if (yoGraphics == null)
          return;
 
       for (int i = yoGraphics.size() - 1; i >= 0; i--)
       {
-         YoGraphicDefinition child = yoGraphics.get(i);
-         if (child instanceof YoGraphicGroupDefinition subGroup)
+         YoGraphicDefinition yoGraphic = yoGraphics.get(i);
+         if (yoGraphic instanceof YoGraphicGroupDefinition subGroup)
          {
-            subGroup.mergeHomonymousNestedGroups();
+            subGroup.mergeNestedGroupsByName();
 
             for (int j = yoGraphics.size() - 1; j > i; j--)
             {
@@ -141,6 +145,10 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
                   }
                }
             }
+         }
+         else if (yoGraphic instanceof YoGraphicListDefinition list)
+         {
+            list.mergeGroupsByName();
          }
       }
    }
