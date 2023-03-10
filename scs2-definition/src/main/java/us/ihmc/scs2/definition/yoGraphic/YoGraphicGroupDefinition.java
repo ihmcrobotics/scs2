@@ -189,6 +189,10 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
                }
             }
          }
+         else if (child instanceof YoGraphicListDefinition list)
+         {
+            list.mergeGroupsByName();
+         }
       }
    }
 
