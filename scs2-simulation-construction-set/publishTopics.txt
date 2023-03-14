@@ -1,0 +1,3 @@
+/abb/ccd/up/pub1/yellow
+/abb/ddf/down/pub1/green
+/abb/ghh/left/pub1/red

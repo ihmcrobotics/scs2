@@ -1,0 +1,3 @@
+/right/franka/right/cm/loop_time
+/right/franka/right/cm/cat
+/left/franka/left/b/dog
