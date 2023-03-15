@@ -32,8 +32,32 @@ public class RTPSPublisherTest
          for (String topic : pubTopics)
          {
             createPublisher(node, topic);
-            //            new YoRTPSDouble(node, rootRegistry, topic, RTPS_MODE.PUBLISH_ONLY);
          }
+
+         for (String topic : subTopics)
+         {
+            createSubscriber(node, topic);
+         }
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+   private void createSubscriber(ROS2Node node, String topic)
+   {
+      System.out.println("Binding Subscriber:  " + topic);
+      try
+      {
+         node.createSubscription(new std_msgs.msg.dds.Float64PubSubType(), sub ->
+         {
+            {
+               Float64 rosData = sub.takeNextData();
+               System.out.println(topic + " : " + rosData.getData());
+            }
+
+         }, topic);
       }
       catch (IOException e)
       {

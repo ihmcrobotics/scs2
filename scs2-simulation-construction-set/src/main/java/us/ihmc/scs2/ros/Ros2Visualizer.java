@@ -24,10 +24,14 @@ public class Ros2Visualizer
 {
    private SimulationConstructionSet2 scs;
 
-   public Ros2Visualizer(int domainID, List<String> subTopics, List<String> pubTopics) throws IOException
+   public Ros2Visualizer(int domainID, List<String> subTopics, List<String> pubTopics) throws IOException, InterruptedException
    {
+      //try and give resource loading a chance to catch up
+      Thread.sleep(1500);
       scs = new SimulationConstructionSet2(SimulationConstructionSet2.contactPointBasedPhysicsEngineFactory());
-
+      
+      //try and give resource loading a chance to catch up
+      Thread.sleep(200);
 
       //      * Create a new ROS2 node.
       //      *
@@ -68,7 +72,7 @@ public class Ros2Visualizer
       scs.start(true, false, false);
    }
 
-   public static void main(String[] args) throws IOException, JSAPException
+   public static void main(String[] args) throws IOException, JSAPException, InterruptedException
    {
       FlaggedOption domainIdFlag = new FlaggedOption("domain");
       domainIdFlag.setRequired(true);
@@ -121,7 +125,7 @@ public class Ros2Visualizer
       {
          System.out.println(topic);
       }
-
+      
       new Ros2Visualizer(domainID, subTopics, pubTopics);
    }
 
