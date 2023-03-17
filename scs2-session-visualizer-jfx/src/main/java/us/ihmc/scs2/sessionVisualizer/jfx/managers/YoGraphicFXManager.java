@@ -51,6 +51,9 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
 
       messager.registerJavaFXSyncedTopicListener(topics.getYoGraphicLoadRequest(), this::loadYoGraphicFromFile);
       messager.registerJavaFXSyncedTopicListener(topics.getYoGraphicSaveRequest(), this::saveYoGraphicToFile);
+      messager.registerTopicListener(topics.getRemoveYoGraphicRequest(), this::removeYoGraphic);
+      messager.registerTopicListener(topics.getSetYoGraphicVisibleRequest(), pair -> setYoGraphicVisible(pair.getKey(), pair.getValue()));
+      messager.registerTopicListener(topics.getAddYoGraphicRequest(), this::setupYoGraphicDefinition);
       messager.registerTopicListener(topics.getAddYoGraphicRequest(), this::setupYoGraphicDefinition);
    }
 
@@ -107,6 +110,29 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
    @Override
    public boolean isSessionLoaded()
    {
+      return true;
+   }
+
+   public boolean removeYoGraphic(String name)
+   {
+      YoGraphicFXItem graphic = root.findYoGraphicFX(name);
+      if (graphic == null)
+         return false;
+      return JavaFXMissingTools.runAndWait(getClass(), () ->
+      {
+         YoGroupFX parent = graphic.getParentGroup();
+         if (parent == null)
+            return false;
+         return parent.removeYoGraphicFXItem(graphic);
+      });
+   }
+
+   public boolean setYoGraphicVisible(String name, boolean visible)
+   {
+      YoGraphicFXItem graphic = root.findYoGraphicFX(name);
+      if (graphic == null)
+         return false;
+      JavaFXMissingTools.runAndWait(getClass(), () -> graphic.setVisible(visible));
       return true;
    }
 

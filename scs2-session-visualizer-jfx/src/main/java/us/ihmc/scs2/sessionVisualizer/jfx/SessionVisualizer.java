@@ -414,6 +414,18 @@ public class SessionVisualizer
       }
 
       @Override
+      public void removeYoGraphic(String name)
+      {
+         submitMessage(getTopics().getRemoveYoGraphicRequest(), name);
+      }
+
+      @Override
+      public void setYoGraphicVisible(String name, boolean visible)
+      {
+         submitMessage(getTopics().getSetYoGraphicVisibleRequest(), new Pair<>(name, visible));
+      }
+
+      @Override
       public void addYoGraphic(YoGraphicDefinition yoGraphicDefinition)
       {
          submitMessage(getTopics().getAddYoGraphicRequest(), yoGraphicDefinition);

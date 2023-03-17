@@ -69,6 +69,7 @@ public class SessionVisualizerMessagerAPI
    private static final TopicTheme Add = apiFactory.createTopicTheme("add");
    private static final TopicTheme Set = apiFactory.createTopicTheme("set");
    private static final TopicTheme Remove = apiFactory.createTopicTheme("remove");
+   private static final TopicTheme Visible = apiFactory.createTopicTheme("visible");
 
    public static final Topic<Boolean> DisableUserControls = APIRoot.child(User).child(Controls).topic(Disable);
    public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = APIRoot.child(Video).topic(Request);
@@ -140,6 +141,8 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<File> YoGraphicSaveRequest = APIRoot.child(YoGraphic).topic(Save);
       public static final Topic<File> YoGraphicLoadRequest = APIRoot.child(YoGraphic).topic(Load);
 
+      public static final Topic<String> RemoveYoGraphicRequest = APIRoot.child(YoGraphic).topic(Remove);
+      public static final Topic<Pair<String, Boolean>> SetYoGraphicVisibleRequest = APIRoot.child(YoGraphic).topic(Visible);
       public static final Topic<YoGraphicDefinition> AddYoGraphicRequest = APIRoot.child(YoGraphic).topic(Add);
       public static final Topic<YoTuple2DDefinition> Plotter2DTrackCoordinateRequest = APIRoot.child(YoGraphic).child(Plotter2D).child(Track).topic(Request);
    }

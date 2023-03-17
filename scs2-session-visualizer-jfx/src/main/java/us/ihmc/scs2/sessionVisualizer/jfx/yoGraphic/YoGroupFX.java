@@ -22,6 +22,8 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.yoVariables.exceptions.IllegalNameException;
 
 public class YoGroupFX implements YoGraphicFXItem
 {
@@ -192,7 +194,7 @@ public class YoGroupFX implements YoGraphicFXItem
             if (numberOfGraphicWithSameName > 1)
             {
                throw new IllegalArgumentException(elementAdded.getClass().getSimpleName() + " should have a unique name within a group, graphic causing issue: "
-                     + elementAdded.getFullname());
+                                                  + elementAdded.getFullname());
             }
 
             elementAdded.detachFromParent();
@@ -275,6 +277,18 @@ public class YoGroupFX implements YoGraphicFXItem
          throw new RuntimeException("Unexpected item type: " + yoGraphicFXItem.getClass().getSimpleName());
    }
 
+   public boolean removeYoGraphicFXItem(YoGraphicFXItem yoGraphicFXItem)
+   {
+      if (yoGraphicFXItem instanceof YoGraphicFX2D)
+         return removeYoGraphicFX2D((YoGraphicFX2D) yoGraphicFXItem);
+      else if (yoGraphicFXItem instanceof YoGraphicFX3D)
+         return removeYoGraphicFX3D((YoGraphicFX3D) yoGraphicFXItem);
+      else if (yoGraphicFXItem instanceof YoGroupFX)
+         return removeChild((YoGroupFX) yoGraphicFXItem);
+      else
+         throw new RuntimeException("Unexpected item type: " + yoGraphicFXItem.getClass().getSimpleName());
+   }
+
    public boolean addYoGraphicFX2D(YoGraphicFX2D yoGraphicFX)
    {
       if (containsYoGraphicFX2D(yoGraphicFX.getName()))
@@ -322,6 +336,38 @@ public class YoGroupFX implements YoGraphicFXItem
    public YoGraphicFX3D getYoGraphicFX3D(String graphicName)
    {
       return yoGraphicFX3DSet.stream().filter(graphic -> graphic.getName().equals(graphicName)).findFirst().orElse(null);
+   }
+
+   public YoGraphicFXItem findYoGraphicFX(String name)
+   {
+      int separatorIndex = name.lastIndexOf(YoGraphicDefinition.SEPARATOR);
+
+      if (separatorIndex == -1)
+         return findYoGraphicFX(null, name);
+      else
+         return findYoGraphicFX(name.substring(0, separatorIndex), name.substring(separatorIndex + 1));
+   }
+
+   public YoGraphicFXItem findYoGraphicFX(String namespaceEnding, String name)
+   {
+      if (name.contains(YoGraphicDefinition.SEPARATOR))
+         throw new IllegalNameException("The name cannot contain '" + YoGraphicDefinition.SEPARATOR + "'. Was: " + name);
+
+      if (namespaceEnding == null || getNamespace().endsWith(namespaceEnding))
+      {
+         YoGraphicFX2D graphic = getYoGraphicFX2D(name);
+         if (graphic != null)
+            return graphic;
+      }
+
+      for (YoGroupFX child : getChildren())
+      {
+         YoGraphicFXItem graphic = child.findYoGraphicFX(namespaceEnding, name);
+         if (graphic != null)
+            return graphic;
+      }
+
+      return null;
    }
 
    @Override
@@ -419,6 +465,25 @@ public class YoGroupFX implements YoGraphicFXItem
    public StringProperty nameProperty()
    {
       return nameProperty;
+   }
+
+   /**
+    * Sets the visible property of this group and propagates it down to its descendants.
+    */
+   public void setVisibleDeep(boolean visible)
+   {
+      if (visible != isVisible())
+      {
+         // The visible update will propagate naturally
+         visibleProperty.set(visible);
+         return;
+      }
+      else
+      {
+         children.forEach(child -> child.setVisibleDeep(visible));
+         yoGraphicFX2DSet.forEach(graphic2D -> graphic2D.setVisible(visible));
+         yoGraphicFX3DSet.forEach(graphic3D -> graphic3D.setVisible(visible));
+      }
    }
 
    @Override
