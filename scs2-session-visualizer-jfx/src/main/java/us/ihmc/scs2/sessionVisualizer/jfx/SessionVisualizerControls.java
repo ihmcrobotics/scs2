@@ -263,6 +263,49 @@ public interface SessionVisualizerControls
    }
 
    /**
+    * Removes all yoGraphics that were added to the GUI.
+    */
+   default void removeAllYoGraphics()
+   {
+      removeYoGraphic(YoGraphicTools.GUI_ROOT_NAME);
+   }
+
+   /**
+    * Finds the first discovered instance of a yoGraphic matching the given name and removes it from
+    * the scene.
+    * <p>
+    * If the yoGraphic found is a group, it is removed as well as all of its children and descendants.
+    * </p>
+    * 
+    * @param name the name of the yoGraphic to remove. If the name contains
+    *             {@value YoGraphicDefinition#SEPARATOR}, it is split at the last occurrence to extract
+    *             a namespace and the actual yoGraphic name.
+    */
+   void removeYoGraphic(String name);
+
+   /**
+    * Sets the visible property for all yoGraphics that were added to the GUI.
+    */
+   default void setAllYoGraphicsVisible(boolean visible)
+   {
+      setYoGraphicVisible(YoGraphicTools.GUI_ROOT_NAME, visible);
+   }
+
+   /**
+    * Finds the first discovered instance of a yoGraphic matching the given name and sets its visible
+    * property.
+    * <p>
+    * If the yoGraphic found is a group, it is sets the visible property for all of its children and
+    * descendants as well.
+    * </p>
+    * 
+    * @param name the name of the yoGraphic to remove. If the name contains
+    *             {@value YoGraphicDefinition#SEPARATOR}, it is split at the last occurrence to extract
+    *             a namespace and the actual yoGraphic name.
+    */
+   void setYoGraphicVisible(String name, boolean visible);
+
+   /**
     * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
     * 
     * @param yoGraphicDefinition the definition of the graphic to be added.
@@ -294,7 +337,7 @@ public interface SessionVisualizerControls
     * Adds a dynamic graphic to the 3D scene.
     * 
     * @param namespace           the desired namespace for the new graphic. The separator used is
-    *                            {@value YoGraphicTools#SEPARATOR}.
+    *                            {@value YoGraphicDefinition#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
@@ -303,7 +346,7 @@ public interface SessionVisualizerControls
     */
    default void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
    {
-      String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
+      String[] subNames = namespace.split(YoGraphicDefinition.SEPARATOR);
       if (subNames == null || subNames.length == 0)
       {
          addYoGraphic(yoGraphicDefinition);
@@ -323,7 +366,7 @@ public interface SessionVisualizerControls
     * Adds dynamic graphics to the 3D scene.
     * 
     * @param namespace            the desired namespace for the new graphics. The separator used is
-    *                             {@value YoGraphicTools#SEPARATOR}.
+    *                             {@value YoGraphicDefinition#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
@@ -332,7 +375,7 @@ public interface SessionVisualizerControls
     */
    default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
-      String[] subNames = namespace.split(YoGraphicTools.SEPARATOR);
+      String[] subNames = namespace.split(YoGraphicDefinition.SEPARATOR);
       if (subNames == null || subNames.length == 0)
       {
          addYoGraphics(yoGraphicDefinitions);

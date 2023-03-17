@@ -168,7 +168,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * {@code true} by default.
     */
    public static final boolean DEFAULT_VISUALIZER_ENABLED = SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true)
-         && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
+                                                            && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
 
    private final SimulationSession simulationSession;
 
@@ -1065,6 +1065,20 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void removeStaticVisual(VisualDefinition visualDefinition)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.removeStaticVisual(visualDefinition));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void removeYoGraphic(String name)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeYoGraphic(name));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void setYoGraphicVisible(String name, boolean visible)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setYoGraphicVisible(name, visible));
    }
 
    /** {@inheritDoc} */
