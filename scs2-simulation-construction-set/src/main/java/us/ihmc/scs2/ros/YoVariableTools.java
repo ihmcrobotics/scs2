@@ -48,7 +48,7 @@ public class YoVariableTools
             if (child == null)
             {
                child = new YoRegistry(namespace);
-               currentRegistry.addChild(child);
+               currentRegistry.addChild(child, false);
             }
             currentRegistry = child;
          }

@@ -51,11 +51,19 @@ public class YoRTPSDouble
          System.out.println("Binding Subscriber:  " + topicName + " to " + topic);
          node.createSubscription(new std_msgs.msg.dds.Float64PubSubType(), sub ->
          {
-            if (scs.isSimulating())
+            if(scs != null)
+            {
+               if (scs.isSimulating())
+               {
+                  Float64 rosData = sub.takeNextData();
+                  variable.set(rosData.getData());
+                  //               System.out.println(topicName + " : " + rosData.getData());
+               }
+            }
+            else
             {
                Float64 rosData = sub.takeNextData();
                variable.set(rosData.getData());
-               //               System.out.println(topicName + " : " + rosData.getData());
             }
 
          }, topic);
@@ -80,9 +88,18 @@ public class YoRTPSDouble
             @Override
             public void changed(YoVariable source)
             {
-               if (scs.isSimulating())
+               if(scs != null)
                {
-                  //               System.out.println(topicName + " : " + source.getValueAsDouble());
+                  if (scs.isSimulating())
+                  {
+                     //               System.out.println(topicName + " : " + source.getValueAsDouble());
+                     Float64 data = new Float64();
+                     data.setData(source.getValueAsDouble());
+                     publisher.publish(data);
+                  }
+               }
+               else
+               {
                   Float64 data = new Float64();
                   data.setData(source.getValueAsDouble());
                   publisher.publish(data);
