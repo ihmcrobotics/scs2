@@ -289,6 +289,16 @@ public class YoGroupFX implements YoGraphicFXItem
          throw new RuntimeException("Unexpected item type: " + yoGraphicFXItem.getClass().getSimpleName());
    }
 
+   public boolean containsYoGraphicFXItem(String graphicName)
+   {
+      return itemChildren.stream().filter(graphic -> graphic.getName().equals(graphicName)).findFirst().isPresent();
+   }
+
+   public YoGraphicFXItem getYoGraphicFXItem(String graphicName)
+   {
+      return itemChildren.stream().filter(graphic -> graphic.getName().equals(graphicName)).findFirst().orElse(null);
+   }
+
    public boolean addYoGraphicFX2D(YoGraphicFX2D yoGraphicFX)
    {
       if (containsYoGraphicFX2D(yoGraphicFX.getName()))
@@ -353,9 +363,12 @@ public class YoGroupFX implements YoGraphicFXItem
       if (name.contains(YoGraphicDefinition.SEPARATOR))
          throw new IllegalNameException("The name cannot contain '" + YoGraphicDefinition.SEPARATOR + "'. Was: " + name);
 
+      if (namespaceEnding == null && Objects.equals(getName(), name))
+         return this;
+
       if (namespaceEnding == null || getNamespace().endsWith(namespaceEnding))
       {
-         YoGraphicFX2D graphic = getYoGraphicFX2D(name);
+         YoGraphicFXItem graphic = getYoGraphicFXItem(name);
          if (graphic != null)
             return graphic;
       }
