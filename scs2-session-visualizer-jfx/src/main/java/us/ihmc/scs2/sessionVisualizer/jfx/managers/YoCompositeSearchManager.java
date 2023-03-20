@@ -41,6 +41,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -354,7 +355,7 @@ public class YoCompositeSearchManager implements Manager
       listOfYoCompositeMaps.remove(patternToDiscard);
    }
 
-   private void loadYoCompositePatternFromFile(File file)
+   private void loadYoCompositePatternFromFile(File file, SynchronizeHint hint)
    {
       if (file == null)
          return;
@@ -362,7 +363,10 @@ public class YoCompositeSearchManager implements Manager
       try
       {
          List<YoCompositePattern> newPatterns = XMLTools.loadYoCompositePatterns(new FileInputStream(file));
-         newPatterns.forEach(this::searchYoCompositeInBackground);
+         if (hint == SynchronizeHint.SYNCHRONOUS)
+            newPatterns.forEach(this::searchYoCompositeNow);
+         else
+            newPatterns.forEach(this::searchYoCompositeInBackground);
       }
       catch (IOException | JAXBException e)
       {

@@ -241,8 +241,8 @@ public class YoChartGroupPanelController implements VisualizerController
          if (!isMessagerSetup)
             return;
          isMessagerSetup = false;
-         messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
-         messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
+         messager.removeFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
+         messager.removeFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
          messager.removeTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
       });
    }
