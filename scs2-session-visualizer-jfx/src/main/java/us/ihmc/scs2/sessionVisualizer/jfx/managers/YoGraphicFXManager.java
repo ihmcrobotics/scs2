@@ -50,7 +50,7 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       this.backgroundExecutorManager = backgroundExecutorManager;
       this.referenceFrameManager = referenceFrameManager;
 
-      messager.addFXTopicListener(topics.getYoGraphicLoadRequest(), this::loadYoGraphicFromFile);
+      messager.addFXTopicListenerBase(topics.getYoGraphicLoadRequest(), m -> loadYoGraphicFromFile(m.getMessageContent(), m.getSynchronizeHint()));
       messager.addFXTopicListener(topics.getYoGraphicSaveRequest(), this::saveYoGraphicToFile);
       messager.addTopicListener(topics.getRemoveYoGraphicRequest(), this::removeYoGraphic);
       messager.addTopicListener(topics.getSetYoGraphicVisibleRequest(), pair -> setYoGraphicVisible(pair.getKey(), pair.getValue()));
