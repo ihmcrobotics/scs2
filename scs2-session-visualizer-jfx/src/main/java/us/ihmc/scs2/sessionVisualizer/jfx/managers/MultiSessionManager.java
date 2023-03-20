@@ -41,7 +41,7 @@ public class MultiSessionManager
 {
    private static final boolean LOAD_SESSION_SYNCHRONOUS = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.loadconfig.synchronous",
                                                                                                                     "SCS2_GUI_LOAD_SESSION_SYNCHRONOUS",
-                                                                                                                    false);
+                                                                                                                    true);
    private static final boolean LOAD_SESSION_TIME = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.loadconfig.time", false);
    private static final boolean LOAD_MAIN_WINDOW_CONFIGURATION = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.mainwindow.loadconfig", true);
 
