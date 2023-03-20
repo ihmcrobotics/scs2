@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
-import static us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition.*;
+import static us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition.YoQuaternion;
+import static us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition.YoQuaternionIdentifiers;
 
 import java.util.Objects;
 

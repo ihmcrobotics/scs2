@@ -41,8 +41,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.session.log.LogDataReader;
@@ -290,7 +290,7 @@ public class LogSessionManagerController implements SessionControlsController
          }
       });
 
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m ->
+      messager.addFXTopicListener(topics.getDisableUserControls(), m ->
       {
          openSessionButton.setDisable(m);
          endSessionButton.setDisable(m);

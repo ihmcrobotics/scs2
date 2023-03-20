@@ -16,7 +16,7 @@ public class SessionDataPreferenceManager implements Manager
 
    public SessionDataPreferenceManager(Messager messager, SessionVisualizerTopics topics)
    {
-      messager.registerTopicListener(topics.getSessionDataFilterParametersAddRequest(), m ->
+      messager.addTopicListener(topics.getSessionDataFilterParametersAddRequest(), m ->
       {
          if (m.getName() == null)
             LogTools.error("Session data filter name cannot be null");

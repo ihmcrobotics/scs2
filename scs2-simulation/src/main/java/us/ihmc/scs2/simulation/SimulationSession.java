@@ -229,7 +229,7 @@ public class SimulationSession extends Session
             }
          });
       };
-      messager.registerTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener);
+      messager.addTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener);
       cleanupActions.add(() -> messager.removeTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener));
    }
 

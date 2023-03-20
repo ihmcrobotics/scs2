@@ -23,13 +23,13 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
 {
-   private final BufferedJavaFXMessager messager;
+   private final SCS2JavaFXMessager messager;
    private final SessionVisualizerTopics topics = new SessionVisualizerTopics();
 
    private final YoManager yoManager = new YoManager();
@@ -67,7 +67,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       MessagerAPIFactory apiFactory = new MessagerAPIFactory();
       apiFactory.createRootCategory("SCS2");
       apiFactory.includeMessagerAPIs(SessionMessagerAPI.API, YoSharedBufferMessagerAPI.API, SessionVisualizerMessagerAPI.API);
-      messager = new BufferedJavaFXMessager(apiFactory.getAPIAndCloseFactory());
+      messager = new SCS2JavaFXMessager(apiFactory.getAPIAndCloseFactory());
 
       topics.setupTopics();
       messager.startMessager();
@@ -222,7 +222,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       messager.closeMessager();
    }
 
-   public BufferedJavaFXMessager getMessager()
+   public SCS2JavaFXMessager getMessager()
    {
       return messager;
    }

@@ -50,7 +50,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
@@ -73,7 +73,7 @@ public class SessionVisualizer
    private final Group view3DRoot;
    private final MainWindowController mainWindowController;
    private final MultiViewport3DManager viewport3DManager;
-   private final BufferedJavaFXMessager messager;
+   private final SCS2JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
    private final SessionVisualizerControlsImpl sessionVisualizerControls = new SessionVisualizerControlsImpl();
    private final List<Runnable> stopListeners = new ArrayList<>();
@@ -109,7 +109,7 @@ public class SessionVisualizer
       scene3DBuilder.addNodeToView(toolkit.getYoRobotFXManager().getRootNode());
       scene3DBuilder.addNodeToView(toolkit.getEnvironmentManager().getRootNode());
 
-      messager.registerJavaFXSyncedTopicListener(topics.getCameraTrackObject(), request ->
+      messager.addFXTopicListener(topics.getCameraTrackObject(), request ->
       {
          if (request.getNode() != null)
             viewport3DManager.getMainViewport().setCameraNodeToTrack(request.getNode());
@@ -117,7 +117,7 @@ public class SessionVisualizer
 
       toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
       toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
+      messager.addFXTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
 
       scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
       mainWindowController.setupViewport3D(viewport3DManager.getPane());

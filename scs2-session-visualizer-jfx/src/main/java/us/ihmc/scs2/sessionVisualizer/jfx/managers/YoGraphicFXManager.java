@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 import javafx.scene.Node;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
 import us.ihmc.scs2.session.Session;
@@ -49,12 +49,12 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       this.backgroundExecutorManager = backgroundExecutorManager;
       this.referenceFrameManager = referenceFrameManager;
 
-      messager.registerJavaFXSyncedTopicListener(topics.getYoGraphicLoadRequest(), this::loadYoGraphicFromFile);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoGraphicSaveRequest(), this::saveYoGraphicToFile);
-      messager.registerTopicListener(topics.getRemoveYoGraphicRequest(), this::removeYoGraphic);
-      messager.registerTopicListener(topics.getSetYoGraphicVisibleRequest(), pair -> setYoGraphicVisible(pair.getKey(), pair.getValue()));
-      messager.registerTopicListener(topics.getAddYoGraphicRequest(), this::setupYoGraphicDefinition);
-      messager.registerTopicListener(topics.getAddYoGraphicRequest(), this::setupYoGraphicDefinition);
+      messager.addFXTopicListener(topics.getYoGraphicLoadRequest(), this::loadYoGraphicFromFile);
+      messager.addFXTopicListener(topics.getYoGraphicSaveRequest(), this::saveYoGraphicToFile);
+      messager.addTopicListener(topics.getRemoveYoGraphicRequest(), this::removeYoGraphic);
+      messager.addTopicListener(topics.getSetYoGraphicVisibleRequest(), pair -> setYoGraphicVisible(pair.getKey(), pair.getValue()));
+      messager.addTopicListener(topics.getAddYoGraphicRequest(), this::setupYoGraphicDefinition);
+      messager.addTopicListener(topics.getAddYoGraphicRequest(), this::setupYoGraphicDefinition);
    }
 
    private void computeBackground()

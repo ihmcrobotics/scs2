@@ -38,8 +38,8 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.messager.TopicListener;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -199,8 +199,8 @@ public class VideoRecordingPreviewPaneController
             updatingBufferIndex.setFalse();
          }
       };
-      messager.registerJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener);
-      cleanupActions.add(() -> messager.removeJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener));
+      messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener);
+      cleanupActions.add(() -> messager.removeFXTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener));
 
       ChangeListener<? super Number> currentBufferIndexSliderListener = (o, oldValue, newValue) ->
       {

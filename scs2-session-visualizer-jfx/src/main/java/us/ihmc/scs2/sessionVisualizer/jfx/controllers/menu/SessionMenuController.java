@@ -2,7 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Menu;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -20,7 +20,7 @@ public class SessionMenuController implements VisualizerController
    {
       topics = toolkit.getTopics();
       messager = toolkit.getMessager();
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
+      messager.addFXTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
    }
 
    @FXML

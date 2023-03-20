@@ -55,10 +55,10 @@ import javafx.util.Pair;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.TopicListener;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoChart.ChartDoubleBoundsDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.session.SessionMode;
@@ -266,10 +266,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
          JavaFXMissingTools.runNFramesLater(1, () -> charts.values().forEach(YoVariableChartPackage::updateLegend));
       });
 
-      messager.registerJavaFXSyncedTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
+      messager.addFXTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
       // Only show the update markers when the session is running and the chart may be behind.
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionCurrentMode(),
-                                                 m -> dynamicLineChart.updateIndexMarkersVisible().set(m == SessionMode.RUNNING));
+      messager.addFXTopicListener(topics.getSessionCurrentMode(), m -> dynamicLineChart.updateIndexMarkersVisible().set(m == SessionMode.RUNNING));
       messager.submitMessage(topics.getRequestCurrentKeyFrames(), new Object());
 
       messager = toolkit.getMessager();
@@ -435,7 +434,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       chartsCopy.forEach(YoVariableChartPackage::close);
 
       messager.removeInput(topics.getYoBufferCurrentProperties(), newBufferProperties);
-      messager.removeJavaFXSyncedTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
+      messager.addFXTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
    }
 
    public boolean isEmpty()

@@ -95,7 +95,7 @@ public class SharedMemoryMessager implements Messager
    /** {@inheritDoc} */
    @Override
    @SuppressWarnings("unchecked")
-   public <T> void registerTopicListener(Topic<T> topic, TopicListener<T> listener)
+   public <T> void addTopicListener(Topic<T> topic, TopicListener<T> listener)
    {
       ConcurrentLinkedQueue<TopicListener<Object>> topicListeners = topicListenersMap.get(topic);
       if (topicListeners == null)
@@ -147,7 +147,7 @@ public class SharedMemoryMessager implements Messager
 
    /** {@inheritDoc} */
    @Override
-   public void registerMessagerStateListener(MessagerStateListener listener)
+   public void addMessagerStateListener(MessagerStateListener listener)
    {
       connectionStateListeners.add(listener);
    }

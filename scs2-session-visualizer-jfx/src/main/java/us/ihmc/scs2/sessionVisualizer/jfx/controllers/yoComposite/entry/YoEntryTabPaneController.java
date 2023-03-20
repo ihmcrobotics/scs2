@@ -23,16 +23,16 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.stage.Window;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 
@@ -104,12 +104,12 @@ public class YoEntryTabPaneController
 
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionCurrentState(), state ->
+      messager.addFXTopicListener(topics.getSessionCurrentState(), state ->
       {
          if (state == SessionState.INACTIVE)
             yoEntryTabPane.getTabs().clear();
       });
-      messager.registerJavaFXSyncedTopicListener(topics.getYoEntryListAdd(), this::addYoEntryList);
+      messager.addFXTopicListener(topics.getYoEntryListAdd(), this::addYoEntryList);
    }
 
    public void setInput(YoEntryConfigurationDefinition input)

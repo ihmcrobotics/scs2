@@ -18,7 +18,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
@@ -31,7 +31,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.remote.RemoteSessionManagerController;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class MultiSessionManager
@@ -83,14 +83,14 @@ public class MultiSessionManager
 
       SessionVisualizerTopics topics = toolkit.getTopics();
       JavaFXMessager messager = toolkit.getMessager();
-      messager.registerTopicListener(topics.getStartNewSessionRequest(), m -> activeSession.set(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getRemoteSessionControlsRequest(), m -> openRemoteSessionControls());
-      messager.registerJavaFXSyncedTopicListener(topics.getLogSessionControlsRequest(), m -> openLogSessionControls());
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m));
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(),
+      messager.addTopicListener(topics.getStartNewSessionRequest(), m -> activeSession.set(m));
+      messager.addFXTopicListener(topics.getRemoteSessionControlsRequest(), m -> openRemoteSessionControls());
+      messager.addFXTopicListener(topics.getLogSessionControlsRequest(), m -> openLogSessionControls());
+      messager.addFXTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
+      messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m));
+      messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(),
                                                  m -> loadSessionDefaultConfiguration(toolkit.getSession()));
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration());
+      messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration());
    }
 
    public void startSession(Session session, Runnable sessionLoadedCallback)
@@ -325,7 +325,7 @@ public class MultiSessionManager
       configuration.setMainStage(toolkit.getMainWindow());
 
       SessionVisualizerTopics topics = toolkit.getTopics();
-      BufferedJavaFXMessager messager = toolkit.getMessager();
+      SCS2JavaFXMessager messager = toolkit.getMessager();
 
       int currentBufferSize = toolkit.getYoManager().getBufferSize();
       configuration.setBufferSize(currentBufferSize);
