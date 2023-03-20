@@ -434,7 +434,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       chartsCopy.forEach(YoVariableChartPackage::close);
 
       messager.removeInput(topics.getYoBufferCurrentProperties(), newBufferProperties);
-      messager.addFXTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
+      messager.removeFXTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
    }
 
    public boolean isEmpty()

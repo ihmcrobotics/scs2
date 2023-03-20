@@ -15,6 +15,7 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
 import us.ihmc.scs2.session.Session;
@@ -81,7 +82,9 @@ public class SecondaryWindowManager implements Manager
             {
                WindowConfigurationDefinition secondaryWindowConfiguration = secondaryWindowConfigurations.get(i);
                Stage stage = newChartWindow(null, secondaryWindowConfiguration);
-               messager.submitMessage(topics.getYoChartGroupLoadConfiguration(), new Pair<>(stage, configuration.getSecondaryYoChartGroupConfigurationFile(i)));
+               messager.submitMessage(topics.getYoChartGroupLoadConfiguration(),
+                                        new Pair<>(stage, configuration.getSecondaryYoChartGroupConfigurationFile(i)),
+                                        SynchronizeHint.SYNCHRONOUS);
             }
          }
       });

@@ -18,6 +18,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.log.LogTools;
+import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
@@ -27,15 +29,20 @@ import us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry.YoEntryTabPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.remote.RemoteSessionManagerController;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 
 public class MultiSessionManager
 {
+   private static final boolean LOAD_SESSION_SYNCHRONOUS = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.loadconfig.synchronous",
+                                                                                                                    "SCS2_GUI_LOAD_SESSION_SYNCHRONOUS",
+                                                                                                                    false);
+   private static final boolean LOAD_SESSION_TIME = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.loadconfig.time", false);
    private static final boolean LOAD_MAIN_WINDOW_CONFIGURATION = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.mainwindow.loadconfig", true);
 
    private final SessionVisualizerToolkit toolkit;
@@ -88,8 +95,7 @@ public class MultiSessionManager
       messager.addFXTopicListener(topics.getLogSessionControlsRequest(), m -> openLogSessionControls());
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m));
-      messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(),
-                                                 m -> loadSessionDefaultConfiguration(toolkit.getSession()));
+      messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(), m -> loadSessionDefaultConfiguration(toolkit.getSession()));
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration());
    }
 
@@ -222,40 +228,51 @@ public class MultiSessionManager
       if (!configuration.exists())
          return;
 
+      SynchronizeHint synchronizeHint = LOAD_SESSION_SYNCHRONOUS ? SynchronizeHint.SYNCHRONOUS : SynchronizeHint.NONE;
+      LogTools.info(synchronizeHint);
+      long start = System.nanoTime();
+
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
       if (LOAD_MAIN_WINDOW_CONFIGURATION)
       {
-         JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+         JavaFXMissingTools.runAndWait(getClass(), () ->
          {
             if (isFirstSession)
             {// TODO When the main window is already up, changing its configuration is quite unpleasant.
                if (configuration.hasMainWindowConfiguration())
                   configuration.getMainWindowConfiguration(toolkit.getMainWindow());
             }
-            JavaFXMissingTools.runNFramesLater(2, () -> toolkit.getMainWindow().toFront());
+            JavaFXMissingTools.runNFramesLater(2, () -> toolkit.getMainWindow().toFront()); // TODO Should we wait here too?
          });
       }
 
       if (configuration.hasYoGraphicsConfiguration())
-         messager.submitMessage(topics.getYoGraphicLoadRequest(), configuration.getYoGraphicsConfigurationFile());
+         messager.submitMessage(topics.getYoGraphicLoadRequest(), configuration.getYoGraphicsConfigurationFile(), synchronizeHint);
 
       if (configuration.hasYoCompositeConfiguration())
-         messager.submitMessage(topics.getYoCompositePatternLoadRequest(), configuration.getYoCompositeConfigurationFile());
+         messager.submitMessage(topics.getYoCompositePatternLoadRequest(), configuration.getYoCompositeConfigurationFile(), synchronizeHint);
 
       if (configuration.hasYoEntryConfiguration())
       {
-         JavaFXMissingTools.runLaterWhen(getClass(),
-                                         () -> toolkit.getYoCompositeSearchManager().isSessionLoaded(),
-                                         () -> mainWindowController.getSidePaneController()
-                                                                   .getYoEntryTabPaneController()
-                                                                   .load(configuration.getYoEntryConfigurationFile()));
+         YoEntryTabPaneController yoEntryTabPaneController = mainWindowController.getSidePaneController().getYoEntryTabPaneController();
+         if (LOAD_SESSION_SYNCHRONOUS)
+         {
+            JavaFXMissingTools.runAndWait(getClass(), () -> yoEntryTabPaneController.load(configuration.getYoEntryConfigurationFile()));
+         }
+         else
+         {
+            JavaFXMissingTools.runLaterWhen(getClass(),
+                                            () -> toolkit.getYoCompositeSearchManager().isSessionLoaded(),
+                                            () -> yoEntryTabPaneController.load(configuration.getYoEntryConfigurationFile()));
+         }
       }
 
       if (configuration.hasMainYoChartGroupConfiguration())
          messager.submitMessage(topics.getYoChartGroupLoadConfiguration(),
-                                new Pair<>(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile()));
+                                new Pair<>(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile()),
+                                synchronizeHint);
 
       toolkit.getWindowManager().loadSessionConfiguration(configuration);
 
@@ -269,7 +286,13 @@ public class MultiSessionManager
       messager.submitMessage(topics.getShowOverheadPlotter(), configuration.getShowOverheadPlotter());
       messager.submitMessage(topics.getShowAdvancedControls(), configuration.getShowAdvancedControls());
       if (configuration.hasYoSliderboardConfiguration())
-         messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile());
+         messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile(), synchronizeHint);
+
+      if (LOAD_SESSION_TIME)
+      {
+         long end = System.nanoTime();
+         LogTools.info("Loaded session configuration in: {}[sec]", (end - start) * 1.0e-9);
+      }
    }
 
    public void loadSessionConfiguration(File configurationFile)

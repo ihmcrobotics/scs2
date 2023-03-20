@@ -78,14 +78,14 @@ public class SessionDataExportStageController implements VisualizerController
                                                                                                                    false);
       cleanupActions.add(() ->
       {
-         messager.addFXTopicListener(topics.getSessionCurrentMode(), currentSessionModeBinding);
+         messager.removeFXTopicListener(topics.getSessionCurrentMode(), currentSessionModeBinding);
          currentSessionMode.removeListener(currentSessionModeBinding);
       });
 
       messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
       TopicListener<YoBufferPropertiesReadOnly> bufferPropertiesBinding = messager.bindPropertyToTopic(topics.getYoBufferCurrentProperties(), bufferProperties);
-      cleanupActions.add(() -> messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesBinding));
+      cleanupActions.add(() -> messager.removeFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesBinding));
 
       ChangeListener<? super SessionMode> currentSessionModeChangeListener = (o, oldValue, newValue) ->
       {
@@ -119,7 +119,7 @@ public class SessionDataExportStageController implements VisualizerController
          }
       };
       messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener);
-      cleanupActions.add(() -> messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener));
+      cleanupActions.add(() -> messager.removeFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener));
 
       ChangeListener<? super Number> bufferIndexSliderListener = (o, oldValue, newValue) ->
       {
