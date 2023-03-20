@@ -160,7 +160,7 @@ public class YoCompositeSearchManager implements Manager
             customYoCompositePatterns.remove(change.getValueRemoved());
       });
 
-      messager.addTopicListener(topics.getYoCompositePatternLoadRequest(), this::loadYoCompositePatternFromFile);
+      messager.addTopicListenerBase(topics.getYoCompositePatternLoadRequest(), m -> loadYoCompositePatternFromFile(m.getMessageContent(), m.getSynchronizeHint()));
       messager.addTopicListener(topics.getYoCompositePatternSaveRequest(), this::saveYoCompositePatternToFile);
       messager.addTopicListener(topics.getYoCompositeRefreshAll(), m -> refreshYoCompositesInBackground());
       includeSCS2YoVariables = messager.createPropertyInput(topics.getShowSCS2YoVariables(), false);
