@@ -19,7 +19,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
@@ -44,7 +44,7 @@ public class Plotter2DOptionsStageController implements VisualizerController
       owner = toolkit.getWindow();
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
 
-      BufferedJavaFXMessager messager = toolkit.getMessager();
+      SCS2JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       Topic<YoTuple2DDefinition> trackCoordsTopic = topics.getPlotter2DTrackCoordinateRequest();
       Property<YoTuple2DDefinition> lastCoordinates = new SimpleObjectProperty<>(this, "lastCoordinatesProperty", messager.getLastValue(trackCoordsTopic));

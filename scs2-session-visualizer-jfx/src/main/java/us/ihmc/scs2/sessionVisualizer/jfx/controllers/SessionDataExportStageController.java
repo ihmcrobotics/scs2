@@ -22,9 +22,9 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
-import us.ihmc.javaFXToolkit.messager.MessageBidirectionalBinding;
 import us.ihmc.messager.TopicListener;
+import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.messager.javafx.MessageBidirectionalBinding;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -78,14 +78,14 @@ public class SessionDataExportStageController implements VisualizerController
                                                                                                                    false);
       cleanupActions.add(() ->
       {
-         messager.removeJavaFXSyncedTopicListener(topics.getSessionCurrentMode(), currentSessionModeBinding);
+         messager.addFXTopicListener(topics.getSessionCurrentMode(), currentSessionModeBinding);
          currentSessionMode.removeListener(currentSessionModeBinding);
       });
 
       messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
       TopicListener<YoBufferPropertiesReadOnly> bufferPropertiesBinding = messager.bindPropertyToTopic(topics.getYoBufferCurrentProperties(), bufferProperties);
-      cleanupActions.add(() -> messager.removeJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesBinding));
+      cleanupActions.add(() -> messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesBinding));
 
       ChangeListener<? super SessionMode> currentSessionModeChangeListener = (o, oldValue, newValue) ->
       {
@@ -118,8 +118,8 @@ public class SessionDataExportStageController implements VisualizerController
             updatingBufferIndex.setFalse();
          }
       };
-      messager.registerJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener);
-      cleanupActions.add(() -> messager.removeJavaFXSyncedTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener));
+      messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener);
+      cleanupActions.add(() -> messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener));
 
       ChangeListener<? super Number> bufferIndexSliderListener = (o, oldValue, newValue) ->
       {

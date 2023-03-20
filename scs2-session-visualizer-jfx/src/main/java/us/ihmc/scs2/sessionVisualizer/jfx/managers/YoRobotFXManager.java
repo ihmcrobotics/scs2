@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 import javafx.scene.Group;
 import javafx.scene.Node;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.CameraObjectTrackingRequest;
@@ -43,7 +43,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       this.referenceFrameManager = referenceFrameManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
 
-      messager.registerTopicListener(topics.getCameraTrackObject(), request ->
+      messager.addTopicListener(topics.getCameraTrackObject(), request ->
       {
          if (!isSessionLoaded())
             throw new IllegalOperationException("Session has not been loaded yet.");
@@ -73,7 +73,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
          }
       });
 
-      messager.registerTopicListener(topics.getRobotVisualRequest(), this::handleRobotVisualRequest);
+      messager.addTopicListener(topics.getRobotVisualRequest(), this::handleRobotVisualRequest);
    }
 
    private void handleRobotVisualRequest(NewRobotVisualRequest request)

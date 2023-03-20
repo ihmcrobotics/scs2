@@ -28,8 +28,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 
 public class SnapshotManager
@@ -41,9 +41,9 @@ public class SnapshotManager
    public SnapshotManager(Stage mainWindow, JavaFXMessager messager, SessionVisualizerTopics topics)
    {
       this.primaryStage = mainWindow;
-      messager.registerTopicListener(topics.getTakeSnapshot(), message -> takeSnapshot());
-      messager.registerTopicListener(topics.getRegisterRecordable(), this::registerRecordable);
-      messager.registerTopicListener(topics.getForgetRecordable(), this::forgetRecordable);
+      messager.addTopicListener(topics.getTakeSnapshot(), message -> takeSnapshot());
+      messager.addTopicListener(topics.getRegisterRecordable(), this::registerRecordable);
+      messager.addTopicListener(topics.getForgetRecordable(), this::forgetRecordable);
 
       primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
       {

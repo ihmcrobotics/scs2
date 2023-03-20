@@ -14,8 +14,8 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
@@ -53,7 +53,7 @@ public class SecondaryWindowManager implements Manager
 
       sliderboardManager = new YoSliderboardManager(toolkit);
 
-      messager.registerTopicListener(topics.getOpenWindowRequest(), this::openWindow);
+      messager.addTopicListener(topics.getOpenWindowRequest(), this::openWindow);
    }
 
    @Override

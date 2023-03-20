@@ -19,7 +19,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.MenuItem;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionDataExportStageController;
@@ -65,7 +65,7 @@ public class FileMenuController implements VisualizerController
       mainScene3D = toolkit.getGlobalToolkit().getMainScene3D();
       mainView3DRoot = toolkit.getGlobalToolkit().getMainView3DRoot();
 
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable ->
+      messager.addFXTopicListener(topics.getDisableUserControls(), disable ->
       {
          takeSnapshotMenuItem.setDisable(disable);
          exportVideoMenuItem.setDisable(disable);

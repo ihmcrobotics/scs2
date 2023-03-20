@@ -12,9 +12,9 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.session.Session;
@@ -49,7 +49,7 @@ public class EnvironmentManager implements Manager
    {
       this.backgroundExecutorManager = backgroundExecutorManager;
       rootNode.getChildren().add(terrainObjectGraphics);
-      messager.registerTopicListener(topics.getTerrainVisualRequest(), this::handleTerrainVisualRequest);
+      messager.addTopicListener(topics.getTerrainVisualRequest(), this::handleTerrainVisualRequest);
    }
 
    private void handleTerrainVisualRequest(NewTerrainVisualRequest request)

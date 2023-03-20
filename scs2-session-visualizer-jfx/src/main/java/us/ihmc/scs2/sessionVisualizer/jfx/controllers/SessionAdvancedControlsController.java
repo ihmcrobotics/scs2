@@ -15,7 +15,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -55,8 +55,8 @@ public class SessionAdvancedControlsController implements VisualizerController
 
       bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties());
 
-      messager.registerJavaFXSyncedTopicListener(topics.getShowAdvancedControls(), show -> showProperty.set(show));
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> buttonsContainer.setDisable(disable));
+      messager.addFXTopicListener(topics.getShowAdvancedControls(), show -> showProperty.set(show));
+      messager.addFXTopicListener(topics.getDisableUserControls(), disable -> buttonsContainer.setDisable(disable));
 
       showProperty.addListener((o, oldValue, newValue) -> show(newValue));
       show(showProperty.get());

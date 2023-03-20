@@ -32,7 +32,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import us.ihmc.commons.Conversions;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController;
@@ -100,7 +100,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       topics = toolkit.getTopics();
       messager = toolkit.getMessager();
 
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m -> disableUserControls.set(m));
+      messager.addFXTopicListener(topics.getDisableUserControls(), m -> disableUserControls.set(m));
 
       mainWindowMenuBarController.initialize(windowToolkit);
       sessionSimpleControlsController.initialize(windowToolkit);
@@ -146,7 +146,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       }
 
       setupPlotter2D(plotter2D);
-      messager.registerJavaFXSyncedTopicListener(topics.getPlotter2DTrackCoordinateRequest(), m ->
+      messager.addFXTopicListener(topics.getPlotter2DTrackCoordinateRequest(), m ->
       {
          YoVariableDatabase rootRegistryDatabase = toolkit.getYoManager().getRootRegistryDatabase();
          ReferenceFrameManager referenceFrameManager = toolkit.getReferenceFrameManager();

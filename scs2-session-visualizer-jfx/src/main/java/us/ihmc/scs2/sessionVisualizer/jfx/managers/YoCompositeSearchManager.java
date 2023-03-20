@@ -40,8 +40,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -159,9 +159,9 @@ public class YoCompositeSearchManager implements Manager
             customYoCompositePatterns.remove(change.getValueRemoved());
       });
 
-      messager.registerTopicListener(topics.getYoCompositePatternLoadRequest(), this::loadYoCompositePatternFromFile);
-      messager.registerTopicListener(topics.getYoCompositePatternSaveRequest(), this::saveYoCompositePatternToFile);
-      messager.registerTopicListener(topics.getYoCompositeRefreshAll(), m -> refreshYoCompositesInBackground());
+      messager.addTopicListener(topics.getYoCompositePatternLoadRequest(), this::loadYoCompositePatternFromFile);
+      messager.addTopicListener(topics.getYoCompositePatternSaveRequest(), this::saveYoCompositePatternToFile);
+      messager.addTopicListener(topics.getYoCompositeRefreshAll(), m -> refreshYoCompositesInBackground());
       includeSCS2YoVariables = messager.createPropertyInput(topics.getShowSCS2YoVariables(), false);
       includeSCS2YoVariables.addListener((o, oldValue, newValue) -> refreshYoCompositesInBackground());
    }
