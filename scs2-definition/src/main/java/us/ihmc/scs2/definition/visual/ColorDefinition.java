@@ -471,10 +471,7 @@ public class ColorDefinition extends PaintDefinition
     */
    public int toRGB()
    {
-      int argb = (getRedAsInteger() & 0xFF) << 16;
-      argb |= (getGreenAsInteger() & 0xFF) << 8;
-      argb |= (getBlueAsInteger() & 0xFF) << 0;
-      return argb;
+      return ColorDefinitions.toRGB(red, green, blue);
    }
 
    /**
@@ -493,11 +490,7 @@ public class ColorDefinition extends PaintDefinition
     */
    public int toARGB()
    {
-      int argb = (getAlphaAsInteger() & 0xFF) << 24;
-      argb |= (getRedAsInteger() & 0xFF) << 16;
-      argb |= (getGreenAsInteger() & 0xFF) << 8;
-      argb |= (getBlueAsInteger() & 0xFF) << 0;
-      return argb;
+      return ColorDefinitions.toARGB(red, green, blue, alpha);
    }
 
    /**
@@ -516,11 +509,7 @@ public class ColorDefinition extends PaintDefinition
     */
    public int toRGBA()
    {
-      int argb = (getRedAsInteger() & 0xFF) << 24;
-      argb |= (getGreenAsInteger() & 0xFF) << 16;
-      argb |= (getBlueAsInteger() & 0xFF) << 8;
-      argb |= (getAlphaAsInteger() & 0xFF) << 0;
-      return argb;
+      return ColorDefinitions.toRGBA(red, green, blue, alpha);
    }
 
    /**
