@@ -83,8 +83,8 @@ public class SecondaryWindowManager implements Manager
                WindowConfigurationDefinition secondaryWindowConfiguration = secondaryWindowConfigurations.get(i);
                Stage stage = newChartWindow(null, secondaryWindowConfiguration);
                messager.submitMessage(topics.getYoChartGroupLoadConfiguration(),
-                                        new Pair<>(stage, configuration.getSecondaryYoChartGroupConfigurationFile(i)),
-                                        SynchronizeHint.SYNCHRONOUS);
+                                      new Pair<>(stage, configuration.getSecondaryYoChartGroupConfigurationFile(i)),
+                                      SynchronizeHint.SYNCHRONOUS);
             }
          }
       });
@@ -123,6 +123,11 @@ public class SecondaryWindowManager implements Manager
          yoRegistryStatistics.setValue(null);
       }
 
+      closeAllSecondaryWindows();
+   }
+
+   public void closeAllSecondaryWindows()
+   {
       secondaryWindows.forEach(secondaryWindow -> secondaryWindow.fireEvent(new WindowEvent(secondaryWindow, WindowEvent.WINDOW_CLOSE_REQUEST)));
       secondaryWindowControllers.forEach(SecondaryWindowController::closeAndDispose);
       secondaryWindowControllers.clear();

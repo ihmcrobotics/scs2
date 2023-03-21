@@ -314,10 +314,15 @@ public class YoChartGroupPanelController implements VisualizerController
       chartTable2D.forEachChart(YoChartPanelController::stop);
    }
 
+   public void stopAndClear()
+   {
+      stop();
+      chartTable2D.clear();
+   }
+
    public void closeAndDispose()
    {
-      isRunning.set(false);
-      chartTable2D.clear();
+      stopAndClear();
       scheduleMessagerCleanup();
    }
 
