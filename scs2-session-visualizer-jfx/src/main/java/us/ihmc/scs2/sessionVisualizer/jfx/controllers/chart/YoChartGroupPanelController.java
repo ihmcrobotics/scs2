@@ -53,9 +53,9 @@ import javafx.scene.transform.Scale;
 import javafx.stage.Popup;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -122,7 +122,7 @@ public class YoChartGroupPanelController implements VisualizerController
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       messager.submitMessage(topics.getRegisterRecordable(), mainPane);
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), m -> mainPane.setDisable(m));
+      messager.addFXTopicListener(topics.getDisableUserControls(), m -> mainPane.setDisable(m));
 
       toolkit.getWindow().iconifiedProperty().addListener((o, oldValue, newValue) ->
       {
@@ -229,9 +229,9 @@ public class YoChartGroupPanelController implements VisualizerController
       if (isMessagerSetup)
          return;
       isMessagerSetup = true;
-      messager.registerJavaFXSyncedTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
-      messager.registerJavaFXSyncedTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
-      messager.registerTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
+      messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
+      messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
+      messager.addTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
    }
 
    public void scheduleMessagerCleanup()
@@ -241,8 +241,8 @@ public class YoChartGroupPanelController implements VisualizerController
          if (!isMessagerSetup)
             return;
          isMessagerSetup = false;
-         messager.removeJavaFXSyncedTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
-         messager.removeJavaFXSyncedTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
+         messager.removeFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
+         messager.removeFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
          messager.removeTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
       });
    }
@@ -314,10 +314,15 @@ public class YoChartGroupPanelController implements VisualizerController
       chartTable2D.forEachChart(YoChartPanelController::stop);
    }
 
+   public void stopAndClear()
+   {
+      stop();
+      chartTable2D.clear();
+   }
+
    public void closeAndDispose()
    {
-      isRunning.set(false);
-      chartTable2D.clear();
+      stopAndClear();
       scheduleMessagerCleanup();
    }
 

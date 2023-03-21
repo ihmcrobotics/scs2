@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
-import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.*;
+import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.YoYawPitchRoll;
+import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.YoYawPitchRollIdentifiers;
 
 import java.util.Objects;
 

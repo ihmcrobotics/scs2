@@ -16,7 +16,7 @@ mainDependencies {
    api("us.ihmc:scs2-shared-memory:source")
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.19.1")
-   api("us.ihmc:ihmc-messager:0.1.7")
+   api("us.ihmc:ihmc-messager:0.2.0")
    api("us.ihmc:mecano-yovariables:17-0.11.6")
 }
 

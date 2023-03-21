@@ -6,7 +6,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIntegerBounds;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
@@ -33,15 +33,15 @@ public class ChartZoomManager extends ObservedAnimationTimer
       this.topics = topics;
       this.messager = messager;
 
-      messager.registerJavaFXSyncedTopicListener(topics.getYoChartZoomFactor(), m ->
+      messager.addFXTopicListener(topics.getYoChartZoomFactor(), m ->
       {
          if (m.getKey() == owner)
             zoomFactorProperty.set(m.getValue());
       });
       currentBufferPropertiesProperty = messager.createPropertyInput(topics.getYoBufferCurrentProperties());
-      messager.registerTopicListener(topics.getYoChartRequestZoomIn(), this::processZoomInRequest);
-      messager.registerTopicListener(topics.getYoChartRequestZoomOut(), this::processZoomOutRequest);
-      messager.registerTopicListener(topics.getYoChartRequestShift(), this::processShiftRequest);
+      messager.addTopicListener(topics.getYoChartRequestZoomIn(), this::processZoomInRequest);
+      messager.addTopicListener(topics.getYoChartRequestZoomOut(), this::processZoomOutRequest);
+      messager.addTopicListener(topics.getYoChartRequestShift(), this::processShiftRequest);
    }
 
    @Override

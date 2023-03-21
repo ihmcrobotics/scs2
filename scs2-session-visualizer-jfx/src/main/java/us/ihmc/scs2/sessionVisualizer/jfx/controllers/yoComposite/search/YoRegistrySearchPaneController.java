@@ -22,7 +22,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -94,7 +94,7 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
 
       activeSearchEngine = messager.createInput(topics.getYoSearchEngine(), SearchEngines.DEFAULT);
 
-      messager.registerJavaFXSyncedTopicListener(topics.getSessionCurrentState(), state ->
+      messager.addFXTopicListener(topics.getSessionCurrentState(), state ->
       {
          if (state == SessionState.ACTIVE)
          {

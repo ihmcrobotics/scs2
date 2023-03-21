@@ -89,8 +89,6 @@ public class YoGraphicTools
 {
    public static final String GUI_ROOT_NAME = "root";
    public static final String SESSION_ROOT_NAME = "session";
-   public static final String SEPARATOR = ":";
-
    private static final SimpleColorFX DEFAULT_COLOR = new SimpleColorFX(JavaFXVisualTools.DEFAULT_COLOR);
 
    public static List<String> collectAllExistingNamespaces(YoGroupFX group)
@@ -154,8 +152,8 @@ public class YoGraphicTools
    public static YoGroupFX findYoGraphicFXGroup(YoGroupFX root, String namespace)
    {
       String[] groupNames;
-      if (namespace.contains(YoGraphicTools.SEPARATOR))
-         groupNames = namespace.split(YoGraphicTools.SEPARATOR);
+      if (namespace.contains(YoGraphicDefinition.SEPARATOR))
+         groupNames = namespace.split(YoGraphicDefinition.SEPARATOR);
       else
          groupNames = new String[] {namespace};
 
@@ -186,8 +184,8 @@ public class YoGraphicTools
    public static YoGroupFX findOrCreateYoGraphicFXGroup(YoGroupFX root, String namespace)
    {
       String[] groupNames;
-      if (namespace.contains(YoGraphicTools.SEPARATOR))
-         groupNames = namespace.split(YoGraphicTools.SEPARATOR);
+      if (namespace.contains(YoGraphicDefinition.SEPARATOR))
+         groupNames = namespace.split(YoGraphicDefinition.SEPARATOR);
       else
          groupNames = new String[] {namespace};
 
