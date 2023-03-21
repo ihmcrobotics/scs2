@@ -16,6 +16,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
@@ -228,6 +229,8 @@ public class MultiSessionManager
       if (!configuration.exists())
          return;
 
+      JavaFXMissingTools.runAndWait(getClass(), ()-> toolkit.getWindowManager().closeAllSecondaryWindows());
+
       SynchronizeHint synchronizeHint = LOAD_SESSION_SYNCHRONOUS ? SynchronizeHint.SYNCHRONOUS : SynchronizeHint.NONE;
       LogTools.info(synchronizeHint);
       long start = System.nanoTime();
@@ -270,9 +273,11 @@ public class MultiSessionManager
       }
 
       if (configuration.hasMainYoChartGroupConfiguration())
-         messager.submitMessage(topics.getYoChartGroupLoadConfiguration(),
-                                new Pair<>(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile()),
-                                synchronizeHint);
+      {
+         LogTools.info("Submitting message to load main charts {}", configuration.getMainYoChartGroupConfigurationFile());
+         Pair<Window, File> messageContent = new Pair<>(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile());
+         messager.submitMessage(topics.getYoChartGroupLoadConfiguration(), messageContent, synchronizeHint);
+      }
 
       toolkit.getWindowManager().loadSessionConfiguration(configuration);
 

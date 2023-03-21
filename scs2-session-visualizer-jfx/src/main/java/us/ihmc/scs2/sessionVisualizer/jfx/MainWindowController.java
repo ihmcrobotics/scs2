@@ -408,7 +408,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
    public void stopSession()
    {
-      yoChartGroupPanelController.closeAndDispose();
+      yoChartGroupPanelController.stopAndClear();
       sidePaneController.stop();
       plotter2D.coordinateToTrackProperty().setValue(null);
    }
