@@ -79,6 +79,26 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 - `VisualDefinitionFactory`: for creating `VisualDefinition`.
 - `YoGraphicDefinitionFactory`: for creating `YoGraphicDefinition`.
 
+# Repository Projects:
+## scs2-definition
+This project gathers classes to help define: robots, terrain environment, yoGraphics, visuals, and so on. It is meant to be a low-level project with low overhead in terms of dependencies such that it can easily be imported in other low-level projects.
+## scs2-shared-memory
+This project provides an implementation for a yoVariable buffer. This buffer allows storing yoVariable values over time which in turn allows playing back simulation data for instance. This project is meant to remain rather low-level in terms of dependency and limit the scope to yoVariables.
+## scs2-session
+This project defines the base implementation of a session. A session is an abstract base layer for defining a simulation session, log session, or remote session. 
+## scs2-simulation
+This project provides the implementation for the simulation backend as well as 2 physics engines: contact point based physics engine (SCS1 like) and an impulse based physics engine.
+## scs2-bullet-simulation
+This project provides a new physics engine that is a bridge to Bullet.
+## scs2-session-logger
+This project provides the backend for log session and remote session.
+## scs2-session-visualizer
+This project provides tools for the SCS2 GUI that are graphics engine agnostic.
+## scs2-session-visualizer-jfx
+This project provides a JavaFX implementation of the SCS2 GUI.
+## scs2-simulation-construction-set
+This project provides the class `SimulationConstructionSet2` which bundles backend and frontend of SCS2 in a similar fashion as `SimulationConstructionSet` in SCS1.
+
 # Known issues:
 See [Wiki - Known Issues](https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Known-Issues-and-workaround).
 
