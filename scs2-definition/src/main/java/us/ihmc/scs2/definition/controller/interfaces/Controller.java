@@ -25,6 +25,10 @@ public interface Controller
 
    /**
     * The registry used to store all the {@code YoVariable}s for the controller.
+    * <p>
+    * In simulation, the registry is typically attached to the robot's registry when adding it
+    * {@code this} to the robot controllers.
+    * </p>
     * 
     * @return the controller's registry or {@code null} if the controller doesn't use
     *         {@code YoVariable}s

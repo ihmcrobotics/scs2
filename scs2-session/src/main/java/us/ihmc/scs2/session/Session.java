@@ -2179,26 +2179,26 @@ public abstract class Session
 
          addCurrentBufferPropertiesListener(bufferPropertiesListener);
 
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.FillRequest, fillRequestListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.CurrentIndexRequest, currentIndexListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.InPointIndexRequest, inPointIndexListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.OutPointIndexRequest, outPointIndexListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest, incrementCurrentIndexListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest, decrementCurrentIndexListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
-         messager.registerTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.FillRequest, fillRequestListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentIndexRequest, currentIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.InPointIndexRequest, inPointIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.OutPointIndexRequest, outPointIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest, incrementCurrentIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest, decrementCurrentIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
 
          addSessionPropertiesListener(sessionPropertiesListener);
 
-         messager.registerTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
-         messager.registerTopicListener(SessionMessagerAPI.SessionCurrentMode, sessionCurrentModeListener);
-         messager.registerTopicListener(SessionMessagerAPI.SessionDTNanoseconds, sessionDTNanosecondsListener);
-         messager.registerTopicListener(SessionMessagerAPI.RunAtRealTimeRate, runAtRealTimeRateListener);
-         messager.registerTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
-         messager.registerTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
-         messager.registerTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
-         messager.registerTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionCurrentMode, sessionCurrentModeListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionDTNanoseconds, sessionDTNanosecondsListener);
+         messager.addTopicListener(SessionMessagerAPI.RunAtRealTimeRate, runAtRealTimeRateListener);
+         messager.addTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
+         messager.addTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
+         messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
       }
 
       private void detachFromMessager()

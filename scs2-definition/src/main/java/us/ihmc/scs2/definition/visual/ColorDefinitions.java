@@ -16,7 +16,8 @@ public class ColorDefinitions
 
    static
    {
-      Map<String, ColorDefinition> map = Stream.of(ColorDefinitions.class.getDeclaredMethods()).filter(ColorDefinitions::isNamedColorMethod)
+      Map<String, ColorDefinition> map = Stream.of(ColorDefinitions.class.getDeclaredMethods())
+                                               .filter(ColorDefinitions::isNamedColorMethod)
                                                .collect(Collectors.toMap(m -> m.getName().toLowerCase(), ColorDefinitions::invokeMethod));
       namedColorLowerCaseMap = Collections.unmodifiableMap(map);
    }
@@ -194,6 +195,164 @@ public class ColorDefinitions
    }
 
    /**
+    * Returns the RGB, "#00RRGGBB", value representing a given color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [16-23] are used to store red,
+    * <li>Bits [8-15] are used to store green,
+    * <li>Bits [0-7] are used to store blue.
+    * </ul>
+    * </p>
+    * 
+    * @param red   red component in range [0.0-1.0].
+    * @param green green component in range [0.0-1.0].
+    * @param blue  blue component in range [0.0-1.0].
+    * @return the RGB value.
+    */
+   public static int toRGB(double red, double green, double blue)
+   {
+      int r = (int) Math.round(red * 255.0);
+      int g = (int) Math.round(green * 255.0);
+      int b = (int) Math.round(blue * 255.0);
+      return toRGB(r, g, b);
+   }
+
+   /**
+    * Returns the RGB, "#00RRGGBB", value representing a given color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [16-23] are used to store red,
+    * <li>Bits [8-15] are used to store green,
+    * <li>Bits [0-7] are used to store blue.
+    * </ul>
+    * </p>
+    * 
+    * @param red   red component in range [0.0-255].
+    * @param green green component in range [0-255].
+    * @param blue  blue component in range [0-255].
+    * @return the RGB value.
+    */
+   public static int toRGB(int red, int green, int blue)
+   {
+      int rgba = (red & 0xFF) << 16;
+      rgba |= (green & 0xFF) << 8;
+      rgba |= (blue & 0xFF) << 0;
+      return rgba;
+   }
+
+   /**
+    * Returns the ARGB, "#AARRGGBB", value representing a given color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [24-31] are used to store alpha,
+    * <li>Bits [16-23] are used to store red,
+    * <li>Bits [8-15] are used to store green,
+    * <li>Bits [0-7] are used to store blue.
+    * </ul>
+    * </p>
+    * 
+    * @param red   red component in range [0.0-1.0].
+    * @param green green component in range [0.0-1.0].
+    * @param blue  blue component in range [0.0-1.0].
+    * @param alpha alpha component in range [0.0-1.0], 0.0 being fully transparent and 1.0 fully
+    *              opaque.
+    * @return the ARGB value.
+    */
+   public static int toARGB(double red, double green, double blue, double alpha)
+   {
+      int r = (int) Math.round(red * 255.0);
+      int g = (int) Math.round(green * 255.0);
+      int b = (int) Math.round(blue * 255.0);
+      int a = (int) Math.round(alpha * 255.0);
+      return toARGB(r, g, b, a);
+   }
+
+   /**
+    * Returns the ARGB, "#AARRGGBB", value representing a given color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [24-31] are used to store alpha,
+    * <li>Bits [16-23] are used to store red,
+    * <li>Bits [8-15] are used to store green,
+    * <li>Bits [0-7] are used to store blue.
+    * </ul>
+    * </p>
+    * 
+    * @param red   red component in range [0.0-255].
+    * @param green green component in range [0-255].
+    * @param blue  blue component in range [0-255].
+    * @param alpha alpha component in range [0-255], 0 being fully transparent and 255 fully opaque.
+    * @return the ARGB value.
+    */
+   public static int toARGB(int red, int green, int blue, int alpha)
+   {
+      int rgba = (alpha & 0xFF) << 24;
+      rgba |= (red & 0xFF) << 16;
+      rgba |= (green & 0xFF) << 8;
+      rgba |= (blue & 0xFF) << 0;
+      return rgba;
+   }
+
+   /**
+    * Returns the RGBA, "#RRGGBBAA", value representing a given color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [24-31] are used to store red,
+    * <li>Bits [16-23] are used to store green,
+    * <li>Bits [8-15] are used to store blue,
+    * <li>Bits [0-7] are used to store alpha.
+    * </ul>
+    * </p>
+    * 
+    * @param red   red component in range [0.0-1.0].
+    * @param green green component in range [0.0-1.0].
+    * @param blue  blue component in range [0.0-1.0].
+    * @param alpha alpha component in range [0.0-1.0], 0.0 being fully transparent and 1.0 fully
+    *              opaque.
+    * @return the RGBA value.
+    */
+   public static int toRGBA(double red, double green, double blue, double alpha)
+   {
+      int r = (int) Math.round(red * 255.0);
+      int g = (int) Math.round(green * 255.0);
+      int b = (int) Math.round(blue * 255.0);
+      int a = (int) Math.round(alpha * 255.0);
+      return toRGBA(r, g, b, a);
+   }
+
+   /**
+    * Returns the RGBA, "#RRGGBBAA", value representing a given color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [24-31] are used to store red,
+    * <li>Bits [16-23] are used to store green,
+    * <li>Bits [8-15] are used to store blue,
+    * <li>Bits [0-7] are used to store alpha.
+    * </ul>
+    * </p>
+    * 
+    * @param red   red component in range [0.0-255].
+    * @param green green component in range [0-255].
+    * @param blue  blue component in range [0-255].
+    * @param alpha alpha component in range [0-255], 0 being fully transparent and 255 fully opaque.
+    * @return the RGBA value.
+    */
+   public static int toRGBA(int red, int green, int blue, int alpha)
+   {
+      int rgba = (red & 0xFF) << 24;
+      rgba |= (green & 0xFF) << 16;
+      rgba |= (blue & 0xFF) << 8;
+      rgba |= (alpha & 0xFF) << 0;
+      return rgba;
+   }
+
+   /**
     * Creates a new opaque color from the given HSB/HSV values.
     * <p>
     * The components are assumed to be ordered as hue [0-360], saturation [0.0-1.0], and
@@ -246,7 +405,7 @@ public class ColorDefinitions
    }
 
    /**
-    * Creates a new opaque color from the given HSBA/HSVA values.
+    * Creates a new color from the given HSBA/HSVA values.
     * 
     * @param hue        the hue component in range [0-360].
     * @param saturation the saturation component in range [0.0-1.0].
@@ -287,6 +446,96 @@ public class ColorDefinitions
          return new ColorDefinition(c + m, 0 + m, x + m, alpha);
       else
          return new ColorDefinition(m, m, m, alpha);
+   }
+
+   /**
+    * Creates a new color from the given HSBA/HSVA values.
+    * 
+    * @param hue        the hue component in range [0-360].
+    * @param saturation the saturation component in range [0.0-1.0].
+    * @param brightness the brightness/value component in range [0.0-1.0].
+    * @param alpha      the alpha component in range [0.0-1.0], 0 being fully transparent and 255 fully
+    *                   opaque.
+    * @return the color as a single RGBA integer.
+    * @see <a href=
+    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *      representation</a>
+    * @see #toRGBA(double, double, double, double)
+    */
+   public static int hsbaToRGBA(double hue, double saturation, double brightness, double alpha)
+   {
+      hue %= 360.0;
+      if (hue < 0.0)
+         hue += 360.0;
+      saturation = MathTools.clamp(saturation, 0.0, 1.0);
+      brightness = MathTools.clamp(brightness, 0.0, 1.0);
+
+      // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+      double c = brightness * saturation;
+      double hh = hue / 60.0;
+      double x = c * (1.0 - Math.abs(hh % 2 - 1.0));
+
+      double m = brightness - c;
+
+      if (hh <= 1.0)
+         return toRGBA(c + m, x + m, 0 + m, alpha);
+      else if (hh <= 2)
+         return toRGBA(x + m, c + m, 0 + m, alpha);
+      else if (hh <= 3)
+         return toRGBA(0 + m, c + m, x + m, alpha);
+      else if (hh <= 4)
+         return toRGBA(0 + m, x + m, c + m, alpha);
+      else if (hh <= 5)
+         return toRGBA(x + m, 0 + m, c + m, alpha);
+      else if (hh <= 6)
+         return toRGBA(c + m, 0 + m, x + m, alpha);
+      else
+         return toRGBA(m, m, m, alpha);
+   }
+
+   /**
+    * Creates a new color from the given HSBA/HSVA values.
+    * 
+    * @param hue        the hue component in range [0-360].
+    * @param saturation the saturation component in range [0.0-1.0].
+    * @param brightness the brightness/value component in range [0.0-1.0].
+    * @param alpha      the alpha component in range [0.0-1.0], 0 being fully transparent and 255 fully
+    *                   opaque.
+    * @return the color as a single ARGB integer.
+    * @see <a href=
+    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *      representation</a>
+    * @see #toARGB(double, double, double, double)
+    */
+   public static int hsbaToARGB(double hue, double saturation, double brightness, double alpha)
+   {
+      hue %= 360.0;
+      if (hue < 0.0)
+         hue += 360.0;
+      saturation = MathTools.clamp(saturation, 0.0, 1.0);
+      brightness = MathTools.clamp(brightness, 0.0, 1.0);
+
+      // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+      double c = brightness * saturation;
+      double hh = hue / 60.0;
+      double x = c * (1.0 - Math.abs(hh % 2 - 1.0));
+
+      double m = brightness - c;
+
+      if (hh <= 1.0)
+         return toARGB(c + m, x + m, 0 + m, alpha);
+      else if (hh <= 2)
+         return toARGB(x + m, c + m, 0 + m, alpha);
+      else if (hh <= 3)
+         return toARGB(0 + m, c + m, x + m, alpha);
+      else if (hh <= 4)
+         return toARGB(0 + m, x + m, c + m, alpha);
+      else if (hh <= 5)
+         return toARGB(x + m, 0 + m, c + m, alpha);
+      else if (hh <= 6)
+         return toARGB(c + m, 0 + m, x + m, alpha);
+      else
+         return toARGB(m, m, m, alpha);
    }
 
    /**
@@ -342,7 +591,7 @@ public class ColorDefinitions
    }
 
    /**
-    * Creates a new opaque color from the given HSLA values.
+    * Creates a new color from the given HSLA values.
     * 
     * @param hue        the hue component in range [0-360].
     * @param saturation the saturation component in range [0.0-1.0].
@@ -383,6 +632,96 @@ public class ColorDefinitions
          return new ColorDefinition(c + m, 0 + m, x + m, alpha);
       else
          return new ColorDefinition(m, m, m, alpha);
+   }
+
+   /**
+    * Creates a new color from the given HSLA values.
+    * 
+    * @param hue        the hue component in range [0-360].
+    * @param saturation the saturation component in range [0.0-1.0].
+    * @param lightness  the lightness component in range [0.0-1.0].
+    * @param alpha      the alpha component in range [0.0-1.0], 0 being fully transparent and 255 fully
+    *                   opaque.
+    * @return the color as a single RGBA integer.
+    * @see <a href=
+    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *      representation</a>
+    * @see #toRGBA(double, double, double, double)
+    */
+   public static int hslaToRGBA(double hue, double saturation, double lightness, double alpha)
+   {
+      hue %= 360.0;
+      if (hue < 0.0)
+         hue += 360.0;
+      saturation = MathTools.clamp(saturation, 0.0, 1.0);
+      lightness = MathTools.clamp(lightness, 0.0, 1.0);
+
+      // https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
+      double c = (1.0 - Math.abs(2.0 * lightness - 1.0)) * saturation;
+      double hh = hue / 60.0;
+      double x = c * (1.0 - Math.abs(hh % 2 - 1.0));
+
+      double m = lightness - 0.5 * c;
+
+      if (hh <= 1.0)
+         return toRGBA(c + m, x + m, 0 + m, alpha);
+      else if (hh <= 2)
+         return toRGBA(x + m, c + m, 0 + m, alpha);
+      else if (hh <= 3)
+         return toRGBA(0 + m, c + m, x + m, alpha);
+      else if (hh <= 4)
+         return toRGBA(0 + m, x + m, c + m, alpha);
+      else if (hh <= 5)
+         return toRGBA(x + m, 0 + m, c + m, alpha);
+      else if (hh <= 6)
+         return toRGBA(c + m, 0 + m, x + m, alpha);
+      else
+         return toRGBA(m, m, m, alpha);
+   }
+
+   /**
+    * Creates a new color from the given HSLA values.
+    * 
+    * @param hue        the hue component in range [0-360].
+    * @param saturation the saturation component in range [0.0-1.0].
+    * @param lightness  the lightness component in range [0.0-1.0].
+    * @param alpha      the alpha component in range [0.0-1.0], 0 being fully transparent and 255 fully
+    *                   opaque.
+    * @return the color as a single ARGB integer.
+    * @see <a href=
+    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *      representation</a>
+    * @see #toARGB(double, double, double, double)
+    */
+   public static int hslaToARGB(double hue, double saturation, double lightness, double alpha)
+   {
+      hue %= 360.0;
+      if (hue < 0.0)
+         hue += 360.0;
+      saturation = MathTools.clamp(saturation, 0.0, 1.0);
+      lightness = MathTools.clamp(lightness, 0.0, 1.0);
+
+      // https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
+      double c = (1.0 - Math.abs(2.0 * lightness - 1.0)) * saturation;
+      double hh = hue / 60.0;
+      double x = c * (1.0 - Math.abs(hh % 2 - 1.0));
+
+      double m = lightness - 0.5 * c;
+
+      if (hh <= 1.0)
+         return toARGB(c + m, x + m, 0 + m, alpha);
+      else if (hh <= 2)
+         return toARGB(x + m, c + m, 0 + m, alpha);
+      else if (hh <= 3)
+         return toARGB(0 + m, c + m, x + m, alpha);
+      else if (hh <= 4)
+         return toARGB(0 + m, x + m, c + m, alpha);
+      else if (hh <= 5)
+         return toARGB(x + m, 0 + m, c + m, alpha);
+      else if (hh <= 6)
+         return toARGB(c + m, 0 + m, x + m, alpha);
+      else
+         return toARGB(m, m, m, alpha);
    }
 
    /**

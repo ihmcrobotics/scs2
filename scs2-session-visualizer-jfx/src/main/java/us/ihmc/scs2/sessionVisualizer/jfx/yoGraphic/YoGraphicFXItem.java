@@ -4,6 +4,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableSet;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 
 public interface YoGraphicFXItem
 {
@@ -65,7 +66,7 @@ public interface YoGraphicFXItem
 
    default String getFullname()
    {
-      return getParentGroup() == null ? getName() : getParentGroup().getFullname() + YoGraphicTools.SEPARATOR + getName();
+      return getParentGroup() == null ? getName() : getParentGroup().getFullname() + YoGraphicDefinition.SEPARATOR + getName();
    }
 
    void render();

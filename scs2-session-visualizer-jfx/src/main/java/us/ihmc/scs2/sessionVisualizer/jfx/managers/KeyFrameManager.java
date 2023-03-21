@@ -5,7 +5,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -23,10 +23,10 @@ public class KeyFrameManager implements Manager
       this.messager = messager;
       this.topics = topics;
       bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties(), null);
-      messager.registerJavaFXSyncedTopicListener(topics.getToggleKeyFrame(), messageContent -> toggleKeyFrame());
-      messager.registerJavaFXSyncedTopicListener(topics.getGoToNextKeyFrame(), messageContent -> gotToNextKeyFrame());
-      messager.registerJavaFXSyncedTopicListener(topics.getGoToPreviousKeyFrame(), messageContent -> gotToPreviousKeyFrame());
-      messager.registerJavaFXSyncedTopicListener(topics.getRequestCurrentKeyFrames(),
+      messager.addFXTopicListener(topics.getToggleKeyFrame(), messageContent -> toggleKeyFrame());
+      messager.addFXTopicListener(topics.getGoToNextKeyFrame(), messageContent -> gotToNextKeyFrame());
+      messager.addFXTopicListener(topics.getGoToPreviousKeyFrame(), messageContent -> gotToPreviousKeyFrame());
+      messager.addFXTopicListener(topics.getRequestCurrentKeyFrames(),
                                                  messageContent -> messager.submitMessage(topics.getCurrentKeyFrames(), keyFrameIndicesProperty.get()));
 
       bufferProperties.addListener((o, oldValue, newValue) ->

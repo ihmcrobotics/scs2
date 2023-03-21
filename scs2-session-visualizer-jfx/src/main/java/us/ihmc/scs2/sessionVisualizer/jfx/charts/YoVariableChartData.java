@@ -106,9 +106,9 @@ public class YoVariableChartData
          lastProperties = m;
       };
 
-      messager.registerTopicListener(topics.getYoBufferCropRequest(), cropRequestListener);
-      messager.registerTopicListener(topics.getYoBufferFillRequest(), fillRequestListener);
-      messager.registerTopicListener(topics.getYoBufferCurrentProperties(), propertiesListener);
+      messager.addTopicListener(topics.getYoBufferCropRequest(), cropRequestListener);
+      messager.addTopicListener(topics.getYoBufferFillRequest(), fillRequestListener);
+      messager.addTopicListener(topics.getYoBufferCurrentProperties(), propertiesListener);
    }
 
    public void dispose()

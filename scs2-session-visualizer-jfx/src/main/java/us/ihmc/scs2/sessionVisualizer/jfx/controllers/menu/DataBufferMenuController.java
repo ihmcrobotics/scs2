@@ -12,7 +12,7 @@ import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.IntegerStringConverter;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
@@ -51,12 +51,12 @@ public class DataBufferMenuController implements VisualizerController
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties(), null);
-      messager.registerTopicListener(topics.getSessionCurrentState(), m ->
+      messager.addTopicListener(topics.getSessionCurrentState(), m ->
       {
          if (m == SessionState.INACTIVE)
             initializeBufferSizeTextField = true;
       });
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
+      messager.addFXTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
 
       TextFormatter<Integer> bufferSizeFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
       bufferSizeTextField.setTextFormatter(bufferSizeFormatter);

@@ -60,21 +60,21 @@ public class JavaFXMissingTools
       Platform.runLater(task::run);
    }
 
-   public static void runLaterIfNeeded(Class<?> caller, Runnable task)
+   public static void runLaterIfNeeded(Class<?> caller, Runnable runnable)
    {
       if (Platform.isFxApplicationThread())
       {
-         task.run();
+         tryRun(runnable);
       }
       else
       {
          try
          {
-            runLater(caller, task);
+            runLater(caller, runnable);
          }
          catch (IllegalStateException e)
          {
-            task.run();
+            tryRun(runnable);
          }
       }
    }
@@ -90,7 +90,7 @@ public class JavaFXMissingTools
          {
             if (counter++ > numberOfFramesToWait)
             {
-               runnable.run();
+               tryRun(runnable);
                stop();
             }
          }
@@ -101,15 +101,7 @@ public class JavaFXMissingTools
    {
       if (Platform.isFxApplicationThread())
       {
-         try
-         {
-            runnable.run();
-         }
-         catch (Throwable t)
-         {
-            System.err.println("Exception in runnable");
-            t.printStackTrace();
-         }
+         tryRun(runnable);
       }
       else
       {
@@ -119,7 +111,7 @@ public class JavaFXMissingTools
          {
             try
             {
-               runnable.run();
+               tryRun(runnable);
             }
             finally
             {
@@ -135,6 +127,19 @@ public class JavaFXMissingTools
          {
             ex.printStackTrace();
          }
+      }
+   }
+
+   public static void tryRun(final Runnable runnable)
+   {
+      try
+      {
+         runnable.run();
+      }
+      catch (Throwable t)
+      {
+         System.err.println("Exception in runnable");
+         t.printStackTrace();
       }
    }
 
@@ -198,11 +203,7 @@ public class JavaFXMissingTools
             {
                try
                {
-                  runnable.run();
-               }
-               catch (Exception e)
-               {
-                  e.printStackTrace();
+                  tryRun(runnable);
                }
                finally
                {

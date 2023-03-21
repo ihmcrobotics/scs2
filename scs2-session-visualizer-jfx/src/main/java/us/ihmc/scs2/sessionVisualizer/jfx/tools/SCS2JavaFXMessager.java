@@ -3,19 +3,58 @@ package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.Property;
 import us.ihmc.messager.MessagerAPIFactory.MessagerAPI;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
+import us.ihmc.messager.javafx.SharedMemoryJavaFXMessager;
 
-public class BufferedJavaFXMessager extends SharedMemoryJavaFXMessager
+public class SCS2JavaFXMessager extends SharedMemoryJavaFXMessager
 {
+   private final AnimationTimer animationTimer;
    private final HashMap<Topic<?>, AtomicReference<?>> internalBuffer = new HashMap<>();
 
-   public BufferedJavaFXMessager(MessagerAPI messagerAPI)
+   public SCS2JavaFXMessager(MessagerAPI messagerAPI)
    {
-      super(messagerAPI);
+      super(messagerAPI, true);
+
+      animationTimer = new ObservedAnimationTimer(getClass().getSimpleName())
+      {
+         @Override
+         public void handleImpl(long now)
+         {
+            updateFXTopicListeners();
+         }
+      };
+
       for (Topic<?> topic : messagerAPI.getAllTopics())
          internalBuffer.put(topic, super.createInput(topic, null));
+   }
+
+   @Override
+   public void startMessager()
+   {
+      super.startMessager();
+      animationTimer.start();
+   }
+
+   @Override
+   public void closeMessager()
+   {
+      animationTimer.stop();
+      super.closeMessager();
+   }
+
+   @Override
+   protected void runFXLater(Runnable fxTask)
+   {
+      JavaFXMissingTools.runLater(getClass(), fxTask);
+   }
+
+   @Override
+   protected void runFXAndWait(final Runnable fxTask)
+   {
+      JavaFXMissingTools.runAndWait(getClass(), fxTask);
    }
 
    @SuppressWarnings("unchecked")

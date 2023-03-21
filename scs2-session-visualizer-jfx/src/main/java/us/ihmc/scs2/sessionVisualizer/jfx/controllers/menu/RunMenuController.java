@@ -10,7 +10,7 @@ import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
@@ -42,7 +42,7 @@ public class RunMenuController implements VisualizerController
       bufferProperties = messager.createInput(topics.getYoBufferCurrentProperties(), null);
 
       messager.bindBidirectional(topics.getRunAtRealTimeRate(), simulateAtRealTimeCheckMenuItem.selectedProperty(), false);
-      messager.registerJavaFXSyncedTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
+      messager.addFXTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
 
       TextFormatter<Double> formatter = new TextFormatter<>(new DoubleStringConverter());
       formatter.setValue(1.0);

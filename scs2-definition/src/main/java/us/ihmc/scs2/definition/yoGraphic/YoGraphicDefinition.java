@@ -43,6 +43,11 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 public abstract class YoGraphicDefinition
 {
    /**
+    * Character used to separate sub-names in a namespace when the namespace is represented as a single
+    * {@code String}.
+    */
+   public static final String SEPARATOR = ":";
+   /**
     * Whether to print additional debug information when parsing {@code YoGraphicDefinition}s.
     * <p>
     * Can be set to {@code true} using the program argument {@code scs2.definition.debugParsing}.

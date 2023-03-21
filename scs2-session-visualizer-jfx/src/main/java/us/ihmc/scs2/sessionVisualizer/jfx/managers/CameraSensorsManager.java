@@ -24,18 +24,18 @@ import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.javaFXToolkit.JavaFXTools;
-import us.ihmc.javaFXToolkit.messager.JavaFXMessager;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
+import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 public class CameraSensorsManager extends ObservedAnimationTimer implements Manager
@@ -50,13 +50,13 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
    private final JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
 
-   public CameraSensorsManager(Node mainSceneRoot, BufferedJavaFXMessager messager, SessionVisualizerTopics topics, YoRobotFXManager robotFXManager)
+   public CameraSensorsManager(Node mainSceneRoot, SCS2JavaFXMessager messager, SessionVisualizerTopics topics, YoRobotFXManager robotFXManager)
    {
       this.mainSceneRoot = mainSceneRoot;
       this.messager = messager;
       this.topics = topics;
       this.robotFXManager = robotFXManager;
-      messager.registerTopicListener(topics.getCameraSensorDefinitionData(), this::handleCameraSensorDefinitionMessage);
+      messager.addTopicListener(topics.getCameraSensorDefinitionData(), this::handleCameraSensorDefinitionMessage);
    }
 
    private void handleCameraSensorDefinitionMessage(SensorMessage<CameraSensorDefinition> message)

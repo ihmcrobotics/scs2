@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
-import static us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition.*;
+import static us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition.YoTuple3D;
+import static us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition.YoTuple3DIdentifiers;
 
 import java.util.Objects;
 

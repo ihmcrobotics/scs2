@@ -62,6 +62,8 @@ public class SessionVisualizerTopics
 
    private Topic<File> yoGraphicLoadRequest;
    private Topic<File> yoGraphicSaveRequest;
+   private Topic<String> removeYoGraphicRequest;
+   private Topic<Pair<String, Boolean>> setYoGraphicVisibleRequest;
    private Topic<YoGraphicDefinition> addYoGraphicRequest;
    private Topic<YoTuple2DDefinition> plotter2DTrackCoordinateRequest;
 
@@ -152,6 +154,8 @@ public class SessionVisualizerTopics
 
       yoGraphicLoadRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicLoadRequest;
       yoGraphicSaveRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicSaveRequest;
+      removeYoGraphicRequest = SessionVisualizerMessagerAPI.YoGraphic.RemoveYoGraphicRequest;
+      setYoGraphicVisibleRequest = SessionVisualizerMessagerAPI.YoGraphic.SetYoGraphicVisibleRequest;
       addYoGraphicRequest = SessionVisualizerMessagerAPI.YoGraphic.AddYoGraphicRequest;
       plotter2DTrackCoordinateRequest = SessionVisualizerMessagerAPI.YoGraphic.Plotter2DTrackCoordinateRequest;
 
@@ -342,6 +346,16 @@ public class SessionVisualizerTopics
    public Topic<File> getYoGraphicSaveRequest()
    {
       return yoGraphicSaveRequest;
+   }
+
+   public Topic<String> getRemoveYoGraphicRequest()
+   {
+      return removeYoGraphicRequest;
+   }
+
+   public Topic<Pair<String, Boolean>> getSetYoGraphicVisibleRequest()
+   {
+      return setYoGraphicVisibleRequest;
    }
 
    public Topic<YoGraphicDefinition> getAddYoGraphicRequest()

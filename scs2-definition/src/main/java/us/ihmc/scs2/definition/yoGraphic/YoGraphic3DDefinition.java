@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlElement;
 
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 
@@ -88,7 +87,6 @@ public abstract class YoGraphic3DDefinition extends YoGraphicDefinition
    @XmlElement(name = "color")
    public void setColorOld(ColorDefinition color)
    {
-      LogTools.info("Setting color {}", color);
       this.color = color;
    }
 

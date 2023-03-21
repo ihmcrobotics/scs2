@@ -46,22 +46,26 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 `YoGraphic`s can be created via the menu _YoGraphic > YoGraphic properties..._. You can export/import `YoGraphic` to a file via _YoComposite > Load/Save YoGraphic..._.
 
 # System properties:
-- `scs2.home`: Defines the home folder in which SCS2 is saving configuration files.
-- `scs2.session.buffer.initialsize`: Defines the default buffer size for any type of session.
-- `scs2.session.buffer.recordtickperiod`: Defines the default record frequency for any type of session.
-- `scs2.session.runrealtime`: If defined, the simulation will not go faster than real-time.
-- `scs2.session.playrealtime`: Defines the default real-time rate when playing back data for any type of session.
-- `scs2.session.buffer.publishperiod`: Defines the default rate at which the GUI is refreshed for any type of session.
-- `scs2.session.gui.mainwindow.loadconfig`: Determines whether or not the main window configuration (width, height, position, maximized or not) from the configuration file. Enabled by default, can be disabled if the behavior is not desired.
-- `scs2.session.gui.mainwindow.loadconfig`: Determines whether or not the main window configuration (width, height, position, maximized or not) from the configuration file. Enabled by default, can be disabled if the behavior is not desired.
-- `scs2.session.gui.yovariable.enablefuzzysearch`: If a `YoVariable` cannot be found by name in the session registry, when loading configuration file, the fuzzy search can help retrieving it. This helps with variable rename or with variable that gets moved. Disabled by default. The search can be computationally expensive and is currently blocking the rendering thread.
-- `scs2.session.gui.skybox.theme`: Allows changing skybox theme. 3 options: `CLOUDY_CROWN_MIDDAY` (default), `SCS1`, and `CUSTOM`. When `CUSTOM` is set, the path to the skybox image file(s) is to be provided as well.
-- `scs2.session.gui.skybox.custompath`: Defines the path to load a custom skybox, not that the skybox theme is to be set to `CUSTOM` for this property to be used. The path should lead to either a single image file that contains the 6 panes to use as the skybox (looks like an unfolded box), or lead to a directory that contains 6 image files named: Top, Bottom, Left, Right, Front, and Back and which file extension can be either `*.png`, `*jpg`, or `*.bmp`.
+- `scs2.home`: [String] Defines the home folder in which SCS2 is saving configuration files.
+- `scs2.session.buffer.initialsize`: [Integer] Defines the default buffer size for any type of session.
+- `scs2.session.buffer.recordtickperiod`: [Integer] Defines the default record frequency for any type of session.
+- `scs2.session.runrealtime`: [Boolean] If defined, the simulation will not go faster than real-time.
+- `scs2.session.playrealtime`: [Boolean] Defines the default real-time rate when playing back data for any type of session.
+- `scs2.session.buffer.publishperiod`: [Long] Defines the default period in nanoseconds at which the GUI is refreshed for any type of session.
+- `scs2.session.gui.mainwindow.loadconfig`: [Boolean] Determines whether or not the main window configuration (width, height, position, maximized or not) from the configuration file. Enabled by default, can be disabled if the behavior is not desired.
+- `scs2.session.gui.yovariable.enablefuzzysearch`: [Boolean] If a `YoVariable` cannot be found by name in the session registry, when loading configuration file, the fuzzy search can help retrieving it. This helps with variable rename or with variable that gets moved. Disabled by default. The search can be computationally expensive and is currently blocking the rendering thread.
+- `scs2.session.gui.skybox.theme`: [String] Allows changing skybox theme. 3 options: `CLOUDY_CROWN_MIDDAY` (default), `SCS1`, and `CUSTOM`. When `CUSTOM` is set, the path to the skybox image file(s) is to be provided as well.
+- `scs2.session.gui.skybox.custompath`: [String] Defines the path to load a custom skybox, not that the skybox theme is to be set to `CUSTOM` for this property to be used. The path should lead to either a single image file that contains the 6 panes to use as the skybox (looks like an unfolded box), or lead to a directory that contains 6 image files named: Top, Bottom, Left, Right, Front, and Back and which file extension can be either `*.png`, `*jpg`, or `*.bmp`.
+- `scs2.session.gui.loadconfig.synchronous`: [Boolean] Modifies the behavior for initializing a session:
+  - `true` best attempt is made at initializing sequentially, increasing initialization time and improving predictability of when the GUI is fully initialized. This is expected to improved the accuracy of `SessionVisualizerControls.waitUntilVisualizerFullyUp()`.
+  - `false` initialization is done in parallel, decreasing initialization time and impairing the ability to predict when the GUI is fully initialized.
+- `scs2.session.gui.loadconfig.time`: [Boolean] Whether to print the time taken for initialization. 
 
 # Environment variables:
-- `SCS2_HOME`: Defines the home folder in which SCS2 is saving configuration files.
-- `SCS2_SKYBOX_THEME`: Allows changing skybox theme. 3 options: `CLOUDY_CROWN_MIDDAY` (default), `SCS1`, and `CUSTOM`. When `CUSTOM` is set, the path to the skybox image file(s) is to be provided as well.
-- `SCS2_SKYBOX_CUSTOM_PATH`: Defines the path to load a custom skybox, not that the skybox theme is to be set to `CUSTOM` for this property to be used. The path should lead to either a single image file that contains the 6 panes to use as the skybox (looks like an unfolded box), or lead to a directory that contains 6 image files named: Top, Bottom, Left, Right, Front, and Back and which file extension can be either `*.png`, `*jpg`, or `*.bmp`.
+- `SCS2_HOME`: [String] Defines the home folder in which SCS2 is saving configuration files.
+- `SCS2_SKYBOX_THEME`: [String] Allows changing skybox theme. 3 options: `CLOUDY_CROWN_MIDDAY` (default), `SCS1`, and `CUSTOM`. When `CUSTOM` is set, the path to the skybox image file(s) is to be provided as well.
+- `SCS2_SKYBOX_CUSTOM_PATH`: [String] Defines the path to load a custom skybox, not that the skybox theme is to be set to `CUSTOM` for this property to be used. The path should lead to either a single image file that contains the 6 panes to use as the skybox (looks like an unfolded box), or lead to a directory that contains 6 image files named: Top, Bottom, Left, Right, Front, and Back and which file extension can be either `*.png`, `*jpg`, or `*.bmp`.
+- `SCS2_GUI_LOAD_SESSION_SYNCHRONOUS`: [Boolean] Modifies the behavior for initializing a session. See `scs2.session.gui.loadconfig.synchronous` above.
 
 # Useful Tools classes:
 - `URDFTools`: for creating a `RobotDefinition` from a URDF file.
@@ -70,10 +74,30 @@ While `YoGraphic` were available in SCS1 by implementing them in Java, they are 
 - `SimMultiBodySystemTools`: common operations with system composed of `SimRigidBodyBasics` and `SimJointBasics` which are used to define the robot in simulation.
 - `SharedMemoryIOTools`: for writing a `SharedBuffer` into a data file and reading a `SharedBuffer` from a data file.
 - `JavaFXMissingTools`: provides additional tools for working with JavaFX.
-- `SCS1GraphicConversionTools`: for converting SCS1 `YoGraphic` and `Artifact` into SCS2 `YoGraphicDefinition`.
+- `YoGraphicConversionTools` (in `ihmc-graphics-description`): for converting SCS1 `YoGraphic` and `Artifact` into SCS2 `YoGraphicDefinition`.
 - `SegmentedLine3DTriangleMeshFactory`: for creating a 3D "noodle" that goes through 3D waypoint.
 - `VisualDefinitionFactory`: for creating `VisualDefinition`.
 - `YoGraphicDefinitionFactory`: for creating `YoGraphicDefinition`.
+
+# Repository Projects:
+## scs2-definition
+This project gathers classes to help define: robots, terrain environment, yoGraphics, visuals, and so on. It is meant to be a low-level project with low overhead in terms of dependencies such that it can easily be imported in other low-level projects.
+## scs2-shared-memory
+This project provides an implementation for a yoVariable buffer. This buffer allows storing yoVariable values over time which in turn allows playing back simulation data for instance. This project is meant to remain rather low-level in terms of dependency and limit the scope to yoVariables.
+## scs2-session
+This project defines the base implementation of a session. A session is an abstract base layer for defining a simulation session, log session, or remote session. 
+## scs2-simulation
+This project provides the implementation for the simulation backend as well as 2 physics engines: contact point based physics engine (SCS1 like) and an impulse based physics engine.
+## scs2-bullet-simulation
+This project provides a new physics engine that is a bridge to Bullet.
+## scs2-session-logger
+This project provides the backend for log session and remote session.
+## scs2-session-visualizer
+This project provides tools for the SCS2 GUI that are graphics engine agnostic.
+## scs2-session-visualizer-jfx
+This project provides a JavaFX implementation of the SCS2 GUI.
+## scs2-simulation-construction-set
+This project provides the class `SimulationConstructionSet2` which bundles backend and frontend of SCS2 in a similar fashion as `SimulationConstructionSet` in SCS1.
 
 # Known issues:
 See [Wiki - Known Issues](https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Known-Issues-and-workaround).

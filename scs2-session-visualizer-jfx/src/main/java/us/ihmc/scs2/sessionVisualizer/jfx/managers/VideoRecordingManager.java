@@ -24,7 +24,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.BufferedJavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 
@@ -33,7 +33,7 @@ public class VideoRecordingManager
    private final SubScene scene;
    private final Group mainView3DRoot;
    private final SessionVisualizerTopics topics;
-   private final BufferedJavaFXMessager messager;
+   private final SCS2JavaFXMessager messager;
 
    private final AtomicReference<YoBufferPropertiesReadOnly> currentBufferProperties;
    private final AtomicReference<SessionMode> currentSessionMode;
@@ -46,7 +46,7 @@ public class VideoRecordingManager
    public VideoRecordingManager(SubScene scene,
                                 Group mainView3DRoot,
                                 SessionVisualizerTopics topics,
-                                BufferedJavaFXMessager messager,
+                                SCS2JavaFXMessager messager,
                                 BackgroundExecutorManager backgroundExecutorManager)
    {
       this.scene = scene;
@@ -60,7 +60,7 @@ public class VideoRecordingManager
       sessionDT = messager.createInput(topics.getSessionDTNanoseconds());
       bufferRecordTickPeriod = messager.createInput(topics.getBufferRecordTickPeriod());
 
-      messager.registerTopicListener(topics.getSceneVideoRecordingRequest(), request -> submitRequest(request));
+      messager.addTopicListener(topics.getSceneVideoRecordingRequest(), request -> submitRequest(request));
    }
 
    private void submitRequest(SceneVideoRecordingRequest request)

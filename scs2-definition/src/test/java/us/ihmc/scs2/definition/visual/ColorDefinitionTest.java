@@ -48,6 +48,73 @@ public class ColorDefinitionTest
    }
 
    @Test
+   public void testConvesions()
+   {
+      Random random = new Random();
+      ColorDefinition expectedColor = new ColorDefinition();
+      ColorDefinition actualColor;
+      int argb, rgb, rgba;
+
+      for (int i = 0; i < ITERATIONS; i++)
+      {
+         expectedColor = ColorDefinitions.argb(random.nextInt());
+         int rInt = expectedColor.getRedAsInteger();
+         int gInt = expectedColor.getGreenAsInteger();
+         int bInt = expectedColor.getBlueAsInteger();
+         int aInt = expectedColor.getAlphaAsInteger();
+
+         double rDouble = expectedColor.getRed();
+         double gDouble = expectedColor.getGreen();
+         double bDouble = expectedColor.getBlue();
+         double aDouble = expectedColor.getAlpha();
+
+         argb = ColorDefinitions.toARGB(rInt, gInt, bInt, aInt);
+         actualColor = ColorDefinitions.argb(argb);
+         assertEquals(expectedColor, actualColor);
+
+         argb = ColorDefinitions.toARGB(rDouble, gDouble, bDouble, aDouble);
+         actualColor = ColorDefinitions.argb(argb);
+         assertEquals(expectedColor, actualColor);
+
+         rgb = ColorDefinitions.toRGB(rInt, gInt, bInt);
+         actualColor = ColorDefinitions.rgb(rgb);
+         actualColor.setAlpha(aInt);
+         assertEquals(expectedColor, actualColor);
+
+         rgb = ColorDefinitions.toRGB(rDouble, gDouble, bDouble);
+         actualColor = ColorDefinitions.rgb(rgb);
+         actualColor.setAlpha(aInt);
+         assertEquals(expectedColor, actualColor);
+
+         rgba = ColorDefinitions.toRGBA(rInt, gInt, bInt, aInt);
+         actualColor = ColorDefinitions.rgba(rgba);
+         assertEquals(expectedColor, actualColor);
+
+         rgba = ColorDefinitions.toRGBA(rDouble, gDouble, bDouble, aDouble);
+         actualColor = ColorDefinitions.rgba(rgba);
+         assertEquals(expectedColor, actualColor);
+
+         double[] hsba = expectedColor.toHSBADoubleArray();
+         argb = ColorDefinitions.hsbaToARGB(hsba[0], hsba[1], hsba[2], hsba[3]);
+         actualColor = ColorDefinitions.argb(argb);
+         assertEquals(expectedColor, actualColor);
+
+         rgba = ColorDefinitions.hsbaToRGBA(hsba[0], hsba[1], hsba[2], hsba[3]);
+         actualColor = ColorDefinitions.rgba(rgba);
+         assertEquals(expectedColor, actualColor);
+
+         double[] hsla = expectedColor.toHSLADoubleArray();
+         argb = ColorDefinitions.hslaToARGB(hsla[0], hsla[1], hsla[2], hsla[3]);
+         actualColor = ColorDefinitions.argb(argb);
+         assertEquals(expectedColor, actualColor);
+
+         rgba = ColorDefinitions.hslaToRGBA(hsla[0], hsla[1], hsla[2], hsla[3]);
+         actualColor = ColorDefinitions.rgba(rgba);
+         assertEquals(expectedColor, actualColor);
+      }
+   }
+
+   @Test
    public void testHexConversion()
    {
       Random random = new Random(4752);
