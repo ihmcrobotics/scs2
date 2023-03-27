@@ -21,7 +21,7 @@ mainDependencies {
    api("us.ihmc:euclid-frame-shape:0.19.1")
    api("us.ihmc:ihmc-messager:0.2.0")
    api("us.ihmc:ihmc-yovariables:0.9.17")
-   api("us.ihmc:mecano-yovariables:17-0.12.0")
+   api("us.ihmc:mecano-yovariables:17-0.12.1")
 
    apiBytedecoNatives("javacpp")
    apiBytedecoNatives("bullet", "3.24-")
