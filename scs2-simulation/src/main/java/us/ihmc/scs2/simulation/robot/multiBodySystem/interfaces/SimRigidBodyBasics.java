@@ -19,13 +19,13 @@ public interface SimRigidBodyBasics extends RigidBodyBasics, SimRigidBodyReadOnl
    @Override
    default Iterable<? extends SimRigidBodyBasics> subtreeIterable()
    {
-      return new RigidBodyIterable<>(SimRigidBodyBasics.class, null, this);
+      return new RigidBodyIterable<>(SimRigidBodyBasics.class, null, null, this);
    }
 
    @Override
    default Iterable<? extends SimJointBasics> childrenSubtreeIterable()
    {
-      return new JointIterable<>(SimJointBasics.class, null, getChildrenJoints());
+      return new JointIterable<>(SimJointBasics.class, null, null, getChildrenJoints());
    }
 
    @Override
