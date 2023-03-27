@@ -22,13 +22,13 @@ public interface SimRigidBodyReadOnly extends RigidBodyReadOnly, CollidableHolde
    @Override
    default Iterable<? extends SimRigidBodyReadOnly> subtreeIterable()
    {
-      return new RigidBodyIterable<>(SimRigidBodyReadOnly.class, null, this);
+      return new RigidBodyIterable<>(SimRigidBodyReadOnly.class, null, null, this);
    }
 
    @Override
    default Iterable<? extends SimJointReadOnly> childrenSubtreeIterable()
    {
-      return new JointIterable<>(SimJointReadOnly.class, null, getChildrenJoints());
+      return new JointIterable<>(SimJointReadOnly.class, null, null, getChildrenJoints());
    }
 
    @Override

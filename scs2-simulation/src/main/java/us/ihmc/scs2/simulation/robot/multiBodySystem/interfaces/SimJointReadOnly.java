@@ -70,7 +70,7 @@ public interface SimJointReadOnly extends JointReadOnly
    @Override
    default Iterable<? extends SimJointReadOnly> subtreeIterable()
    {
-      return new JointIterable<>(SimJointBasics.class, null, this);
+      return new JointIterable<>(SimJointBasics.class, null, null, this);
    }
 
    @Override

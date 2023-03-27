@@ -109,13 +109,13 @@ public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
    @Override
    public Iterable<? extends SimRigidBody> subtreeIterable()
    {
-      return new RigidBodyIterable<>(SimRigidBody.class, null, this);
+      return new RigidBodyIterable<>(SimRigidBody.class, null, null, this);
    }
 
    @Override
    public Iterable<? extends SimJointBasics> childrenSubtreeIterable()
    {
-      return new JointIterable<>(SimJointBasics.class, null, getChildrenJoints());
+      return new JointIterable<>(SimJointBasics.class, null, null, getChildrenJoints());
    }
 
    @Override
