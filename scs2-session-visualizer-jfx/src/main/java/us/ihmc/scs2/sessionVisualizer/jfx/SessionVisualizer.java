@@ -382,7 +382,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         submitMessage(getTopics().getShowOverheadPlotter(), true);
+         submitMessage(getTopics().getShowOverheadPlotter(), show);
       }
 
       @Override
