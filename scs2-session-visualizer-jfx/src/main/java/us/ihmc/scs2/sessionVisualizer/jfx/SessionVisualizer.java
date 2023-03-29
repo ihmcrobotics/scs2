@@ -82,7 +82,7 @@ public class SessionVisualizer
 
    private boolean hasTerminated = false;
 
-   public SessionVisualizer(Stage primaryStage, boolean shutdownSessionOnClose) throws Exception
+   public SessionVisualizer(Stage primaryStage, boolean shutdownSessionOnClose, Session initialSession) throws Exception
    {
       this.primaryStage = primaryStage;
       this.shutdownSessionOnClose = shutdownSessionOnClose;
@@ -140,6 +140,16 @@ public class SessionVisualizer
       // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
       // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
       initializeStageWithPrimaryScreen();
+
+      if (initialSession != null)
+      {
+         Runnable sessionLoadedCallback = () -> sessionVisualizerControls.visualizerReadyLatch.countDown();
+         multiSessionManager.startSession(initialSession, sessionLoadedCallback);
+      }
+      else
+      {
+         sessionVisualizerControls.visualizerReadyLatch.countDown();
+      }
    }
 
    public void initializeStageWithPrimaryScreen()
@@ -159,12 +169,6 @@ public class SessionVisualizer
       double centerY = bounds.getMinY() + (bounds.getHeight() - height) * 1.0 / 3.0;
       stage.setX(centerX);
       stage.setY(centerY);
-   }
-
-   public void startSession(Session session)
-   {
-      Runnable sessionLoadedCallback = () -> sessionVisualizerControls.visualizerReadyLatch.countDown();
-      multiSessionManager.startSession(session, sessionLoadedCallback);
    }
 
    public void stop()
@@ -282,9 +286,7 @@ public class SessionVisualizer
       {
          try
          {
-            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose);
-            if (session != null)
-               sessionVisualizer.startSession(session);
+            SessionVisualizer sessionVisualizer = new SessionVisualizer(new Stage(), shutdownSessionOnClose, session);
 
             JavaFXApplicationCreator.attachStopListener(sessionVisualizer::stop);
 
