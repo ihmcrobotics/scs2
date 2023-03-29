@@ -11,16 +11,23 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader.FrameData;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class VideoViewer
 {
@@ -29,6 +36,9 @@ public class VideoViewer
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
+   private final Label cameraTargetPTSLabel = new Label();
+   private final Label cameraCurrentPTSLabel = new Label();
+   private final Label robotTimestampLabel = new Label();
 
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
@@ -45,12 +55,15 @@ public class VideoViewer
       thumbnail.setOnMouseEntered(e ->
       {
          Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
-                                                       new KeyValue(thumbnail.fitWidthProperty(), THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize, Interpolator.EASE_BOTH)));
+                                                       new KeyValue(thumbnail.fitWidthProperty(),
+                                                                    THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize,
+                                                                    Interpolator.EASE_BOTH)));
          timeline.playFromStart();
       });
       thumbnail.setOnMouseExited(e ->
       {
-         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1), new KeyValue(thumbnail.fitWidthProperty(), defaultThumbnailSize, Interpolator.EASE_BOTH)));
+         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
+                                                       new KeyValue(thumbnail.fitWidthProperty(), defaultThumbnailSize, Interpolator.EASE_BOTH)));
          timeline.playFromStart();
       });
 
@@ -70,12 +83,22 @@ public class VideoViewer
          else
          {
             stage = new Stage();
+            AnchorPane anchorPane = new AnchorPane();
             Pane root = createImageViewPane(videoView);
+            anchorPane.getChildren().add(root);
+            JavaFXMissingTools.setAnchorConstraints(root, 0);
+            VBox labelNames = new VBox(new Label("cameraTargetPTSLabel"), new Label("cameraCurrentPTSLabel"), new Label("robotTimestampLabel"));
+            VBox labels = new VBox(cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
+            HBox labelsContainer = new HBox(5, labelNames, labels);
+            anchorPane.getChildren().add(labelsContainer);
+            AnchorPane.setLeftAnchor(labelsContainer, 0.0);
+            AnchorPane.setBottomAnchor(labelsContainer, 0.0);
+
             videoWindowProperty.set(stage);
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
             stage.setTitle(reader.getName());
             owner.setOnHiding(e2 -> stage.close());
-            Scene scene = new Scene(root);
+            Scene scene = new Scene(anchorPane);
             stage.setScene(scene);
             updateVideoView.bind(stage.showingProperty());
          }
@@ -121,10 +144,12 @@ public class VideoViewer
 
    public void update()
    {
-      Image currentFrame = reader.pollCurrentFrame();
+      FrameData currentFrameData = reader.pollCurrentFrame();
 
-      if (currentFrame == null)
+      if (currentFrameData == null)
          return;
+
+      WritableImage currentFrame = currentFrameData.frame;
 
       thumbnailContainer.setPrefWidth(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize);
       thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * currentFrame.getHeight() / currentFrame.getWidth());
@@ -132,7 +157,12 @@ public class VideoViewer
       thumbnail.setImage(currentFrame);
 
       if (updateVideoView.get())
+      {
          videoView.setImage(currentFrame);
+         cameraTargetPTSLabel.setText(Long.toString(currentFrameData.cameraTargetPTS));
+         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
+      }
    }
 
    public void stop()

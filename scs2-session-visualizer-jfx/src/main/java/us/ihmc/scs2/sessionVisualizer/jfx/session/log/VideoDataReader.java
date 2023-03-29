@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
-import org.apache.commons.lang3.mutable.MutableObject;
-
 import gnu.trove.list.array.TLongArrayList;
 import javafx.scene.image.WritableImage;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
@@ -39,7 +37,7 @@ public class VideoDataReader
 
    private final File videoFile;
    private final Camera camera;
-   private final ConcurrentCopier<MutableObject<WritableImage>> imageBuffer = new ConcurrentCopier<>(MutableObject::new);
+   private final ConcurrentCopier<FrameData> imageBuffer = new ConcurrentCopier<>(FrameData::new);
 
    public VideoDataReader(Camera camera, File dataDirectory, boolean hasTimeBase) throws IOException
    {
@@ -101,9 +99,12 @@ public class VideoDataReader
       {
          demuxer.seekToPTS(videoTimestamp);
          YUVPicture nextFrame = demuxer.getNextFrame();
-         MutableObject<WritableImage> copyForWriting = imageBuffer.getCopyForWriting();
-         copyForWriting.setValue(converter.toFXImage(nextFrame, copyForWriting.getValue()));
-         
+         FrameData copyForWriting = imageBuffer.getCopyForWriting();
+         copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
+         copyForWriting.cameraTargetPTS = videoTimestamp;
+         copyForWriting.cameraCurrentPTS = demuxer.getCurrentPTS();
+         copyForWriting.robotTimestamp = currentlyShowingRobotTimestamp;
+
          imageBuffer.commit();
       }
       catch (IOException e)
@@ -280,11 +281,16 @@ public class VideoDataReader
       return camera;
    }
 
-   public WritableImage pollCurrentFrame()
+   public FrameData pollCurrentFrame()
    {
-      MutableObject<WritableImage> copyForReading = imageBuffer.getCopyForReading();
-      if (copyForReading == null)
-         return null;
-      return copyForReading.getValue();
+      return imageBuffer.getCopyForReading();
+   }
+
+   public static class FrameData
+   {
+      public WritableImage frame;
+      public long cameraTargetPTS;
+      public long cameraCurrentPTS;
+      public long robotTimestamp;
    }
 }
