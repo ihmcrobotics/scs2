@@ -12,7 +12,7 @@ import javafx.css.Styleable;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleablePropertyFactory;
 import javafx.scene.CacheHint;
-import javafx.scene.chart.InvisibleNumberAxis;
+import javafx.scene.chart.FastAxisBase;
 import javafx.scene.shape.Line;
 
 public final class ChartMarker extends Line
@@ -123,7 +123,7 @@ public final class ChartMarker extends Line
       listeners.remove(listener);
    }
 
-   public void updateMarker(InvisibleNumberAxis xAxis, InvisibleNumberAxis yAxis)
+   public void updateMarker(FastAxisBase xAxis, FastAxisBase yAxis)
    {
       if (typeProperty.get() == ChartMarkerType.HORIZONTAL)
       {

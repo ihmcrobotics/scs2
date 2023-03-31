@@ -18,13 +18,14 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.css.StyleableDoubleProperty;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleablePropertyFactory;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.chart.InvisibleNumberAxis;
+import javafx.scene.chart.FastAxisBase;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -44,7 +45,9 @@ public class NumberSeriesLayer extends ImageView
    private final NumberSeries numberSeries;
    private final DynamicChartLegendItem legendNode = new DynamicChartLegendItem();
 
-   private final InvisibleNumberAxis xAxis, yAxis;
+   protected final ObjectProperty<FastAxisBase> xAxis;
+   protected final ObjectProperty<FastAxisBase> yAxis;
+
    private final BooleanProperty layoutChangedProperty = new SimpleBooleanProperty(this, "layoutChanged", true);
 
    private final Executor backgroundExecutor;
@@ -116,8 +119,8 @@ public class NumberSeriesLayer extends ImageView
    private IntegerProperty dataSizeProperty = new SimpleIntegerProperty(this, "dataSize", 0);
    private BooleanProperty updateIndexMarkerVisible = new SimpleBooleanProperty(this, "updateIndexMarkerVisible", false);
 
-   public NumberSeriesLayer(InvisibleNumberAxis xAxis,
-                            InvisibleNumberAxis yAxis,
+   public NumberSeriesLayer(ObjectProperty<FastAxisBase> xAxis,
+                            ObjectProperty<FastAxisBase> yAxis,
                             NumberSeries numberSeries,
                             Executor backgroundExecutor,
                             ChartRenderManager renderManager)
@@ -132,10 +135,22 @@ public class NumberSeriesLayer extends ImageView
       legendNode.currentValueProperty().bind(numberSeries.currentValueProperty());
 
       InvalidationListener dirtyListener = (InvalidationListener) -> layoutChangedProperty.set(true);
-      xAxis.lowerBoundProperty().addListener(dirtyListener);
-      xAxis.upperBoundProperty().addListener(dirtyListener);
-      yAxis.lowerBoundProperty().addListener(dirtyListener);
-      yAxis.upperBoundProperty().addListener(dirtyListener);
+
+      ChangeListener<? super FastAxisBase> axisChangeListener = (o, oldAxis, newAxis) ->
+      {
+         if (oldAxis != null)
+         {
+            oldAxis.lowerBoundProperty().removeListener(dirtyListener);
+            oldAxis.upperBoundProperty().removeListener(dirtyListener);
+         }
+         newAxis.lowerBoundProperty().addListener(dirtyListener);
+         newAxis.upperBoundProperty().addListener(dirtyListener);
+      };
+      xAxis.addListener(axisChangeListener);
+      yAxis.addListener(axisChangeListener);
+      axisChangeListener.changed(null, null, xAxis.get());
+      axisChangeListener.changed(null, null, yAxis.get());
+
       stroke.addListener(dirtyListener);
       strokeWidth.addListener(dirtyListener);
       dataSizeProperty.addListener(dirtyListener);
@@ -193,8 +208,8 @@ public class NumberSeriesLayer extends ImageView
       if (isUpdatingImage.get())
          return false;
 
-      double width = xAxis.getWidth();
-      double height = yAxis.getHeight();
+      double width = xAxis.get().getWidth();
+      double height = yAxis.get().getHeight();
       int widthInt = (int) Math.round(width);
       int heightInt = (int) Math.round(height);
 
@@ -236,8 +251,8 @@ public class NumberSeriesLayer extends ImageView
          graphics.setColor(toAWTColor(stroke.get()));
          graphics.setStroke(new BasicStroke((float) (strokeWidth.get()), BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
 
-         DoubleUnaryOperator xTransform = xToHorizontalDisplayTransform(width, xAxis.getLowerBound(), xAxis.getUpperBound());
-         DoubleUnaryOperator yTransform = yToVerticalDisplayTransform(height, yAxis.getLowerBound(), yAxis.getUpperBound());
+         DoubleUnaryOperator xTransform = xToHorizontalDisplayTransform(width, xAxis.get().getLowerBound(), xAxis.get().getUpperBound());
+         DoubleUnaryOperator yTransform = yToVerticalDisplayTransform(height, yAxis.get().getLowerBound(), yAxis.get().getUpperBound());
 
          if (chartStyleProperty.get() == ChartStyle.NORMALIZED)
          {
@@ -260,8 +275,8 @@ public class NumberSeriesLayer extends ImageView
          {
             graphics.setColor(toAWTColor(Color.GREY.deriveColor(0, 1.0, 0.92, 0.5)));
             graphics.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
-            List<Point2D> markerData = Arrays.asList(new Point2D(numberSeries.bufferCurrentIndexProperty().get(), yAxis.getLowerBound()),
-                                                     new Point2D(numberSeries.bufferCurrentIndexProperty().get(), yAxis.getUpperBound()));
+            List<Point2D> markerData = Arrays.asList(new Point2D(numberSeries.bufferCurrentIndexProperty().get(), yAxis.get().getLowerBound()),
+                                                     new Point2D(numberSeries.bufferCurrentIndexProperty().get(), yAxis.get().getUpperBound()));
             drawMultiLine(graphics, markerData, xTransform, yTransform, xData, yData);
          }
 
