@@ -30,7 +30,8 @@ import javafx.collections.ObservableSet;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.chart.InvisibleNumberAxis;
+import javafx.scene.chart.FastAxisBase;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -55,6 +56,7 @@ import javafx.util.Pair;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
+import us.ihmc.javaFXExtensions.chart.FastNumberAxis;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.TopicListener;
@@ -106,8 +108,6 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    @FXML
    private FontAwesomeIconView chartMoveIcon;
 
-   private final InvisibleNumberAxis xAxis = new InvisibleNumberAxis(0.0, 0.0, 1000.0);
-   private final InvisibleNumberAxis yAxis = new InvisibleNumberAxis();
    private DynamicLineChart dynamicLineChart;
 
    private final ChartMarker inPointMarker = new ChartMarker(new SimpleDoubleProperty(this, "inPointMarkerCoordinate", 0.0));
@@ -153,7 +153,10 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       newBufferProperties = messager.createInput(topics.getYoBufferCurrentProperties());
       legendPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 5);
 
-      dynamicLineChart = new DynamicLineChart(xAxis, yAxis, backgroundExecutorManager::executeInBackground, toolkit.getChartRenderManager());
+      dynamicLineChart = new DynamicLineChart(new FastNumberAxis(0.0, 0.0),
+                                              new FastNumberAxis(),
+                                              backgroundExecutorManager::executeInBackground,
+                                              toolkit.getChartRenderManager());
       dynamicLineChart.markerAutoUpdateProperty().set(false);
       chartMainPane.getChildren().add(0, dynamicLineChart);
       AnchorPane.setTopAnchor(dynamicLineChart, 0.0);
@@ -161,11 +164,28 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       AnchorPane.setLeftAnchor(dynamicLineChart, 0.0);
       AnchorPane.setRightAnchor(dynamicLineChart, 0.0);
 
-      xAxis.setLowerBound(-1);
-      xAxis.setAutoRanging(false);
+      ChangeListener<? super FastAxisBase> xAxisChangeListener = (o, oldAxis, newAxis) ->
+      {
+         newAxis.setLowerBound(-1);
+         newAxis.setAutoRanging(false);
+         newAxis.setMinorTickVisible(false);
+         newAxis.setTickMarkVisible(true);
+         newAxis.setAnimated(false);
+      };
+      dynamicLineChart.xAxisProperty().addListener(xAxisChangeListener);
+      xAxisChangeListener.changed(null, null, dynamicLineChart.getXAxis());
 
-      yAxis.setAutoRanging(true);
-      yAxis.setForceZeroInRange(false);
+      ChangeListener<? super FastAxisBase> yAxisListener = (o, oldAxis, newAxis) ->
+      {
+         newAxis.setAutoRanging(true);
+         newAxis.setForceZeroInRange(false);
+         newAxis.setMinorTickVisible(false);
+         newAxis.setTickMarkVisible(true);
+         newAxis.setTickLabelsVisible(true);
+         newAxis.setAnimated(false);
+      };
+      dynamicLineChart.yAxisProperty().addListener(yAxisListener);
+      yAxisListener.changed(null, null, dynamicLineChart.getYAxis());
 
       inPointMarker.getStyleClass().add(INPOINT_MARKER_STYLECLASS);
       outPointMarker.getStyleClass().add(OUTPOINT_MARKER_STYLECLASS);
@@ -464,6 +484,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    {
       ChartIntegerBounds chartsBounds = toolkit.getChartZoomManager().chartBoundsProperty().getValue();
       YoBufferPropertiesReadOnly bufferProperties = newBufferProperties.getAndSet(null);
+      FastAxisBase xAxis = dynamicLineChart.getXAxis();
 
       if (bufferProperties != null)
       {
@@ -514,6 +535,19 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
          menuItem.setOnAction(e -> removeYoVariableFromPlot(yoVariable));
          contextMenu.getItems().add(menuItem);
       }
+
+      FastAxisBase yAxis = dynamicLineChart.getYAxis();
+      boolean isYAxisVisible = !(yAxis instanceof FastNumberAxis);
+      MenuItem yAxisVisibleItem = new MenuItem(isYAxisVisible ? "Hide y-axis" : "Show y-axis");
+      yAxisVisibleItem.setOnAction(e ->
+      {
+         if (isYAxisVisible)
+            dynamicLineChart.setYAxis(new FastNumberAxis());
+         else
+            dynamicLineChart.setYAxis(FastAxisBase.wrap(new NumberAxis()));
+      });
+      contextMenu.getItems().add(yAxisVisibleItem);
+
       return contextMenu;
    }
 
@@ -651,6 +685,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    {
       if (lastBufferProperties == null)
          return -1;
+      FastAxisBase xAxis = dynamicLineChart.getXAxis();
       double xLocal = xAxis.screenToLocal(screenX, screenY).getX();
       int index = (int) Math.round(xAxis.getValueForDisplay(xLocal));
       return MathTools.clamp(index, 0, lastBufferProperties.getSize());

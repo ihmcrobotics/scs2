@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.charts;
 
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
@@ -12,9 +11,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.Group;
-import javafx.scene.chart.InvisibleNumberAxis;
+import javafx.scene.chart.FastAxisBase;
 import us.ihmc.javaFXExtensions.chart.DynamicXYChart;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ChartRenderManager;
 
@@ -23,7 +23,7 @@ public class DynamicLineChart extends DynamicXYChart
    public enum ChartStyle
    {
       RAW, NORMALIZED
-   };
+   }
 
    private final Group seriesGroup = new Group()
    {
@@ -49,28 +49,42 @@ public class DynamicLineChart extends DynamicXYChart
 
    private final BooleanProperty updateIndexMarkersVisible = new SimpleBooleanProperty(this, "updateIndexMarkersVisible", false);
 
-   private final InvisibleNumberAxis xAxis;
-   private final InvisibleNumberAxis yAxis;
-
    private final Executor backgroundExecutor;
    private final ChartRenderManager chartRenderManager;
+   private final ChangeListener<? super Boolean> autoRangingListener = (ov, t, t1) -> updateAxisRange();
 
-   public DynamicLineChart(InvisibleNumberAxis xAxis, InvisibleNumberAxis yAxis, Executor backgroundExecutor, ChartRenderManager chartRenderManager)
+   public DynamicLineChart(FastAxisBase xAxis, FastAxisBase yAxis, Executor backgroundExecutor, ChartRenderManager chartRenderManager)
    {
       super(xAxis, yAxis);
 
-      this.xAxis = xAxis;
       this.chartRenderManager = chartRenderManager;
-      if (xAxis.getSide() == null)
-         xAxis.setSide(Side.BOTTOM);
-      this.yAxis = yAxis;
-      if (yAxis.getSide() == null)
-         yAxis.setSide(Side.LEFT);
 
       this.backgroundExecutor = backgroundExecutor;
 
-      xAxis.autoRangingProperty().addListener((ov, t, t1) -> updateAxisRange());
-      yAxis.autoRangingProperty().addListener((ov, t, t1) -> updateAxisRange());
+      ChangeListener<? super FastAxisBase> xAxisChangeListener = (o, oldAxis, newAxis) ->
+      {
+         if (oldAxis != null)
+            oldAxis.autoRangingProperty().removeListener(autoRangingListener);
+
+         if (newAxis.getSide() == null)
+            newAxis.setSide(Side.BOTTOM);
+         newAxis.setEffectiveOrientation(Orientation.HORIZONTAL);
+         newAxis.autoRangingProperty().addListener(autoRangingListener);
+      };
+      xAxisProperty().addListener(xAxisChangeListener);
+      xAxisChangeListener.changed(null, null, xAxis);
+
+      ChangeListener<? super FastAxisBase> yAxisChangeListener = (o, oldAxis, newAxis) ->
+      {
+         if (oldAxis != null)
+            oldAxis.autoRangingProperty().removeListener(autoRangingListener);
+         if (newAxis.getSide() == null)
+            newAxis.setSide(Side.LEFT);
+         newAxis.setEffectiveOrientation(Orientation.VERTICAL);
+         newAxis.autoRangingProperty().addListener(autoRangingListener);
+      };
+      yAxisProperty().addListener(yAxisChangeListener);
+      yAxisChangeListener.changed(null, null, yAxis);
 
       chartStyleProperty.addListener(chartUpdaterListener);
 
@@ -201,7 +215,7 @@ public class DynamicLineChart extends DynamicXYChart
 
    public void updateMarkers()
    {
-      markers.forEach(marker -> marker.updateMarker(xAxis, yAxis));
+      markers.forEach(marker -> marker.updateMarker(getXAxis(), getYAxis()));
    }
 
    @Override
@@ -214,6 +228,8 @@ public class DynamicLineChart extends DynamicXYChart
    protected void updateXAxisRange()
    {
       ChartIntegerBounds xBounds = null;
+
+      FastAxisBase xAxis = getXAxis();
 
       if (xAxis.isAutoRanging())
       {
@@ -233,13 +249,15 @@ public class DynamicLineChart extends DynamicXYChart
          }
 
          if (xBounds != null)
-            xAxis.invalidateRange(Arrays.asList(xBounds.getLower(), xBounds.getUpper()));
+            xAxis.invalidateRange(xBounds.getLower(), xBounds.getUpper());
       }
    }
 
    protected void updateYAxisRange()
    {
       ChartDoubleBounds yBounds = null;
+
+      FastAxisBase yAxis = getYAxis();
 
       if (yAxis.isAutoRanging())
       {
@@ -275,18 +293,6 @@ public class DynamicLineChart extends DynamicXYChart
             }
          }
       }
-   }
-
-   /** Get the X axis, by default it is along the bottom of the plot */
-   public InvisibleNumberAxis getXAxis()
-   {
-      return xAxis;
-   }
-
-   /** Get the Y axis, by default it is along the left of the plot */
-   public InvisibleNumberAxis getYAxis()
-   {
-      return yAxis;
    }
 
    /**
