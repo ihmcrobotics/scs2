@@ -8,6 +8,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -16,11 +18,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -87,12 +88,8 @@ public class VideoViewer
             Pane root = createImageViewPane(videoView);
             anchorPane.getChildren().add(root);
             JavaFXMissingTools.setAnchorConstraints(root, 0);
-            VBox labelNames = new VBox(new Label("cameraTargetPTSLabel"), new Label("cameraCurrentPTSLabel"), new Label("robotTimestampLabel"));
-            VBox labels = new VBox(cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
-            HBox labelsContainer = new HBox(5, labelNames, labels);
-            anchorPane.getChildren().add(labelsContainer);
-            AnchorPane.setLeftAnchor(labelsContainer, 0.0);
-            AnchorPane.setBottomAnchor(labelsContainer, 0.0);
+
+            setupVideoStatistics(anchorPane);
 
             videoWindowProperty.set(stage);
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
@@ -117,6 +114,44 @@ public class VideoViewer
          stage.toFront();
          stage.show();
       });
+   }
+
+   private void setupVideoStatistics(AnchorPane anchorPane)
+   {
+      Label videoStatisticTitle = new Label("Video Statistics");
+      videoStatisticTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+      Background generalBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
+      Border noRightBorder = new Border(new BorderStroke(Color.BLACK, null, Color.BLACK, Color.BLACK,
+                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID,
+                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
+      Border noLeftBorder = new Border(new BorderStroke(Color.BLACK, Color.BLACK, Color.BLACK, null,
+                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE,
+                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
+
+      Border generalBorder = new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT));
+      Insets textInsets = new Insets(0, 2, 0, 2);
+
+      VBox videoStatisticBox = new VBox(videoStatisticTitle);
+      videoStatisticBox.setAlignment(Pos.CENTER);
+      videoStatisticBox.setBackground(generalBackground);
+      videoStatisticBox.setBorder(generalBorder);
+
+      VBox videoStatisticLabels = new VBox(new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
+      videoStatisticLabels.setBackground(generalBackground);
+      videoStatisticLabels.setBorder(noRightBorder);
+      videoStatisticLabels.setPadding(textInsets);
+
+      VBox videoStatistics = new VBox(cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
+      videoStatistics.setBackground(generalBackground);
+      videoStatistics.setBorder(noLeftBorder);
+      videoStatistics.setPadding(textInsets);
+
+      HBox labelsContainer = new HBox(0, videoStatisticLabels, videoStatistics);
+      VBox videoStatisticsDisplay = new VBox(0, videoStatisticBox, labelsContainer);
+      anchorPane.getChildren().add(videoStatisticsDisplay);
+      AnchorPane.setLeftAnchor(videoStatisticsDisplay, 0.0);
+      AnchorPane.setBottomAnchor(videoStatisticsDisplay, 0.0);
    }
 
    private static Pane createImageViewPane(ImageView imageView)
