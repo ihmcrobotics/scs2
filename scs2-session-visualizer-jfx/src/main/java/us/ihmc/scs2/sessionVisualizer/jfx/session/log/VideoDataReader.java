@@ -68,8 +68,6 @@ public class VideoDataReader
       private long[] robotTimestamps;
       private long[] videoTimestamps;
 
-      private long bmdTimeBaseNum;
-      private long bmdTimeBaseDen;
       private long videoTimestamp;
 
       private final MP4VideoDemuxer demuxer;
@@ -180,35 +178,23 @@ public class VideoDataReader
             currentlyShowingIndex = robotTimestamps.length - 1;
          currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
 
-         long videoTimestamp = videoTimestamps[currentlyShowingIndex];
-
-         return videoTimestamp;
+         return videoTimestamps[currentlyShowingIndex];
       }
 
       private void parseTimestampData(File timestampFile) throws IOException
       {
-         BufferedReader bufferedReader = null;
-         try
+         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(timestampFile)))
          {
-            bufferedReader = new BufferedReader(new FileReader(timestampFile));
 
             String line;
             if (hasTimebase)
             {
-               if ((line = bufferedReader.readLine()) != null)
-               {
-                  bmdTimeBaseNum = Long.valueOf(line);
-               }
-               else
+               if (bufferedReader.readLine() == null)
                {
                   throw new IOException("Cannot read numerator");
                }
 
-               if ((line = bufferedReader.readLine()) != null)
-               {
-                  bmdTimeBaseDen = Long.valueOf(line);
-               }
-               else
+               if (bufferedReader.readLine() == null)
                {
                   throw new IOException("Cannot read denumerator");
                }
@@ -220,8 +206,8 @@ public class VideoDataReader
             while ((line = bufferedReader.readLine()) != null)
             {
                String[] stamps = line.split("\\s");
-               long robotStamp = Long.valueOf(stamps[0]);
-               long videoStamp = Long.valueOf(stamps[1]);
+               long robotStamp = Long.parseLong(stamps[0]);
+               long videoStamp = Long.parseLong(stamps[1]);
 
                if (interlaced)
                {
@@ -236,23 +222,9 @@ public class VideoDataReader
             this.robotTimestamps = robotTimestamps.toArray();
             this.videoTimestamps = videoTimestamps.toArray();
 
-         }
-         catch (FileNotFoundException e)
+         } catch (FileNotFoundException e)
          {
             throw new RuntimeException(e);
-         }
-         finally
-         {
-            try
-            {
-               if (bufferedReader != null)
-               {
-                  bufferedReader.close();
-               }
-            }
-            catch (IOException e)
-            {
-            }
          }
       }
 
