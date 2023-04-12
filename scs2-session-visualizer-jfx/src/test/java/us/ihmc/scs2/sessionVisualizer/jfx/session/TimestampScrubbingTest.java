@@ -80,4 +80,14 @@ public class TimestampScrubbingTest
         reader.readVideoFrame(actualRobotTimestamps[34]);
         Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
     }
+
+    @Test
+    public void testGoingThroughRobotTimestampsBackwards()
+    {
+        for (int i = actualRobotTimestamps.length / 8; i > 0; i--)
+        {
+            reader.readVideoFrame(actualRobotTimestamps[i]);
+            Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
+        }
+    }
 }
