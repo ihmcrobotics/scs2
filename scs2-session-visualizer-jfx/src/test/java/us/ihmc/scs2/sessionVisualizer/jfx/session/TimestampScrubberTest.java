@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
-public class TimestampScrubbingTest
+public class TimestampScrubberTest
 {
     private VideoDataReader.TimestampScrubber scrubber;
 
@@ -35,6 +35,8 @@ public class TimestampScrubbingTest
         // Go through the robot timestamps in order and see if we get the desired video timestamp
         for (int i = 0; i < actualRobotTimestamps.length; i++)
         {
+            //TODO there really shouldn't be duplicate robotTimestamps so that seems like an issue
+
             // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
             if (robotTimestampIsNotUnique(i))
                 continue;
@@ -51,8 +53,8 @@ public class TimestampScrubbingTest
         for (int i = 0; i < actualRobotTimestamps.length ; i+=2)
         {
             // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
-//            if (robotTimestampIsNotUnique(i))
-//                continue;
+            if (robotTimestampIsNotUnique(i))
+                continue;
 
             scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i], "For look index: " + i);
