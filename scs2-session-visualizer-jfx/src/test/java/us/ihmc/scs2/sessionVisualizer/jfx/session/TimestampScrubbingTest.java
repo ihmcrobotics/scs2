@@ -3,8 +3,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import us.ihmc.robotDataLogger.Camera;
-import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 
 import java.io.File;
@@ -14,40 +12,35 @@ import java.util.Objects;
 
 public class TimestampScrubbingTest
 {
-    private VideoDataReader.ExtendedVideoDataReader reader;
+    private VideoDataReader.TimestampScrubber scrubber;
 
     private long[] actualRobotTimestamps;
     private long[] actualVideoTimestamps;
 
     @BeforeEach
-    public void loadLogDirectory() throws URISyntaxException, IOException
+    public void loadFileTimestamps() throws URISyntaxException, IOException
     {
-        // GStreamer Algorithm Log
-        File dataDirectory = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/GStreamer_Capture")).toURI());
+        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/Capture.dat")).toURI());
 
-        LogPropertiesReader logPropertiesReader = new LogPropertiesReader(new File(dataDirectory + "/robotData.log"));
-        // Need to have one video in the log or this will fail
-        Camera camera = logPropertiesReader.getCameras().get(0);
-        reader = new VideoDataReader.ExtendedVideoDataReader(camera, dataDirectory, true);
+        scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
         // Need to have one video in the log or this will fail
-        actualRobotTimestamps = reader.getRobotTimestamps();
-        actualVideoTimestamps = reader.getVideoTimestamps();
+        actualRobotTimestamps = scrubber.getRobotTimestampsFromFile();
+        actualVideoTimestamps = scrubber.getVideoTimestampsFromFile();
     }
 
     @Test
     public void testGoingThroughRobotTimestampsInOrder()
     {
         // Go through the robot timestamps in order and see if we get the desired video timestamp
-        for (int i = 0; i < actualRobotTimestamps.length / 12; i++)
+        for (int i = 0; i < actualRobotTimestamps.length; i++)
         {
-            reader.readVideoFrame(actualRobotTimestamps[i]);
-
-            // Skip first frame since it's often messed up at the beginning
-            if (i < 1)
+            // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
+            if (robotTimestampIsNotUnique(i))
                 continue;
 
-            Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
+            scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
+            Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
 
@@ -55,15 +48,14 @@ public class TimestampScrubbingTest
     public void testGoingThroughRobotTimestampsEveryOther()
     {
         // Go through the robot timestamps by +=2, so we skip every other frame and see if we get the desired video timestamp
-        for (int i = 0; i < actualRobotTimestamps.length / 8; i+=2)
+        for (int i = 0; i < actualRobotTimestamps.length ; i+=2)
         {
-            reader.readVideoFrame(actualRobotTimestamps[i]);
+            // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
+//            if (robotTimestampIsNotUnique(i))
+//                continue;
 
-            // Skip first frame since it's often messed up at the beginning
-            if (i < 1)
-                continue;
-
-            Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
+            scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
+            Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i], "For look index: " + i);
         }
     }
 
@@ -71,23 +63,42 @@ public class TimestampScrubbingTest
     public void testGettingRandomTimestamp()
     {
         // Test grabbing random robot timestamps and checking to make sure we get the correct video timestamp
-        reader.readVideoFrame(actualRobotTimestamps[26]);
-        Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[26]);
+        // These robot timestamps need to be unique or the binary search will fail to get the correct video timestamp
+        scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[26]);
+        Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[26]);
 
-        reader.readVideoFrame(actualRobotTimestamps[40]);
-        Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[40]);
+        scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[40]);
+        Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[40]);
 
-        reader.readVideoFrame(actualRobotTimestamps[34]);
-        Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
+        scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[34]);
+        Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
     }
 
     @Test
     public void testGoingThroughRobotTimestampsBackwards()
     {
-        for (int i = actualRobotTimestamps.length / 8; i > 0; i--)
+        for (int i = actualRobotTimestamps.length - 1; i > 0; i--)
         {
-            reader.readVideoFrame(actualRobotTimestamps[i]);
-            Assertions.assertEquals(reader.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
+            // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
+            if (robotTimestampIsNotUnique(i))
+                continue;
+
+            scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
+            Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
+    }
+
+    public boolean robotTimestampIsNotUnique(int index)
+    {
+        boolean checkPrevious = false;
+        boolean checkNext = false;
+
+        if (index - 1 > 0)
+            checkPrevious = actualRobotTimestamps[index] == actualRobotTimestamps[index - 1];
+
+        if (index + 1 < actualRobotTimestamps.length)
+            checkNext = actualRobotTimestamps[index] == actualRobotTimestamps[index + 1];
+
+        return checkPrevious || checkNext;
     }
 }
