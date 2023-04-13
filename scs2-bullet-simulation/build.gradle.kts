@@ -18,10 +18,10 @@ mainDependencies {
    api("us.ihmc:scs2-definition:source")
    api("us.ihmc:scs2-shared-memory:source")
    api("us.ihmc:scs2-session:source")
-   api("us.ihmc:euclid-frame-shape:0.19.1")
+   api("us.ihmc:euclid-frame-shape:0.20.0-alpha1")
    api("us.ihmc:ihmc-messager:0.2.0")
    api("us.ihmc:ihmc-yovariables:0.9.17")
-   api("us.ihmc:mecano-yovariables:17-0.12.1")
+   api("us.ihmc:mecano-yovariables:17-0.13.0-alpha2")
 
    apiBytedecoNatives("javacpp")
    apiBytedecoNatives("bullet", "3.24-")
