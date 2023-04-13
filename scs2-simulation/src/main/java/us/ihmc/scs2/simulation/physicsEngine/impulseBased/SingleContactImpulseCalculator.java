@@ -126,7 +126,8 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
     */
    private final DMatrixRMaj M_inv = new DMatrixRMaj(4, 4);
 
-   public SingleContactImpulseCalculator(ReferenceFrame rootFrame,
+   public SingleContactImpulseCalculator(String prefix,
+                                         ReferenceFrame rootFrame,
                                          RigidBodyBasics rootBodyA,
                                          ForwardDynamicsCalculator forwardDynamicsCalculatorA,
                                          RigidBodyBasics rootBodyB,
@@ -138,7 +139,7 @@ public class SingleContactImpulseCalculator implements ImpulseBasedConstraintCal
       rootA = rootBodyA;
       rootB = rootBodyB;
 
-      contactFrame = new ReferenceFrame("contactFrame" + Session.SCS2_INTERNAL_FRAME_SUFFIX, rootFrame, true, false)
+      contactFrame = new ReferenceFrame(prefix + "contactFrame" + Session.SCS2_INTERNAL_FRAME_SUFFIX, rootFrame, true, false)
       {
          @Override
          protected void updateTransformToParent(RigidBodyTransform transformToParent)

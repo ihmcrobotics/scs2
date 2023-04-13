@@ -178,7 +178,7 @@ public class SingleContactImpulseCalculatorTest
          FrameVector3D contactLinearVelocityNoImpulse = predictContactVelocity(dt, collisionResult, forwardDynamicsCalculatorA, null);
          double normalVelocityMagnitudePreImpulse = contactLinearVelocityNoImpulse.dot(collisionResult.getCollisionAxisForA());
 
-         SingleContactImpulseCalculator impulseCalculator = new SingleContactImpulseCalculator(worldFrame, rootBodyA, forwardDynamicsCalculatorA, null, null);
+         SingleContactImpulseCalculator impulseCalculator = new SingleContactImpulseCalculator("calculator" + i, worldFrame, rootBodyA, forwardDynamicsCalculatorA, null, null);
          impulseCalculator.setCollision(collisionResult);
          impulseCalculator.setTolerance(GAMMA);
          impulseCalculator.setContactParameters(ContactParameters.defaultIneslasticContactParameters(false));
@@ -215,7 +215,8 @@ public class SingleContactImpulseCalculatorTest
 
          FrameVector3D contactLinearVelocityNoImpulse = predictContactVelocity(dt, collisionResult, forwardDynamicsCalculatorA, forwardDynamicsCalculatorB);
 
-         SingleContactImpulseCalculator impulseCalculator = new SingleContactImpulseCalculator(worldFrame,
+         SingleContactImpulseCalculator impulseCalculator = new SingleContactImpulseCalculator("calculator" + i,
+                                                                                               worldFrame,
                                                                                                rootBodyA,
                                                                                                forwardDynamicsCalculatorA,
                                                                                                rootBodyB,
@@ -304,7 +305,8 @@ public class SingleContactImpulseCalculatorTest
 
          ForwardDynamicsCalculator forwardDynamicsCalculatorA = new ForwardDynamicsCalculator(sphereCollidableA.getRootBody());
          ForwardDynamicsCalculator forwardDynamicsCalculatorB = new ForwardDynamicsCalculator(sphereCollidableB.getRootBody());
-         SingleContactImpulseCalculator calculator = new SingleContactImpulseCalculator(worldFrame,
+         SingleContactImpulseCalculator calculator = new SingleContactImpulseCalculator("calculator" + i,
+                                                                                        worldFrame,
                                                                                         sphereCollidableA.getRootBody(),
                                                                                         forwardDynamicsCalculatorA,
                                                                                         sphereCollidableB.getRootBody(),

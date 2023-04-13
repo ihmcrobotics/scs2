@@ -53,7 +53,7 @@ public class YoSingleContactImpulseCalculator extends SingleContactImpulseCalcul
                                            ForwardDynamicsCalculator forwardDynamicsCalculatorB,
                                            YoRegistry registry)
    {
-      super(rootFrame, rootBodyA, forwardDynamicsCalculatorA, rootBodyB, forwardDynamicsCalculatorB);
+      super(prefix + identifier, rootFrame, rootBodyA, forwardDynamicsCalculatorA, rootBodyB, forwardDynamicsCalculatorB);
 
       isContactClosing = new YoBoolean(prefix + "IsContactClosing" + identifier, registry);
       collisionAxis = new YoFrameVector3D(prefix + "CollisionAxis" + identifier, rootFrame, registry);
