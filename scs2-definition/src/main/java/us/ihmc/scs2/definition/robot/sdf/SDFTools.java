@@ -746,7 +746,7 @@ public class SDFTools
 
       if (pose != null)
       {
-         String[] split = pose.split("\\s+");
+         String[] split = pose.strip().split("\\s+");
          Vector3D position = new Vector3D(Double.parseDouble(split[0]), Double.parseDouble(split[1]), Double.parseDouble(split[2]));
          YawPitchRoll orientation = new YawPitchRoll(Double.parseDouble(split[5]), Double.parseDouble(split[4]), Double.parseDouble(split[3]));
          rigidBodyTransform.set(orientation, position);
@@ -851,7 +851,7 @@ public class SDFTools
       if (value == null)
          return defaultValue;
 
-      String[] split = value.split("\\s+");
+      String[] split = value.strip().split("\\s+");
       Vector3D vector = new Vector3D();
       vector.setX(Double.parseDouble(split[0]));
       vector.setY(Double.parseDouble(split[1]));
@@ -864,7 +864,7 @@ public class SDFTools
       if (value == null)
          return defaultValue;
 
-      String[] split = value.split("\\s+");
+      String[] split = value.strip().split("\\s+");
       double[] array = new double[split.length];
 
       for (int i = 0; i < split.length; i++)
