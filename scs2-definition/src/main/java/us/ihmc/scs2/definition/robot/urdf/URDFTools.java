@@ -30,6 +30,7 @@ import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.tools.MecanoTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
+import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
@@ -54,6 +55,7 @@ import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFAxis;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFCollision;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFColor;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFDynamics;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFFilenameHolder;
@@ -687,6 +689,9 @@ public class URDFTools
 
       if (urdfLink.getVisual() != null)
          urdfLink.getVisual().stream().map(URDFTools::toVisualDefinition).forEach(definition::addVisualDefinition);
+      
+      if (urdfLink.getCollision() != null)
+         urdfLink.getCollision().stream().map(URDFTools::toCollisionShapeDefinition).forEach(definition::addCollisionShapeDefinition);
 
       return definition;
    }
@@ -989,6 +994,26 @@ public class URDFTools
       visualDefinition.setGeometryDefinition(toGeometryDefinition(urdfVisual.getGeometry()));
       return visualDefinition;
    }
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Converts the given URDF collision into a {@link CollisionShapeDefinition}.
+    * </p>
+    * 
+    * @param urdfCollision the parsed URDF collision to convert.
+    * @return the collision shape definition.
+    */
+   public static CollisionShapeDefinition toCollisionShapeDefinition(URDFCollision urdfCollision)
+   {
+      if (urdfCollision == null)
+         return null;
+      
+      CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition();
+      collisionShapeDefinition.setName(urdfCollision.getName());
+      collisionShapeDefinition.setOriginPose(parseRigidBodyTransform(urdfCollision.getOrigin()));
+      collisionShapeDefinition.setGeometryDefinition(toGeometryDefinition(urdfCollision.getGeometry()));
+      return collisionShapeDefinition;
+   }
 
    /**
     * <i>-- Intended for internal use --</i>
@@ -1105,7 +1130,7 @@ public class URDFTools
 
       if (pose != null)
       {
-         String[] split = pose.split("\\s+");
+         String[] split = pose.strip().split("\\s+");
          Vector3D position = new Vector3D(Double.parseDouble(split[0]), Double.parseDouble(split[1]), Double.parseDouble(split[2]));
          YawPitchRoll orientation = new YawPitchRoll(Double.parseDouble(split[5]), Double.parseDouble(split[4]), Double.parseDouble(split[3]));
          rigidBodyTransform.set(orientation, position);
@@ -1228,7 +1253,7 @@ public class URDFTools
       if (value == null)
          return defaultValue;
 
-      String[] split = value.split("\\s+");
+      String[] split = value.strip().split("\\s+");
       Vector3D vector = new Vector3D();
       vector.setX(Double.parseDouble(split[0]));
       vector.setY(Double.parseDouble(split[1]));
@@ -1241,7 +1266,7 @@ public class URDFTools
       if (value == null)
          return defaultValue;
 
-      String[] split = value.split("\\s+");
+      String[] split = value.strip().split("\\s+");
       double[] array = new double[split.length];
 
       for (int i = 0; i < split.length; i++)
