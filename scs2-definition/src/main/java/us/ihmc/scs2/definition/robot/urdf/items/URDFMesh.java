@@ -23,7 +23,7 @@ public class URDFMesh implements URDFItem, URDFFilenameHolder
       this.filename = filename;
    }
 
-   @XmlElement(name = "scale")
+   @XmlAttribute(name = "scale")
    public void setScale(String scale)
    {
       this.scale = scale;
