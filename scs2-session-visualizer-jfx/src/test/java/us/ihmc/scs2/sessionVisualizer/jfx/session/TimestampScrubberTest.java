@@ -1,9 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session;
 
+import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 
 import java.io.File;
@@ -58,6 +58,8 @@ public class TimestampScrubberTest
         long largestDelta = 0;
         int duplicates = 0;
 
+        double[] copyRobotTimestamps = new double[actualRobotTimestamps.length];
+        StandardDeviation standardDeviation = new StandardDeviation();
 
         // Go through the robot timestamps in order and check the next one is larger
         for (int i = 1; i < actualRobotTimestamps.length; i++)
@@ -76,7 +78,7 @@ public class TimestampScrubberTest
             Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
 
             long currentDelta = currentTimestamp - previousTimestamp;
-
+            copyRobotTimestamps[i] = currentDelta;
             delta += currentDelta;
 
             if (currentDelta < smallestDelta)
@@ -88,6 +90,7 @@ public class TimestampScrubberTest
 
         delta = delta / (actualRobotTimestamps.length - duplicates);
 
+        System.out.println("Standard Deviation: " + (long) standardDeviation.evaluate(copyRobotTimestamps));
         System.out.println("Smallest Delta: " + smallestDelta);
         System.out.println("Largest Delta: " + largestDelta);
         System.out.println("Duplicate robotTimestamps: " + duplicates);
