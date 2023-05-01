@@ -70,8 +70,9 @@ public class VideoDataReader
          YUVPicture nextFrame = demuxer.getNextFrame();
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
-         copyForWriting.cameraTargetPTS = videoTimestamp;
-         copyForWriting.cameraCurrentPTS = demuxer.getCurrentPTS();
+         copyForWriting.givenTimestamp = timestamp;
+         copyForWriting.cameraCurrentPTS = videoTimestamp;
+         copyForWriting.cameraTargetPTS = demuxer.getCurrentPTS();
          copyForWriting.robotTimestamp = currentlyShowingRobotTimestamp;
 
          imageBuffer.commit();
@@ -148,8 +149,9 @@ public class VideoDataReader
    public static class FrameData
    {
       public WritableImage frame;
-      public long cameraTargetPTS;
+      public long givenTimestamp;
       public long cameraCurrentPTS;
+      public long cameraTargetPTS;
       public long robotTimestamp;
    }
 
@@ -249,29 +251,30 @@ public class VideoDataReader
          return videoTimestamp;
       }
 
-      public long setVideoTimestamp(long timestamp)
+      private long setVideoTimestamp(long timestamp)
       {
+         if (timestamp <= robotTimestamps[0])
+         {
+            currentlyShowingIndex = 0;
+            return videoTimestamps[currentlyShowingIndex];
+         }
+
+         if (timestamp >= robotTimestamps[robotTimestamps.length-1])
+         {
+            currentlyShowingIndex = robotTimestamps.length - 2;
+            return videoTimestamps[currentlyShowingIndex];
+         }
+
          currentlyShowingIndex = Arrays.binarySearch(robotTimestamps, timestamp);
 
          if (currentlyShowingIndex < 0)
          {
-            int nextIndex = -currentlyShowingIndex + 1;
-            if (nextIndex < robotTimestamps.length && Math.abs(robotTimestamps[-currentlyShowingIndex] - timestamp) > Math.abs(robotTimestamps[nextIndex]))
-            {
-               currentlyShowingIndex = nextIndex;
-            } else
-            {
-               currentlyShowingIndex = -currentlyShowingIndex;
-            }
+            int nextIndex = -currentlyShowingIndex - 1; // insertionPoint
+            currentlyShowingIndex = nextIndex;
+            currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
          }
 
-         if (currentlyShowingIndex < 0)
-            currentlyShowingIndex = 0;
-         if (currentlyShowingIndex >= robotTimestamps.length)
-            currentlyShowingIndex = robotTimestamps.length - 1;
-         currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
-
-         videoTimestamp = videoTimestamps[currentlyShowingIndex];
+         long videoTimestamp = videoTimestamps[currentlyShowingIndex];
 
          return videoTimestamp;
       }
