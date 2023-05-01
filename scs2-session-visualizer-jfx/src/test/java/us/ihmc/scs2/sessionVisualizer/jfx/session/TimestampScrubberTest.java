@@ -3,6 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 
 import java.io.File;
@@ -20,13 +21,77 @@ public class TimestampScrubberTest
     @BeforeEach
     public void loadFileTimestamps() throws URISyntaxException, IOException
     {
-        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/Capture.dat")).toURI());
+        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/NadiaTripodSouth_Timestamps_No_Duplicates.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
         // Need to have one video in the log or this will fail
         actualRobotTimestamps = scrubber.getRobotTimestampsFromFile();
         actualVideoTimestamps = scrubber.getVideoTimestampsFromFile();
+    }
+
+    @Test
+    public void testChronologicallyIncreasingRobotTimestamps()
+    {
+        long previousTimestamp;
+
+        // Go through the robot timestamps in order and check the next one is larger
+        for (int i = 1; i < actualRobotTimestamps.length; i++)
+        {
+            previousTimestamp = actualRobotTimestamps[i - 1];
+            long currentTimestamp = actualRobotTimestamps[i];
+
+            //TODO fix duplicate timestamps
+            if (currentTimestamp == previousTimestamp)
+                continue;
+
+            Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
+        }
+    }
+
+    @Test
+    public void testDeltaStatisticsBetweenRobotTimestamps()
+    {
+        long previousTimestamp;
+        long delta = 0;
+        long smallestDelta = 1000000000;
+        long largestDelta = 0;
+        int duplicates = 0;
+
+
+        // Go through the robot timestamps in order and check the next one is larger
+        for (int i = 1; i < actualRobotTimestamps.length; i++)
+        {
+            previousTimestamp = actualRobotTimestamps[i - 1];
+            long currentTimestamp = actualRobotTimestamps[i];
+
+            //TODO fix duplicate timestamps
+            if (currentTimestamp == previousTimestamp)
+            {
+                System.out.println("Current:" + currentTimestamp + " and Previous: " + previousTimestamp);
+                duplicates++;
+                continue;
+            }
+
+            Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
+
+            long currentDelta = currentTimestamp - previousTimestamp;
+
+            delta += currentDelta;
+
+            if (currentDelta < smallestDelta)
+                smallestDelta = currentDelta;
+
+            if (currentDelta > largestDelta)
+                largestDelta = currentDelta;
+        }
+
+        delta = delta / (actualRobotTimestamps.length - duplicates);
+
+        System.out.println("Smallest Delta: " + smallestDelta);
+        System.out.println("Largest Delta: " + largestDelta);
+        System.out.println("Duplicate robotTimestamps: " + duplicates);
+        System.out.println("Average delta for robotTimestamps: " + delta);
     }
 
     @Test
@@ -39,8 +104,10 @@ public class TimestampScrubberTest
 
             // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
             if (robotTimestampIsNotUnique(i))
+            {
+                System.out.println(actualRobotTimestamps[i]);
                 continue;
-
+            }
             scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
