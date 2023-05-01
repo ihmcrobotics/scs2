@@ -37,6 +37,7 @@ public class VideoViewer
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
+   private final Label cameraGivenTimestampPTSLabel = new Label();
    private final Label cameraTargetPTSLabel = new Label();
    private final Label cameraCurrentPTSLabel = new Label();
    private final Label robotTimestampLabel = new Label();
@@ -137,12 +138,12 @@ public class VideoViewer
       videoStatisticBox.setBackground(generalBackground);
       videoStatisticBox.setBorder(generalBorder);
 
-      VBox videoStatisticLabels = new VBox(new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
+      VBox videoStatisticLabels = new VBox(new Label("givenrobotTimestamp"), new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
       videoStatisticLabels.setBackground(generalBackground);
       videoStatisticLabels.setBorder(noRightBorder);
       videoStatisticLabels.setPadding(textInsets);
 
-      VBox videoStatistics = new VBox(cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
+      VBox videoStatistics = new VBox(cameraGivenTimestampPTSLabel, cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
       videoStatistics.setBackground(generalBackground);
       videoStatistics.setBorder(noLeftBorder);
       videoStatistics.setPadding(textInsets);
@@ -194,8 +195,9 @@ public class VideoViewer
       if (updateVideoView.get())
       {
          videoView.setImage(currentFrame);
-         cameraTargetPTSLabel.setText(Long.toString(currentFrameData.cameraTargetPTS));
-         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+         cameraGivenTimestampPTSLabel.setText(Long.toString(currentFrameData.givenTimestamp));
+         cameraTargetPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraTargetPTS));
          robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
       }
    }
