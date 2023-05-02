@@ -50,6 +50,35 @@ public class TimestampScrubberTest
     }
 
     @Test
+    public void testStandardDeviation()
+    {
+        int duplicates = 0;
+
+        StandardDeviation standardDeviation = new StandardDeviation();
+
+        // Go through the robot timestamps in order and check the next one is larger
+        for (int i = 1; i < actualRobotTimestamps.length; i++)
+        {
+            if (actualRobotTimestamps[i - 1] == actualRobotTimestamps[i])
+            {
+                duplicates++;
+            }
+        }
+
+        double[] copyRobotTimestamps = new double[actualRobotTimestamps.length - duplicates];
+
+        for (int i = 1; i < actualRobotTimestamps.length; i++)
+        {
+            long currentDelta = actualRobotTimestamps[i] - actualRobotTimestamps[i - 1];
+            copyRobotTimestamps[i - 1] = currentDelta;
+        }
+
+        System.out.println("robotTimestamp Length: " + actualRobotTimestamps.length);
+        System.out.println("copy Length: " + copyRobotTimestamps.length);
+        System.out.println("Standard Deviation: " + (long) standardDeviation.evaluate(copyRobotTimestamps));
+    }
+
+    @Test
     public void testDeltaStatisticsBetweenRobotTimestamps()
     {
         long previousTimestamp;
@@ -58,7 +87,15 @@ public class TimestampScrubberTest
         long largestDelta = 0;
         int duplicates = 0;
 
-        double[] copyRobotTimestamps = new double[actualRobotTimestamps.length];
+        double[] copyRobotTimestamps = new double[10];
+        copyRobotTimestamps[0] = 10;
+        copyRobotTimestamps[1] = 12;
+        copyRobotTimestamps[2] = 23;
+        copyRobotTimestamps[3] = 23;
+        copyRobotTimestamps[4] = 16;
+        copyRobotTimestamps[5] = 23;
+        copyRobotTimestamps[6] = 21;
+        copyRobotTimestamps[7] = 16;
         StandardDeviation standardDeviation = new StandardDeviation();
 
         // Go through the robot timestamps in order and check the next one is larger
@@ -78,7 +115,7 @@ public class TimestampScrubberTest
             Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
 
             long currentDelta = currentTimestamp - previousTimestamp;
-            copyRobotTimestamps[i] = currentDelta;
+//            copyRobotTimestamps[i] = currentDelta;
             delta += currentDelta;
 
             if (currentDelta < smallestDelta)
