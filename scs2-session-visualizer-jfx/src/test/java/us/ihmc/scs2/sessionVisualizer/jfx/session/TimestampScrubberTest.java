@@ -21,7 +21,7 @@ public class TimestampScrubberTest
     @BeforeEach
     public void loadFileTimestamps() throws URISyntaxException, IOException
     {
-        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/NadiaTripodSouth_Timestamps_No_Duplicates.dat")).toURI());
+        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/NadiaPoleNorth_Timestamps.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
@@ -50,22 +50,11 @@ public class TimestampScrubberTest
     }
 
     @Test
-    public void testStandardDeviation()
+    public void testStandardDeviationBetweenRobotTimestamps()
     {
-        int duplicates = 0;
-
         StandardDeviation standardDeviation = new StandardDeviation();
 
-        // Go through the robot timestamps in order and check the next one is larger
-        for (int i = 1; i < actualRobotTimestamps.length; i++)
-        {
-            if (actualRobotTimestamps[i - 1] == actualRobotTimestamps[i])
-            {
-                duplicates++;
-            }
-        }
-
-        double[] copyRobotTimestamps = new double[actualRobotTimestamps.length - duplicates];
+        double[] copyRobotTimestamps = new double[actualRobotTimestamps.length];
 
         for (int i = 1; i < actualRobotTimestamps.length; i++)
         {
@@ -73,8 +62,8 @@ public class TimestampScrubberTest
             copyRobotTimestamps[i - 1] = currentDelta;
         }
 
-        System.out.println("robotTimestamp Length: " + actualRobotTimestamps.length);
-        System.out.println("copy Length: " + copyRobotTimestamps.length);
+        System.out.println("robotTimestamps Length: " + actualRobotTimestamps.length);
+        System.out.println("copyOfRobotTimestamps Length: " + copyRobotTimestamps.length);
         System.out.println("Standard Deviation: " + (long) standardDeviation.evaluate(copyRobotTimestamps));
     }
 
@@ -86,17 +75,6 @@ public class TimestampScrubberTest
         long smallestDelta = 1000000000;
         long largestDelta = 0;
         int duplicates = 0;
-
-        double[] copyRobotTimestamps = new double[10];
-        copyRobotTimestamps[0] = 10;
-        copyRobotTimestamps[1] = 12;
-        copyRobotTimestamps[2] = 23;
-        copyRobotTimestamps[3] = 23;
-        copyRobotTimestamps[4] = 16;
-        copyRobotTimestamps[5] = 23;
-        copyRobotTimestamps[6] = 21;
-        copyRobotTimestamps[7] = 16;
-        StandardDeviation standardDeviation = new StandardDeviation();
 
         // Go through the robot timestamps in order and check the next one is larger
         for (int i = 1; i < actualRobotTimestamps.length; i++)
@@ -115,7 +93,6 @@ public class TimestampScrubberTest
             Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
 
             long currentDelta = currentTimestamp - previousTimestamp;
-//            copyRobotTimestamps[i] = currentDelta;
             delta += currentDelta;
 
             if (currentDelta < smallestDelta)
@@ -127,7 +104,6 @@ public class TimestampScrubberTest
 
         delta = delta / (actualRobotTimestamps.length - duplicates);
 
-        System.out.println("Standard Deviation: " + (long) standardDeviation.evaluate(copyRobotTimestamps));
         System.out.println("Smallest Delta: " + smallestDelta);
         System.out.println("Largest Delta: " + largestDelta);
         System.out.println("Duplicate robotTimestamps: " + duplicates);
