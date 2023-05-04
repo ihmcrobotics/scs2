@@ -83,6 +83,7 @@
          </content>
       </CustomMenuItem>
       <CheckMenuItem fx:id="showSCS2YoVariablesMenuItem" mnemonicParsing="false" text="Show SCS2 YoVariables" />
+      <CheckMenuItem fx:id="enableFuzzyYoSearchMenuItem" mnemonicParsing="false" text="Enable Fuzzy YoSearch" />
    </items>
    <graphic>
       <FontAwesomeIconView glyphName="DATABASE" />

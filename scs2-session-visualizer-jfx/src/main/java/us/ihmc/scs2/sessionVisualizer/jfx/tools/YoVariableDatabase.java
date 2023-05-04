@@ -12,7 +12,6 @@ import org.apache.commons.text.similarity.LongestCommonSubsequence;
 import org.apache.commons.text.similarity.SimilarityScore;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
@@ -24,8 +23,6 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoVariableDatabase
 {
-   private static final boolean ENABLE_FUZZY_SEARCH = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.yovariable.enablefuzzysearch", false);
-
    private final YoRegistry rootRegistry;
    private final YoRegistryChangedListener registryChangedListener;
    private final LinkedYoRegistry linkedRootRegistry;
@@ -38,6 +35,8 @@ public class YoVariableDatabase
    private final Map<String, String> fromSearchToBestSubname = new HashMap<>();
 
    private final SimilarityScore<Double> searchEngine;
+
+   private boolean enableFuzzySearch = false;
 
    public YoVariableDatabase(YoRegistry rootRegistry, LinkedYoRegistry linkedRootRegistry)
    {
@@ -91,6 +90,11 @@ public class YoVariableDatabase
       rootRegistry.addListener(registryChangedListener);
    }
 
+   public void setEnableFuzzySearch(boolean enableFuzzySearch)
+   {
+      this.enableFuzzySearch = enableFuzzySearch;
+   }
+
    public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink, Object initialUser)
    {
       return linkedRootRegistry.linkYoVariable(variableToLink, initialUser);
@@ -109,7 +113,7 @@ public class YoVariableDatabase
    @SuppressWarnings("unchecked")
    public <T extends YoVariable> T searchSimilar(String fullnameToSearch, double minScore, Class<? extends T> type)
    {
-      if (!ENABLE_FUZZY_SEARCH)
+      if (!enableFuzzySearch)
          return null;
 
       // 1- First see if we've made this exact search previously.
