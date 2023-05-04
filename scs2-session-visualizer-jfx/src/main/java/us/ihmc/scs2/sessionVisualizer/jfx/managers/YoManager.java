@@ -1,9 +1,12 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.LongProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleLongProperty;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -29,7 +32,10 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoManager extends ObservedAnimationTimer implements Manager
 {
+   private static final boolean DEFAULT_ENABLE_FUZZY_SEARCH = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.yovariable.enablefuzzysearch", false);
+
    private final LongProperty rootRegistryChangeCounter = new SimpleLongProperty(this, "rootRegistryChangeCounter", 0);
+   private final BooleanProperty enableFuzzyYoSearch = new SimpleBooleanProperty(this, "enableFuzzySearch", DEFAULT_ENABLE_FUZZY_SEARCH);
    private final YoRegistryChangedListener counterUpdater = changer -> rootRegistryChangeCounter.set(rootRegistryChangeCounter.get() + 1);
 
    private YoRegistry rootRegistry;
@@ -43,6 +49,10 @@ public class YoManager extends ObservedAnimationTimer implements Manager
 
    public YoManager()
    {
+      enableFuzzyYoSearch.addListener((o, oldValue, newValue) -> {
+         if (rootRegistryDatabase != null)
+            rootRegistryDatabase.setEnableFuzzySearch(newValue);
+      });
    }
 
    @Override
@@ -65,6 +75,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       rootRegistry.addListener(counterUpdater);
       rootRegistryChangeCounter.set(rootRegistryChangeCounter.get() + 1);
       rootRegistryDatabase = new YoVariableDatabase(rootRegistry, linkedRootRegistry);
+      rootRegistryDatabase.setEnableFuzzySearch(enableFuzzyYoSearch.get());
       updatingYoVariables = false;
       LogTools.info("UI linked YoVariables created");
       start();
@@ -88,6 +99,11 @@ public class YoManager extends ObservedAnimationTimer implements Manager
    public boolean isSessionLoaded()
    {
       return linkedRootRegistry != null && !updatingYoVariables;
+   }
+
+   public BooleanProperty enableFuzzyYoSearchProperty()
+   {
+      return enableFuzzyYoSearch;
    }
 
    public LinkedYoRegistry newLinkedYoRegistry(YoRegistry registry)
