@@ -60,4 +60,5 @@ mainDependencies {
 }
 
 testDependencies {
+   api("org.apache.commons:commons-math:2.2")
 }
