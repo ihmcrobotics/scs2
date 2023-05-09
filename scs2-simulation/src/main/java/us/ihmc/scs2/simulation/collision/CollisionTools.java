@@ -82,6 +82,9 @@ public class CollisionTools
 
       FrameShape3DReadOnly shape = toFrameShape3D(definition.getOriginPose(), shapeFrame, definition.getGeometryDefinition());
 
+      if (shape == null)
+         return null;
+
       long collisionMask = definition.getCollisionMask();
       long collisionGroup = definition.getCollisionGroup();
 
