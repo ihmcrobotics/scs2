@@ -124,7 +124,7 @@ public class TimestampScrubberTest
                 System.out.println(actualRobotTimestamps[i]);
                 continue;
             }
-            scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
+            scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
@@ -139,7 +139,7 @@ public class TimestampScrubberTest
             if (robotTimestampIsNotUnique(i))
                 continue;
 
-            scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
+            scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i], "For look index: " + i);
         }
     }
@@ -149,13 +149,13 @@ public class TimestampScrubberTest
     {
         // Test grabbing random robot timestamps and checking to make sure we get the correct video timestamp
         // These robot timestamps need to be unique or the binary search will fail to get the correct video timestamp
-        scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[26]);
+        scrubber.getVideoTimestamp(actualRobotTimestamps[26]);
         Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[26]);
 
-        scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[40]);
+        scrubber.getVideoTimestamp(actualRobotTimestamps[40]);
         Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[40]);
 
-        scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[34]);
+        scrubber.getVideoTimestamp(actualRobotTimestamps[34]);
         Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
     }
 
@@ -168,7 +168,7 @@ public class TimestampScrubberTest
             if (robotTimestampIsNotUnique(i))
                 continue;
 
-            scrubber.setCorrectVideoTimestamp(actualRobotTimestamps[i]);
+            scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
