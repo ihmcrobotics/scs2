@@ -34,8 +34,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 public class VideoViewer
 {
 
-   private static final boolean VIDEO_READER_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.loadconfig.synchronous",
-                                                                                                              "SCS_GUI_VIDEO_READER_DEBUG",
+   private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
+                                                                                                              "SCS2_GUI_LOGGER_VIDEO_DEBUG",
                                                                                                               false);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
@@ -139,7 +139,7 @@ public class VideoViewer
       Insets textInsets = new Insets(0, 2, 0, 2);
 
 
-      if (VIDEO_READER_DEBUG)
+      if (LOGGER_VIDEO_DEBUG)
       {
          VBox videoStatisticBox = new VBox(videoStatisticTitle);
          videoStatisticBox.setAlignment(Pos.CENTER);
