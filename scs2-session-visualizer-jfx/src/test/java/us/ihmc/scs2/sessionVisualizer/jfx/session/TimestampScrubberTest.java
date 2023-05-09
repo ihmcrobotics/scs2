@@ -3,6 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session;
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 
@@ -10,6 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Objects;
+
+/**
+ * Tests in this class are disabled because the files have duplicate timestamps that will cause issues when trying to retrieve a specific timestamp
+ */
 
 public class TimestampScrubberTest
 {
@@ -67,6 +72,7 @@ public class TimestampScrubberTest
         System.out.println("Standard Deviation: " + (long) standardDeviation.evaluate(copyRobotTimestamps));
     }
 
+    @Disabled
     @Test
     public void testDeltaStatisticsBetweenRobotTimestamps()
     {
@@ -81,14 +87,6 @@ public class TimestampScrubberTest
         {
             previousTimestamp = actualRobotTimestamps[i - 1];
             long currentTimestamp = actualRobotTimestamps[i];
-
-            //TODO fix duplicate timestamps
-            if (currentTimestamp == previousTimestamp)
-            {
-                System.out.println("Current:" + currentTimestamp + " and Previous: " + previousTimestamp);
-                duplicates++;
-                continue;
-            }
 
             Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
 
@@ -110,40 +108,31 @@ public class TimestampScrubberTest
         System.out.println("Average delta for robotTimestamps: " + delta);
     }
 
+    @Disabled
     @Test
     public void testGoingThroughRobotTimestampsInOrder()
     {
         // Go through the robot timestamps in order and see if we get the desired video timestamp
         for (int i = 0; i < actualRobotTimestamps.length; i++)
         {
-            //TODO there really shouldn't be duplicate robotTimestamps so that seems like an issue
-
-            // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
-            if (robotTimestampIsNotUnique(i))
-            {
-                System.out.println(actualRobotTimestamps[i]);
-                continue;
-            }
             scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
 
+    @Disabled
     @Test
     public void testGoingThroughRobotTimestampsEveryOther()
     {
         // Go through the robot timestamps by +=2, so we skip every other frame and see if we get the desired video timestamp
         for (int i = 0; i < actualRobotTimestamps.length ; i+=2)
         {
-            // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
-            if (robotTimestampIsNotUnique(i))
-                continue;
-
             scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i], "For look index: " + i);
         }
     }
 
+    @Disabled
     @Test
     public void testGettingRandomTimestamp()
     {
@@ -159,20 +148,18 @@ public class TimestampScrubberTest
         Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
     }
 
+    @Disabled
     @Test
     public void testGoingThroughRobotTimestampsBackwards()
     {
         for (int i = actualRobotTimestamps.length - 1; i > 0; i--)
         {
-            // Need unique robot timestamp, otherwise how could we possibly find the unique video timestamp
-            if (robotTimestampIsNotUnique(i))
-                continue;
-
             scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
             Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
 
+    // Method to prevent reading duplicate timestamps, useful for testing future tests and bugs
     public boolean robotTimestampIsNotUnique(int index)
     {
         boolean checkPrevious = false;

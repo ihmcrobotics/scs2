@@ -26,12 +26,17 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader.FrameData;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class VideoViewer
 {
+
+   private static final boolean VIDEO_READER_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.loadconfig.synchronous",
+                                                                                                              "SCS_GUI_VIDEO_READER_DEBUG",
+                                                                                                              false);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private final ImageView thumbnail = new ImageView();
@@ -133,26 +138,30 @@ public class VideoViewer
       Border generalBorder = new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT));
       Insets textInsets = new Insets(0, 2, 0, 2);
 
-      VBox videoStatisticBox = new VBox(videoStatisticTitle);
-      videoStatisticBox.setAlignment(Pos.CENTER);
-      videoStatisticBox.setBackground(generalBackground);
-      videoStatisticBox.setBorder(generalBorder);
 
-      VBox videoStatisticLabels = new VBox(new Label("givenrobotTimestamp"), new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
-      videoStatisticLabels.setBackground(generalBackground);
-      videoStatisticLabels.setBorder(noRightBorder);
-      videoStatisticLabels.setPadding(textInsets);
+      if (VIDEO_READER_DEBUG)
+      {
+         VBox videoStatisticBox = new VBox(videoStatisticTitle);
+         videoStatisticBox.setAlignment(Pos.CENTER);
+         videoStatisticBox.setBackground(generalBackground);
+         videoStatisticBox.setBorder(generalBorder);
 
-      VBox videoStatistics = new VBox(cameraGivenTimestampPTSLabel, cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
-      videoStatistics.setBackground(generalBackground);
-      videoStatistics.setBorder(noLeftBorder);
-      videoStatistics.setPadding(textInsets);
+         VBox videoStatisticLabels = new VBox(new Label("givenrobotTimestamp"), new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
+         videoStatisticLabels.setBackground(generalBackground);
+         videoStatisticLabels.setBorder(noRightBorder);
+         videoStatisticLabels.setPadding(textInsets);
 
-      HBox labelsContainer = new HBox(0, videoStatisticLabels, videoStatistics);
-      VBox videoStatisticsDisplay = new VBox(0, videoStatisticBox, labelsContainer);
-      anchorPane.getChildren().add(videoStatisticsDisplay);
-      AnchorPane.setLeftAnchor(videoStatisticsDisplay, 0.0);
-      AnchorPane.setBottomAnchor(videoStatisticsDisplay, 0.0);
+         VBox videoStatistics = new VBox(cameraGivenTimestampPTSLabel, cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
+         videoStatistics.setBackground(generalBackground);
+         videoStatistics.setBorder(noLeftBorder);
+         videoStatistics.setPadding(textInsets);
+
+         HBox labelsContainer = new HBox(0, videoStatisticLabels, videoStatistics);
+         VBox videoStatisticsDisplay = new VBox(0, videoStatisticBox, labelsContainer);
+         anchorPane.getChildren().add(videoStatisticsDisplay);
+         AnchorPane.setLeftAnchor(videoStatisticsDisplay, 0.0);
+         AnchorPane.setBottomAnchor(videoStatisticsDisplay, 0.0);
+      }
    }
 
    private static Pane createImageViewPane(ImageView imageView)
