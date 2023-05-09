@@ -8,27 +8,44 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader.FrameData;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class VideoViewer
 {
+
+   private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
+                                                                                                              "SCS2_GUI_LOGGER_VIDEO_DEBUG",
+                                                                                                              false);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
+   private final Label cameraGivenTimestampPTSLabel = new Label();
+   private final Label cameraTargetPTSLabel = new Label();
+   private final Label cameraCurrentPTSLabel = new Label();
+   private final Label robotTimestampLabel = new Label();
 
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
@@ -45,12 +62,15 @@ public class VideoViewer
       thumbnail.setOnMouseEntered(e ->
       {
          Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
-                                                       new KeyValue(thumbnail.fitWidthProperty(), THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize, Interpolator.EASE_BOTH)));
+                                                       new KeyValue(thumbnail.fitWidthProperty(),
+                                                                    THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize,
+                                                                    Interpolator.EASE_BOTH)));
          timeline.playFromStart();
       });
       thumbnail.setOnMouseExited(e ->
       {
-         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1), new KeyValue(thumbnail.fitWidthProperty(), defaultThumbnailSize, Interpolator.EASE_BOTH)));
+         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
+                                                       new KeyValue(thumbnail.fitWidthProperty(), defaultThumbnailSize, Interpolator.EASE_BOTH)));
          timeline.playFromStart();
       });
 
@@ -70,12 +90,18 @@ public class VideoViewer
          else
          {
             stage = new Stage();
+            AnchorPane anchorPane = new AnchorPane();
             Pane root = createImageViewPane(videoView);
+            anchorPane.getChildren().add(root);
+            JavaFXMissingTools.setAnchorConstraints(root, 0);
+
+            setupVideoStatistics(anchorPane);
+
             videoWindowProperty.set(stage);
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
             stage.setTitle(reader.getName());
             owner.setOnHiding(e2 -> stage.close());
-            Scene scene = new Scene(root);
+            Scene scene = new Scene(anchorPane);
             stage.setScene(scene);
             updateVideoView.bind(stage.showingProperty());
          }
@@ -94,6 +120,48 @@ public class VideoViewer
          stage.toFront();
          stage.show();
       });
+   }
+
+   private void setupVideoStatistics(AnchorPane anchorPane)
+   {
+      Label videoStatisticTitle = new Label("Video Statistics");
+      videoStatisticTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+      Background generalBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
+      Border noRightBorder = new Border(new BorderStroke(Color.BLACK, null, Color.BLACK, Color.BLACK,
+                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID,
+                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
+      Border noLeftBorder = new Border(new BorderStroke(Color.BLACK, Color.BLACK, Color.BLACK, null,
+                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE,
+                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
+
+      Border generalBorder = new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT));
+      Insets textInsets = new Insets(0, 2, 0, 2);
+
+
+      if (LOGGER_VIDEO_DEBUG)
+      {
+         VBox videoStatisticBox = new VBox(videoStatisticTitle);
+         videoStatisticBox.setAlignment(Pos.CENTER);
+         videoStatisticBox.setBackground(generalBackground);
+         videoStatisticBox.setBorder(generalBorder);
+
+         VBox videoStatisticLabels = new VBox(new Label("givenrobotTimestamp"), new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
+         videoStatisticLabels.setBackground(generalBackground);
+         videoStatisticLabels.setBorder(noRightBorder);
+         videoStatisticLabels.setPadding(textInsets);
+
+         VBox videoStatistics = new VBox(cameraGivenTimestampPTSLabel, cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
+         videoStatistics.setBackground(generalBackground);
+         videoStatistics.setBorder(noLeftBorder);
+         videoStatistics.setPadding(textInsets);
+
+         HBox labelsContainer = new HBox(0, videoStatisticLabels, videoStatistics);
+         VBox videoStatisticsDisplay = new VBox(0, videoStatisticBox, labelsContainer);
+         anchorPane.getChildren().add(videoStatisticsDisplay);
+         AnchorPane.setLeftAnchor(videoStatisticsDisplay, 0.0);
+         AnchorPane.setBottomAnchor(videoStatisticsDisplay, 0.0);
+      }
    }
 
    private static Pane createImageViewPane(ImageView imageView)
@@ -121,10 +189,12 @@ public class VideoViewer
 
    public void update()
    {
-      Image currentFrame = reader.pollCurrentFrame();
+      FrameData currentFrameData = reader.pollCurrentFrame();
 
-      if (currentFrame == null)
+      if (currentFrameData == null)
          return;
+
+      WritableImage currentFrame = currentFrameData.frame;
 
       thumbnailContainer.setPrefWidth(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize);
       thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * currentFrame.getHeight() / currentFrame.getWidth());
@@ -132,7 +202,13 @@ public class VideoViewer
       thumbnail.setImage(currentFrame);
 
       if (updateVideoView.get())
+      {
          videoView.setImage(currentFrame);
+         cameraGivenTimestampPTSLabel.setText(Long.toString(currentFrameData.givenTimestamp));
+         cameraTargetPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraTargetPTS));
+         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
+      }
    }
 
    public void stop()
