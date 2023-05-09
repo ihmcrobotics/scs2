@@ -39,6 +39,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
@@ -57,6 +58,9 @@ import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 public class SessionVisualizer
 {
+   private static final boolean SHOW_WORLD_FRAME = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.worldframe.show",
+                                                                                                            "SCS2_GUI_WORLDFRAME_SHOW",
+                                                                                                            true);
    public static final String NO_ACTIVE_SESSION_TITLE = "No Active Session";
 
    static
@@ -115,7 +119,8 @@ public class SessionVisualizer
             viewport3DManager.getMainViewport().setCameraNodeToTrack(request.getNode());
       });
 
-      toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
+      if (SHOW_WORLD_FRAME)
+         toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
       toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
       messager.addFXTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
 
