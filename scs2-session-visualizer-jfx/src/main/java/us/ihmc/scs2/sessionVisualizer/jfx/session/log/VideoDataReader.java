@@ -22,8 +22,6 @@ public class VideoDataReader
 
    private final String name;
 
-   private final long[] robotTimestamps;
-
    private final MP4VideoDemuxer demuxer;
    private final JavaFXPictureConverter converter = new JavaFXPictureConverter();
 
@@ -55,13 +53,11 @@ public class VideoDataReader
       demuxer = new MP4VideoDemuxer(videoFile);
 
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
-
-      this.robotTimestamps = timestampScrubber.getRobotTimestampsFromFile();
    }
 
    public void readVideoFrame(long timestamp)
    {
-      long videoTimestamp = timestampScrubber.setCorrectVideoTimestamp(timestamp);
+      long videoTimestamp = timestampScrubber.getVideoTimestamp(timestamp);
       long currentlyShowingRobotTimestamp = timestampScrubber.getCurrentlyShowingRobotTimestamp();
 
       try
@@ -84,8 +80,8 @@ public class VideoDataReader
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException
    {
-      long startVideoTimestamp = timestampScrubber.setVideoTimestamp(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.setVideoTimestamp(endTimestamp);
+      long startVideoTimestamp = timestampScrubber.getVideoTimestampWithBinarySearch(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.getVideoTimestampWithBinarySearch(endTimestamp);
 
       int framerate = VideoConverter.crop(videoFile, outputFile, startVideoTimestamp, endVideoTimestamp, monitor);
 
@@ -97,9 +93,9 @@ public class VideoDataReader
       /*
        * PTS gets reordered to be monotonically increasing starting from 0
        */
-      for (int i = 0; i < robotTimestamps.length; i++)
+      for (int i = 0; i < timestampScrubber.getRobotTimestampsLength(); i++)
       {
-         long robotTimestamp = robotTimestamps[i];
+         long robotTimestamp = timestampScrubber.getRobotTimestampAtIndex(i);
 
          if (robotTimestamp >= startTimestamp && robotTimestamp <= endTimestamp)
          {
@@ -119,8 +115,8 @@ public class VideoDataReader
 
    public void exportVideo(File selectedFile, long startTimestamp, long endTimestamp, ProgressConsumer progreesConsumer)
    {
-      long startVideoTimestamp = timestampScrubber.setVideoTimestamp(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.setVideoTimestamp(endTimestamp);
+      long startVideoTimestamp = timestampScrubber.getVideoTimestampWithBinarySearch(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.getVideoTimestampWithBinarySearch(endTimestamp);
 
       try
       {
@@ -222,7 +218,7 @@ public class VideoDataReader
          }
       }
 
-      public long setCorrectVideoTimestamp(long timestamp)
+      public long getVideoTimestamp(long timestamp)
       {
          long previousTimestamp = videoTimestamps[currentlyShowingIndex];
 
@@ -240,7 +236,7 @@ public class VideoDataReader
          }
          else
          {
-            videoTimestamp = setVideoTimestamp(timestamp);
+            videoTimestamp = getVideoTimestampWithBinarySearch(timestamp);
          }
 
          if (currentlyShowingIndex + 1 < robotTimestamps.length)
@@ -251,7 +247,7 @@ public class VideoDataReader
          return videoTimestamp;
       }
 
-      private long setVideoTimestamp(long timestamp)
+      private long getVideoTimestampWithBinarySearch(long timestamp)
       {
          if (timestamp <= robotTimestamps[0])
          {
@@ -274,9 +270,22 @@ public class VideoDataReader
             currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
          }
 
-         long videoTimestamp = videoTimestamps[currentlyShowingIndex];
+         return videoTimestamps[currentlyShowingIndex];
+      }
 
-         return videoTimestamp;
+      public long getCurrentlyShowingRobotTimestamp()
+      {
+         return currentlyShowingRobotTimestamp;
+      }
+
+      public int getRobotTimestampsLength()
+      {
+         return robotTimestamps.length;
+      }
+
+      public long getRobotTimestampAtIndex(int i)
+      {
+         return robotTimestamps[i];
       }
 
       public long[] getRobotTimestampsFromFile()
@@ -292,11 +301,6 @@ public class VideoDataReader
       public long getCurrentVideoTimestamp()
       {
          return videoTimestamp;
-      }
-
-      public long getCurrentlyShowingRobotTimestamp()
-      {
-         return currentlyShowingRobotTimestamp;
       }
    }
 }
