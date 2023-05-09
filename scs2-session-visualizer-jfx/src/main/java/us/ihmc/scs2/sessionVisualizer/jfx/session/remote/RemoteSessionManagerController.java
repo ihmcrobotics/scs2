@@ -34,7 +34,6 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.commons.thread.ThreadTools;
-import us.ihmc.javaFXToolkit.TextFormatterTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.robotDataLogger.StaticHostListLoader;
@@ -116,9 +115,7 @@ public class RemoteSessionManagerController implements SessionControlsController
       sessionTreeTableView.setShowRoot(false);
       sessionTreeTableView.getColumns().setAll(hostColumn, portColumn, hostNameColumn, sessionNameColumn);
 
-      TextFormatter<String> hostFormatter = TextFormatterTools.ipAddressTextFormatter();
       TextFormatter<Integer> portFormatter = new TextFormatter<>(new IntegerConverter(), DEFAULT_PORT, new PositiveIntegerValueFilter());
-      staticHostTextField.setTextFormatter(hostFormatter);
       staticPortTextField.setTextFormatter(portFormatter);
 
       createStaticHostButton.setDisable(true);
@@ -141,12 +138,12 @@ public class RemoteSessionManagerController implements SessionControlsController
       {
          if (newValue == null)
          {
-            hostFormatter.setValue(null);
+            staticHostTextField.setText(null);
             portFormatter.setValue(DEFAULT_PORT);
          }
          else
          {
-            hostFormatter.setValue(newValue.getHost());
+            staticHostTextField.setText(newValue.getHost());
             portFormatter.setValue(newValue.getPort());
          }
       });

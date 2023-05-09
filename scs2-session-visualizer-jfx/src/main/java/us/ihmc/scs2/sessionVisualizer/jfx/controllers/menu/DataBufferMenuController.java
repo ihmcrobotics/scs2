@@ -37,6 +37,8 @@ public class DataBufferMenuController implements VisualizerController
    @FXML
    private Spinner<Integer> numberPrecisionSpinner;
    @FXML
+   private CheckMenuItem enableFuzzyYoSearchMenuItem;
+   @FXML
    private CheckMenuItem showSCS2YoVariablesMenuItem;
 
    private JavaFXMessager messager;
@@ -113,8 +115,8 @@ public class DataBufferMenuController implements VisualizerController
          });
       }
       messager.bindBidirectional(topics.getControlsNumberPrecision(), numberPrecisionSpinnerValueFactory.valueProperty(), false);
-
       messager.bindBidirectional(topics.getShowSCS2YoVariables(), showSCS2YoVariablesMenuItem.selectedProperty(), false);
+      enableFuzzyYoSearchMenuItem.selectedProperty().bindBidirectional(toolkit.getYoManager().enableFuzzyYoSearchProperty());
    }
 
    @FXML
