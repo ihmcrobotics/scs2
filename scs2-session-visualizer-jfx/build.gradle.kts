@@ -33,6 +33,7 @@ mainDependencies {
    api("us.ihmc:euclid:0.20.0")
    api("us.ihmc:euclid-shape:0.20.0")
    api("us.ihmc:euclid-frame:0.20.0")
+   api("org.apache.commons:commons-math:2.2")
    api("us.ihmc:ihmc-graphics-description:0.20.3")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
    api("us.ihmc:svgloader:0.0")
