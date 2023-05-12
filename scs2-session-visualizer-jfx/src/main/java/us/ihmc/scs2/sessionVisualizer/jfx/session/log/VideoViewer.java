@@ -146,12 +146,12 @@ public class VideoViewer
          videoStatisticBox.setBackground(generalBackground);
          videoStatisticBox.setBorder(generalBorder);
 
-         VBox videoStatisticLabels = new VBox(new Label("givenrobotTimestamp"), new Label("cameraTargetPTS"), new Label("cameraCurrentPTS"), new Label("robotTimestamp"));
+         VBox videoStatisticLabels = new VBox(new Label("givenrobotTimestamp"), new Label("robotTimestamp"), new Label("cameraCurrentPTS"), new Label("demuxerCurrentPTS"));
          videoStatisticLabels.setBackground(generalBackground);
          videoStatisticLabels.setBorder(noRightBorder);
          videoStatisticLabels.setPadding(textInsets);
 
-         VBox videoStatistics = new VBox(cameraGivenTimestampPTSLabel, cameraTargetPTSLabel, cameraCurrentPTSLabel, robotTimestampLabel);
+         VBox videoStatistics = new VBox(cameraGivenTimestampPTSLabel, robotTimestampLabel, cameraCurrentPTSLabel, cameraTargetPTSLabel);
          videoStatistics.setBackground(generalBackground);
          videoStatistics.setBorder(noLeftBorder);
          videoStatistics.setPadding(textInsets);
@@ -205,9 +205,9 @@ public class VideoViewer
       {
          videoView.setImage(currentFrame);
          cameraGivenTimestampPTSLabel.setText(Long.toString(currentFrameData.givenRobotTimestamp));
-         cameraTargetPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
-         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraTargetPTS));
          robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
+         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+         cameraTargetPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
       }
    }
 
