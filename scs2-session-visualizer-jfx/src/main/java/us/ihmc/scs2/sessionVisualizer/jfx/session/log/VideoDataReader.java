@@ -58,7 +58,7 @@ public class VideoDataReader
    public void readVideoFrame(long givenRobotTimestamp)
    {
       long videoTimestamp = timestampScrubber.getVideoTimestamp(givenRobotTimestamp);
-      long currentlyShowingRobotTimestamp = timestampScrubber.getCurrentlyShowingRobotTimestamp();
+      long currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
       try
       {
@@ -69,7 +69,7 @@ public class VideoDataReader
          copyForWriting.givenRobotTimestamp = givenRobotTimestamp;
          copyForWriting.cameraCurrentPTS = videoTimestamp;
          copyForWriting.demuxerCurrentPTS = demuxer.getCurrentPTS();
-         copyForWriting.robotTimestamp = currentlyShowingRobotTimestamp;
+         copyForWriting.robotTimestamp = currentRobotTimestamp;
 
          imageBuffer.commit();
       } catch (IOException e)
@@ -159,7 +159,7 @@ public class VideoDataReader
       private long[] videoTimestamps;
 
       private int currentIndex = 0;
-      private long currentlyShowingRobotTimestamp = 0;
+      private long currentRobotTimestamp = 0;
       private long upcomingRobotTimestamp = 0;
 
       private long videoTimestamp;
@@ -227,14 +227,14 @@ public class VideoDataReader
 
       public long getVideoTimestamp(long givenRobotTimestamp)
       {
-         if (givenRobotTimestamp < currentlyShowingRobotTimestamp || givenRobotTimestamp >= upcomingRobotTimestamp)
+         if (givenRobotTimestamp < currentRobotTimestamp || givenRobotTimestamp >= upcomingRobotTimestamp)
          {
             videoTimestamp = getVideoTimestampWithBinarySearch(givenRobotTimestamp);
 
             if (currentIndex + 1 < robotTimestamps.length)
                upcomingRobotTimestamp = robotTimestamps[currentIndex + 1];
             else
-               upcomingRobotTimestamp = currentlyShowingRobotTimestamp;
+               upcomingRobotTimestamp = currentRobotTimestamp;
          }
 
          return videoTimestamp;
@@ -262,13 +262,13 @@ public class VideoDataReader
             currentIndex = nextIndex;
          }
 
-         currentlyShowingRobotTimestamp = robotTimestamps[currentIndex];
+         currentRobotTimestamp = robotTimestamps[currentIndex];
          return videoTimestamps[currentIndex];
       }
 
-      public long getCurrentlyShowingRobotTimestamp()
+      public long getCurrentRobotTimestamp()
       {
-         return currentlyShowingRobotTimestamp;
+         return currentRobotTimestamp;
       }
 
       public int getRobotTimestampsLength()
