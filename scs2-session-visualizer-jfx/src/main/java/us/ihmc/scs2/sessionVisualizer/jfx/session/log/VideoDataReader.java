@@ -55,9 +55,9 @@ public class VideoDataReader
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
    }
 
-   public void readVideoFrame(long givenRobotTimestamp)
+   public void readVideoFrame(long queryRobotTimestamp)
    {
-      long videoTimestamp = timestampScrubber.getVideoTimestamp(givenRobotTimestamp);
+      long videoTimestamp = timestampScrubber.getVideoTimestamp(queryRobotTimestamp);
       long currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
       try
@@ -66,7 +66,7 @@ public class VideoDataReader
          YUVPicture nextFrame = demuxer.getNextFrame();
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
-         copyForWriting.givenRobotTimestamp = givenRobotTimestamp;
+         copyForWriting.givenRobotTimestamp = queryRobotTimestamp;
          copyForWriting.cameraCurrentPTS = videoTimestamp;
          copyForWriting.demuxerCurrentPTS = demuxer.getCurrentPTS();
          copyForWriting.robotTimestamp = currentRobotTimestamp;
@@ -219,17 +219,16 @@ public class VideoDataReader
       }
 
       /**
-       * Searchs the list of robotTimestamps for the value closest to givenRobotTimestamp and sets the currentIndex to that index. Then sets videoTimestamp to
+       * Searchs the list of robotTimestamps for the value closest to queryRobotTimestamp and sets the currentIndex to that index. Then sets videoTimestamp to
        * that index in oder to display the right frame.
-       * @param givenRobotTimestamp the value sent from the robot data in which we wnat to find the closest robotTimestamp in the timestamp file.
+       * @param queryRobotTimestamp the value sent from the robot data in which we wnat to find the closest robotTimestamp in the timestamp file.
        * @return the videoTimestamp that matches the index of the closest robotTimestamp in our timestamp file.
        */
-
-      public long getVideoTimestamp(long givenRobotTimestamp)
+      public long getVideoTimestamp(long queryRobotTimestamp)
       {
-         if (givenRobotTimestamp < currentRobotTimestamp || givenRobotTimestamp >= upcomingRobotTimestamp)
+         if (queryRobotTimestamp < currentRobotTimestamp || queryRobotTimestamp >= upcomingRobotTimestamp)
          {
-            videoTimestamp = getVideoTimestampWithBinarySearch(givenRobotTimestamp);
+            videoTimestamp = getVideoTimestampWithBinarySearch(queryRobotTimestamp);
 
             if (currentIndex + 1 < robotTimestamps.length)
                upcomingRobotTimestamp = robotTimestamps[currentIndex + 1];
@@ -240,21 +239,21 @@ public class VideoDataReader
          return videoTimestamp;
       }
 
-      private long getVideoTimestampWithBinarySearch(long givenRobotTimestamp)
+      private long getVideoTimestampWithBinarySearch(long queryRobotTimestamp)
       {
-         if (givenRobotTimestamp <= robotTimestamps[0])
+         if (queryRobotTimestamp <= robotTimestamps[0])
          {
             currentIndex = 0;
             return videoTimestamps[currentIndex];
          }
 
-         if (givenRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
+         if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
          {
             currentIndex = robotTimestamps.length - 2;
             return videoTimestamps[currentIndex];
          }
 
-         currentIndex = Arrays.binarySearch(robotTimestamps, givenRobotTimestamp);
+         currentIndex = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
          if (currentIndex < 0)
          {
