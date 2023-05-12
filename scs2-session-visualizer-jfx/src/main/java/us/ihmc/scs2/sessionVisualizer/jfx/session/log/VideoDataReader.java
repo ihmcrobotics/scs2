@@ -228,16 +228,7 @@ public class VideoDataReader
             return previousTimestamp;
          }
 
-         if (robotTimestamps.length > currentlyShowingIndex + 1 && robotTimestamps[currentlyShowingIndex + 1] == timestamp)
-         {
-            currentlyShowingIndex++;
-            videoTimestamp = videoTimestamps[currentlyShowingIndex];
-            currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
-         }
-         else
-         {
-            videoTimestamp = getVideoTimestampWithBinarySearch(timestamp);
-         }
+         videoTimestamp = getVideoTimestampWithBinarySearch(timestamp);
 
          if (currentlyShowingIndex + 1 < robotTimestamps.length)
             upcomingRobotTimestamp = robotTimestamps[currentlyShowingIndex + 1];
