@@ -55,9 +55,9 @@ public class VideoDataReader
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
    }
 
-   public void readVideoFrame(long timestamp)
+   public void readVideoFrame(long givenRobotTimestamp)
    {
-      long videoTimestamp = timestampScrubber.getVideoTimestamp(timestamp);
+      long videoTimestamp = timestampScrubber.getVideoTimestamp(givenRobotTimestamp);
       long currentlyShowingRobotTimestamp = timestampScrubber.getCurrentlyShowingRobotTimestamp();
 
       try
@@ -66,7 +66,7 @@ public class VideoDataReader
          YUVPicture nextFrame = demuxer.getNextFrame();
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
-         copyForWriting.givenTimestamp = timestamp;
+         copyForWriting.givenTimestamp = givenRobotTimestamp;
          copyForWriting.cameraCurrentPTS = videoTimestamp;
          copyForWriting.cameraTargetPTS = demuxer.getCurrentPTS();
          copyForWriting.robotTimestamp = currentlyShowingRobotTimestamp;
@@ -158,7 +158,7 @@ public class VideoDataReader
       private long[] robotTimestamps;
       private long[] videoTimestamps;
 
-      private int currentlyShowingIndex = 0;
+      private int currentIndex = 0;
       private long currentlyShowingRobotTimestamp = 0;
       private long upcomingRobotTimestamp = 0;
 
@@ -218,50 +218,57 @@ public class VideoDataReader
          }
       }
 
-      public long getVideoTimestamp(long timestamp)
-      {
-         long previousTimestamp = videoTimestamps[currentlyShowingIndex];
+      /**
+       * Searchs the list of robotTimestamps for the value closest to givenRobotTimestamp and sets the currentIndex to that index. Then sets videoTimestamp to
+       * that index in oder to display the right frame.
+       * @param givenRobotTimestamp the value sent from the robot data in which we wnat to find the closest robotTimestamp in the timestamp file.
+       * @return the videoTimestamp that matches the index of the closest robotTimestamp in our timestamp file.
+       */
 
-         if (timestamp >= currentlyShowingRobotTimestamp && timestamp < upcomingRobotTimestamp)
+      public long getVideoTimestamp(long givenRobotTimestamp)
+      {
+         long previousVideoTimestamp = videoTimestamps[currentIndex];
+
+         if (givenRobotTimestamp >= currentlyShowingRobotTimestamp && givenRobotTimestamp < upcomingRobotTimestamp)
          {
-            videoTimestamp = previousTimestamp;
-            return previousTimestamp;
+            videoTimestamp = previousVideoTimestamp;
+            return previousVideoTimestamp;
          }
 
-         videoTimestamp = getVideoTimestampWithBinarySearch(timestamp);
+         videoTimestamp = getVideoTimestampWithBinarySearch(givenRobotTimestamp);
 
-         if (currentlyShowingIndex + 1 < robotTimestamps.length)
-            upcomingRobotTimestamp = robotTimestamps[currentlyShowingIndex + 1];
+         if (currentIndex + 1 < robotTimestamps.length)
+            upcomingRobotTimestamp = robotTimestamps[currentIndex + 1];
          else
             upcomingRobotTimestamp = currentlyShowingRobotTimestamp;
 
          return videoTimestamp;
       }
 
-      private long getVideoTimestampWithBinarySearch(long timestamp)
+      private long getVideoTimestampWithBinarySearch(long givenRobotTimestamp)
       {
-         if (timestamp <= robotTimestamps[0])
+         if (givenRobotTimestamp <= robotTimestamps[0])
          {
-            currentlyShowingIndex = 0;
-            return videoTimestamps[currentlyShowingIndex];
+            currentIndex = 0;
+            return videoTimestamps[currentIndex];
          }
 
-         if (timestamp >= robotTimestamps[robotTimestamps.length-1])
+         if (givenRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
          {
-            currentlyShowingIndex = robotTimestamps.length - 2;
-            return videoTimestamps[currentlyShowingIndex];
+            currentIndex = robotTimestamps.length - 2;
+            return videoTimestamps[currentIndex];
          }
 
-         currentlyShowingIndex = Arrays.binarySearch(robotTimestamps, timestamp);
+         currentIndex = Arrays.binarySearch(robotTimestamps, givenRobotTimestamp);
 
-         if (currentlyShowingIndex < 0)
+         if (currentIndex < 0)
          {
-            int nextIndex = -currentlyShowingIndex - 1; // insertionPoint
-            currentlyShowingIndex = nextIndex;
-            currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
+            int nextIndex = -currentIndex - 1; // insertionPoint
+            currentIndex = nextIndex;
+            currentlyShowingRobotTimestamp = robotTimestamps[currentIndex];
          }
 
-         return videoTimestamps[currentlyShowingIndex];
+         return videoTimestamps[currentIndex];
       }
 
       public long getCurrentlyShowingRobotTimestamp()
