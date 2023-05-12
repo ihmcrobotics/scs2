@@ -37,9 +37,9 @@ public class MultiVideoDataReader
       }
    }
 
-   public void readVideoFrameNow(long givenRobotTimestamp)
+   public void readVideoFrameNow(long queryRobotTimestamp)
    {
-      readers.forEach(reader -> reader.readVideoFrame(givenRobotTimestamp));
+      readers.forEach(reader -> reader.readVideoFrame(queryRobotTimestamp));
    }
 
    public void readVideoFrameInBackground(long givenRobotTimestamp)
