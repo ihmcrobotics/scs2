@@ -28,6 +28,7 @@ public class VideoDataReader
    private final File videoFile;
    private final Camera camera;
    private final ConcurrentCopier<FrameData> imageBuffer = new ConcurrentCopier<>(FrameData::new);
+   private final static int delayInFrames = 2;
 
    public VideoDataReader(Camera camera, File dataDirectory, boolean hasTimeBase) throws IOException
    {
@@ -62,7 +63,7 @@ public class VideoDataReader
 
       try
       {
-         demuxer.seekToPTS(videoTimestamp);
+         demuxer.seekToPTS(videoTimestamp + delayInFrames);
          YUVPicture nextFrame = demuxer.getNextFrame();
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
@@ -158,7 +159,7 @@ public class VideoDataReader
       private long[] robotTimestamps;
       private long[] videoTimestamps;
 
-      private int currentlyShowingIndex = 0;
+      private int currentlyShowingIndex = delayInFrames;
       private long currentlyShowingRobotTimestamp = 0;
       private long upcomingRobotTimestamp = 0;
 
@@ -220,27 +221,18 @@ public class VideoDataReader
 
       public long getVideoTimestamp(long timestamp)
       {
-         long previousTimestamp = videoTimestamps[currentlyShowingIndex];
+//         long previousTimestamp = videoTimestamps[currentlyShowingIndex + delayInFrames];
+//
+//         if (timestamp >= currentlyShowingRobotTimestamp && timestamp < upcomingRobotTimestamp)
+//         {
+//            videoTimestamp = previousTimestamp;
+//            return previousTimestamp;
+//         }
 
-         if (timestamp >= currentlyShowingRobotTimestamp && timestamp < upcomingRobotTimestamp)
-         {
-            videoTimestamp = previousTimestamp;
-            return previousTimestamp;
-         }
+         videoTimestamp = getVideoTimestampWithBinarySearch(timestamp);
 
-         if (robotTimestamps.length > currentlyShowingIndex + 1 && robotTimestamps[currentlyShowingIndex + 1] == timestamp)
-         {
-            currentlyShowingIndex++;
-            videoTimestamp = videoTimestamps[currentlyShowingIndex];
-            currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
-         }
-         else
-         {
-            videoTimestamp = getVideoTimestampWithBinarySearch(timestamp);
-         }
-
-         if (currentlyShowingIndex + 1 < robotTimestamps.length)
-            upcomingRobotTimestamp = robotTimestamps[currentlyShowingIndex + 1];
+         if (currentlyShowingIndex + 1 + delayInFrames < robotTimestamps.length)
+            upcomingRobotTimestamp = robotTimestamps[currentlyShowingIndex + 1 + delayInFrames];
          else
             upcomingRobotTimestamp = currentlyShowingRobotTimestamp;
 
@@ -249,26 +241,28 @@ public class VideoDataReader
 
       private long getVideoTimestampWithBinarySearch(long timestamp)
       {
-         if (timestamp <= robotTimestamps[0])
-         {
-            currentlyShowingIndex = 0;
-            return videoTimestamps[currentlyShowingIndex];
-         }
-
-         if (timestamp >= robotTimestamps[robotTimestamps.length-1])
-         {
-            currentlyShowingIndex = robotTimestamps.length - 2;
-            return videoTimestamps[currentlyShowingIndex];
-         }
+//         if (timestamp <= robotTimestamps[0])
+//         {
+//            currentlyShowingIndex = delayInFrames;
+//            return videoTimestamps[currentlyShowingIndex];
+//         }
+//
+//         if (timestamp >= robotTimestamps[robotTimestamps.length-1])
+//         {
+//            currentlyShowingIndex = robotTimestamps.length - 2;
+//            return videoTimestamps[currentlyShowingIndex];
+//         }
 
          currentlyShowingIndex = Arrays.binarySearch(robotTimestamps, timestamp);
 
          if (currentlyShowingIndex < 0)
          {
             int nextIndex = -currentlyShowingIndex - 1; // insertionPoint
-            currentlyShowingIndex = nextIndex;
+            currentlyShowingIndex = nextIndex + delayInFrames;
             currentlyShowingRobotTimestamp = robotTimestamps[currentlyShowingIndex];
          }
+         else
+            currentlyShowingIndex = currentlyShowingIndex + delayInFrames;
 
          return videoTimestamps[currentlyShowingIndex];
       }
