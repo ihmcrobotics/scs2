@@ -68,7 +68,7 @@ public class VideoDataReader
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
          copyForWriting.givenRobotTimestamp = givenRobotTimestamp;
          copyForWriting.cameraCurrentPTS = videoTimestamp;
-         copyForWriting.cameraTargetPTS = demuxer.getCurrentPTS();
+         copyForWriting.demuxerCurrentPTS = demuxer.getCurrentPTS();
          copyForWriting.robotTimestamp = currentlyShowingRobotTimestamp;
 
          imageBuffer.commit();
@@ -146,9 +146,9 @@ public class VideoDataReader
    {
       public WritableImage frame;
       public long givenRobotTimestamp;
-      public long cameraCurrentPTS;
-      public long cameraTargetPTS;
       public long robotTimestamp;
+      public long cameraCurrentPTS;
+      public long demuxerCurrentPTS;
    }
 
    public static class TimestampScrubber
@@ -227,20 +227,15 @@ public class VideoDataReader
 
       public long getVideoTimestamp(long givenRobotTimestamp)
       {
-         long previousVideoTimestamp = videoTimestamps[currentIndex];
-
-         if (givenRobotTimestamp >= currentlyShowingRobotTimestamp && givenRobotTimestamp < upcomingRobotTimestamp)
+         if (givenRobotTimestamp < currentlyShowingRobotTimestamp || givenRobotTimestamp >= upcomingRobotTimestamp)
          {
-            videoTimestamp = previousVideoTimestamp;
-            return previousVideoTimestamp;
+            videoTimestamp = getVideoTimestampWithBinarySearch(givenRobotTimestamp);
+
+            if (currentIndex + 1 < robotTimestamps.length)
+               upcomingRobotTimestamp = robotTimestamps[currentIndex + 1];
+            else
+               upcomingRobotTimestamp = currentlyShowingRobotTimestamp;
          }
-
-         videoTimestamp = getVideoTimestampWithBinarySearch(givenRobotTimestamp);
-
-         if (currentIndex + 1 < robotTimestamps.length)
-            upcomingRobotTimestamp = robotTimestamps[currentIndex + 1];
-         else
-            upcomingRobotTimestamp = currentlyShowingRobotTimestamp;
 
          return videoTimestamp;
       }
@@ -265,9 +260,9 @@ public class VideoDataReader
          {
             int nextIndex = -currentIndex - 1; // insertionPoint
             currentIndex = nextIndex;
-            currentlyShowingRobotTimestamp = robotTimestamps[currentIndex];
          }
 
+         currentlyShowingRobotTimestamp = robotTimestamps[currentIndex];
          return videoTimestamps[currentIndex];
       }
 
