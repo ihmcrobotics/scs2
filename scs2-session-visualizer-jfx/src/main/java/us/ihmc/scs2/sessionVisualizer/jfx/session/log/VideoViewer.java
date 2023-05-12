@@ -204,7 +204,7 @@ public class VideoViewer
       if (updateVideoView.get())
       {
          videoView.setImage(currentFrame);
-         cameraGivenTimestampPTSLabel.setText(Long.toString(currentFrameData.givenTimestamp));
+         cameraGivenTimestampPTSLabel.setText(Long.toString(currentFrameData.givenRobotTimestamp));
          cameraTargetPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
          cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraTargetPTS));
          robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
