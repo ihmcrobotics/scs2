@@ -66,7 +66,7 @@ public class VideoDataReader
          YUVPicture nextFrame = demuxer.getNextFrame();
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
-         copyForWriting.givenTimestamp = givenRobotTimestamp;
+         copyForWriting.givenRobotTimestamp = givenRobotTimestamp;
          copyForWriting.cameraCurrentPTS = videoTimestamp;
          copyForWriting.cameraTargetPTS = demuxer.getCurrentPTS();
          copyForWriting.robotTimestamp = currentlyShowingRobotTimestamp;
@@ -145,7 +145,7 @@ public class VideoDataReader
    public static class FrameData
    {
       public WritableImage frame;
-      public long givenTimestamp;
+      public long givenRobotTimestamp;
       public long cameraCurrentPTS;
       public long cameraTargetPTS;
       public long robotTimestamp;
