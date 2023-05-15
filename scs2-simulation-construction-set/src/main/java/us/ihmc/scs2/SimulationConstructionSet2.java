@@ -33,6 +33,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
@@ -990,11 +991,23 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    // ------------------------- Visualizer Controls --------------------------------- //
    // ------------------------------------------------------------------------------- //
 
-   private void executeOrScheduleVisualizerTask(Runnable task)
+   /**
+    * Schedules a task to be executed once the visualizer is up.
+    * <p>
+    * This can be used for adding GUI controls like a button before having started the simulation. If
+    * the simulation visualizer is already up, the task is then executed either:
+    * <ul>
+    * <li>immediately if the call is done in the JavaFX thread,
+    * <li>on the next iteration of the JavaFX thread if the call is done from another thread.
+    * </p>
+    * 
+    * @param task the task to schedule for when the visualizer is up.
+    */
+   public void executeOrScheduleVisualizerTask(Runnable task)
    {
       if (visualizerControls != null)
       {
-         task.run();
+         JavaFXMissingTools.runLaterIfNeeded(getClass(), task);
       }
       else if (visualizerEnabled && !isVisualizerShutdown())
       {
