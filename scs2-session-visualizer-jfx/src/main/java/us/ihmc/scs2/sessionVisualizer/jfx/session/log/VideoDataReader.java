@@ -224,7 +224,7 @@ public class VideoDataReader
 
       public void checkAndReplaceDuplicates()
       {
-         for (int i = 501; i < robotTimestamps.length - 1; i++)
+         for (int i = 0; i < robotTimestamps.length - 1; i++)
          {
             if (robotTimestamps[i] == robotTimestamps[i + 1])
             {
