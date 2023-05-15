@@ -218,7 +218,7 @@ public class VideoDataReader
       }
 
       /**
-       * Searches the list of robotTimestamps for the value closest to queryRobotTimestamp returns that index. Then sets videoTimestamp to
+       * Searches the list of robotTimestamps for the value closest to queryRobotTimestamp and returns that index. Then sets videoTimestamp to
        * that index in oder to display the right frame.
        * @param queryRobotTimestamp the value sent from the robot data in which we want to find the closest robotTimestamp in the timestamp file.
        * @return the videoTimestamp that matches the index of the closest robotTimestamp in our timestamp file.
