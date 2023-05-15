@@ -190,6 +190,8 @@ public class RigidBodyDefinition implements Transformable
 
    public void addVisualDefinition(VisualDefinition visualDefinition)
    {
+      if (visualDefinition == null)
+         return;
       visualDefinitions.add(visualDefinition);
    }
 
