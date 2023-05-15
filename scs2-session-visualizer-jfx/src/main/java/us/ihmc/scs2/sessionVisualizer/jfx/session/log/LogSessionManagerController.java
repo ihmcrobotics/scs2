@@ -340,7 +340,6 @@ public class LogSessionManagerController implements SessionControlsController
          if (!e.isConsumed())
             shutdown();
       });
-      stage.show();
    }
 
    public void openLogFile()

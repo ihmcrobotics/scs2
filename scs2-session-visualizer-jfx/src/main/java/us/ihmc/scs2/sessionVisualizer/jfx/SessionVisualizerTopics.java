@@ -27,6 +27,7 @@ import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
@@ -109,8 +110,7 @@ public class SessionVisualizerTopics
    private Topic<Integer> initializeBufferRecordTickPeriod;
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
-   private Topic<Boolean> remoteSessionControlsRequest;
-   private Topic<Boolean> logSessionControlsRequest;
+   private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
 
    private Topic<Integer> yoBufferCurrentIndexRequest;
    private Topic<Integer> yoBufferIncrementCurrentIndexRequest, yoBufferDecrementCurrentIndexRequest;
@@ -200,8 +200,7 @@ public class SessionVisualizerTopics
       initializeBufferRecordTickPeriod = SessionMessagerAPI.InitializeBufferRecordTickPeriod;
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
-      remoteSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.RemoteSessionControlsRequest;
-      logSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.LogSessionControlsRequest;
+      openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
 
       yoBufferCurrentIndexRequest = YoSharedBufferMessagerAPI.CurrentIndexRequest;
       yoBufferIncrementCurrentIndexRequest = YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest;
@@ -543,14 +542,9 @@ public class SessionVisualizerTopics
       return startNewSessionRequest;
    }
 
-   public Topic<Boolean> getRemoteSessionControlsRequest()
+   public Topic<OpenSessionControlsRequest> getOpenSessionControlsRequest()
    {
-      return remoteSessionControlsRequest;
-   }
-
-   public Topic<Boolean> getLogSessionControlsRequest()
-   {
-      return logSessionControlsRequest;
+      return openSessionControlsRequest;
    }
 
    public Topic<Integer> getYoBufferCurrentIndexRequest()

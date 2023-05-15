@@ -262,7 +262,6 @@ public class RemoteSessionManagerController implements SessionControlsController
          if (!e.isConsumed())
             shutdown();
       });
-      stage.show();
    }
 
    private static boolean isEmpty(String query)
