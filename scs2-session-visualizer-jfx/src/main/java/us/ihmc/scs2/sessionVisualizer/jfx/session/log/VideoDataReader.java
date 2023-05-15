@@ -64,7 +64,7 @@ public class VideoDataReader
       {
          demuxer.seekToPTS(videoTimestamp);
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
-         copyForWriting.givenRobotTimestamp = queryRobotTimestamp;
+         copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
          copyForWriting.robotTimestamp = currentRobotTimestamp;
          copyForWriting.cameraCurrentPTS = videoTimestamp;
          copyForWriting.demuxerCurrentPTS = demuxer.getCurrentPTS();
@@ -80,8 +80,8 @@ public class VideoDataReader
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException
    {
-      long startVideoTimestamp = timestampScrubber.getIndexWithBinarySearch(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.getIndexWithBinarySearch(endTimestamp);
+      long startVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(endTimestamp);
 
       int framerate = VideoConverter.crop(videoFile, outputFile, startVideoTimestamp, endVideoTimestamp, monitor);
 
@@ -115,8 +115,8 @@ public class VideoDataReader
 
    public void exportVideo(File selectedFile, long startTimestamp, long endTimestamp, ProgressConsumer progreesConsumer)
    {
-      long startVideoTimestamp = timestampScrubber.getIndexWithBinarySearch(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.getIndexWithBinarySearch(endTimestamp);
+      long startVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(endTimestamp);
 
       try
       {
@@ -145,7 +145,7 @@ public class VideoDataReader
    public static class FrameData
    {
       public WritableImage frame;
-      public long givenRobotTimestamp;
+      public long queryRobotTimestamp;
       public long robotTimestamp;
       public long cameraCurrentPTS;
       public long demuxerCurrentPTS;
@@ -229,7 +229,7 @@ public class VideoDataReader
 
          if (queryRobotTimestamp < currentRobotTimestamp || queryRobotTimestamp >= upcomingRobotTimestamp)
          {
-            index = getIndexWithBinarySearch(queryRobotTimestamp);
+            index = searchRobotTimestampIndex(queryRobotTimestamp);
 
             videoTimestamp = videoTimestamps[index];
             currentRobotTimestamp = robotTimestamps[index];
@@ -243,7 +243,7 @@ public class VideoDataReader
          return videoTimestamp;
       }
 
-      private int getIndexWithBinarySearch(long queryRobotTimestamp)
+      private int searchRobotTimestampIndex(long queryRobotTimestamp)
       {
          int index;
 
