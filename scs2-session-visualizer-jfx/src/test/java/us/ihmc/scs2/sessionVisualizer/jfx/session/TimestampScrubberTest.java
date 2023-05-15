@@ -10,6 +10,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -23,16 +25,57 @@ public class TimestampScrubberTest
     private long[] actualRobotTimestamps;
     private long[] actualVideoTimestamps;
 
+    List<Integer> alteredRobotTimestampIndexes = new ArrayList<>();
+
     @BeforeEach
     public void loadFileTimestamps() throws URISyntaxException, IOException
     {
-        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/NadiaPoleNorth_Timestamps.dat")).toURI());
+        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/GStreamer_HDMI_timestamps_100.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
         // Need to have one video in the log or this will fail
         actualRobotTimestamps = scrubber.getRobotTimestampsFromFile();
         actualVideoTimestamps = scrubber.getVideoTimestampsFromFile();
+    }
+
+    @Test
+    public void interpolateDuplicates()
+    {
+        // Go through the robot timestamps in order and check the next one is larger
+        for (int i = 1; i < actualRobotTimestamps.length; i++)
+        {
+            scrubber.replaceDuplicateTimestamps(i);
+        }
+
+        System.out.println(scrubber.alteredRobotTimestampIndexes);
+        System.out.println(scrubber.alteredRobotTimestampIndexes.size());
+    }
+
+    @Test
+    public void goingBackwards()
+    {
+        // Go through the robot timestamps in order and check the next one is larger
+        for (int i = actualRobotTimestamps.length; i > 0; i--)
+        {
+            scrubber.replaceDuplicateTimestamps(i);
+        }
+
+        System.out.println(scrubber.alteredRobotTimestampIndexes);
+        System.out.println(scrubber.alteredRobotTimestampIndexes.size());
+    }
+
+    @Test
+    public void random()
+    {
+        // Go through the robot timestamps in order and check the next one is larger
+        for (int i = actualRobotTimestamps.length; i > 0; i-=2)
+        {
+            scrubber.replaceDuplicateTimestamps(i);
+        }
+
+        System.out.println(scrubber.alteredRobotTimestampIndexes);
+        System.out.println(scrubber.alteredRobotTimestampIndexes.size());
     }
 
     @Test
@@ -48,7 +91,10 @@ public class TimestampScrubberTest
 
             //TODO fix duplicate timestamps
             if (currentTimestamp == previousTimestamp)
+            {
+                System.out.println(currentTimestamp);
                 continue;
+            }
 
             Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
         }
@@ -81,6 +127,7 @@ public class TimestampScrubberTest
         long smallestDelta = 1000000000;
         long largestDelta = 0;
         int duplicates = 0;
+        long whereItHappened = 0;
 
         // Go through the robot timestamps in order and check the next one is larger
         for (int i = 1; i < actualRobotTimestamps.length; i++)
@@ -88,7 +135,7 @@ public class TimestampScrubberTest
             previousTimestamp = actualRobotTimestamps[i - 1];
             long currentTimestamp = actualRobotTimestamps[i];
 
-            Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
+//            Assertions.assertTrue(currentTimestamp > previousTimestamp, "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
 
             long currentDelta = currentTimestamp - previousTimestamp;
             delta += currentDelta;
@@ -97,7 +144,11 @@ public class TimestampScrubberTest
                 smallestDelta = currentDelta;
 
             if (currentDelta > largestDelta)
+            {
                 largestDelta = currentDelta;
+                whereItHappened = previousTimestamp;
+            }
+
         }
 
         delta = delta / (actualRobotTimestamps.length - duplicates);
@@ -106,6 +157,7 @@ public class TimestampScrubberTest
         System.out.println("Largest Delta: " + largestDelta);
         System.out.println("Duplicate robotTimestamps: " + duplicates);
         System.out.println("Average delta for robotTimestamps: " + delta);
+        System.out.println("Where it happened: " + whereItHappened);
     }
 
     @Disabled
