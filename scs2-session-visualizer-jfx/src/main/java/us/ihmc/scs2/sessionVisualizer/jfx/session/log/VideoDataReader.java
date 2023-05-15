@@ -6,7 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import gnu.trove.list.array.TLongArrayList;
 import javafx.scene.image.WritableImage;
@@ -160,8 +162,9 @@ public class VideoDataReader
 
       private long currentRobotTimestamp = 0;
       private long upcomingRobotTimestamp = 0;
-
       private long videoTimestamp;
+
+      public List<Integer> alteredRobotTimestampIndexes = new ArrayList<>();
 
       public TimestampScrubber(File timestampFile, boolean hasTimebase, boolean interlaced) throws IOException
       {
@@ -262,6 +265,53 @@ public class VideoDataReader
          }
 
          return index;
+      }
+
+      // TODO have the method only be called when there are duplicates, otherwise it will get called all the time and inside then check, but we should
+      // be able to checkout outside and only call the method if there are duplicates. That would clean up the method a bit.
+      public void replaceDuplicateTimestamps(int currentIndex)
+      {
+         if (currentIndex + 1 >= robotTimestamps.length || currentIndex - 1 < 0)
+            return;
+
+         // Checks if the same robotTimestamps exists before or after the currentIndex
+         if (robotTimestamps[currentIndex] == robotTimestamps[currentIndex + 1] || robotTimestamps[currentIndex] == robotTimestamps[currentIndex - 1])
+         {
+            boolean endOfFileReached = false;
+
+            // Moves the currentIndex position to the beginning of the duplicated robotTimestamps
+            while (robotTimestamps[currentIndex] == robotTimestamps[currentIndex - 1])
+               currentIndex--;
+
+            int nextIndex = currentIndex;
+            int numberOfDuplicateRobotTimestamps = 1;
+
+            // While we have duplicate robotTimestamps, add those indexes to a list, so we know which frames have been altered
+            while (robotTimestamps[currentIndex] == robotTimestamps[nextIndex] && nextIndex + 1 < robotTimestamps.length)
+            {
+               nextIndex++;
+               numberOfDuplicateRobotTimestamps++;
+
+               if (!alteredRobotTimestampIndexes.contains(nextIndex))  // Only add new elements to the list of indexes we have altered
+                  alteredRobotTimestampIndexes.add(nextIndex);
+            }
+
+            // Calculate the delta that should be added to a duplicated robotTimestamp
+            long nextNonDuplicateRobotTimestamp = robotTimestamps[nextIndex];
+            long totalDelta = nextNonDuplicateRobotTimestamp - robotTimestamps[currentIndex];
+            long deltaAddedToEachDuplicateRobotTimestamp = totalDelta / numberOfDuplicateRobotTimestamps + 1; // add 1 because dividing by 1 for 2 duplicate frames doesn't give you half
+
+            // We don't care about updating the robotTimestamps that get generated after the controller stops. So don't change them because they will never be displayed.
+            if (!endOfFileReached)
+            {
+               int duplicateRobotTimestampOffset = 1; // Multiplier for which duplicate we are on
+               for (int j = currentIndex; j < nextIndex; j++)
+               {
+                  robotTimestamps[j] = robotTimestamps[j] + deltaAddedToEachDuplicateRobotTimestamp * duplicateRobotTimestampOffset;
+                  duplicateRobotTimestampOffset++;
+               }
+            }
+         }
       }
 
       public long getCurrentRobotTimestamp()
