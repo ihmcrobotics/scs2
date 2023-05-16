@@ -42,10 +42,10 @@ public class MultiVideoDataReader
       readers.forEach(reader -> reader.readVideoFrame(queryRobotTimestamp));
    }
 
-   public void readVideoFrameInBackground(long givenRobotTimestamp)
+   public void readVideoFrameInBackground(long queryRobotTimestamp)
    {
       if (currentTask == null || currentTask.isDone())
-         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(givenRobotTimestamp));
+         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(queryRobotTimestamp));
    }
 
    public void crop(File selectedDirectory, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
