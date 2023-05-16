@@ -25,6 +25,7 @@ import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 
 public class SessionVisualizerMessagerAPI
@@ -202,12 +203,9 @@ public class SessionVisualizerMessagerAPI
    {
       private static final CategoryTheme Session = apiFactory.createCategoryTheme("Session");
       private static final CategoryTheme Start = apiFactory.createCategoryTheme("Start");
-      private static final CategoryTheme Remote = apiFactory.createCategoryTheme("Remote");
-      private static final CategoryTheme Log = apiFactory.createCategoryTheme("Log");
 
       public static final Topic<Session> StartNewSessionRequest = APIRoot.child(Session).child(Start).topic(Request);
-      public static final Topic<Boolean> RemoteSessionControlsRequest = APIRoot.child(Session).child(Remote).child(Controls).topic(Request);
-      public static final Topic<Boolean> LogSessionControlsRequest = APIRoot.child(Session).child(Log).child(Controls).topic(Request);
+      public static final Topic<OpenSessionControlsRequest> OpenSessionControlsRequest = APIRoot.child(Session).child(Controls).topic(Request);
    }
 
    public static final MessagerAPI API = apiFactory.getAPIAndCloseFactory();

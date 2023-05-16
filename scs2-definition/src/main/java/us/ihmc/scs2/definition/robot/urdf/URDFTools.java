@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -177,11 +178,12 @@ public class URDFTools
     */
    public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
+      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
       JAXBContext context = JAXBContext.newInstance(URDFModel.class);
       Unmarshaller um = context.createUnmarshaller();
       URDFModel urdfModel = (URDFModel) um.unmarshal(inputStream);
 
-      resolvePaths(urdfModel, resourceDirectories, resourceClassLoader);
+      resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
 
       return urdfModel;
    }
@@ -577,7 +579,11 @@ public class URDFTools
             URDFLinkReference parent = urdfJoint.getParent();
             URDFLinkReference child = urdfJoint.getChild();
             RigidBodyDefinition parentRigidBodyDefinition = rigidBodyDefinitionMap.get(parent.getLink());
+            Objects.requireNonNull(parentRigidBodyDefinition,
+                                   "Could not find parent rigid-body (%s) for joint (%s)".formatted(parent.getLink(), urdfJoint.getName()));
             RigidBodyDefinition childRigidBodyDefinition = rigidBodyDefinitionMap.get(child.getLink());
+            Objects.requireNonNull(parentRigidBodyDefinition,
+                                   "Could not find child rigid-body (%s) for joint (%s)".formatted(child.getLink(), urdfJoint.getName()));
             JointDefinition jointDefinition = jointDefinitionMap.get(urdfJoint.getName());
 
             jointDefinition.setSuccessor(childRigidBodyDefinition);
@@ -689,7 +695,7 @@ public class URDFTools
 
       if (urdfLink.getVisual() != null)
          urdfLink.getVisual().stream().map(URDFTools::toVisualDefinition).forEach(definition::addVisualDefinition);
-      
+
       if (urdfLink.getCollision() != null)
          urdfLink.getCollision().stream().map(URDFTools::toCollisionShapeDefinition).forEach(definition::addCollisionShapeDefinition);
 
@@ -991,9 +997,13 @@ public class URDFTools
       visualDefinition.setName(urdfVisual.getName());
       visualDefinition.setOriginPose(parseRigidBodyTransform(urdfVisual.getOrigin()));
       visualDefinition.setMaterialDefinition(toMaterialDefinition(urdfVisual.getMaterial()));
-      visualDefinition.setGeometryDefinition(toGeometryDefinition(urdfVisual.getGeometry()));
+      GeometryDefinition geometryDefinition = toGeometryDefinition(urdfVisual.getGeometry());
+      if (geometryDefinition == null)
+         return null;
+      visualDefinition.setGeometryDefinition(geometryDefinition);
       return visualDefinition;
    }
+
    /**
     * <i>-- Intended for internal use --</i>
     * <p>
@@ -1007,11 +1017,14 @@ public class URDFTools
    {
       if (urdfCollision == null)
          return null;
-      
+
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition();
       collisionShapeDefinition.setName(urdfCollision.getName());
       collisionShapeDefinition.setOriginPose(parseRigidBodyTransform(urdfCollision.getOrigin()));
-      collisionShapeDefinition.setGeometryDefinition(toGeometryDefinition(urdfCollision.getGeometry()));
+      GeometryDefinition geometryDefinition = toGeometryDefinition(urdfCollision.getGeometry());
+      if (geometryDefinition == null)
+         return null;
+      collisionShapeDefinition.setGeometryDefinition(geometryDefinition);
       return collisionShapeDefinition;
    }
 
@@ -1058,7 +1071,7 @@ public class URDFTools
          modelFileGeometryDefinition.setScale(parseVector3D(urdfGeometry.getMesh().getScale(), new Vector3D(1, 1, 1)));
          return modelFileGeometryDefinition;
       }
-      throw new IllegalArgumentException("The given URDF Geometry is empty.");
+      return null;
    }
 
    /**

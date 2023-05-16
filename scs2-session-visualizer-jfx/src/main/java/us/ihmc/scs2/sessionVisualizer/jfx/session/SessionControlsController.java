@@ -1,7 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session;
 
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public interface SessionControlsController
 {
@@ -20,7 +22,7 @@ public interface SessionControlsController
 
    Stage getStage();
 
-   default void bringUp()
+   default void bringUp(Window owner)
    {
       getStage().setIconified(false);
       getStage().setMaximized(false);
@@ -28,5 +30,6 @@ public interface SessionControlsController
       getStage().centerOnScreen();
       getStage().toFront();
       getStage().show();
+      JavaFXMissingTools.centerWindowInOwner(getStage(), owner);
    }
 }

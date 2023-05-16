@@ -16,6 +16,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
@@ -31,6 +32,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry.YoEntryTabPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController;
@@ -68,7 +70,12 @@ public class MultiSessionManager
             if (toolkit.hasActiveSession())
             {
                Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO);
-               alert.initOwner(toolkit.getMainWindow());
+               Stage owner;
+               if (activeController.get() != null)
+                  owner = activeController.get().getStage();
+               else
+                  owner = toolkit.getMainWindow();
+               alert.initOwner(owner);
                JavaFXMissingTools.centerDialogInOwner(alert);
 
                SessionVisualizerIOTools.addSCSIconToDialog(alert);
@@ -92,8 +99,7 @@ public class MultiSessionManager
       SessionVisualizerTopics topics = toolkit.getTopics();
       JavaFXMessager messager = toolkit.getMessager();
       messager.addTopicListener(topics.getStartNewSessionRequest(), m -> activeSession.set(m));
-      messager.addFXTopicListener(topics.getRemoteSessionControlsRequest(), m -> openRemoteSessionControls());
-      messager.addFXTopicListener(topics.getLogSessionControlsRequest(), m -> openLogSessionControls());
+      messager.addFXTopicListener(topics.getOpenSessionControlsRequest(), m -> openSessionControls(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m));
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(), m -> loadSessionDefaultConfiguration(toolkit.getSession()));
@@ -134,17 +140,35 @@ public class MultiSessionManager
       inactiveControllerMap.values().forEach(SessionControlsController::unloadSession);
    }
 
-   public void openRemoteSessionControls()
+   private void openSessionControls(OpenSessionControlsRequest request)
    {
-      openSessionControls(RemoteSessionManagerController.class, SessionVisualizerIOTools.REMOTE_SESSION_MANAGER_PANE_FXML_URL);
+      URL fxml;
+      Class<? extends SessionControlsController> controllerType;
+
+      switch (request.getSessionType())
+      {
+         case LOG:
+         {
+            fxml = SessionVisualizerIOTools.LOG_SESSION_MANAGER_PANE_FXML_URL;
+            controllerType = LogSessionManagerController.class;
+            break;
+         }
+         case REMOTE:
+         {
+            fxml = SessionVisualizerIOTools.REMOTE_SESSION_MANAGER_PANE_FXML_URL;
+            controllerType = RemoteSessionManagerController.class;
+            break;
+         }
+         default:
+         {
+            LogTools.error("Unhandled session type {}", request.getSessionType());
+            return;
+         }
+      }
+      openSessionControls(request.getSource(), controllerType, fxml);
    }
 
-   public void openLogSessionControls()
-   {
-      openSessionControls(LogSessionManagerController.class, SessionVisualizerIOTools.LOG_SESSION_MANAGER_PANE_FXML_URL);
-   }
-
-   private void openSessionControls(Class<? extends SessionControlsController> controllerType, URL fxml)
+   private void openSessionControls(Window source, Class<? extends SessionControlsController> controllerType, URL fxml)
    {
       SessionControlsController activeSessionControls = activeController.get();
 
@@ -156,7 +180,7 @@ public class MultiSessionManager
          }
          else
          {
-            activeSessionControls.bringUp();
+            activeSessionControls.bringUp(source);
             return;
          }
       }
@@ -189,7 +213,7 @@ public class MultiSessionManager
       }
 
       activeController.set(controller);
-      controller.bringUp();
+      controller.bringUp(source);
    }
 
    private void closeSessionControls(SessionControlsController controller)
@@ -229,7 +253,7 @@ public class MultiSessionManager
       if (!configuration.exists())
          return;
 
-      JavaFXMissingTools.runAndWait(getClass(), ()-> toolkit.getWindowManager().closeAllSecondaryWindows());
+      JavaFXMissingTools.runAndWait(getClass(), () -> toolkit.getWindowManager().closeAllSecondaryWindows());
 
       SynchronizeHint synchronizeHint = LOAD_SESSION_SYNCHRONOUS ? SynchronizeHint.SYNCHRONOUS : SynchronizeHint.NONE;
       LogTools.info(synchronizeHint);
