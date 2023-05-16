@@ -124,12 +124,13 @@ public class SDFTools
 
    public static SDFRoot loadSDFRoot(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
+      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
       JAXBContext context = JAXBContext.newInstance(SDFRoot.class);
       Unmarshaller um = context.createUnmarshaller();
       SDFRoot sdfRoot = (SDFRoot) um.unmarshal(inputStream);
 
       ensureListsNotNull(sdfRoot);
-      resolvePaths(sdfRoot, resourceDirectories, resourceClassLoader);
+      resolvePaths(sdfRoot, allResourceDirectories, resourceClassLoader);
 
       return sdfRoot;
    }
