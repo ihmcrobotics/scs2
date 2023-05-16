@@ -67,11 +67,6 @@ public class VideoDataReader
 
       try
       {
-         if (timestampScrubber.alteredRobotTimestampIndexes.contains(index))
-         {
-            System.out.println("We are at an altered frame, need different border to notify user...");
-            new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT));
-         }
          demuxer.seekToPTS(videoTimestamp);
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
@@ -150,6 +145,16 @@ public class VideoDataReader
    public FrameData pollCurrentFrame()
    {
       return imageBuffer.getCopyForReading();
+   }
+
+   public boolean replacedRobotTimestamps(int index)
+   {
+      return timestampScrubber.alteredRobotTimestampIndexes.contains(index);
+   }
+
+   public int getIndex()
+   {
+      return timestampScrubber.getIndex();
    }
 
    public static class FrameData
