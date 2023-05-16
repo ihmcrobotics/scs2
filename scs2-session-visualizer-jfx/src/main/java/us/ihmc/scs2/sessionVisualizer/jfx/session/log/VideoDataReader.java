@@ -12,6 +12,8 @@ import java.util.List;
 
 import gnu.trove.list.array.TLongArrayList;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
 import us.ihmc.concurrent.ConcurrentCopier;
@@ -61,9 +63,15 @@ public class VideoDataReader
    {
       long videoTimestamp = timestampScrubber.getVideoTimestamp(queryRobotTimestamp);
       long currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
+      int index = timestampScrubber.getIndex();
 
       try
       {
+         if (timestampScrubber.alteredRobotTimestampIndexes.contains(index))
+         {
+            System.out.println("We are at an altered frame, need different border to notify user...");
+            new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT));
+         }
          demuxer.seekToPTS(videoTimestamp);
          FrameData copyForWriting = imageBuffer.getCopyForWriting();
          copyForWriting.givenRobotTimestamp = queryRobotTimestamp;
@@ -163,6 +171,7 @@ public class VideoDataReader
       private long currentRobotTimestamp = 0;
       private long upcomingRobotTimestamp = 0;
       private long videoTimestamp;
+      private int currentIndex = 0;
 
       public List<Integer> alteredRobotTimestampIndexes = new ArrayList<>();
 
@@ -280,15 +289,13 @@ public class VideoDataReader
       {
          if (queryRobotTimestamp < currentRobotTimestamp || queryRobotTimestamp >= upcomingRobotTimestamp)
          {
-            int index;
+            currentIndex = getIndexWithBinarySearch(queryRobotTimestamp);
 
-            index = getIndexWithBinarySearch(queryRobotTimestamp);
+            videoTimestamp = videoTimestamps[currentIndex];
+            currentRobotTimestamp = robotTimestamps[currentIndex];
 
-            videoTimestamp = videoTimestamps[index];
-            currentRobotTimestamp = robotTimestamps[index];
-
-            if (index + 1 < robotTimestamps.length)
-               upcomingRobotTimestamp = robotTimestamps[index + 1];
+            if (currentIndex + 1 < robotTimestamps.length)
+               upcomingRobotTimestamp = robotTimestamps[currentIndex + 1];
             else
                upcomingRobotTimestamp = currentRobotTimestamp;
          }
@@ -315,6 +322,11 @@ public class VideoDataReader
          }
 
          return index;
+      }
+
+      public int getIndex()
+      {
+         return currentIndex;
       }
 
       public long getCurrentRobotTimestamp()
