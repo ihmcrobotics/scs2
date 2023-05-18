@@ -12,8 +12,6 @@ import java.util.List;
 
 import gnu.trove.list.array.TLongArrayList;
 import javafx.scene.image.WritableImage;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
 import us.ihmc.concurrent.ConcurrentCopier;
@@ -147,9 +145,10 @@ public class VideoDataReader
       return imageBuffer.getCopyForReading();
    }
 
-   public boolean replacedRobotTimestamps(int index)
+   public boolean replacedRobotTimestampsContainsIndex(int index)
    {
-      return timestampScrubber.alteredRobotTimestampIndexes.contains(index);
+      System.out.println(Arrays.toString(timestampScrubber.replacedRobotTimestampIndexes.toArray()));
+      return timestampScrubber.replacedRobotTimestampIndexes.contains(index);
    }
 
    public int getIndex()
@@ -179,7 +178,7 @@ public class VideoDataReader
       private long videoTimestamp;
       private int currentIndex = 0;
 
-      public List<Integer> alteredRobotTimestampIndexes = new ArrayList<>();
+      public List<Integer> replacedRobotTimestampIndexes = new ArrayList<>();
 
       public TimestampScrubber(File timestampFile, boolean hasTimebase, boolean interlaced) throws IOException
       {
@@ -257,8 +256,8 @@ public class VideoDataReader
          // While we have duplicate robotTimestamps, add those indexes to a list, so we know which frames have been altered
          while (robotTimestamps[currentIndex] == robotTimestamps[nextIndex] && nextIndex + 1 < robotTimestamps.length)
          {
-            if (!alteredRobotTimestampIndexes.contains(nextIndex) && nextIndex != currentIndex)  // Only add new elements to the list of indexes we have altered
-               alteredRobotTimestampIndexes.add(nextIndex);
+            if (!replacedRobotTimestampIndexes.contains(nextIndex) && nextIndex != currentIndex)  // Only add new elements to the list of indexes we have altered
+               replacedRobotTimestampIndexes.add(nextIndex);
 
             nextIndex++;
             numberOfDuplicateRobotTimestamps++;

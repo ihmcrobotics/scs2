@@ -36,7 +36,7 @@ public class VideoViewer
 
    private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
                                                                                                               "SCS2_GUI_LOGGER_VIDEO_DEBUG",
-                                                                                                              false);
+                                                                                                              true);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private final ImageView thumbnail = new ImageView();
@@ -51,6 +51,8 @@ public class VideoViewer
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
    private final VideoDataReader reader;
    private final double defaultThumbnailSize;
+
+   private final ObjectProperty<Pane> imageViewRootPane = new SimpleObjectProperty<>(this, "imageViewRootPane", null);
 
    public VideoViewer(Window owner, VideoDataReader reader, double defaultThumbnailSize)
    {
@@ -94,6 +96,7 @@ public class VideoViewer
             Pane root = createImageViewPane(videoView);
             anchorPane.getChildren().add(root);
             JavaFXMissingTools.setAnchorConstraints(root, 0);
+            imageViewRootPane.set(root);
 
             setupVideoStatistics(anchorPane);
 
@@ -124,6 +127,13 @@ public class VideoViewer
 
    private void setupVideoStatistics(AnchorPane anchorPane)
    {
+      if (reader.replacedRobotTimestampsContainsIndex(reader.getIndex()))
+      {
+         System.out.println("We are at an altered frame, need different border to notify user...");
+//         imageViewRootPane.get()
+//                          .setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT)));
+      }
+
       Label videoStatisticTitle = new Label("Video Statistics");
       videoStatisticTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
@@ -175,14 +185,16 @@ public class VideoViewer
             if (image == null)
                return;
             double imageRatio = image.getWidth() / image.getHeight();
-            double width = Math.min(getWidth(), getHeight() * imageRatio);
+            double paneWidth = getWidth() - getPadding().getTop() - getPadding().getBottom();
+            double paneHeight = getHeight() - getPadding().getLeft() - getPadding().getRight();
+            double width = Math.min(paneWidth, paneHeight * imageRatio);
             double height = width / imageRatio;
 
-            double x = 0.5 * (getWidth() - width);
-            double y = 0.5 * (getHeight() - height);
+            double x = 0.5 * (paneWidth - width);
+            double y = 0.5 * (paneHeight - height);
             imageView.setFitWidth(width);
-            imageView.setX(x);
-            imageView.setY(y);
+            imageView.setX(x + getPadding().getLeft());
+            imageView.setY(y + getPadding().getTop());
          }
       };
    }
