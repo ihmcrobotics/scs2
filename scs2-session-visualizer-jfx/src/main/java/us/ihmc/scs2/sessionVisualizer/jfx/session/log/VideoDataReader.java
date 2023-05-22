@@ -61,7 +61,6 @@ public class VideoDataReader
    {
       long videoTimestamp = timestampScrubber.getVideoTimestamp(queryRobotTimestamp);
       long currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
-      int index = timestampScrubber.getIndex();
 
       try
       {
@@ -147,7 +146,6 @@ public class VideoDataReader
 
    public boolean replacedRobotTimestampsContainsIndex(int index)
    {
-      System.out.println(Arrays.toString(timestampScrubber.replacedRobotTimestampIndexes.toArray()));
       return timestampScrubber.replacedRobotTimestampIndexes.contains(index);
    }
 
@@ -292,8 +290,6 @@ public class VideoDataReader
        */
       public long getVideoTimestamp(long queryRobotTimestamp)
       {
-         int index;
-
          if (queryRobotTimestamp < currentRobotTimestamp || queryRobotTimestamp >= upcomingRobotTimestamp)
          {
             currentIndex = searchRobotTimestampIndex(queryRobotTimestamp);

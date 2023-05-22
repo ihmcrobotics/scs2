@@ -127,13 +127,6 @@ public class VideoViewer
 
    private void setupVideoStatistics(AnchorPane anchorPane)
    {
-      if (reader.replacedRobotTimestampsContainsIndex(reader.getIndex()))
-      {
-         System.out.println("We are at an altered frame, need different border to notify user...");
-//         imageViewRootPane.get()
-//                          .setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT)));
-      }
-
       Label videoStatisticTitle = new Label("Video Statistics");
       videoStatisticTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
@@ -220,6 +213,25 @@ public class VideoViewer
          robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
          cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
          demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
+
+         if (imageViewRootPane.get() != null)
+         {
+            if (reader.replacedRobotTimestampsContainsIndex(reader.getIndex()))
+            {
+               imageViewRootPane.get()
+                                .setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(0),
+                                                                       new BorderWidths(25, 25, 25, 25,
+                                                                                        false, false, false, false))));
+
+            }
+            else
+            {
+               imageViewRootPane.get().setBorder(new Border(new BorderStroke(Color.WHITE, BorderStrokeStyle.SOLID, new CornerRadii(0),
+                                                                             new BorderWidths(25, 25, 25, 25,
+                                                                                              false, false, false, false))));
+
+            }
+         }
       }
    }
 
