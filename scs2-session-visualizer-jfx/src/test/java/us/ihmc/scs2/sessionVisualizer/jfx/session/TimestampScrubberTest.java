@@ -22,8 +22,8 @@ public class TimestampScrubberTest
     @BeforeEach
     public void loadFileTimestamps() throws URISyntaxException, IOException
     {
-//        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
-        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/GStreamer_HDMI_timestamps_100.dat")).toURI());
+        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
+//        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/GStreamer_HDMI_timestamps_100.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
@@ -47,11 +47,12 @@ public class TimestampScrubberTest
             long previousTimestamp = actualRobotTimestamps[i - 1];
             long currentTimestamp = actualRobotTimestamps[i];
 
+            // Useful for debugging timestamps issues, won't print anything if the checkForDuplicates() is run inside the VideoDataReader
             if (currentTimestamp == previousTimestamp)
                 System.out.println(currentTimestamp + " -- " + previousTimestamp);
 
-//            Assertions.assertTrue(currentTimestamp > previousTimestamp,
-//                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp);
+            Assertions.assertTrue(currentTimestamp > previousTimestamp,
+                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp);
         }
     }
 
