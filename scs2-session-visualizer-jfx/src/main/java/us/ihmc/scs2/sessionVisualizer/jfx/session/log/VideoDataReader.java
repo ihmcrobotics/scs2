@@ -80,8 +80,8 @@ public class VideoDataReader
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException
    {
-      long startVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(endTimestamp);
+      long startVideoTimestamp = timestampScrubber.getVideoTimestamp(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.getVideoTimestamp(endTimestamp);
 
       int framerate = VideoConverter.crop(videoFile, outputFile, startVideoTimestamp, endVideoTimestamp, monitor);
 
@@ -115,8 +115,8 @@ public class VideoDataReader
 
    public void exportVideo(File selectedFile, long startTimestamp, long endTimestamp, ProgressConsumer progreesConsumer)
    {
-      long startVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.searchRobotTimestampIndex(endTimestamp);
+      long startVideoTimestamp = timestampScrubber.getVideoTimestamp(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.getVideoTimestamp(endTimestamp);
 
       try
       {
