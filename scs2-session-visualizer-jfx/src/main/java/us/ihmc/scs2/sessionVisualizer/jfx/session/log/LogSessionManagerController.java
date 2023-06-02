@@ -199,14 +199,19 @@ public class LogSessionManagerController implements SessionControlsController
 
          if (sliderFeedbackEnabled.get())
          {
+            int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
+
             JavaFXMissingTools.runLater(getClass(), () ->
             {
                if (logSession == null || logSession.getLogDataReader() == null)
                   return;
 
-               logPositionUpdate.set(true);
-               logPositionSlider.setValue(logSession.getLogDataReader().getCurrentLogPosition());
-               logPositionUpdate.set(false);
+               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
+               {
+                  logPositionUpdate.set(true);
+                  logPositionSlider.setValue(currentLogPosition);
+                  logPositionUpdate.set(false);
+               }
             });
          }
       };
@@ -309,8 +314,13 @@ public class LogSessionManagerController implements SessionControlsController
                   FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SESSION_VARIABLE_FILTER_PANE_URL);
                   loader.load();
                   SessionVariableFilterPaneController controller = loader.getController();
-                  Set<String> logVariableSet = activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList().stream()
-                                                                    .map(YoVariable::getFullNameString).collect(Collectors.toSet());
+                  Set<String> logVariableSet = activeSessionProperty.get()
+                                                                    .getLogDataReader()
+                                                                    .getParser()
+                                                                    .getYoVariablesList()
+                                                                    .stream()
+                                                                    .map(YoVariable::getFullNameString)
+                                                                    .collect(Collectors.toSet());
                   controller.initialize(toolkit, var -> logVariableSet.contains(var.getFullNameString()));
                   variableFilterControllerProperty.set(controller);
                }
