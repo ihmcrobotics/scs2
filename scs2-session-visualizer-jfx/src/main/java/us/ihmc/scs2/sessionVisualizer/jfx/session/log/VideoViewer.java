@@ -14,6 +14,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Spinner;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -96,6 +97,10 @@ public class VideoViewer
             Pane root = createImageViewPane(videoView);
             anchorPane.getChildren().add(root);
             JavaFXMissingTools.setAnchorConstraints(root, 0);
+            VBox vbox = new VBox();
+            vbox.getChildren().add(anchorPane);
+            VBox.setVgrow(anchorPane, Priority.ALWAYS);
+            vbox.getChildren().add(new Spinner<Integer>());
             imageViewRootPane.set(root);
 
             setupVideoStatistics(anchorPane);
@@ -104,7 +109,7 @@ public class VideoViewer
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
             stage.setTitle(reader.getName());
             owner.setOnHiding(e2 -> stage.close());
-            Scene scene = new Scene(anchorPane);
+            Scene scene = new Scene(vbox);
             stage.setScene(scene);
             updateVideoView.bind(stage.showingProperty());
          }
