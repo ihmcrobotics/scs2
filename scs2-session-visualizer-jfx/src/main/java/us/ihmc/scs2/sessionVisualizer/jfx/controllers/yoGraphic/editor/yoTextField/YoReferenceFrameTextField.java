@@ -49,13 +49,13 @@ public class YoReferenceFrameTextField extends YoVariableTextField<Property<Refe
    protected String simplifyText(String text)
    {
       if (text == null)
-         return referenceFrameManager.getUniqueName(referenceFrameManager.getWorldFrame());
+         return referenceFrameManager.getUniqueShortName(referenceFrameManager.getWorldFrame());
 
       ReferenceFrame referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(text);
       if (referenceFrame == null)
          return null;
 
-      String uniqueName = referenceFrameManager.getUniqueName(referenceFrame);
+      String uniqueName = referenceFrameManager.getUniqueShortName(referenceFrame);
       if (uniqueName != null && uniqueName.equals(text))
          return null;
 
@@ -65,7 +65,7 @@ public class YoReferenceFrameTextField extends YoVariableTextField<Property<Refe
    @Override
    protected Callback<ISuggestionRequest, Collection<String>> createSuggestions()
    {
-      Collection<String> referenceFrameUniqueNames = referenceFrameManager.getReferenceFrameUniqueNames();
+      Collection<String> referenceFrameUniqueNames = referenceFrameManager.getReferenceFrameUniqueShortNames();
 
       return request ->
       {
