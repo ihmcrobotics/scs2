@@ -42,6 +42,12 @@ public class ReferenceFrameManager implements Manager
    private final ObjectProperty<Map<ReferenceFrame, String>> referenceFrameToUniqueNameMapProperty = new SimpleObjectProperty<>(this,
                                                                                                                                 "referenceFrameToUniqueNameMap",
                                                                                                                                 null);
+   private final ObjectProperty<Map<String, ReferenceFrame>> uniqueShortNameToReferenceFrameMapProperty = new SimpleObjectProperty<>(this,
+                                                                                                                                     "uniqueShortNameToReferenceFrameMap",
+                                                                                                                                     null);
+   private final ObjectProperty<Map<ReferenceFrame, String>> referenceFrameToUniqueShortNameMapProperty = new SimpleObjectProperty<>(this,
+                                                                                                                                     "referenceFrameToUniqueShortNameMap",
+                                                                                                                                     null);
 
    private final ObservableMap<String, ReferenceFrame> fullnameToReferenceFrameMap = FXCollections.observableMap(new ConcurrentHashMap<>());
 
@@ -140,6 +146,8 @@ public class ReferenceFrameManager implements Manager
       worldFrame.clearChildren();
       uniqueNameToReferenceFrameMapProperty.set(null);
       referenceFrameToUniqueNameMapProperty.set(null);
+      uniqueShortNameToReferenceFrameMapProperty.set(null);
+      referenceFrameToUniqueShortNameMapProperty.set(null);
       fullnameToReferenceFrameMap.clear();
    }
 
@@ -149,6 +157,10 @@ public class ReferenceFrameManager implements Manager
       if (uniqueNameToReferenceFrameMapProperty.get() == null)
          return false;
       if (referenceFrameToUniqueNameMapProperty.get() == null)
+         return false;
+      if (uniqueShortNameToReferenceFrameMapProperty.get() == null)
+         return false;
+      if (referenceFrameToUniqueShortNameMapProperty.get() == null)
          return false;
       if (fullnameToReferenceFrameMap.isEmpty())
          return false;
@@ -302,17 +314,32 @@ public class ReferenceFrameManager implements Manager
                                                                                ReferenceFrame::getName);
       Map<String, ReferenceFrame> newUniqueNameToReferenceFrameMap = new LinkedHashMap<>();
       Map<ReferenceFrame, String> newReferenceFrameToUniqueNameMap = new LinkedHashMap<>();
+      Map<String, ReferenceFrame> newUniqueShortNameToReferenceFrameMap = new LinkedHashMap<>();
+      Map<ReferenceFrame, String> newReferenceFrameToUniqueShortNameMap = new LinkedHashMap<>();
 
       newMap.entrySet().forEach(e ->
       {
-         newUniqueNameToReferenceFrameMap.put(e.getValue(), e.getKey());
-         newReferenceFrameToUniqueNameMap.put(e.getKey(), e.getValue());
+         ReferenceFrame frame = e.getKey();
+         String uniqueName = e.getValue();
+         newUniqueNameToReferenceFrameMap.put(uniqueName, frame);
+         newReferenceFrameToUniqueNameMap.put(frame, uniqueName);
+
+         int firstSeparatorIndex = uniqueName.indexOf(".");
+         int lastSeparatorIndex = uniqueName.lastIndexOf(".");
+         String uniqueShortName = uniqueName;
+         if (firstSeparatorIndex != lastSeparatorIndex)
+            uniqueShortName = uniqueName.substring(0, firstSeparatorIndex) + "..." + uniqueName.substring(lastSeparatorIndex + 1, uniqueName.length());
+
+         newUniqueShortNameToReferenceFrameMap.put(uniqueShortName, frame);
+         newReferenceFrameToUniqueShortNameMap.put(frame, uniqueShortName);
       });
 
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
          uniqueNameToReferenceFrameMapProperty.set(newUniqueNameToReferenceFrameMap);
          referenceFrameToUniqueNameMapProperty.set(newReferenceFrameToUniqueNameMap);
+         uniqueShortNameToReferenceFrameMapProperty.set(newUniqueShortNameToReferenceFrameMap);
+         referenceFrameToUniqueShortNameMapProperty.set(newReferenceFrameToUniqueShortNameMap);
       });
    }
 
@@ -348,6 +375,13 @@ public class ReferenceFrameManager implements Manager
       return uniqueNameToReferenceFrameMapProperty.get().keySet();
    }
 
+   public Collection<String> getReferenceFrameUniqueShortNames()
+   {
+      if (uniqueShortNameToReferenceFrameMapProperty.get() == null)
+         return Collections.emptyList();
+      return uniqueShortNameToReferenceFrameMapProperty.get().keySet();
+   }
+
    public Collection<String> getReferenceFrameFullnames()
    {
       return fullnameToReferenceFrameMap.keySet();
@@ -357,7 +391,10 @@ public class ReferenceFrameManager implements Manager
    {
       if (uniqueNameToReferenceFrameMapProperty.get() == null)
          return null;
-      return uniqueNameToReferenceFrameMapProperty.get().get(uniqueName);
+      ReferenceFrame frame = uniqueNameToReferenceFrameMapProperty.get().get(uniqueName);
+      if (frame == null)
+         return uniqueShortNameToReferenceFrameMapProperty.get().get(uniqueName);
+      return frame;
    }
 
    public ReferenceFrame getReferenceFrameFromFullname(String fullname)
@@ -381,6 +418,13 @@ public class ReferenceFrameManager implements Manager
       return referenceFrameToUniqueNameMapProperty.get().get(referenceFrame);
    }
 
+   public String getUniqueShortName(ReferenceFrame referenceFrame)
+   {
+      if (referenceFrameToUniqueShortNameMapProperty.get() == null)
+         return null;
+      return referenceFrameToUniqueShortNameMapProperty.get().get(referenceFrame);
+   }
+
    public Map<ReferenceFrame, String> getReferenceFrameToUniqueNameMap()
    {
       return referenceFrameToUniqueNameMapProperty.get();
@@ -389,6 +433,11 @@ public class ReferenceFrameManager implements Manager
    public Map<String, ReferenceFrame> getUniqueNameToReferenceFrameMap()
    {
       return uniqueNameToReferenceFrameMapProperty.get();
+   }
+
+   public Map<String, ReferenceFrame> getUniqueShortNameToReferenceFrameMap()
+   {
+      return uniqueShortNameToReferenceFrameMapProperty.get();
    }
 
    public Map<String, ReferenceFrame> getFullnameToReferenceFrameMap()
