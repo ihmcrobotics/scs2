@@ -19,6 +19,13 @@ import java.util.stream.Stream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
@@ -178,11 +185,61 @@ public class URDFTools
     */
    public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
+      return loadURDFModel(inputStream, resourceDirectories, resourceClassLoader, false);
+   }
+
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    * 
+    * @param inputStream         the stream to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @param ignoreNamespace     whether XML namespaces should be ignored. Note that should always be
+    *                            false, it is only to handle malformed XML file that do not properly
+    *                            declare their namespaces.
+    * @return the model.
+    * @throws JAXBException
+    */
+   public static URDFModel loadURDFModel(InputStream inputStream,
+                                         Collection<String> resourceDirectories,
+                                         ClassLoader resourceClassLoader,
+                                         boolean ignoreNamespace)
+         throws JAXBException
+   {
       Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
+      URDFModel urdfModel;
       JAXBContext context = JAXBContext.newInstance(URDFModel.class);
       Unmarshaller um = context.createUnmarshaller();
-      URDFModel urdfModel = (URDFModel) um.unmarshal(inputStream);
 
+      if (!ignoreNamespace)
+      {
+         urdfModel = (URDFModel) um.unmarshal(inputStream);
+      }
+      else
+      {
+         InputSource is = new InputSource(inputStream);
+         SAXParserFactory sax = SAXParserFactory.newInstance();
+         sax.setNamespaceAware(false);
+         XMLReader reader;
+
+         try
+         {
+            reader = sax.newSAXParser().getXMLReader();
+         }
+         catch (SAXException | ParserConfigurationException e)
+         {
+            throw new JAXBException(e);
+         }
+
+         SAXSource source = new SAXSource(reader, is);
+         urdfModel = (URDFModel) um.unmarshal(source);
+      }
       resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
 
       return urdfModel;
