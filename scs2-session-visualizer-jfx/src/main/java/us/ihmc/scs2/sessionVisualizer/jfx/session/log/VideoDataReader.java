@@ -15,6 +15,7 @@ import javafx.scene.image.WritableImage;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
 import us.ihmc.concurrent.ConcurrentCopier;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 
@@ -190,7 +191,6 @@ public class VideoDataReader
       {
          try (BufferedReader bufferedReader = new BufferedReader(new FileReader(timestampFile)))
          {
-
             String line;
             if (hasTimebase)
             {
@@ -226,7 +226,8 @@ public class VideoDataReader
             this.robotTimestamps = robotTimestamps.toArray();
             this.videoTimestamps = videoTimestamps.toArray();
 
-         } catch (FileNotFoundException e)
+         }
+         catch (FileNotFoundException e)
          {
             throw new RuntimeException(e);
          }
@@ -236,50 +237,48 @@ public class VideoDataReader
 
       public void checkAndReplaceDuplicates()
       {
-         for (int i = 0; i < robotTimestamps.length - 1; i++)
+         for (int index = 0; index < robotTimestamps.length - 1; index++)
          {
-            if (robotTimestamps[i] == robotTimestamps[i + 1])
+            if (robotTimestamps[index] == robotTimestamps[index + 1] && index + 2 < robotTimestamps.length)
             {
-               replaceDuplicateTimestamps(i);
+               int firstDuplicateIndex = index;
+               int nextNonDuplicateIndex = getNextNonDuplicateIndex(index);
+               int numberOfDuplicates = nextNonDuplicateIndex - firstDuplicateIndex;
+
+               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[firstDuplicateIndex], robotTimestamps[nextNonDuplicateIndex], (double) 1 / numberOfDuplicates);
+               long deltaValue = firstAdjustedTimestamp - robotTimestamps[firstDuplicateIndex];
+
+               index = replaceDuplicateTimestampsAndIncrementIndex(firstDuplicateIndex, nextNonDuplicateIndex - 1, deltaValue);
             }
          }
       }
 
-      private void replaceDuplicateTimestamps(int currentIndex)
+      public int getNextNonDuplicateIndex(int index)
       {
-         boolean endOfFileReached = false;
-         int nextIndex = currentIndex;
-         int numberOfDuplicateRobotTimestamps = 0;
+         while (robotTimestamps[index] == robotTimestamps[index + 1] && index + 2 < robotTimestamps.length)
+            index++;
 
-         // While we have duplicate robotTimestamps, add those indexes to a list, so we know which frames have been altered
-         while (robotTimestamps[currentIndex] == robotTimestamps[nextIndex] && nextIndex + 1 < robotTimestamps.length)
+         return index + 1;
+      }
+
+      private int replaceDuplicateTimestampsAndIncrementIndex(int firstDuplicateIndex, int lastDuplicateIndex, long deltaValue)
+      {
+         // Don't replace duplicates at end of file since the controller has already stopped and this data is junk
+         if (lastDuplicateIndex + 2 >= robotTimestamps.length)
+            return robotTimestamps.length;
+
+         int currentIndex = firstDuplicateIndex + 1;
+         while (currentIndex <= lastDuplicateIndex)
          {
-            if (!replacedRobotTimestampIndexes.contains(nextIndex) && nextIndex != currentIndex)  // Only add new elements to the list of indexes we have altered
-               replacedRobotTimestampIndexes.add(nextIndex);
+            int deltaIndex = currentIndex - firstDuplicateIndex;
+            long additionalValue = deltaValue * deltaIndex;
 
-            nextIndex++;
-            numberOfDuplicateRobotTimestamps++;
+            robotTimestamps[currentIndex] = robotTimestamps[currentIndex] + additionalValue;
+            currentIndex++;
          }
 
-         if (nextIndex + 1 >= robotTimestamps.length)
-            endOfFileReached = true;
-
-         // Calculate the delta that should be added to a duplicated robotTimestamp
-         long nextNonDuplicateRobotTimestamp = robotTimestamps[nextIndex];
-         long totalDelta = nextNonDuplicateRobotTimestamp - robotTimestamps[currentIndex];
-         long deltaAddedToEachDuplicateRobotTimestamp = totalDelta / numberOfDuplicateRobotTimestamps + 1; // add 1 because dividing by 1 for 2 duplicate frames doesn't give you half
-
-         // We don't care about updating the robotTimestamps that get generated after the controller stops. So don't change them because they will never be displayed.
-         if (!endOfFileReached)
-         {
-            int duplicateRobotTimestampOffset = 1; // Multiplier for which duplicate we are on
-            for (int j = currentIndex + 1; j < nextIndex; j++)
-            {
-               // Replace robotTimestamps
-               robotTimestamps[j] = robotTimestamps[j] + deltaAddedToEachDuplicateRobotTimestamp * duplicateRobotTimestampOffset;
-               duplicateRobotTimestampOffset++;
-            }
-         }
+         // Prevents looping through the currentIndex's we have already changed in this method, ( - 1) because the for loop increments once
+         return currentIndex - 1;
       }
 
       /**
