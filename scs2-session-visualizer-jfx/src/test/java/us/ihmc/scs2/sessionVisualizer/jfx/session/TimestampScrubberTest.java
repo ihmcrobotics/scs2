@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class TimestampScrubberTest
 {
-    private VideoDataReader.TimestampScrubber scrubber;
+    private static VideoDataReader.TimestampScrubber scrubber;
 
     private static long[] actualRobotTimestamps;
     private static long[] actualVideoTimestamps;
@@ -19,11 +19,11 @@ public class TimestampScrubberTest
     // After the controller stops we generate a lot of garbage timestamps. This prevents us from trying to use them
     private static int duplicatesAtEndOfFile = 1;
 
-    @BeforeEach
-    public void loadFileTimestamps() throws URISyntaxException, IOException
+    @BeforeAll
+    public static void loadFileTimestamps() throws URISyntaxException, IOException
     {
 //        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
-        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/GStreamer_HDMI_timestamps_100.dat")).toURI());
+        File timestampFile = new File(Objects.requireNonNull(TimestampScrubberTest.class.getClassLoader().getResource("sessionLogs/GStreamer_HDMI_timestamps_100.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
@@ -52,7 +52,7 @@ public class TimestampScrubberTest
                 System.out.println(currentTimestamp + " -- " + previousTimestamp);
 
             Assertions.assertTrue(currentTimestamp > previousTimestamp,
-                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp);
+                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp + " at Index: " + i);
         }
     }
 
@@ -85,7 +85,7 @@ public class TimestampScrubberTest
         long whereItHappened = 0;
 
         // Go through the robot timestamps in order and check the next one is larger
-        for (int i = 1; i < actualRobotTimestamps.length; i++)
+        for (int i = 1; i < actualRobotTimestamps.length - duplicatesAtEndOfFile; i++)
         {
             previousTimestamp = actualRobotTimestamps[i - 1];
             long currentTimestamp = actualRobotTimestamps[i];
