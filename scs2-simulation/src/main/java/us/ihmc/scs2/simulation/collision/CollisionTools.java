@@ -168,8 +168,6 @@ public class CollisionTools
          return new FramePointShape3D(referenceFrame, toPointShape3D(originPose, (Point3DDefinition) definition));
       else if (definition instanceof Sphere3DDefinition)
          return new FrameSphere3D(referenceFrame, toSphere3D(originPose, (Sphere3DDefinition) definition));
-      else if (definition instanceof Torus3DDefinition)
-         throw new UnsupportedOperationException("Torus shape is not supported as collidable.");
       else if (definition instanceof STPRamp3DDefinition)
          return new FrameSTPRamp3D(referenceFrame, toSTPRamp3D(originPose, (STPRamp3DDefinition) definition));
       else if (definition instanceof Ramp3DDefinition)
