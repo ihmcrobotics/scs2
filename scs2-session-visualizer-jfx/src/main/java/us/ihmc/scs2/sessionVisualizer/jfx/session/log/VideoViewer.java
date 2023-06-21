@@ -40,6 +40,8 @@ public class VideoViewer
                                                                                                               true);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
+   private FrameData currentFrameData;
+
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
@@ -199,7 +201,7 @@ public class VideoViewer
 
    public void update()
    {
-      FrameData currentFrameData = reader.pollCurrentFrame();
+      currentFrameData = reader.pollCurrentFrame();
 
       if (currentFrameData == null)
          return;
@@ -221,7 +223,9 @@ public class VideoViewer
 
          if (imageViewRootPane.get() != null)
          {
-            if (reader.replacedRobotTimestampsContainsIndex(reader.getIndex()))
+            System.out.println(reader.getCurrentIndex() + " -- current index");
+
+            if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
             {
                imageViewRootPane.get()
                                 .setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(0),
