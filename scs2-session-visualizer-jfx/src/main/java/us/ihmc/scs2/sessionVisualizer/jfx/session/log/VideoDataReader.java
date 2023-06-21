@@ -6,11 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 import javafx.scene.image.WritableImage;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
@@ -22,7 +21,6 @@ import us.ihmc.scs2.session.log.ProgressConsumer;
 public class VideoDataReader
 {
    private final TimestampScrubber timestampScrubber;
-
    private final String name;
 
    private final MP4VideoDemuxer demuxer;
@@ -145,14 +143,14 @@ public class VideoDataReader
       return imageBuffer.getCopyForReading();
    }
 
+   public int getCurrentIndex()
+   {
+      return timestampScrubber.getCurrentIndex();
+   }
+
    public boolean replacedRobotTimestampsContainsIndex(int index)
    {
       return timestampScrubber.replacedRobotTimestampIndexes.contains(index);
-   }
-
-   public int getIndex()
-   {
-      return timestampScrubber.getIndex();
    }
 
    public static class FrameData
@@ -177,7 +175,7 @@ public class VideoDataReader
       private long videoTimestamp;
       private int currentIndex = 0;
 
-      public List<Integer> replacedRobotTimestampIndexes = new ArrayList<>();
+      public TIntHashSet replacedRobotTimestampIndexes = new TIntHashSet();
 
       public TimestampScrubber(File timestampFile, boolean hasTimebase, boolean interlaced) throws IOException
       {
@@ -241,6 +239,8 @@ public class VideoDataReader
          {
             if (robotTimestamps[index] == robotTimestamps[index + 1] && index + 2 < robotTimestamps.length)
             {
+               addDuplicateIndexToList(index + 1);
+
                int firstDuplicateIndex = index;
                int nextNonDuplicateIndex = getNextNonDuplicateIndex(index);
                int numberOfDuplicates = nextNonDuplicateIndex - firstDuplicateIndex;
@@ -326,7 +326,7 @@ public class VideoDataReader
          return index;
       }
 
-      public int getIndex()
+      public int getCurrentIndex()
       {
          return currentIndex;
       }
@@ -359,6 +359,11 @@ public class VideoDataReader
       public long getCurrentVideoTimestamp()
       {
          return videoTimestamp;
+      }
+
+      public void addDuplicateIndexToList(int index)
+      {
+         replacedRobotTimestampIndexes.add(index);
       }
    }
 }
