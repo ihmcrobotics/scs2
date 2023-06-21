@@ -213,7 +213,14 @@ public class RigidBodyDefinition implements Transformable
 
    public void addCollisionShapeDefinition(CollisionShapeDefinition collisionShapeDefinition)
    {
+      if (collisionShapeDefinition == null)
+         return;
       collisionShapeDefinitions.add(collisionShapeDefinition);
+   }
+
+   public void addCollisionShapeDefinitions(Collection<CollisionShapeDefinition> collisionShapeDefinitions)
+   {
+      collisionShapeDefinitions.forEach(this::addCollisionShapeDefinition);
    }
 
    public List<CollisionShapeDefinition> getCollisionShapeDefinitions()
@@ -237,6 +244,7 @@ public class RigidBodyDefinition implements Transformable
       transform.transform(inertiaPose);
       transform.transform(momentOfInertia);
       visualDefinitions.forEach(visual -> transform.transform(visual.getOriginPose()));
+      collisionShapeDefinitions.forEach(collision -> transform.transform(collision.getOriginPose()));
    }
 
    @Override
@@ -245,6 +253,7 @@ public class RigidBodyDefinition implements Transformable
       transform.inverseTransform(inertiaPose);
       transform.inverseTransform(momentOfInertia);
       visualDefinitions.forEach(visual -> transform.inverseTransform(visual.getOriginPose()));
+      collisionShapeDefinitions.forEach(collision -> transform.inverseTransform(collision.getOriginPose()));
    }
 
    public RigidBodyDefinition copy()

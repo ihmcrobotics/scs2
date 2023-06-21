@@ -29,15 +29,12 @@ import org.xml.sax.XMLReader;
 
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
-import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.log.LogTools;
-import us.ihmc.mecano.tools.MecanoTools;
-import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
@@ -45,12 +42,9 @@ import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
-import us.ihmc.scs2.definition.robot.ExternalWrenchPointDefinition;
 import us.ihmc.scs2.definition.robot.FixedJointDefinition;
-import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
 import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.KinematicPointDefinition;
 import us.ihmc.scs2.definition.robot.LidarSensorDefinition;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
@@ -351,7 +345,7 @@ public class URDFTools
     * @param urdfModel                the URDF model to convert.
     * @param simplifyKinematicsFilter filter for controlling the robot kinematics simplification.
     * @return the robot definition which can be used to create a robot to be simulated in SCS2.
-    * @see #simplifyKinematics(JointDefinition, Predicate)
+    * @see RobotDefinition#simplifyKinematics(JointDefinition, Predicate)
     */
    public static RobotDefinition toRobotDefinition(JointDefinition rootJointDefinition, URDFModel urdfModel)
    {
@@ -370,7 +364,7 @@ public class URDFTools
     * @param urdfModel                the URDF model to convert.
     * @param simplifyKinematicsFilter filter for controlling the robot kinematics simplification.
     * @return the robot definition which can be used to create a robot to be simulated in SCS2.
-    * @see #simplifyKinematics(JointDefinition, Predicate)
+    * @see RobotDefinition#simplifyKinematics(JointDefinition, Predicate)
     */
    public static RobotDefinition toRobotDefinition(JointDefinition rootJointDefinition,
                                                    URDFModel urdfModel,
@@ -394,8 +388,6 @@ public class URDFTools
       rootBodyDefinition.addChildJoint(rootJointDefinition);
       jointDefinitions.add(rootJointDefinition); // This is required for sensors that are attached to the successor of the root joint.
       addSensors(urdfGazebos, jointDefinitions);
-      simplifyKinematics(rootJointDefinition, simplifyKinematicsFilter);
-      correctTransforms(rootJointDefinition);
 
       RobotDefinition robotDefinition = new RobotDefinition(urdfModel.getName());
       robotDefinition.setRootBodyDefinition(rootBodyDefinition);
@@ -442,164 +434,6 @@ public class URDFTools
          if (sensorDefinitions != null)
             sensorDefinitions.forEach(jointDefinition::addSensorDefinition);
       }
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
-    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
-    * {@link FixedJointDefinition}.
-    * </p>
-    * <p>
-    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
-    * <ul>
-    * <li>the fixed joint successor's physical properties (mass, inertia) are combined to the joint's
-    * predecessor.
-    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
-    * of each sensor so they remain at the same physical location on the robot.
-    * </ul>
-    * </p>
-    * 
-    * @param joint the first joint from which to simplify the kinematics.
-    */
-   public static void simplifyKinematics(JointDefinition joint)
-   {
-      simplifyKinematics(joint, null);
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
-    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
-    * {@link FixedJointDefinition}.
-    * </p>
-    * <p>
-    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
-    * <ul>
-    * <li>the fixed joint successor's physical properties (mass, inertia) and visuals are combined to
-    * the joint's predecessor.
-    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
-    * of each sensor so they remain at the same physical location on the robot.
-    * </ul>
-    * </p>
-    * 
-    * @param joint  the first joint from which to simplify the kinematics.
-    * @param filter a fixed joint is only removed if: the filter is {@code null} or
-    *               {@code filter.test(joint)} is {@code true}. If a filter is provided, any fixed
-    *               joint for which it returns {@code false} will <b>not</b> be removed.
-    */
-   public static void simplifyKinematics(JointDefinition joint, Predicate<FixedJointDefinition> filter)
-   {
-      // The children list may shrink or grow depending the simplyKinematics(joint.child)
-      // Also, if a child is a fixed-joint, the successor of this joint will be replaced with a new one, so can't save the successor as a local variable.
-      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size();)
-      {
-         List<JointDefinition> children = joint.getSuccessor().getChildrenJoints();
-         JointDefinition child = children.get(i);
-
-         if (!(child instanceof FixedJointDefinition))
-            i++; // This child won't be removed, we can increment to the next.
-
-         simplifyKinematics(child);
-      }
-
-      JointDefinition parentJoint = joint.getParentJoint();
-      if (parentJoint == null)
-         return;
-
-      if (joint instanceof FixedJointDefinition fixedJoint && (filter == null || filter.test(fixedJoint)))
-      {
-         RigidBodyDefinition rigidBody = joint.getSuccessor();
-         YawPitchRollTransformDefinition transformToParentJoint = joint.getTransformToParent();
-
-         rigidBody.applyTransform(transformToParentJoint);
-         RigidBodyDefinition oldParentRigidBody = parentJoint.getSuccessor();
-         parentJoint.setSuccessor(merge(oldParentRigidBody.getName(), oldParentRigidBody, rigidBody));
-         parentJoint.getSuccessor().addChildJoints(oldParentRigidBody.getChildrenJoints());
-
-         joint.getKinematicPointDefinitions().removeIf(kp ->
-         {
-            kp.applyTransform(transformToParentJoint);
-            parentJoint.addKinematicPointDefinition(kp);
-            return true;
-         });
-         joint.getExternalWrenchPointDefinitions().removeIf(efp ->
-         {
-            efp.applyTransform(transformToParentJoint);
-            parentJoint.addExternalWrenchPointDefinition(efp);
-            return true;
-         });
-         joint.getGroundContactPointDefinitions().removeIf(gcp ->
-         {
-            gcp.applyTransform(transformToParentJoint);
-            parentJoint.addGroundContactPointDefinition(gcp);
-            return true;
-         });
-         joint.getSensorDefinitions().removeIf(sensor ->
-         {
-            sensor.applyTransform(transformToParentJoint);
-            parentJoint.addSensorDefinition(sensor);
-            return true;
-         });
-         joint.getSuccessor().getChildrenJoints().removeIf(child ->
-         {
-            child.getTransformToParent().preMultiply(transformToParentJoint);
-            parentJoint.getSuccessor().addChildJoint(child);
-            return true;
-         });
-         parentJoint.getSuccessor().removeChildJoint(joint);
-      }
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
-    * Creates a new rigid-body which physical properties equals the sum of {@code rigidBodyA} and
-    * {@code rigidBody}. In addition, the visuals are added to the merged body.
-    * </p>
-    * <p>
-    * Note the following property:
-    * {@code merge("bodyAB", bodyA, bodyB) == merge("bodyAB", bodyB, bodyA)}.
-    * </p>
-    * 
-    * @param name       the name of the merged rigid-body.
-    * @param rigidBodyA the first rigid-body to merge.
-    * @param rigidBodyB the second rigid-body to merge.
-    * @return the merged body.
-    */
-   public static RigidBodyDefinition merge(String name, RigidBodyDefinition rigidBodyA, RigidBodyDefinition rigidBodyB)
-   {
-      double mergedMass = rigidBodyA.getMass() + rigidBodyB.getMass();
-      Vector3D mergedCoM = new Vector3D();
-      mergedCoM.setAndScale(rigidBodyA.getMass(), rigidBodyA.getCenterOfMassOffset());
-      mergedCoM.scaleAdd(rigidBodyB.getMass(), rigidBodyB.getCenterOfMassOffset(), mergedCoM);
-      mergedCoM.scale(1.0 / mergedMass);
-
-      Vector3D translationInertiaA = new Vector3D();
-      translationInertiaA.sub(mergedCoM, rigidBodyA.getCenterOfMassOffset());
-      Matrix3D inertiaA = new Matrix3D(rigidBodyA.getMomentOfInertia());
-      MecanoTools.translateMomentOfInertia(rigidBodyA.getMass(), null, false, translationInertiaA, inertiaA);
-
-      Vector3D translationInertiaB = new Vector3D();
-      translationInertiaB.sub(mergedCoM, rigidBodyB.getCenterOfMassOffset());
-      Matrix3D inertiaB = new Matrix3D(rigidBodyB.getMomentOfInertia());
-      MecanoTools.translateMomentOfInertia(rigidBodyB.getMass(), null, false, translationInertiaB, inertiaB);
-
-      Matrix3D mergedInertia = new Matrix3D();
-      mergedInertia.add(inertiaA);
-      mergedInertia.add(inertiaB);
-
-      RigidBodyDefinition merged = new RigidBodyDefinition(name);
-      merged.setMass(mergedMass);
-      merged.getInertiaPose().getTranslation().set(mergedCoM);
-      merged.getMomentOfInertia().set(mergedInertia);
-
-      List<VisualDefinition> mergedGraphics = new ArrayList<>();
-      mergedGraphics.addAll(rigidBodyA.getVisualDefinitions());
-      mergedGraphics.addAll(rigidBodyB.getVisualDefinitions());
-      merged.addVisualDefinitions(mergedGraphics);
-
-      return merged;
    }
 
    /**
@@ -673,54 +507,6 @@ public class URDFTools
    /**
     * <i>-- Intended for internal use --</i>
     * <p>
-    * Recursive method that performs the following modifications will preserving the robot's physical
-    * qualities:
-    * <ul>
-    * <li>adjust orientations such that the joint poses are z-up when the robot is at the zero joint
-    * configuration.
-    * <li>transform the moment of inertia for all rigid-body such that their inertia pose is only a
-    * translation.
-    * </ul>
-    * </p>
-    * 
-    * @param jointDefinition starting point for the recursion.
-    */
-   public static void correctTransforms(JointDefinition jointDefinition)
-   {
-      Orientation3DBasics jointRotation = jointDefinition.getTransformToParent().getRotation();
-      if (jointDefinition instanceof OneDoFJointDefinition)
-         jointRotation.transform(((OneDoFJointDefinition) jointDefinition).getAxis());
-      RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
-      YawPitchRollTransformDefinition inertiaPose = linkDefinition.getInertiaPose();
-      inertiaPose.prependOrientation(jointRotation);
-      inertiaPose.transform(linkDefinition.getMomentOfInertia());
-      inertiaPose.getRotation().setToZero();
-
-      for (KinematicPointDefinition kinematicPointDefinition : jointDefinition.getKinematicPointDefinitions())
-         kinematicPointDefinition.getTransformToParent().prependOrientation(jointRotation);
-      for (ExternalWrenchPointDefinition externalWrenchPointDefinition : jointDefinition.getExternalWrenchPointDefinitions())
-         externalWrenchPointDefinition.getTransformToParent().prependOrientation(jointRotation);
-      for (GroundContactPointDefinition groundContactPointDefinition : jointDefinition.getGroundContactPointDefinitions())
-         groundContactPointDefinition.getTransformToParent().prependOrientation(jointRotation);
-
-      for (SensorDefinition sensorDefinition : jointDefinition.getSensorDefinitions())
-         sensorDefinition.getTransformToJoint().prependOrientation(jointRotation);
-
-      for (VisualDefinition visualDefinition : linkDefinition.getVisualDefinitions())
-         visualDefinition.getOriginPose().prependOrientation(jointRotation);
-
-      for (JointDefinition childDefinition : jointDefinition.getSuccessor().getChildrenJoints())
-      {
-         childDefinition.getTransformToParent().prependOrientation(jointRotation);
-         correctTransforms(childDefinition);
-      }
-
-      jointRotation.setToZero();
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
     * Converts the given URDF link into a {@link RigidBodyDefinition}.
     * </p>
     * <p>
@@ -751,10 +537,46 @@ public class URDFTools
       }
 
       if (urdfLink.getVisual() != null)
-         urdfLink.getVisual().stream().map(URDFTools::toVisualDefinition).forEach(definition::addVisualDefinition);
+      {
+         List<URDFVisual> urdfVisuals = urdfLink.getVisual();
+
+         for (int i = 0; i < urdfVisuals.size(); i++)
+         {
+            URDFVisual urdfVisual = urdfVisuals.get(i);
+            VisualDefinition visual = toVisualDefinition(urdfVisual);
+            if (visual == null)
+               continue;
+            if (visual.getName() == null)
+            {
+               if (i == 0)
+                  visual.setName(urdfLink.getName() + "_visual");
+               else // This seems to be the Gazebo SDF converter default naming convention
+                  visual.setName(urdfLink.getName() + "_visual_" + urdfLink.getName() + "_" + i);
+            }
+            definition.addVisualDefinition(visual);
+         }
+      }
 
       if (urdfLink.getCollision() != null)
-         urdfLink.getCollision().stream().map(URDFTools::toCollisionShapeDefinition).forEach(definition::addCollisionShapeDefinition);
+      {
+         List<URDFCollision> urdfCollisions = urdfLink.getCollision();
+
+         for (int i = 0; i < urdfCollisions.size(); i++)
+         {
+            URDFCollision urdfCollision = urdfCollisions.get(i);
+            CollisionShapeDefinition collision = toCollisionShapeDefinition(urdfCollision);
+            if (collision == null)
+               continue;
+            if (collision.getName() == null)
+            {
+               if (i == 0)
+                  collision.setName(urdfLink.getName() + "_collision");
+               else // This seems to be the Gazebo SDF converter default naming convention
+                  collision.setName(urdfLink.getName() + "_collision_" + urdfLink.getName() + "_" + i);
+            }
+            definition.addCollisionShapeDefinition(collision);
+         }
+      }
 
       return definition;
    }
@@ -872,7 +694,7 @@ public class URDFTools
 
       if (!surfaceNormal.geometricallyEquals(Axis3D.Y, 1.0e-5))
          throw new UnsupportedOperationException("Planar joint are supported only with a surface normal equal to: "
-               + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:" + surfaceNormal);
+                                                 + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:" + surfaceNormal);
 
       return definition;
    }
@@ -1054,10 +876,7 @@ public class URDFTools
       visualDefinition.setName(urdfVisual.getName());
       visualDefinition.setOriginPose(parseRigidBodyTransform(urdfVisual.getOrigin()));
       visualDefinition.setMaterialDefinition(toMaterialDefinition(urdfVisual.getMaterial()));
-      GeometryDefinition geometryDefinition = toGeometryDefinition(urdfVisual.getGeometry());
-      if (geometryDefinition == null)
-         return null;
-      visualDefinition.setGeometryDefinition(geometryDefinition);
+      visualDefinition.setGeometryDefinition(toGeometryDefinition(urdfVisual.getGeometry()));
       return visualDefinition;
    }
 
@@ -1078,10 +897,7 @@ public class URDFTools
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition();
       collisionShapeDefinition.setName(urdfCollision.getName());
       collisionShapeDefinition.setOriginPose(parseRigidBodyTransform(urdfCollision.getOrigin()));
-      GeometryDefinition geometryDefinition = toGeometryDefinition(urdfCollision.getGeometry());
-      if (geometryDefinition == null)
-         return null;
-      collisionShapeDefinition.setGeometryDefinition(geometryDefinition);
+      collisionShapeDefinition.setGeometryDefinition(toGeometryDefinition(urdfCollision.getGeometry()));
       return collisionShapeDefinition;
    }
 
