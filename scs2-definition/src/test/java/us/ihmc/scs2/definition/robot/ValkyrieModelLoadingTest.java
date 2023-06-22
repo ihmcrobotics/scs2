@@ -238,7 +238,7 @@ public class ValkyrieModelLoadingTest
       InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream("models/valkyrie/valkyrie_sim.sdf");
       SDFRoot sdfRoot = SDFTools.loadSDFRoot(resourceAsStream, Collections.emptyList(), this.getClass().getClassLoader());
       RobotDefinition robotDefinition = SDFTools.toFloatingRobotDefinition(sdfRoot.getModels().get(0));
-      robotDefinition.transformsAllFrameToZUp();
+      robotDefinition.transformAllFramesToZUp();
       performAssertionsOnRobotDefinition(robotDefinition);
    }
 
@@ -249,7 +249,7 @@ public class ValkyrieModelLoadingTest
       URDFModel urdfModel = URDFTools.loadURDFModel(resourceAsStream, Collections.emptyList(), this.getClass().getClassLoader());
       RobotDefinition robotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
       robotDefinition.simplifyKinematics();
-      robotDefinition.transformsAllFrameToZUp();
+      robotDefinition.transformAllFramesToZUp();
       performAssertionsOnRobotDefinition(robotDefinition);
    }
 
@@ -265,7 +265,7 @@ public class ValkyrieModelLoadingTest
       URDFModel urdfModel = URDFTools.loadURDFModel(resourceAsStream, Collections.emptyList(), this.getClass().getClassLoader());
       RobotDefinition robotURDF = URDFTools.toFloatingRobotDefinition(urdfModel);
       robotURDF.simplifyKinematics();
-      robotURDF.transformsAllFrameToZUp();
+      robotURDF.transformAllFramesToZUp();
 
       for (RigidBodyDefinition bodySDF : robotSDF.getAllRigidBodies())
       {
@@ -568,7 +568,7 @@ public class ValkyrieModelLoadingTest
       URDFModel urdfModel = URDFTools.loadURDFModel(resourceAsStream, Collections.emptyList(), this.getClass().getClassLoader());
       RobotDefinition exportedRobotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
       exportedRobotDefinition.simplifyKinematics();
-      exportedRobotDefinition.transformsAllFrameToZUp();
+      exportedRobotDefinition.transformAllFramesToZUp();
       File testFile = new File("test.xml");
       DefinitionIOTools.saveRobotDefinition(new FileOutputStream(testFile), exportedRobotDefinition);
       RobotDefinition importedRobotDefinition = DefinitionIOTools.loadRobotDefinition(new FileInputStream(testFile));
