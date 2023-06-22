@@ -125,7 +125,6 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
             referenceFrameManager.startSession(session);
             chartDataManager.startSession(session);
             chartRenderManager.startSession(session);
-            yoGraphicFXManager.startSession(session);
             yoCompositeSearchManager.startSession(session);
             keyFrameManager.startSession(session);
             secondaryWindowManager.startSession(session);
@@ -143,6 +142,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
                }
             }
 
+            yoGraphicFXManager.startSession(session); // In case some graphics rely on the robot frames
             cameraSensorsManager.startSession(session);
             messager.submitMessage(topics.getSessionCurrentState(), SessionState.ACTIVE);
          }
