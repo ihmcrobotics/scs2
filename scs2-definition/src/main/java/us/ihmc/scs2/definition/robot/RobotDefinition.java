@@ -148,12 +148,12 @@ public class RobotDefinition
     * Transforms all the robot local frames such that they are pointing z-up and x-forward when the
     * robot is in the zero configuration.
     * 
-    * @see #transformsAllFrameToZUp(JointDefinition)
+    * @see #transformAllFramesToZUp(JointDefinition)
     */
-   public void transformsAllFrameToZUp()
+   public void transformAllFramesToZUp()
    {
       for (int i = 0; i < rootBodyDefinition.getChildrenJoints().size(); i++)
-         transformsAllFrameToZUp(rootBodyDefinition.getChildrenJoints().get(i));
+         transformAllFramesToZUp(rootBodyDefinition.getChildrenJoints().get(i));
    }
 
    @XmlTransient
@@ -497,7 +497,7 @@ public class RobotDefinition
     * 
     * @param jointDefinition starting point for the recursion.
     */
-   public static void transformsAllFrameToZUp(JointDefinition jointDefinition)
+   public static void transformAllFramesToZUp(JointDefinition jointDefinition)
    {
       Orientation3DBasics jointRotation = jointDefinition.getTransformToParent().getRotation();
       if (jointDefinition instanceof OneDoFJointDefinition)
@@ -527,7 +527,7 @@ public class RobotDefinition
       for (JointDefinition childDefinition : jointDefinition.getSuccessor().getChildrenJoints())
       {
          childDefinition.getTransformToParent().prependOrientation(jointRotation);
-         transformsAllFrameToZUp(childDefinition);
+         transformAllFramesToZUp(childDefinition);
       }
 
       jointRotation.setToZero();
