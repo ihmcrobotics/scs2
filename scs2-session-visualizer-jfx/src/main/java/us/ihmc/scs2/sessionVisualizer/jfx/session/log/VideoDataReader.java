@@ -158,9 +158,8 @@ public class VideoDataReader
       private long[] robotTimestamps;
       private long[] videoTimestamps;
 
+      private int currentIndex = 0;
       private long currentRobotTimestamp = 0;
-      private long upcomingRobotTimestamp = 0;
-
       private long videoTimestamp;
 
       public TimestampScrubber(File timestampFile, boolean hasTimebase, boolean interlaced) throws IOException
@@ -225,25 +224,14 @@ public class VideoDataReader
        */
       public long getVideoTimestamp(long queryRobotTimestamp)
       {
-         int index;
-
-         if (queryRobotTimestamp < currentRobotTimestamp || queryRobotTimestamp >= upcomingRobotTimestamp)
-         {
-            index = searchRobotTimestampIndex(queryRobotTimestamp);
-
-            videoTimestamp = videoTimestamps[index];
-            currentRobotTimestamp = robotTimestamps[index];
-
-            if (index + 1 < robotTimestamps.length)
-               upcomingRobotTimestamp = robotTimestamps[index + 1];
-            else
-               upcomingRobotTimestamp = currentRobotTimestamp;
-         }
+         currentIndex = searchRobotTimestampsForIndex(queryRobotTimestamp);
+         videoTimestamp = videoTimestamps[currentIndex];
+         currentRobotTimestamp = robotTimestamps[currentIndex];
 
          return videoTimestamp;
       }
 
-      private int searchRobotTimestampIndex(long queryRobotTimestamp)
+      private int searchRobotTimestampsForIndex(long queryRobotTimestamp)
       {
          int index;
 
@@ -262,6 +250,11 @@ public class VideoDataReader
          }
 
          return index;
+      }
+
+      public int getCurrentIndex()
+      {
+         return currentIndex;
       }
 
       public long getCurrentRobotTimestamp()
