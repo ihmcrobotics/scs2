@@ -4,12 +4,14 @@ import java.util.List;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/joint"> ROS Specification joint.</a>
  *
  * @author Sylvain Bertrand
  */
+@XmlType(propOrder = {"name", "type", "origin", "axis", "parent", "child", "calibration", "dynamics", "limit", "mimic", "safetyController"})
 public class URDFJoint implements URDFItem
 {
    public enum URDFJointType

@@ -1,11 +1,14 @@
 package us.ihmc.scs2.definition.robot.urdf;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -73,6 +77,7 @@ import us.ihmc.scs2.definition.robot.urdf.items.URDFGazebo;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFGeometry;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFInertia;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFInertial;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFItem;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint.URDFJointType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLimit;
@@ -135,6 +140,8 @@ public class URDFTools
    private static final double DEFAULT_UPPER_LIMIT = Double.POSITIVE_INFINITY;
    private static final double DEFAULT_EFFORT_LIMIT = Double.POSITIVE_INFINITY;
    private static final double DEFAULT_VELOCITY_LIMIT = Double.POSITIVE_INFINITY;
+
+   public static final URDFFormatter DEFAULT_URDF_FORMATTER = new URDFFormatter();
 
    /**
     * Parse a {@link URDFModel} from the given URDF file.
@@ -223,37 +230,50 @@ public class URDFTools
                                          boolean ignoreNamespace)
          throws JAXBException
    {
-      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
-      URDFModel urdfModel;
-      JAXBContext context = JAXBContext.newInstance(URDFModel.class);
-      Unmarshaller um = context.createUnmarshaller();
-
-      if (!ignoreNamespace)
+      try
       {
-         urdfModel = (URDFModel) um.unmarshal(inputStream);
+         Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
+         URDFModel urdfModel;
+         JAXBContext context = JAXBContext.newInstance(URDFModel.class);
+         Unmarshaller um = context.createUnmarshaller();
+
+         if (!ignoreNamespace)
+         {
+            urdfModel = (URDFModel) um.unmarshal(inputStream);
+         }
+         else
+         {
+            InputSource is = new InputSource(inputStream);
+            SAXParserFactory sax = SAXParserFactory.newInstance();
+            sax.setNamespaceAware(false);
+            XMLReader reader;
+
+            try
+            {
+               reader = sax.newSAXParser().getXMLReader();
+            }
+            catch (SAXException | ParserConfigurationException e)
+            {
+               throw new JAXBException(e);
+            }
+
+            SAXSource source = new SAXSource(reader, is);
+            urdfModel = (URDFModel) um.unmarshal(source);
+         }
+         resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
+         return urdfModel;
       }
-      else
+      finally
       {
-         InputSource is = new InputSource(inputStream);
-         SAXParserFactory sax = SAXParserFactory.newInstance();
-         sax.setNamespaceAware(false);
-         XMLReader reader;
-
          try
          {
-            reader = sax.newSAXParser().getXMLReader();
+            inputStream.close();
          }
-         catch (SAXException | ParserConfigurationException e)
+         catch (IOException e)
          {
-            throw new JAXBException(e);
+            LogTools.error(e.getMessage());
          }
-
-         SAXSource source = new SAXSource(reader, is);
-         urdfModel = (URDFModel) um.unmarshal(source);
       }
-      resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
-
-      return urdfModel;
    }
 
    /**
@@ -1184,19 +1204,46 @@ public class URDFTools
    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+   public static void saveURDFModel(OutputStream outputStream, URDFModel urdfModel) throws JAXBException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(URDFModel.class);
+         Marshaller m = context.createMarshaller();
+         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+         m.marshal(urdfModel, outputStream);
+      }
+      finally
+      {
+         try
+         {
+            outputStream.close();
+         }
+         catch (IOException e)
+         {
+            LogTools.error(e.getMessage());
+         }
+      }
+   }
+
    public static URDFModel toURDFModel(RobotDefinition robotDefinition)
+   {
+      return toURDFModel(robotDefinition, DEFAULT_URDF_FORMATTER);
+   }
+
+   public static URDFModel toURDFModel(RobotDefinition robotDefinition, URDFFormatter urdfFormatter)
    {
       URDFModel urdfModel = new URDFModel();
 
       urdfModel.setName(robotDefinition.getName());
-      urdfModel.setLinks(toURDFLinks(robotDefinition.getAllRigidBodies()));
-      urdfModel.setJoints(toURDFJoints(robotDefinition.getAllJoints()));
-      urdfModel.setGazebos(toURDFGazebos(robotDefinition.getAllJoints()));
+      urdfModel.setLinks(toURDFLinks(robotDefinition.getAllRigidBodies(), urdfFormatter));
+      urdfModel.setJoints(toURDFJoints(robotDefinition.getAllJoints(), urdfFormatter));
+      urdfModel.setGazebos(toURDFGazebos(robotDefinition.getAllJoints(), urdfFormatter));
 
       return urdfModel;
    }
 
-   public static List<URDFLink> toURDFLinks(List<RigidBodyDefinition> rigidBodyDefinitions)
+   public static List<URDFLink> toURDFLinks(List<RigidBodyDefinition> rigidBodyDefinitions, URDFFormatter urdfFormatter)
    {
       if (rigidBodyDefinitions == null || rigidBodyDefinitions.isEmpty())
          return null;
@@ -1205,7 +1252,7 @@ public class URDFTools
 
       for (RigidBodyDefinition rigidBodyDefinition : rigidBodyDefinitions)
       {
-         URDFLink urdfLink = toURDFLink(rigidBodyDefinition);
+         URDFLink urdfLink = toURDFLink(rigidBodyDefinition, urdfFormatter);
          if (urdfLink != null)
             urdfLinks.add(urdfLink);
       }
@@ -1213,54 +1260,54 @@ public class URDFTools
       return urdfLinks;
    }
 
-   public static URDFLink toURDFLink(RigidBodyDefinition rigidBodyDefinition)
+   public static URDFLink toURDFLink(RigidBodyDefinition rigidBodyDefinition, URDFFormatter urdfFormatter)
    {
       if (rigidBodyDefinition == null)
          return null;
 
       URDFLink urdfLink = new URDFLink();
       urdfLink.setName(rigidBodyDefinition.getName());
-      urdfLink.setInertial(toURDFInterial(rigidBodyDefinition));
-      urdfLink.setVisual(toURDFVisuals(rigidBodyDefinition.getVisualDefinitions()));
-      urdfLink.setCollision(toURDFCollisions(rigidBodyDefinition.getCollisionShapeDefinitions()));
+      urdfLink.setInertial(toURDFInterial(rigidBodyDefinition, urdfFormatter));
+      urdfLink.setVisual(toURDFVisuals(rigidBodyDefinition.getVisualDefinitions(), urdfFormatter));
+      urdfLink.setCollision(toURDFCollisions(rigidBodyDefinition.getCollisionShapeDefinitions(), urdfFormatter));
       return urdfLink;
    }
 
-   public static URDFInertial toURDFInterial(RigidBodyDefinition rigidBodyDefinition)
+   public static URDFInertial toURDFInterial(RigidBodyDefinition rigidBodyDefinition, URDFFormatter urdfFormatter)
    {
       if (rigidBodyDefinition == null)
          return null;
 
       URDFInertial urdfInertial = new URDFInertial();
-      urdfInertial.setOrigin(toURDFOrigin(rigidBodyDefinition.getInertiaPose()));
-      urdfInertial.setMass(toURDFMass(rigidBodyDefinition.getMass()));
-      urdfInertial.setInertia(toURDFInertia(rigidBodyDefinition.getMomentOfInertia()));
+      urdfInertial.setOrigin(toURDFOrigin(rigidBodyDefinition.getInertiaPose(), urdfFormatter));
+      urdfInertial.setMass(toURDFMass(rigidBodyDefinition.getMass(), urdfFormatter));
+      urdfInertial.setInertia(toURDFInertia(rigidBodyDefinition.getMomentOfInertia(), urdfFormatter));
       return urdfInertial;
    }
 
-   public static URDFMass toURDFMass(double mass)
+   public static URDFMass toURDFMass(double mass, URDFFormatter urdfFormatter)
    {
       URDFMass urdfMass = new URDFMass();
-      urdfMass.setValue(mass);
+      urdfMass.setValue(urdfFormatter.toString(URDFMass.class, "value", mass));
       return urdfMass;
    }
 
-   public static URDFInertia toURDFInertia(MomentOfInertiaDefinition momentOfInertiaDefinition)
+   public static URDFInertia toURDFInertia(MomentOfInertiaDefinition momentOfInertiaDefinition, URDFFormatter urdfFormatter)
    {
       if (momentOfInertiaDefinition == null)
          return null;
 
       URDFInertia urdfInertia = new URDFInertia();
-      urdfInertia.setIxx(momentOfInertiaDefinition.getIxx());
-      urdfInertia.setIyy(momentOfInertiaDefinition.getIyy());
-      urdfInertia.setIzz(momentOfInertiaDefinition.getIzz());
-      urdfInertia.setIxy(momentOfInertiaDefinition.getIxy());
-      urdfInertia.setIxz(momentOfInertiaDefinition.getIxz());
-      urdfInertia.setIyz(momentOfInertiaDefinition.getIyz());
+      urdfInertia.setIxx(urdfFormatter.toString(URDFInertia.class, "ixx", momentOfInertiaDefinition.getIxx()));
+      urdfInertia.setIyy(urdfFormatter.toString(URDFInertia.class, "iyy", momentOfInertiaDefinition.getIyy()));
+      urdfInertia.setIzz(urdfFormatter.toString(URDFInertia.class, "izz", momentOfInertiaDefinition.getIzz()));
+      urdfInertia.setIxy(urdfFormatter.toString(URDFInertia.class, "ixy", momentOfInertiaDefinition.getIxy()));
+      urdfInertia.setIxz(urdfFormatter.toString(URDFInertia.class, "ixz", momentOfInertiaDefinition.getIxz()));
+      urdfInertia.setIyz(urdfFormatter.toString(URDFInertia.class, "iyz", momentOfInertiaDefinition.getIyz()));
       return urdfInertia;
    }
 
-   public static List<URDFVisual> toURDFVisuals(List<VisualDefinition> visualDefinitions)
+   public static List<URDFVisual> toURDFVisuals(List<VisualDefinition> visualDefinitions, URDFFormatter urdfFormatter)
    {
       if (visualDefinitions == null || visualDefinitions.isEmpty())
          return null;
@@ -1269,7 +1316,7 @@ public class URDFTools
 
       for (VisualDefinition visualDefinition : visualDefinitions)
       {
-         URDFVisual urdfVisual = toURDFVisual(visualDefinition);
+         URDFVisual urdfVisual = toURDFVisual(visualDefinition, urdfFormatter);
          if (urdfVisual != null)
             urdfVisuals.add(urdfVisual);
       }
@@ -1277,20 +1324,20 @@ public class URDFTools
       return urdfVisuals;
    }
 
-   public static URDFVisual toURDFVisual(VisualDefinition visualDefinition)
+   public static URDFVisual toURDFVisual(VisualDefinition visualDefinition, URDFFormatter urdfFormatter)
    {
       if (visualDefinition == null)
          return null;
 
       URDFVisual urdfVisual = new URDFVisual();
       urdfVisual.setName(visualDefinition.getName());
-      urdfVisual.setOrigin(toURDFOrigin(visualDefinition.getOriginPose()));
-      urdfVisual.setGeometry(toURDFGeometry(visualDefinition.getGeometryDefinition()));
-      urdfVisual.setMaterial(toURDFMaterial(visualDefinition.getMaterialDefinition()));
+      urdfVisual.setOrigin(toURDFOrigin(visualDefinition.getOriginPose(), urdfFormatter));
+      urdfVisual.setGeometry(toURDFGeometry(visualDefinition.getGeometryDefinition(), urdfFormatter));
+      urdfVisual.setMaterial(toURDFMaterial(visualDefinition.getMaterialDefinition(), urdfFormatter));
       return urdfVisual;
    }
 
-   public static List<URDFCollision> toURDFCollisions(List<CollisionShapeDefinition> collisionShapeDefinitions)
+   public static List<URDFCollision> toURDFCollisions(List<CollisionShapeDefinition> collisionShapeDefinitions, URDFFormatter urdfFormatter)
    {
       if (collisionShapeDefinitions == null || collisionShapeDefinitions.isEmpty())
          return null;
@@ -1299,7 +1346,7 @@ public class URDFTools
 
       for (CollisionShapeDefinition collisionShapeDefinition : collisionShapeDefinitions)
       {
-         URDFCollision urdfCollision = toURDFCollision(collisionShapeDefinition);
+         URDFCollision urdfCollision = toURDFCollision(collisionShapeDefinition, urdfFormatter);
          if (urdfCollision != null)
             urdfCollisions.add(urdfCollision);
       }
@@ -1307,19 +1354,19 @@ public class URDFTools
       return urdfCollisions;
    }
 
-   public static URDFCollision toURDFCollision(CollisionShapeDefinition collisionShapeDefinition)
+   public static URDFCollision toURDFCollision(CollisionShapeDefinition collisionShapeDefinition, URDFFormatter urdfFormatter)
    {
       if (collisionShapeDefinition == null)
          return null;
 
       URDFCollision urdfCollision = new URDFCollision();
       urdfCollision.setName(collisionShapeDefinition.getName());
-      urdfCollision.setOrigin(toURDFOrigin(collisionShapeDefinition.getOriginPose()));
-      urdfCollision.setGeometry(toURDFGeometry(collisionShapeDefinition.getGeometryDefinition()));
+      urdfCollision.setOrigin(toURDFOrigin(collisionShapeDefinition.getOriginPose(), urdfFormatter));
+      urdfCollision.setGeometry(toURDFGeometry(collisionShapeDefinition.getGeometryDefinition(), urdfFormatter));
       return urdfCollision;
    }
 
-   public static URDFGeometry toURDFGeometry(GeometryDefinition geometryDefinition)
+   public static URDFGeometry toURDFGeometry(GeometryDefinition geometryDefinition, URDFFormatter urdfFormatter)
    {
       if (geometryDefinition == null)
          return null;
@@ -1328,19 +1375,19 @@ public class URDFTools
 
       if (geometryDefinition instanceof Box3DDefinition box3DGeometry)
       {
-         urdfGeometry.setBox(toURDFBox(box3DGeometry));
+         urdfGeometry.setBox(toURDFBox(box3DGeometry, urdfFormatter));
       }
       else if (geometryDefinition instanceof Cylinder3DDefinition cylinder3DDefinition)
       {
-         urdfGeometry.setCylinder(toURDFCylinder(cylinder3DDefinition));
+         urdfGeometry.setCylinder(toURDFCylinder(cylinder3DDefinition, urdfFormatter));
       }
       else if (geometryDefinition instanceof Sphere3DDefinition sphere3DDefinition)
       {
-         urdfGeometry.setSphere(toURDFSphere(sphere3DDefinition));
+         urdfGeometry.setSphere(toURDFSphere(sphere3DDefinition, urdfFormatter));
       }
       else if (geometryDefinition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
       {
-         urdfGeometry.setMesh(toURDFMesh(modelFileGeometryDefinition));
+         urdfGeometry.setMesh(toURDFMesh(modelFileGeometryDefinition, urdfFormatter));
       }
       else
       {
@@ -1350,38 +1397,41 @@ public class URDFTools
       return urdfGeometry;
    }
 
-   public static URDFBox toURDFBox(Box3DDefinition box3DDefinition)
+   public static URDFBox toURDFBox(Box3DDefinition box3DDefinition, URDFFormatter urdfFormatter)
    {
       if (box3DDefinition == null)
          return null;
 
       URDFBox urdfBox = new URDFBox();
-      urdfBox.setSize(EuclidCoreIOTools.getStringOf(" ", null, box3DDefinition.getSizeX(), box3DDefinition.getSizeY(), box3DDefinition.getSizeZ()));
+      String sizeX = urdfFormatter.toString(URDFBox.class, "size", box3DDefinition.getSizeX());
+      String sizeY = urdfFormatter.toString(URDFBox.class, "size", box3DDefinition.getSizeY());
+      String sizeZ = urdfFormatter.toString(URDFBox.class, "size", box3DDefinition.getSizeZ());
+      urdfBox.setSize("%s %s %s".formatted(sizeX, sizeY, sizeZ));
       return urdfBox;
    }
 
-   public static URDFCylinder toURDFCylinder(Cylinder3DDefinition cylinder3DDefinition)
+   public static URDFCylinder toURDFCylinder(Cylinder3DDefinition cylinder3DDefinition, URDFFormatter urdfFormatter)
    {
       if (cylinder3DDefinition == null)
          return null;
 
       URDFCylinder urdfCylinder = new URDFCylinder();
-      urdfCylinder.setRadius(cylinder3DDefinition.getRadius());
-      urdfCylinder.setLength(cylinder3DDefinition.getLength());
+      urdfCylinder.setRadius(urdfFormatter.toString(URDFCylinder.class, "radius", cylinder3DDefinition.getRadius()));
+      urdfCylinder.setLength(urdfFormatter.toString(URDFCylinder.class, "length", cylinder3DDefinition.getLength()));
       return urdfCylinder;
    }
 
-   public static URDFSphere toURDFSphere(Sphere3DDefinition sphere3DDefinition)
+   public static URDFSphere toURDFSphere(Sphere3DDefinition sphere3DDefinition, URDFFormatter urdfFormatter)
    {
       if (sphere3DDefinition == null)
          return null;
 
       URDFSphere urdfSphere = new URDFSphere();
-      urdfSphere.setRadius(sphere3DDefinition.getRadius());
+      urdfSphere.setRadius(urdfFormatter.toString(URDFSphere.class, "radius", sphere3DDefinition.getRadius()));
       return urdfSphere;
    }
 
-   public static URDFMesh toURDFMesh(ModelFileGeometryDefinition modelFileGeometryDefinition)
+   public static URDFMesh toURDFMesh(ModelFileGeometryDefinition modelFileGeometryDefinition, URDFFormatter urdfFormatter)
    {
       if (modelFileGeometryDefinition == null)
          return null;
@@ -1389,39 +1439,43 @@ public class URDFTools
       URDFMesh urdfMesh = new URDFMesh();
       urdfMesh.setFilename(modelFileGeometryDefinition.getFileName());
       Vector3D scale = modelFileGeometryDefinition.getScale();
-      if (scale != null)
-         urdfMesh.setScale(EuclidCoreIOTools.getStringOf(" ", null, scale.getX(), scale.getY(), scale.getZ()));
+      if (scale != null && !scale.equals(new Vector3D(1, 1, 1)))
+      {
+         String scaleX = urdfFormatter.toString(URDFMesh.class, "scale", scale.getX());
+         String scaleY = urdfFormatter.toString(URDFMesh.class, "scale", scale.getY());
+         String scaleZ = urdfFormatter.toString(URDFMesh.class, "scale", scale.getZ());
+         urdfMesh.setScale("%s %s %s".formatted(scaleX, scaleY, scaleZ));
+      }
       return urdfMesh;
    }
 
-   public static URDFMaterial toURDFMaterial(MaterialDefinition materialDefinition)
+   public static URDFMaterial toURDFMaterial(MaterialDefinition materialDefinition, URDFFormatter urdfFormatter)
    {
       if (materialDefinition == null)
          return null;
 
       URDFMaterial urdfMaterial = new URDFMaterial();
       urdfMaterial.setName(materialDefinition.getName());
-      urdfMaterial.setColor(toURDFColor(materialDefinition.getDiffuseColor()));
-      urdfMaterial.setTexture(toURDFTexture(materialDefinition.getDiffuseMap()));
+      urdfMaterial.setColor(toURDFColor(materialDefinition.getDiffuseColor(), urdfFormatter));
+      urdfMaterial.setTexture(toURDFTexture(materialDefinition.getDiffuseMap(), urdfFormatter));
       return urdfMaterial;
    }
 
-   public static URDFColor toURDFColor(ColorDefinition colorDefinition)
+   public static URDFColor toURDFColor(ColorDefinition colorDefinition, URDFFormatter urdfFormatter)
    {
       if (colorDefinition == null)
          return null;
 
       URDFColor urdfColor = new URDFColor();
-      urdfColor.setRGBA(EuclidCoreIOTools.getStringOf(" ",
-                                                      null,
-                                                      colorDefinition.getRed(),
-                                                      colorDefinition.getGreen(),
-                                                      colorDefinition.getBlue(),
-                                                      colorDefinition.getAlpha()));
+      String r = urdfFormatter.toString(URDFColor.class, "rgba", colorDefinition.getRed());
+      String g = urdfFormatter.toString(URDFColor.class, "rgba", colorDefinition.getGreen());
+      String b = urdfFormatter.toString(URDFColor.class, "rgba", colorDefinition.getBlue());
+      String a = urdfFormatter.toString(URDFColor.class, "rgba", colorDefinition.getAlpha());
+      urdfColor.setRGBA("%s %s %s %s".formatted(r, g, b, a));
       return urdfColor;
    }
 
-   public static URDFTexture toURDFTexture(TextureDefinition diffuseMap)
+   public static URDFTexture toURDFTexture(TextureDefinition diffuseMap, URDFFormatter urdfFormatter)
    {
       if (diffuseMap == null)
          return null;
@@ -1431,7 +1485,7 @@ public class URDFTools
       return urdfTexture;
    }
 
-   public static List<URDFJoint> toURDFJoints(List<JointDefinition> jointDefinitions)
+   public static List<URDFJoint> toURDFJoints(List<JointDefinition> jointDefinitions, URDFFormatter urdfFormatter)
    {
       if (jointDefinitions == null || jointDefinitions.isEmpty())
          return null;
@@ -1440,7 +1494,7 @@ public class URDFTools
 
       for (JointDefinition jointDefinition : jointDefinitions)
       {
-         URDFJoint urdfJoint = toURDFJoint(jointDefinition);
+         URDFJoint urdfJoint = toURDFJoint(jointDefinition, urdfFormatter);
          if (urdfJoint != null)
             urdfJoints.add(urdfJoint);
       }
@@ -1448,25 +1502,25 @@ public class URDFTools
       return urdfJoints;
    }
 
-   public static URDFJoint toURDFJoint(JointDefinition jointDefinition)
+   public static URDFJoint toURDFJoint(JointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
 
       if (jointDefinition instanceof RevoluteJointDefinition revoluteJointDefinition)
-         return toURDFJoint(revoluteJointDefinition);
+         return toURDFJoint(revoluteJointDefinition, urdfFormatter);
       if (jointDefinition instanceof PrismaticJointDefinition prismaticJointDefinition)
-         return toURDFJoint(prismaticJointDefinition);
+         return toURDFJoint(prismaticJointDefinition, urdfFormatter);
       if (jointDefinition instanceof FixedJointDefinition fixedJointDefinition)
-         return toURDFJoint(fixedJointDefinition);
+         return toURDFJoint(fixedJointDefinition, urdfFormatter);
       if (jointDefinition instanceof SixDoFJointDefinition sixDoFJointDefinition)
-         return toURDFJoint(sixDoFJointDefinition);
+         return toURDFJoint(sixDoFJointDefinition, urdfFormatter);
       if (jointDefinition instanceof PlanarJointDefinition planarJointDefinition)
-         return toURDFJoint(planarJointDefinition);
+         return toURDFJoint(planarJointDefinition, urdfFormatter);
       throw new UnsupportedOperationException("Unsupported joint type: " + jointDefinition);
    }
 
-   public static URDFJoint toURDFJoint(RevoluteJointDefinition jointDefinition)
+   public static URDFJoint toURDFJoint(RevoluteJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
@@ -1477,16 +1531,16 @@ public class URDFTools
          urdfJoint.setType(URDFJointType.continuous);
       else
          urdfJoint.setType(URDFJointType.revolute);
-      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
-      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
-      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
-      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis()));
-      urdfJoint.setLimit(toURDFLimit(jointDefinition));
-      urdfJoint.setDynamics(toURDFDynamics(jointDefinition));
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), urdfFormatter));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), urdfFormatter));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), urdfFormatter));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis(), urdfFormatter));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition, urdfFormatter));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition, urdfFormatter));
       return urdfJoint;
    }
 
-   public static URDFJoint toURDFJoint(PrismaticJointDefinition jointDefinition)
+   public static URDFJoint toURDFJoint(PrismaticJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
@@ -1494,16 +1548,16 @@ public class URDFTools
       URDFJoint urdfJoint = new URDFJoint();
       urdfJoint.setName(jointDefinition.getName());
       urdfJoint.setType(URDFJointType.prismatic);
-      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
-      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
-      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
-      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis()));
-      urdfJoint.setLimit(toURDFLimit(jointDefinition));
-      urdfJoint.setDynamics(toURDFDynamics(jointDefinition));
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), urdfFormatter));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), urdfFormatter));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), urdfFormatter));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis(), urdfFormatter));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition, urdfFormatter));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition, urdfFormatter));
       return urdfJoint;
    }
 
-   public static URDFJoint toURDFJoint(FixedJointDefinition jointDefinition)
+   public static URDFJoint toURDFJoint(FixedJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
@@ -1511,13 +1565,13 @@ public class URDFTools
       URDFJoint urdfJoint = new URDFJoint();
       urdfJoint.setName(jointDefinition.getName());
       urdfJoint.setType(URDFJointType.fixed);
-      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
-      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
-      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), urdfFormatter));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), urdfFormatter));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), urdfFormatter));
       return urdfJoint;
    }
 
-   public static URDFJoint toURDFJoint(SixDoFJointDefinition jointDefinition)
+   public static URDFJoint toURDFJoint(SixDoFJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
@@ -1525,13 +1579,13 @@ public class URDFTools
       URDFJoint urdfJoint = new URDFJoint();
       urdfJoint.setName(jointDefinition.getName());
       urdfJoint.setType(URDFJointType.floating);
-      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
-      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
-      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), urdfFormatter));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), urdfFormatter));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), urdfFormatter));
       return urdfJoint;
    }
 
-   public static URDFJoint toURDFJoint(PlanarJointDefinition jointDefinition)
+   public static URDFJoint toURDFJoint(PlanarJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
@@ -1539,13 +1593,13 @@ public class URDFTools
       URDFJoint urdfJoint = new URDFJoint();
       urdfJoint.setName(jointDefinition.getName());
       urdfJoint.setType(URDFJointType.planar);
-      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
-      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
-      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), urdfFormatter));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), urdfFormatter));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), urdfFormatter));
       return urdfJoint;
    }
 
-   public static List<URDFGazebo> toURDFGazebos(List<JointDefinition> jointDefinitions)
+   public static List<URDFGazebo> toURDFGazebos(List<JointDefinition> jointDefinitions, URDFFormatter urdfFormatter)
    {
       if (jointDefinitions == null || jointDefinitions.isEmpty())
          return null;
@@ -1554,7 +1608,7 @@ public class URDFTools
 
       for (JointDefinition jointDefinition : jointDefinitions)
       {
-         List<URDFGazebo> jointURDFGazebos = toURDFGazebos(jointDefinition);
+         List<URDFGazebo> jointURDFGazebos = toURDFGazebos(jointDefinition, urdfFormatter);
          if (jointURDFGazebos != null)
             urdfGazebos.addAll(jointURDFGazebos);
       }
@@ -1562,11 +1616,11 @@ public class URDFTools
       return urdfGazebos;
    }
 
-   public static List<URDFGazebo> toURDFGazebos(JointDefinition jointDefinition)
+   public static List<URDFGazebo> toURDFGazebos(JointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
-      List<URDFSensor> urdfSensors = toURDFSensors(jointDefinition.getSensorDefinitions());
+      List<URDFSensor> urdfSensors = toURDFSensors(jointDefinition.getSensorDefinitions(), urdfFormatter);
       if (urdfSensors == null)
          return null;
 
@@ -1583,7 +1637,7 @@ public class URDFTools
       return urdfGazebos;
    }
 
-   public static List<URDFSensor> toURDFSensors(List<SensorDefinition> sensorDefinitions)
+   public static List<URDFSensor> toURDFSensors(List<SensorDefinition> sensorDefinitions, URDFFormatter urdfFormatter)
    {
       if (sensorDefinitions == null || sensorDefinitions.isEmpty())
          return null;
@@ -1592,7 +1646,7 @@ public class URDFTools
 
       for (SensorDefinition sensorDefinition : sensorDefinitions)
       {
-         URDFSensor urdfSensor = toURDFSensor(sensorDefinition);
+         URDFSensor urdfSensor = toURDFSensor(sensorDefinition, urdfFormatter);
          if (urdfSensor != null)
             urdfSensors.add(urdfSensor);
       }
@@ -1600,45 +1654,45 @@ public class URDFTools
       return urdfSensors;
    }
 
-   public static URDFSensor toURDFSensor(SensorDefinition sensorDefinition)
+   public static URDFSensor toURDFSensor(SensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
 
       if (sensorDefinition instanceof CameraSensorDefinition cameraSensorDefinition)
-         return toURDFSensor(cameraSensorDefinition);
+         return toURDFSensor(cameraSensorDefinition, urdfFormatter);
       if (sensorDefinition instanceof LidarSensorDefinition lidarSensorDefinition)
-         return toURDFSensor(lidarSensorDefinition);
+         return toURDFSensor(lidarSensorDefinition, urdfFormatter);
       if (sensorDefinition instanceof IMUSensorDefinition imuSensorDefinition)
-         return toURDFSensor(imuSensorDefinition);
+         return toURDFSensor(imuSensorDefinition, urdfFormatter);
       if (sensorDefinition instanceof WrenchSensorDefinition wrenchSensorDefinition)
-         return toURDFSensor(wrenchSensorDefinition);
+         return toURDFSensor(wrenchSensorDefinition, urdfFormatter);
       LogTools.warn("Unsupported sensor type: " + sensorDefinition);
       return null;
    }
 
-   public static URDFSensor toURDFSensor(WrenchSensorDefinition sensorDefinition)
+   public static URDFSensor toURDFSensor(WrenchSensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
 
       URDFSensor urdfSensor = new URDFSensor();
       urdfSensor.setName(sensorDefinition.getName());
-      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
-      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), urdfFormatter.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(urdfFormatter.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.force_torque);
       return urdfSensor;
    }
 
-   public static URDFSensor toURDFSensor(IMUSensorDefinition sensorDefinition)
+   public static URDFSensor toURDFSensor(IMUSensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
 
       URDFSensor urdfSensor = new URDFSensor();
       urdfSensor.setName(sensorDefinition.getName());
-      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
-      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), urdfFormatter.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(urdfFormatter.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.imu);
 
       URDFIMU urdfIMU = new URDFIMU();
@@ -1648,19 +1702,27 @@ public class URDFTools
 
       { // Angular velocity noise
          URDFNoiseParameters urdfNoiseParameters = new URDFNoiseParameters();
-         urdfNoiseParameters.setMean(sensorDefinition.getAngularVelocityNoiseMean());
-         urdfNoiseParameters.setStddev(sensorDefinition.getAngularVelocityNoiseStandardDeviation());
-         urdfNoiseParameters.setBias_mean(sensorDefinition.getAngularVelocityBiasMean());
-         urdfNoiseParameters.setBias_stddev(sensorDefinition.getAngularVelocityBiasStandardDeviation());
+         String mean = urdfFormatter.toString(URDFNoiseParameters.class, "mean", sensorDefinition.getAngularVelocityNoiseMean());
+         String stddev = urdfFormatter.toString(URDFNoiseParameters.class, "stddev", sensorDefinition.getAngularVelocityNoiseStandardDeviation());
+         String bias_mean = urdfFormatter.toString(URDFNoiseParameters.class, "bias_mean", sensorDefinition.getAngularVelocityBiasMean());
+         String bias_stddev = urdfFormatter.toString(URDFNoiseParameters.class, "bias_stddev", sensorDefinition.getAngularVelocityBiasStandardDeviation());
+         urdfNoiseParameters.setMean(mean);
+         urdfNoiseParameters.setStddev(stddev);
+         urdfNoiseParameters.setBias_mean(bias_mean);
+         urdfNoiseParameters.setBias_stddev(bias_stddev);
          urdfIMUNoise.setRate(urdfNoiseParameters);
       }
 
       { // Acceleration noise
+         String mean = urdfFormatter.toString(URDFNoiseParameters.class, "mean", sensorDefinition.getAccelerationNoiseMean());
+         String stddev = urdfFormatter.toString(URDFNoiseParameters.class, "stddev", sensorDefinition.getAccelerationNoiseStandardDeviation());
+         String bias_mean = urdfFormatter.toString(URDFNoiseParameters.class, "bias_mean", sensorDefinition.getAccelerationBiasMean());
+         String bias_stddev = urdfFormatter.toString(URDFNoiseParameters.class, "bias_stddev", sensorDefinition.getAccelerationBiasStandardDeviation());
          URDFNoiseParameters urdfNoiseParameters = new URDFNoiseParameters();
-         urdfNoiseParameters.setMean(sensorDefinition.getAccelerationNoiseMean());
-         urdfNoiseParameters.setStddev(sensorDefinition.getAccelerationNoiseStandardDeviation());
-         urdfNoiseParameters.setBias_mean(sensorDefinition.getAccelerationBiasMean());
-         urdfNoiseParameters.setBias_stddev(sensorDefinition.getAccelerationBiasStandardDeviation());
+         urdfNoiseParameters.setMean(mean);
+         urdfNoiseParameters.setStddev(stddev);
+         urdfNoiseParameters.setBias_mean(bias_mean);
+         urdfNoiseParameters.setBias_stddev(bias_stddev);
          urdfIMUNoise.setAccel(urdfNoiseParameters);
       }
 
@@ -1669,21 +1731,21 @@ public class URDFTools
       return urdfSensor;
    }
 
-   public static URDFSensor toURDFSensor(LidarSensorDefinition sensorDefinition)
+   public static URDFSensor toURDFSensor(LidarSensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
 
       URDFSensor urdfSensor = new URDFSensor();
       urdfSensor.setName(sensorDefinition.getName());
-      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
-      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), urdfFormatter.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(urdfFormatter.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.ray);
-      urdfSensor.setRay(toURDFRay(sensorDefinition));
+      urdfSensor.setRay(toURDFRay(sensorDefinition, urdfFormatter));
       return urdfSensor;
    }
 
-   public static URDFRay toURDFRay(LidarSensorDefinition sensorDefinition)
+   public static URDFRay toURDFRay(LidarSensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
@@ -1691,36 +1753,36 @@ public class URDFTools
       URDFRay urdfRay = new URDFRay();
 
       URDFRange urdfRange = new URDFRange();
-      urdfRange.setMax(sensorDefinition.getMaxRange());
-      urdfRange.setMin(sensorDefinition.getMinRange());
-      urdfRange.setResolution(sensorDefinition.getRangeResolution());
+      urdfRange.setMin(urdfFormatter.toString(URDFRange.class, "min", sensorDefinition.getMinRange()));
+      urdfRange.setMax(urdfFormatter.toString(URDFRange.class, "max", sensorDefinition.getMaxRange()));
+      urdfRange.setResolution(urdfFormatter.toString(URDFRange.class, "resolution", sensorDefinition.getRangeResolution()));
+      urdfRay.setRange(urdfRange);
 
       URDFScan urdfScan = new URDFScan();
 
       URDFHorizontalScan urdfHorizontalScan = new URDFHorizontalScan();
-      urdfHorizontalScan.setMinAngle(sensorDefinition.getSweepYawMin());
-      urdfHorizontalScan.setMaxAngle(sensorDefinition.getSweepYawMax());
-      urdfHorizontalScan.setSamples(sensorDefinition.getPointsPerSweep());
+      urdfHorizontalScan.setMinAngle(urdfFormatter.toString(URDFHorizontalScan.class, "min_angle", sensorDefinition.getSweepYawMin()));
+      urdfHorizontalScan.setMaxAngle(urdfFormatter.toString(URDFHorizontalScan.class, "max_angle", sensorDefinition.getSweepYawMax()));
+      urdfHorizontalScan.setSamples(urdfFormatter.toString(URDFHorizontalScan.class, "samples", sensorDefinition.getPointsPerSweep()));
       urdfScan.setHorizontal(urdfHorizontalScan);
 
       URDFVerticalScan urdfVerticalScan = new URDFVerticalScan();
-      urdfVerticalScan.setMinAngle(sensorDefinition.getHeightPitchMin());
-      urdfVerticalScan.setMaxAngle(sensorDefinition.getHeightPitchMax());
-      urdfVerticalScan.setSamples(sensorDefinition.getScanHeight());
+      urdfVerticalScan.setMinAngle(urdfFormatter.toString(URDFVerticalScan.class, "min_angle", sensorDefinition.getHeightPitchMin()));
+      urdfVerticalScan.setMaxAngle(urdfFormatter.toString(URDFVerticalScan.class, "max_angle", sensorDefinition.getHeightPitchMax()));
+      urdfVerticalScan.setSamples(urdfFormatter.toString(URDFVerticalScan.class, "samples", sensorDefinition.getScanHeight()));
       urdfScan.setVertical(urdfVerticalScan);
+      urdfRay.setScan(urdfScan);
 
       URDFNoise urdfNoise = new URDFNoise();
       urdfNoise.setType(URDFNoiseType.gaussian);
-      urdfNoise.setMean(sensorDefinition.getGaussianNoiseMean());
-      urdfNoise.setStddev(sensorDefinition.getGaussianNoiseStandardDeviation());
+      urdfNoise.setMean(urdfFormatter.toString(URDFNoise.class, "mean", sensorDefinition.getGaussianNoiseMean()));
+      urdfNoise.setStddev(urdfFormatter.toString(URDFNoise.class, "stddev", sensorDefinition.getGaussianNoiseStandardDeviation()));
       urdfRay.setNoise(urdfNoise);
-
-      urdfRay.setRange(urdfRange);
 
       return urdfRay;
    }
 
-   public static URDFSensor toURDFSensor(CameraSensorDefinition sensorDefinition)
+   public static URDFSensor toURDFSensor(CameraSensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
@@ -1731,14 +1793,14 @@ public class URDFTools
          urdfSensor.setName(name.substring(0, name.lastIndexOf("_")));
       else
          urdfSensor.setName(name);
-      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
-      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), urdfFormatter.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(urdfFormatter.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.camera);
-      urdfSensor.setCamera(Collections.singletonList(toURDFCamera(sensorDefinition)));
+      urdfSensor.setCamera(Collections.singletonList(toURDFCamera(sensorDefinition, urdfFormatter)));
       return urdfSensor;
    }
 
-   public static URDFCamera toURDFCamera(CameraSensorDefinition sensorDefinition)
+   public static URDFCamera toURDFCamera(CameraSensorDefinition sensorDefinition, URDFFormatter urdfFormatter)
    {
       if (sensorDefinition == null)
          return null;
@@ -1747,19 +1809,19 @@ public class URDFTools
       String name = sensorDefinition.getName();
       if (name != null && name.contains("_"))
          urdfCamera.setName(name.substring(name.lastIndexOf("_") + 1));
-      urdfCamera.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
+      urdfCamera.setPose(toPoseString(sensorDefinition.getTransformToJoint(), urdfFormatter.getDoubleFormatter(URDFSensor.class, "pose")));
       urdfCamera.setHorizontalFov(sensorDefinition.getFieldOfView());
-      urdfCamera.setImage(toURDFSensorImage(sensorDefinition.getImageWidth(), sensorDefinition.getImageHeight()));
-      urdfCamera.setClip(toURDFClip(sensorDefinition.getClipNear(), sensorDefinition.getClipFar()));
+      urdfCamera.setImage(toURDFSensorImage(sensorDefinition.getImageWidth(), sensorDefinition.getImageHeight(), urdfFormatter));
+      urdfCamera.setClip(toURDFClip(sensorDefinition.getClipNear(), sensorDefinition.getClipFar(), urdfFormatter));
       return urdfCamera;
    }
 
-   public static URDFSensorImage toURDFSensorImage(int width, int height)
+   public static URDFSensorImage toURDFSensorImage(int width, int height, URDFFormatter urdfFormatter)
    {
-      return toURDFSensorImage(width, height, null);
+      return toURDFSensorImage(width, height, null, urdfFormatter);
    }
 
-   public static URDFSensorImage toURDFSensorImage(int width, int height, String format)
+   public static URDFSensorImage toURDFSensorImage(int width, int height, String format, URDFFormatter urdfFormatter)
    {
       URDFSensorImage urdfSensorImage = new URDFSensorImage();
       urdfSensorImage.setWidth(width);
@@ -1768,111 +1830,128 @@ public class URDFTools
       return urdfSensorImage;
    }
 
-   public static URDFClip toURDFClip(double near, double far)
+   public static URDFClip toURDFClip(double near, double far, URDFFormatter urdfFormatter)
    {
       URDFClip urdfClip = new URDFClip();
-      urdfClip.setNear(near);
-      urdfClip.setFar(far);
+      urdfClip.setNear(urdfFormatter.toString(URDFClip.class, "near", near));
+      urdfClip.setFar(urdfFormatter.toString(URDFClip.class, "far", far));
       return urdfClip;
    }
 
-   public static URDFOrigin toURDFOrigin(RigidBodyTransformReadOnly pose)
+   public static URDFOrigin toURDFOrigin(RigidBodyTransformReadOnly pose, URDFFormatter urdfFormatter)
    {
       if (pose == null)
          return null;
 
       URDFOrigin urdfOrigin = new URDFOrigin();
       Tuple3DReadOnly translation = pose.getTranslation();
-      urdfOrigin.setXYZ(EuclidCoreIOTools.getStringOf(" ", null, translation.getX(), translation.getY(), translation.getZ()));
       Orientation3DReadOnly rotation = pose.getRotation();
-      urdfOrigin.setRPY(EuclidCoreIOTools.getStringOf(" ", null, rotation.getRoll(), rotation.getPitch(), rotation.getYaw()));
+
+      String tx = urdfFormatter.toString(URDFOrigin.class, "xyz", translation.getX());
+      String ty = urdfFormatter.toString(URDFOrigin.class, "xyz", translation.getY());
+      String tz = urdfFormatter.toString(URDFOrigin.class, "xyz", translation.getZ());
+      String rr = urdfFormatter.toString(URDFOrigin.class, "rpy", rotation.getRoll());
+      String rp = urdfFormatter.toString(URDFOrigin.class, "rpy", rotation.getPitch());
+      String ry = urdfFormatter.toString(URDFOrigin.class, "rpy", rotation.getYaw());
+
+      urdfOrigin.setXYZ("%s %s %s".formatted(tx, ty, tz));
+      urdfOrigin.setRPY("%s %s %s".formatted(rr, rp, ry));
       return urdfOrigin;
    }
 
-   public static URDFOrigin toURDFOrigin(AffineTransformReadOnly pose)
+   public static URDFOrigin toURDFOrigin(AffineTransformReadOnly pose, URDFFormatter urdfFormatter)
    {
       if (pose == null)
          return null;
 
       URDFOrigin urdfOrigin = new URDFOrigin();
       Tuple3DReadOnly translation = pose.getTranslation();
-      urdfOrigin.setXYZ(EuclidCoreIOTools.getStringOf(" ", null, translation.getX(), translation.getY(), translation.getZ()));
       Orientation3DReadOnly rotation = pose.getLinearTransform().getAsQuaternion();
-      urdfOrigin.setRPY(EuclidCoreIOTools.getStringOf(" ", null, rotation.getRoll(), rotation.getPitch(), rotation.getYaw()));
+
+      String tx = urdfFormatter.toString(URDFOrigin.class, "xyz", translation.getX());
+      String ty = urdfFormatter.toString(URDFOrigin.class, "xyz", translation.getY());
+      String tz = urdfFormatter.toString(URDFOrigin.class, "xyz", translation.getZ());
+      String rr = urdfFormatter.toString(URDFOrigin.class, "rpy", rotation.getRoll());
+      String rp = urdfFormatter.toString(URDFOrigin.class, "rpy", rotation.getPitch());
+      String ry = urdfFormatter.toString(URDFOrigin.class, "rpy", rotation.getYaw());
+
+      urdfOrigin.setXYZ("%s %s %s".formatted(tx, ty, tz));
+      urdfOrigin.setRPY("%s %s %s".formatted(rr, rp, ry));
+
       if (!EuclidCoreTools.epsilonEquals(new Vector3D(1, 1, 1), pose.getLinearTransform().getScaleVector(), 1.0e-7))
          LogTools.warn("Discarding scale from affine trane transform.");
       return urdfOrigin;
    }
 
-   public static String toPoseString(RigidBodyTransformReadOnly pose)
+   public static String toPoseString(RigidBodyTransformReadOnly pose, DoubleFormatter doubleFormatter)
    {
       if (pose == null)
          return null;
 
       Tuple3DReadOnly translation = pose.getTranslation();
       Orientation3DReadOnly rotation = pose.getRotation();
-      return EuclidCoreIOTools.getStringOf(" ",
-                                           null,
-                                           translation.getX(),
-                                           translation.getY(),
-                                           translation.getZ(),
-                                           rotation.getRoll(),
-                                           rotation.getPitch(),
-                                           rotation.getYaw());
+      String tx = doubleFormatter.toString(translation.getX());
+      String ty = doubleFormatter.toString(translation.getY());
+      String tz = doubleFormatter.toString(translation.getZ());
+      String rr = doubleFormatter.toString(rotation.getRoll());
+      String rp = doubleFormatter.toString(rotation.getPitch());
+      String ry = doubleFormatter.toString(rotation.getYaw());
+      return "%s %s %s %s %s %s".formatted(tx, ty, tz, rr, rp, ry);
    }
 
-   public static URDFAxis toURDFAxis(Tuple3DReadOnly axis)
+   public static URDFAxis toURDFAxis(Tuple3DReadOnly axis, URDFFormatter urdfFormatter)
    {
       if (axis == null)
          return null;
 
       URDFAxis urdfAxis = new URDFAxis();
-      urdfAxis.setXYZ(EuclidCoreIOTools.getStringOf(" ", null, axis.getX(), axis.getY(), axis.getZ()));
+      String x = urdfFormatter.toString(URDFAxis.class, "xyz", axis.getX());
+      String y = urdfFormatter.toString(URDFAxis.class, "xyz", axis.getY());
+      String z = urdfFormatter.toString(URDFAxis.class, "xyz", axis.getZ());
+      urdfAxis.setXYZ("%s %s %s".formatted(x, y, z));
       return urdfAxis;
    }
 
-   public static URDFLimit toURDFLimit(OneDoFJointDefinition jointDefinition)
+   public static URDFLimit toURDFLimit(OneDoFJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
 
       URDFLimit urdfLimit = new URDFLimit();
-      urdfLimit.setLower(jointDefinition.getPositionLowerLimit());
-      urdfLimit.setUpper(jointDefinition.getPositionUpperLimit());
+      urdfLimit.setLower(urdfFormatter.toString(URDFLimit.class, "lower", jointDefinition.getPositionLowerLimit()));
+      urdfLimit.setUpper(urdfFormatter.toString(URDFLimit.class, "upper", jointDefinition.getPositionUpperLimit()));
+
       if (-jointDefinition.getVelocityLowerLimit() != jointDefinition.getVelocityUpperLimit())
       {
          LogTools.warn("Velocity limits no symmetric for joint {}, exporting smallest limit", jointDefinition.getName());
-         urdfLimit.setVelocity(Math.min(Math.abs(jointDefinition.getVelocityLowerLimit()), jointDefinition.getVelocityUpperLimit()));
       }
-      else
-      {
-         urdfLimit.setVelocity(jointDefinition.getVelocityUpperLimit());
-      }
+
+      double velocity = Math.min(Math.abs(jointDefinition.getVelocityLowerLimit()), jointDefinition.getVelocityUpperLimit());
+      urdfLimit.setVelocity(urdfFormatter.toString(URDFLimit.class, "velocity", velocity));
 
       if (-jointDefinition.getEffortLowerLimit() != jointDefinition.getEffortUpperLimit())
       {
          LogTools.warn("Effort limits no symmetric for joint {}, exporting smallest limit", jointDefinition.getName());
-         urdfLimit.setEffort(Math.min(Math.abs(jointDefinition.getEffortLowerLimit()), jointDefinition.getEffortUpperLimit()));
       }
-      else
-      {
-         urdfLimit.setEffort(jointDefinition.getEffortUpperLimit());
-      }
+
+      double effort = Math.min(Math.abs(jointDefinition.getEffortLowerLimit()), jointDefinition.getEffortUpperLimit());
+      urdfLimit.setEffort(urdfFormatter.toString(URDFLimit.class, "effort", effort));
+
       return urdfLimit;
    }
 
-   public static URDFDynamics toURDFDynamics(OneDoFJointDefinition jointDefinition)
+   public static URDFDynamics toURDFDynamics(OneDoFJointDefinition jointDefinition, URDFFormatter urdfFormatter)
    {
       if (jointDefinition == null)
          return null;
 
       URDFDynamics urdfDynamics = new URDFDynamics();
-      urdfDynamics.setFriction(jointDefinition.getStiction());
-      urdfDynamics.setDamping(jointDefinition.getDamping());
+      urdfDynamics.setFriction(urdfFormatter.toString(URDFDynamics.class, "friction", jointDefinition.getStiction()));
+      urdfDynamics.setDamping(urdfFormatter.toString(URDFDynamics.class, "damping", jointDefinition.getDamping()));
       return urdfDynamics;
    }
 
-   public static URDFLinkReference toURDFLinkReference(RigidBodyDefinition rigidBodyDefinition)
+   public static URDFLinkReference toURDFLinkReference(RigidBodyDefinition rigidBodyDefinition, URDFFormatter urdfFormatter)
    {
       if (rigidBodyDefinition == null)
          return null;
@@ -1880,5 +1959,102 @@ public class URDFTools
       URDFLinkReference urdfLinkReference = new URDFLinkReference();
       urdfLinkReference.setLink(rigidBodyDefinition.getName());
       return urdfLinkReference;
+   }
+
+   public static interface DoubleFormatter
+   {
+      String toString(double value);
+   }
+
+   public static class URDFFormatter
+   {
+      private DoubleFormatter defaultDoubleFormatter = Double::toString;
+      private final Map<Class<? extends URDFItem>, URDFItemFormatter> urdfTypeFormatters = new HashMap<>();
+
+      public void setDefaultDoubleFormatter(DoubleFormatter formatter)
+      {
+         this.defaultDoubleFormatter = formatter;
+      }
+
+      public void addDoubleFormatter(Class<? extends URDFItem> urdfType, DoubleFormatter formatter)
+      {
+         URDFItemFormatter urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter == null)
+            urdfTypeFormatters.put(urdfType, urdfTypeFormatter = new URDFItemFormatter());
+         urdfTypeFormatter.setDefaultFormatter(formatter);
+      }
+
+      public void addDoubleFormatter(Class<? extends URDFItem> urdfType, String fieldName, DoubleFormatter formatter)
+      {
+         URDFItemFormatter urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter == null)
+            urdfTypeFormatters.put(urdfType, urdfTypeFormatter = new URDFItemFormatter());
+         urdfTypeFormatter.addFormatter(fieldName, formatter);
+      }
+
+      public String toString(Class<? extends URDFItem> urdfType, String fieldName, double value)
+      {
+         DoubleFormatter formatter = getDoubleFormatter(urdfType, fieldName);
+         if (formatter != null)
+            return formatter.toString(value);
+         else
+            return null;
+      }
+
+      public DoubleFormatter getDoubleFormatter(Class<? extends URDFItem> urdfType)
+      {
+         URDFItemFormatter urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter != null)
+         {
+            if (urdfTypeFormatter.defaultDoubleFormatter != null)
+               return urdfTypeFormatter.defaultDoubleFormatter;
+         }
+
+         return defaultDoubleFormatter;
+      }
+
+      public DoubleFormatter getDoubleFormatter(Class<? extends URDFItem> urdfType, String fieldName)
+      {
+         URDFItemFormatter urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter != null)
+         {
+            DoubleFormatter formatter = urdfTypeFormatter.getDoubleFormatter(fieldName.toLowerCase());
+            if (formatter != null)
+               return formatter;
+         }
+
+         return defaultDoubleFormatter;
+      }
+   }
+
+   private static class URDFItemFormatter
+   {
+      private DoubleFormatter defaultDoubleFormatter;
+      private final Map<String, DoubleFormatter> fieldToDoubleFormatterMap = new HashMap<>();
+
+      public URDFItemFormatter()
+      {
+      }
+
+      public void setDefaultFormatter(DoubleFormatter formatter)
+      {
+         defaultDoubleFormatter = formatter;
+      }
+
+      public void addFormatter(String fieldName, DoubleFormatter formatter)
+      {
+         fieldToDoubleFormatterMap.put(fieldName.toLowerCase(), formatter);
+      }
+
+      public DoubleFormatter getDoubleFormatter(String fieldName)
+      {
+         DoubleFormatter formatter = fieldToDoubleFormatterMap.get(fieldName.toLowerCase());
+         if (formatter != null)
+            return formatter;
+         else if (defaultDoubleFormatter != null)
+            return defaultDoubleFormatter;
+         else
+            return null;
+      }
    }
 }
