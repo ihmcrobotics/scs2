@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Tests in this class are disabled because the files have duplicate timestamps that will cause issues when trying to retrieve a specific timestamp
  */
@@ -116,7 +118,7 @@ public class TimestampScrubberTest
         for (int i = 0; i < actualRobotTimestamps.length; i++)
         {
             scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
-            Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
+            assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
 
@@ -128,7 +130,7 @@ public class TimestampScrubberTest
         for (int i = 0; i < actualRobotTimestamps.length ; i+=2)
         {
             scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
-            Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i], "For look index: " + i);
+            assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i], "For look index: " + i);
         }
     }
 
@@ -139,13 +141,13 @@ public class TimestampScrubberTest
         // Test grabbing random robot timestamps and checking to make sure we get the correct video timestamp
         // These robot timestamps need to be unique or the binary search will fail to get the correct video timestamp
         scrubber.getVideoTimestamp(actualRobotTimestamps[26]);
-        Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[26]);
+        assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[26]);
 
         scrubber.getVideoTimestamp(actualRobotTimestamps[40]);
-        Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[40]);
+        assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[40]);
 
         scrubber.getVideoTimestamp(actualRobotTimestamps[34]);
-        Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
+        assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[34]);
     }
 
     @Disabled
@@ -155,7 +157,7 @@ public class TimestampScrubberTest
         for (int i = actualRobotTimestamps.length - 1; i > 0; i--)
         {
             scrubber.getVideoTimestamp(actualRobotTimestamps[i]);
-            Assertions.assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
+            assertEquals(scrubber.getCurrentVideoTimestamp(), actualVideoTimestamps[i]);
         }
     }
 
@@ -172,5 +174,15 @@ public class TimestampScrubberTest
             checkNext = actualRobotTimestamps[index] == actualRobotTimestamps[index + 1];
 
         return checkPrevious || checkNext;
+    }
+
+    @Test
+    public void testSearchRobotTimestampsForIndex()
+    {
+        // Sets the currentIndex to the end of the
+        scrubber.getVideoTimestamp(Long.MAX_VALUE);
+        int endOfArray = scrubber.getCurrentIndex();
+
+        assertEquals(actualRobotTimestamps.length - 1, endOfArray);
     }
 }
