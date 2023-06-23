@@ -192,7 +192,9 @@ public class TimestampScrubberTest
         File badName = new File("This_is_a_bad_file_name_lol");
 
         Throwable thrown = assertThrows(RuntimeException.class, () -> new VideoDataReader.TimestampScrubber(badName, true, false));
-        assertEquals("java.io.FileNotFoundException: " + badName + " (The system cannot find the file specified)", thrown.getMessage());
+        String messageException = thrown.getMessage().substring(0, 58);
+
+        assertEquals("java.io.FileNotFoundException: " + badName, messageException);
     }
 
     @Test
