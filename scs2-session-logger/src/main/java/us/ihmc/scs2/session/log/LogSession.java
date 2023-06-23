@@ -107,6 +107,9 @@ public class LogSession extends Session
          else if (!firstLogPositionRequest) // That means the user has scrubbed through the data.
             sharedBuffer.setInPoint(properties.getCurrentIndex());
          sharedBuffer.incrementBufferIndex(true);
+         // Sync the log position index (logDataReader.index) the current YoVariable (logDataReader.currentRecordTick()) value.
+         // Without that, scrubbing through a chart and then resuming log reading reading will start from an arbitrary position in the log file (corresponding to where we last stop reading the log file).
+         logDataReader.seek(logDataReader.getCurrentLogPosition());
          nextRunBufferRecordTickCounter = 0;
          firstRunTick = false;
       }
