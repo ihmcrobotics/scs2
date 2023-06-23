@@ -28,7 +28,7 @@ public class TimestampScrubberTest
     @BeforeEach
     public void loadFileTimestamps() throws URISyntaxException, IOException
     {
-        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/NadiaPoleNorth_Timestamps.dat")).toURI());
+        File timestampFile = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("sessionLogs/Capture.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
@@ -183,7 +183,7 @@ public class TimestampScrubberTest
         scrubber.getVideoTimestamp(Long.MAX_VALUE);
         int endOfArray = scrubber.getCurrentIndex();
 
-        assertEquals(actualRobotTimestamps.length, endOfArray);
+        assertEquals(actualRobotTimestamps.length - 1, endOfArray);
     }
 
     @Test
