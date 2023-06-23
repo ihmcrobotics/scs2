@@ -21,10 +21,20 @@ public class URDFCylinder implements URDFItem
       this.radius = radius;
    }
 
+   public void setRadius(double radius)
+   {
+      setRadius(Double.toString(radius));
+   }
+
    @XmlAttribute(name = "length")
    public void setLength(String length)
    {
       this.length = length;
+   }
+
+   public void setLength(double length)
+   {
+      setLength(Double.toString(length));
    }
 
    public String getRadius()
