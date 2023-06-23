@@ -47,6 +47,7 @@ public class MultiSessionManager
                                                                                                                     true);
    private static final boolean LOAD_SESSION_TIME = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.loadconfig.time", false);
    private static final boolean LOAD_MAIN_WINDOW_CONFIGURATION = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.mainwindow.loadconfig", true);
+   private static final boolean LOAD_BUFFER_SIZE_CONFIGURATION = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.buffersize.loadconfig", false);
 
    private final SessionVisualizerToolkit toolkit;
    private final MainWindowController mainWindowController;
@@ -305,8 +306,11 @@ public class MultiSessionManager
 
       toolkit.getWindowManager().loadSessionConfiguration(configuration);
 
-      if (configuration.hasBufferSize())
-         messager.submitMessage(topics.getYoBufferInitializeSize(), configuration.getBufferSize());
+      if (LOAD_BUFFER_SIZE_CONFIGURATION)
+      {
+         if (configuration.hasBufferSize())
+            messager.submitMessage(topics.getYoBufferInitializeSize(), configuration.getBufferSize());
+      }
       if (configuration.hasRecordTickPeriod())
          messager.submitMessage(topics.getInitializeBufferRecordTickPeriod(), configuration.getRecordTickPeriod());
       if (configuration.hasNumberPrecision())
