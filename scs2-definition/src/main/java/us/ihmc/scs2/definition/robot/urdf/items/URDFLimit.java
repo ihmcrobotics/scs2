@@ -23,10 +23,20 @@ public class URDFLimit implements URDFItem
       this.lower = lower;
    }
 
+   public void setLower(double lower)
+   {
+      setLower(Double.toString(lower));
+   }
+
    @XmlAttribute(name = "upper")
    public void setUpper(String upper)
    {
       this.upper = upper;
+   }
+
+   public void setUpper(double upper)
+   {
+      setUpper(Double.toString(upper));
    }
 
    @XmlAttribute(name = "effort")
@@ -35,10 +45,20 @@ public class URDFLimit implements URDFItem
       this.effort = effort;
    }
 
+   public void setEffort(double effort)
+   {
+      setEffort(Double.toString(effort));
+   }
+
    @XmlAttribute(name = "velocity")
    public void setVelocity(String velocity)
    {
       this.velocity = velocity;
+   }
+
+   public void setVelocity(double velocity)
+   {
+      setVelocity(Double.toString(velocity));
    }
 
    public String getLower()

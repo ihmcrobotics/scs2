@@ -29,9 +29,14 @@ import org.xml.sax.XMLReader;
 
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
+import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.transform.interfaces.AffineTransformReadOnly;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.log.LogTools;
@@ -46,6 +51,7 @@ import us.ihmc.scs2.definition.robot.FixedJointDefinition;
 import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.LidarSensorDefinition;
+import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
 import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
@@ -57,8 +63,10 @@ import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFAxis;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFBox;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFCollision;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFColor;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFCylinder;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFDynamics;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFFilenameHolder;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFGazebo;
@@ -66,23 +74,32 @@ import us.ihmc.scs2.definition.robot.urdf.items.URDFGeometry;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFInertia;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFInertial;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint.URDFJointType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLimit;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLink;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLinkReference;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFMass;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFMaterial;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFMesh;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFOrigin;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFClip;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFSensorImage;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU.URDFIMUNoise;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU.URDFIMUNoise.URDFIMUNoiseType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU.URDFIMUNoise.URDFNoiseParameters;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFNoise;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFNoise.URDFNoiseType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFRange;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFHorizontalScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFVerticalScan;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFSensorType;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSphere;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFTexture;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFVisual;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
@@ -597,19 +614,19 @@ public class URDFTools
     */
    public static JointDefinition toJointDefinition(URDFJoint urdfJoint)
    {
-      switch (urdfJoint.getType())
+      switch (URDFJointType.parse(urdfJoint.getType()))
       {
-         case "continuous":
+         case continuous:
             return toRevoluteJointDefinition(urdfJoint, true);
-         case "revolute":
+         case revolute:
             return toRevoluteJointDefinition(urdfJoint, false);
-         case "prismatic":
+         case prismatic:
             return toPrismaticJointDefinition(urdfJoint);
-         case "fixed":
+         case fixed:
             return toFixedJointDefinition(urdfJoint);
-         case "floating":
+         case floating:
             return toSixDoFJointDefinition(urdfJoint);
-         case "planar":
+         case planar:
             return toPlanarJointDefinition(urdfJoint);
          default:
             throw new RuntimeException("Unexpected value for the joint type: " + urdfJoint.getType());
@@ -712,25 +729,25 @@ public class URDFTools
    {
       List<SensorDefinition> definitions = new ArrayList<>();
 
-      switch (urdfSensor.getType())
+      switch (URDFSensorType.parse(urdfSensor.getType()))
       {
-         case "camera":
-         case "multicamera":
-         case "depth":
+         case camera:
+         case multicamera:
+         case depth:
             definitions.addAll(toCameraSensorDefinition(urdfSensor.getCamera()));
             break;
-         case "imu":
+         case imu:
             definitions.add(toIMUSensorDefinition(urdfSensor.getImu()));
             break;
-         case "gpu_ray":
-         case "ray":
+         case gpu_ray:
+         case ray:
             definitions.add(toLidarSensorDefinition(urdfSensor.getRay()));
             break;
-         case "force_torque":
+         case force_torque:
             definitions.add(new WrenchSensorDefinition());
             break;
          default:
-            LogTools.error("Unsupport sensor type: " + urdfSensor.getType());
+            LogTools.error("Unsupported sensor type: " + urdfSensor.getType());
             return null;
       }
 
@@ -804,7 +821,7 @@ public class URDFTools
       URDFNoise urdfNoise = urdfRay.getNoise();
       if (urdfNoise != null)
       {
-         if ("gaussian".equals(urdfNoise.getType()))
+         if (URDFNoiseType.gaussian.equals(URDFNoiseType.parse(urdfNoise.getType())))
          {
             definition.setGaussianNoiseMean(parseDouble(urdfNoise.getMean(), 0.0));
             definition.setGaussianNoiseStandardDeviation(parseDouble(urdfNoise.getStddev(), 0.0));
@@ -837,7 +854,7 @@ public class URDFTools
       URDFIMUNoise urdfNoise = urdfIMU.getNoise();
       if (urdfNoise != null)
       {
-         if ("gaussian".equals(urdfNoise.getType()))
+         if (URDFIMUNoiseType.gaussian.equals(URDFIMUNoiseType.parse(urdfNoise.getType())))
          {
             URDFNoiseParameters accelerationNoise = urdfNoise.getAccel();
             URDFNoiseParameters angularVelocityNoise = urdfNoise.getRate();
@@ -1159,5 +1176,709 @@ public class URDFTools
          array[i] = Double.parseDouble(split[i]);
 
       return array;
+   }
+
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////// Following are tools for converting RobotDefinition to URDF ////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   public static URDFModel toURDFModel(RobotDefinition robotDefinition)
+   {
+      URDFModel urdfModel = new URDFModel();
+
+      urdfModel.setName(robotDefinition.getName());
+      urdfModel.setLinks(toURDFLinks(robotDefinition.getAllRigidBodies()));
+      urdfModel.setJoints(toURDFJoints(robotDefinition.getAllJoints()));
+      urdfModel.setGazebos(toURDFGazebos(robotDefinition.getAllJoints()));
+
+      return urdfModel;
+   }
+
+   public static List<URDFLink> toURDFLinks(List<RigidBodyDefinition> rigidBodyDefinitions)
+   {
+      if (rigidBodyDefinitions == null || rigidBodyDefinitions.isEmpty())
+         return null;
+
+      List<URDFLink> urdfLinks = new ArrayList<>();
+
+      for (RigidBodyDefinition rigidBodyDefinition : rigidBodyDefinitions)
+      {
+         URDFLink urdfLink = toURDFLink(rigidBodyDefinition);
+         if (urdfLink != null)
+            urdfLinks.add(urdfLink);
+      }
+
+      return urdfLinks;
+   }
+
+   public static URDFLink toURDFLink(RigidBodyDefinition rigidBodyDefinition)
+   {
+      if (rigidBodyDefinition == null)
+         return null;
+
+      URDFLink urdfLink = new URDFLink();
+      urdfLink.setName(rigidBodyDefinition.getName());
+      urdfLink.setInertial(toURDFInterial(rigidBodyDefinition));
+      urdfLink.setVisual(toURDFVisuals(rigidBodyDefinition.getVisualDefinitions()));
+      urdfLink.setCollision(toURDFCollisions(rigidBodyDefinition.getCollisionShapeDefinitions()));
+      return urdfLink;
+   }
+
+   public static URDFInertial toURDFInterial(RigidBodyDefinition rigidBodyDefinition)
+   {
+      if (rigidBodyDefinition == null)
+         return null;
+
+      URDFInertial urdfInertial = new URDFInertial();
+      urdfInertial.setOrigin(toURDFOrigin(rigidBodyDefinition.getInertiaPose()));
+      urdfInertial.setMass(toURDFMass(rigidBodyDefinition.getMass()));
+      urdfInertial.setInertia(toURDFInertia(rigidBodyDefinition.getMomentOfInertia()));
+      return urdfInertial;
+   }
+
+   public static URDFMass toURDFMass(double mass)
+   {
+      URDFMass urdfMass = new URDFMass();
+      urdfMass.setValue(mass);
+      return urdfMass;
+   }
+
+   public static URDFInertia toURDFInertia(MomentOfInertiaDefinition momentOfInertiaDefinition)
+   {
+      if (momentOfInertiaDefinition == null)
+         return null;
+
+      URDFInertia urdfInertia = new URDFInertia();
+      urdfInertia.setIxx(momentOfInertiaDefinition.getIxx());
+      urdfInertia.setIyy(momentOfInertiaDefinition.getIyy());
+      urdfInertia.setIzz(momentOfInertiaDefinition.getIzz());
+      urdfInertia.setIxy(momentOfInertiaDefinition.getIxy());
+      urdfInertia.setIxz(momentOfInertiaDefinition.getIxz());
+      urdfInertia.setIyz(momentOfInertiaDefinition.getIyz());
+      return urdfInertia;
+   }
+
+   public static List<URDFVisual> toURDFVisuals(List<VisualDefinition> visualDefinitions)
+   {
+      if (visualDefinitions == null || visualDefinitions.isEmpty())
+         return null;
+
+      List<URDFVisual> urdfVisuals = new ArrayList<>();
+
+      for (VisualDefinition visualDefinition : visualDefinitions)
+      {
+         URDFVisual urdfVisual = toURDFVisual(visualDefinition);
+         if (urdfVisual != null)
+            urdfVisuals.add(urdfVisual);
+      }
+
+      return urdfVisuals;
+   }
+
+   public static URDFVisual toURDFVisual(VisualDefinition visualDefinition)
+   {
+      if (visualDefinition == null)
+         return null;
+
+      URDFVisual urdfVisual = new URDFVisual();
+      urdfVisual.setName(visualDefinition.getName());
+      urdfVisual.setOrigin(toURDFOrigin(visualDefinition.getOriginPose()));
+      urdfVisual.setGeometry(toURDFGeometry(visualDefinition.getGeometryDefinition()));
+      urdfVisual.setMaterial(toURDFMaterial(visualDefinition.getMaterialDefinition()));
+      return urdfVisual;
+   }
+
+   public static List<URDFCollision> toURDFCollisions(List<CollisionShapeDefinition> collisionShapeDefinitions)
+   {
+      if (collisionShapeDefinitions == null || collisionShapeDefinitions.isEmpty())
+         return null;
+
+      List<URDFCollision> urdfCollisions = new ArrayList<>();
+
+      for (CollisionShapeDefinition collisionShapeDefinition : collisionShapeDefinitions)
+      {
+         URDFCollision urdfCollision = toURDFCollision(collisionShapeDefinition);
+         if (urdfCollision != null)
+            urdfCollisions.add(urdfCollision);
+      }
+
+      return urdfCollisions;
+   }
+
+   public static URDFCollision toURDFCollision(CollisionShapeDefinition collisionShapeDefinition)
+   {
+      if (collisionShapeDefinition == null)
+         return null;
+
+      URDFCollision urdfCollision = new URDFCollision();
+      urdfCollision.setName(collisionShapeDefinition.getName());
+      urdfCollision.setOrigin(toURDFOrigin(collisionShapeDefinition.getOriginPose()));
+      urdfCollision.setGeometry(toURDFGeometry(collisionShapeDefinition.getGeometryDefinition()));
+      return urdfCollision;
+   }
+
+   public static URDFGeometry toURDFGeometry(GeometryDefinition geometryDefinition)
+   {
+      if (geometryDefinition == null)
+         return null;
+
+      URDFGeometry urdfGeometry = new URDFGeometry();
+
+      if (geometryDefinition instanceof Box3DDefinition box3DGeometry)
+      {
+         urdfGeometry.setBox(toURDFBox(box3DGeometry));
+      }
+      else if (geometryDefinition instanceof Cylinder3DDefinition cylinder3DDefinition)
+      {
+         urdfGeometry.setCylinder(toURDFCylinder(cylinder3DDefinition));
+      }
+      else if (geometryDefinition instanceof Sphere3DDefinition sphere3DDefinition)
+      {
+         urdfGeometry.setSphere(toURDFSphere(sphere3DDefinition));
+      }
+      else if (geometryDefinition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
+      {
+         urdfGeometry.setMesh(toURDFMesh(modelFileGeometryDefinition));
+      }
+      else
+      {
+         LogTools.warn("Unhandled geometry: {}", geometryDefinition);
+      }
+
+      return urdfGeometry;
+   }
+
+   public static URDFBox toURDFBox(Box3DDefinition box3DDefinition)
+   {
+      if (box3DDefinition == null)
+         return null;
+
+      URDFBox urdfBox = new URDFBox();
+      urdfBox.setSize(EuclidCoreIOTools.getStringOf(" ", null, box3DDefinition.getSizeX(), box3DDefinition.getSizeY(), box3DDefinition.getSizeZ()));
+      return urdfBox;
+   }
+
+   public static URDFCylinder toURDFCylinder(Cylinder3DDefinition cylinder3DDefinition)
+   {
+      if (cylinder3DDefinition == null)
+         return null;
+
+      URDFCylinder urdfCylinder = new URDFCylinder();
+      urdfCylinder.setRadius(cylinder3DDefinition.getRadius());
+      urdfCylinder.setLength(cylinder3DDefinition.getLength());
+      return urdfCylinder;
+   }
+
+   public static URDFSphere toURDFSphere(Sphere3DDefinition sphere3DDefinition)
+   {
+      if (sphere3DDefinition == null)
+         return null;
+
+      URDFSphere urdfSphere = new URDFSphere();
+      urdfSphere.setRadius(sphere3DDefinition.getRadius());
+      return urdfSphere;
+   }
+
+   public static URDFMesh toURDFMesh(ModelFileGeometryDefinition modelFileGeometryDefinition)
+   {
+      if (modelFileGeometryDefinition == null)
+         return null;
+
+      URDFMesh urdfMesh = new URDFMesh();
+      urdfMesh.setFilename(modelFileGeometryDefinition.getFileName());
+      Vector3D scale = modelFileGeometryDefinition.getScale();
+      if (scale != null)
+         urdfMesh.setScale(EuclidCoreIOTools.getStringOf(" ", null, scale.getX(), scale.getY(), scale.getZ()));
+      return urdfMesh;
+   }
+
+   public static URDFMaterial toURDFMaterial(MaterialDefinition materialDefinition)
+   {
+      if (materialDefinition == null)
+         return null;
+
+      URDFMaterial urdfMaterial = new URDFMaterial();
+      urdfMaterial.setName(materialDefinition.getName());
+      urdfMaterial.setColor(toURDFColor(materialDefinition.getDiffuseColor()));
+      urdfMaterial.setTexture(toURDFTexture(materialDefinition.getDiffuseMap()));
+      return urdfMaterial;
+   }
+
+   public static URDFColor toURDFColor(ColorDefinition colorDefinition)
+   {
+      if (colorDefinition == null)
+         return null;
+
+      URDFColor urdfColor = new URDFColor();
+      urdfColor.setRGBA(EuclidCoreIOTools.getStringOf(" ",
+                                                      null,
+                                                      colorDefinition.getRed(),
+                                                      colorDefinition.getGreen(),
+                                                      colorDefinition.getBlue(),
+                                                      colorDefinition.getAlpha()));
+      return urdfColor;
+   }
+
+   public static URDFTexture toURDFTexture(TextureDefinition diffuseMap)
+   {
+      if (diffuseMap == null)
+         return null;
+
+      URDFTexture urdfTexture = new URDFTexture();
+      urdfTexture.setFilename(diffuseMap.getFilename());
+      return urdfTexture;
+   }
+
+   public static List<URDFJoint> toURDFJoints(List<JointDefinition> jointDefinitions)
+   {
+      if (jointDefinitions == null || jointDefinitions.isEmpty())
+         return null;
+
+      List<URDFJoint> urdfJoints = new ArrayList<>();
+
+      for (JointDefinition jointDefinition : jointDefinitions)
+      {
+         URDFJoint urdfJoint = toURDFJoint(jointDefinition);
+         if (urdfJoint != null)
+            urdfJoints.add(urdfJoint);
+      }
+
+      return urdfJoints;
+   }
+
+   public static URDFJoint toURDFJoint(JointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      if (jointDefinition instanceof RevoluteJointDefinition revoluteJointDefinition)
+         return toURDFJoint(revoluteJointDefinition);
+      if (jointDefinition instanceof PrismaticJointDefinition prismaticJointDefinition)
+         return toURDFJoint(prismaticJointDefinition);
+      if (jointDefinition instanceof FixedJointDefinition fixedJointDefinition)
+         return toURDFJoint(fixedJointDefinition);
+      if (jointDefinition instanceof SixDoFJointDefinition sixDoFJointDefinition)
+         return toURDFJoint(sixDoFJointDefinition);
+      if (jointDefinition instanceof PlanarJointDefinition planarJointDefinition)
+         return toURDFJoint(planarJointDefinition);
+      throw new UnsupportedOperationException("Unsupported joint type: " + jointDefinition);
+   }
+
+   public static URDFJoint toURDFJoint(RevoluteJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      if (Double.isInfinite(jointDefinition.getPositionLowerLimit()) && Double.isInfinite(jointDefinition.getPositionLowerLimit()))
+         urdfJoint.setType(URDFJointType.continuous);
+      else
+         urdfJoint.setType(URDFJointType.revolute);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis()));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(PrismaticJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.prismatic);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis()));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(FixedJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.fixed);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(SixDoFJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.floating);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(PlanarJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.planar);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent()));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor()));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor()));
+      return urdfJoint;
+   }
+
+   public static List<URDFGazebo> toURDFGazebos(List<JointDefinition> jointDefinitions)
+   {
+      if (jointDefinitions == null || jointDefinitions.isEmpty())
+         return null;
+
+      List<URDFGazebo> urdfGazebos = new ArrayList<>();
+
+      for (JointDefinition jointDefinition : jointDefinitions)
+      {
+         List<URDFGazebo> jointURDFGazebos = toURDFGazebos(jointDefinition);
+         if (jointURDFGazebos != null)
+            urdfGazebos.addAll(jointURDFGazebos);
+      }
+
+      return urdfGazebos;
+   }
+
+   public static List<URDFGazebo> toURDFGazebos(JointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+      List<URDFSensor> urdfSensors = toURDFSensors(jointDefinition.getSensorDefinitions());
+      if (urdfSensors == null)
+         return null;
+
+      List<URDFGazebo> urdfGazebos = new ArrayList<>();
+
+      for (URDFSensor urdfSensor : urdfSensors)
+      {
+         URDFGazebo urdfGazebo = new URDFGazebo();
+         urdfGazebo.setReference(jointDefinition.getName());
+         urdfGazebo.setSensor(urdfSensor);
+         urdfGazebos.add(urdfGazebo);
+      }
+
+      return urdfGazebos;
+   }
+
+   public static List<URDFSensor> toURDFSensors(List<SensorDefinition> sensorDefinitions)
+   {
+      if (sensorDefinitions == null || sensorDefinitions.isEmpty())
+         return null;
+
+      List<URDFSensor> urdfSensors = new ArrayList<>();
+
+      for (SensorDefinition sensorDefinition : sensorDefinitions)
+      {
+         URDFSensor urdfSensor = toURDFSensor(sensorDefinition);
+         if (urdfSensor != null)
+            urdfSensors.add(urdfSensor);
+      }
+
+      return urdfSensors;
+   }
+
+   public static URDFSensor toURDFSensor(SensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      if (sensorDefinition instanceof CameraSensorDefinition cameraSensorDefinition)
+         return toURDFSensor(cameraSensorDefinition);
+      if (sensorDefinition instanceof LidarSensorDefinition lidarSensorDefinition)
+         return toURDFSensor(lidarSensorDefinition);
+      if (sensorDefinition instanceof IMUSensorDefinition imuSensorDefinition)
+         return toURDFSensor(imuSensorDefinition);
+      if (sensorDefinition instanceof WrenchSensorDefinition wrenchSensorDefinition)
+         return toURDFSensor(wrenchSensorDefinition);
+      LogTools.warn("Unsupported sensor type: " + sensorDefinition);
+      return null;
+   }
+
+   public static URDFSensor toURDFSensor(WrenchSensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      urdfSensor.setName(sensorDefinition.getName());
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
+      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.force_torque);
+      return urdfSensor;
+   }
+
+   public static URDFSensor toURDFSensor(IMUSensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      urdfSensor.setName(sensorDefinition.getName());
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
+      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.imu);
+
+      URDFIMU urdfIMU = new URDFIMU();
+
+      URDFIMUNoise urdfIMUNoise = new URDFIMUNoise();
+      urdfIMUNoise.setType(URDFIMUNoiseType.gaussian);
+
+      { // Angular velocity noise
+         URDFNoiseParameters urdfNoiseParameters = new URDFNoiseParameters();
+         urdfNoiseParameters.setMean(sensorDefinition.getAngularVelocityNoiseMean());
+         urdfNoiseParameters.setStddev(sensorDefinition.getAngularVelocityNoiseStandardDeviation());
+         urdfNoiseParameters.setBias_mean(sensorDefinition.getAngularVelocityBiasMean());
+         urdfNoiseParameters.setBias_stddev(sensorDefinition.getAngularVelocityBiasStandardDeviation());
+         urdfIMUNoise.setRate(urdfNoiseParameters);
+      }
+
+      { // Acceleration noise
+         URDFNoiseParameters urdfNoiseParameters = new URDFNoiseParameters();
+         urdfNoiseParameters.setMean(sensorDefinition.getAccelerationNoiseMean());
+         urdfNoiseParameters.setStddev(sensorDefinition.getAccelerationNoiseStandardDeviation());
+         urdfNoiseParameters.setBias_mean(sensorDefinition.getAccelerationBiasMean());
+         urdfNoiseParameters.setBias_stddev(sensorDefinition.getAccelerationBiasStandardDeviation());
+         urdfIMUNoise.setAccel(urdfNoiseParameters);
+      }
+
+      urdfIMU.setNoise(urdfIMUNoise);
+
+      return urdfSensor;
+   }
+
+   public static URDFSensor toURDFSensor(LidarSensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      urdfSensor.setName(sensorDefinition.getName());
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
+      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.ray);
+      urdfSensor.setRay(toURDFRay(sensorDefinition));
+      return urdfSensor;
+   }
+
+   public static URDFRay toURDFRay(LidarSensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFRay urdfRay = new URDFRay();
+
+      URDFRange urdfRange = new URDFRange();
+      urdfRange.setMax(sensorDefinition.getMaxRange());
+      urdfRange.setMin(sensorDefinition.getMinRange());
+      urdfRange.setResolution(sensorDefinition.getRangeResolution());
+
+      URDFScan urdfScan = new URDFScan();
+
+      URDFHorizontalScan urdfHorizontalScan = new URDFHorizontalScan();
+      urdfHorizontalScan.setMinAngle(sensorDefinition.getSweepYawMin());
+      urdfHorizontalScan.setMaxAngle(sensorDefinition.getSweepYawMax());
+      urdfHorizontalScan.setSamples(sensorDefinition.getPointsPerSweep());
+      urdfScan.setHorizontal(urdfHorizontalScan);
+
+      URDFVerticalScan urdfVerticalScan = new URDFVerticalScan();
+      urdfVerticalScan.setMinAngle(sensorDefinition.getHeightPitchMin());
+      urdfVerticalScan.setMaxAngle(sensorDefinition.getHeightPitchMax());
+      urdfVerticalScan.setSamples(sensorDefinition.getScanHeight());
+      urdfScan.setVertical(urdfVerticalScan);
+
+      URDFNoise urdfNoise = new URDFNoise();
+      urdfNoise.setType(URDFNoiseType.gaussian);
+      urdfNoise.setMean(sensorDefinition.getGaussianNoiseMean());
+      urdfNoise.setStddev(sensorDefinition.getGaussianNoiseStandardDeviation());
+      urdfRay.setNoise(urdfNoise);
+
+      urdfRay.setRange(urdfRange);
+
+      return urdfRay;
+   }
+
+   public static URDFSensor toURDFSensor(CameraSensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      String name = sensorDefinition.getName();
+      if (name.contains("_"))
+         urdfSensor.setName(name.substring(0, name.lastIndexOf("_")));
+      else
+         urdfSensor.setName(name);
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
+      urdfSensor.setUpdateRate(Double.toString(1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.camera);
+      urdfSensor.setCamera(Collections.singletonList(toURDFCamera(sensorDefinition)));
+      return urdfSensor;
+   }
+
+   public static URDFCamera toURDFCamera(CameraSensorDefinition sensorDefinition)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFCamera urdfCamera = new URDFCamera();
+      String name = sensorDefinition.getName();
+      if (name != null && name.contains("_"))
+         urdfCamera.setName(name.substring(name.lastIndexOf("_") + 1));
+      urdfCamera.setPose(toPoseString(sensorDefinition.getTransformToJoint()));
+      urdfCamera.setHorizontalFov(sensorDefinition.getFieldOfView());
+      urdfCamera.setImage(toURDFSensorImage(sensorDefinition.getImageWidth(), sensorDefinition.getImageHeight()));
+      urdfCamera.setClip(toURDFClip(sensorDefinition.getClipNear(), sensorDefinition.getClipFar()));
+      return urdfCamera;
+   }
+
+   public static URDFSensorImage toURDFSensorImage(int width, int height)
+   {
+      return toURDFSensorImage(width, height, null);
+   }
+
+   public static URDFSensorImage toURDFSensorImage(int width, int height, String format)
+   {
+      URDFSensorImage urdfSensorImage = new URDFSensorImage();
+      urdfSensorImage.setWidth(width);
+      urdfSensorImage.setHeight(height);
+      urdfSensorImage.setFormat(format);
+      return urdfSensorImage;
+   }
+
+   public static URDFClip toURDFClip(double near, double far)
+   {
+      URDFClip urdfClip = new URDFClip();
+      urdfClip.setNear(near);
+      urdfClip.setFar(far);
+      return urdfClip;
+   }
+
+   public static URDFOrigin toURDFOrigin(RigidBodyTransformReadOnly pose)
+   {
+      if (pose == null)
+         return null;
+
+      URDFOrigin urdfOrigin = new URDFOrigin();
+      Tuple3DReadOnly translation = pose.getTranslation();
+      urdfOrigin.setXYZ(EuclidCoreIOTools.getStringOf(" ", null, translation.getX(), translation.getY(), translation.getZ()));
+      Orientation3DReadOnly rotation = pose.getRotation();
+      urdfOrigin.setRPY(EuclidCoreIOTools.getStringOf(" ", null, rotation.getRoll(), rotation.getPitch(), rotation.getYaw()));
+      return urdfOrigin;
+   }
+
+   public static URDFOrigin toURDFOrigin(AffineTransformReadOnly pose)
+   {
+      if (pose == null)
+         return null;
+
+      URDFOrigin urdfOrigin = new URDFOrigin();
+      Tuple3DReadOnly translation = pose.getTranslation();
+      urdfOrigin.setXYZ(EuclidCoreIOTools.getStringOf(" ", null, translation.getX(), translation.getY(), translation.getZ()));
+      Orientation3DReadOnly rotation = pose.getLinearTransform().getAsQuaternion();
+      urdfOrigin.setRPY(EuclidCoreIOTools.getStringOf(" ", null, rotation.getRoll(), rotation.getPitch(), rotation.getYaw()));
+      if (!EuclidCoreTools.epsilonEquals(new Vector3D(1, 1, 1), pose.getLinearTransform().getScaleVector(), 1.0e-7))
+         LogTools.warn("Discarding scale from affine trane transform.");
+      return urdfOrigin;
+   }
+
+   public static String toPoseString(RigidBodyTransformReadOnly pose)
+   {
+      if (pose == null)
+         return null;
+
+      Tuple3DReadOnly translation = pose.getTranslation();
+      Orientation3DReadOnly rotation = pose.getRotation();
+      return EuclidCoreIOTools.getStringOf(" ",
+                                           null,
+                                           translation.getX(),
+                                           translation.getY(),
+                                           translation.getZ(),
+                                           rotation.getRoll(),
+                                           rotation.getPitch(),
+                                           rotation.getYaw());
+   }
+
+   public static URDFAxis toURDFAxis(Tuple3DReadOnly axis)
+   {
+      if (axis == null)
+         return null;
+
+      URDFAxis urdfAxis = new URDFAxis();
+      urdfAxis.setXYZ(EuclidCoreIOTools.getStringOf(" ", null, axis.getX(), axis.getY(), axis.getZ()));
+      return urdfAxis;
+   }
+
+   public static URDFLimit toURDFLimit(OneDoFJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFLimit urdfLimit = new URDFLimit();
+      urdfLimit.setLower(jointDefinition.getPositionLowerLimit());
+      urdfLimit.setUpper(jointDefinition.getPositionUpperLimit());
+      if (-jointDefinition.getVelocityLowerLimit() != jointDefinition.getVelocityUpperLimit())
+      {
+         LogTools.warn("Velocity limits no symmetric for joint {}, exporting smallest limit", jointDefinition.getName());
+         urdfLimit.setVelocity(Math.min(Math.abs(jointDefinition.getVelocityLowerLimit()), jointDefinition.getVelocityUpperLimit()));
+      }
+      else
+      {
+         urdfLimit.setVelocity(jointDefinition.getVelocityUpperLimit());
+      }
+
+      if (-jointDefinition.getEffortLowerLimit() != jointDefinition.getEffortUpperLimit())
+      {
+         LogTools.warn("Effort limits no symmetric for joint {}, exporting smallest limit", jointDefinition.getName());
+         urdfLimit.setEffort(Math.min(Math.abs(jointDefinition.getEffortLowerLimit()), jointDefinition.getEffortUpperLimit()));
+      }
+      else
+      {
+         urdfLimit.setEffort(jointDefinition.getEffortUpperLimit());
+      }
+      return urdfLimit;
+   }
+
+   public static URDFDynamics toURDFDynamics(OneDoFJointDefinition jointDefinition)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFDynamics urdfDynamics = new URDFDynamics();
+      urdfDynamics.setFriction(jointDefinition.getStiction());
+      urdfDynamics.setDamping(jointDefinition.getDamping());
+      return urdfDynamics;
+   }
+
+   public static URDFLinkReference toURDFLinkReference(RigidBodyDefinition rigidBodyDefinition)
+   {
+      if (rigidBodyDefinition == null)
+         return null;
+
+      URDFLinkReference urdfLinkReference = new URDFLinkReference();
+      urdfLinkReference.setLink(rigidBodyDefinition.getName());
+      return urdfLinkReference;
    }
 }

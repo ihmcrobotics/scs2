@@ -7,8 +7,30 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
+/**
+ * <a href="http://wiki.ros.org/urdf/XML/sensor"> ROS Specification sensor.</a>
+ *
+ * @author Sylvain Bertrand
+ */
 public class URDFSensor implements URDFItem
 {
+   public enum URDFSensorType
+   {
+      camera, multicamera, depth, imu, gpu_ray, ray, force_torque;
+
+      public static URDFSensorType parse(String value)
+      {
+         if (value == null)
+            return null;
+         for (URDFSensorType type : values())
+         {
+            if (type.name().equals(value))
+               return type;
+         }
+         return null;
+      }
+   };
+
    private String name;
    private String type;
    private String pose;
@@ -34,6 +56,11 @@ public class URDFSensor implements URDFItem
    public void setType(String type)
    {
       this.type = type;
+   }
+
+   public void setType(URDFSensorType type)
+   {
+      setType(type.name());
    }
 
    @XmlElement(name = "visualize")
@@ -205,16 +232,31 @@ public class URDFSensor implements URDFItem
             this.min = min;
          }
 
+         public void setMin(double min)
+         {
+            setMin(Double.toString(min));
+         }
+
          @XmlElement(name = "max")
          public void setMax(String max)
          {
             this.max = max;
          }
 
+         public void setMax(double max)
+         {
+            setMax(Double.toString(max));
+         }
+
          @XmlElement(name = "resolution")
          public void setResolution(String resolution)
          {
             this.resolution = resolution;
+         }
+
+         public void setResolution(double resolution)
+         {
+            setResolution(Double.toString(resolution));
          }
 
          public String getMin()
@@ -309,6 +351,11 @@ public class URDFSensor implements URDFItem
                this.samples = samples;
             }
 
+            public void setSamples(int samples)
+            {
+               setSamples(Integer.toString(samples));
+            }
+
             @XmlElement(name = "resolution")
             public void setResolution(String resolution)
             {
@@ -321,10 +368,20 @@ public class URDFSensor implements URDFItem
                this.minAngle = minAngle;
             }
 
+            public void setMinAngle(double minAngle)
+            {
+               setMinAngle(Double.toString(minAngle));
+            }
+
             @XmlElement(name = "max_angle")
             public void setMaxAngle(String maxAngle)
             {
                this.maxAngle = maxAngle;
+            }
+
+            public void setMaxAngle(double maxAngle)
+            {
+               setMaxAngle(Double.toString(maxAngle));
             }
 
             public String getSamples()
@@ -379,6 +436,11 @@ public class URDFSensor implements URDFItem
                this.samples = samples;
             }
 
+            public void setSamples(int samples)
+            {
+               setSamples(Integer.toString(samples));
+            }
+
             @XmlElement(name = "resolution")
             public void setResolution(String resolution)
             {
@@ -391,10 +453,20 @@ public class URDFSensor implements URDFItem
                this.minAngle = minAngle;
             }
 
+            public void setMinAngle(double minAngle)
+            {
+               setMinAngle(Double.toString(minAngle));
+            }
+
             @XmlElement(name = "max_angle")
             public void setMaxAngle(String maxAngle)
             {
                this.maxAngle = maxAngle;
+            }
+
+            public void setMaxAngle(double maxAngle)
+            {
+               setMaxAngle(Double.toString(maxAngle));
             }
 
             public String getSamples()
@@ -439,6 +511,23 @@ public class URDFSensor implements URDFItem
 
       public static class URDFNoise implements URDFItem
       {
+         public enum URDFNoiseType
+         {
+            gaussian;
+
+            public static URDFNoiseType parse(String value)
+            {
+               if (value == null)
+                  return null;
+               for (URDFNoiseType type : values())
+               {
+                  if (type.name().equals(value))
+                     return type;
+               }
+               return null;
+            }
+         };
+
          private String type;
          private String mean;
          private String stddev;
@@ -449,16 +538,31 @@ public class URDFSensor implements URDFItem
             this.type = type;
          }
 
+         public void setType(URDFNoiseType type)
+         {
+            setType(type.name());
+         }
+
          @XmlElement(name = "mean")
          public void setMean(String mean)
          {
             this.mean = mean;
          }
 
+         public void setMean(double mean)
+         {
+            setMean(Double.toString(mean));
+         }
+
          @XmlElement(name = "stddev")
          public void setStddev(String stddev)
          {
             this.stddev = stddev;
+         }
+
+         public void setStddev(double stddev)
+         {
+            setStddev(Double.toString(stddev));
          }
 
          public String getType()
@@ -524,6 +628,11 @@ public class URDFSensor implements URDFItem
       public void setHorizontalFov(String horizontalFov)
       {
          this.horizontalFov = horizontalFov;
+      }
+
+      public void setHorizontalFov(double horizontalFov)
+      {
+         setHorizontalFov(Double.toString(horizontalFov));
       }
 
       public URDFSensorImage getImage()
@@ -594,6 +703,11 @@ public class URDFSensor implements URDFItem
             this.width = width;
          }
 
+         public void setWidth(int width)
+         {
+            setWidth(Integer.toString(width));
+         }
+
          public String getHeight()
          {
             return height;
@@ -603,6 +717,11 @@ public class URDFSensor implements URDFItem
          public void setHeight(String height)
          {
             this.height = height;
+         }
+
+         public void setHeight(int height)
+         {
+            setHeight(Integer.toString(height));
          }
 
          public String getFormat()
@@ -651,6 +770,11 @@ public class URDFSensor implements URDFItem
             this.near = near;
          }
 
+         public void setNear(double near)
+         {
+            setNear(Double.toString(near));
+         }
+
          public String getFar()
          {
             return far;
@@ -660,6 +784,11 @@ public class URDFSensor implements URDFItem
          public void setFar(String far)
          {
             this.far = far;
+         }
+
+         public void setFar(double far)
+         {
+            setFar(Double.toString(far));
          }
 
          @Override
@@ -717,6 +846,23 @@ public class URDFSensor implements URDFItem
 
       public static class URDFIMUNoise implements URDFItem
       {
+         public enum URDFIMUNoiseType
+         {
+            gaussian;
+
+            public static URDFIMUNoiseType parse(String value)
+            {
+               if (value == null)
+                  return null;
+               for (URDFIMUNoiseType type : values())
+               {
+                  if (type.name().equals(value))
+                     return type;
+               }
+               return null;
+            }
+         };
+
          private String type;
          private URDFNoiseParameters rate;
          private URDFNoiseParameters accel;
@@ -740,6 +886,11 @@ public class URDFSensor implements URDFItem
          public void setType(String type)
          {
             this.type = type;
+         }
+
+         public void setType(URDFIMUNoiseType type)
+         {
+            setType(type.name());
          }
 
          @XmlElement(name = "rate")
@@ -805,10 +956,20 @@ public class URDFSensor implements URDFItem
                this.mean = mean;
             }
 
+            public void setMean(double mean)
+            {
+               setMean(Double.toString(mean));
+            }
+
             @XmlElement(name = "stddev")
             public void setStddev(String stddev)
             {
                this.stddev = stddev;
+            }
+
+            public void setStddev(double stddev)
+            {
+               setStddev(Double.toString(stddev));
             }
 
             @XmlElement(name = "bias_mean")
@@ -817,10 +978,20 @@ public class URDFSensor implements URDFItem
                this.bias_mean = bias_mean;
             }
 
+            public void setBias_mean(double bias_mean)
+            {
+               setBias_mean(Double.toString(bias_mean));
+            }
+
             @XmlElement(name = "bias_stddev")
             public void setBias_stddev(String bias_stddev)
             {
                this.bias_stddev = bias_stddev;
+            }
+
+            public void setBias_stddev(double bias_stddev)
+            {
+               setBias_stddev(Double.toString(bias_stddev));
             }
 
             @Override

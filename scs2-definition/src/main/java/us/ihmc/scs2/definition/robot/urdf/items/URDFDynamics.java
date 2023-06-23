@@ -21,10 +21,20 @@ public class URDFDynamics implements URDFItem
       this.damping = damping;
    }
 
+   public void setDamping(double damping)
+   {
+      setDamping(Double.toString(damping));
+   }
+
    @XmlAttribute(name = "friction")
    public void setFriction(String friction)
    {
       this.friction = friction;
+   }
+
+   public void setFriction(double friction)
+   {
+      setFriction(Double.toString(friction));
    }
 
    public String getDamping()

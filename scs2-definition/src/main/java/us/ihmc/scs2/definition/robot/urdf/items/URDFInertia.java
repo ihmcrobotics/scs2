@@ -25,10 +25,20 @@ public class URDFInertia implements URDFItem
       this.ixx = ixx;
    }
 
+   public void setIxx(double ixx)
+   {
+      setIxx(Double.toString(ixx));
+   }
+
    @XmlAttribute(name = "iyy")
    public void setIyy(String iyy)
    {
       this.iyy = iyy;
+   }
+
+   public void setIyy(double iyy)
+   {
+      setIyy(Double.toString(iyy));
    }
 
    @XmlAttribute(name = "izz")
@@ -37,10 +47,20 @@ public class URDFInertia implements URDFItem
       this.izz = izz;
    }
 
+   public void setIzz(double izz)
+   {
+      setIzz(Double.toString(izz));
+   }
+
    @XmlAttribute(name = "ixy")
    public void setIxy(String ixy)
    {
       this.ixy = ixy;
+   }
+
+   public void setIxy(double ixy)
+   {
+      setIxy(Double.toString(ixy));
    }
 
    @XmlAttribute(name = "ixz")
@@ -49,10 +69,20 @@ public class URDFInertia implements URDFItem
       this.ixz = ixz;
    }
 
+   public void setIxz(double ixz)
+   {
+      setIxz(Double.toString(ixz));
+   }
+
    @XmlAttribute(name = "iyz")
    public void setIyz(String iyz)
    {
       this.iyz = iyz;
+   }
+
+   public void setIyz(double iyz)
+   {
+      setIyz(Double.toString(iyz));
    }
 
    public String getIxx()

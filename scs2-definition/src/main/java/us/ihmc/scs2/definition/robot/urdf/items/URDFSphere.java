@@ -20,6 +20,11 @@ public class URDFSphere implements URDFItem
       this.radius = radius;
    }
 
+   public void setRadius(double radius)
+   {
+      setRadius(Double.toString(radius));
+   }
+
    public String getRadius()
    {
       return radius;

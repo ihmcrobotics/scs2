@@ -12,6 +12,23 @@ import javax.xml.bind.annotation.XmlElement;
  */
 public class URDFJoint implements URDFItem
 {
+   public enum URDFJointType
+   {
+      continuous, revolute, prismatic, fixed, floating, planar;
+
+      public static URDFJointType parse(String value)
+      {
+         if (value == null)
+            return null;
+         for (URDFJointType type : values())
+         {
+            if (type.name().equals(value))
+               return type;
+         }
+         return null;
+      }
+   };
+
    private String name;
    private String type;
    private URDFOrigin origin;
@@ -34,6 +51,11 @@ public class URDFJoint implements URDFItem
    public void setType(String type)
    {
       this.type = type;
+   }
+
+   public void setType(URDFJointType type)
+   {
+      setType(type.name());
    }
 
    @XmlElement(name = "origin")
@@ -149,7 +171,17 @@ public class URDFJoint implements URDFItem
    public String getContentAsString()
    {
       return format("[name: %s, type: %s, origin: %s, parent: %s, child: %s, axis: %s, calibration: %s, dynamics: %s, limit: %s, mimic: %s, safetyController: %s]",
-                    name, type, origin, parent, child, axis, calibration, dynamics, limit, mimic, safetyController);
+                    name,
+                    type,
+                    origin,
+                    parent,
+                    child,
+                    axis,
+                    calibration,
+                    dynamics,
+                    limit,
+                    mimic,
+                    safetyController);
    }
 
    @Override
