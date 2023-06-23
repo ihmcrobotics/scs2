@@ -183,7 +183,7 @@ public class TimestampScrubberTest
         scrubber.getVideoTimestamp(Long.MAX_VALUE);
         int endOfArray = scrubber.getCurrentIndex();
 
-        assertEquals(actualRobotTimestamps.length - 1, endOfArray);
+        assertEquals(actualRobotTimestamps.length, endOfArray);
     }
 
     @Test

@@ -239,7 +239,7 @@ public class VideoDataReader
             return 0;
 
          if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
-            return robotTimestamps.length - 2;
+            return robotTimestamps.length - 1;
 
          index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
