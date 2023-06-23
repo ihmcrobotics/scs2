@@ -7,7 +7,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -177,5 +176,24 @@ public class TimestampScrubberTest
         int endOfArray = scrubber.getCurrentIndex();
 
         assertEquals(actualRobotTimestamps.length - 1, endOfArray);
+    }
+
+    @Test
+    public void testFileNotFoundException()
+    {
+        File badName = new File("This_is_a_bad_file_name_lol");
+
+        Throwable thrown = assertThrows(RuntimeException.class, () -> new VideoDataReader.TimestampScrubber(badName, true, false));
+        assertEquals("java.io.FileNotFoundException: " + badName + " (The system cannot find the file specified)", thrown.getMessage());
+    }
+
+    @Test
+    public void testInsertionPointWhenSearching()
+    {
+        // Trying to find a robotTimestamp that doesn't exist will cause an insertionPoint
+        scrubber.getVideoTimestamp(actualRobotTimestamps[0] + 1);
+        int insertionPointIndex = scrubber.getCurrentIndex();
+
+        assertEquals(1, insertionPointIndex);
     }
 }
