@@ -32,7 +32,6 @@ public class VideoDataReader
 
    public VideoDataReader(Camera camera, File dataDirectory, boolean hasTimeBase) throws IOException
    {
-
       this.camera = camera;
       name = camera.getNameAsString();
       boolean interlaced = camera.getInterlaced();
@@ -49,9 +48,9 @@ public class VideoDataReader
          throw new IOException("Cannot find video: " + videoFile);
       }
 
-      File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
-
       demuxer = new MP4VideoDemuxer(videoFile);
+
+      File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
 
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
    }
@@ -169,10 +168,9 @@ public class VideoDataReader
       private long[] robotTimestamps;
       private long[] videoTimestamps;
 
-      private long currentRobotTimestamp = 0;
-
-      private long videoTimestamp;
       private int currentIndex = 0;
+      private long currentRobotTimestamp = 0;
+      private long videoTimestamp;
 
       public TIntHashSet replacedRobotTimestampIndexes = new TIntHashSet();
 
@@ -222,7 +220,6 @@ public class VideoDataReader
 
             this.robotTimestamps = robotTimestamps.toArray();
             this.videoTimestamps = videoTimestamps.toArray();
-
          }
          catch (FileNotFoundException e)
          {
@@ -238,7 +235,8 @@ public class VideoDataReader
          {
             if (robotTimestamps[index] == robotTimestamps[index + 1] && index + 2 < robotTimestamps.length)
             {
-               addDuplicateIndexToList(index + 1);
+               // Keeps track of the duplicated index's so frames border can be adjusted
+               replacedRobotTimestampIndexes.add(index + 1);
 
                int firstDuplicateIndex = index;
                int nextNonDuplicateIndex = getNextNonDuplicateIndex(index);
@@ -297,15 +295,13 @@ public class VideoDataReader
 
       private int searchRobotTimestampsForIndex(long queryRobotTimestamp)
       {
-         int index;
-
          if (queryRobotTimestamp <= robotTimestamps[0])
             return 0;
 
          if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
             return robotTimestamps.length - 1;
 
-         index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
+         int index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
          if (index < 0)
          {
@@ -349,11 +345,6 @@ public class VideoDataReader
       public long getCurrentVideoTimestamp()
       {
          return videoTimestamp;
-      }
-
-      public void addDuplicateIndexToList(int index)
-      {
-         replacedRobotTimestampIndexes.add(index);
       }
    }
 }
