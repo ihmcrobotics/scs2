@@ -270,12 +270,12 @@ public class VideoDataReader
          return robotTimestamps[i];
       }
 
-      public long[] getRobotTimestampsFromFile()
+      public long[] getRobotTimestampsArray()
       {
          return robotTimestamps;
       }
 
-      public long[] getVideoTimestampsFromFile()
+      public long[] getVideoTimestampsArray()
       {
          return videoTimestamps;
       }
