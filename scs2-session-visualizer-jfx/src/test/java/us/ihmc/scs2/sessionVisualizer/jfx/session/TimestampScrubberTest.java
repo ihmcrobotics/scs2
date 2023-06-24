@@ -33,8 +33,8 @@ public class TimestampScrubberTest
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
         // Need to have one video in the log or this will fail
-        actualRobotTimestamps = scrubber.getRobotTimestampsFromFile();
-        actualVideoTimestamps = scrubber.getVideoTimestampsFromFile();
+        actualRobotTimestamps = scrubber.getRobotTimestampsArray();
+        actualVideoTimestamps = scrubber.getVideoTimestampsArray();
     }
 
     @Test
