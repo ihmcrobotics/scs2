@@ -32,8 +32,8 @@ public class TimestampScrubberTest
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
-        actualRobotTimestamps = scrubber.getRobotTimestampsFromFile();
-        actualVideoTimestamps = scrubber.getVideoTimestampsFromFile();
+        actualRobotTimestamps = scrubber.getRobotTimestampsArray();
+        actualVideoTimestamps = scrubber.getVideoTimestampsArray();
 
         // Check for duplicate robotTimestamps at end of file. Due to delay between controller and logger we don't want to even consider those indexes
         for (int i = actualRobotTimestamps.length - 1; i > 0; i--)
@@ -41,6 +41,7 @@ public class TimestampScrubberTest
             if (actualRobotTimestamps[i] == actualRobotTimestamps[i - 1])
                 duplicatesAtEndOfFile++;
         }
+        // Need to have one video in the log or this will fail
     }
 
     @Test
