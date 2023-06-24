@@ -233,15 +233,13 @@ public class VideoDataReader
 
       private int searchRobotTimestampsForIndex(long queryRobotTimestamp)
       {
-         int index;
-
          if (queryRobotTimestamp <= robotTimestamps[0])
             return 0;
 
          if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
             return robotTimestamps.length - 1;
 
-         index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
+         int index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
          if (index < 0)
          {
