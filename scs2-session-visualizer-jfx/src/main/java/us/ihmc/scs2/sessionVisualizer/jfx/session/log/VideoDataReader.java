@@ -229,53 +229,68 @@ public class VideoDataReader
          checkAndReplaceDuplicates();
       }
 
-      public void checkAndReplaceDuplicates()
+      private void checkAndReplaceDuplicates()
       {
-         for (int index = 0; index < robotTimestamps.length - 1; index++)
+         int duplicatesAtEndOfFile = getNumberOfDuplicatesAtEndOfFile();
+
+         int currentIndex = 0;
+         while (currentIndex < robotTimestamps.length - duplicatesAtEndOfFile)
          {
-            if (robotTimestamps[index] == robotTimestamps[index + 1] && index + 2 < robotTimestamps.length)
+            if (robotTimestamps[currentIndex] == robotTimestamps[currentIndex + 1])
             {
                // Keeps track of the duplicated index's so frames border can be adjusted
-               replacedRobotTimestampIndexes.add(index + 1);
+               replacedRobotTimestampIndexes.add(currentIndex + 1);
 
-               int firstDuplicateIndex = index;
-               int nextNonDuplicateIndex = getNextNonDuplicateIndex(index);
-               int numberOfDuplicates = nextNonDuplicateIndex - firstDuplicateIndex;
+               int lastDuplicateIndex = getLastDuplicateIndex(currentIndex);
+               int nextNonDuplicateIndex = lastDuplicateIndex + 1;
 
-               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[firstDuplicateIndex], robotTimestamps[nextNonDuplicateIndex], (double) 1 / numberOfDuplicates);
-               long deltaValue = firstAdjustedTimestamp - robotTimestamps[firstDuplicateIndex];
+               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[currentIndex], robotTimestamps[nextNonDuplicateIndex],
+                                                                                (double) 1 / (nextNonDuplicateIndex - currentIndex));
+               replaceDuplicateTimestampsAndIncrementIndex(currentIndex, lastDuplicateIndex, firstAdjustedTimestamp);
 
-               index = replaceDuplicateTimestampsAndIncrementIndex(firstDuplicateIndex, nextNonDuplicateIndex - 1, deltaValue);
+               currentIndex = nextNonDuplicateIndex;
+            }
+            else
+            {
+               currentIndex++;
             }
          }
       }
 
-      public int getNextNonDuplicateIndex(int index)
+      private int getNumberOfDuplicatesAtEndOfFile()
       {
-         while (robotTimestamps[index] == robotTimestamps[index + 1] && index + 2 < robotTimestamps.length)
-            index++;
+         int duplicatesAtEndOfFile = 1;
 
-         return index + 1;
+         for (int i = robotTimestamps.length - 1; i > 0; i--)
+         {
+            if (robotTimestamps[i] == robotTimestamps[i - 1])
+               duplicatesAtEndOfFile++;
+         }
+
+         return duplicatesAtEndOfFile;
       }
 
-      private int replaceDuplicateTimestampsAndIncrementIndex(int firstDuplicateIndex, int lastDuplicateIndex, long deltaValue)
+      private int getLastDuplicateIndex(int index)
       {
-         // Don't replace duplicates at end of file since the controller has already stopped and this data is junk
-         if (lastDuplicateIndex + 2 >= robotTimestamps.length)
-            return robotTimestamps.length;
+         while (index < robotTimestamps.length - 1 && robotTimestamps[index] == robotTimestamps[index + 1])
+            index++;
 
-         int currentIndex = firstDuplicateIndex + 1;
+         return index;
+      }
+
+      private void replaceDuplicateTimestampsAndIncrementIndex(int firstDuplicateIndex, int lastDuplicateIndex, long firstAdjustedTimestamp)
+      {
+         long deltaValue = firstAdjustedTimestamp - robotTimestamps[firstDuplicateIndex];
+
+         int currentIndex = firstDuplicateIndex;
          while (currentIndex <= lastDuplicateIndex)
          {
             int deltaIndex = currentIndex - firstDuplicateIndex;
             long additionalValue = deltaValue * deltaIndex;
-
             robotTimestamps[currentIndex] = robotTimestamps[currentIndex] + additionalValue;
+
             currentIndex++;
          }
-
-         // Prevents looping through the currentIndex's we have already changed in this method, ( - 1) because the for loop increments once
-         return currentIndex - 1;
       }
 
       /**

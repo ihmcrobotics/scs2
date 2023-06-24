@@ -7,12 +7,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-/**
- * Tests in this class are disabled because the files have duplicate timestamps that will cause issues when trying to retrieve a specific timestamp
- */
 
 public class TimestampScrubberTest
 {
@@ -27,8 +24,8 @@ public class TimestampScrubberTest
     @BeforeAll
     public static void loadFileTimestamps() throws URISyntaxException, IOException
     {
-        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
-//        File timestampFile = new File(Objects.requireNonNull(TimestampScrubberTest.class.getClassLoader().getResource("sessionLogs/GStreamer_HDMI_timestamps_100.dat")).toURI());
+//        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
+        File timestampFile = new File(Objects.requireNonNull(TimestampScrubberTest.class.getClassLoader().getResource("sessionLogs/Capture.dat")).toURI());
 
         scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
 
@@ -96,8 +93,11 @@ public class TimestampScrubberTest
             previousTimestamp = actualRobotTimestamps[i - 1];
             long currentTimestamp = actualRobotTimestamps[i];
 
+//            System.out.println(i - 1);
+//            System.out.println(i);
+
             Assertions.assertTrue(currentTimestamp > previousTimestamp,
-                    "Cureent: " + currentTimestamp + "\n Previous: " + previousTimestamp);
+                    "Current: " + currentTimestamp + "\n Previous: " + previousTimestamp);
 
             long currentDelta = currentTimestamp - previousTimestamp;
             delta += currentDelta;
