@@ -275,9 +275,9 @@ public class URDFTools
          }
          resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
 
-         if (urdfModel.getLinks() != null)
+         if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
             urdfModel.getLinks().removeIf(urdfLink -> parserProperties.linksToIgnore.contains(urdfLink.getName()));
-         if (urdfModel.getJoints() != null)
+         if (!parserProperties.jointsToIgnore.isEmpty() && urdfModel.getJoints() != null)
             urdfModel.getJoints().removeIf(urdfJoint -> parserProperties.jointsToIgnore.contains(urdfJoint.getName()));
          if (!parserProperties.parseSensors)
             urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
