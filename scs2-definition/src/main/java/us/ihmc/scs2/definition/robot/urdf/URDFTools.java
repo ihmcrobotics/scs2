@@ -637,7 +637,11 @@ public class URDFTools
     */
    public static JointDefinition toJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
-      switch (URDFJointType.parse(urdfJoint.getType()))
+      URDFJointType type = URDFJointType.parse(urdfJoint.getType());
+      if (type == null)
+         throw new RuntimeException("Unexpected value for the joint type: " + urdfJoint.getType());
+
+      switch (type)
       {
          case continuous:
             return toRevoluteJointDefinition(urdfJoint, true, parserProperties);
