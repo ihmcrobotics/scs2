@@ -15,11 +15,6 @@ public class URDFMass implements URDFItem
       this.value = value;
    }
 
-   public void setValue(double value)
-   {
-      setValue(Double.toString(value));
-   }
-
    public String getValue()
    {
       return value;
