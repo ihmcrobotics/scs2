@@ -1783,13 +1783,13 @@ public class URDFTools
       URDFHorizontalScan urdfHorizontalScan = new URDFHorizontalScan();
       urdfHorizontalScan.setMinAngle(properties.toString(URDFHorizontalScan.class, "min_angle", sensorDefinition.getSweepYawMin()));
       urdfHorizontalScan.setMaxAngle(properties.toString(URDFHorizontalScan.class, "max_angle", sensorDefinition.getSweepYawMax()));
-      urdfHorizontalScan.setSamples(properties.toString(URDFHorizontalScan.class, "samples", sensorDefinition.getPointsPerSweep()));
+      urdfHorizontalScan.setSamples(Integer.toString(sensorDefinition.getPointsPerSweep()));
       urdfScan.setHorizontal(urdfHorizontalScan);
 
       URDFVerticalScan urdfVerticalScan = new URDFVerticalScan();
       urdfVerticalScan.setMinAngle(properties.toString(URDFVerticalScan.class, "min_angle", sensorDefinition.getHeightPitchMin()));
       urdfVerticalScan.setMaxAngle(properties.toString(URDFVerticalScan.class, "max_angle", sensorDefinition.getHeightPitchMax()));
-      urdfVerticalScan.setSamples(properties.toString(URDFVerticalScan.class, "samples", sensorDefinition.getScanHeight()));
+      urdfVerticalScan.setSamples(Integer.toString(sensorDefinition.getScanHeight()));
       urdfScan.setVertical(urdfVerticalScan);
       urdfRay.setScan(urdfScan);
 
@@ -1830,7 +1830,7 @@ public class URDFTools
       if (name != null && name.contains("_"))
          urdfCamera.setName(name.substring(name.lastIndexOf("_") + 1));
       urdfCamera.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
-      urdfCamera.setHorizontalFov(sensorDefinition.getFieldOfView());
+      urdfCamera.setHorizontalFov(properties.toString(URDFCamera.class, "horizontal_fov", sensorDefinition.getFieldOfView()));
       urdfCamera.setImage(toURDFSensorImage(sensorDefinition.getImageWidth(), sensorDefinition.getImageHeight(), properties));
       urdfCamera.setClip(toURDFClip(sensorDefinition.getClipNear(), sensorDefinition.getClipFar(), properties));
       return urdfCamera;
@@ -1844,8 +1844,8 @@ public class URDFTools
    public static URDFSensorImage toURDFSensorImage(int width, int height, String format, URDFGeneratorProperties properties)
    {
       URDFSensorImage urdfSensorImage = new URDFSensorImage();
-      urdfSensorImage.setWidth(width);
-      urdfSensorImage.setHeight(height);
+      urdfSensorImage.setWidth(Integer.toString(width));
+      urdfSensorImage.setHeight(Integer.toString(height));
       urdfSensorImage.setFormat(format);
       return urdfSensorImage;
    }
