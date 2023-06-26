@@ -15,8 +15,8 @@ public class TimestampScrubberTest
 {
     private static VideoDataReader.TimestampScrubber scrubber;
 
-    private long[] robotTimestamps;
-    private long[] videoTimestamps;
+    private static long[] robotTimestamps;
+    private static long[] videoTimestamps;
 
     // After the controller stops we generate a lot of garbage timestamps. This prevents us from trying to use them
     private static int duplicatesAtEndOfFile = 1;
@@ -91,7 +91,7 @@ public class TimestampScrubberTest
         long whereItHappened = 0;
 
         // Go through the robot timestamps in order and check the next one is larger
-        for (int i = 1; i < robotTimestamps.length; i++)
+        for (int i = 1; i < robotTimestamps.length - duplicatesAtEndOfFile; i++)
         {
             previousTimestamp = robotTimestamps[i - 1];
             long currentTimestamp = robotTimestamps[i];
