@@ -16,7 +16,7 @@ public class URDFSensor implements URDFItem
 {
    public enum URDFSensorType
    {
-      camera, multicamera, depth, imu, gpu_ray, ray, force_torque;
+      camera, multicamera, depth, imu, gpu_ray, ray, force_torque, contact;
 
       public static URDFSensorType parse(String value)
       {

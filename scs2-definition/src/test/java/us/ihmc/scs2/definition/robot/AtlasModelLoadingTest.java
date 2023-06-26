@@ -190,7 +190,7 @@ public class AtlasModelLoadingTest
    {
       InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream("models/atlas/atlas_unplugged_v5_dual_robotiq_with_head.urdf");
       URDFModel urdfModel = URDFTools.loadURDFModel(resourceAsStream, Collections.emptyList(), this.getClass().getClassLoader());
-      RobotDefinition robotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
+      RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel);
       performAssertionsOnRobotDefinition(robotDefinition);
    }
 
@@ -199,7 +199,7 @@ public class AtlasModelLoadingTest
    {
       InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream("models/atlas/atlas_unplugged_v5_dual_robotiq_with_head.urdf");
       URDFModel urdfModel = URDFTools.loadURDFModel(resourceAsStream, Collections.emptyList(), this.getClass().getClassLoader());
-      RobotDefinition exportedRobotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
+      RobotDefinition exportedRobotDefinition = URDFTools.toRobotDefinition(urdfModel);
       File testFile = new File("test.xml");
       DefinitionIOTools.saveRobotDefinition(new FileOutputStream(testFile), exportedRobotDefinition);
       RobotDefinition importedRobotDefinition = DefinitionIOTools.loadRobotDefinition(new FileInputStream(testFile));
