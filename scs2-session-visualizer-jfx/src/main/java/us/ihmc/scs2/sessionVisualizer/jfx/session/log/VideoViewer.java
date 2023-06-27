@@ -223,8 +223,6 @@ public class VideoViewer
 
          if (imageViewRootPane.get() != null)
          {
-            System.out.println(reader.getCurrentIndex() + " -- current index");
-
             if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
             {
                imageViewRootPane.get()
