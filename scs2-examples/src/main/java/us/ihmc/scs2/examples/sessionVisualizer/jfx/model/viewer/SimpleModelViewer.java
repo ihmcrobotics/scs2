@@ -35,9 +35,10 @@ public class SimpleModelViewer
       if (modelFile == null)
       {
          FileChooser fileChooser = new FileChooser();
-         fileChooser.getExtensionFilters().addAll(new ExtensionFilter("All Model Files", "*.urdf", "*.sdf"),
-                                                  new ExtensionFilter("URDF Files", "*.urdf"),
-                                                  new ExtensionFilter("SDF Files", "*.sdf"));
+         fileChooser.getExtensionFilters()
+                    .addAll(new ExtensionFilter("All Model Files", "*.urdf", "*.sdf"),
+                            new ExtensionFilter("URDF Files", "*.urdf"),
+                            new ExtensionFilter("SDF Files", "*.sdf"));
          fileChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath(MODEL_FILE_KEY));
          modelFile = fileChooser.showOpenDialog(primaryStage);
       }
@@ -63,7 +64,7 @@ public class SimpleModelViewer
          {
             throw new RuntimeException(e);
          }
-         robotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
+         robotDefinition = URDFTools.toRobotDefinition(urdfModel);
       }
       else if (modelFile.getName().toLowerCase().endsWith("sdf"))
       {
@@ -89,7 +90,6 @@ public class SimpleModelViewer
       RigidBodyFrameNodeFactories.createRobotFrameNodeMap(rigidBody, robotDefinition, null, frameNodes);
       rigidBody.updateFramesRecursively();
       frameNodes.values().forEach(FrameNode::updatePose);
-
 
       View3DFactory view3dFactory = new View3DFactory(1024, 768);
       view3dFactory.addWorldCoordinateSystem(0.2);
