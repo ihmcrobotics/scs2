@@ -52,7 +52,6 @@ public class VideoDataReader
       demuxer = new MP4VideoDemuxer(videoFile);
 
       File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
-
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
    }
 
@@ -100,7 +99,6 @@ public class VideoDataReader
 
          if (robotTimestamp >= startTimestamp && robotTimestamp <= endTimestamp)
          {
-
             timestampWriter.print(robotTimestamp);
             timestampWriter.print(" ");
             timestampWriter.println(pts);
@@ -122,7 +120,8 @@ public class VideoDataReader
       try
       {
          VideoConverter.convert(videoFile, selectedFile, startVideoTimestamp, endVideoTimestamp, progreesConsumer);
-      } catch (IOException e)
+      }
+      catch (IOException e)
       {
          e.printStackTrace();
       }
@@ -278,7 +277,6 @@ public class VideoDataReader
             robotTimestamps[i + 1] = firstAdjustedTimestamp;
          }
       }
-
 
       /**
        * Searches the list of robotTimestamps for the value closest to queryRobotTimestamp and returns that index. Then sets videoTimestamp to
