@@ -37,7 +37,7 @@ public class VideoViewer
 
    private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
                                                                                                               "SCS2_GUI_LOGGER_VIDEO_DEBUG",
-                                                                                                              true);
+                                                                                                              false);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private FrameData currentFrameData;
