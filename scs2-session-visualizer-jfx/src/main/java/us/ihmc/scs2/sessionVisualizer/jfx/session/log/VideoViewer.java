@@ -37,7 +37,7 @@ public class VideoViewer
 
    private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
                                                                                                               "SCS2_GUI_LOGGER_VIDEO_DEBUG",
-                                                                                                              false);
+                                                                                                              true);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private FrameData currentFrameData;
@@ -102,7 +102,6 @@ public class VideoViewer
             VBox vbox = new VBox();
             vbox.getChildren().add(anchorPane);
             VBox.setVgrow(anchorPane, Priority.ALWAYS);
-            vbox.getChildren().add(new Spinner<Integer>());
             imageViewRootPane.set(root);
 
             setupVideoStatistics(anchorPane);
