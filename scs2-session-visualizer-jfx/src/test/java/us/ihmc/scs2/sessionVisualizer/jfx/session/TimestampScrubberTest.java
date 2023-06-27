@@ -45,20 +45,20 @@ public class TimestampScrubberTest
     @Test
     public void testChronologicallyIncreasingRobotTimestamps()
     {
-        long previousTimestamp;
+        long previousRobotTimestamp;
 
         // Go through the robot timestamps in order and check the next one is larger
         for (int i = 1; i < robotTimestamps.length - duplicatesAtEndOfFile; i++)
         {
-            previousTimestamp = robotTimestamps[i - 1];
-            long currentTimestamp = robotTimestamps[i];
+            previousRobotTimestamp = robotTimestamps[i - 1];
+            long currentRobotTimestamp = robotTimestamps[i];
 
             // Useful for debugging timestamps issues, won't print anything if the checkForDuplicates() is run inside the VideoDataReader
-            if (currentTimestamp == previousTimestamp)
-                System.out.println(currentTimestamp + " -- " + previousTimestamp);
+            if (currentRobotTimestamp == previousRobotTimestamp)
+                System.out.println(currentRobotTimestamp + " -- " + previousRobotTimestamp);
 
-            Assertions.assertTrue(currentTimestamp > previousTimestamp,
-                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp + " at Index: " + i);
+            Assertions.assertTrue(currentRobotTimestamp > previousRobotTimestamp,
+                    "Cureent: " + currentRobotTimestamp + " and Previous: " + previousRobotTimestamp + " at Index: " + i);
         }
     }
 
