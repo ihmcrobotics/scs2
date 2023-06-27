@@ -228,7 +228,7 @@ public class VideoViewer
             if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
             {
                imageViewRootPane.get()
-                                .setBorder(new Border(new BorderStroke(Color.GREEN, BorderStrokeStyle.SOLID, new CornerRadii(0),
+                                .setBorder(new Border(new BorderStroke(Color.DARKORANGE, BorderStrokeStyle.SOLID, new CornerRadii(0),
                                                                        new BorderWidths(25, 25, 25, 25,
                                                                                         false, false, false, false))));
 
