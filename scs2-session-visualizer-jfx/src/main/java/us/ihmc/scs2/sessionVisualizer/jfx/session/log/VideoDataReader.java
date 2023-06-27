@@ -233,16 +233,25 @@ public class VideoDataReader
          replacedRobotTimestampIndex = new boolean[robotTimestamps.length];
          int duplicatesAtEndOfFile = getNumberOfDuplicatesAtEndOfFile();
 
-         for (int currentIndex = 0; currentIndex < robotTimestamps.length - duplicatesAtEndOfFile; currentIndex++)
+         for (int currentIndex = 0; currentIndex < robotTimestamps.length - duplicatesAtEndOfFile;)
          {
             if (robotTimestamps[currentIndex] != robotTimestamps[currentIndex + 1])
+            {
+               currentIndex++;
                continue;
+            }
 
             // Keeps track of the duplicated index's so frames border can be adjusted
             replacedRobotTimestampIndex[currentIndex + 1] = true;
 
             int nextNonDuplicateIndex = getNextNonDuplicateIndex(currentIndex);
-            replaceDuplicates(currentIndex, nextNonDuplicateIndex);
+            for (int i = currentIndex; i < nextNonDuplicateIndex; i++)
+            {
+               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[i], robotTimestamps[nextNonDuplicateIndex],
+                                                                                (double) 1 / (nextNonDuplicateIndex - i));
+               robotTimestamps[i + 1] = firstAdjustedTimestamp;
+            }
+
             currentIndex = nextNonDuplicateIndex;
          }
       }
@@ -266,16 +275,6 @@ public class VideoDataReader
             index++;
 
          return index + 1;
-      }
-
-      public void replaceDuplicates(int currentIndex, int nextNonDuplicateIndex)
-      {
-         for (int i = currentIndex; i < nextNonDuplicateIndex; i++)
-         {
-            long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[i], robotTimestamps[nextNonDuplicateIndex],
-                                                                             (double) 1 / (nextNonDuplicateIndex - i));
-            robotTimestamps[i + 1] = firstAdjustedTimestamp;
-         }
       }
 
       /**
