@@ -48,7 +48,7 @@ public class TimestampScrubberTest
         long previousTimestamp;
 
         // Go through the robot timestamps in order and check the next one is larger
-        for (int i = 1; i < robotTimestamps.length; i++)
+        for (int i = 1; i < robotTimestamps.length - duplicatesAtEndOfFile; i++)
         {
             previousTimestamp = robotTimestamps[i - 1];
             long currentTimestamp = robotTimestamps[i];
@@ -57,8 +57,8 @@ public class TimestampScrubberTest
             if (currentTimestamp == previousTimestamp)
                 System.out.println(currentTimestamp + " -- " + previousTimestamp);
 
-//            Assertions.assertTrue(currentTimestamp > previousTimestamp,
-//                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp + " at Index: " + i);
+            Assertions.assertTrue(currentTimestamp > previousTimestamp,
+                    "Cureent: " + currentTimestamp + " and Previous: " + previousTimestamp + " at Index: " + i);
         }
     }
 
@@ -96,11 +96,8 @@ public class TimestampScrubberTest
             previousTimestamp = robotTimestamps[i - 1];
             long currentTimestamp = robotTimestamps[i];
 
-//            System.out.println(i - 1);
-//            System.out.println(i);
-
             Assertions.assertTrue(currentTimestamp > previousTimestamp,
-                    "Current: " + currentTimestamp + "\n Previous: " + previousTimestamp);
+                    "Current: " + currentTimestamp + "\n Previous: " + previousTimestamp + " at Index: " + i);
 
             long currentDelta = currentTimestamp - previousTimestamp;
             delta += currentDelta;

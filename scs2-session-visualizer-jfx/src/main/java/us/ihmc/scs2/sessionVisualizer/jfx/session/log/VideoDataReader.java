@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import gnu.trove.list.array.TLongArrayList;
@@ -149,7 +150,7 @@ public class VideoDataReader
 
    public boolean replacedRobotTimestampsContainsIndex(int index)
    {
-      return timestampScrubber.replacedRobotTimestampIndexes.contains(index);
+      return timestampScrubber.replacedRobotTimestampIndex[index];
    }
 
    public static class FrameData
@@ -171,8 +172,7 @@ public class VideoDataReader
       private int currentIndex = 0;
       private long currentRobotTimestamp = 0;
       private long videoTimestamp;
-
-      public TIntHashSet replacedRobotTimestampIndexes = new TIntHashSet();
+      private boolean[] replacedRobotTimestampIndex;
 
       public TimestampScrubber(File timestampFile, boolean hasTimebase, boolean interlaced) throws IOException
       {
@@ -231,29 +231,20 @@ public class VideoDataReader
 
       private void checkAndReplaceDuplicates()
       {
+         replacedRobotTimestampIndex = new boolean[robotTimestamps.length];
          int duplicatesAtEndOfFile = getNumberOfDuplicatesAtEndOfFile();
 
-         int currentIndex = 0;
-         while (currentIndex < robotTimestamps.length - duplicatesAtEndOfFile)
+         for (int currentIndex = 0; currentIndex < robotTimestamps.length - duplicatesAtEndOfFile; currentIndex++)
          {
-            if (robotTimestamps[currentIndex] == robotTimestamps[currentIndex + 1])
-            {
-               // Keeps track of the duplicated index's so frames border can be adjusted
-               replacedRobotTimestampIndexes.add(currentIndex + 1);
+            if (robotTimestamps[currentIndex] != robotTimestamps[currentIndex + 1])
+               continue;
 
-               int lastDuplicateIndex = getLastDuplicateIndex(currentIndex);
-               int nextNonDuplicateIndex = lastDuplicateIndex + 1;
+            // Keeps track of the duplicated index's so frames border can be adjusted
+            replacedRobotTimestampIndex[currentIndex + 1] = true;
 
-               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[currentIndex], robotTimestamps[nextNonDuplicateIndex],
-                                                                                (double) 1 / (nextNonDuplicateIndex - currentIndex));
-               replaceDuplicateTimestampsAndIncrementIndex(currentIndex, lastDuplicateIndex, firstAdjustedTimestamp);
-
-               currentIndex = nextNonDuplicateIndex;
-            }
-            else
-            {
-               currentIndex++;
-            }
+            int nextNonDuplicateIndex = getNextNonDuplicateIndex(currentIndex);
+            replaceDuplicates(currentIndex, nextNonDuplicateIndex);
+            currentIndex = nextNonDuplicateIndex;
          }
       }
 
@@ -270,28 +261,24 @@ public class VideoDataReader
          return duplicatesAtEndOfFile;
       }
 
-      private int getLastDuplicateIndex(int index)
+      private int getNextNonDuplicateIndex(int index)
       {
          while (index < robotTimestamps.length - 1 && robotTimestamps[index] == robotTimestamps[index + 1])
             index++;
 
-         return index;
+         return index + 1;
       }
 
-      private void replaceDuplicateTimestampsAndIncrementIndex(int firstDuplicateIndex, int lastDuplicateIndex, long firstAdjustedTimestamp)
+      public void replaceDuplicates(int currentIndex, int nextNonDuplicateIndex)
       {
-         long deltaValue = firstAdjustedTimestamp - robotTimestamps[firstDuplicateIndex];
-
-         int currentIndex = firstDuplicateIndex;
-         while (currentIndex <= lastDuplicateIndex)
+         for (int i = currentIndex; i < nextNonDuplicateIndex; i++)
          {
-            int deltaIndex = currentIndex - firstDuplicateIndex;
-            long additionalValue = deltaValue * deltaIndex;
-            robotTimestamps[currentIndex] = robotTimestamps[currentIndex] + additionalValue;
-
-            currentIndex++;
+            long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[i], robotTimestamps[nextNonDuplicateIndex],
+                                                                             (double) 1 / (nextNonDuplicateIndex - i));
+            robotTimestamps[i + 1] = firstAdjustedTimestamp;
          }
       }
+
 
       /**
        * Searches the list of robotTimestamps for the value closest to queryRobotTimestamp and returns that index. Then sets videoTimestamp to
