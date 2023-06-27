@@ -1,36 +1,51 @@
 package us.ihmc.scs2.definition.robot.urdf;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
-import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
+import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.transform.interfaces.AffineTransformReadOnly;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.log.LogTools;
-import us.ihmc.mecano.tools.MecanoTools;
-import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
@@ -38,13 +53,11 @@ import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
-import us.ihmc.scs2.definition.robot.ExternalWrenchPointDefinition;
 import us.ihmc.scs2.definition.robot.FixedJointDefinition;
-import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
 import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.KinematicPointDefinition;
 import us.ihmc.scs2.definition.robot.LidarSensorDefinition;
+import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
 import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
@@ -56,32 +69,44 @@ import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFAxis;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFBox;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFCollision;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFColor;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFCylinder;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFDynamics;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFFilenameHolder;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFGazebo;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFGeometry;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFInertia;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFInertial;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFItem;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint.URDFJointType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLimit;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLink;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFLinkReference;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFMass;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFMaterial;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFMesh;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFOrigin;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFClip;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFSensorImage;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU.URDFIMUNoise;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU.URDFIMUNoise.URDFIMUNoiseType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFIMU.URDFIMUNoise.URDFNoiseParameters;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFNoise;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFNoise.URDFNoiseType;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFRange;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFHorizontalScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFVerticalScan;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFSensorType;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFSphere;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFTexture;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFVisual;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
@@ -118,6 +143,9 @@ public class URDFTools
    private static final double DEFAULT_EFFORT_LIMIT = Double.POSITIVE_INFINITY;
    private static final double DEFAULT_VELOCITY_LIMIT = Double.POSITIVE_INFINITY;
 
+   public static final URDFParserProperties DEFAULT_URDF_PARSER_PROPERTIES = new URDFParserProperties();
+   public static final URDFGeneratorProperties DEFAULT_URDF_GENERATOR_PROPERTIES = new URDFGeneratorProperties();
+
    /**
     * Parse a {@link URDFModel} from the given URDF file.
     * 
@@ -143,22 +171,33 @@ public class URDFTools
     */
    public static URDFModel loadURDFModel(File urdfFile, Collection<String> resourceDirectories) throws JAXBException
    {
-      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
-      File parentFile = urdfFile.getParentFile();
+      return loadURDFModel(urdfFile, resourceDirectories, DEFAULT_URDF_PARSER_PROPERTIES);
+   }
 
-      if (parentFile != null)
+   /**
+    * Parse a {@link URDFModel} from the given URDF file.
+    * 
+    * @param urdfFile            the URDF file to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are not in the same directory as the {@code urdfFile}'s parent
+    *                            directory. Paths can either be relative to the {@code urdfFile}'s
+    *                            parent directory or absolute.
+    * @param parserProperties    provides additional properties related to how the parsing show be
+    *                            done.
+    * @return the model.
+    * @throws JAXBException
+    */
+   public static URDFModel loadURDFModel(File urdfFile, Collection<String> resourceDirectories, URDFParserProperties parserProperties) throws JAXBException
+   {
+      try
       {
-         allResourceDirectories.add(parentFile.getAbsolutePath() + File.separator);
-         Stream.of(parentFile.listFiles(File::isDirectory)).map(file -> file.getAbsolutePath() + File.separator).forEach(allResourceDirectories::add);
+         // Internally, the unmarshaller does "new BufferedInputStream(new FileInputStream(urdfFile)" (see AbstractUnmarshallerImpl), no need to have 2 distinct implementations.
+         return loadURDFModel(new BufferedInputStream(new FileInputStream(urdfFile)), resourceDirectories, null, parserProperties);
       }
-
-      JAXBContext context = JAXBContext.newInstance(URDFModel.class);
-      Unmarshaller um = context.createUnmarshaller();
-      URDFModel urdfModel = (URDFModel) um.unmarshal(urdfFile);
-
-      resolvePaths(urdfModel, allResourceDirectories);
-
-      return urdfModel;
+      catch (FileNotFoundException e)
+      {
+         throw new IllegalArgumentException(e.getMessage());
+      }
    }
 
    /**
@@ -178,14 +217,84 @@ public class URDFTools
     */
    public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
-      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
-      JAXBContext context = JAXBContext.newInstance(URDFModel.class);
-      Unmarshaller um = context.createUnmarshaller();
-      URDFModel urdfModel = (URDFModel) um.unmarshal(inputStream);
+      return loadURDFModel(inputStream, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
+   }
 
-      resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    * 
+    * @param inputStream         the stream to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @param parserProperties    provides additional properties related to how the parsing show be
+    *                            done.
+    * @return the model.
+    * @throws JAXBException
+    */
+   public static URDFModel loadURDFModel(InputStream inputStream,
+                                         Collection<String> resourceDirectories,
+                                         ClassLoader resourceClassLoader,
+                                         URDFParserProperties parserProperties)
+         throws JAXBException
+   {
+      try
+      {
+         Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
+         URDFModel urdfModel;
+         JAXBContext context = JAXBContext.newInstance(URDFModel.class);
+         Unmarshaller um = context.createUnmarshaller();
 
-      return urdfModel;
+         if (!parserProperties.ignoreNamespace)
+         {
+            urdfModel = (URDFModel) um.unmarshal(inputStream);
+         }
+         else
+         {
+            InputSource is = new InputSource(inputStream);
+            SAXParserFactory sax = SAXParserFactory.newInstance();
+            sax.setNamespaceAware(false);
+            XMLReader reader;
+
+            try
+            {
+               reader = sax.newSAXParser().getXMLReader();
+            }
+            catch (SAXException | ParserConfigurationException e)
+            {
+               throw new JAXBException(e);
+            }
+
+            SAXSource source = new SAXSource(reader, is);
+            urdfModel = (URDFModel) um.unmarshal(source);
+         }
+         resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
+
+         if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
+            urdfModel.getLinks().removeIf(urdfLink -> parserProperties.linksToIgnore.contains(urdfLink.getName()));
+         if (!parserProperties.jointsToIgnore.isEmpty() && urdfModel.getJoints() != null)
+            urdfModel.getJoints().removeIf(urdfJoint -> parserProperties.jointsToIgnore.contains(urdfJoint.getName()));
+         if (!parserProperties.parseSensors)
+            urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
+
+         return urdfModel;
+      }
+      finally
+      {
+         try
+         {
+            inputStream.close();
+         }
+         catch (IOException e)
+         {
+            LogTools.error(e.getMessage());
+         }
+      }
    }
 
    /**
@@ -251,97 +360,77 @@ public class URDFTools
    }
 
    /**
-    * Converts the given URDF model into a {@code RobotDefinition} which root joint is a 6-DoF floating
-    * joint.
+    * Converts the given URDF model into a {@code RobotDefinition}.
     * <p>
-    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
-    * specified here.
+    * See {@link URDFParserProperties} for additional properties.
     * </p>
     * 
     * @param urdfModel the URDF model to convert.
     * @return the robot definition which can be used to create a robot to be simulated in SCS2.
     */
-   public static RobotDefinition toFloatingRobotDefinition(URDFModel urdfModel)
+   public static RobotDefinition toRobotDefinition(URDFModel urdfModel)
    {
-      return toFloatingRobotDefinition(urdfModel, null);
+      return toRobotDefinition(urdfModel, DEFAULT_URDF_PARSER_PROPERTIES);
    }
 
    /**
-    * Converts the given URDF model into a {@code RobotDefinition} which root joint is a 6-DoF floating
-    * joint.
-    * <p>
-    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
-    * specified here.
-    * </p>
+    * Converts the given URDF model into a {@code RobotDefinition}.
     * 
-    * @param urdfModel the URDF model to convert.
+    * @param urdfModel        the URDF model to convert.
+    * @param parserProperties additional properties for tweaking the parsing operations such as
+    *                         specifying the root joint.
     * @return the robot definition which can be used to create a robot to be simulated in SCS2.
     */
-   public static RobotDefinition toFloatingRobotDefinition(URDFModel urdfModel, Predicate<FixedJointDefinition> simplifyKinematicsFilter)
-   {
-      return toRobotDefinition(new SixDoFJointDefinition(), urdfModel);
-   }
-
-   /**
-    * Converts the given URDF model into a {@code RobotDefinition} while specifying the root joint
-    * type.
-    * <p>
-    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
-    * specified here.
-    * </p>
-    * 
-    * @param rootJointDefinition      the definition to use for the robot's root joint.
-    * @param urdfModel                the URDF model to convert.
-    * @param simplifyKinematicsFilter filter for controlling the robot kinematics simplification.
-    * @return the robot definition which can be used to create a robot to be simulated in SCS2.
-    * @see #simplifyKinematics(JointDefinition, Predicate)
-    */
-   public static RobotDefinition toRobotDefinition(JointDefinition rootJointDefinition, URDFModel urdfModel)
-   {
-      return toRobotDefinition(rootJointDefinition, urdfModel, null);
-   }
-
-   /**
-    * Converts the given URDF model into a {@code RobotDefinition} while specifying the root joint
-    * type.
-    * <p>
-    * Note that the root joint type is not explicitly defined in the URDF model and thus has to be
-    * specified here.
-    * </p>
-    * 
-    * @param rootJointDefinition      the definition to use for the robot's root joint.
-    * @param urdfModel                the URDF model to convert.
-    * @param simplifyKinematicsFilter filter for controlling the robot kinematics simplification.
-    * @return the robot definition which can be used to create a robot to be simulated in SCS2.
-    * @see #simplifyKinematics(JointDefinition, Predicate)
-    */
-   public static RobotDefinition toRobotDefinition(JointDefinition rootJointDefinition,
-                                                   URDFModel urdfModel,
-                                                   Predicate<FixedJointDefinition> simplifyKinematicsFilter)
+   public static RobotDefinition toRobotDefinition(URDFModel urdfModel, URDFParserProperties parserProperties)
    {
       List<URDFLink> urdfLinks = urdfModel.getLinks();
       List<URDFJoint> urdfJoints = urdfModel.getJoints();
       List<URDFGazebo> urdfGazebos = urdfModel.getGazebos();
 
-      List<RigidBodyDefinition> rigidBodyDefinitions = urdfLinks.stream().map(URDFTools::toRigidBodyDefinition).collect(Collectors.toList());
-      List<JointDefinition> jointDefinitions;
-      if (urdfJoints == null)
-         jointDefinitions = Collections.emptyList();
-      else
-         jointDefinitions = urdfJoints.stream().map(URDFTools::toJointDefinition).collect(Collectors.toList());
+      List<RigidBodyDefinition> rigidBodyDefinitions = new ArrayList<>();
+
+      for (URDFLink urdfLink : urdfLinks)
+      {
+         rigidBodyDefinitions.add(toRigidBodyDefinition(urdfLink, parserProperties));
+      }
+
+      List<JointDefinition> jointDefinitions = new ArrayList<>();
+      if (urdfJoints != null)
+      {
+         jointDefinitions = new ArrayList<>();
+         for (URDFJoint urdfJoint : urdfJoints)
+         {
+            jointDefinitions.add(toJointDefinition(urdfJoint, parserProperties));
+         }
+      }
+
       RigidBodyDefinition startBodyDefinition = connectKinematics(rigidBodyDefinitions, jointDefinitions, urdfJoints);
-      if (rootJointDefinition.getName() == null)
-         rootJointDefinition.setName(startBodyDefinition.getName());
-      rootJointDefinition.setSuccessor(startBodyDefinition);
-      RigidBodyDefinition rootBodyDefinition = new RigidBodyDefinition("rootBody");
-      rootBodyDefinition.addChildJoint(rootJointDefinition);
-      jointDefinitions.add(rootJointDefinition); // This is required for sensors that are attached to the successor of the root joint.
-      addSensors(urdfGazebos, jointDefinitions);
-      simplifyKinematics(rootJointDefinition, simplifyKinematicsFilter);
-      correctTransforms(rootJointDefinition);
+      addSensors(urdfGazebos, jointDefinitions, parserProperties);
+
+      RigidBodyDefinition rootBodyDefinition;
+
+      if (parserProperties.rootJointFactory != null)
+      {
+         JointDefinition rootJointDefinition = parserProperties.rootJointFactory.get();
+         if (rootJointDefinition.getName() == null)
+            rootJointDefinition.setName(startBodyDefinition.getName());
+         rootJointDefinition.setSuccessor(startBodyDefinition);
+         rootBodyDefinition = new RigidBodyDefinition("rootBody");
+         rootBodyDefinition.addChildJoint(rootJointDefinition);
+         jointDefinitions.add(rootJointDefinition); // This is required for sensors that are attached to the successor of the root joint.
+      }
+      else
+      {
+         rootBodyDefinition = startBodyDefinition;
+      }
 
       RobotDefinition robotDefinition = new RobotDefinition(urdfModel.getName());
       robotDefinition.setRootBodyDefinition(rootBodyDefinition);
+
+      if (parserProperties.simplifyKinematics)
+         robotDefinition.simplifyKinematics();
+      if (parserProperties.transformToZUp)
+         robotDefinition.transformAllFramesToZUp();
 
       return robotDefinition;
    }
@@ -356,7 +445,7 @@ public class URDFTools
     * @param urdfGazebos      the list of parsed Gazebo references from a URDF file.
     * @param jointDefinitions the list of parsed and converted joints from the same URDF file.
     */
-   public static void addSensors(List<URDFGazebo> urdfGazebos, List<JointDefinition> jointDefinitions)
+   public static void addSensors(List<URDFGazebo> urdfGazebos, List<JointDefinition> jointDefinitions, URDFParserProperties parserProperties)
    {
       if (urdfGazebos == null || urdfGazebos.isEmpty())
          return;
@@ -371,7 +460,7 @@ public class URDFTools
          if (urdfGazebo.getSensor() == null)
             continue;
 
-         List<SensorDefinition> sensorDefinitions = toSensorDefinition(urdfGazebo.getSensor());
+         List<SensorDefinition> sensorDefinitions = toSensorDefinition(urdfGazebo.getSensor(), parserProperties);
          JointDefinition jointDefinition = jointDefinitionMap.get(urdfGazebo.getReference());
          if (jointDefinition == null)
             jointDefinition = linkNameToJointDefinitionMap.get(urdfGazebo.getReference());
@@ -385,164 +474,6 @@ public class URDFTools
          if (sensorDefinitions != null)
             sensorDefinitions.forEach(jointDefinition::addSensorDefinition);
       }
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
-    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
-    * {@link FixedJointDefinition}.
-    * </p>
-    * <p>
-    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
-    * <ul>
-    * <li>the fixed joint successor's physical properties (mass, inertia) are combined to the joint's
-    * predecessor.
-    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
-    * of each sensor so they remain at the same physical location on the robot.
-    * </ul>
-    * </p>
-    * 
-    * @param joint the first joint from which to simplify the kinematics.
-    */
-   public static void simplifyKinematics(JointDefinition joint)
-   {
-      simplifyKinematics(joint, null);
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
-    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
-    * {@link FixedJointDefinition}.
-    * </p>
-    * <p>
-    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
-    * <ul>
-    * <li>the fixed joint successor's physical properties (mass, inertia) and visuals are combined to
-    * the joint's predecessor.
-    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
-    * of each sensor so they remain at the same physical location on the robot.
-    * </ul>
-    * </p>
-    * 
-    * @param joint  the first joint from which to simplify the kinematics.
-    * @param filter a fixed joint is only removed if: the filter is {@code null} or
-    *               {@code filter.test(joint)} is {@code true}. If a filter is provided, any fixed
-    *               joint for which it returns {@code false} will <b>not</b> be removed.
-    */
-   public static void simplifyKinematics(JointDefinition joint, Predicate<FixedJointDefinition> filter)
-   {
-      // The children list may shrink or grow depending the simplyKinematics(joint.child)
-      // Also, if a child is a fixed-joint, the successor of this joint will be replaced with a new one, so can't save the successor as a local variable.
-      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size();)
-      {
-         List<JointDefinition> children = joint.getSuccessor().getChildrenJoints();
-         JointDefinition child = children.get(i);
-
-         if (!(child instanceof FixedJointDefinition))
-            i++; // This child won't be removed, we can increment to the next.
-
-         simplifyKinematics(child);
-      }
-
-      JointDefinition parentJoint = joint.getParentJoint();
-      if (parentJoint == null)
-         return;
-
-      if (joint instanceof FixedJointDefinition fixedJoint && (filter == null || filter.test(fixedJoint)))
-      {
-         RigidBodyDefinition rigidBody = joint.getSuccessor();
-         YawPitchRollTransformDefinition transformToParentJoint = joint.getTransformToParent();
-
-         rigidBody.applyTransform(transformToParentJoint);
-         RigidBodyDefinition oldParentRigidBody = parentJoint.getSuccessor();
-         parentJoint.setSuccessor(merge(oldParentRigidBody.getName(), oldParentRigidBody, rigidBody));
-         parentJoint.getSuccessor().addChildJoints(oldParentRigidBody.getChildrenJoints());
-
-         joint.getKinematicPointDefinitions().removeIf(kp ->
-         {
-            kp.applyTransform(transformToParentJoint);
-            parentJoint.addKinematicPointDefinition(kp);
-            return true;
-         });
-         joint.getExternalWrenchPointDefinitions().removeIf(efp ->
-         {
-            efp.applyTransform(transformToParentJoint);
-            parentJoint.addExternalWrenchPointDefinition(efp);
-            return true;
-         });
-         joint.getGroundContactPointDefinitions().removeIf(gcp ->
-         {
-            gcp.applyTransform(transformToParentJoint);
-            parentJoint.addGroundContactPointDefinition(gcp);
-            return true;
-         });
-         joint.getSensorDefinitions().removeIf(sensor ->
-         {
-            sensor.applyTransform(transformToParentJoint);
-            parentJoint.addSensorDefinition(sensor);
-            return true;
-         });
-         joint.getSuccessor().getChildrenJoints().removeIf(child ->
-         {
-            child.getTransformToParent().preMultiply(transformToParentJoint);
-            parentJoint.getSuccessor().addChildJoint(child);
-            return true;
-         });
-         parentJoint.getSuccessor().removeChildJoint(joint);
-      }
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
-    * Creates a new rigid-body which physical properties equals the sum of {@code rigidBodyA} and
-    * {@code rigidBody}. In addition, the visuals are added to the merged body.
-    * </p>
-    * <p>
-    * Note the following property:
-    * {@code merge("bodyAB", bodyA, bodyB) == merge("bodyAB", bodyB, bodyA)}.
-    * </p>
-    * 
-    * @param name       the name of the merged rigid-body.
-    * @param rigidBodyA the first rigid-body to merge.
-    * @param rigidBodyB the second rigid-body to merge.
-    * @return the merged body.
-    */
-   public static RigidBodyDefinition merge(String name, RigidBodyDefinition rigidBodyA, RigidBodyDefinition rigidBodyB)
-   {
-      double mergedMass = rigidBodyA.getMass() + rigidBodyB.getMass();
-      Vector3D mergedCoM = new Vector3D();
-      mergedCoM.setAndScale(rigidBodyA.getMass(), rigidBodyA.getCenterOfMassOffset());
-      mergedCoM.scaleAdd(rigidBodyB.getMass(), rigidBodyB.getCenterOfMassOffset(), mergedCoM);
-      mergedCoM.scale(1.0 / mergedMass);
-
-      Vector3D translationInertiaA = new Vector3D();
-      translationInertiaA.sub(mergedCoM, rigidBodyA.getCenterOfMassOffset());
-      Matrix3D inertiaA = new Matrix3D(rigidBodyA.getMomentOfInertia());
-      MecanoTools.translateMomentOfInertia(rigidBodyA.getMass(), null, false, translationInertiaA, inertiaA);
-
-      Vector3D translationInertiaB = new Vector3D();
-      translationInertiaB.sub(mergedCoM, rigidBodyB.getCenterOfMassOffset());
-      Matrix3D inertiaB = new Matrix3D(rigidBodyB.getMomentOfInertia());
-      MecanoTools.translateMomentOfInertia(rigidBodyB.getMass(), null, false, translationInertiaB, inertiaB);
-
-      Matrix3D mergedInertia = new Matrix3D();
-      mergedInertia.add(inertiaA);
-      mergedInertia.add(inertiaB);
-
-      RigidBodyDefinition merged = new RigidBodyDefinition(name);
-      merged.setMass(mergedMass);
-      merged.getInertiaPose().getTranslation().set(mergedCoM);
-      merged.getMomentOfInertia().set(mergedInertia);
-
-      List<VisualDefinition> mergedGraphics = new ArrayList<>();
-      mergedGraphics.addAll(rigidBodyA.getVisualDefinitions());
-      mergedGraphics.addAll(rigidBodyB.getVisualDefinitions());
-      merged.addVisualDefinitions(mergedGraphics);
-
-      return merged;
    }
 
    /**
@@ -616,54 +547,6 @@ public class URDFTools
    /**
     * <i>-- Intended for internal use --</i>
     * <p>
-    * Recursive method that performs the following modifications will preserving the robot's physical
-    * qualities:
-    * <ul>
-    * <li>adjust orientations such that the joint poses are z-up when the robot is at the zero joint
-    * configuration.
-    * <li>transform the moment of inertia for all rigid-body such that their inertia pose is only a
-    * translation.
-    * </ul>
-    * </p>
-    * 
-    * @param jointDefinition starting point for the recursion.
-    */
-   public static void correctTransforms(JointDefinition jointDefinition)
-   {
-      Orientation3DBasics jointRotation = jointDefinition.getTransformToParent().getRotation();
-      if (jointDefinition instanceof OneDoFJointDefinition)
-         jointRotation.transform(((OneDoFJointDefinition) jointDefinition).getAxis());
-      RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
-      YawPitchRollTransformDefinition inertiaPose = linkDefinition.getInertiaPose();
-      inertiaPose.prependOrientation(jointRotation);
-      inertiaPose.transform(linkDefinition.getMomentOfInertia());
-      inertiaPose.getRotation().setToZero();
-
-      for (KinematicPointDefinition kinematicPointDefinition : jointDefinition.getKinematicPointDefinitions())
-         kinematicPointDefinition.getTransformToParent().prependOrientation(jointRotation);
-      for (ExternalWrenchPointDefinition externalWrenchPointDefinition : jointDefinition.getExternalWrenchPointDefinitions())
-         externalWrenchPointDefinition.getTransformToParent().prependOrientation(jointRotation);
-      for (GroundContactPointDefinition groundContactPointDefinition : jointDefinition.getGroundContactPointDefinitions())
-         groundContactPointDefinition.getTransformToParent().prependOrientation(jointRotation);
-
-      for (SensorDefinition sensorDefinition : jointDefinition.getSensorDefinitions())
-         sensorDefinition.getTransformToJoint().prependOrientation(jointRotation);
-
-      for (VisualDefinition visualDefinition : linkDefinition.getVisualDefinitions())
-         visualDefinition.getOriginPose().prependOrientation(jointRotation);
-
-      for (JointDefinition childDefinition : jointDefinition.getSuccessor().getChildrenJoints())
-      {
-         childDefinition.getTransformToParent().prependOrientation(jointRotation);
-         correctTransforms(childDefinition);
-      }
-
-      jointRotation.setToZero();
-   }
-
-   /**
-    * <i>-- Intended for internal use --</i>
-    * <p>
     * Converts the given URDF link into a {@link RigidBodyDefinition}.
     * </p>
     * <p>
@@ -674,7 +557,7 @@ public class URDFTools
     * @return the rigid-body definition.
     * @see #connectKinematics(List, List, List)
     */
-   public static RigidBodyDefinition toRigidBodyDefinition(URDFLink urdfLink)
+   public static RigidBodyDefinition toRigidBodyDefinition(URDFLink urdfLink, URDFParserProperties parserProperties)
    {
       RigidBodyDefinition definition = new RigidBodyDefinition(urdfLink.getName());
 
@@ -682,22 +565,58 @@ public class URDFTools
 
       if (urdfInertial == null)
       {
-         definition.setMass(parseMass(null));
-         definition.getMomentOfInertia().set(parseMomentOfInertia(null));
-         definition.getInertiaPose().set(parseRigidBodyTransform(null));
+         definition.setMass(parseMass(null, parserProperties));
+         definition.getMomentOfInertia().set(parseMomentOfInertia(null, parserProperties));
+         definition.getInertiaPose().set(parseRigidBodyTransform(null, parserProperties));
       }
       else
       {
-         definition.setMass(parseMass(urdfInertial.getMass()));
-         definition.getMomentOfInertia().set(parseMomentOfInertia(urdfInertial.getInertia()));
-         definition.getInertiaPose().set(parseRigidBodyTransform(urdfInertial.getOrigin()));
+         definition.setMass(parseMass(urdfInertial.getMass(), parserProperties));
+         definition.getMomentOfInertia().set(parseMomentOfInertia(urdfInertial.getInertia(), parserProperties));
+         definition.getInertiaPose().set(parseRigidBodyTransform(urdfInertial.getOrigin(), parserProperties));
       }
 
       if (urdfLink.getVisual() != null)
-         urdfLink.getVisual().stream().map(URDFTools::toVisualDefinition).forEach(definition::addVisualDefinition);
+      {
+         List<URDFVisual> urdfVisuals = urdfLink.getVisual();
+
+         for (int i = 0; i < urdfVisuals.size(); i++)
+         {
+            URDFVisual urdfVisual = urdfVisuals.get(i);
+            VisualDefinition visual = toVisualDefinition(urdfVisual, parserProperties);
+            if (visual == null)
+               continue;
+            if (parserProperties.autoGenerateVisualName && visual.getName() == null)
+            {
+               if (i == 0)
+                  visual.setName(urdfLink.getName() + "_visual");
+               else // This seems to be the Gazebo SDF converter default naming convention
+                  visual.setName(urdfLink.getName() + "_visual_" + urdfLink.getName() + "_" + i);
+            }
+            definition.addVisualDefinition(visual);
+         }
+      }
 
       if (urdfLink.getCollision() != null)
-         urdfLink.getCollision().stream().map(URDFTools::toCollisionShapeDefinition).forEach(definition::addCollisionShapeDefinition);
+      {
+         List<URDFCollision> urdfCollisions = urdfLink.getCollision();
+
+         for (int i = 0; i < urdfCollisions.size(); i++)
+         {
+            URDFCollision urdfCollision = urdfCollisions.get(i);
+            CollisionShapeDefinition collision = toCollisionShapeDefinition(urdfCollision, parserProperties);
+            if (collision == null)
+               continue;
+            if (parserProperties.autoGenerateCollisionName && collision.getName() == null)
+            {
+               if (i == 0)
+                  collision.setName(urdfLink.getName() + "_collision");
+               else // This seems to be the Gazebo SDF converter default naming convention
+                  collision.setName(urdfLink.getName() + "_collision_" + urdfLink.getName() + "_" + i);
+            }
+            definition.addCollisionShapeDefinition(collision);
+         }
+      }
 
       return definition;
    }
@@ -716,22 +635,26 @@ public class URDFTools
     * @see #addSensors(List, List)
     * @see #connectKinematics(List, List, List)
     */
-   public static JointDefinition toJointDefinition(URDFJoint urdfJoint)
+   public static JointDefinition toJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
-      switch (urdfJoint.getType())
+      URDFJointType type = URDFJointType.parse(urdfJoint.getType());
+      if (type == null)
+         throw new RuntimeException("Unexpected value for the joint type: " + urdfJoint.getType());
+
+      switch (type)
       {
-         case "continuous":
-            return toRevoluteJointDefinition(urdfJoint, true);
-         case "revolute":
-            return toRevoluteJointDefinition(urdfJoint, false);
-         case "prismatic":
-            return toPrismaticJointDefinition(urdfJoint);
-         case "fixed":
-            return toFixedJointDefinition(urdfJoint);
-         case "floating":
-            return toSixDoFJointDefinition(urdfJoint);
-         case "planar":
-            return toPlanarJointDefinition(urdfJoint);
+         case continuous:
+            return toRevoluteJointDefinition(urdfJoint, true, parserProperties);
+         case revolute:
+            return toRevoluteJointDefinition(urdfJoint, false, parserProperties);
+         case prismatic:
+            return toPrismaticJointDefinition(urdfJoint, parserProperties);
+         case fixed:
+            return toFixedJointDefinition(urdfJoint, parserProperties);
+         case floating:
+            return toSixDoFJointDefinition(urdfJoint, parserProperties);
+         case planar:
+            return toPlanarJointDefinition(urdfJoint, parserProperties);
          default:
             throw new RuntimeException("Unexpected value for the joint type: " + urdfJoint.getType());
       }
@@ -742,14 +665,14 @@ public class URDFTools
     * 
     * @see #toJointDefinition(URDFJoint)
     */
-   public static RevoluteJointDefinition toRevoluteJointDefinition(URDFJoint urdfJoint, boolean ignorePositionLimits)
+   public static RevoluteJointDefinition toRevoluteJointDefinition(URDFJoint urdfJoint, boolean ignorePositionLimits, URDFParserProperties parserProperties)
    {
       RevoluteJointDefinition definition = new RevoluteJointDefinition(urdfJoint.getName());
 
-      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin()));
-      definition.getAxis().set(parseAxis(urdfJoint.getAxis()));
-      parseLimit(urdfJoint.getLimit(), definition, ignorePositionLimits);
-      parseDynamics(urdfJoint.getDynamics(), definition);
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
+      definition.getAxis().set(parseAxis(urdfJoint.getAxis(), parserProperties));
+      parseLimit(urdfJoint.getLimit(), definition, ignorePositionLimits, parserProperties);
+      parseDynamics(urdfJoint.getDynamics(), definition, parserProperties);
 
       return definition;
    }
@@ -759,14 +682,14 @@ public class URDFTools
     * 
     * @see #toJointDefinition(URDFJoint)
     */
-   public static PrismaticJointDefinition toPrismaticJointDefinition(URDFJoint urdfJoint)
+   public static PrismaticJointDefinition toPrismaticJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
       PrismaticJointDefinition definition = new PrismaticJointDefinition(urdfJoint.getName());
 
-      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin()));
-      definition.getAxis().set(parseAxis(urdfJoint.getAxis()));
-      parseLimit(urdfJoint.getLimit(), definition, false);
-      parseDynamics(urdfJoint.getDynamics(), definition);
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
+      definition.getAxis().set(parseAxis(urdfJoint.getAxis(), parserProperties));
+      parseLimit(urdfJoint.getLimit(), definition, false, parserProperties);
+      parseDynamics(urdfJoint.getDynamics(), definition, parserProperties);
 
       return definition;
    }
@@ -776,11 +699,11 @@ public class URDFTools
     * 
     * @see #toJointDefinition(URDFJoint)
     */
-   public static FixedJointDefinition toFixedJointDefinition(URDFJoint urdfJoint)
+   public static FixedJointDefinition toFixedJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
       FixedJointDefinition definition = new FixedJointDefinition(urdfJoint.getName());
 
-      RigidBodyTransform parseRigidBodyTransform = parseRigidBodyTransform(urdfJoint.getOrigin());
+      RigidBodyTransform parseRigidBodyTransform = parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties);
       definition.getTransformToParent().set(parseRigidBodyTransform);
 
       return definition;
@@ -791,11 +714,11 @@ public class URDFTools
     * 
     * @see #toJointDefinition(URDFJoint)
     */
-   public static SixDoFJointDefinition toSixDoFJointDefinition(URDFJoint urdfJoint)
+   public static SixDoFJointDefinition toSixDoFJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
       SixDoFJointDefinition definition = new SixDoFJointDefinition(urdfJoint.getName());
 
-      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin()));
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
 
       return definition;
    }
@@ -805,17 +728,17 @@ public class URDFTools
     * 
     * @see #toJointDefinition(URDFJoint)
     */
-   public static PlanarJointDefinition toPlanarJointDefinition(URDFJoint urdfJoint)
+   public static PlanarJointDefinition toPlanarJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
       PlanarJointDefinition definition = new PlanarJointDefinition(urdfJoint.getName());
 
-      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin()));
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
 
-      Vector3D surfaceNormal = parseAxis(urdfJoint.getAxis());
+      Vector3D surfaceNormal = parseAxis(urdfJoint.getAxis(), parserProperties);
 
       if (!surfaceNormal.geometricallyEquals(Axis3D.Y, 1.0e-5))
          throw new UnsupportedOperationException("Planar joint are supported only with a surface normal equal to: "
-               + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:" + surfaceNormal);
+                                                 + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:" + surfaceNormal);
 
       return definition;
    }
@@ -829,29 +752,37 @@ public class URDFTools
     * @param urdfSensor the parsed URDF sensor to convert.
     * @return the sensor definition.
     */
-   public static List<SensorDefinition> toSensorDefinition(URDFSensor urdfSensor)
+   public static List<SensorDefinition> toSensorDefinition(URDFSensor urdfSensor, URDFParserProperties parserProperties)
    {
       List<SensorDefinition> definitions = new ArrayList<>();
 
-      switch (urdfSensor.getType())
+      URDFSensorType type = URDFSensorType.parse(urdfSensor.getType());
+
+      if (type == null)
       {
-         case "camera":
-         case "multicamera":
-         case "depth":
-            definitions.addAll(toCameraSensorDefinition(urdfSensor.getCamera()));
+         LogTools.error("Unsupported sensor type: " + urdfSensor.getType());
+         return null;
+      }
+
+      switch (type)
+      {
+         case camera:
+         case multicamera:
+         case depth:
+            definitions.addAll(toCameraSensorDefinition(urdfSensor.getCamera(), parserProperties));
             break;
-         case "imu":
-            definitions.add(toIMUSensorDefinition(urdfSensor.getImu()));
+         case imu:
+            definitions.add(toIMUSensorDefinition(urdfSensor.getImu(), parserProperties));
             break;
-         case "gpu_ray":
-         case "ray":
-            definitions.add(toLidarSensorDefinition(urdfSensor.getRay()));
+         case gpu_ray:
+         case ray:
+            definitions.add(toLidarSensorDefinition(urdfSensor.getRay(), parserProperties));
             break;
-         case "force_torque":
+         case force_torque:
             definitions.add(new WrenchSensorDefinition());
             break;
          default:
-            LogTools.error("Unsupport sensor type: " + urdfSensor.getType());
+            LogTools.error("Unsupported sensor type: " + urdfSensor.getType());
             return null;
       }
 
@@ -863,7 +794,7 @@ public class URDFTools
             definition.setName(urdfSensor.getName() + "_" + definition.getName());
          else
             definition.setName(urdfSensor.getName());
-         definition.getTransformToJoint().preMultiply(parsePose(urdfSensor.getPose()));
+         definition.getTransformToJoint().preMultiply(parsePose(urdfSensor.getPose(), parserProperties));
          definition.setUpdatePeriod(updatePeriod);
       }
 
@@ -875,9 +806,9 @@ public class URDFTools
     * 
     * @see #toSensorDefinition(URDFSensor)
     */
-   public static List<CameraSensorDefinition> toCameraSensorDefinition(List<URDFCamera> urdfCameras)
+   public static List<CameraSensorDefinition> toCameraSensorDefinition(List<URDFCamera> urdfCameras, URDFParserProperties parserProperties)
    {
-      return urdfCameras.stream().map(URDFTools::toCameraSensorDefinition).collect(Collectors.toList());
+      return urdfCameras.stream().map(urdfCamera -> toCameraSensorDefinition(urdfCamera, parserProperties)).collect(Collectors.toList());
    }
 
    /**
@@ -885,11 +816,11 @@ public class URDFTools
     * 
     * @see #toSensorDefinition(URDFSensor)
     */
-   public static CameraSensorDefinition toCameraSensorDefinition(URDFCamera urdfCamera)
+   public static CameraSensorDefinition toCameraSensorDefinition(URDFCamera urdfCamera, URDFParserProperties parserProperties)
    {
       CameraSensorDefinition definition = new CameraSensorDefinition();
       definition.setName(urdfCamera.getName());
-      definition.getTransformToJoint().set(parsePose(urdfCamera.getPose()));
+      definition.getTransformToJoint().set(parsePose(urdfCamera.getPose(), parserProperties));
       definition.setFieldOfView(parseDouble(urdfCamera.getHorizontalFov(), Double.NaN));
       definition.setClipNear(parseDouble(urdfCamera.getClip().getNear(), Double.NaN));
       definition.setClipFar(parseDouble(urdfCamera.getClip().getFar(), Double.NaN));
@@ -903,7 +834,7 @@ public class URDFTools
     * 
     * @see #toSensorDefinition(URDFSensor)
     */
-   public static LidarSensorDefinition toLidarSensorDefinition(URDFRay urdfRay)
+   public static LidarSensorDefinition toLidarSensorDefinition(URDFRay urdfRay, URDFParserProperties parserProperties)
    {
       LidarSensorDefinition definition = new LidarSensorDefinition();
 
@@ -925,7 +856,7 @@ public class URDFTools
       URDFNoise urdfNoise = urdfRay.getNoise();
       if (urdfNoise != null)
       {
-         if ("gaussian".equals(urdfNoise.getType()))
+         if (URDFNoiseType.gaussian.equals(URDFNoiseType.parse(urdfNoise.getType())))
          {
             definition.setGaussianNoiseMean(parseDouble(urdfNoise.getMean(), 0.0));
             definition.setGaussianNoiseStandardDeviation(parseDouble(urdfNoise.getStddev(), 0.0));
@@ -936,7 +867,7 @@ public class URDFTools
          }
       }
 
-      definition.getTransformToJoint().set(parsePose(urdfRay.getPose()));
+      definition.getTransformToJoint().set(parsePose(urdfRay.getPose(), parserProperties));
       definition.setPointsPerSweep(samples);
       definition.setSweepYawLimits(minSweepAngle, maxSweepAngle);
       definition.setHeightPitchLimits(minHeightAngle, maxHeightAngle);
@@ -951,14 +882,14 @@ public class URDFTools
     * 
     * @see #toSensorDefinition(URDFSensor)
     */
-   public static IMUSensorDefinition toIMUSensorDefinition(URDFIMU urdfIMU)
+   public static IMUSensorDefinition toIMUSensorDefinition(URDFIMU urdfIMU, URDFParserProperties parserProperties)
    {
       IMUSensorDefinition definition = new IMUSensorDefinition();
 
       URDFIMUNoise urdfNoise = urdfIMU.getNoise();
       if (urdfNoise != null)
       {
-         if ("gaussian".equals(urdfNoise.getType()))
+         if (URDFIMUNoiseType.gaussian.equals(URDFIMUNoiseType.parse(urdfNoise.getType())))
          {
             URDFNoiseParameters accelerationNoise = urdfNoise.getAccel();
             URDFNoiseParameters angularVelocityNoise = urdfNoise.getRate();
@@ -988,19 +919,16 @@ public class URDFTools
     * @param urdfVisual the parsed URDF visual to convert.
     * @return the visual definition.
     */
-   public static VisualDefinition toVisualDefinition(URDFVisual urdfVisual)
+   public static VisualDefinition toVisualDefinition(URDFVisual urdfVisual, URDFParserProperties parserProperties)
    {
       if (urdfVisual == null)
          return null;
 
       VisualDefinition visualDefinition = new VisualDefinition();
       visualDefinition.setName(urdfVisual.getName());
-      visualDefinition.setOriginPose(parseRigidBodyTransform(urdfVisual.getOrigin()));
-      visualDefinition.setMaterialDefinition(toMaterialDefinition(urdfVisual.getMaterial()));
-      GeometryDefinition geometryDefinition = toGeometryDefinition(urdfVisual.getGeometry());
-      if (geometryDefinition == null)
-         return null;
-      visualDefinition.setGeometryDefinition(geometryDefinition);
+      visualDefinition.setOriginPose(parseRigidBodyTransform(urdfVisual.getOrigin(), parserProperties));
+      visualDefinition.setMaterialDefinition(toMaterialDefinition(urdfVisual.getMaterial(), parserProperties));
+      visualDefinition.setGeometryDefinition(toGeometryDefinition(urdfVisual.getGeometry(), parserProperties));
       return visualDefinition;
    }
 
@@ -1013,18 +941,15 @@ public class URDFTools
     * @param urdfCollision the parsed URDF collision to convert.
     * @return the collision shape definition.
     */
-   public static CollisionShapeDefinition toCollisionShapeDefinition(URDFCollision urdfCollision)
+   public static CollisionShapeDefinition toCollisionShapeDefinition(URDFCollision urdfCollision, URDFParserProperties parserProperties)
    {
       if (urdfCollision == null)
          return null;
 
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition();
       collisionShapeDefinition.setName(urdfCollision.getName());
-      collisionShapeDefinition.setOriginPose(parseRigidBodyTransform(urdfCollision.getOrigin()));
-      GeometryDefinition geometryDefinition = toGeometryDefinition(urdfCollision.getGeometry());
-      if (geometryDefinition == null)
-         return null;
-      collisionShapeDefinition.setGeometryDefinition(geometryDefinition);
+      collisionShapeDefinition.setOriginPose(parseRigidBodyTransform(urdfCollision.getOrigin(), parserProperties));
+      collisionShapeDefinition.setGeometryDefinition(toGeometryDefinition(urdfCollision.getGeometry(), parserProperties));
       return collisionShapeDefinition;
    }
 
@@ -1037,7 +962,7 @@ public class URDFTools
     * @param urdfGeometry the parsed URDF geometry to convert.
     * @return the geometry definition.
     */
-   public static GeometryDefinition toGeometryDefinition(URDFGeometry urdfGeometry)
+   public static GeometryDefinition toGeometryDefinition(URDFGeometry urdfGeometry, URDFParserProperties parserProperties)
    {
       return toGeometryDefinition(urdfGeometry, Collections.emptyList());
    }
@@ -1083,15 +1008,15 @@ public class URDFTools
     * @param urdfMaterial the parsed URDF material to convert.
     * @return the material definition.
     */
-   public static MaterialDefinition toMaterialDefinition(URDFMaterial urdfMaterial)
+   public static MaterialDefinition toMaterialDefinition(URDFMaterial urdfMaterial, URDFParserProperties parserProperties)
    {
       if (urdfMaterial == null)
          return null;
 
       MaterialDefinition materialDefinition = new MaterialDefinition();
       materialDefinition.setName(urdfMaterial.getName());
-      materialDefinition.setDiffuseColor(toColorDefinition(urdfMaterial.getColor()));
-      materialDefinition.setDiffuseMap(toTextureDefinition(urdfMaterial.getTexture()));
+      materialDefinition.setDiffuseColor(toColorDefinition(urdfMaterial.getColor(), parserProperties));
+      materialDefinition.setDiffuseMap(toTextureDefinition(urdfMaterial.getTexture(), parserProperties));
       return materialDefinition;
    }
 
@@ -1104,7 +1029,7 @@ public class URDFTools
     * @param urdfTexture the parsed URDF texture to convert.
     * @return the texture definition.
     */
-   public static TextureDefinition toTextureDefinition(URDFTexture urdfTexture)
+   public static TextureDefinition toTextureDefinition(URDFTexture urdfTexture, URDFParserProperties parserProperties)
    {
       if (urdfTexture == null)
          return null;
@@ -1123,7 +1048,7 @@ public class URDFTools
     * @param urdfColor the parsed URDF color to convert.
     * @return the color definition.
     */
-   public static ColorDefinition toColorDefinition(URDFColor urdfColor)
+   public static ColorDefinition toColorDefinition(URDFColor urdfColor, URDFParserProperties parserProperties)
    {
       if (urdfColor == null)
          return null;
@@ -1137,7 +1062,7 @@ public class URDFTools
          return ColorDefinitions.rgba(colorArray);
    }
 
-   public static RigidBodyTransform parsePose(String pose)
+   public static RigidBodyTransform parsePose(String pose, URDFParserProperties parserProperties)
    {
       RigidBodyTransform rigidBodyTransform = new RigidBodyTransform();
 
@@ -1151,7 +1076,7 @@ public class URDFTools
       return rigidBodyTransform;
    }
 
-   public static RigidBodyTransform parseRigidBodyTransform(URDFOrigin origin)
+   public static RigidBodyTransform parseRigidBodyTransform(URDFOrigin origin, URDFParserProperties parserProperties)
    {
       if (origin == null)
          origin = new URDFOrigin();
@@ -1162,7 +1087,7 @@ public class URDFTools
       return rigidBodyTransform;
    }
 
-   public static Matrix3D parseMomentOfInertia(URDFInertia inertia)
+   public static Matrix3D parseMomentOfInertia(URDFInertia inertia, URDFParserProperties parserProperties)
    {
       if (inertia == null)
          inertia = new URDFInertia();
@@ -1192,14 +1117,17 @@ public class URDFTools
       return momentOfInertia;
    }
 
-   public static double parseMass(URDFMass urdfMass)
+   public static double parseMass(URDFMass urdfMass, URDFParserProperties parserProperties)
    {
       if (urdfMass == null)
          return DEFAULT_MASS;
       return parseDouble(urdfMass.getValue(), DEFAULT_MASS);
    }
 
-   public static void parseLimit(URDFLimit urdfLimit, OneDoFJointDefinition jointDefinitionToParseLimitInto, boolean ignorePositionLimits)
+   public static void parseLimit(URDFLimit urdfLimit,
+                                 OneDoFJointDefinition jointDefinitionToParseLimitInto,
+                                 boolean ignorePositionLimits,
+                                 URDFParserProperties parserProperties)
    {
       jointDefinitionToParseLimitInto.setPositionLimits(DEFAULT_LOWER_LIMIT, DEFAULT_UPPER_LIMIT);
       jointDefinitionToParseLimitInto.setEffortLimits(DEFAULT_EFFORT_LIMIT);
@@ -1223,7 +1151,7 @@ public class URDFTools
       }
    }
 
-   public static void parseDynamics(URDFDynamics urdfDynamics, OneDoFJointDefinition jointDefinitionToParseDynamicsInto)
+   public static void parseDynamics(URDFDynamics urdfDynamics, OneDoFJointDefinition jointDefinitionToParseDynamicsInto, URDFParserProperties parserProperties)
    {
       double damping = 0.0;
       double stiction = 0.0;
@@ -1238,7 +1166,7 @@ public class URDFTools
       jointDefinitionToParseDynamicsInto.setStiction(stiction);
    }
 
-   public static Vector3D parseAxis(URDFAxis axis)
+   public static Vector3D parseAxis(URDFAxis axis, URDFParserProperties parserProperties)
    {
       if (axis == null)
          return new Vector3D(DEFAULT_AXIS);
@@ -1286,5 +1214,1168 @@ public class URDFTools
          array[i] = Double.parseDouble(split[i]);
 
       return array;
+   }
+
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////// Following are tools for converting RobotDefinition to URDF ////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   public static void saveURDFModel(OutputStream outputStream, URDFModel urdfModel) throws JAXBException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(URDFModel.class);
+         Marshaller m = context.createMarshaller();
+         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+         m.marshal(urdfModel, outputStream);
+      }
+      finally
+      {
+         try
+         {
+            outputStream.close();
+         }
+         catch (IOException e)
+         {
+            LogTools.error(e.getMessage());
+         }
+      }
+   }
+
+   public static URDFModel toURDFModel(RobotDefinition robotDefinition)
+   {
+      return toURDFModel(robotDefinition, DEFAULT_URDF_GENERATOR_PROPERTIES);
+   }
+
+   public static URDFModel toURDFModel(RobotDefinition robotDefinition, URDFGeneratorProperties properties)
+   {
+      URDFModel urdfModel = new URDFModel();
+
+      urdfModel.setName(robotDefinition.getName());
+      urdfModel.setLinks(toURDFLinks(robotDefinition.getAllRigidBodies(), properties));
+      urdfModel.setJoints(toURDFJoints(robotDefinition.getAllJoints(), properties));
+      urdfModel.setGazebos(toURDFGazebos(robotDefinition.getAllJoints(), properties));
+
+      return urdfModel;
+   }
+
+   public static List<URDFLink> toURDFLinks(List<RigidBodyDefinition> rigidBodyDefinitions, URDFGeneratorProperties properties)
+   {
+      if (rigidBodyDefinitions == null || rigidBodyDefinitions.isEmpty())
+         return null;
+
+      List<URDFLink> urdfLinks = new ArrayList<>();
+
+      for (RigidBodyDefinition rigidBodyDefinition : rigidBodyDefinitions)
+      {
+         URDFLink urdfLink = toURDFLink(rigidBodyDefinition, properties);
+         if (urdfLink != null)
+            urdfLinks.add(urdfLink);
+      }
+
+      return urdfLinks;
+   }
+
+   public static URDFLink toURDFLink(RigidBodyDefinition rigidBodyDefinition, URDFGeneratorProperties properties)
+   {
+      if (rigidBodyDefinition == null)
+         return null;
+
+      URDFLink urdfLink = new URDFLink();
+      urdfLink.setName(rigidBodyDefinition.getName());
+      urdfLink.setInertial(toURDFInterial(rigidBodyDefinition, properties));
+      urdfLink.setVisual(toURDFVisuals(rigidBodyDefinition.getVisualDefinitions(), properties));
+      urdfLink.setCollision(toURDFCollisions(rigidBodyDefinition.getCollisionShapeDefinitions(), properties));
+      return urdfLink;
+   }
+
+   public static URDFInertial toURDFInterial(RigidBodyDefinition rigidBodyDefinition, URDFGeneratorProperties properties)
+   {
+      if (rigidBodyDefinition == null)
+         return null;
+
+      if (!properties.alwaysExportLinkInertial)
+      {
+         if (rigidBodyDefinition.getMass() == 0.0 && rigidBodyDefinition.getMomentOfInertia().isZero(0.0))
+            return null;
+      }
+
+      URDFInertial urdfInertial = new URDFInertial();
+      urdfInertial.setOrigin(toURDFOrigin(rigidBodyDefinition.getInertiaPose(), properties));
+      urdfInertial.setMass(toURDFMass(rigidBodyDefinition.getMass(), properties));
+      urdfInertial.setInertia(toURDFInertia(rigidBodyDefinition.getMomentOfInertia(), properties));
+      return urdfInertial;
+   }
+
+   public static URDFMass toURDFMass(double mass, URDFGeneratorProperties properties)
+   {
+      URDFMass urdfMass = new URDFMass();
+      urdfMass.setValue(properties.toString(URDFMass.class, "value", mass));
+      return urdfMass;
+   }
+
+   public static URDFInertia toURDFInertia(MomentOfInertiaDefinition momentOfInertiaDefinition, URDFGeneratorProperties properties)
+   {
+      if (momentOfInertiaDefinition == null)
+         return null;
+
+      URDFInertia urdfInertia = new URDFInertia();
+      urdfInertia.setIxx(properties.toString(URDFInertia.class, "ixx", momentOfInertiaDefinition.getIxx()));
+      urdfInertia.setIyy(properties.toString(URDFInertia.class, "iyy", momentOfInertiaDefinition.getIyy()));
+      urdfInertia.setIzz(properties.toString(URDFInertia.class, "izz", momentOfInertiaDefinition.getIzz()));
+      urdfInertia.setIxy(properties.toString(URDFInertia.class, "ixy", momentOfInertiaDefinition.getIxy()));
+      urdfInertia.setIxz(properties.toString(URDFInertia.class, "ixz", momentOfInertiaDefinition.getIxz()));
+      urdfInertia.setIyz(properties.toString(URDFInertia.class, "iyz", momentOfInertiaDefinition.getIyz()));
+      return urdfInertia;
+   }
+
+   public static List<URDFVisual> toURDFVisuals(List<VisualDefinition> visualDefinitions, URDFGeneratorProperties properties)
+   {
+      if (visualDefinitions == null || visualDefinitions.isEmpty())
+         return null;
+
+      List<URDFVisual> urdfVisuals = new ArrayList<>();
+
+      for (VisualDefinition visualDefinition : visualDefinitions)
+      {
+         URDFVisual urdfVisual = toURDFVisual(visualDefinition, properties);
+         if (urdfVisual != null)
+            urdfVisuals.add(urdfVisual);
+      }
+
+      return urdfVisuals;
+   }
+
+   public static URDFVisual toURDFVisual(VisualDefinition visualDefinition, URDFGeneratorProperties properties)
+   {
+      if (visualDefinition == null)
+         return null;
+
+      URDFVisual urdfVisual = new URDFVisual();
+      urdfVisual.setName(visualDefinition.getName());
+      urdfVisual.setOrigin(toURDFOrigin(visualDefinition.getOriginPose(), properties));
+      urdfVisual.setGeometry(toURDFGeometry(visualDefinition.getGeometryDefinition(), properties));
+      urdfVisual.setMaterial(toURDFMaterial(visualDefinition.getMaterialDefinition(), properties));
+      return urdfVisual;
+   }
+
+   public static List<URDFCollision> toURDFCollisions(List<CollisionShapeDefinition> collisionShapeDefinitions, URDFGeneratorProperties properties)
+   {
+      if (collisionShapeDefinitions == null || collisionShapeDefinitions.isEmpty())
+         return null;
+
+      List<URDFCollision> urdfCollisions = new ArrayList<>();
+
+      for (CollisionShapeDefinition collisionShapeDefinition : collisionShapeDefinitions)
+      {
+         URDFCollision urdfCollision = toURDFCollision(collisionShapeDefinition, properties);
+         if (urdfCollision != null)
+            urdfCollisions.add(urdfCollision);
+      }
+
+      return urdfCollisions;
+   }
+
+   public static URDFCollision toURDFCollision(CollisionShapeDefinition collisionShapeDefinition, URDFGeneratorProperties properties)
+   {
+      if (collisionShapeDefinition == null)
+         return null;
+
+      URDFCollision urdfCollision = new URDFCollision();
+      urdfCollision.setName(collisionShapeDefinition.getName());
+      urdfCollision.setOrigin(toURDFOrigin(collisionShapeDefinition.getOriginPose(), properties));
+      urdfCollision.setGeometry(toURDFGeometry(collisionShapeDefinition.getGeometryDefinition(), properties));
+      return urdfCollision;
+   }
+
+   public static URDFGeometry toURDFGeometry(GeometryDefinition geometryDefinition, URDFGeneratorProperties properties)
+   {
+      if (geometryDefinition == null)
+         return null;
+
+      URDFGeometry urdfGeometry = new URDFGeometry();
+
+      if (geometryDefinition instanceof Box3DDefinition box3DGeometry)
+      {
+         urdfGeometry.setBox(toURDFBox(box3DGeometry, properties));
+      }
+      else if (geometryDefinition instanceof Cylinder3DDefinition cylinder3DDefinition)
+      {
+         urdfGeometry.setCylinder(toURDFCylinder(cylinder3DDefinition, properties));
+      }
+      else if (geometryDefinition instanceof Sphere3DDefinition sphere3DDefinition)
+      {
+         urdfGeometry.setSphere(toURDFSphere(sphere3DDefinition, properties));
+      }
+      else if (geometryDefinition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
+      {
+         urdfGeometry.setMesh(toURDFMesh(modelFileGeometryDefinition, properties));
+      }
+      else
+      {
+         LogTools.warn("Unhandled geometry: {}", geometryDefinition);
+      }
+
+      return urdfGeometry;
+   }
+
+   public static URDFBox toURDFBox(Box3DDefinition box3DDefinition, URDFGeneratorProperties properties)
+   {
+      if (box3DDefinition == null)
+         return null;
+
+      URDFBox urdfBox = new URDFBox();
+      urdfBox.setSize(properties.toString(URDFBox.class, "size", box3DDefinition.getSizeX(), box3DDefinition.getSizeY(), box3DDefinition.getSizeZ()));
+      return urdfBox;
+   }
+
+   public static URDFCylinder toURDFCylinder(Cylinder3DDefinition cylinder3DDefinition, URDFGeneratorProperties properties)
+   {
+      if (cylinder3DDefinition == null)
+         return null;
+
+      URDFCylinder urdfCylinder = new URDFCylinder();
+      urdfCylinder.setRadius(properties.toString(URDFCylinder.class, "radius", cylinder3DDefinition.getRadius()));
+      urdfCylinder.setLength(properties.toString(URDFCylinder.class, "length", cylinder3DDefinition.getLength()));
+      return urdfCylinder;
+   }
+
+   public static URDFSphere toURDFSphere(Sphere3DDefinition sphere3DDefinition, URDFGeneratorProperties properties)
+   {
+      if (sphere3DDefinition == null)
+         return null;
+
+      URDFSphere urdfSphere = new URDFSphere();
+      urdfSphere.setRadius(properties.toString(URDFSphere.class, "radius", sphere3DDefinition.getRadius()));
+      return urdfSphere;
+   }
+
+   public static URDFMesh toURDFMesh(ModelFileGeometryDefinition modelFileGeometryDefinition, URDFGeneratorProperties properties)
+   {
+      if (modelFileGeometryDefinition == null)
+         return null;
+
+      URDFMesh urdfMesh = new URDFMesh();
+      urdfMesh.setFilename(modelFileGeometryDefinition.getFileName());
+      Vector3D scale = modelFileGeometryDefinition.getScale();
+      if (scale != null && !scale.equals(new Vector3D(1, 1, 1)))
+      {
+         urdfMesh.setScale(properties.toString(URDFMesh.class, "scale", scale.getX(), scale.getY(), scale.getZ()));
+      }
+      return urdfMesh;
+   }
+
+   public static URDFMaterial toURDFMaterial(MaterialDefinition materialDefinition, URDFGeneratorProperties properties)
+   {
+      if (materialDefinition == null)
+         return null;
+
+      URDFMaterial urdfMaterial = new URDFMaterial();
+      urdfMaterial.setName(materialDefinition.getName());
+      urdfMaterial.setColor(toURDFColor(materialDefinition.getDiffuseColor(), properties));
+      urdfMaterial.setTexture(toURDFTexture(materialDefinition.getDiffuseMap(), properties));
+      return urdfMaterial;
+   }
+
+   public static URDFColor toURDFColor(ColorDefinition colorDefinition, URDFGeneratorProperties properties)
+   {
+      if (colorDefinition == null)
+         return null;
+
+      URDFColor urdfColor = new URDFColor();
+      urdfColor.setRGBA(properties.toString(URDFColor.class,
+                                            "rgba",
+                                            colorDefinition.getRed(),
+                                            colorDefinition.getGreen(),
+                                            colorDefinition.getBlue(),
+                                            colorDefinition.getAlpha()));
+      return urdfColor;
+   }
+
+   public static URDFTexture toURDFTexture(TextureDefinition diffuseMap, URDFGeneratorProperties properties)
+   {
+      if (diffuseMap == null)
+         return null;
+
+      URDFTexture urdfTexture = new URDFTexture();
+      urdfTexture.setFilename(diffuseMap.getFilename());
+      return urdfTexture;
+   }
+
+   public static List<URDFJoint> toURDFJoints(List<JointDefinition> jointDefinitions, URDFGeneratorProperties properties)
+   {
+      if (jointDefinitions == null || jointDefinitions.isEmpty())
+         return null;
+
+      List<URDFJoint> urdfJoints = new ArrayList<>();
+
+      for (JointDefinition jointDefinition : jointDefinitions)
+      {
+         URDFJoint urdfJoint = toURDFJoint(jointDefinition, properties);
+         if (urdfJoint != null)
+            urdfJoints.add(urdfJoint);
+      }
+
+      return urdfJoints;
+   }
+
+   public static URDFJoint toURDFJoint(JointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      if (jointDefinition instanceof RevoluteJointDefinition revoluteJointDefinition)
+         return toURDFJoint(revoluteJointDefinition, properties);
+      if (jointDefinition instanceof PrismaticJointDefinition prismaticJointDefinition)
+         return toURDFJoint(prismaticJointDefinition, properties);
+      if (jointDefinition instanceof FixedJointDefinition fixedJointDefinition)
+         return toURDFJoint(fixedJointDefinition, properties);
+      if (jointDefinition instanceof SixDoFJointDefinition sixDoFJointDefinition)
+         return toURDFJoint(sixDoFJointDefinition, properties);
+      if (jointDefinition instanceof PlanarJointDefinition planarJointDefinition)
+         return toURDFJoint(planarJointDefinition, properties);
+      throw new UnsupportedOperationException("Unsupported joint type: " + jointDefinition);
+   }
+
+   public static URDFJoint toURDFJoint(RevoluteJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      if (Double.isInfinite(jointDefinition.getPositionLowerLimit()) && Double.isInfinite(jointDefinition.getPositionLowerLimit()))
+         urdfJoint.setType(URDFJointType.continuous);
+      else
+         urdfJoint.setType(URDFJointType.revolute);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis(), properties));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition, properties));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition, properties));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(PrismaticJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.prismatic);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis(), properties));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition, properties));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition, properties));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(FixedJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.fixed);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+      if (properties.alwaysExportJointAxis)
+         urdfJoint.setAxis(toURDFAxis(EuclidCoreTools.zeroVector3D, properties));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(SixDoFJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.floating);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+      if (properties.alwaysExportJointAxis)
+         urdfJoint.setAxis(toURDFAxis(EuclidCoreTools.zeroVector3D, properties));
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(PlanarJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.planar);
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+      urdfJoint.setAxis(toURDFAxis(Axis3D.Y, properties)); // TODO need to upgrade PlanarJointDefinition to allow different axis
+      return urdfJoint;
+   }
+
+   public static List<URDFGazebo> toURDFGazebos(List<JointDefinition> jointDefinitions, URDFGeneratorProperties properties)
+   {
+      if (jointDefinitions == null || jointDefinitions.isEmpty())
+         return null;
+
+      List<URDFGazebo> urdfGazebos = new ArrayList<>();
+
+      for (JointDefinition jointDefinition : jointDefinitions)
+      {
+         List<URDFGazebo> jointURDFGazebos = toURDFGazebos(jointDefinition, properties);
+         if (jointURDFGazebos != null)
+            urdfGazebos.addAll(jointURDFGazebos);
+      }
+
+      return urdfGazebos;
+   }
+
+   public static List<URDFGazebo> toURDFGazebos(JointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+      List<URDFSensor> urdfSensors = toURDFSensors(jointDefinition.getSensorDefinitions(), properties);
+      if (urdfSensors == null)
+         return null;
+
+      List<URDFGazebo> urdfGazebos = new ArrayList<>();
+
+      for (URDFSensor urdfSensor : urdfSensors)
+      {
+         URDFGazebo urdfGazebo = new URDFGazebo();
+         urdfGazebo.setReference(jointDefinition.getName());
+         urdfGazebo.setSensor(urdfSensor);
+         urdfGazebos.add(urdfGazebo);
+      }
+
+      return urdfGazebos;
+   }
+
+   public static List<URDFSensor> toURDFSensors(List<SensorDefinition> sensorDefinitions, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinitions == null || sensorDefinitions.isEmpty())
+         return null;
+
+      List<URDFSensor> urdfSensors = new ArrayList<>();
+
+      for (SensorDefinition sensorDefinition : sensorDefinitions)
+      {
+         URDFSensor urdfSensor = toURDFSensor(sensorDefinition, properties);
+         if (urdfSensor != null)
+            urdfSensors.add(urdfSensor);
+      }
+
+      return urdfSensors;
+   }
+
+   public static URDFSensor toURDFSensor(SensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      if (sensorDefinition instanceof CameraSensorDefinition cameraSensorDefinition)
+         return toURDFSensor(cameraSensorDefinition, properties);
+      if (sensorDefinition instanceof LidarSensorDefinition lidarSensorDefinition)
+         return toURDFSensor(lidarSensorDefinition, properties);
+      if (sensorDefinition instanceof IMUSensorDefinition imuSensorDefinition)
+         return toURDFSensor(imuSensorDefinition, properties);
+      if (sensorDefinition instanceof WrenchSensorDefinition wrenchSensorDefinition)
+         return toURDFSensor(wrenchSensorDefinition, properties);
+      LogTools.warn("Unsupported sensor type: " + sensorDefinition);
+      return null;
+   }
+
+   public static URDFSensor toURDFSensor(WrenchSensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      urdfSensor.setName(sensorDefinition.getName());
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.force_torque);
+      return urdfSensor;
+   }
+
+   public static URDFSensor toURDFSensor(IMUSensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      urdfSensor.setName(sensorDefinition.getName());
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.imu);
+
+      URDFIMU urdfIMU = new URDFIMU();
+
+      URDFIMUNoise urdfIMUNoise = new URDFIMUNoise();
+      urdfIMUNoise.setType(URDFIMUNoiseType.gaussian);
+
+      { // Angular velocity noise
+         URDFNoiseParameters urdfNoiseParameters = new URDFNoiseParameters();
+         String mean = properties.toString(URDFNoiseParameters.class, "mean", sensorDefinition.getAngularVelocityNoiseMean());
+         String stddev = properties.toString(URDFNoiseParameters.class, "stddev", sensorDefinition.getAngularVelocityNoiseStandardDeviation());
+         String bias_mean = properties.toString(URDFNoiseParameters.class, "bias_mean", sensorDefinition.getAngularVelocityBiasMean());
+         String bias_stddev = properties.toString(URDFNoiseParameters.class, "bias_stddev", sensorDefinition.getAngularVelocityBiasStandardDeviation());
+         urdfNoiseParameters.setMean(mean);
+         urdfNoiseParameters.setStddev(stddev);
+         urdfNoiseParameters.setBias_mean(bias_mean);
+         urdfNoiseParameters.setBias_stddev(bias_stddev);
+         urdfIMUNoise.setRate(urdfNoiseParameters);
+      }
+
+      { // Acceleration noise
+         String mean = properties.toString(URDFNoiseParameters.class, "mean", sensorDefinition.getAccelerationNoiseMean());
+         String stddev = properties.toString(URDFNoiseParameters.class, "stddev", sensorDefinition.getAccelerationNoiseStandardDeviation());
+         String bias_mean = properties.toString(URDFNoiseParameters.class, "bias_mean", sensorDefinition.getAccelerationBiasMean());
+         String bias_stddev = properties.toString(URDFNoiseParameters.class, "bias_stddev", sensorDefinition.getAccelerationBiasStandardDeviation());
+         URDFNoiseParameters urdfNoiseParameters = new URDFNoiseParameters();
+         urdfNoiseParameters.setMean(mean);
+         urdfNoiseParameters.setStddev(stddev);
+         urdfNoiseParameters.setBias_mean(bias_mean);
+         urdfNoiseParameters.setBias_stddev(bias_stddev);
+         urdfIMUNoise.setAccel(urdfNoiseParameters);
+      }
+
+      urdfIMU.setNoise(urdfIMUNoise);
+
+      return urdfSensor;
+   }
+
+   public static URDFSensor toURDFSensor(LidarSensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      urdfSensor.setName(sensorDefinition.getName());
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.ray);
+      urdfSensor.setRay(toURDFRay(sensorDefinition, properties));
+      return urdfSensor;
+   }
+
+   public static URDFRay toURDFRay(LidarSensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFRay urdfRay = new URDFRay();
+
+      URDFRange urdfRange = new URDFRange();
+      urdfRange.setMin(properties.toString(URDFRange.class, "min", sensorDefinition.getMinRange()));
+      urdfRange.setMax(properties.toString(URDFRange.class, "max", sensorDefinition.getMaxRange()));
+      urdfRange.setResolution(properties.toString(URDFRange.class, "resolution", sensorDefinition.getRangeResolution()));
+      urdfRay.setRange(urdfRange);
+
+      URDFScan urdfScan = new URDFScan();
+
+      URDFHorizontalScan urdfHorizontalScan = new URDFHorizontalScan();
+      urdfHorizontalScan.setMinAngle(properties.toString(URDFHorizontalScan.class, "min_angle", sensorDefinition.getSweepYawMin()));
+      urdfHorizontalScan.setMaxAngle(properties.toString(URDFHorizontalScan.class, "max_angle", sensorDefinition.getSweepYawMax()));
+      urdfHorizontalScan.setSamples(Integer.toString(sensorDefinition.getPointsPerSweep()));
+      urdfScan.setHorizontal(urdfHorizontalScan);
+
+      URDFVerticalScan urdfVerticalScan = new URDFVerticalScan();
+      urdfVerticalScan.setMinAngle(properties.toString(URDFVerticalScan.class, "min_angle", sensorDefinition.getHeightPitchMin()));
+      urdfVerticalScan.setMaxAngle(properties.toString(URDFVerticalScan.class, "max_angle", sensorDefinition.getHeightPitchMax()));
+      urdfVerticalScan.setSamples(Integer.toString(sensorDefinition.getScanHeight()));
+      urdfScan.setVertical(urdfVerticalScan);
+      urdfRay.setScan(urdfScan);
+
+      URDFNoise urdfNoise = new URDFNoise();
+      urdfNoise.setType(URDFNoiseType.gaussian);
+      urdfNoise.setMean(properties.toString(URDFNoise.class, "mean", sensorDefinition.getGaussianNoiseMean()));
+      urdfNoise.setStddev(properties.toString(URDFNoise.class, "stddev", sensorDefinition.getGaussianNoiseStandardDeviation()));
+      urdfRay.setNoise(urdfNoise);
+
+      return urdfRay;
+   }
+
+   public static URDFSensor toURDFSensor(CameraSensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFSensor urdfSensor = new URDFSensor();
+      String name = sensorDefinition.getName();
+      if (name.contains("_"))
+         urdfSensor.setName(name.substring(0, name.lastIndexOf("_")));
+      else
+         urdfSensor.setName(name);
+      urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      urdfSensor.setType(URDFSensorType.camera);
+      urdfSensor.setCamera(Collections.singletonList(toURDFCamera(sensorDefinition, properties)));
+      return urdfSensor;
+   }
+
+   public static URDFCamera toURDFCamera(CameraSensorDefinition sensorDefinition, URDFGeneratorProperties properties)
+   {
+      if (sensorDefinition == null)
+         return null;
+
+      URDFCamera urdfCamera = new URDFCamera();
+      String name = sensorDefinition.getName();
+      if (name != null && name.contains("_"))
+         urdfCamera.setName(name.substring(name.lastIndexOf("_") + 1));
+      urdfCamera.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
+      urdfCamera.setHorizontalFov(properties.toString(URDFCamera.class, "horizontal_fov", sensorDefinition.getFieldOfView()));
+      urdfCamera.setImage(toURDFSensorImage(sensorDefinition.getImageWidth(), sensorDefinition.getImageHeight(), properties));
+      urdfCamera.setClip(toURDFClip(sensorDefinition.getClipNear(), sensorDefinition.getClipFar(), properties));
+      return urdfCamera;
+   }
+
+   public static URDFSensorImage toURDFSensorImage(int width, int height, URDFGeneratorProperties properties)
+   {
+      return toURDFSensorImage(width, height, null, properties);
+   }
+
+   public static URDFSensorImage toURDFSensorImage(int width, int height, String format, URDFGeneratorProperties properties)
+   {
+      URDFSensorImage urdfSensorImage = new URDFSensorImage();
+      urdfSensorImage.setWidth(Integer.toString(width));
+      urdfSensorImage.setHeight(Integer.toString(height));
+      urdfSensorImage.setFormat(format);
+      return urdfSensorImage;
+   }
+
+   public static URDFClip toURDFClip(double near, double far, URDFGeneratorProperties properties)
+   {
+      URDFClip urdfClip = new URDFClip();
+      urdfClip.setNear(properties.toString(URDFClip.class, "near", near));
+      urdfClip.setFar(properties.toString(URDFClip.class, "far", far));
+      return urdfClip;
+   }
+
+   public static URDFOrigin toURDFOrigin(RigidBodyTransformReadOnly pose, URDFGeneratorProperties properties)
+   {
+      if (pose == null)
+         return null;
+
+      URDFOrigin urdfOrigin = new URDFOrigin();
+      Tuple3DReadOnly translation = pose.getTranslation();
+      Orientation3DReadOnly rotation = pose.getRotation();
+
+      urdfOrigin.setXYZ(properties.toString(URDFOrigin.class, "xyz", translation.getX(), translation.getY(), translation.getZ()));
+      urdfOrigin.setRPY(properties.toString(URDFOrigin.class, "rpy", rotation.getRoll(), rotation.getPitch(), rotation.getYaw()));
+      return urdfOrigin;
+   }
+
+   public static URDFOrigin toURDFOrigin(AffineTransformReadOnly pose, URDFGeneratorProperties properties)
+   {
+      if (pose == null)
+         return null;
+
+      URDFOrigin urdfOrigin = new URDFOrigin();
+      Tuple3DReadOnly translation = pose.getTranslation();
+      Orientation3DReadOnly rotation = pose.getLinearTransform().getAsQuaternion();
+
+      urdfOrigin.setXYZ(properties.toString(URDFOrigin.class, "xyz", translation.getX(), translation.getY(), translation.getZ()));
+      urdfOrigin.setRPY(properties.toString(URDFOrigin.class, "rpy", rotation.getRoll(), rotation.getPitch(), rotation.getYaw()));
+
+      if (!EuclidCoreTools.epsilonEquals(new Vector3D(1, 1, 1), pose.getLinearTransform().getScaleVector(), 1.0e-7))
+         LogTools.warn("Discarding scale from affine trane transform.");
+      return urdfOrigin;
+   }
+
+   public static String toPoseString(RigidBodyTransformReadOnly pose, DoubleFormatter doubleFormatter)
+   {
+      return toPoseString(pose, 1, doubleFormatter);
+   }
+
+   public static String toPoseString(RigidBodyTransformReadOnly pose, int spaceCount, DoubleFormatter doubleFormatter)
+   {
+      if (pose == null)
+         return null;
+
+      Tuple3DReadOnly translation = pose.getTranslation();
+      Orientation3DReadOnly rotation = pose.getRotation();
+
+      return doubleFormatter.toString(spaceCount,
+                                      translation.getX(),
+                                      translation.getY(),
+                                      translation.getZ(),
+                                      rotation.getRoll(),
+                                      rotation.getPitch(),
+                                      rotation.getYaw());
+   }
+
+   public static URDFAxis toURDFAxis(Tuple3DReadOnly axis, URDFGeneratorProperties properties)
+   {
+      if (axis == null)
+         return null;
+
+      URDFAxis urdfAxis = new URDFAxis();
+      urdfAxis.setXYZ(properties.toString(URDFAxis.class, "xyz", axis.getX(), axis.getY(), axis.getZ()));
+      return urdfAxis;
+   }
+
+   public static URDFLimit toURDFLimit(OneDoFJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFLimit urdfLimit = new URDFLimit();
+      urdfLimit.setLower(properties.toString(URDFLimit.class, "lower", jointDefinition.getPositionLowerLimit()));
+      urdfLimit.setUpper(properties.toString(URDFLimit.class, "upper", jointDefinition.getPositionUpperLimit()));
+
+      if (-jointDefinition.getVelocityLowerLimit() != jointDefinition.getVelocityUpperLimit())
+      {
+         LogTools.warn("Velocity limits no symmetric for joint {}, exporting smallest limit", jointDefinition.getName());
+      }
+
+      double velocity = Math.min(Math.abs(jointDefinition.getVelocityLowerLimit()), jointDefinition.getVelocityUpperLimit());
+      urdfLimit.setVelocity(properties.toString(URDFLimit.class, "velocity", velocity));
+
+      if (-jointDefinition.getEffortLowerLimit() != jointDefinition.getEffortUpperLimit())
+      {
+         LogTools.warn("Effort limits no symmetric for joint {}, exporting smallest limit", jointDefinition.getName());
+      }
+
+      double effort = Math.min(Math.abs(jointDefinition.getEffortLowerLimit()), jointDefinition.getEffortUpperLimit());
+      urdfLimit.setEffort(properties.toString(URDFLimit.class, "effort", effort));
+
+      return urdfLimit;
+   }
+
+   public static URDFDynamics toURDFDynamics(OneDoFJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      if (!properties.alwaysExportJointDynamics)
+      {
+         if (jointDefinition.getStiction() == 0.0 && jointDefinition.getDamping() == 0.0)
+            return null;
+      }
+
+      URDFDynamics urdfDynamics = new URDFDynamics();
+      urdfDynamics.setFriction(properties.toString(URDFDynamics.class, "friction", jointDefinition.getStiction()));
+      urdfDynamics.setDamping(properties.toString(URDFDynamics.class, "damping", jointDefinition.getDamping()));
+      return urdfDynamics;
+   }
+
+   public static URDFLinkReference toURDFLinkReference(RigidBodyDefinition rigidBodyDefinition, URDFGeneratorProperties properties)
+   {
+      if (rigidBodyDefinition == null)
+         return null;
+
+      URDFLinkReference urdfLinkReference = new URDFLinkReference();
+      urdfLinkReference.setLink(rigidBodyDefinition.getName());
+      return urdfLinkReference;
+   }
+
+   /**
+    * This class provides extra properties for tweaking operations when parsing a URDF file. It is used
+    * in both
+    * {@link URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)} and
+    * {@link URDFTools#toRobotDefinition(URDFModel, URDFParserProperties)}.
+    * 
+    * @author Sylvain Bertrand
+    */
+   public static class URDFParserProperties
+   {
+      private boolean ignoreNamespace = false;
+      private final Set<String> jointsToIgnore = new HashSet<>();
+      private final Set<String> linksToIgnore = new HashSet<>();
+      private Supplier<? extends JointDefinition> rootJointFactory = SixDoFJointDefinition::new;
+
+      private boolean autoGenerateVisualName = true;
+      private boolean autoGenerateCollisionName = true;
+      private boolean parseSensors = true;
+      private boolean simplifyKinematics = true;
+      private boolean transformToZUp = true;
+
+      /**
+       * Sets whether XML namespaces should be ignored.
+       * <p>
+       * Note that should always be false, it is only to handle malformed XML file that do not properly
+       * declare their namespaces.
+       * </p>
+       * 
+       * @param ignoreNamespace {@code true} to ignore namespaces. Recommended value {@code false}.
+       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       */
+      public void setIgnoreNamespace(boolean ignoreNamespace)
+      {
+         this.ignoreNamespace = ignoreNamespace;
+      }
+
+      /**
+       * Indicates that a joint should be ignored when loading the URDF.
+       * <p>
+       * Be careful with this as it can result in a corrupted model. Only use to handle poorly generated
+       * URDF files.
+       * 
+       * @param nameOfJointToIgnore the name of a joint to be ignored when parsing the URDF file.
+       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       */
+      public void addJointToIgnore(String nameOfJointToIgnore)
+      {
+         jointsToIgnore.add(nameOfJointToIgnore);
+      }
+
+      /**
+       * Indicates that a link should be ignored when loading the URDF.
+       * <p>
+       * Be careful with this as it can result in a corrupted model. Only use to handle poorly generated
+       * URDF files.
+       * 
+       * @param nameOfLinkToIgnore the name of a link to be ignored when parsing the URDF file.
+       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       */
+      public void addLinkToIgnore(String nameOfLinkToIgnore)
+      {
+         linksToIgnore.add(nameOfLinkToIgnore);
+      }
+
+      /**
+       * Specifies the joint factory used to create an additional root joint for the robot.
+       * <p>
+       * Typically, the URDF model does not explicitly declare the floating joint connecting the robot to
+       * the world. When creating the robot definition, a new rigid-body representing the world and a new
+       * floating joint connecting the robot to the world are created.
+       * </p>
+       * 
+       * @param rootJointFactory the factory used to create the root joint of the robot. If the URDF
+       *                         already declares that joint (uncommon), then set this to {@code null}.
+       * @see URDFTools#toRobotDefinition(URDFModel, URDFParserProperties)
+       */
+      public void setRootJointFactory(Supplier<? extends JointDefinition> rootJointFactory)
+      {
+         this.rootJointFactory = rootJointFactory;
+      }
+
+      /**
+       * Specifies whether a default name should be generated for {@code URDFVisual} that do not
+       * explicitly declare one.
+       * 
+       * @param autoGenerateVisualName whether to automatically generate a name for visuals when it is
+       *                               missing.
+       */
+      public void setAutoGenerateVisualName(boolean autoGenerateVisualName)
+      {
+         this.autoGenerateVisualName = autoGenerateVisualName;
+      }
+
+      /**
+       * Specifies whether a default name should be generated for {@code URDFCollision} that do not
+       * explicitly declare one.
+       * 
+       * @param autoGenerateVisualName whether to automatically generate a name for collisions when it is
+       *                               missing.
+       */
+      public void setAutoGenerateCollisionName(boolean autoGenerateCollisionName)
+      {
+         this.autoGenerateCollisionName = autoGenerateCollisionName;
+      }
+
+      /**
+       * Specifies whether the sensors should be parsed.
+       * 
+       * @param parseSensors {@code true} [default value] to parse the sensors from the URDF file.
+       */
+      public void setParseSensors(boolean parseSensors)
+      {
+         this.parseSensors = parseSensors;
+      }
+
+      /**
+       * Specifies whether {@link RobotDefinition#simplifyKinematics()} should be called after parsing the
+       * URDF model.
+       * <p>
+       * This will remove fixed joints from the robot definition while preserving the physical properties
+       * of the robot.
+       * </p>
+       * 
+       * @param simplifyKinematics {@code true} [default value] simplifies the robot kinematics,
+       *                           {@code false} do nothing.
+       */
+      public void setSimplifyKinematics(boolean simplifyKinematics)
+      {
+         this.simplifyKinematics = simplifyKinematics;
+      }
+
+      /**
+       * Specifies whether {@link RobotDefinition#transformAllFramesToZUp()} should be called after
+       * parsing the URDF model.
+       * <p>
+       * This will ensure that all local frames a pointing z-up and x-forward when the robot is in the
+       * zero pose.
+       * </p>
+       * 
+       * @param transformToZUp {@code true} [default value] transforms the local frame to follow the z-up
+       *                       convention.
+       */
+      public void setTransformToZUp(boolean transformToZUp)
+      {
+         this.transformToZUp = transformToZUp;
+      }
+   }
+
+   /**
+    * This class provides extra properties for tweaking operations when generating a URDF model. It is
+    * used in {@link URDFTools#toURDFModel(RobotDefinition, URDFGeneratorProperties)}.
+    * 
+    * @author Sylvain Bertrand
+    */
+   public static class URDFGeneratorProperties
+   {
+      private boolean alwaysExportJointDynamics = false;
+      private boolean alwaysExportJointAxis = false;
+      private boolean alwaysExportLinkInertial = false;
+
+      private int defaultSpaceCount = 1;
+
+      private DoubleFormatter defaultDoubleFormatter = Double::toString;
+      private final Map<Class<? extends URDFItem>, URDFItemGeneratorProperties> urdfTypeFormatters = new HashMap<>();
+
+      /**
+       * Specifies whether the axis item should always be exported regardless of the joint type.
+       * 
+       * @param alwaysExportJointAxis {@code true} to always export the axis item, {@code false} [default
+       *                              value] to only export it for joints requiring it, such as 1-DoF
+       *                              joints.
+       */
+      public void setAlwaysExportJointAxis(boolean alwaysExportJointAxis)
+      {
+         this.alwaysExportJointAxis = alwaysExportJointAxis;
+      }
+
+      /**
+       * Specifies whether the dynamics item should always be exported.
+       * 
+       * @param alwaysExportJointDynamics {@code true} to always export the dynamics item, {@code false}
+       *                                  [default value] to only export it for joints requiring it, i.e.
+       *                                  only when it contains meaningful values.
+       */
+      public void setAlwaysExportJointDynamics(boolean alwaysExportJointDynamics)
+      {
+         this.alwaysExportJointDynamics = alwaysExportJointDynamics;
+      }
+
+      /**
+       * Specifies whether the inertial item should always be exported.
+       * 
+       * @param alwaysExportLinkInertial {@code true} to always export the inertial item, {@code false}
+       *                                 [default value] to only export it for links requiring it, i.e.
+       *                                 only when it contains meaningful values.
+       */
+      public void setAlwaysExportLinkInertial(boolean alwaysExportLinkInertial)
+      {
+         this.alwaysExportLinkInertial = alwaysExportLinkInertial;
+      }
+
+      /**
+       * Specifies the number of spaces to use for separating values of a multi-value item, for instance
+       * the axis item. This is the default value used unless a specific value (for a given URDF item such
+       * as {@code URDFAxis}) is given.
+       * 
+       * @param defaultSpaceCount the number of spaces to use for separating values of a multi-value item.
+       *                          Default value is 1.
+       */
+      public void setDefaultSpaceCount(int defaultSpaceCount)
+      {
+         this.defaultSpaceCount = defaultSpaceCount;
+      }
+
+      /**
+       * Specifies the number of spaces to use for separating values of a multi-value item, and only apply
+       * it to a given URDF item.
+       * 
+       * @param urdfType   the URDF item to which the space count should be applied.
+       * @param spaceCount the number of spaces to use for separating values of a multi-value item.
+       *                   Default value is 1.
+       */
+      public void setSpaceCount(Class<? extends URDFItem> urdfType, int spaceCount)
+      {
+         URDFItemGeneratorProperties urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter == null)
+            urdfTypeFormatters.put(urdfType, urdfTypeFormatter = new URDFItemGeneratorProperties());
+         urdfTypeFormatter.setDefaultSpaceCount(spaceCount);
+      }
+
+      /**
+       * Specifies a default double formatter to use for generating {@code String} for double values.
+       * 
+       * @param formatter the default formatter to use.
+       */
+      public void setDefaultDoubleFormatter(DoubleFormatter formatter)
+      {
+         this.defaultDoubleFormatter = formatter;
+      }
+
+      /**
+       * Specifies a double formatter to use instead of the default one for a given URDF item.
+       * 
+       * @param urdfType  the URDF item to which the formatter should be applied.
+       * @param formatter the formatter to use.
+       */
+      public void addDoubleFormatter(Class<? extends URDFItem> urdfType, DoubleFormatter formatter)
+      {
+         URDFItemGeneratorProperties urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter == null)
+            urdfTypeFormatters.put(urdfType, urdfTypeFormatter = new URDFItemGeneratorProperties());
+         urdfTypeFormatter.setDefaultDoubleFormatter(formatter);
+      }
+
+      /**
+       * Specifies a double formatter to use instead of the default one for the field of a given URDF
+       * item. This overrides both formatter provided via
+       * {@link #setDefaultDoubleFormatter(DoubleFormatter)} and
+       * {@link #addDoubleFormatter(Class, DoubleFormatter)}.
+       * 
+       * @param urdfType  the URDF item to which the formatter should be applied.
+       * @param fieldName the name of the field for which the formatter is to be applied.
+       * @param formatter the formatter to use.
+       */
+      public void addDoubleFormatter(Class<? extends URDFItem> urdfType, String fieldName, DoubleFormatter formatter)
+      {
+         URDFItemGeneratorProperties urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter == null)
+            urdfTypeFormatters.put(urdfType, urdfTypeFormatter = new URDFItemGeneratorProperties());
+         urdfTypeFormatter.addFormatter(fieldName, formatter);
+      }
+
+      private String toString(Class<? extends URDFItem> urdfType, String fieldName, double... values)
+      {
+         DoubleFormatter formatter = getDoubleFormatter(urdfType, fieldName);
+         int spaceCount = Math.max(1, getSpaceCount(urdfType));
+         return formatter.toString(spaceCount, values);
+      }
+
+      private int getSpaceCount(Class<? extends URDFItem> urdfType)
+      {
+         URDFItemGeneratorProperties urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter != null)
+         {
+            if (urdfTypeFormatter.defaultSpaceCount != -1)
+               return urdfTypeFormatter.defaultSpaceCount;
+         }
+
+         return defaultSpaceCount;
+      }
+
+      private DoubleFormatter getDoubleFormatter(Class<? extends URDFItem> urdfType, String fieldName)
+      {
+         URDFItemGeneratorProperties urdfTypeFormatter = urdfTypeFormatters.get(urdfType);
+         if (urdfTypeFormatter != null)
+         {
+            if (fieldName == null)
+            {
+               if (urdfTypeFormatter.defaultDoubleFormatter != null)
+                  return urdfTypeFormatter.defaultDoubleFormatter;
+            }
+            else
+            {
+               DoubleFormatter formatter = urdfTypeFormatter.getDoubleFormatter(fieldName.toLowerCase());
+               if (formatter != null)
+                  return formatter;
+            }
+         }
+
+         return defaultDoubleFormatter;
+      }
+   }
+
+   private static class URDFItemGeneratorProperties
+   {
+      /**
+       * Default value for the number of spaces to use to separate values.
+       */
+      private int defaultSpaceCount = -1;
+
+      private DoubleFormatter defaultDoubleFormatter;
+      private final Map<String, DoubleFormatter> fieldToDoubleFormatterMap = new HashMap<>();
+
+      public URDFItemGeneratorProperties()
+      {
+      }
+
+      public void setDefaultSpaceCount(int defaultSpaceCount)
+      {
+         this.defaultSpaceCount = defaultSpaceCount;
+      }
+
+      public void setDefaultDoubleFormatter(DoubleFormatter formatter)
+      {
+         defaultDoubleFormatter = formatter;
+      }
+
+      public void addFormatter(String fieldName, DoubleFormatter formatter)
+      {
+         fieldToDoubleFormatterMap.put(fieldName.toLowerCase(), formatter);
+      }
+
+      private DoubleFormatter getDoubleFormatter(String fieldName)
+      {
+         DoubleFormatter formatter = fieldToDoubleFormatterMap.get(fieldName.toLowerCase());
+         if (formatter != null)
+            return formatter;
+         else if (defaultDoubleFormatter != null)
+            return defaultDoubleFormatter;
+         else
+            return null;
+      }
+   }
+
+   /**
+    * Functional interface dedicated to generate {@code String} for double values when generating a
+    * URDF model.
+    * 
+    * @author Sylvain Bertrand
+    */
+   public static interface DoubleFormatter
+   {
+      /**
+       * Generates a representative {@code String} for the given value.
+       * 
+       * @param value the value to generate the {@code String} of.
+       * @return the representative {@code String}.
+       */
+      String toString(double value);
+
+      /**
+       * Convenience method for expanding this formatter to format multiple double values at once.
+       * 
+       * @param spaceCount the number of spaces for separating values.
+       * @param values     the values to generate the {@code String} of.
+       * @return the representative {@code String}.
+       */
+      default String toString(int spaceCount, double... values)
+      {
+         if (values == null)
+            return null;
+         if (values.length == 0)
+            return "";
+
+         if (values.length == 1)
+            return toString(values[0]);
+
+         String separator = " ".repeat(spaceCount);
+
+         StringBuilder sb = new StringBuilder(toString(values[0]));
+
+         for (int i = 1; i < values.length; i++)
+         {
+            sb.append(separator).append(toString(values[i]));
+         }
+         return sb.toString();
+      }
    }
 }
