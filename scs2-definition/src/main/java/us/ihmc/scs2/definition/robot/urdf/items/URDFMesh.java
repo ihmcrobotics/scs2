@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/link"> ROS Specification link.</a>

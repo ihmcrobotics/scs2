@@ -3,12 +3,14 @@ package us.ihmc.scs2.definition.robot.urdf.items;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/link"> ROS Specification link.</a>
  *
  * @author Sylvain Bertrand
  */
+@XmlType(propOrder = {"name", "origin", "geometry"})
 public class URDFCollision implements URDFItem
 {
    private String name;
