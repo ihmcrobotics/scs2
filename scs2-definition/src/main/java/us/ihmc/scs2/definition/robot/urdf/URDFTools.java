@@ -405,7 +405,6 @@ public class URDFTools
       }
 
       RigidBodyDefinition startBodyDefinition = connectKinematics(rigidBodyDefinitions, jointDefinitions, urdfJoints);
-      addSensors(urdfGazebos, jointDefinitions, parserProperties);
 
       RigidBodyDefinition rootBodyDefinition;
 
@@ -423,6 +422,8 @@ public class URDFTools
       {
          rootBodyDefinition = startBodyDefinition;
       }
+
+      addSensors(urdfGazebos, jointDefinitions, parserProperties);
 
       RobotDefinition robotDefinition = new RobotDefinition(urdfModel.getName());
       robotDefinition.setRootBodyDefinition(rootBodyDefinition);
