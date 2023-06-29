@@ -46,6 +46,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
@@ -704,8 +705,7 @@ public class URDFTools
    {
       FixedJointDefinition definition = new FixedJointDefinition(urdfJoint.getName());
 
-      RigidBodyTransform parseRigidBodyTransform = parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties);
-      definition.getTransformToParent().set(parseRigidBodyTransform);
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
 
       return definition;
    }
@@ -1077,12 +1077,12 @@ public class URDFTools
       return rigidBodyTransform;
    }
 
-   public static RigidBodyTransform parseRigidBodyTransform(URDFOrigin origin, URDFParserProperties parserProperties)
+   public static YawPitchRollTransformDefinition parseRigidBodyTransform(URDFOrigin origin, URDFParserProperties parserProperties)
    {
       if (origin == null)
          origin = new URDFOrigin();
 
-      RigidBodyTransform rigidBodyTransform = new RigidBodyTransform();
+      YawPitchRollTransformDefinition rigidBodyTransform = new YawPitchRollTransformDefinition();
       rigidBodyTransform.getTranslation().set(parseVector3D(origin.getXYZ(), DEFAULT_ORIGIN_XYZ));
       rigidBodyTransform.getRotation().setEuler(parseVector3D(origin.getRPY(), DEFAULT_ORIGIN_RPY));
       return rigidBodyTransform;
