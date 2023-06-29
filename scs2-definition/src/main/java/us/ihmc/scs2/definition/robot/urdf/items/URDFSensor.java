@@ -7,8 +7,30 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
+/**
+ * <a href="http://wiki.ros.org/urdf/XML/sensor"> ROS Specification sensor.</a>
+ *
+ * @author Sylvain Bertrand
+ */
 public class URDFSensor implements URDFItem
 {
+   public enum URDFSensorType
+   {
+      camera, multicamera, depth, imu, gpu_ray, ray, force_torque, contact;
+
+      public static URDFSensorType parse(String value)
+      {
+         if (value == null)
+            return null;
+         for (URDFSensorType type : values())
+         {
+            if (type.name().equals(value))
+               return type;
+         }
+         return null;
+      }
+   };
+
    private String name;
    private String type;
    private String pose;
@@ -34,6 +56,11 @@ public class URDFSensor implements URDFItem
    public void setType(String type)
    {
       this.type = type;
+   }
+
+   public void setType(URDFSensorType type)
+   {
+      setType(type.name());
    }
 
    @XmlElement(name = "visualize")
@@ -439,6 +466,23 @@ public class URDFSensor implements URDFItem
 
       public static class URDFNoise implements URDFItem
       {
+         public enum URDFNoiseType
+         {
+            gaussian;
+
+            public static URDFNoiseType parse(String value)
+            {
+               if (value == null)
+                  return null;
+               for (URDFNoiseType type : values())
+               {
+                  if (type.name().equals(value))
+                     return type;
+               }
+               return null;
+            }
+         };
+
          private String type;
          private String mean;
          private String stddev;
@@ -447,6 +491,11 @@ public class URDFSensor implements URDFItem
          public void setType(String type)
          {
             this.type = type;
+         }
+
+         public void setType(URDFNoiseType type)
+         {
+            setType(type.name());
          }
 
          @XmlElement(name = "mean")
@@ -717,6 +766,23 @@ public class URDFSensor implements URDFItem
 
       public static class URDFIMUNoise implements URDFItem
       {
+         public enum URDFIMUNoiseType
+         {
+            gaussian;
+
+            public static URDFIMUNoiseType parse(String value)
+            {
+               if (value == null)
+                  return null;
+               for (URDFIMUNoiseType type : values())
+               {
+                  if (type.name().equals(value))
+                     return type;
+               }
+               return null;
+            }
+         };
+
          private String type;
          private URDFNoiseParameters rate;
          private URDFNoiseParameters accel;
@@ -740,6 +806,11 @@ public class URDFSensor implements URDFItem
          public void setType(String type)
          {
             this.type = type;
+         }
+
+         public void setType(URDFIMUNoiseType type)
+         {
+            setType(type.name());
          }
 
          @XmlElement(name = "rate")
