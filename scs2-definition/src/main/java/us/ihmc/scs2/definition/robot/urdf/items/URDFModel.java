@@ -5,14 +5,17 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
-@XmlRootElement(name="robot")
+@XmlRootElement(name = "robot")
+@XmlType(propOrder = {"joints", "links", "materials", "sensors", "gazebos"})
 public class URDFModel implements URDFItem
 {
    private String name;
    private List<URDFMaterial> materials;
    private List<URDFLink> links;
    private List<URDFJoint> joints;
+   private List<URDFSensor> sensors;
    private List<URDFGazebo> gazebos;
 
    @XmlAttribute(name = "name")
@@ -37,6 +40,12 @@ public class URDFModel implements URDFItem
    public void setJoints(List<URDFJoint> joints)
    {
       this.joints = joints;
+   }
+
+   @XmlElement(name = "sensor")
+   public void setSensors(List<URDFSensor> sensors)
+   {
+      this.sensors = sensors;
    }
 
    @XmlElement(name = "gazebo")
@@ -65,6 +74,11 @@ public class URDFModel implements URDFItem
       return joints;
    }
 
+   public List<URDFSensor> getSensors()
+   {
+      return sensors;
+   }
+
    public List<URDFGazebo> getGazebos()
    {
       return gazebos;
@@ -73,7 +87,7 @@ public class URDFModel implements URDFItem
    @Override
    public String getContentAsString()
    {
-      return format("[name: %s, materials: %s, links: %s, joints: %s]", name, materials, links, joints);
+      return format("[name: %s, materials: %s, links: %s, joints: %s, sensors: %s]", name, materials, links, joints, sensors);
    }
 
    @Override
@@ -85,6 +99,6 @@ public class URDFModel implements URDFItem
    @Override
    public List<URDFFilenameHolder> getFilenameHolders()
    {
-      return URDFItem.combineItemListsFilenameHolders(materials, links, joints);
+      return URDFItem.combineItemListsFilenameHolders(materials, links, joints, sensors, gazebos);
    }
 }

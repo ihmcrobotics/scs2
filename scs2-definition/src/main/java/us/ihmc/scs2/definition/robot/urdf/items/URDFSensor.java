@@ -32,6 +32,7 @@ public class URDFSensor implements URDFItem
    };
 
    private String name;
+   private URDFLinkReference parent;
    private String type;
    private String pose;
    private String visualize;
@@ -44,6 +45,12 @@ public class URDFSensor implements URDFItem
    public void setName(String name)
    {
       this.name = name;
+   }
+
+   @XmlElement(name = "parent")
+   public void setParent(URDFLinkReference parent)
+   {
+      this.parent = parent;
    }
 
    @XmlElement(name = "pose")
@@ -69,7 +76,7 @@ public class URDFSensor implements URDFItem
       this.visualize = visualize;
    }
 
-   @XmlElement(name = "update_rate")
+   @XmlElement(name = "update_rate") // TODO According to the do this should be an attribute, but Val does it as an element
    public void setUpdateRate(String updateRate)
    {
       this.updateRate = updateRate;
@@ -96,6 +103,11 @@ public class URDFSensor implements URDFItem
    public String getName()
    {
       return name;
+   }
+
+   public URDFLinkReference getParent()
+   {
+      return parent;
    }
 
    public String getPose()
@@ -136,7 +148,15 @@ public class URDFSensor implements URDFItem
    @Override
    public String getContentAsString()
    {
-      return format("[name: %s, type: %s, updateRate: %s, pose: %s, camera: %s, ray: %s, imu: %s]", name, type, updateRate, pose, camera, ray, imu);
+      return format("[name: %s, parent: %s, type: %s, updateRate: %s, pose: %s, camera: %s, ray: %s, imu: %s]",
+                    name,
+                    parent,
+                    type,
+                    updateRate,
+                    pose,
+                    camera,
+                    ray,
+                    imu);
    }
 
    @Override
