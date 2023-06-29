@@ -4,21 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import us.ihmc.euclid.matrix.Matrix3D;
+import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.tools.JointStateType;
+import us.ihmc.mecano.tools.MecanoTools;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
+import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
+import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.state.interfaces.JointStateBasics;
+import us.ihmc.scs2.definition.visual.VisualDefinition;
 
 @XmlRootElement(name = "Robot")
 public class RobotDefinition
@@ -108,6 +116,44 @@ public class RobotDefinition
    public void addControllerDefinition(ControllerDefinition controllerDefinition)
    {
       controllerDefinitions.add(controllerDefinition);
+   }
+
+   /**
+    * Simplifies this robot kinematics by removing any fixed joint, i.e. joints with 0 degree of
+    * freedom.
+    * 
+    * @see #simplifyKinematics(JointDefinition, Predicate)
+    */
+   public void simplifyKinematics()
+   {
+      simplifyKinematics((Predicate<FixedJointDefinition>) null);
+   }
+
+   /**
+    * Simplifies this robot kinematics by removing any fixed joint, i.e. joints with 0 degree of
+    * freedom.
+    * 
+    * @param simplifyKinematicsFilter filter that allows to preserve some fixed joints during this
+    *                                 operation. A fixed joint is preserved only if the filter is
+    *                                 defined and returns {@code false} when queried.
+    * @see #simplifyKinematics(JointDefinition, Predicate)
+    */
+   public void simplifyKinematics(Predicate<FixedJointDefinition> simplifyKinematicsFilter)
+   {
+      for (int i = 0; i < rootBodyDefinition.getChildrenJoints().size(); i++)
+         simplifyKinematics(rootBodyDefinition.getChildrenJoints().get(i), simplifyKinematicsFilter);
+   }
+
+   /**
+    * Transforms all the robot local frames such that they are pointing z-up and x-forward when the
+    * robot is in the zero configuration.
+    * 
+    * @see #transformAllFramesToZUp(JointDefinition)
+    */
+   public void transformAllFramesToZUp()
+   {
+      for (int i = 0; i < rootBodyDefinition.getChildrenJoints().size(); i++)
+         transformAllFramesToZUp(rootBodyDefinition.getChildrenJoints().get(i));
    }
 
    @XmlTransient
@@ -437,5 +483,190 @@ public class RobotDefinition
          return false;
 
       return true;
+   }
+
+   /**
+    * Recursive method that performs the following modifications will preserving the robot's physical
+    * qualities:
+    * <ul>
+    * <li>adjust orientations such that the joint poses are z-up when the robot is at the zero joint
+    * configuration.
+    * <li>transform the moment of inertia for all rigid-body such that their inertia pose is only a
+    * translation.
+    * </ul>
+    * 
+    * @param jointDefinition starting point for the recursion.
+    */
+   public static void transformAllFramesToZUp(JointDefinition jointDefinition)
+   {
+      Orientation3DBasics jointRotation = jointDefinition.getTransformToParent().getRotation();
+      if (jointDefinition instanceof OneDoFJointDefinition)
+         jointRotation.transform(((OneDoFJointDefinition) jointDefinition).getAxis());
+      RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
+      YawPitchRollTransformDefinition inertiaPose = linkDefinition.getInertiaPose();
+      inertiaPose.prependOrientation(jointRotation);
+      inertiaPose.transform(linkDefinition.getMomentOfInertia());
+      inertiaPose.getRotation().setToZero();
+
+      for (KinematicPointDefinition kinematicPointDefinition : jointDefinition.getKinematicPointDefinitions())
+         kinematicPointDefinition.getTransformToParent().prependOrientation(jointRotation);
+      for (ExternalWrenchPointDefinition externalWrenchPointDefinition : jointDefinition.getExternalWrenchPointDefinitions())
+         externalWrenchPointDefinition.getTransformToParent().prependOrientation(jointRotation);
+      for (GroundContactPointDefinition groundContactPointDefinition : jointDefinition.getGroundContactPointDefinitions())
+         groundContactPointDefinition.getTransformToParent().prependOrientation(jointRotation);
+
+      for (SensorDefinition sensorDefinition : jointDefinition.getSensorDefinitions())
+         sensorDefinition.getTransformToJoint().prependOrientation(jointRotation);
+
+      for (VisualDefinition visualDefinition : linkDefinition.getVisualDefinitions())
+         visualDefinition.getOriginPose().prependOrientation(jointRotation);
+
+      for (CollisionShapeDefinition collisionShapeDefinition : linkDefinition.getCollisionShapeDefinitions())
+         collisionShapeDefinition.getOriginPose().prependOrientation(jointRotation);
+
+      for (JointDefinition childDefinition : jointDefinition.getSuccessor().getChildrenJoints())
+      {
+         childDefinition.getTransformToParent().prependOrientation(jointRotation);
+         transformAllFramesToZUp(childDefinition);
+      }
+
+      jointRotation.setToZero();
+   }
+
+   /**
+    * Navigates the subtree starting from the given joint and simplifies the kinematics by removing all
+    * {@link FixedJointDefinition}.
+    * <p>
+    * Whenever a {@code FixedJointDefinition} is removed, the following operations are performed:
+    * <ul>
+    * <li>the fixed joint successor's physical properties (mass, inertia) and visuals are combined to
+    * the joint's predecessor.
+    * <li>the fixed joint sensors are moved to the parent joint. The move includes adjusting the pose
+    * of each sensor so they remain at the same physical location on the robot.
+    * </ul>
+    * </p>
+    * 
+    * @param joint  the first joint from which to simplify the kinematics.
+    * @param filter a fixed joint is only removed if: the filter is {@code null} or
+    *               {@code filter.test(joint)} is {@code true}. If a filter is provided, any fixed
+    *               joint for which it returns {@code false} will <b>not</b> be removed.
+    */
+   public static void simplifyKinematics(JointDefinition joint, Predicate<FixedJointDefinition> filter)
+   {
+      // The children list may shrink or grow depending the simplyKinematics(joint.child)
+      // Also, if a child is a fixed-joint, the successor of this joint will be replaced with a new one, so can't save the successor as a local variable.
+      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size();)
+      {
+         List<JointDefinition> children = joint.getSuccessor().getChildrenJoints();
+         JointDefinition child = children.get(i);
+
+         if (!(child instanceof FixedJointDefinition))
+            i++; // This child won't be removed, we can increment to the next.
+
+         simplifyKinematics(child, filter);
+      }
+
+      JointDefinition parentJoint = joint.getParentJoint();
+      if (parentJoint == null)
+         return;
+
+      if (joint instanceof FixedJointDefinition fixedJoint && (filter == null || filter.test(fixedJoint)))
+      {
+         RigidBodyDefinition rigidBody = joint.getSuccessor();
+         YawPitchRollTransformDefinition transformToParentJoint = joint.getTransformToParent();
+
+         rigidBody.applyTransform(transformToParentJoint);
+         RigidBodyDefinition oldParentRigidBody = parentJoint.getSuccessor();
+         parentJoint.setSuccessor(merge(oldParentRigidBody.getName(), oldParentRigidBody, rigidBody));
+         parentJoint.getSuccessor().addChildJoints(oldParentRigidBody.getChildrenJoints());
+
+         joint.getKinematicPointDefinitions().removeIf(kp ->
+         {
+            kp.applyTransform(transformToParentJoint);
+            parentJoint.addKinematicPointDefinition(kp);
+            return true;
+         });
+         joint.getExternalWrenchPointDefinitions().removeIf(efp ->
+         {
+            efp.applyTransform(transformToParentJoint);
+            parentJoint.addExternalWrenchPointDefinition(efp);
+            return true;
+         });
+         joint.getGroundContactPointDefinitions().removeIf(gcp ->
+         {
+            gcp.applyTransform(transformToParentJoint);
+            parentJoint.addGroundContactPointDefinition(gcp);
+            return true;
+         });
+         joint.getSensorDefinitions().removeIf(sensor ->
+         {
+            sensor.applyTransform(transformToParentJoint);
+            parentJoint.addSensorDefinition(sensor);
+            return true;
+         });
+         joint.getSuccessor().getChildrenJoints().removeIf(child ->
+         {
+            child.getTransformToParent().preMultiply(transformToParentJoint);
+            parentJoint.getSuccessor().addChildJoint(child);
+            return true;
+         });
+         parentJoint.getSuccessor().removeChildJoint(joint);
+      }
+   }
+
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Creates a new rigid-body which physical properties equals the sum of {@code rigidBodyA} and
+    * {@code rigidBody}. In addition, the visuals and collisions are added to the merged body.
+    * </p>
+    * <p>
+    * Note the following property:
+    * {@code merge("bodyAB", bodyA, bodyB) == merge("bodyAB", bodyB, bodyA)}.
+    * </p>
+    * 
+    * @param name       the name of the merged rigid-body.
+    * @param rigidBodyA the first rigid-body to merge.
+    * @param rigidBodyB the second rigid-body to merge.
+    * @return the merged body.
+    */
+   public static RigidBodyDefinition merge(String name, RigidBodyDefinition rigidBodyA, RigidBodyDefinition rigidBodyB)
+   {
+      double mergedMass = rigidBodyA.getMass() + rigidBodyB.getMass();
+      Vector3D mergedCoM = new Vector3D();
+      mergedCoM.setAndScale(rigidBodyA.getMass(), rigidBodyA.getCenterOfMassOffset());
+      mergedCoM.scaleAdd(rigidBodyB.getMass(), rigidBodyB.getCenterOfMassOffset(), mergedCoM);
+      mergedCoM.scale(1.0 / mergedMass);
+
+      Vector3D translationInertiaA = new Vector3D();
+      translationInertiaA.sub(mergedCoM, rigidBodyA.getCenterOfMassOffset());
+      Matrix3D inertiaA = new Matrix3D(rigidBodyA.getMomentOfInertia());
+      MecanoTools.translateMomentOfInertia(rigidBodyA.getMass(), null, false, translationInertiaA, inertiaA);
+
+      Vector3D translationInertiaB = new Vector3D();
+      translationInertiaB.sub(mergedCoM, rigidBodyB.getCenterOfMassOffset());
+      Matrix3D inertiaB = new Matrix3D(rigidBodyB.getMomentOfInertia());
+      MecanoTools.translateMomentOfInertia(rigidBodyB.getMass(), null, false, translationInertiaB, inertiaB);
+
+      Matrix3D mergedInertia = new Matrix3D();
+      mergedInertia.add(inertiaA);
+      mergedInertia.add(inertiaB);
+
+      RigidBodyDefinition merged = new RigidBodyDefinition(name);
+      merged.setMass(mergedMass);
+      merged.getInertiaPose().getTranslation().set(mergedCoM);
+      merged.getMomentOfInertia().set(mergedInertia);
+
+      List<VisualDefinition> mergedGraphics = new ArrayList<>();
+      mergedGraphics.addAll(rigidBodyA.getVisualDefinitions());
+      mergedGraphics.addAll(rigidBodyB.getVisualDefinitions());
+      merged.addVisualDefinitions(mergedGraphics);
+
+      List<CollisionShapeDefinition> mergedCollisions = new ArrayList<>();
+      mergedCollisions.addAll(rigidBodyA.getCollisionShapeDefinitions());
+      mergedCollisions.addAll(rigidBodyB.getCollisionShapeDefinitions());
+      merged.addCollisionShapeDefinitions(mergedCollisions);
+
+      return merged;
    }
 }

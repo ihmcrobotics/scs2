@@ -4,12 +4,14 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/link"> ROS Specification link.</a>
  *
  * @author Sylvain Bertrand
  */
+@XmlType(propOrder = {"XYZ", "RPY"})
 public class URDFOrigin implements URDFItem
 {
    private String xyz;
