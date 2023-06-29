@@ -14,7 +14,6 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.Spinner;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -37,10 +36,8 @@ public class VideoViewer
 
    private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
                                                                                                               "SCS2_GUI_LOGGER_VIDEO_DEBUG",
-                                                                                                              false);
+                                                                                                              true);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
-
-   private FrameData currentFrameData;
 
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
@@ -200,7 +197,7 @@ public class VideoViewer
 
    public void update()
    {
-      currentFrameData = reader.pollCurrentFrame();
+      FrameData currentFrameData = reader.pollCurrentFrame();
 
       if (currentFrameData == null)
          return;
@@ -222,20 +219,15 @@ public class VideoViewer
 
          if (imageViewRootPane.get() != null)
          {
+            imageViewRootPane.get().setPadding(new Insets(16,16,16,16));
+
             if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
             {
-               imageViewRootPane.get()
-                                .setBorder(new Border(new BorderStroke(Color.DARKORANGE, BorderStrokeStyle.SOLID, new CornerRadii(0),
-                                                                       new BorderWidths(25, 25, 25, 25,
-                                                                                        false, false, false, false))));
-
+               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
             }
             else
             {
-               imageViewRootPane.get().setBorder(new Border(new BorderStroke(Color.WHITE, BorderStrokeStyle.SOLID, new CornerRadii(0),
-                                                                             new BorderWidths(25, 25, 25, 25,
-                                                                                              false, false, false, false))));
-
+               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
             }
          }
       }
