@@ -809,6 +809,8 @@ public class URDFTools
     */
    public static List<CameraSensorDefinition> toCameraSensorDefinition(List<URDFCamera> urdfCameras, URDFParserProperties parserProperties)
    {
+      if (urdfCameras == null)
+         return Collections.emptyList();
       return urdfCameras.stream().map(urdfCamera -> toCameraSensorDefinition(urdfCamera, parserProperties)).collect(Collectors.toList());
    }
 
@@ -887,24 +889,29 @@ public class URDFTools
    {
       IMUSensorDefinition definition = new IMUSensorDefinition();
 
-      URDFIMUNoise urdfNoise = urdfIMU.getNoise();
-      if (urdfNoise != null)
+      if (urdfIMU != null)
       {
-         if (URDFIMUNoiseType.gaussian.equals(URDFIMUNoiseType.parse(urdfNoise.getType())))
+         URDFIMUNoise urdfNoise = urdfIMU.getNoise();
+         if (urdfNoise != null)
          {
-            URDFNoiseParameters accelerationNoise = urdfNoise.getAccel();
-            URDFNoiseParameters angularVelocityNoise = urdfNoise.getRate();
+            if (URDFIMUNoiseType.gaussian.equals(URDFIMUNoiseType.parse(urdfNoise.getType())))
+            {
+               URDFNoiseParameters accelerationNoise = urdfNoise.getAccel();
+               URDFNoiseParameters angularVelocityNoise = urdfNoise.getRate();
 
-            definition.setAccelerationNoiseParameters(parseDouble(accelerationNoise.getMean(), 0.0), parseDouble(accelerationNoise.getStddev(), 0.0));
-            definition.setAccelerationBiasParameters(parseDouble(accelerationNoise.getBias_mean(), 0.0), parseDouble(accelerationNoise.getBias_stddev(), 0.0));
+               definition.setAccelerationNoiseParameters(parseDouble(accelerationNoise.getMean(), 0.0), parseDouble(accelerationNoise.getStddev(), 0.0));
+               definition.setAccelerationBiasParameters(parseDouble(accelerationNoise.getBias_mean(), 0.0),
+                                                        parseDouble(accelerationNoise.getBias_stddev(), 0.0));
 
-            definition.setAngularVelocityNoiseParameters(parseDouble(angularVelocityNoise.getMean(), 0.0), parseDouble(angularVelocityNoise.getStddev(), 0.0));
-            definition.setAngularVelocityBiasParameters(parseDouble(angularVelocityNoise.getBias_mean(), 0.0),
-                                                        parseDouble(angularVelocityNoise.getBias_stddev(), 0.0));
-         }
-         else
-         {
-            LogTools.error("Unknown IMU noise model: {}.", urdfNoise.getType());
+               definition.setAngularVelocityNoiseParameters(parseDouble(angularVelocityNoise.getMean(), 0.0),
+                                                            parseDouble(angularVelocityNoise.getStddev(), 0.0));
+               definition.setAngularVelocityBiasParameters(parseDouble(angularVelocityNoise.getBias_mean(), 0.0),
+                                                           parseDouble(angularVelocityNoise.getBias_stddev(), 0.0));
+            }
+            else
+            {
+               LogTools.error("Unknown IMU noise model: {}.", urdfNoise.getType());
+            }
          }
       }
 
@@ -1704,7 +1711,8 @@ public class URDFTools
       URDFSensor urdfSensor = new URDFSensor();
       urdfSensor.setName(sensorDefinition.getName());
       urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
-      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      if (sensorDefinition.getUpdatePeriod() > 0)
+         urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.force_torque);
       return urdfSensor;
    }
@@ -1717,7 +1725,8 @@ public class URDFTools
       URDFSensor urdfSensor = new URDFSensor();
       urdfSensor.setName(sensorDefinition.getName());
       urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
-      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      if (sensorDefinition.getUpdatePeriod() > 0)
+         urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.imu);
 
       URDFIMU urdfIMU = new URDFIMU();
@@ -1764,7 +1773,8 @@ public class URDFTools
       URDFSensor urdfSensor = new URDFSensor();
       urdfSensor.setName(sensorDefinition.getName());
       urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
-      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      if (sensorDefinition.getUpdatePeriod() > 0)
+         urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.ray);
       urdfSensor.setRay(toURDFRay(sensorDefinition, properties));
       return urdfSensor;
@@ -1819,7 +1829,8 @@ public class URDFTools
       else
          urdfSensor.setName(name);
       urdfSensor.setPose(toPoseString(sensorDefinition.getTransformToJoint(), properties.getDoubleFormatter(URDFSensor.class, "pose")));
-      urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
+      if (sensorDefinition.getUpdatePeriod() > 0)
+         urdfSensor.setUpdateRate(properties.toString(URDFSensor.class, "update_rate", 1000.0 / sensorDefinition.getUpdatePeriod()));
       urdfSensor.setType(URDFSensorType.camera);
       urdfSensor.setCamera(Collections.singletonList(toURDFCamera(sensorDefinition, properties)));
       return urdfSensor;
