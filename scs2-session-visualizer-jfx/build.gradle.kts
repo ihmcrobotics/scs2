@@ -24,7 +24,7 @@ mainDependencies {
    api(ihmc.javaFXModule("fxml", javaFXVersion))
    api(ihmc.javaFXModule("swing", javaFXVersion))
 
-   api("us.ihmc:ihmc-javafx-toolkit:17-0.22.3") {
+   api("us.ihmc:ihmc-javafx-toolkit:17-0.22.4") {
       exclude(group="us.ihmc", module="jassimp")
       exclude(group="us.ihmc", module="euclid")
       exclude(group="us.ihmc", module="euclid-shape")
@@ -33,7 +33,7 @@ mainDependencies {
    api("us.ihmc:euclid:0.20.0")
    api("us.ihmc:euclid-shape:0.20.0")
    api("us.ihmc:euclid-frame:0.20.0")
-   api("us.ihmc:ihmc-graphics-description:0.20.3")
+   api("us.ihmc:ihmc-graphics-description:0.20.4")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
    api("us.ihmc:svgloader:0.0")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.1")

@@ -184,7 +184,7 @@ public class RobotModelLoader
          throws JAXBException
    {
       URDFModel urdfModel = URDFTools.loadURDFModel(new ByteArrayInputStream(model), Arrays.asList(resourceDirectories), resourceClassLoader);
-      RobotDefinition robotDefinition = URDFTools.toFloatingRobotDefinition(urdfModel);
+      RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel);
       robotDefinition.setResourceClassLoader(resourceClassLoader);
       cachedImportedModels.put(modelHashCode, robotDefinition);
       return robotDefinition;
