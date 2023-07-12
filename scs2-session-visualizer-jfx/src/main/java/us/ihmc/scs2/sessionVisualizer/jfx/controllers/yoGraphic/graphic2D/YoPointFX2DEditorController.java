@@ -1,10 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic2D;
 
-import com.jfoenix.controls.JFXComboBox;
-
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPoint2DDefinition;
@@ -21,7 +20,7 @@ public class YoPointFX2DEditorController extends YoGraphicFX2DEditorController<Y
    @FXML
    private TextField sizeTextField;
    @FXML
-   private JFXComboBox<String> graphicComboBox;
+   private ComboBox<String> graphicComboBox;
    @FXML
    private ImageView sizeValidImageView;
 

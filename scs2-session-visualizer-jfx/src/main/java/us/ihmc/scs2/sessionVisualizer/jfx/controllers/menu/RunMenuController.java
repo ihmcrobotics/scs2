@@ -2,12 +2,11 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -27,7 +26,7 @@ public class RunMenuController implements VisualizerController
    @FXML
    private CheckMenuItem simulateAtRealTimeCheckMenuItem;
    @FXML
-   private JFXTextField playbackRealTimeRateTextField;
+   private TextField playbackRealTimeRateTextField;
 
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;

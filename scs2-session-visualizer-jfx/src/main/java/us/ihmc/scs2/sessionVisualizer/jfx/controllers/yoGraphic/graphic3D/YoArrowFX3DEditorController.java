@@ -1,9 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D;
 
-import com.jfoenix.controls.JFXCheckBox;
-
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicArrow3DDefinition;
@@ -21,7 +20,7 @@ public class YoArrowFX3DEditorController extends YoGraphicFX3DEditorController<Y
    @FXML
    private TextField bodyRadiusTextField, headRadiusTextField;
    @FXML
-   private JFXCheckBox scaleLengthCheckBox, scaleRadiusCheckBox;
+   private CheckBox scaleLengthCheckBox, scaleRadiusCheckBox;
 
    @FXML
    private ImageView bodyLengthValidImageView, headLengthValidImageView;

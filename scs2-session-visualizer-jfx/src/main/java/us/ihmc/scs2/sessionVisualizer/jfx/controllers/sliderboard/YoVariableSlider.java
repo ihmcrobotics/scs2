@@ -1,9 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard;
 
 import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXTextField;
 
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
@@ -38,9 +38,9 @@ public interface YoVariableSlider
 
    void bindSliderVariable(SliderboardVariable sliderVariable);
 
-   void bindMinTextField(JFXTextField minTextField);
+   void bindMinTextField(TextField minTextField);
 
-   void bindMaxTextField(JFXTextField maxTextField);
+   void bindMaxTextField(TextField maxTextField);
 
    YoVariable getYoVariable();
 

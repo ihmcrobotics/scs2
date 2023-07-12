@@ -2,8 +2,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools.bindValidityImageView;
 
-import com.jfoenix.controls.JFXRadioButton;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
@@ -15,6 +13,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
@@ -34,11 +33,11 @@ public class YoGraphic2DStyleEditorPaneController
    @FXML
    private GridPane mainPane;
    @FXML
-   private JFXRadioButton fillRadioButton;
+   private RadioButton fillRadioButton;
    @FXML
    private ColorEditorController fillColorEditorController;
    @FXML
-   private JFXRadioButton strokeRadioButton;
+   private RadioButton strokeRadioButton;
    @FXML
    private ColorEditorController strokeColorEditorController;
    @FXML

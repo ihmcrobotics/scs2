@@ -5,9 +5,6 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.jfoenix.controls.JFXComboBox;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -21,7 +18,9 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
 import javafx.scene.input.KeyCode;
@@ -49,9 +48,9 @@ public class YoChartOptionController implements VisualizerController
    @FXML
    private TitledPane masterSettingsPane;
    @FXML
-   private JFXComboBox<ChartScalingMode> scalingComboBox;
+   private ComboBox<ChartScalingMode> scalingComboBox;
    @FXML
-   private JFXTextField manualRangeMinTextField, manualRangeMaxTextField;
+   private TextField manualRangeMinTextField, manualRangeMaxTextField;
    @FXML
    private Label actualRangeMinLabel, actualRangeMaxLabel;
    @FXML

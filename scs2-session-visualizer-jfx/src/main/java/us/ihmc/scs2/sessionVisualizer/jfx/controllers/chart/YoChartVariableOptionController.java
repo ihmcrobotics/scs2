@@ -1,16 +1,15 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import com.jfoenix.controls.JFXCheckBox;
-import com.jfoenix.controls.JFXComboBox;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
 import javafx.util.converter.DoubleStringConverter;
@@ -24,11 +23,11 @@ public class YoChartVariableOptionController implements VisualizerController
    @FXML
    private TitledPane mainPane;
    @FXML
-   private JFXComboBox<ChartVariableScalingMode> scalingComboBox;
+   private ComboBox<ChartVariableScalingMode> scalingComboBox;
    @FXML
-   private JFXCheckBox negateCheckBox;
+   private CheckBox negateCheckBox;
    @FXML
-   private JFXTextField manualRangeMinTextField, manualRangeMaxTextField;
+   private TextField manualRangeMinTextField, manualRangeMaxTextField;
    @FXML
    private Label actualRangeMinLabel, actualRangeMaxLabel;
 

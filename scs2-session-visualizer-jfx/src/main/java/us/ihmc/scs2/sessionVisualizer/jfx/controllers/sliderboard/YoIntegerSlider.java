@@ -6,12 +6,12 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXTextField;
 
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.IntegerStringConverter;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -36,7 +36,7 @@ public class YoIntegerSlider implements YoVariableSlider
    }
 
    @Override
-   public void bindMinTextField(JFXTextField minTextField)
+   public void bindMinTextField(TextField minTextField)
    {
       TextFormatter<Integer> minTextFormatter = new TextFormatter<>(new IntegerStringConverter());
       minTextFormatter.setValue(yoIntegerProperty.get() - 1);
@@ -52,7 +52,7 @@ public class YoIntegerSlider implements YoVariableSlider
    }
 
    @Override
-   public void bindMaxTextField(JFXTextField maxTextField)
+   public void bindMaxTextField(TextField maxTextField)
    {
       TextFormatter<Integer> maxTextFormatter = new TextFormatter<>(new IntegerStringConverter());
       maxTextFormatter.setValue(yoIntegerProperty.get() + 1);

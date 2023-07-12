@@ -1,12 +1,11 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D;
 
-import com.jfoenix.controls.JFXComboBox;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPointcloud3DDefinition;
@@ -21,11 +20,11 @@ public class YoPointcloudFX3DEditorController extends YoGraphicFX3DEditorControl
    @FXML
    private YoCompositeListEditorPaneController pointListEditorController;
    @FXML
-   private JFXTextField sizeTextField;
+   private TextField sizeTextField;
    @FXML
    private ImageView sizeValidImageView;
    @FXML
-   private JFXComboBox<String> graphicComboBox;
+   private ComboBox<String> graphicComboBox;
 
    private YoGraphicPointcloud3DDefinition definitionBeforeEdits;
 
