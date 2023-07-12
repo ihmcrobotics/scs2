@@ -6,20 +6,22 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 import javafx.scene.image.WritableImage;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
 import us.ihmc.concurrent.ConcurrentCopier;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 
 public class VideoDataReader
 {
    private final TimestampScrubber timestampScrubber;
-
    private final String name;
 
    private final MP4VideoDemuxer demuxer;
@@ -31,7 +33,6 @@ public class VideoDataReader
 
    public VideoDataReader(Camera camera, File dataDirectory, boolean hasTimeBase) throws IOException
    {
-
       this.camera = camera;
       name = camera.getNameAsString();
       boolean interlaced = camera.getInterlaced();
@@ -48,10 +49,9 @@ public class VideoDataReader
          throw new IOException("Cannot find video: " + videoFile);
       }
 
-      File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
-
       demuxer = new MP4VideoDemuxer(videoFile);
 
+      File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
    }
 
@@ -99,7 +99,6 @@ public class VideoDataReader
 
          if (robotTimestamp >= startTimestamp && robotTimestamp <= endTimestamp)
          {
-
             timestampWriter.print(robotTimestamp);
             timestampWriter.print(" ");
             timestampWriter.println(pts);
@@ -121,7 +120,8 @@ public class VideoDataReader
       try
       {
          VideoConverter.convert(videoFile, selectedFile, startVideoTimestamp, endVideoTimestamp, progreesConsumer);
-      } catch (IOException e)
+      }
+      catch (IOException e)
       {
          e.printStackTrace();
       }
@@ -140,6 +140,16 @@ public class VideoDataReader
    public FrameData pollCurrentFrame()
    {
       return imageBuffer.getCopyForReading();
+   }
+
+   public int getCurrentIndex()
+   {
+      return timestampScrubber.getCurrentIndex();
+   }
+
+   public boolean replacedRobotTimestampsContainsIndex(int index)
+   {
+      return timestampScrubber.replacedRobotTimestampIndex[index];
    }
 
    public static class FrameData
@@ -161,6 +171,7 @@ public class VideoDataReader
       private int currentIndex = 0;
       private long currentRobotTimestamp = 0;
       private long videoTimestamp;
+      private boolean[] replacedRobotTimestampIndex;
 
       public TimestampScrubber(File timestampFile, boolean hasTimebase, boolean interlaced) throws IOException
       {
@@ -174,7 +185,6 @@ public class VideoDataReader
       {
          try (BufferedReader bufferedReader = new BufferedReader(new FileReader(timestampFile)))
          {
-
             String line;
             if (hasTimebase)
             {
@@ -209,11 +219,62 @@ public class VideoDataReader
 
             this.robotTimestamps = robotTimestamps.toArray();
             this.videoTimestamps = videoTimestamps.toArray();
-
-         } catch (FileNotFoundException e)
+         }
+         catch (FileNotFoundException e)
          {
             throw new RuntimeException(e);
          }
+
+         checkAndReplaceDuplicates();
+      }
+
+      private void checkAndReplaceDuplicates()
+      {
+         replacedRobotTimestampIndex = new boolean[robotTimestamps.length];
+         int duplicatesAtEndOfFile = getNumberOfDuplicatesAtEndOfFile();
+
+         for (int currentIndex = 0; currentIndex < robotTimestamps.length - duplicatesAtEndOfFile;)
+         {
+            if (robotTimestamps[currentIndex] != robotTimestamps[currentIndex + 1])
+            {
+               currentIndex++;
+               continue;
+            }
+
+            // Keeps track of the duplicated index's so frames border can be adjusted
+            replacedRobotTimestampIndex[currentIndex + 1] = true;
+
+            int nextNonDuplicateIndex = getNextNonDuplicateIndex(currentIndex);
+            for (int i = currentIndex; i < nextNonDuplicateIndex; i++)
+            {
+               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[i], robotTimestamps[nextNonDuplicateIndex],
+                                                                                (double) 1 / (nextNonDuplicateIndex - i));
+               robotTimestamps[i + 1] = firstAdjustedTimestamp;
+            }
+
+            currentIndex = nextNonDuplicateIndex;
+         }
+      }
+
+      private int getNumberOfDuplicatesAtEndOfFile()
+      {
+         int duplicatesAtEndOfFile = 1;
+
+         for (int i = robotTimestamps.length - 1; i > 0; i--)
+         {
+            if (robotTimestamps[i] == robotTimestamps[i - 1])
+               duplicatesAtEndOfFile++;
+         }
+
+         return duplicatesAtEndOfFile;
+      }
+
+      private int getNextNonDuplicateIndex(int index)
+      {
+         while (index < robotTimestamps.length - 1 && robotTimestamps[index] == robotTimestamps[index + 1])
+            index++;
+
+         return index + 1;
       }
 
       /**
