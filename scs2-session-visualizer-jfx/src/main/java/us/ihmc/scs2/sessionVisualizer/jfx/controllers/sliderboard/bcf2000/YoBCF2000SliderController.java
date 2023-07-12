@@ -1,10 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000;
 
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
@@ -20,9 +19,9 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
    @FXML
    private VBox rootPane;
    @FXML
-   private JFXTextField sliderMaxTextField;
+   private TextField sliderMaxTextField;
    @FXML
-   private JFXTextField sliderMinTextField;
+   private TextField sliderMinTextField;
    @FXML
    private Slider slider;
    @FXML

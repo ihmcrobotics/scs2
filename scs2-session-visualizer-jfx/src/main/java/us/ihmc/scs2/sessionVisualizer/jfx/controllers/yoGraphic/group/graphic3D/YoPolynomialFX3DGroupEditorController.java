@@ -1,10 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.graphic3D;
 
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
@@ -20,7 +19,7 @@ public class YoPolynomialFX3DGroupEditorController extends YoGroupFXEditorContro
    @FXML
    private VBox mainPane;
    @FXML
-   private JFXTextField sizeTextField;
+   private TextField sizeTextField;
    @FXML
    private ImageView sizeValidImageView;
    @FXML

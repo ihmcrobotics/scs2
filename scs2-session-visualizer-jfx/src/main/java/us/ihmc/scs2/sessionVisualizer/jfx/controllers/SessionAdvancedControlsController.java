@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
-import com.jfoenix.controls.JFXButton;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.BooleanProperty;
@@ -11,6 +9,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
@@ -34,7 +33,7 @@ public class SessionAdvancedControlsController implements VisualizerController
    @FXML
    private FlowPane buttonsContainer;
    @FXML
-   private JFXButton previousKeyFrameButton, nextKeyFrameButton;
+   private Button previousKeyFrameButton, nextKeyFrameButton;
    @FXML
    private FontAwesomeIconView runningIconView, playbackIconView, pauseIconView;
 

@@ -2,11 +2,10 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import com.jfoenix.controls.JFXColorPicker;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -21,9 +20,9 @@ public class YoChartBaselineEditorPaneController implements UIElement
    @FXML
    private HBox mainPane;
    @FXML
-   private JFXTextField coordinateTextField;
+   private TextField coordinateTextField;
    @FXML
-   private JFXColorPicker colorPicker;
+   private ColorPicker colorPicker;
 
    private final TextFormatter<Double> coordinateFormatter = new TextFormatter<>(new DoubleStringConverter());
    private ChartMarker marker;

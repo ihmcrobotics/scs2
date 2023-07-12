@@ -6,10 +6,10 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXTextField;
 
 import javafx.beans.value.ChangeListener;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -31,14 +31,14 @@ public class YoEnumSlider implements YoVariableSlider
    }
 
    @Override
-   public void bindMaxTextField(JFXTextField maxTextField)
+   public void bindMaxTextField(TextField maxTextField)
    {
       maxTextField.setDisable(true);
       cleanupTasks.add(() -> maxTextField.setDisable(false));
    }
 
    @Override
-   public void bindMinTextField(JFXTextField minTextField)
+   public void bindMinTextField(TextField minTextField)
    {
       minTextField.setDisable(true);
       cleanupTasks.add(() -> minTextField.setDisable(false));

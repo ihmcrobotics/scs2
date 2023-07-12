@@ -20,6 +20,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -48,10 +49,10 @@ public class YoCompositeEditorPaneController
    @FXML
    private Label searchYoCompositeLabel;
    @FXML
-   private JFXTextField searchYoCompositeTextField;
+   private TextField searchYoCompositeTextField;
 
    private Label[] componentLabels;
-   private JFXTextField[] componentSearchTextFields;
+   private TextField[] componentSearchTextFields;
    private ImageView[] componentValidImageViews;
 
    private YoCompositeTextField yoCompositeTextField;
@@ -66,7 +67,7 @@ public class YoCompositeEditorPaneController
    private ObjectProperty<DoubleProperty[]> compositeSupplierProperty = new SimpleObjectProperty<>(this, "compositeSupplier", null);
 
    private Label referenceFrameLabel;
-   private JFXTextField referenceFrameSearchTextField;
+   private TextField referenceFrameSearchTextField;
    private ImageView referenceFrameValidImageView;
    private ReferenceFrameManager referenceFrameManager;
 
@@ -320,7 +321,7 @@ public class YoCompositeEditorPaneController
       return mainPane;
    }
 
-   public JFXTextField getSearchYoCompositeTextField()
+   public TextField getSearchYoCompositeTextField()
    {
       return searchYoCompositeTextField;
    }

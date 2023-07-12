@@ -3,7 +3,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 import java.util.function.Function;
 
 import com.jfoenix.controls.JFXTreeTableColumn;
-import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
@@ -18,6 +17,8 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
@@ -33,7 +34,7 @@ public class YoRegistryStatisticsPaneController
    @FXML
    private AnchorPane mainAnchorPane;
    @FXML
-   private JFXTreeTableView<YoRegistryInfo> treeTableView;
+   private TreeTableView<YoRegistryInfo> treeTableView;
 
    private TreeItem<YoRegistryInfo> rootTreeItem;
    private Stage window;
@@ -41,10 +42,10 @@ public class YoRegistryStatisticsPaneController
    @SuppressWarnings("unchecked")
    public void initialize(SessionVisualizerToolkit toolkit)
    {
-      JFXTreeTableColumn<YoRegistryInfo, String> nameCol;
-      JFXTreeTableColumn<YoRegistryInfo, Integer> nVarsShallowCol;
-      JFXTreeTableColumn<YoRegistryInfo, Integer> nVarsDeepCol;
-      JFXTreeTableColumn<YoRegistryInfo, Integer> nChildShallowCol;
+      TreeTableColumn<YoRegistryInfo, String> nameCol;
+      TreeTableColumn<YoRegistryInfo, Integer> nVarsShallowCol;
+      TreeTableColumn<YoRegistryInfo, Integer> nVarsDeepCol;
+      TreeTableColumn<YoRegistryInfo, Integer> nChildShallowCol;
 
       nameCol = createColumn("Registry", 300, 200, 800, YoRegistryInfo::getName);
       nVarsShallowCol = createColumn("Number of\nvariables\n(shallow)", 100, YoRegistryInfo::getNumberOfVariablesShallow);
@@ -99,18 +100,18 @@ public class YoRegistryStatisticsPaneController
       parentTreeItem.getChildren().add(treeItem);
    }
 
-   private <T> JFXTreeTableColumn<YoRegistryInfo, T> createColumn(String name, double prefWidth, Function<YoRegistryInfo, Property<T>> fieldProvider)
+   private <T> TreeTableColumn<YoRegistryInfo, T> createColumn(String name, double prefWidth, Function<YoRegistryInfo, Property<T>> fieldProvider)
    {
       return createColumn(name, prefWidth, prefWidth, prefWidth, fieldProvider);
    }
 
-   private <T> JFXTreeTableColumn<YoRegistryInfo, T> createColumn(String name,
+   private <T> TreeTableColumn<YoRegistryInfo, T> createColumn(String name,
                                                                   double prefWidth,
                                                                   double minWidth,
                                                                   double maxWidth,
                                                                   Function<YoRegistryInfo, Property<T>> fieldProvider)
    {
-      JFXTreeTableColumn<YoRegistryInfo, T> column = new JFXTreeTableColumn<>(name);
+      TreeTableColumn<YoRegistryInfo, T> column = new JFXTreeTableColumn<>(name);
       column.setPrefWidth(prefWidth);
       column.setMinWidth(minWidth);
       column.setMaxWidth(maxWidth);

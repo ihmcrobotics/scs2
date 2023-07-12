@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.jfoenix.controls.JFXButton;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
@@ -104,7 +102,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    @FXML
    private AnchorPane chartMainPane;
    @FXML
-   private JFXButton closeButton;
+   private Button closeButton;
    @FXML
    private FontAwesomeIconView chartMoveIcon;
 

@@ -4,12 +4,11 @@ import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoG
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.getField;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.setField;
 
-import com.jfoenix.controls.JFXComboBox;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
@@ -30,7 +29,7 @@ public class YoPointFX3DGroupEditorController extends YoGroupFXEditorController<
    @FXML
    private TextField sizeTextField;
    @FXML
-   private JFXComboBox<String> graphicComboBox;
+   private ComboBox<String> graphicComboBox;
    @FXML
    private YoGraphicNameEditorPaneController nameEditorController;
    @FXML

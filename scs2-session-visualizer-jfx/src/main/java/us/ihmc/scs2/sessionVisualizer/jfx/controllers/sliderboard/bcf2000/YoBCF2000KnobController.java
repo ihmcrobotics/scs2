@@ -1,10 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000;
 
 import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXTextField;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -20,9 +20,9 @@ public class YoBCF2000KnobController extends YoBCF2000InputController
    @FXML
    private VBox rootPane;
    @FXML
-   private JFXTextField knobMaxTextField;
+   private TextField knobMaxTextField;
    @FXML
-   private JFXTextField knobMinTextField;
+   private TextField knobMinTextField;
    @FXML
    private JFXSpinner spinner;
    @FXML

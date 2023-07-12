@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -17,6 +15,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupModelDefinition;
@@ -33,7 +32,7 @@ public class YoChartGroupModelEditorController implements UIElement
    @FXML
    private Label configurationNameLabel;
    @FXML
-   private JFXTextField configurationNameTextField;
+   private TextField configurationNameTextField;
    @FXML
    private Label configurationModelLabel;
    @FXML

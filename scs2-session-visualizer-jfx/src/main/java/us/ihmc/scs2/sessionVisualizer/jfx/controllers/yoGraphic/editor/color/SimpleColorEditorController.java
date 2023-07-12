@@ -2,13 +2,12 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import com.jfoenix.controls.JFXColorPicker;
-import com.jfoenix.controls.JFXSlider;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -31,16 +30,16 @@ public class SimpleColorEditorController extends PaintEditorController<SimpleCol
    private Label colorLabel;
 
    @FXML
-   private JFXColorPicker colorPicker;
+   private ColorPicker colorPicker;
 
    @FXML
    private Label opacityLabel;
 
    @FXML
-   private JFXSlider opacitySlider;
+   private Slider opacitySlider;
 
    @FXML
-   private JFXTextField opacityTextField;
+   private TextField opacityTextField;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)

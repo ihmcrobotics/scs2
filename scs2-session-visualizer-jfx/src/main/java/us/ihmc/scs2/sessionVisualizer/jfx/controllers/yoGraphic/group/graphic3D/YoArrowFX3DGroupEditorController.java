@@ -2,11 +2,10 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.graphic3D
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.setField;
 
-import com.jfoenix.controls.JFXCheckBox;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
@@ -28,7 +27,7 @@ public class YoArrowFX3DGroupEditorController extends YoGroupFXEditorController<
    @FXML
    private TextField bodyRadiusTextField, headRadiusTextField;
    @FXML
-   private JFXCheckBox scaleLengthCheckBox, scaleRadiusCheckBox;
+   private CheckBox scaleLengthCheckBox, scaleRadiusCheckBox;
    @FXML
    private YoGraphic3DStyleEditorPaneController styleEditorController;
    @FXML
