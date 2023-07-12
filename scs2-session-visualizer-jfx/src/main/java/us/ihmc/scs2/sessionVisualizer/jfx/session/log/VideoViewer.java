@@ -52,6 +52,8 @@ public class VideoViewer
    private final VideoDataReader reader;
    private final double defaultThumbnailSize;
 
+   private final ObjectProperty<Pane> imageViewRootPane = new SimpleObjectProperty<>(this, "imageViewRootPane", null);
+
    public VideoViewer(Window owner, VideoDataReader reader, double defaultThumbnailSize)
    {
       this.reader = reader;
@@ -94,6 +96,7 @@ public class VideoViewer
             Pane root = createImageViewPane(videoView);
             anchorPane.getChildren().add(root);
             JavaFXMissingTools.setAnchorConstraints(root, 0);
+            imageViewRootPane.set(root);
 
             setupVideoStatistics(anchorPane);
 
@@ -175,14 +178,16 @@ public class VideoViewer
             if (image == null)
                return;
             double imageRatio = image.getWidth() / image.getHeight();
-            double width = Math.min(getWidth(), getHeight() * imageRatio);
+            double paneWidth = getWidth() - getPadding().getTop() - getPadding().getBottom();
+            double paneHeight = getHeight() - getPadding().getLeft() - getPadding().getRight();
+            double width = Math.min(paneWidth, paneHeight * imageRatio);
             double height = width / imageRatio;
 
-            double x = 0.5 * (getWidth() - width);
-            double y = 0.5 * (getHeight() - height);
+            double x = 0.5 * (paneWidth - width);
+            double y = 0.5 * (paneHeight - height);
             imageView.setFitWidth(width);
-            imageView.setX(x);
-            imageView.setY(y);
+            imageView.setX(x + getPadding().getLeft());
+            imageView.setY(y + getPadding().getTop());
          }
       };
    }
@@ -208,6 +213,20 @@ public class VideoViewer
          robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
          cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
          demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
+
+         if (imageViewRootPane.get() != null)
+         {
+            imageViewRootPane.get().setPadding(new Insets(16,16,16,16));
+
+            if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
+            {
+               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.DARKORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
+            }
+            else
+            {
+               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+            }
+         }
       }
    }
 
