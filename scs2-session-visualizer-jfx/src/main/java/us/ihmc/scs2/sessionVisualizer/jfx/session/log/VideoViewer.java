@@ -96,9 +96,6 @@ public class VideoViewer
             Pane root = createImageViewPane(videoView);
             anchorPane.getChildren().add(root);
             JavaFXMissingTools.setAnchorConstraints(root, 0);
-            VBox vbox = new VBox();
-            vbox.getChildren().add(anchorPane);
-            VBox.setVgrow(anchorPane, Priority.ALWAYS);
             imageViewRootPane.set(root);
 
             setupVideoStatistics(anchorPane);
@@ -107,7 +104,7 @@ public class VideoViewer
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
             stage.setTitle(reader.getName());
             owner.setOnHiding(e2 -> stage.close());
-            Scene scene = new Scene(vbox);
+            Scene scene = new Scene(anchorPane);
             stage.setScene(scene);
             updateVideoView.bind(stage.showingProperty());
          }
@@ -223,7 +220,7 @@ public class VideoViewer
 
             if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
             {
-               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.DARKORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
             }
             else
             {
