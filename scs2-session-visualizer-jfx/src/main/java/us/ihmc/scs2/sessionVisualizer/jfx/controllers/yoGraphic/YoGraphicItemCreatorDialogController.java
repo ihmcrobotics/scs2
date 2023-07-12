@@ -11,9 +11,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -25,6 +22,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
@@ -80,13 +79,13 @@ public class YoGraphicItemCreatorDialogController
    @FXML
    private ToggleButton yoGroupFXToggleButton;
    @FXML
-   private JFXTextField itemNameTextField;
+   private TextField itemNameTextField;
    @FXML
-   private JFXTextField itemNamespaceTextField;
+   private TextField itemNamespaceTextField;
    @FXML
    private ImageView itemNameValidImageView;
    @FXML
-   private JFXButton createItemButton;
+   private Button createItemButton;
    @FXML
    private TitledPane graphics2DTitledPane, graphics3DTitledPane, miscTitledPane;
    @FXML

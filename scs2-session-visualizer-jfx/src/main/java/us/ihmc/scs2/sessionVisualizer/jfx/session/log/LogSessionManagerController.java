@@ -11,10 +11,6 @@ import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXComboBox;
-import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXToggleButton;
 import com.jfoenix.controls.JFXTrimSlider;
 
 import javafx.beans.binding.StringBinding;
@@ -31,8 +27,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
@@ -68,21 +68,21 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private AnchorPane mainPane;
    @FXML
-   private JFXSpinner loadingSpinner;
+   private ProgressIndicator loadingSpinner;
    @FXML
-   private JFXButton openSessionButton, endSessionButton;
+   private Button openSessionButton, endSessionButton;
    @FXML
    private Label sessionNameLabel, dateLabel, logPathLabel;
    @FXML
    private Pane cropControlsContainer;
    @FXML
-   private JFXToggleButton showTrimsButton;
+   private ToggleButton showTrimsButton;
    @FXML
-   private JFXButton startTrimToCurrentButton, endTrimToCurrentButton, resetTrimsButton, cropAndExportButton;
+   private Button startTrimToCurrentButton, endTrimToCurrentButton, resetTrimsButton, cropAndExportButton;
    @FXML
-   private JFXToggleButton enableVariableFilterToggleButton;
+   private ToggleButton enableVariableFilterToggleButton;
    @FXML
-   private JFXComboBox<OutputFormat> outputFormatComboxBox;
+   private ComboBox<OutputFormat> outputFormatComboxBox;
    @FXML
    private JFXTrimSlider logPositionSlider;
    @FXML

@@ -5,11 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.Function;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeTableColumn;
-import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
@@ -26,9 +22,14 @@ import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -65,18 +66,18 @@ public class RemoteSessionManagerController implements SessionControlsController
    @FXML
    private AnchorPane mainPane;
    @FXML
-   private JFXTreeTableView<SessionInfo> sessionTreeTableView;
+   private TreeTableView<SessionInfo> sessionTreeTableView;
    @FXML
    private Pane staticControlsPane;
    @FXML
-   private JFXTextField staticHostTextField, staticPortTextField;
+   private TextField staticHostTextField, staticPortTextField;
    @FXML
-   private JFXButton createStaticHostButton;
+   private Button createStaticHostButton;
 
    @FXML
-   private JFXSpinner loadingSpinner;
+   private ProgressIndicator loadingSpinner;
    @FXML
-   private JFXButton startSessionButton, endSessionButton;
+   private Button startSessionButton, endSessionButton;
 
    private YoVariableClient client;
    private final RemoteSessionFactory sessionFactory = new RemoteSessionFactory();
@@ -103,10 +104,10 @@ public class RemoteSessionManagerController implements SessionControlsController
 
       mainPane.getStylesheets().add(SessionVisualizerIOTools.GENERAL_STYLESHEET.toExternalForm());
 
-      JFXTreeTableColumn<SessionInfo, String> hostColumn = createColumn("Host", 150.0, 100.0, 200.0, SessionInfo::getHost);
-      JFXTreeTableColumn<SessionInfo, String> portColumn = createColumn("Port", 80.0, SessionInfo::getPort);
-      JFXTreeTableColumn<SessionInfo, String> hostNameColumn = createColumn("HostName", 175.0, 100.0, 250.0, SessionInfo::getHostName);
-      JFXTreeTableColumn<SessionInfo, String> sessionNameColumn = createColumn("SessionName", 250.0, 200.0, 500.0, SessionInfo::getSessionName);
+      TreeTableColumn<SessionInfo, String> hostColumn = createColumn("Host", 150.0, 100.0, 200.0, SessionInfo::getHost);
+      TreeTableColumn<SessionInfo, String> portColumn = createColumn("Port", 80.0, SessionInfo::getPort);
+      TreeTableColumn<SessionInfo, String> hostNameColumn = createColumn("HostName", 175.0, 100.0, 250.0, SessionInfo::getHostName);
+      TreeTableColumn<SessionInfo, String> sessionNameColumn = createColumn("SessionName", 250.0, 200.0, 500.0, SessionInfo::getSessionName);
 
       rootSession = new RecursiveTreeItem<>(FXCollections.observableArrayList(), RecursiveTreeObject<SessionInfo>::getChildren);
 
@@ -410,18 +411,18 @@ public class RemoteSessionManagerController implements SessionControlsController
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> loadingSpinner.setVisible(isLoading));
    }
 
-   private JFXTreeTableColumn<SessionInfo, String> createColumn(String name, double prefWidth, Function<SessionInfo, StringProperty> fieldProvider)
+   private TreeTableColumn<SessionInfo, String> createColumn(String name, double prefWidth, Function<SessionInfo, StringProperty> fieldProvider)
    {
       return createColumn(name, prefWidth, prefWidth, prefWidth, fieldProvider);
    }
 
-   private JFXTreeTableColumn<SessionInfo, String> createColumn(String name,
+   private TreeTableColumn<SessionInfo, String> createColumn(String name,
                                                                 double prefWidth,
                                                                 double minWidth,
                                                                 double maxWidth,
                                                                 Function<SessionInfo, StringProperty> fieldProvider)
    {
-      JFXTreeTableColumn<SessionInfo, String> column = new JFXTreeTableColumn<>(name);
+      TreeTableColumn<SessionInfo, String> column = new JFXTreeTableColumn<>(name);
       column.setPrefWidth(prefWidth);
       column.setMinWidth(minWidth);
       column.setMaxWidth(maxWidth);

@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXCheckBox;
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.animation.AnimationTimer;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
@@ -27,7 +23,10 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
@@ -53,11 +52,11 @@ public class YoCompositePatternEditorController implements UIElement
    @FXML
    private VBox mainPane;
    @FXML
-   private JFXTextField compositeNameTextField;
+   private TextField compositeNameTextField;
    @FXML
-   private JFXCheckBox crossRegistryCompositeCheckBox;
+   private CheckBox crossRegistryCompositeCheckBox;
    @FXML
-   private JFXButton addComponentButton;
+   private Button addComponentButton;
    @FXML
    private ListView<String> componentIdentifiersListView;
    @FXML

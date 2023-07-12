@@ -14,13 +14,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
 
 public class TabPaneTools
 {
    public static Label editableTabHeader(Tab tab)
    {
       Label headerLabel = new Label();
-      JFXTextField headerEditor = new JFXTextField();
+      TextField headerEditor = new JFXTextField();
 
       headerLabel.setText(tab.getText());
       tab.setGraphic(headerLabel);

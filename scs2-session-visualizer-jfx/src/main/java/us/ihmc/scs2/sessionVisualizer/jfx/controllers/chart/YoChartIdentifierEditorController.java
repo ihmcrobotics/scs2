@@ -1,11 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Pane;
 import us.ihmc.scs2.definition.yoChart.YoChartIdentifierDefinition;
@@ -23,7 +22,7 @@ public class YoChartIdentifierEditorController implements UIElement
    @FXML
    private Label chartIdLabel, rowLabel, columnLabel;
    @FXML
-   private JFXTextField rowTextField, columnTextField;
+   private TextField rowTextField, columnTextField;
 
    private final ObjectProperty<YoChartIdentifierDefinition> chartIdentifierProperty = new SimpleObjectProperty<>(new YoChartIdentifierDefinition());
 

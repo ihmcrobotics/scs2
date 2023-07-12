@@ -6,12 +6,12 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.jfoenix.controls.JFXSpinner;
-import com.jfoenix.controls.JFXTextField;
 
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.LongStringConverter;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -36,7 +36,7 @@ public class YoLongSlider implements YoVariableSlider
    }
 
    @Override
-   public void bindMinTextField(JFXTextField minTextField)
+   public void bindMinTextField(TextField minTextField)
    {
       TextFormatter<Long> minTextFormatter = new TextFormatter<>(new LongStringConverter());
       minTextFormatter.setValue(yoLongProperty.get() - 1);
@@ -52,7 +52,7 @@ public class YoLongSlider implements YoVariableSlider
    }
 
    @Override
-   public void bindMaxTextField(JFXTextField maxTextField)
+   public void bindMaxTextField(TextField maxTextField)
    {
       TextFormatter<Long> maxTextFormatter = new TextFormatter<>(new LongStringConverter());
       maxTextFormatter.setValue(yoLongProperty.get() + 1);

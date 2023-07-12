@@ -1,8 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000;
 
-import com.jfoenix.controls.JFXToggleNode;
-
 import javafx.fxml.FXML;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.VBox;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
@@ -20,7 +19,7 @@ public class YoBCF2000ButtonController extends YoBCF2000InputController
    @FXML
    private VBox rootPane;
    @FXML
-   private JFXToggleNode button;
+   private ToggleButton button;
 
    private SliderboardVariable sliderVariable;
 

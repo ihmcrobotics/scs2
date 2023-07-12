@@ -6,10 +6,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import com.jfoenix.controls.JFXComboBox;
-import com.jfoenix.controls.JFXSlider;
-import com.jfoenix.controls.JFXToggleButton;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -17,6 +13,9 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -41,19 +40,19 @@ public class SessionDataExportStageController implements VisualizerController
    @FXML
    private VBox mainPane;
    @FXML
-   private JFXSlider currentBufferIndexSlider;
+   private Slider currentBufferIndexSlider;
    @FXML
-   private JFXToggleButton exportRobotDefinitionToggleButton;
+   private ToggleButton exportRobotDefinitionToggleButton;
    @FXML
-   private JFXToggleButton exportTerrainDefinitionToggleButton;
+   private ToggleButton exportTerrainDefinitionToggleButton;
    @FXML
-   private JFXToggleButton exportYoGraphicsDefinitionToggleButton;
+   private ToggleButton exportYoGraphicsDefinitionToggleButton;
    @FXML
-   private JFXToggleButton exportRobotStateToggleButton;
+   private ToggleButton exportRobotStateToggleButton;
    @FXML
-   private JFXToggleButton exportDataToggleButton;
+   private ToggleButton exportDataToggleButton;
    @FXML
-   private JFXComboBox<DataFormat> dataFormatComboBox;
+   private ComboBox<DataFormat> dataFormatComboBox;
    @FXML
    private SessionVariableFilterPaneController variableFilterPaneController;
 

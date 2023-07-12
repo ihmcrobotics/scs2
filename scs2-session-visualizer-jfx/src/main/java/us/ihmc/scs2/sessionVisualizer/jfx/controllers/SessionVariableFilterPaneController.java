@@ -17,8 +17,6 @@ import javax.xml.bind.JAXBException;
 
 import org.controlsfx.control.CheckTreeView;
 
-import com.jfoenix.controls.JFXButton;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.property.ObjectProperty;
@@ -26,6 +24,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
@@ -58,7 +57,7 @@ public class SessionVariableFilterPaneController
    @FXML
    private CheckTreeView<Object> selectedVariablesCheckTreeView;
    @FXML
-   private JFXButton selectAllButton, unselectAllButton;
+   private Button selectAllButton, unselectAllButton;
    @FXML
    private ComboBox<String> filterComboBox;
 

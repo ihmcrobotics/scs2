@@ -1,9 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D;
 
-import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolynomial3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeListEditorPaneController;
@@ -16,11 +15,11 @@ public class YoPolynomialFX3DEditorController extends YoGraphicFX3DEditorControl
    @FXML
    private YoCompositeListEditorPaneController coefficientsXListEditorController, coefficientsYListEditorController, coefficientsZListEditorController;
    @FXML
-   private JFXTextField referenceFrameSearchTextField;
+   private TextField referenceFrameSearchTextField;
    @FXML
-   private JFXTextField startTimeTextField, endTimeTextField;
+   private TextField startTimeTextField, endTimeTextField;
    @FXML
-   private JFXTextField sizeTextField;
+   private TextField sizeTextField;
    @FXML
    private ImageView referenceFrameValidImageView;
    @FXML

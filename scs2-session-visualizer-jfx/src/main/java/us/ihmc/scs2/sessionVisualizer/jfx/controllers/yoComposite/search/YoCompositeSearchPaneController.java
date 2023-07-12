@@ -9,8 +9,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import com.jfoenix.controls.JFXComboBox;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
@@ -22,6 +20,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
@@ -56,7 +55,7 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
    @FXML
    private ListView<YoComposite> yoCompositeListView;
    @FXML
-   private JFXComboBox<String> searchTargetComboBox;
+   private ComboBox<String> searchTargetComboBox;
 
    private ObservableList<YoComposite> defaultItemList = FXCollections.emptyObservableList();
    private ObservableList<YoComposite> searchResult = null;

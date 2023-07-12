@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.jfoenix.controls.JFXButton;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -25,6 +23,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -54,17 +53,17 @@ public class YoCompositePatternPropertyWindowController
    @FXML
    private AnchorPane mainAnchorPane;
    @FXML
-   private JFXButton addPatternButton, removePatternButton;
+   private Button addPatternButton, removePatternButton;
    @FXML
    private ListView<ObjectProperty<YoCompositePatternDefinition>> yoCompositePatternListView;
    @FXML
-   private JFXButton exportButton, importButton;
+   private Button exportButton, importButton;
 
    @FXML
    private AnchorPane yoCompositePatternEditorPane;
 
    @FXML
-   private JFXButton saveChangesButton, revertChangesButton;
+   private Button saveChangesButton, revertChangesButton;
 
    private final ObjectProperty<YoCompositePatternEditorController> activeEditor = new SimpleObjectProperty<>(this, "activeEditor", null);
    private final Map<ObjectProperty<YoCompositePatternDefinition>, YoCompositePatternEditorController> cachedEditors = new HashMap<>();

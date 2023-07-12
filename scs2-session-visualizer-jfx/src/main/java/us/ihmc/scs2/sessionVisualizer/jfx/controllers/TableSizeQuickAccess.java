@@ -4,6 +4,7 @@ import com.jfoenix.controls.JFXButton;
 
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
@@ -29,7 +30,7 @@ public class TableSizeQuickAccess
    private final GridPane gridPane = new GridPane();
    private final Tooltip tooltip = new Tooltip();
    private final Rectangle[][] boxes;
-   private final JFXButton clearAllButton, clearEmptyButton;
+   private final Button clearAllButton, clearEmptyButton;
 
    private final ChartTable2DSize maxSize;
 
@@ -142,12 +143,12 @@ public class TableSizeQuickAccess
       return selectedColumnsProperty;
    }
 
-   public JFXButton getClearAllButton()
+   public Button getClearAllButton()
    {
       return clearAllButton;
    }
 
-   public JFXButton getClearEmptyButton()
+   public Button getClearEmptyButton()
    {
       return clearEmptyButton;
    }
