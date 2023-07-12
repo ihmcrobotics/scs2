@@ -4,6 +4,7 @@
 <?import com.jfoenix.controls.JFXComboBox?>
 <?import com.jfoenix.controls.JFXSpinner?>
 <?import com.jfoenix.controls.JFXToggleButton?>
+<?import com.jfoenix.controls.JFXTrimSlider?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TitledPane?>
@@ -14,7 +15,6 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
-<?import us.ihmc.scs2.sessionVisualizer.jfx.tools.CropSlider?>
 
 <AnchorPane fx:id="mainPane" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController">
    <children>
@@ -46,11 +46,11 @@
                   <Label fx:id="logPathLabel" minHeight="-Infinity" minWidth="-Infinity" text="logPathLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                </children>
             </GridPane>
-            <CropSlider fx:id="logPositionSlider" VBox.vgrow="NEVER">
+            <JFXTrimSlider fx:id="logPositionSlider" VBox.vgrow="NEVER">
                <padding>
                   <Insets bottom="20.0" />
                </padding>
-            </CropSlider>
+            </JFXTrimSlider>
             <VBox fx:id="cropControlsContainer">
                <children>
                   <JFXToggleButton fx:id="showTrimsButton" size="6.0" text="Enable crop data controls" />

@@ -15,6 +15,7 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXSpinner;
 import com.jfoenix.controls.JFXToggleButton;
+import com.jfoenix.controls.JFXTrimSlider;
 
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.LongProperty;
@@ -53,7 +54,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneC
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.CropSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -84,7 +84,7 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private JFXComboBox<OutputFormat> outputFormatComboxBox;
    @FXML
-   private CropSlider logPositionSlider;
+   private JFXTrimSlider logPositionSlider;
    @FXML
    private Pane cropProgressMonitorPane;
    @FXML
