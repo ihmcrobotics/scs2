@@ -145,6 +145,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          e.printStackTrace();
       }
 
+      setupViewport3D(toolkit.getGlobalToolkit().getViewport3DManager().getPane());
       setupPlotter2D(plotter2D);
       messager.addFXTopicListener(topics.getPlotter2DTrackCoordinateRequest(), m ->
       {
