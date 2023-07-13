@@ -21,7 +21,7 @@ public class MultiViewport3DManager
    private final IntegerProperty numberOfColumns = new SimpleIntegerProperty(this, "numberOfColumns", 2);
 
    public MultiViewport3DManager(Group mainView3DRoot,
-                                 LinkedYoRegistry linkedRootRegistry,
+                                 YoManager yoManager,
                                  YoCompositeSearchManager yoCompositeSearchManager,
                                  ReferenceFrameManager referenceFrameManager)
    {
@@ -30,7 +30,7 @@ public class MultiViewport3DManager
       allViewports.addListener((ListChangeListener<SingleViewport3DManager>) change -> refreshLayout());
       numberOfColumns.addListener((o, oldValue, newValue) -> refreshLayout());
 
-      mainViewport = new MainViewport3DManager(mainView3DRoot, yoCompositeSearchManager, referenceFrameManager);
+      mainViewport = new MainViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager);
       allViewports.add(mainViewport);
    }
 

@@ -80,7 +80,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoRobotFXManager = new YoRobotFXManager(messager, topics, yoManager, referenceFrameManager, backgroundExecutorManager);
       environmentManager = new EnvironmentManager(messager, topics, backgroundExecutorManager);
 
-      viewport3DManager = new MultiViewport3DManager(mainView3DRoot, yoCompositeSearchManager, referenceFrameManager);
+      viewport3DManager = new MultiViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager);
       this.mainScene3D = viewport3DManager.getMainViewport().getSubScene();
       mainView3DRoot.getChildren().addAll(yoGraphicFXManager.getRootNode3D(), yoRobotFXManager.getRootNode(), environmentManager.getRootNode());
       environmentManager.addSkybox(viewport3DManager.getMainViewport().getCamera());

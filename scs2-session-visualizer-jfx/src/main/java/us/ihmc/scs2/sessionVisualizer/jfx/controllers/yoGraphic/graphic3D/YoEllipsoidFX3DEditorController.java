@@ -3,7 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicEllipsoid3DDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoEllipsoidFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
