@@ -111,9 +111,9 @@ public class CameraRotationCalculator
     */
    private final BooleanProperty restrictLatitude = new SimpleBooleanProperty(this, "restrictLatitude", true);
    /** Minimum latitude of the camera. Only used when {@link #restrictLatitude} is set to true. */
-   private final DoubleProperty minLatitude = new SimpleDoubleProperty(this, "minLatitude", -Math.PI / 2.0 + 0.2);
+   private final DoubleProperty minLatitude = new SimpleDoubleProperty(this, "minLatitude", -Math.PI / 2.0 + 0.01);
    /** Maximum latitude of the camera. Only used when {@link #restrictLatitude} is set to true. */
-   private final DoubleProperty maxLatitude = new SimpleDoubleProperty(this, "maxLatitude", Math.PI / 2.0 - 0.2);
+   private final DoubleProperty maxLatitude = new SimpleDoubleProperty(this, "maxLatitude", Math.PI / 2.0 - 0.01);
 
    private final Vector3D up = new Vector3D();
    private final Vector3D down = new Vector3D();
@@ -264,16 +264,34 @@ public class CameraRotationCalculator
     */
    public void setRotationFromCameraAndFocusPositions(Point3DReadOnly cameraPosition, Point3DReadOnly focusPoint, double cameraRoll)
    {
+      setLookDirection(cameraPosition.getX() - focusPoint.getX(),
+                       cameraPosition.getY() - focusPoint.getY(),
+                       cameraPosition.getZ() - focusPoint.getZ(),
+                       cameraRoll);
+   }
+
+   /**
+    * Computes the camera orientation to align the focus direction to the given vector.
+    * 
+    * @param lookDirection the direction the camera is to be looking at. Not modified.
+    * @param cameraRoll    desired camera roll.
+    */
+   public void setLookDirection(Vector3DReadOnly lookDirection, double cameraRoll)
+   {
+      setLookDirection(lookDirection.getX(), lookDirection.getY(), lookDirection.getZ(), cameraRoll);
+   }
+
+   public void setLookDirection(double lookDirectionX, double lookDirectionY, double lookDirectionZ, double cameraRoll)
+   {
       disableAffineAutoUpdate = true;
-      Vector3D fromFocusToCamera = new Vector3D();
-      fromFocusToCamera.sub(cameraPosition, focusPoint);
-      fromFocusToCamera.normalize();
       Vector3D fromCameraToFocus = new Vector3D();
-      fromCameraToFocus.setAndNegate(fromFocusToCamera);
+      fromCameraToFocus.set(-lookDirectionX, -lookDirectionY, -lookDirectionZ);
+      fromCameraToFocus.normalize();
+
+      double newLatitude = fromCameraToFocus.angle(up) - Math.PI / 2.0;
       // We remove the component along up to be able to compute the longitude
       fromCameraToFocus.scaleAdd(-fromCameraToFocus.dot(up), up, fromCameraToFocus);
 
-      double newLatitude = Math.PI / 2.0 - fromFocusToCamera.angle(up);
       double newLongitude = fromCameraToFocus.angle(forward);
 
       Vector3D cross = new Vector3D();
@@ -341,29 +359,9 @@ public class CameraRotationCalculator
       return latitude;
    }
 
-   public final double getLatitude()
-   {
-      return latitudeProperty().get();
-   }
-
-   public final void setLatitude(final double latitude)
-   {
-      latitudeProperty().set(latitude);
-   }
-
    public final DoubleProperty longitudeProperty()
    {
       return longitude;
-   }
-
-   public final double getLongitude()
-   {
-      return longitudeProperty().get();
-   }
-
-   public final void setLongitude(final double longitude)
-   {
-      longitudeProperty().set(longitude);
    }
 
    public final DoubleProperty rollProperty()
@@ -371,29 +369,9 @@ public class CameraRotationCalculator
       return roll;
    }
 
-   public final double getRoll()
-   {
-      return rollProperty().get();
-   }
-
-   public final void setRoll(final double roll)
-   {
-      rollProperty().set(roll);
-   }
-
    public final BooleanProperty keepRotationLeveledProperty()
    {
       return keepRotationLeveled;
-   }
-
-   public final boolean isKeepRotationLeveled()
-   {
-      return keepRotationLeveledProperty().get();
-   }
-
-   public final void setKeepRotationLeveled(final boolean keepRotationLeveled)
-   {
-      keepRotationLeveledProperty().set(keepRotationLeveled);
    }
 
    public final ObjectProperty<Predicate<MouseEvent>> fastModifierPredicateProperty()
@@ -401,29 +379,9 @@ public class CameraRotationCalculator
       return fastModifierPredicate;
    }
 
-   public final Predicate<MouseEvent> getFastModifierPredicate()
-   {
-      return fastModifierPredicateProperty().get();
-   }
-
-   public final void setFastModifierPredicate(final Predicate<MouseEvent> fastModifierPredicate)
-   {
-      fastModifierPredicateProperty().set(fastModifierPredicate);
-   }
-
    public final DoubleProperty slowModifierProperty()
    {
       return slowModifier;
-   }
-
-   public final double getSlowModifier()
-   {
-      return slowModifierProperty().get();
-   }
-
-   public final void setSlowModifier(final double slowModifier)
-   {
-      slowModifierProperty().set(slowModifier);
    }
 
    public final DoubleProperty fastModifierProperty()
@@ -431,29 +389,9 @@ public class CameraRotationCalculator
       return fastModifier;
    }
 
-   public final double getFastModifier()
-   {
-      return fastModifierProperty().get();
-   }
-
-   public final void setFastModifier(final double fastModifier)
-   {
-      fastModifierProperty().set(fastModifier);
-   }
-
    public final DoubleProperty rollModifierProperty()
    {
       return rollModifier;
-   }
-
-   public final double getRollModifier()
-   {
-      return rollModifierProperty().get();
-   }
-
-   public final void setRollModifier(final double rollModifier)
-   {
-      rollModifierProperty().set(rollModifier);
    }
 
    public final ObjectProperty<MouseButton> rotationMouseButtonProperty()
@@ -461,29 +399,9 @@ public class CameraRotationCalculator
       return rotationMouseButton;
    }
 
-   public final MouseButton getRotationMouseButton()
-   {
-      return rotationMouseButtonProperty().get();
-   }
-
-   public final void setRotationMouseButton(final MouseButton rotationMouseButton)
-   {
-      rotationMouseButtonProperty().set(rotationMouseButton);
-   }
-
    public final BooleanProperty restrictLatitudeProperty()
    {
       return restrictLatitude;
-   }
-
-   public final boolean isRestrictLatitude()
-   {
-      return restrictLatitudeProperty().get();
-   }
-
-   public final void setRestrictLatitude(final boolean restrictLatitude)
-   {
-      restrictLatitudeProperty().set(restrictLatitude);
    }
 
    public final DoubleProperty minLatitudeProperty()
@@ -491,28 +409,8 @@ public class CameraRotationCalculator
       return minLatitude;
    }
 
-   public final double getMinLatitude()
-   {
-      return minLatitudeProperty().get();
-   }
-
-   public final void setMinLatitude(final double minLatitude)
-   {
-      minLatitudeProperty().set(minLatitude);
-   }
-
    public final DoubleProperty maxLatitudeProperty()
    {
       return maxLatitude;
-   }
-
-   public final double getMaxLatitude()
-   {
-      return maxLatitudeProperty().get();
-   }
-
-   public final void setMaxLatitude(final double maxLatitude)
-   {
-      maxLatitudeProperty().set(maxLatitude);
    }
 }

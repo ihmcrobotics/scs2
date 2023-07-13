@@ -13,7 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXExtensions.raycast.CustomPickRayTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 public class SecondaryViewport3DManager implements SingleViewport3DManager
@@ -23,7 +23,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    private WritableImage image;
    private final ImageView cameraView;
    private final PerspectiveCamera camera;
-   private final FocusBasedCameraMouseEventHandler cameraController;
+   private final PerspectiveCameraController cameraController;
 
    private final SnapshotParameters snapshotParameters = new SnapshotParameters();
 
@@ -53,7 +53,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
       camera.setFarClip(2.0e5);
 
       // Setting up the camera controller.
-      cameraController = new FocusBasedCameraMouseEventHandler(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
+      cameraController = new PerspectiveCameraController(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
       cameraController.enableShiftClickFocusTranslation(e -> CustomPickRayTools.pick(e.getX(),
                                                                                      e.getY(),
                                                                                      image.getWidth(),
@@ -102,7 +102,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    }
 
    @Override
-   public FocusBasedCameraMouseEventHandler getCameraController()
+   public PerspectiveCameraController getCameraController()
    {
       return cameraController;
    }

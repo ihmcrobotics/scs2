@@ -272,29 +272,9 @@ public class CameraTranslationCalculator
       return keepTranslationLeveled;
    }
 
-   public final boolean isKeepTranslationLeveled()
-   {
-      return keepTranslationLeveledProperty().get();
-   }
-
-   public final void setKeepTranslationLeveled(final boolean keepTranslationLeveled)
-   {
-      keepTranslationLeveledProperty().set(keepTranslationLeveled);
-   }
-
    public final ObjectProperty<Predicate<KeyEvent>> fastModifierPredicateProperty()
    {
       return fastModifierPredicate;
-   }
-
-   public final Predicate<KeyEvent> getFastModifierPredicate()
-   {
-      return fastModifierPredicateProperty().get();
-   }
-
-   public final void setFastModifierPredicate(final Predicate<KeyEvent> fastModifierPredicate)
-   {
-      fastModifierPredicateProperty().set(fastModifierPredicate);
    }
 
    public final DoubleProperty slowModifierProperty()
@@ -302,29 +282,9 @@ public class CameraTranslationCalculator
       return slowModifier;
    }
 
-   public final double getSlowModifier()
-   {
-      return slowModifierProperty().get();
-   }
-
-   public final void setSlowModifier(final double slowModifier)
-   {
-      slowModifierProperty().set(slowModifier);
-   }
-
    public final DoubleProperty fastModifierProperty()
    {
       return fastModifier;
-   }
-
-   public final double getFastModifier()
-   {
-      return fastModifierProperty().get();
-   }
-
-   public final void setFastModifier(final double fastModifier)
-   {
-      fastModifierProperty().set(fastModifier);
    }
 
    public final DoubleProperty minTranslationOffsetProperty()
@@ -332,29 +292,9 @@ public class CameraTranslationCalculator
       return minTranslationOffset;
    }
 
-   public final double getMinTranslationOffset()
-   {
-      return minTranslationOffsetProperty().get();
-   }
-
-   public final void setMinTranslationOffset(final double minTranslationOffset)
-   {
-      minTranslationOffsetProperty().set(minTranslationOffset);
-   }
-
    public final DoubleProperty zoomToTranslationPowProperty()
    {
       return zoomToTranslationPow;
-   }
-
-   public final double getZoomToTranslationPow()
-   {
-      return zoomToTranslationPowProperty().get();
-   }
-
-   public final void setZoomToTranslationPow(final double zoomToTranslationPow)
-   {
-      zoomToTranslationPowProperty().set(zoomToTranslationPow);
    }
 
    public final ObjectProperty<KeyCode> forwardKeyProperty()
@@ -362,29 +302,9 @@ public class CameraTranslationCalculator
       return forwardKey;
    }
 
-   public final KeyCode getForwardKey()
-   {
-      return forwardKeyProperty().get();
-   }
-
-   public final void setForwardKey(final KeyCode forwardKey)
-   {
-      forwardKeyProperty().set(forwardKey);
-   }
-
    public final ObjectProperty<KeyCode> backwardKeyProperty()
    {
       return backwardKey;
-   }
-
-   public final KeyCode getBackwardKey()
-   {
-      return backwardKeyProperty().get();
-   }
-
-   public final void setBackwardKey(final KeyCode backwardKey)
-   {
-      backwardKeyProperty().set(backwardKey);
    }
 
    public final ObjectProperty<KeyCode> leftKeyProperty()
@@ -392,29 +312,9 @@ public class CameraTranslationCalculator
       return leftKey;
    }
 
-   public final KeyCode getLeftKey()
-   {
-      return leftKeyProperty().get();
-   }
-
-   public final void setLeftKey(final KeyCode leftKey)
-   {
-      leftKeyProperty().set(leftKey);
-   }
-
    public final ObjectProperty<KeyCode> rightKeyProperty()
    {
       return rightKey;
-   }
-
-   public final KeyCode getRightKey()
-   {
-      return rightKeyProperty().get();
-   }
-
-   public final void setRightKey(final KeyCode rightKey)
-   {
-      rightKeyProperty().set(rightKey);
    }
 
    public final ObjectProperty<KeyCode> upKeyProperty()
@@ -422,28 +322,8 @@ public class CameraTranslationCalculator
       return upKey;
    }
 
-   public final KeyCode getUpKey()
-   {
-      return upKeyProperty().get();
-   }
-
-   public final void setUpKey(final KeyCode upKey)
-   {
-      upKeyProperty().set(upKey);
-   }
-
    public final ObjectProperty<KeyCode> downKeyProperty()
    {
       return downKey;
-   }
-
-   public final KeyCode getDownKey()
-   {
-      return downKeyProperty().get();
-   }
-
-   public final void setDownKey(final KeyCode downKey)
-   {
-      downKeyProperty().set(downKey);
    }
 }

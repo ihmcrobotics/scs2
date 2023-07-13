@@ -31,7 +31,7 @@ import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 
@@ -41,7 +41,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
    private final SubScene subScene;
    private final Group rootNode3D;
    private final PerspectiveCamera camera;
-   private final FocusBasedCameraMouseEventHandler cameraController;
+   private final PerspectiveCameraController cameraController;
 
    private final YoManager yoManager;
    private final YoCompositeSearchManager yoCompositeSearchManager;
@@ -74,7 +74,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       subScene.setCamera(camera);
 
       // Setting up the camera controller.
-      cameraController = new FocusBasedCameraMouseEventHandler(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
+      cameraController = new PerspectiveCameraController(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
       cameraController.enableShiftClickFocusTranslation();
       subScene.addEventHandler(Event.ANY, cameraController);
 
@@ -112,7 +112,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
    }
 
    @Override
-   public FocusBasedCameraMouseEventHandler getCameraController()
+   public PerspectiveCameraController getCameraController()
    {
       return cameraController;
    }
@@ -127,7 +127,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraNodeToTrack(Node nodeToTrack)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getNodeTracker().setNodeToTrack(nodeToTrack));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getNodeTracker().nodeToTrackProperty().set(nodeToTrack));
    }
 
    public void setCameraPosition(double x, double y, double z)
@@ -150,14 +150,17 @@ public class MainViewport3DManager implements SingleViewport3DManager
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
          CameraZoomCalculator zoomCalculator = cameraController.getZoomCalculator();
-         if (zoomCalculator.isInvertZoomDirection())
-            zoomCalculator.setZoom(-distanceFromFocus);
+         if (zoomCalculator.invertZoomDirectionProperty().get())
+            zoomCalculator.zoomProperty().set(-distanceFromFocus);
          else
-            zoomCalculator.setZoom(distanceFromFocus);
+         {
+            final double zoom = distanceFromFocus;
+            zoomCalculator.zoomProperty().set(zoom);
+         }
       });
    }
 
-   static void setupContextMenu(FocusBasedCameraMouseEventHandler cameraController, Node viewport)
+   static void setupContextMenu(PerspectiveCameraController cameraController, Node viewport)
    {
       setupContextMenu(cameraController.getNodeTracker().nodeToTrackProperty(), viewport, node -> true);
    }
