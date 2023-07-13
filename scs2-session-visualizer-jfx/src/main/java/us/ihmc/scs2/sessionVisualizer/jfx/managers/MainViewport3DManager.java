@@ -57,7 +57,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       Sphere focusPointViz = cameraController.getFocusPointViz();
       rootNode3D.getChildren().add(focusPointViz);
       focusPointViz.visibleProperty().bind(subScene.focusedProperty());
-      setupNodeTrackingContextMenu(cameraController, subScene);
+      setupContextMenu(cameraController, subScene);
    }
 
    @Override
@@ -133,12 +133,12 @@ public class MainViewport3DManager implements SingleViewport3DManager
       });
    }
 
-   static void setupNodeTrackingContextMenu(FocusBasedCameraMouseEventHandler cameraController, Node viewport)
+   static void setupContextMenu(FocusBasedCameraMouseEventHandler cameraController, Node viewport)
    {
-      setupNodeTrackingContextMenu(cameraController.getNodeTracker().nodeToTrackProperty(), viewport, node -> true);
+      setupContextMenu(cameraController.getNodeTracker().nodeToTrackProperty(), viewport, node -> true);
    }
 
-   static void setupNodeTrackingContextMenu(ObjectProperty<Node> nodeTrackedProperty, Node viewport, Predicate<Node> filter)
+   static void setupContextMenu(ObjectProperty<Node> nodeTrackedProperty, Node viewport, Predicate<Node> filter)
    {
       MenuTools.setupContextMenu(viewport, (owner, event) ->
       {
@@ -158,6 +158,15 @@ public class MainViewport3DManager implements SingleViewport3DManager
          MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeTrackedProperty.get().getId());
          menuItem.setOnAction(e -> nodeTrackedProperty.set(null));
          return menuItem;
+      }, (owner, event) ->
+      {
+         MenuItem menuItem = new MenuItem("Camera properties...");
+         return menuItem;
       });
+   }
+
+   static void openCameraPropertiesDialog()
+   {
+      
    }
 }
