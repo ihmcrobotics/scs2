@@ -13,8 +13,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox spacing="15.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox alignment="CENTER" spacing="10.0">
          <children>
@@ -25,7 +24,7 @@
       </HBox>
       <GridPane hgap="5.0" vgap="5.0">
         <columnConstraints>
-          <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" />
+          <ColumnConstraints halignment="RIGHT" hgrow="NEVER" />
           <ColumnConstraints hgrow="SOMETIMES" />
             <ColumnConstraints hgrow="NEVER" />
         </columnConstraints>
@@ -57,7 +56,7 @@
                   <Image url="@../icons/invalid-icon.png" />
                </image>
             </ImageView>
-            <JFXComboBox maxWidth="1.7976931348623157E308" visibleRowCount="2" GridPane.rowIndex="3" />
+            <JFXComboBox maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" GridPane.rowIndex="3" />
             <JFXTextField GridPane.columnIndex="1" GridPane.rowIndex="3" />
             <ImageView fx:id="nameValidImageView3" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="1">
                <image>
@@ -69,5 +68,63 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
       </GridPane>
+      <HBox alignment="CENTER" spacing="10.0">
+         <children>
+            <Separator HBox.hgrow="ALWAYS" />
+            <Label text="Camera Position" />
+            <Separator HBox.hgrow="ALWAYS" />
+         </children>
+      </HBox>
+      <GridPane hgap="5.0" vgap="5.0">
+         <columnConstraints>
+            <ColumnConstraints halignment="RIGHT" hgrow="NEVER" />
+            <ColumnConstraints halignment="RIGHT" hgrow="NEVER" />
+            <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="NEVER" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints vgrow="NEVER" />
+            <RowConstraints vgrow="NEVER" />
+            <RowConstraints vgrow="NEVER" />
+            <RowConstraints vgrow="NEVER" />
+         </rowConstraints>
+         <children>
+            <JFXComboBox maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" GridPane.rowSpan="2" />
+            <Label alignment="CENTER_RIGHT" minWidth="50.0" text="distance" GridPane.columnIndex="1" />
+            <JFXTextField GridPane.columnIndex="2" />
+            <ImageView fx:id="nameValidImageView1" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3">
+               <image>
+                  <Image url="@../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <Label alignment="CENTER_RIGHT" minWidth="50.0" text="yaw" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <JFXTextField GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <ImageView fx:id="nameValidImageView11" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3" GridPane.rowIndex="3">
+               <image>
+                  <Image url="@../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <JFXComboBox maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" GridPane.columnSpan="2" GridPane.rowIndex="2" />
+            <JFXTextField GridPane.columnIndex="2" GridPane.rowIndex="2" />
+            <ImageView fx:id="nameValidImageView21" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3" GridPane.rowIndex="2">
+               <image>
+                  <Image url="@../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+            <JFXComboBox maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+            <JFXTextField GridPane.columnIndex="2" GridPane.rowIndex="3" />
+            <ImageView fx:id="nameValidImageView31" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="3" GridPane.rowIndex="1">
+               <image>
+                  <Image url="@../icons/invalid-icon.png" />
+               </image>
+            </ImageView>
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </GridPane>
    </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
 </VBox>
