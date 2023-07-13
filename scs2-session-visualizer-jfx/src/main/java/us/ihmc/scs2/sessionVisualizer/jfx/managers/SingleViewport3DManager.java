@@ -2,7 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.layout.Pane;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 
 public interface SingleViewport3DManager
 {
@@ -11,7 +11,7 @@ public interface SingleViewport3DManager
 
    void dispose();
 
-   FocusBasedCameraMouseEventHandler getCameraController();
+   PerspectiveCameraController getCameraController();
 
    PerspectiveCamera getCamera();
 
