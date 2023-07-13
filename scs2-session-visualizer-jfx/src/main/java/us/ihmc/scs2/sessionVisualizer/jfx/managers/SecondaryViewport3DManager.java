@@ -13,7 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXExtensions.raycast.CustomPickRayTools;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 public class SecondaryViewport3DManager implements SingleViewport3DManager

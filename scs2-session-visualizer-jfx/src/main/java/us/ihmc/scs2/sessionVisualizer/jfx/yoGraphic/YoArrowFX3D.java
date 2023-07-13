@@ -15,9 +15,9 @@ import us.ihmc.euclid.axisAngle.AxisAngle;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 public class YoArrowFX3D extends YoGraphicFX3D
@@ -77,7 +77,7 @@ public class YoArrowFX3D extends YoGraphicFX3D
       Vector3DReadOnly directionLocal = direction.toVector3DInWorld();
       AxisAngle axisAngle = EuclidGeometryTools.axisAngleFromZUpToVector3D(directionLocal);
 
-      arrowAffine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(axisAngle, origin.toPoint3DInWorld()));
+      arrowAffine.setToTransform(JavaFXMissingTools.createAffineFromOrientation3DAndTuple(axisAngle, origin.toPoint3DInWorld()));
 
       double directionMagnitude = directionLocal.norm();
       double arrowScaleXY = scaleRadius ? bodyRadius.get() * directionMagnitude : bodyRadius.get();
