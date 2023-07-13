@@ -65,7 +65,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
       Sphere focusPointViz = cameraController.getFocusPointViz();
       rootNode3D.getChildren().add(focusPointViz);
       focusPointViz.visibleProperty().bind(cameraView.focusedProperty());
-      MainViewport3DManager.setupNodeTrackingContextMenu(cameraController, cameraView);
+      MainViewport3DManager.setupContextMenu(cameraController, cameraView);
 
       snapshotParameters.setCamera(camera);
       snapshotParameters.setDepthBuffer(true);
