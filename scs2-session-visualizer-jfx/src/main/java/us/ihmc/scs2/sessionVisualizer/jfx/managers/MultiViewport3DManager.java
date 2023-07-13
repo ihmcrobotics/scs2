@@ -9,24 +9,29 @@ import javafx.scene.Group;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import us.ihmc.yoVariables.exceptions.IllegalOperationException;
+import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class MultiViewport3DManager
 {
-   private final GridPane container;
+   private final GridPane container = new GridPane();
    private final Group mainView3DRoot;
 
    private MainViewport3DManager mainViewport;
    private final ObservableList<SingleViewport3DManager> allViewports = FXCollections.observableArrayList();
    private final IntegerProperty numberOfColumns = new SimpleIntegerProperty(this, "numberOfColumns", 2);
 
-   public MultiViewport3DManager(Group mainView3DRoot)
+   public MultiViewport3DManager(Group mainView3DRoot,
+                                 LinkedYoRegistry linkedRootRegistry,
+                                 YoCompositeSearchManager yoCompositeSearchManager,
+                                 ReferenceFrameManager referenceFrameManager)
    {
       this.mainView3DRoot = mainView3DRoot;
-      container = new GridPane();
 
       allViewports.addListener((ListChangeListener<SingleViewport3DManager>) change -> refreshLayout());
       numberOfColumns.addListener((o, oldValue, newValue) -> refreshLayout());
+
+      mainViewport = new MainViewport3DManager(mainView3DRoot, yoCompositeSearchManager, referenceFrameManager);
+      allViewports.add(mainViewport);
    }
 
    public void refreshLayout()
@@ -51,15 +56,6 @@ public class MultiViewport3DManager
             row++;
          }
       }
-   }
-
-   public void createMainViewport()
-   {
-      if (mainViewport != null)
-         throw new IllegalOperationException("Can only have 1 main viewport");
-
-      mainViewport = new MainViewport3DManager(mainView3DRoot);
-      allViewports.add(mainViewport);
    }
 
    public void addSecondaryViewport()
