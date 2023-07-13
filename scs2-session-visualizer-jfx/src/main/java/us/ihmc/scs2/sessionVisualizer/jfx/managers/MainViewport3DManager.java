@@ -34,7 +34,6 @@ import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
-import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class MainViewport3DManager implements SingleViewport3DManager
 {
@@ -44,14 +43,17 @@ public class MainViewport3DManager implements SingleViewport3DManager
    private final PerspectiveCamera camera;
    private final FocusBasedCameraMouseEventHandler cameraController;
 
-   private final LinkedYoRegistry linkedRootRegistry;
+   private final YoManager yoManager;
    private final YoCompositeSearchManager yoCompositeSearchManager;
    private final ReferenceFrameManager referenceFrameManager;
 
-   public MainViewport3DManager(Group mainView3DRoot, LinkedYoRegistry linkedRootRegistry, YoCompositeSearchManager yoCompositeSearchManager, ReferenceFrameManager referenceFrameManager)
+   public MainViewport3DManager(Group mainView3DRoot,
+                                YoManager yoManager,
+                                YoCompositeSearchManager yoCompositeSearchManager,
+                                ReferenceFrameManager referenceFrameManager)
    {
       rootNode3D = mainView3DRoot;
-      this.linkedRootRegistry = linkedRootRegistry;
+      this.yoManager = yoManager;
       this.yoCompositeSearchManager = yoCompositeSearchManager;
       this.referenceFrameManager = referenceFrameManager;
 

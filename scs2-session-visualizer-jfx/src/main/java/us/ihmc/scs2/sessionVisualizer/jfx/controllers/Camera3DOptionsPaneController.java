@@ -5,8 +5,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
+import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.ReferenceFrameSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
+import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class Camera3DOptionsPaneController
 {
@@ -18,9 +24,11 @@ public class Camera3DOptionsPaneController
    @FXML
    private TextField focalPointXTextField, focalPointYTextField, focalPointZTextField;
    @FXML
+   private ImageView focalPointXValidImageView, focalPointYValidImageView, focalPointZValidImageView, focalPointTrackingValidImageView;
+   @FXML
    private ComboBox<Tracking> trackingComboBox;
    @FXML
-   private ImageView focalPointXValidImageView, focalPointYValidImageView, focalPointZValidImageView, focalPointTrackingValidImageView;
+   private TextField trackingFrameTextField, trackingNodeTextField; // Depending on the comboBox state, we flip which TextField is visible
 
    private enum CameraPositionType
    {
@@ -62,14 +70,48 @@ public class Camera3DOptionsPaneController
    @FXML
    private ImageView cameraValidImageView3;
 
+   private DoubleSearchField[] yoFocalPointFields = new DoubleSearchField[3];
+   private ReferenceFrameSearchField trackingFrameField;
+
    public Camera3DOptionsPaneController()
    {
    }
 
-   public void initialize()
+   public void initialize(FocusBasedCameraMouseEventHandler cameraController,
+                          YoCompositeSearchManager searchManager,
+                          LinkedYoRegistry linkedRootRegistry,
+                          ReferenceFrameManager referenceFrameManager)
    {
-      new YoDoubleTextField(focalPointXTextField, searchManager, linkedRootRegistry, focalPointXValidImageView);
+      yoFocalPointFields[0] = new DoubleSearchField(focalPointXTextField, searchManager, linkedRootRegistry, focalPointXValidImageView);
+      yoFocalPointFields[1] = new DoubleSearchField(focalPointYTextField, searchManager, linkedRootRegistry, focalPointYValidImageView);
+      yoFocalPointFields[2] = new DoubleSearchField(focalPointZTextField, searchManager, linkedRootRegistry, focalPointZValidImageView);
       trackingComboBox.setItems(FXCollections.observableArrayList(Tracking.values()));
+
+      trackingFrameField = new ReferenceFrameSearchField(trackingFrameTextField, referenceFrameManager, focalPointTrackingValidImageView);
+      trackingNodeTextField.setEditable(false); // We use this field to provide info about the currently selected Node
+      trackingNodeTextField.setTooltip(new Tooltip("To select a node to track, right click on it in the 3D view and select in the context menu."));
+
+      trackingComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+      {
+         switch (newValue)
+         {
+            case Frame:
+               trackingFrameTextField.setVisible(true);
+               focalPointTrackingValidImageView.setVisible(true);
+               trackingNodeTextField.setVisible(false);
+               break;
+            case Node:
+               trackingFrameTextField.setVisible(false);
+               focalPointTrackingValidImageView.setVisible(false);
+               trackingNodeTextField.setVisible(true);
+               break;
+            default:
+               throw new IllegalStateException("Unexpected value: " + newValue);
+         }
+      });
+
+      trackingComboBox.getSelectionModel().select(Tracking.Node);
+
       cameraPositionComboxBox.setItems(FXCollections.observableArrayList(CameraPositionType.values()));
    }
 }

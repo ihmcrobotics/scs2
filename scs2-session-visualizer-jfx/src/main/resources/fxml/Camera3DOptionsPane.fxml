@@ -57,7 +57,8 @@
                </image>
             </ImageView>
             <JFXComboBox fx:id="trackingComboBox" maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" GridPane.rowIndex="3" />
-            <JFXTextField GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <JFXTextField fx:id="trackingFrameTextField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <JFXTextField fx:id="trackingNodeTextField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
             <ImageView fx:id="focalPointYValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="1">
                <image>
                   <Image url="@../icons/invalid-icon.png" />
