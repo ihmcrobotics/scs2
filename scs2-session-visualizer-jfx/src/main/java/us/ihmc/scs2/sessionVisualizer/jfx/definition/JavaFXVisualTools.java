@@ -54,7 +54,6 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.AffineTransformDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
@@ -68,6 +67,7 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class JavaFXVisualTools
 {
@@ -158,7 +158,7 @@ public class JavaFXVisualTools
       if (node != null && originPose != null && (originPose.hasTranslation() || originPose.hasLinearTransform()))
       {
          Affine nodeAffine = new Affine();
-         JavaFXTools.convertEuclidAffineToJavaFXAffine(originPose, nodeAffine);
+         JavaFXMissingTools.convertEuclidAffineToJavaFXAffine(originPose, nodeAffine);
          node.getTransforms().add(0, nodeAffine);
       }
 
@@ -269,7 +269,7 @@ public class JavaFXVisualTools
       String filename = geometryDefinition.getFileName();
 
       if (resourceClassLoader == null)
-         resourceClassLoader = JavaFXTools.class.getClassLoader();
+         resourceClassLoader = JavaFXVisualTools.class.getClassLoader();
       URL fileURL = resourceClassLoader.getResource(filename);
 
       if (fileURL == null)
@@ -586,6 +586,11 @@ public class JavaFXVisualTools
       return filteredNodes;
    }
 
+   public static TriangleMesh toTriangleMesh(TriangleMesh3DDefinition triangleMesh3DDefinition)
+   {
+      return JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(triangleMesh3DDefinition);
+   }
+
    public static Material toMaterial(MaterialDefinition materialDefinition, ClassLoader resourceClassLoader)
    {
       if (materialDefinition == null)
@@ -703,9 +708,12 @@ public class JavaFXVisualTools
 
    static
    {
-      List<String> list = Stream.of(Color.class.getDeclaredFields()).filter(field -> Modifier.isStatic(field.getModifiers()))
-                                .filter(field -> Modifier.isPublic(field.getModifiers())).filter(field -> field.getType() == Color.class)
-                                .map(field -> field.getName().toLowerCase()).collect(Collectors.toList());
+      List<String> list = Stream.of(Color.class.getDeclaredFields())
+                                .filter(field -> Modifier.isStatic(field.getModifiers()))
+                                .filter(field -> Modifier.isPublic(field.getModifiers()))
+                                .filter(field -> field.getType() == Color.class)
+                                .map(field -> field.getName().toLowerCase())
+                                .collect(Collectors.toList());
       colorNameList = Collections.unmodifiableList(list);
    }
 

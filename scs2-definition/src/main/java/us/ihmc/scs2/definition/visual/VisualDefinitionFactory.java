@@ -1135,12 +1135,13 @@ public class VisualDefinitionFactory
     * </p>
     * 
     * @param length                the length of each arrow.
-    * @param arrowHeadDiffuseColor the diffuse color to use for the head of the arrows.
+    * @param arrowHeadDiffuseColor the diffuse color to use for the head of the arrows. Use
+    *                              {@code null} to match the color of the body and head for each arrow.
     * @see ColorDefinitions
     */
    public void addCoordinateSystem(double length, ColorDefinition arrowHeadDiffuseColor)
    {
-      addCoordinateSystem(length, new MaterialDefinition(arrowHeadDiffuseColor));
+      addCoordinateSystem(length, arrowHeadDiffuseColor == null ? null : new MaterialDefinition(arrowHeadDiffuseColor));
    }
 
    /**
@@ -1153,13 +1154,14 @@ public class VisualDefinitionFactory
     * </p>
     * 
     * @param length            the length of each arrow.
-    * @param arrowHeadMaterial the material to use for the head of the arrows.
+    * @param arrowHeadMaterial the material to use for the head of the arrows. Use {@code null} to
+    *                          match the material of the body and head for each arrow.
     */
    public void addCoordinateSystem(double length, MaterialDefinition arrowHeadMaterial)
    {
       addCoordinateSystem(length,
                           new MaterialDefinition(ColorDefinitions.Red()),
-                          new MaterialDefinition(ColorDefinitions.White()),
+                          new MaterialDefinition(ColorDefinitions.Lime()), // Lime is actually "full green" i.e. (r=0, g=1, b=0)
                           new MaterialDefinition(ColorDefinitions.Blue()),
                           arrowHeadMaterial);
    }
@@ -1180,7 +1182,8 @@ public class VisualDefinitionFactory
     * @param xAxisDiffuseColor     the diffuse color for the x-axis.
     * @param yAxisDiffuseColor     the diffuse color for the y-axis.
     * @param zAxisDiffuseColor     the diffuse color for the z-axis.
-    * @param arrowHeadDiffuseColor the diffuse color to use for the head of the arrows.
+    * @param arrowHeadDiffuseColor the diffuse color to use for the head of the arrows. Use
+    *                              {@code null} to match the color of the body and head for each arrow.
     * @see ColorDefinitions
     */
    public void addCoordinateSystem(double length,
@@ -1193,7 +1196,7 @@ public class VisualDefinitionFactory
                           new MaterialDefinition(xAxisDiffuseColor),
                           new MaterialDefinition(yAxisDiffuseColor),
                           new MaterialDefinition(zAxisDiffuseColor),
-                          new MaterialDefinition(arrowHeadDiffuseColor));
+                          arrowHeadDiffuseColor == null ? null : new MaterialDefinition(arrowHeadDiffuseColor));
    }
 
    /**
@@ -1209,7 +1212,8 @@ public class VisualDefinitionFactory
     * @param xAxisMaterial     the material for the x-axis.
     * @param yAxisMaterial     the material for the y-axis.
     * @param zAxisMaterial     the material for the z-axis.
-    * @param arrowHeadMaterial the material to use for the head of the arrows.
+    * @param arrowHeadMaterial the material to use for the head of the arrows. Use {@code null} to
+    *                          match the material of the body and head for each arrow.
     */
    public void addCoordinateSystem(double length,
                                    MaterialDefinition xAxisMaterial,
@@ -1217,9 +1221,9 @@ public class VisualDefinitionFactory
                                    MaterialDefinition zAxisMaterial,
                                    MaterialDefinition arrowHeadMaterial)
    {
-      addArrow(Axis3D.X, length, xAxisMaterial, arrowHeadMaterial);
-      addArrow(Axis3D.Y, length, yAxisMaterial, arrowHeadMaterial);
-      addArrow(Axis3D.Z, length, zAxisMaterial, arrowHeadMaterial);
+      addArrow(Axis3D.X, length, xAxisMaterial, arrowHeadMaterial == null ? xAxisMaterial : arrowHeadMaterial);
+      addArrow(Axis3D.Y, length, yAxisMaterial, arrowHeadMaterial == null ? yAxisMaterial : arrowHeadMaterial);
+      addArrow(Axis3D.Z, length, zAxisMaterial, arrowHeadMaterial == null ? zAxisMaterial : arrowHeadMaterial);
    }
 
    /**

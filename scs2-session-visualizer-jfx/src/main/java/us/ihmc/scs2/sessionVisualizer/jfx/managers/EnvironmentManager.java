@@ -12,11 +12,12 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
-import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -65,9 +66,16 @@ public class EnvironmentManager implements Manager
    {
       backgroundExecutorManager.executeInBackground(() ->
       {
-         Node node = new JavaFXCoordinateSystem(size);
+         Node node = coordinateSystem(size);
          JavaFXMissingTools.runLater(getClass(), () -> rootNode.getChildren().add(node));
       });
+   }
+
+   private static Node coordinateSystem(double size)
+   {
+      VisualDefinitionFactory factory = new VisualDefinitionFactory();
+      factory.addCoordinateSystem(size, (ColorDefinition) null);
+      return JavaFXVisualTools.collectNodes(factory.getVisualDefinitions());
    }
 
    public void addSkybox(Camera mainCamera)
