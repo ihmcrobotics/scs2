@@ -9,7 +9,7 @@ import javafx.scene.transform.Translate;
 
 /**
  * Helper class for tracking a 3D node with a camera when using
- * {@link FocusBasedCameraMouseEventHandler}.
+ * {@link PerspectiveCameraController}.
  *
  * @author Sylvain Bertrand
  */
@@ -48,16 +48,6 @@ public class CameraNodeTracker
    public ObjectProperty<Node> nodeToTrackProperty()
    {
       return nodeTracked;
-   }
-
-   public Node getNodeToTrack()
-   {
-      return nodeTracked.get();
-   }
-
-   public void setNodeToTrack(Node nodeToTrack)
-   {
-      nodeTracked.set(nodeToTrack);
    }
 
    public void resetTranslate()

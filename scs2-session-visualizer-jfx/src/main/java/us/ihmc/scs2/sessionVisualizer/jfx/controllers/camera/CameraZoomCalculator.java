@@ -23,10 +23,10 @@ import us.ihmc.commons.MathTools;
 public class CameraZoomCalculator
 {
    /**
-    * The current zoom of the camera. In {@link FocusBasedCameraMouseEventHandler} it is used as the
-    * distance between the camera and the point it focuses on. This is the output of this calculator
-    * and can be bound to an external property or a component of {@link Translate} to apply a
-    * transformation on the camera.
+    * The current zoom of the camera. In {@link PerspectiveCameraController} it is used as the distance
+    * between the camera and the point it focuses on. This is the output of this calculator and can be
+    * bound to an external property or a component of {@link Translate} to apply a transformation on
+    * the camera.
     */
    private final DoubleProperty zoom = new SimpleDoubleProperty(this, "zoom", 10.0);
    /** Minimum value the zoom can be. */
@@ -97,29 +97,9 @@ public class CameraZoomCalculator
       return zoom;
    }
 
-   public final double getZoom()
-   {
-      return zoomProperty().get();
-   }
-
-   public final void setZoom(final double zoom)
-   {
-      zoomProperty().set(zoom);
-   }
-
    public final DoubleProperty minZoomProperty()
    {
       return minZoom;
-   }
-
-   public final double getMinZoom()
-   {
-      return minZoomProperty().get();
-   }
-
-   public final void setMinZoom(final double minZoom)
-   {
-      minZoomProperty().set(minZoom);
    }
 
    public final DoubleProperty maxZoomProperty()
@@ -127,43 +107,13 @@ public class CameraZoomCalculator
       return maxZoom;
    }
 
-   public final double getMaxZoom()
-   {
-      return maxZoomProperty().get();
-   }
-
-   public final void setMaxZoom(final double maxZoom)
-   {
-      maxZoomProperty().set(maxZoom);
-   }
-
    public final DoubleProperty zoomSpeedFactorProperty()
    {
       return zoomSpeedFactor;
    }
 
-   public final double getZoomSpeedFactor()
-   {
-      return zoomSpeedFactorProperty().get();
-   }
-
-   public final void setZoomSpeedFactor(final double zoomSpeedFactor)
-   {
-      zoomSpeedFactorProperty().set(zoomSpeedFactor);
-   }
-
    public final BooleanProperty invertZoomDirectionProperty()
    {
       return invertZoomDirection;
-   }
-
-   public final boolean isInvertZoomDirection()
-   {
-      return invertZoomDirectionProperty().get();
-   }
-
-   public final void setInvertZoomDirection(final boolean invertZoomDirection)
-   {
-      invertZoomDirectionProperty().set(invertZoomDirection);
    }
 }

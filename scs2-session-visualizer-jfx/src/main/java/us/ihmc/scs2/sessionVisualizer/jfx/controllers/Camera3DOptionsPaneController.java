@@ -7,7 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.ReferenceFrameSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
@@ -77,7 +77,7 @@ public class Camera3DOptionsPaneController
    {
    }
 
-   public void initialize(FocusBasedCameraMouseEventHandler cameraController,
+   public void initialize(PerspectiveCameraController cameraController,
                           YoCompositeSearchManager searchManager,
                           LinkedYoRegistry linkedRootRegistry,
                           ReferenceFrameManager referenceFrameManager)
