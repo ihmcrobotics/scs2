@@ -23,8 +23,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
@@ -80,12 +80,9 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       yoRobotFXManager = new YoRobotFXManager(messager, topics, yoManager, referenceFrameManager, backgroundExecutorManager);
       environmentManager = new EnvironmentManager(messager, topics, backgroundExecutorManager);
 
-      viewport3DManager = new MultiViewport3DManager(mainView3DRoot);
-      viewport3DManager.createMainViewport();
+      viewport3DManager = new MultiViewport3DManager(mainView3DRoot, yoCompositeSearchManager, referenceFrameManager);
       this.mainScene3D = viewport3DManager.getMainViewport().getSubScene();
-      mainView3DRoot.getChildren().add(yoGraphicFXManager.getRootNode3D());
-      mainView3DRoot.getChildren().add(yoRobotFXManager.getRootNode());
-      mainView3DRoot.getChildren().add(environmentManager.getRootNode());
+      mainView3DRoot.getChildren().addAll(yoGraphicFXManager.getRootNode3D(), yoRobotFXManager.getRootNode(), environmentManager.getRootNode());
       environmentManager.addSkybox(viewport3DManager.getMainViewport().getCamera());
 
       messager.addFXTopicListener(topics.getCameraTrackObject(), request ->

@@ -1,25 +1,40 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import java.io.IOException;
 import java.util.function.Predicate;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.event.Event;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.MenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXToolkit.cameraControllers.CameraZoomCalculator;
 import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
+import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class MainViewport3DManager implements SingleViewport3DManager
 {
@@ -29,9 +44,16 @@ public class MainViewport3DManager implements SingleViewport3DManager
    private final PerspectiveCamera camera;
    private final FocusBasedCameraMouseEventHandler cameraController;
 
-   public MainViewport3DManager(Group mainView3DRoot)
+   private final LinkedYoRegistry linkedRootRegistry;
+   private final YoCompositeSearchManager yoCompositeSearchManager;
+   private final ReferenceFrameManager referenceFrameManager;
+
+   public MainViewport3DManager(Group mainView3DRoot, LinkedYoRegistry linkedRootRegistry, YoCompositeSearchManager yoCompositeSearchManager, ReferenceFrameManager referenceFrameManager)
    {
       rootNode3D = mainView3DRoot;
+      this.linkedRootRegistry = linkedRootRegistry;
+      this.yoCompositeSearchManager = yoCompositeSearchManager;
+      this.referenceFrameManager = referenceFrameManager;
 
       // Creating sub-scene
       subScene = new SubScene(rootNode3D, -1, -1, true, SceneAntialiasing.BALANCED);
@@ -146,7 +168,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
          PickResult pickResult = event.getPickResult();
          Node intersectedNode = pickResult.getIntersectedNode();
          if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == viewport || intersectedNode == nodeTrackedProperty.get()
-               || !filter.test(intersectedNode))
+             || !filter.test(intersectedNode))
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
          menuItem.setOnAction(e -> nodeTrackedProperty.set(intersectedNode));
@@ -161,12 +183,47 @@ public class MainViewport3DManager implements SingleViewport3DManager
       }, (owner, event) ->
       {
          MenuItem menuItem = new MenuItem("Camera properties...");
+         menuItem.setOnAction(e -> openCameraPropertiesDialog(viewport));
          return menuItem;
       });
    }
 
-   static void openCameraPropertiesDialog()
+   static void openCameraPropertiesDialog(Node viewport)
    {
-      
+      try
+      {
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.CAMERA3D_OPTIONS_PANE_URL);
+         Pane rootPane = loader.load();
+         Stage window = new Stage(StageStyle.UTILITY);
+         window.setScene(new Scene(rootPane));
+         window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
+         {
+            if (e.getCode() == KeyCode.ESCAPE)
+               window.close();
+         });
+         Window owner = viewport.getScene().getWindow();
+         owner.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
+         {
+            if (!e.isConsumed())
+               window.close();
+         });
+         window.initOwner(owner);
+         window.setTitle("Camera 3D options");
+         window.setOpacity(0.0);
+         window.toFront();
+         window.show();
+         Timeline timeline = new Timeline();
+         KeyFrame key = new KeyFrame(Duration.seconds(0.125), new KeyValue(window.opacityProperty(), 1.0));
+         timeline.getKeyFrames().add(key);
+         timeline.play();
+
+         //         window.setOnHidden(e -> stop());
+         //         window.setOnShowing(e -> start());
+
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
    }
 }
