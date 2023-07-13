@@ -21,11 +21,11 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoGraphic3DStyleEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoGraphicNameEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXCreatorController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -98,14 +98,14 @@ public abstract class YoGroupFXEditorController<T extends YoGraphicFX> implement
       });
    }
 
-   protected YoDoubleTextField setupDoublePropertyEditor(TextField textField,
+   protected DoubleSearchField setupDoublePropertyEditor(TextField textField,
                                                          ImageView validImageView,
                                                          BiConsumer<T, DoubleProperty> setter,
                                                          Function<T, DoubleProperty> getter)
    {
       LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
 
-      YoDoubleTextField yoDoubleTextField = new YoDoubleTextField(textField, yoCompositeSearchManager, linkedRootRegistry, validImageView);
+      DoubleSearchField yoDoubleTextField = new DoubleSearchField(textField, yoCompositeSearchManager, linkedRootRegistry, validImageView);
       yoDoubleTextField.setupAutoCompletion();
       yoDoubleTextField.supplierProperty().addListener((o, oldValue, newValue) -> setField(graphicChildren, setter, newValue));
       registerResetAction(() -> textField.setText(getCommonString(yoCompositeSearchManager, getField(graphicChildren, getter))));

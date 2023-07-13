@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.color;
 
 import java.util.function.BiConsumer;
 
@@ -13,8 +13,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoIntegerTextField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.IntegerSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
@@ -44,7 +44,7 @@ public abstract class PaintEditorController<C extends BaseColorFX>
    protected void setupDoublePropertyEditor(TextField textField, ImageView validImageView, BiConsumer<C, DoubleProperty> colorComponentSetter)
    {
       LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
-      YoDoubleTextField yoDoubleTextField = new YoDoubleTextField(textField, yoCompositeSearchManager, linkedRootRegistry, validImageView);
+      DoubleSearchField yoDoubleTextField = new DoubleSearchField(textField, yoCompositeSearchManager, linkedRootRegistry, validImageView);
       yoDoubleTextField.setupAutoCompletion();
 
       yoDoubleTextField.supplierProperty().addListener((o, oldValue, newValue) ->
@@ -61,7 +61,7 @@ public abstract class PaintEditorController<C extends BaseColorFX>
    protected void setupIntegerPropertyEditor(TextField textField, ImageView validImageView, BiConsumer<C, IntegerProperty> colorComponentSetter)
    {
       LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
-      YoIntegerTextField yoIntegerTextField = new YoIntegerTextField(textField, yoCompositeSearchManager, linkedRootRegistry, validImageView);
+      IntegerSearchField yoIntegerTextField = new IntegerSearchField(textField, yoCompositeSearchManager, linkedRootRegistry, validImageView);
       yoIntegerTextField.setupAutoCompletion();
 
       yoIntegerTextField.supplierProperty().addListener((o, oldValue, newValue) ->

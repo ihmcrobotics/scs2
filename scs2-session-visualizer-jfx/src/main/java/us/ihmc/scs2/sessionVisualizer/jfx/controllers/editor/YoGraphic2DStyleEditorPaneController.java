@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools.bindValidityImageView;
 
@@ -20,8 +20,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic2DDefinition;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.color.ColorEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color.ColorEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
