@@ -29,9 +29,9 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
-import us.ihmc.javaFXToolkit.cameraControllers.CameraZoomCalculator;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 

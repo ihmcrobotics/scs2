@@ -7,7 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.FocusBasedCameraMouseEventHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.ReferenceFrameSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
