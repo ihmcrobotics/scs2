@@ -13,7 +13,7 @@
 
 <VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.graphic3D.YoSTPBoxFX3DGroupEditorController">
    <children>
-      <fx:include fx:id="sizeEditor" source="../../editor/YoCompositeEditorPane.fxml" />
+      <fx:include fx:id="sizeEditor" source="../../../editor/YoCompositeEditorPane.fxml" />
       <GridPane hgap="10.0" styleClass="graphic-editor-gridpane" vgap="10.0">
          <columnConstraints>
             <ColumnConstraints hgrow="NEVER" minWidth="-Infinity" />

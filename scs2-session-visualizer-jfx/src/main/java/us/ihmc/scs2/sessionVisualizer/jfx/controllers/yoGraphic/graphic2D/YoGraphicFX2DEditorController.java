@@ -2,8 +2,8 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic2D;
 
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoGraphic2DStyleEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXEditorController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic2DStyleEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 
