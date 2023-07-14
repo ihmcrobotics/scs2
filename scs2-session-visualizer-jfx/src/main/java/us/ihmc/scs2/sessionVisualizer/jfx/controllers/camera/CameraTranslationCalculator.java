@@ -60,19 +60,19 @@ public class CameraTranslationCalculator
     */
    private final ObjectProperty<Predicate<KeyEvent>> fastModifierPredicate = new SimpleObjectProperty<>(this, "fastModifierPredicate", null);
    /** Slow camera translation modifier when using the keyboard. */
-   private final DoubleProperty slowModifier = new SimpleDoubleProperty(this, "slowModifier", 0.005);
+   private final DoubleProperty slowModifier = new SimpleDoubleProperty(this, "slowModifier", 0.0075);
    /**
     * Fast camera translation modifier when using the keyboard. It is triggered when the condition held
     * in {@link #fastModifierPredicate} is fulfilled.
     */
-   private final DoubleProperty fastModifier = new SimpleDoubleProperty(this, "fastModifier", 0.010);
+   private final DoubleProperty fastModifier = new SimpleDoubleProperty(this, "fastModifier", 0.0125);
    /** Minimum value of a translation offset when using the keyboard. */
    private final DoubleProperty minTranslationOffset = new SimpleDoubleProperty(this, "minTranslationOffset", 0.1);
    /**
     * The zoom-to-translation pow is used to define the relation between the current zoom value and the
     * translation speed of the camera.
     */
-   private final DoubleProperty zoomToTranslationPow = new SimpleDoubleProperty(this, "zoomToTranslationPow", 1.5);
+   private final DoubleProperty zoomToTranslationPow = new SimpleDoubleProperty(this, "zoomToTranslationPow", 0.75);
 
    /** Key binding for moving the camera forward. Its default value is: {@code KeyCode.W}. */
    private final ObjectProperty<KeyCode> forwardKey = new SimpleObjectProperty<>(this, "forwardKey", KeyCode.W);

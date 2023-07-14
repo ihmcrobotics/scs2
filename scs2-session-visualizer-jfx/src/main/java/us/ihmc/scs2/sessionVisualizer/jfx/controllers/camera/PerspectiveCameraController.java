@@ -4,7 +4,6 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -29,12 +28,16 @@ import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import us.ihmc.commons.Epsilons;
 import us.ihmc.commons.MathTools;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 /**
  * This class provides a simple controller for a JavaFX {@link PerspectiveCamera}. The control is
@@ -55,17 +58,39 @@ public class PerspectiveCameraController implements EventHandler<Event>
 {
    private static final double DEFAULT_DISTANCE_FROM_FOCUS_POINT = 10.0;
 
+   private static final boolean FOCUS_POINT_SHOW = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.camera.focuspoint.show",
+                                                                                                            "SCS2_GUI_CAMERA_FOCUS_SHOW",
+                                                                                                            true);
+   private static final double FOCUS_POINT_SIZE = SessionPropertiesHelper.loadDoublePropertyOrEnvironment("scs2.session.gui.camera.focuspoint.size",
+                                                                                                          "SCS2_GUI_CAMERA_FOCUS_SIZE",
+                                                                                                          0.0025);
+
+   
+
    private final Sphere focusPointViz;
 
+   /**
+    * Translation updated by {@link CameraTargetTracker} to track a {@link Node}, {@link ReferenceFrame},
+    * and/or {@link YoVariable}.
+    */
+   private final Translate nodeTrackingTranslate;
+   /**
+    * Additional translation offset maintained by {@link CameraTranslationCalculator} to allow
+    * translating freely even when tracking something.
+    */
    private final Translate focusPointTranslation;
+   /**
+    * Rotation about the focus point. By construction it is meant to make the camera orbit about the
+    * focus.
+    */
    private final Affine cameraOrientation;
+   /** Translation to control the distance separating the camera from the focus point. */
    private final Translate offsetFromFocusPoint = new Translate(0.0, 0.0, -DEFAULT_DISTANCE_FROM_FOCUS_POINT);
 
-   private final CameraZoomCalculator zoomCalculator = new CameraZoomCalculator();
-   private final CameraRotationCalculator rotationCalculator;
+   private final CameraTargetTracker nodeTracker;
    private final CameraTranslationCalculator translationCalculator;
-   private final Translate nodeTrackingTranslate;
-   private final CameraNodeTracker nodeTracker;
+   private final CameraRotationCalculator rotationCalculator;
+   private final CameraZoomCalculator zoomCalculator = new CameraZoomCalculator();
 
    private final EventHandler<ScrollEvent> zoomEventHandler = zoomCalculator.createScrollEventHandler();
    /** For rotating around the focus point. */
@@ -73,8 +98,6 @@ public class PerspectiveCameraController implements EventHandler<Event>
    private final EventHandler<KeyEvent> translationEventHandler;
 
    private final PerspectiveCamera camera;
-
-   private final AnimationTimer focusPointResizeAnimation;
 
    public PerspectiveCameraController(ReadOnlyDoubleProperty sceneWidthProperty,
                                       ReadOnlyDoubleProperty sceneHeightProperty,
@@ -104,32 +127,34 @@ public class PerspectiveCameraController implements EventHandler<Event>
       translationCalculator.setZoom(zoomCalculator.zoomProperty());
       focusPointTranslation = translationCalculator.getTranslation();
       translationEventHandler = translationCalculator.createKeyEventHandler();
-      nodeTracker = new CameraNodeTracker(focusPointTranslation);
-      nodeTrackingTranslate = nodeTracker.getNodeTrackingTranslate();
+      nodeTracker = new CameraTargetTracker(focusPointTranslation);
+      nodeTrackingTranslate = nodeTracker.getTrackingTranslate();
 
       changeCameraPosition(-2.0, 0.7, 1.0);
 
       camera.getTransforms().addAll(nodeTrackingTranslate, focusPointTranslation, cameraOrientation, offsetFromFocusPoint);
 
-      focusPointViz = new Sphere(0.01);
-      PhongMaterial material = new PhongMaterial();
-      material.setDiffuseColor(Color.DARKRED);
-      material.setSpecularColor(Color.RED);
-      focusPointViz.setMaterial(material);
-      focusPointViz.getTransforms().addAll(nodeTrackingTranslate, focusPointTranslation);
+      if (FOCUS_POINT_SHOW)
+      {
+         focusPointViz = new Sphere(0.01);
+         PhongMaterial material = new PhongMaterial();
+         material.setDiffuseColor(Color.DARKRED);
+         material.setSpecularColor(Color.RED);
+         focusPointViz.setMaterial(material);
+         focusPointViz.getTransforms().addAll(nodeTrackingTranslate, focusPointTranslation);
+         offsetFromFocusPoint.zProperty().addListener((o, oldValue, newValue) ->
+         {
+            double sphereRadius = FOCUS_POINT_SIZE * Math.abs(offsetFromFocusPoint.getTz());
+            focusPointViz.setRadius(sphereRadius);
+         });
+      }
+      else
+      {
+         focusPointViz = null;
+      }
 
       setupCameraRotationHandler();
 
-      focusPointResizeAnimation = new AnimationTimer()
-      {
-         @Override
-         public void handle(long now)
-         {
-            double sphereRadius = 0.0025 * Math.abs(offsetFromFocusPoint.getTz());
-            focusPointViz.setRadius(sphereRadius);
-         }
-      };
-      focusPointResizeAnimation.start();
    }
 
    public void changeCameraPosition(double x, double y, double z)
@@ -142,10 +167,12 @@ public class PerspectiveCameraController implements EventHandler<Event>
       Point3D currentFocusPosition = new Point3D();
       currentFocusPosition.set(nodeTrackingTranslate.getX(), nodeTrackingTranslate.getY(), nodeTrackingTranslate.getZ());
       currentFocusPosition.add(focusPointTranslation.getX(), focusPointTranslation.getY(), focusPointTranslation.getZ());
+      double dx = desiredCameraPosition.getX() - currentFocusPosition.getX();
+      double dy = desiredCameraPosition.getY() - currentFocusPosition.getY();
+      double dz = desiredCameraPosition.getZ() - currentFocusPosition.getZ();
 
-      double distanceFromFocusPoint = desiredCameraPosition.distance(currentFocusPosition);
-      offsetFromFocusPoint.setZ(-distanceFromFocusPoint);
-      rotationCalculator.setRotationFromCameraAndFocusPositions(desiredCameraPosition, currentFocusPosition, 0.0);
+      offsetFromFocusPoint.setZ(-EuclidCoreTools.norm(dx, dy, dz));
+      rotationCalculator.setLookDirection(dx, dy, dz, 0.0);
    }
 
    /**
@@ -392,7 +419,6 @@ public class PerspectiveCameraController implements EventHandler<Event>
    {
       cameraRotationEventHandler = null;
       translationCalculator.dispose();
-      focusPointResizeAnimation.stop();
    }
 
    public Sphere getFocusPointViz()
@@ -426,7 +452,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
       return translationCalculator;
    }
 
-   public CameraNodeTracker getNodeTracker()
+   public CameraTargetTracker getNodeTracker()
    {
       return nodeTracker;
    }
