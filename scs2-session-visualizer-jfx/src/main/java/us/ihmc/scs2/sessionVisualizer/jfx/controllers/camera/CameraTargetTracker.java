@@ -6,6 +6,8 @@ import javafx.beans.value.ChangeListener;
 import javafx.scene.Node;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
+import us.ihmc.euclid.tuple3D.Point3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 /**
@@ -20,6 +22,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
  */
 public class CameraTargetTracker
 {
+   public enum TrackingTargetType
+   {
+      Disabled, Node, YoCoordinates
+   };
+
+   private final ObjectProperty<TrackingTargetType> targetType = new SimpleObjectProperty<>(this, "", TrackingTargetType.Disabled);
    private final ObjectProperty<Tuple3DProperty> coordinatesTracked = new SimpleObjectProperty<>(this, "coordinatesTracked", null);
    private final ObjectProperty<Node> nodeTracked = new SimpleObjectProperty<>(this, "nodeTracked", null);
 
@@ -27,12 +35,31 @@ public class CameraTargetTracker
 
    private final ChangeListener<Transform> nodeTrackingListener = (o, oldTransform, newTransform) ->
    {
-      trackingTranslate.setX(newTransform.getTx());
-      trackingTranslate.setY(newTransform.getTy());
-      trackingTranslate.setZ(newTransform.getTz());
+      if (targetType.get() == TrackingTargetType.Node)
+      {
+         trackingTranslate.setX(newTransform.getTx());
+         trackingTranslate.setY(newTransform.getTy());
+         trackingTranslate.setZ(newTransform.getTz());
+      }
    };
 
-   public CameraTargetTracker(Translate cameraFocusTranslate)
+   private final ObservedAnimationTimer coordinatesTrackingAnimation = new ObservedAnimationTimer(getClass().getSimpleName())
+   {
+      @Override
+      public void handleImpl(long now)
+      {
+         Tuple3DProperty tuple = coordinatesTracked.get();
+         if (targetType.get() == TrackingTargetType.YoCoordinates && tuple != null)
+         {
+            Point3D pointInWorld = tuple.toPoint3DInWorld();
+            trackingTranslate.setX(pointInWorld.getX());
+            trackingTranslate.setY(pointInWorld.getY());
+            trackingTranslate.setZ(pointInWorld.getZ());
+         }
+      }
+   };
+
+   public CameraTargetTracker()
    {
       nodeTracked.addListener((o, oldValue, newValue) ->
       {
@@ -43,13 +70,28 @@ public class CameraTargetTracker
 
          if (newValue != null)
          {
-            cameraFocusTranslate.setX(0.0);
-            cameraFocusTranslate.setY(0.0);
-            cameraFocusTranslate.setZ(0.0);
             newValue.localToSceneTransformProperty().addListener(nodeTrackingListener);
             nodeTrackingListener.changed(null, null, newValue.getLocalToSceneTransform());
          }
       });
+
+      coordinatesTracked.addListener((o, oldValue, newValue) ->
+      {
+         if (newValue != null)
+            coordinatesTrackingAnimation.start();
+         else
+            coordinatesTrackingAnimation.stop();
+      });
+   }
+
+   public ObjectProperty<TrackingTargetType> targetTypeProperty()
+   {
+      return targetType;
+   }
+
+   public ObjectProperty<Tuple3DProperty> coordinatesToTrackProperty()
+   {
+      return coordinatesTracked;
    }
 
    public ObjectProperty<Node> nodeToTrackProperty()
