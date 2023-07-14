@@ -30,10 +30,12 @@ import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.Camera3DOptionsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
+import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class MainViewport3DManager implements SingleViewport3DManager
 {
@@ -43,19 +45,12 @@ public class MainViewport3DManager implements SingleViewport3DManager
    private final PerspectiveCamera camera;
    private final PerspectiveCameraController cameraController;
 
-   private final YoManager yoManager;
-   private final YoCompositeSearchManager yoCompositeSearchManager;
-   private final ReferenceFrameManager referenceFrameManager;
-
    public MainViewport3DManager(Group mainView3DRoot,
                                 YoManager yoManager,
                                 YoCompositeSearchManager yoCompositeSearchManager,
                                 ReferenceFrameManager referenceFrameManager)
    {
       rootNode3D = mainView3DRoot;
-      this.yoManager = yoManager;
-      this.yoCompositeSearchManager = yoCompositeSearchManager;
-      this.referenceFrameManager = referenceFrameManager;
 
       // Creating sub-scene
       subScene = new SubScene(rootNode3D, -1, -1, true, SceneAntialiasing.BALANCED);
@@ -84,7 +79,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
          rootNode3D.getChildren().add(focusPointViz);
          focusPointViz.visibleProperty().bind(subScene.focusedProperty());
       }
-      setupContextMenu(cameraController, subScene);
+      setupContextMenu(cameraController, yoCompositeSearchManager, yoManager, referenceFrameManager, subScene);
    }
 
    @Override
@@ -130,7 +125,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraNodeToTrack(Node nodeToTrack)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getNodeTracker().nodeToTrackProperty().set(nodeToTrack));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getTargetTracker().nodeToTrackProperty().set(nodeToTrack));
    }
 
    public void setCameraPosition(double x, double y, double z)
@@ -163,45 +158,66 @@ public class MainViewport3DManager implements SingleViewport3DManager
       });
    }
 
-   static void setupContextMenu(PerspectiveCameraController cameraController, Node viewport)
+   static void setupContextMenu(PerspectiveCameraController cameraController,
+                                YoCompositeSearchManager searchManager,
+                                YoManager yoManager,
+                                ReferenceFrameManager referenceFrameManager,
+                                Node viewport)
    {
-      setupContextMenu(cameraController.getNodeTracker().nodeToTrackProperty(), viewport, node -> true);
+      setupContextMenu(cameraController, searchManager, yoManager, referenceFrameManager, viewport, node -> true);
    }
 
-   static void setupContextMenu(ObjectProperty<Node> nodeTrackedProperty, Node viewport, Predicate<Node> filter)
+   static void setupContextMenu(PerspectiveCameraController cameraController,
+                                YoCompositeSearchManager searchManager,
+                                YoManager yoManager,
+                                ReferenceFrameManager referenceFrameManager,
+                                Node viewport,
+                                Predicate<Node> filter)
    {
+      ObjectProperty<Node> nodeToTrackProperty = cameraController.getTargetTracker().nodeToTrackProperty();
       MenuTools.setupContextMenu(viewport, (owner, event) ->
       {
 
          PickResult pickResult = event.getPickResult();
          Node intersectedNode = pickResult.getIntersectedNode();
-         if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == viewport || intersectedNode == nodeTrackedProperty.get()
+         if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == viewport || intersectedNode == nodeToTrackProperty.get()
              || !filter.test(intersectedNode))
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
-         menuItem.setOnAction(e -> nodeTrackedProperty.set(intersectedNode));
+         menuItem.setOnAction(e -> nodeToTrackProperty.set(intersectedNode));
          return menuItem;
       }, (owner, event) ->
       {
-         if (nodeTrackedProperty.get() == null)
+         if (nodeToTrackProperty.get() == null)
             return null;
-         MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeTrackedProperty.get().getId());
-         menuItem.setOnAction(e -> nodeTrackedProperty.set(null));
+         MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeToTrackProperty.get().getId());
+         menuItem.setOnAction(e -> nodeToTrackProperty.set(null));
          return menuItem;
       }, (owner, event) ->
       {
          MenuItem menuItem = new MenuItem("Camera properties...");
-         menuItem.setOnAction(e -> openCameraPropertiesDialog(viewport));
+         menuItem.setOnAction(e -> openCameraPropertiesDialog(cameraController,
+                                                              searchManager,
+                                                              yoManager.getLinkedRootRegistry(),
+                                                              referenceFrameManager,
+                                                              viewport));
          return menuItem;
       });
    }
 
-   static void openCameraPropertiesDialog(Node viewport)
+   static void openCameraPropertiesDialog(PerspectiveCameraController cameraController,
+                                          YoCompositeSearchManager searchManager,
+                                          LinkedYoRegistry linkedRootRegistry,
+                                          ReferenceFrameManager referenceFrameManager,
+                                          Node viewport)
    {
       try
       {
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.CAMERA3D_OPTIONS_PANE_URL);
          Pane rootPane = loader.load();
+         Camera3DOptionsPaneController controller = loader.getController();
+         controller.initialize(cameraController, searchManager, linkedRootRegistry, referenceFrameManager);
+
          Stage window = new Stage(StageStyle.UTILITY);
          window.setScene(new Scene(rootPane));
          window.addEventHandler(KeyEvent.KEY_PRESSED, e ->

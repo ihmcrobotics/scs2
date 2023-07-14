@@ -36,7 +36,10 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
       }
    };
 
-   public SecondaryViewport3DManager(Group mainView3DRoot)
+   public SecondaryViewport3DManager(Group mainView3DRoot,
+                                     YoManager yoManager,
+                                     YoCompositeSearchManager yoCompositeSearchManager,
+                                     ReferenceFrameManager referenceFrameManager)
    {
       this.rootNode3D = mainView3DRoot;
 
@@ -68,7 +71,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
          rootNode3D.getChildren().add(focusPointViz);
          focusPointViz.visibleProperty().bind(cameraView.focusedProperty());
       }
-      MainViewport3DManager.setupContextMenu(cameraController, cameraView);
+      MainViewport3DManager.setupContextMenu(cameraController, yoCompositeSearchManager, yoManager, referenceFrameManager, cameraView);
 
       snapshotParameters.setCamera(camera);
       snapshotParameters.setDepthBuffer(true);

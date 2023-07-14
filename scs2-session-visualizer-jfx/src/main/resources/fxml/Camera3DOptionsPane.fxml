@@ -23,25 +23,56 @@
             <Separator HBox.hgrow="ALWAYS" />
          </children>
       </HBox>
-      <GridPane hgap="5.0" vgap="5.0">
-        <columnConstraints>
-          <ColumnConstraints hgrow="NEVER" />
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
+      <HBox>
          <children>
-            <JFXRadioButton contentDisplay="TEXT_ONLY" graphicTextGap="0.0" text="Track coordinates" />
-            <JFXRadioButton text="Track node" GridPane.rowIndex="1" />
-            <JFXTextField fx:id="trackingNodeTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <fx:include fx:id="yoCoordinate"  source="editor/YoCompositeEditorPane.fxml" VBox.vgrow="ALWAYS" />
+            <GridPane alignment="CENTER_LEFT" hgap="5.0" vgap="5.0">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="NEVER" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+                  <ColumnConstraints hgrow="NEVER" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints vgrow="SOMETIMES" />
+                  <RowConstraints vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <JFXRadioButton fx:id="trackCoordinatesButton" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" text="Track coordinates" />
+                  <fx:include fx:id="yoCoordinateEditor" source="editor/YoCompositeEditorPane.fxml" GridPane.columnIndex="1" VBox.vgrow="ALWAYS" />
+                  <JFXRadioButton fx:id="trackNodeButton" text="Track node" GridPane.rowIndex="1" />
+                  <JFXTextField fx:id="trackingNodeTextField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </GridPane>
+            <Separator orientation="VERTICAL" />
+            <GridPane hgap="5.0" vgap="5.0" HBox.hgrow="NEVER">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label text="Current world coordinates:" GridPane.columnSpan="2147483647" />
+                  <Label text="x" GridPane.rowIndex="1" />
+                  <JFXTextField editable="false" GridPane.columnIndex="1" GridPane.rowIndex="1" fx:id="xFocalPointCurrentTextField" />
+                  <Label text="y" GridPane.rowIndex="2" />
+                  <JFXTextField fx:id="yFocalPointCurrentTextField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Label text="z" GridPane.rowIndex="3" />
+                  <JFXTextField fx:id="zFocalPointCurrentTextField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </GridPane>
          </children>
-         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding>
-      </GridPane>
+      </HBox>
       <HBox alignment="CENTER" spacing="10.0">
          <children>
             <Separator HBox.hgrow="ALWAYS" />
@@ -50,44 +81,73 @@
          </children>
       </HBox>
       <JFXComboBox fx:id="cameraPositionComboxBox" maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" />
-      <GridPane hgap="5.0" vgap="5.0">
-         <columnConstraints>
-            <ColumnConstraints halignment="RIGHT" hgrow="NEVER" minWidth="50.0" />
-            <ColumnConstraints hgrow="SOMETIMES" />
-            <ColumnConstraints hgrow="NEVER" />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints vgrow="NEVER" />
-            <RowConstraints vgrow="NEVER" />
-            <RowConstraints vgrow="NEVER" />
-         </rowConstraints>
+      <HBox spacing="5.0">
          <children>
-            <Label fx:id="cameraLabel1" alignment="CENTER_RIGHT" text="x" />
-            <JFXTextField GridPane.columnIndex="1" />
-            <ImageView fx:id="nameValidImageView1" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2">
-               <image>
-                  <Image url="@../icons/invalid-icon.png" />
-               </image>
-            </ImageView>
-            <Label alignment="CENTER_RIGHT" text="y" GridPane.rowIndex="1" />
-            <JFXTextField GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <JFXTextField GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <ImageView fx:id="nameValidImageView21" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="2">
-               <image>
-                  <Image url="@../icons/invalid-icon.png" />
-               </image>
-            </ImageView>
-            <ImageView fx:id="nameValidImageView31" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="1">
-               <image>
-                  <Image url="@../icons/invalid-icon.png" />
-               </image>
-            </ImageView>
-            <Label alignment="CENTER_RIGHT" text="z" GridPane.rowIndex="2" />
+            <GridPane hgap="5.0" vgap="5.0" HBox.hgrow="SOMETIMES">
+               <columnConstraints>
+                  <ColumnConstraints halignment="RIGHT" hgrow="NEVER" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+                  <ColumnConstraints hgrow="NEVER" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints vgrow="SOMETIMES" />
+                  <RowConstraints vgrow="SOMETIMES" />
+                  <RowConstraints vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label fx:id="cameraLabel1" alignment="CENTER_RIGHT" text="x" />
+                  <JFXTextField GridPane.columnIndex="1" />
+                  <ImageView fx:id="nameValidImageView1" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2">
+                     <image>
+                        <Image url="@../icons/invalid-icon.png" />
+                     </image>
+                  </ImageView>
+                  <Label alignment="CENTER_RIGHT" text="y" GridPane.rowIndex="1" />
+                  <JFXTextField GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <ImageView fx:id="nameValidImageView31" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                     <image>
+                        <Image url="@../icons/invalid-icon.png" />
+                     </image>
+                  </ImageView>
+                  <Label alignment="CENTER_RIGHT" text="z" GridPane.rowIndex="2" />
+                  <JFXTextField GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <ImageView fx:id="nameValidImageView21" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                     <image>
+                        <Image url="@../icons/invalid-icon.png" />
+                     </image>
+                  </ImageView>
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </GridPane>
+            <Separator orientation="VERTICAL" HBox.hgrow="NEVER" />
+            <GridPane hgap="5.0" vgap="5.0" HBox.hgrow="NEVER">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label text="Current world coordinates:" GridPane.columnSpan="2147483647" />
+                  <Label text="x" GridPane.rowIndex="1" />
+                  <JFXTextField editable="false" GridPane.columnIndex="1" GridPane.rowIndex="1" fx:id="xCameraCurrentTextField" />
+                  <Label text="y" GridPane.rowIndex="2" />
+                  <JFXTextField fx:id="yCameraCurrentTextField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Label text="z" GridPane.rowIndex="3" />
+                  <JFXTextField fx:id="zCameraCurrentTextField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </GridPane>
          </children>
-         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding>
-      </GridPane>
+      </HBox>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

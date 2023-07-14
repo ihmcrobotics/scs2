@@ -28,7 +28,6 @@ import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import us.ihmc.commons.Epsilons;
 import us.ihmc.commons.MathTools;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
@@ -37,7 +36,6 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 /**
  * This class provides a simple controller for a JavaFX {@link PerspectiveCamera}. The control is
@@ -65,15 +63,10 @@ public class PerspectiveCameraController implements EventHandler<Event>
                                                                                                           "SCS2_GUI_CAMERA_FOCUS_SIZE",
                                                                                                           0.0025);
 
-   
-
    private final Sphere focusPointViz;
 
-   /**
-    * Translation updated by {@link CameraTargetTracker} to track a {@link Node}, {@link ReferenceFrame},
-    * and/or {@link YoVariable}.
-    */
-   private final Translate nodeTrackingTranslate;
+   /** Translation updated by {@link CameraTargetTracker} to track a target. */
+   private final Translate targetTrackingTranslate;
    /**
     * Additional translation offset maintained by {@link CameraTranslationCalculator} to allow
     * translating freely even when tracking something.
@@ -87,7 +80,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
    /** Translation to control the distance separating the camera from the focus point. */
    private final Translate offsetFromFocusPoint = new Translate(0.0, 0.0, -DEFAULT_DISTANCE_FROM_FOCUS_POINT);
 
-   private final CameraTargetTracker nodeTracker;
+   private final CameraTargetTracker targetTracker = new CameraTargetTracker();
    private final CameraTranslationCalculator translationCalculator;
    private final CameraRotationCalculator rotationCalculator;
    private final CameraZoomCalculator zoomCalculator = new CameraZoomCalculator();
@@ -127,12 +120,31 @@ public class PerspectiveCameraController implements EventHandler<Event>
       translationCalculator.setZoom(zoomCalculator.zoomProperty());
       focusPointTranslation = translationCalculator.getTranslation();
       translationEventHandler = translationCalculator.createKeyEventHandler();
-      nodeTracker = new CameraTargetTracker(focusPointTranslation);
-      nodeTrackingTranslate = nodeTracker.getTrackingTranslate();
+      targetTrackingTranslate = targetTracker.getTrackingTranslate();
+      targetTracker.nodeToTrackProperty().addListener((o, oldValue, newValue) ->
+      {
+         // Reset the focus translation whenever the target gets updated
+         if (newValue != null)
+         {
+            focusPointTranslation.setX(0.0);
+            focusPointTranslation.setY(0.0);
+            focusPointTranslation.setZ(0.0);
+         }
+      });
+      targetTracker.coordinatesToTrackProperty().addListener((o, oldValue, newValue) ->
+      {
+         // Reset the focus translation whenever the target gets updated
+         if (newValue != null)
+         {
+            focusPointTranslation.setX(0.0);
+            focusPointTranslation.setY(0.0);
+            focusPointTranslation.setZ(0.0);
+         }
+      });
 
       changeCameraPosition(-2.0, 0.7, 1.0);
 
-      camera.getTransforms().addAll(nodeTrackingTranslate, focusPointTranslation, cameraOrientation, offsetFromFocusPoint);
+      camera.getTransforms().addAll(targetTrackingTranslate, focusPointTranslation, cameraOrientation, offsetFromFocusPoint);
 
       if (FOCUS_POINT_SHOW)
       {
@@ -141,7 +153,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
          material.setDiffuseColor(Color.DARKRED);
          material.setSpecularColor(Color.RED);
          focusPointViz.setMaterial(material);
-         focusPointViz.getTransforms().addAll(nodeTrackingTranslate, focusPointTranslation);
+         focusPointViz.getTransforms().addAll(targetTrackingTranslate, focusPointTranslation);
          offsetFromFocusPoint.zProperty().addListener((o, oldValue, newValue) ->
          {
             double sphereRadius = FOCUS_POINT_SIZE * Math.abs(offsetFromFocusPoint.getTz());
@@ -165,7 +177,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
    public void changeCameraPosition(Point3DReadOnly desiredCameraPosition)
    {
       Point3D currentFocusPosition = new Point3D();
-      currentFocusPosition.set(nodeTrackingTranslate.getX(), nodeTrackingTranslate.getY(), nodeTrackingTranslate.getZ());
+      currentFocusPosition.set(targetTrackingTranslate.getX(), targetTrackingTranslate.getY(), targetTrackingTranslate.getZ());
       currentFocusPosition.add(focusPointTranslation.getX(), focusPointTranslation.getY(), focusPointTranslation.getZ());
       double dx = desiredCameraPosition.getX() - currentFocusPosition.getX();
       double dy = desiredCameraPosition.getY() - currentFocusPosition.getY();
@@ -217,8 +229,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
     */
    public void changeFocusPosition(Point3DReadOnly desiredFocusPosition, boolean translateCamera)
    {
-      nodeTracker.nodeToTrackProperty().set(null);
-      nodeTracker.resetTranslate();
+      targetTracker.nodeToTrackProperty().set(null);
+      targetTracker.resetTranslate();
 
       if (translateCamera)
       {
@@ -253,7 +265,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
       newFocusPointTranslation.setX(-cameraOrientation.getMxz() * offsetFromFocusPoint.getZ());
       newFocusPointTranslation.setY(-cameraOrientation.getMyz() * offsetFromFocusPoint.getZ());
       newFocusPointTranslation.setZ(-cameraOrientation.getMzz() * offsetFromFocusPoint.getZ());
-      newFocusPointTranslation.sub(nodeTrackingTranslate.getX(), nodeTrackingTranslate.getY(), nodeTrackingTranslate.getZ());
+      newFocusPointTranslation.sub(targetTrackingTranslate.getX(), targetTrackingTranslate.getY(), targetTrackingTranslate.getZ());
       newFocusPointTranslation.add(currentCameraPosition);
       focusPointTranslation.setX(newFocusPointTranslation.getX());
       focusPointTranslation.setY(newFocusPointTranslation.getY());
@@ -342,8 +354,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
                   return;
                javafx.geometry.Point3D localPoint = pickResult.getIntersectedPoint();
                javafx.geometry.Point3D scenePoint = intersectedNode.getLocalToSceneTransform().transform(localPoint);
-               nodeTracker.nodeToTrackProperty().set(null);
-               nodeTracker.resetTranslate();
+               targetTracker.nodeToTrackProperty().set(null);
+               targetTracker.resetTranslate();
 
                if (animationDuration > 0.0)
                {
@@ -426,15 +438,9 @@ public class PerspectiveCameraController implements EventHandler<Event>
       return focusPointViz;
    }
 
-   public void prependTransform(Transform transform)
+   public PerspectiveCamera getCamera()
    {
-      camera.getTransforms().add(0, transform);
-      focusPointViz.getTransforms().add(0, transform);
-   }
-
-   public Translate getTranslate()
-   {
-      return focusPointTranslation;
+      return camera;
    }
 
    public CameraZoomCalculator getZoomCalculator()
@@ -452,8 +458,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
       return translationCalculator;
    }
 
-   public CameraTargetTracker getNodeTracker()
+   public CameraTargetTracker getTargetTracker()
    {
-      return nodeTracker;
+      return targetTracker;
    }
 }

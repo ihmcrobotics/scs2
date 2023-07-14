@@ -1,34 +1,40 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
+import org.apache.commons.lang3.mutable.MutableBoolean;
+
+import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
+import javafx.scene.transform.Transform;
+import javafx.scene.transform.TransformChangedEvent;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraTargetTracker;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraTargetTracker.TrackingTargetType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.ReferenceFrameSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class Camera3DOptionsPaneController
 {
-   private enum Tracking
-   {
-      Frame, Node
-   };
-
    @FXML
-   private TextField focalPointXTextField, focalPointYTextField, focalPointZTextField;
+   private RadioButton trackCoordinatesButton, trackNodeButton;
    @FXML
-   private ImageView focalPointXValidImageView, focalPointYValidImageView, focalPointZValidImageView, focalPointTrackingValidImageView;
+   private YoCompositeEditorPaneController yoCoordinateEditorController;
    @FXML
-   private ComboBox<Tracking> trackingComboBox;
+   private TextField trackingNodeTextField;
    @FXML
-   private TextField trackingFrameTextField, trackingNodeTextField; // Depending on the comboBox state, we flip which TextField is visible
+   private TextField xFocalPointCurrentTextField, yFocalPointCurrentTextField, zFocalPointCurrentTextField;
 
    private enum CameraPositionType
    {
@@ -70,48 +76,98 @@ public class Camera3DOptionsPaneController
    @FXML
    private ImageView cameraValidImageView3;
 
-   private DoubleSearchField[] yoFocalPointFields = new DoubleSearchField[3];
-   private ReferenceFrameSearchField trackingFrameField;
-
-   public Camera3DOptionsPaneController()
-   {
-   }
+   @FXML
+   private TextField xCameraCurrentTextField, yCameraCurrentTextField, zCameraCurrentTextField;
 
    public void initialize(PerspectiveCameraController cameraController,
                           YoCompositeSearchManager searchManager,
                           LinkedYoRegistry linkedRootRegistry,
                           ReferenceFrameManager referenceFrameManager)
    {
-      yoFocalPointFields[0] = new DoubleSearchField(focalPointXTextField, searchManager, linkedRootRegistry, focalPointXValidImageView);
-      yoFocalPointFields[1] = new DoubleSearchField(focalPointYTextField, searchManager, linkedRootRegistry, focalPointYValidImageView);
-      yoFocalPointFields[2] = new DoubleSearchField(focalPointZTextField, searchManager, linkedRootRegistry, focalPointZValidImageView);
-      trackingComboBox.setItems(FXCollections.observableArrayList(Tracking.values()));
+      ToggleGroup toggleGroup = new ToggleGroup();
+      toggleGroup.getToggles().addAll(trackCoordinatesButton, trackNodeButton); // TODO initialize which one is selected
 
-      trackingFrameField = new ReferenceFrameSearchField(trackingFrameTextField, referenceFrameManager, focalPointTrackingValidImageView);
-      trackingNodeTextField.setEditable(false); // We use this field to provide info about the currently selected Node
-      trackingNodeTextField.setTooltip(new Tooltip("To select a node to track, right click on it in the 3D view and select in the context menu."));
+      CameraTargetTracker targetTracker = cameraController.getTargetTracker();
+      ObjectProperty<TrackingTargetType> targetTypeProperty = targetTracker.targetTypeProperty();
 
-      trackingComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+      trackNodeButton.setSelected(targetTypeProperty.get() == TrackingTargetType.Node);
+      trackCoordinatesButton.setSelected(targetTypeProperty.get() == TrackingTargetType.YoCoordinates);
+
+      MutableBoolean updatingTarget = new MutableBoolean(false);
+
+      toggleGroup.selectedToggleProperty().addListener((o, oldValue, newValue) ->
       {
-         switch (newValue)
-         {
-            case Frame:
-               trackingFrameTextField.setVisible(true);
-               focalPointTrackingValidImageView.setVisible(true);
-               trackingNodeTextField.setVisible(false);
-               break;
-            case Node:
-               trackingFrameTextField.setVisible(false);
-               focalPointTrackingValidImageView.setVisible(false);
-               trackingNodeTextField.setVisible(true);
-               break;
-            default:
-               throw new IllegalStateException("Unexpected value: " + newValue);
-         }
+         if (updatingTarget.booleanValue())
+            return;
+         updatingTarget.setTrue();
+
+         if (newValue == trackNodeButton)
+            targetTypeProperty.set(TrackingTargetType.Node);
+         else if (newValue == trackCoordinatesButton)
+            targetTypeProperty.set(TrackingTargetType.YoCoordinates);
+         else
+            targetTypeProperty.set(TrackingTargetType.Disabled);
+
+         updatingTarget.setFalse();
       });
 
-      trackingComboBox.getSelectionModel().select(Tracking.Node);
+      targetTypeProperty.addListener((o, oldValue, newValue) ->
+      {
+         if (updatingTarget.booleanValue())
+            return;
+         updatingTarget.setTrue();
+
+         trackNodeButton.setSelected(targetTypeProperty.get() == TrackingTargetType.Node);
+         trackCoordinatesButton.setSelected(targetTypeProperty.get() == TrackingTargetType.YoCoordinates);
+
+         updatingTarget.setFalse();
+      });
+
+      cameraController.getFocusPointViz().localToSceneTransformProperty().addListener((o, oldValue, newValue) ->
+      {
+         xFocalPointCurrentTextField.setText(Double.toString(newValue.getTx()));
+         yFocalPointCurrentTextField.setText(Double.toString(newValue.getTy()));
+         zFocalPointCurrentTextField.setText(Double.toString(newValue.getTz()));
+      });
+
+      cameraController.getCamera().localToSceneTransformProperty().addListener((o, oldValue, newValue) ->
+      {
+         xCameraCurrentTextField.setText(Double.toString(newValue.getTx()));
+         yCameraCurrentTextField.setText(Double.toString(newValue.getTy()));
+         zCameraCurrentTextField.setText(Double.toString(newValue.getTz()));
+      });
+
+      YoCompositeCollection yoTuple3DCollection = searchManager.getYoTuple3DCollection();
+      if (yoTuple3DCollection == null)
+      {
+         yoCoordinateEditorController.getMainPane().setDisable(true);
+         // Happens when no session is loaded
+      }
+      else
+      {
+         ObjectProperty<Tuple3DProperty> coordinatesToTrack = targetTracker.coordinatesToTrackProperty();
+         yoCoordinateEditorController.initialize(searchManager, referenceFrameManager, linkedRootRegistry, yoTuple3DCollection, true);
+         yoCoordinateEditorController.setCompositeName("Tracking Coordinates");
+         yoCoordinateEditorController.getMainPane().disableProperty().bind(trackCoordinatesButton.selectedProperty().not());
+         if (coordinatesToTrack.get() != null)
+            yoCoordinateEditorController.setInput(coordinatesToTrack.get());
+
+         yoCoordinateEditorController.addInputListener((coords, frame) -> coordinatesToTrack.set(new Tuple3DProperty(frame, coords)));
+      }
+
+      trackingNodeTextField.setEditable(false); // We use this field to provide info about the currently selected Node
+      trackingNodeTextField.setTooltip(new Tooltip("To select a node to track, right click on it in the 3D view and select in the context menu."));
+      trackingNodeTextField.disableProperty().bind(trackNodeButton.selectedProperty().not());
+
+      ObjectProperty<Node> nodeToTrack = targetTracker.nodeToTrackProperty();
+      trackingNodeTextField.setText(nodeToTrack.get() == null ? "null" : nodeToTrack.get().getId());
+
+      nodeToTrack.addListener((o, oldValue, newValue) ->
+      {
+         trackingNodeTextField.setText(newValue == null ? "null" : newValue.getId());
+      });
 
       cameraPositionComboxBox.setItems(FXCollections.observableArrayList(CameraPositionType.values()));
+      // TODO setup the position controls
    }
 }
