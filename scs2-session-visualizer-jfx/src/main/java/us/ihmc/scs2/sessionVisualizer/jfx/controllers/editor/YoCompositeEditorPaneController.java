@@ -75,9 +75,21 @@ public class YoCompositeEditorPaneController
 
    public void initialize(SessionVisualizerToolkit toolkit, YoCompositeCollection yoCompositeCollection, boolean setupReferenceFrameFields)
    {
-      YoCompositeSearchManager searchManager = toolkit.getYoCompositeSearchManager();
+      initialize(toolkit.getYoCompositeSearchManager(),
+                 toolkit.getReferenceFrameManager(),
+                 toolkit.getYoManager().getLinkedRootRegistry(),
+                 yoCompositeCollection,
+                 setupReferenceFrameFields);
+   }
+
+   public void initialize(YoCompositeSearchManager searchManager,
+                          ReferenceFrameManager referenceFrameManager,
+                          LinkedYoRegistry linkedRootRegistry,
+                          YoCompositeCollection yoCompositeCollection,
+                          boolean setupReferenceFrameFields)
+   {
       yoCompositePattern = yoCompositeCollection.getPattern();
-      referenceFrameManager = toolkit.getReferenceFrameManager();
+      this.referenceFrameManager = referenceFrameManager;
 
       numberOfComponents = yoCompositePattern.getComponentIdentifiers() != null ? yoCompositePattern.getComponentIdentifiers().length : 1;
 
@@ -90,7 +102,6 @@ public class YoCompositeEditorPaneController
 
       for (int i = 0; i < numberOfComponents; i++)
       {
-         LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
          DoubleSearchField yoComponentTextField = new DoubleSearchField(componentSearchTextFields[i],
                                                                         searchManager,
                                                                         linkedRootRegistry,

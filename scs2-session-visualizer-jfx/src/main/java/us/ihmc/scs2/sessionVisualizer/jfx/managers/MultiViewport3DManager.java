@@ -9,14 +9,17 @@ import javafx.scene.Group;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class MultiViewport3DManager
 {
    private final GridPane container = new GridPane();
    private final Group mainView3DRoot;
 
-   private MainViewport3DManager mainViewport;
+   private final MainViewport3DManager mainViewport;
+   private final YoManager yoManager;
+   private final YoCompositeSearchManager yoCompositeSearchManager;
+   private final ReferenceFrameManager referenceFrameManager;
+
    private final ObservableList<SingleViewport3DManager> allViewports = FXCollections.observableArrayList();
    private final IntegerProperty numberOfColumns = new SimpleIntegerProperty(this, "numberOfColumns", 2);
 
@@ -26,6 +29,9 @@ public class MultiViewport3DManager
                                  ReferenceFrameManager referenceFrameManager)
    {
       this.mainView3DRoot = mainView3DRoot;
+      this.yoManager = yoManager;
+      this.yoCompositeSearchManager = yoCompositeSearchManager;
+      this.referenceFrameManager = referenceFrameManager;
 
       allViewports.addListener((ListChangeListener<SingleViewport3DManager>) change -> refreshLayout());
       numberOfColumns.addListener((o, oldValue, newValue) -> refreshLayout());
@@ -60,7 +66,7 @@ public class MultiViewport3DManager
 
    public void addSecondaryViewport()
    {
-      allViewports.add(new SecondaryViewport3DManager(mainView3DRoot));
+      allViewports.add(new SecondaryViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager));
    }
 
    public MainViewport3DManager getMainViewport()
