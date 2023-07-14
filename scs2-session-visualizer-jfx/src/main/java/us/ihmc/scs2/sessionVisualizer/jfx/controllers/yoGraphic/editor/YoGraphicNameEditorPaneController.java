@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
 
 import org.controlsfx.control.textfield.TextFields;
 

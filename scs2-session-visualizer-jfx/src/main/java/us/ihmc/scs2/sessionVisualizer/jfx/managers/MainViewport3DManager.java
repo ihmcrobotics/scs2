@@ -79,8 +79,11 @@ public class MainViewport3DManager implements SingleViewport3DManager
       subScene.addEventHandler(Event.ANY, cameraController);
 
       Sphere focusPointViz = cameraController.getFocusPointViz();
-      rootNode3D.getChildren().add(focusPointViz);
-      focusPointViz.visibleProperty().bind(subScene.focusedProperty());
+      if (focusPointViz != null)
+      {
+         rootNode3D.getChildren().add(focusPointViz);
+         focusPointViz.visibleProperty().bind(subScene.focusedProperty());
+      }
       setupContextMenu(cameraController, subScene);
    }
 
