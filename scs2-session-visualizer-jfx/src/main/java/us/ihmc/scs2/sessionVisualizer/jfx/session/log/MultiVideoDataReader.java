@@ -13,7 +13,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
 public class MultiVideoDataReader
 {
-   private final List<VideoDataReader> readers = new ArrayList<>();
+   private final List<BytedecoVideoReader> readers = new ArrayList<>();
    private final BackgroundExecutorManager backgroundExecutorManager;
    private Future<?> currentTask = null;
 
@@ -27,7 +27,7 @@ public class MultiVideoDataReader
          Camera camera = cameras.get(i);
          try
          {
-            VideoDataReader reader = new VideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
+            BytedecoVideoReader reader = new BytedecoVideoReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
             readers.add(reader);
          }
          catch (IOException e)
@@ -54,7 +54,7 @@ public class MultiVideoDataReader
 
       for (int i = 0; i < readers.size(); i++)
       {
-         VideoDataReader reader = readers.get(i);
+         BytedecoVideoReader reader = readers.get(i);
          Camera camera = reader.getCamera();
 
          if (progressConsumer != null)
@@ -76,7 +76,7 @@ public class MultiVideoDataReader
       return readers.size();
    }
 
-   public List<VideoDataReader> getReaders()
+   public List<BytedecoVideoReader> getReaders()
    {
       return readers;
    }

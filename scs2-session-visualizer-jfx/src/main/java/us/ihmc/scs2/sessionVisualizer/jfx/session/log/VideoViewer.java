@@ -26,9 +26,11 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.JavaFXFrameConverter;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader.FrameData;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.log.BytedecoVideoReader.FrameData;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class VideoViewer
@@ -49,12 +51,12 @@ public class VideoViewer
 
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
-   private final VideoDataReader reader;
+   private final BytedecoVideoReader reader;
    private final double defaultThumbnailSize;
 
    private final ObjectProperty<Pane> imageViewRootPane = new SimpleObjectProperty<>(this, "imageViewRootPane", null);
 
-   public VideoViewer(Window owner, VideoDataReader reader, double defaultThumbnailSize)
+   public VideoViewer(Window owner, BytedecoVideoReader reader, double defaultThumbnailSize)
    {
       this.reader = reader;
       this.defaultThumbnailSize = defaultThumbnailSize;
@@ -194,25 +196,27 @@ public class VideoViewer
 
    public void update()
    {
-      FrameData currentFrameData = reader.pollCurrentFrame();
+//      FrameData currentFrameData = reader.pollCurrentFrame();
+      Frame currentFrame = reader.getFrame();
 
-      if (currentFrameData == null)
+      if (currentFrame == null)
          return;
 
-      WritableImage currentFrame = currentFrameData.frame;
+
+      JavaFXFrameConverter frameConverter = new JavaFXFrameConverter();
 
       thumbnailContainer.setPrefWidth(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize);
-      thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * currentFrame.getHeight() / currentFrame.getWidth());
+      thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * reader.getImageHeight()/ reader.getImageWidth());
 
-      thumbnail.setImage(currentFrame);
+      thumbnail.setImage(frameConverter.convert(currentFrame));
 
       if (updateVideoView.get())
       {
-         videoView.setImage(currentFrame);
-         queryRobotTimestampLabel.setText(Long.toString(currentFrameData.queryRobotTimestamp));
-         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
-         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
-         demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
+         videoView.setImage(frameConverter.convert(currentFrame));
+//         queryRobotTimestampLabel.setText(Long.toString(currentFrameData.queryRobotTimestamp));
+//         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
+//         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+//         demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
 
          if (imageViewRootPane.get() != null)
          {
