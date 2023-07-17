@@ -9,6 +9,8 @@ import javafx.scene.Group;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 
 public class MultiViewport3DManager
 {
@@ -38,6 +40,27 @@ public class MultiViewport3DManager
 
       mainViewport = new MainViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager);
       allViewports.add(mainViewport);
+   }
+
+   // TODO Only available for the main viewport for now, need to expand this.
+   public void submitRequest(Camera3DRequest request)
+   {
+      if (request.getTrackingTargetType() == null)
+         return;
+      switch (request.getTrackingTargetType())
+      {
+         case Node:
+            mainViewport.setCameraNodeToTrack(request.getNode());
+            break;
+         case YoCoordinates:
+            mainViewport.setCameraCoordinatesToTrack(request.getCoordinatesToTrack());
+            break;
+         case Disabled:
+            mainViewport.setCameraTargetTypeToTrack(TrackingTargetType.Disabled);
+            break;
+         default:
+            throw new IllegalStateException("Unexpected target type: " + request.getTrackingTargetType());
+      }
    }
 
    public void refreshLayout()

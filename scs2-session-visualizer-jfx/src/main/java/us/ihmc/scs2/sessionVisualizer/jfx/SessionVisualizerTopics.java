@@ -41,7 +41,7 @@ public class SessionVisualizerTopics
    // GUI internal topics:
    private Topic<Boolean> disableUserControls;
    private Topic<SceneVideoRecordingRequest> sceneVideoRecordingRequest;
-   private Topic<CameraObjectTrackingRequest> cameraTrackObject;
+   private Topic<Camera3DRequest> camera3DRequest;
    private Topic<Object> takeSnapshot;
    private Topic<Object> registerRecordable;
    private Topic<Object> forgetRecordable;
@@ -131,7 +131,7 @@ public class SessionVisualizerTopics
    {
       disableUserControls = SessionVisualizerMessagerAPI.DisableUserControls;
       sceneVideoRecordingRequest = SessionVisualizerMessagerAPI.SceneVideoRecordingRequest;
-      cameraTrackObject = SessionVisualizerMessagerAPI.CameraTrackObject;
+      camera3DRequest = SessionVisualizerMessagerAPI.Camera3DRequest;
       takeSnapshot = SessionVisualizerMessagerAPI.TakeSnapshot;
       registerRecordable = SessionVisualizerMessagerAPI.RegisterRecordable;
       forgetRecordable = SessionVisualizerMessagerAPI.ForgetRecordable;
@@ -231,9 +231,9 @@ public class SessionVisualizerTopics
       return sceneVideoRecordingRequest;
    }
 
-   public Topic<CameraObjectTrackingRequest> getCameraTrackObject()
+   public Topic<Camera3DRequest> getCamera3DRequest()
    {
-      return cameraTrackObject;
+      return camera3DRequest;
    }
 
    public Topic<Object> getTakeSnapshot()

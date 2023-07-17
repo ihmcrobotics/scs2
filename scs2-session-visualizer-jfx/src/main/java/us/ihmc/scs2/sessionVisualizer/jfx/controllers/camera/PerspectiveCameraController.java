@@ -36,6 +36,8 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 /**
  * This class provides a simple controller for a JavaFX {@link PerspectiveCamera}. The control is
@@ -65,10 +67,10 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
    private final Sphere focusPointViz;
 
-   /** Translation updated by {@link CameraTargetTracker} to track a target. */
+   /** Translation updated by {@link CameraFocalPointTargetTracker} to track a target. */
    private final Translate targetTrackingTranslate;
    /**
-    * Additional translation offset maintained by {@link CameraTranslationCalculator} to allow
+    * Additional translation offset maintained by {@link CameraFocalPointHandler} to allow
     * translating freely even when tracking something.
     */
    private final Translate focusPointTranslation;
@@ -80,10 +82,12 @@ public class PerspectiveCameraController implements EventHandler<Event>
    /** Translation to control the distance separating the camera from the focus point. */
    private final Translate offsetFromFocusPoint = new Translate(0.0, 0.0, -DEFAULT_DISTANCE_FROM_FOCUS_POINT);
 
-   private final CameraTargetTracker targetTracker = new CameraTargetTracker();
-   private final CameraTranslationCalculator translationCalculator;
-   private final CameraRotationCalculator rotationCalculator;
+   private final CameraFocalPointTargetTracker targetTracker = new CameraFocalPointTargetTracker();
+   private final CameraFocalPointHandler translationCalculator;
    private final CameraZoomCalculator zoomCalculator = new CameraZoomCalculator();
+   private final CameraRotationCalculator rotationCalculator;
+
+   
 
    private final EventHandler<ScrollEvent> zoomEventHandler = zoomCalculator.createScrollEventHandler();
    /** For rotating around the focus point. */
@@ -91,6 +95,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
    private final EventHandler<KeyEvent> translationEventHandler;
 
    private final PerspectiveCamera camera;
+
+   private final ObservedAnimationTimer updater;
 
    public PerspectiveCameraController(ReadOnlyDoubleProperty sceneWidthProperty,
                                       ReadOnlyDoubleProperty sceneHeightProperty,
@@ -114,7 +120,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
       cameraOrientation = rotationCalculator.getRotation();
       orbitalRotationEventHandler = rotationCalculator.createMouseEventHandler(sceneWidthProperty, sceneHeightProperty);
 
-      translationCalculator = new CameraTranslationCalculator(up);
+      translationCalculator = new CameraFocalPointHandler(up);
       translationCalculator.fastModifierPredicateProperty().set(event -> event.isShiftDown());
       translationCalculator.setCameraOrientation(cameraOrientation);
       translationCalculator.setZoom(zoomCalculator.zoomProperty());
@@ -125,21 +131,13 @@ public class PerspectiveCameraController implements EventHandler<Event>
       {
          // Reset the focus translation whenever the target gets updated
          if (newValue != null)
-         {
-            focusPointTranslation.setX(0.0);
-            focusPointTranslation.setY(0.0);
-            focusPointTranslation.setZ(0.0);
-         }
+            JavaFXMissingTools.zero(focusPointTranslation);
       });
       targetTracker.coordinatesToTrackProperty().addListener((o, oldValue, newValue) ->
       {
          // Reset the focus translation whenever the target gets updated
          if (newValue != null)
-         {
-            focusPointTranslation.setX(0.0);
-            focusPointTranslation.setY(0.0);
-            focusPointTranslation.setZ(0.0);
-         }
+            JavaFXMissingTools.zero(focusPointTranslation);
       });
 
       changeCameraPosition(-2.0, 0.7, 1.0);
@@ -431,6 +429,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
    {
       cameraRotationEventHandler = null;
       translationCalculator.dispose();
+      targetTracker.dispose();
    }
 
    public Sphere getFocusPointViz()
@@ -453,12 +452,12 @@ public class PerspectiveCameraController implements EventHandler<Event>
       return rotationCalculator;
    }
 
-   public CameraTranslationCalculator getTranslationCalculator()
+   public CameraFocalPointHandler getTranslationCalculator()
    {
       return translationCalculator;
    }
 
-   public CameraTargetTracker getTargetTracker()
+   public CameraFocalPointTargetTracker getTargetTracker()
    {
       return targetTracker;
    }
