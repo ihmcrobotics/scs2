@@ -54,20 +54,39 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
 public class JavaFXMissingTools
 {
+   public static void zero(Translate translate)
+   {
+      translate.setX(0.0);
+      translate.setY(0.0);
+      translate.setZ(0.0);
+   }
+
+   public static void setTranslate(Translate translateToPack, double x, double y, double z)
+   {
+      translateToPack.setX(x);
+      translateToPack.setY(y);
+      translateToPack.setZ(z);
+   }
+
    public static void addEquals(Translate translateToModify, Tuple2DReadOnly offset)
    {
       translateToModify.setX(translateToModify.getX() + offset.getX());
       translateToModify.setY(translateToModify.getY() + offset.getY());
    }
 
-   public static void addEquals(Translate translateToModify, Tuple3DBasics offset)
+   public static void addEquals(Translate translateToModify, Tuple3DReadOnly offset)
    {
-      translateToModify.setX(translateToModify.getX() + offset.getX());
-      translateToModify.setY(translateToModify.getY() + offset.getY());
-      translateToModify.setZ(translateToModify.getZ() + offset.getZ());
+      addEquals(translateToModify, offset.getX(), offset.getY(), offset.getZ());
    }
 
-   public static void subEquals(Translate translateToModify, Tuple3DBasics offset)
+   public static void addEquals(Translate translateToModify, double dx, double dy, double dz)
+   {
+      translateToModify.setX(translateToModify.getX() + dx);
+      translateToModify.setY(translateToModify.getY() + dy);
+      translateToModify.setZ(translateToModify.getZ() + dz);
+   }
+
+   public static void subEquals(Translate translateToModify, Tuple3DReadOnly offset)
    {
       translateToModify.setX(translateToModify.getX() - offset.getX());
       translateToModify.setY(translateToModify.getY() - offset.getY());

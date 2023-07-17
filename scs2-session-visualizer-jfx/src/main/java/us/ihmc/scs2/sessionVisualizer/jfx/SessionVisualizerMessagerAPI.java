@@ -77,7 +77,7 @@ public class SessionVisualizerMessagerAPI
 
    public static final Topic<Boolean> DisableUserControls = APIRoot.child(User).child(Controls).topic(Disable);
    public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = APIRoot.child(Video).topic(Request);
-   public static final Topic<CameraObjectTrackingRequest> CameraTrackObject = APIRoot.child(Camera).child(Track).topic(Request);
+   public static final Topic<Camera3DRequest> Camera3DRequest = APIRoot.child(Camera).child(Configuration).topic(Request);
    public static final Topic<Object> TakeSnapshot = APIRoot.topic(Snapshot);
    public static final Topic<Object> RegisterRecordable = APIRoot.child(Register).topic(Recordable);
    public static final Topic<Object> ForgetRecordable = APIRoot.child(Forget).topic(Recordable);

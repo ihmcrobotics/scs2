@@ -14,7 +14,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.sessionVisualizer.jfx.CameraObjectTrackingRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -43,7 +43,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       this.referenceFrameManager = referenceFrameManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
 
-      messager.addTopicListener(topics.getCameraTrackObject(), request ->
+      messager.addTopicListener(topics.getCamera3DRequest(), request ->
       {
          if (!isSessionLoaded())
             throw new IllegalOperationException("Session has not been loaded yet.");
@@ -57,7 +57,9 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
             if (robotName != null)
             {
-               result = robots.stream().filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName)).findFirst()
+               result = robots.stream()
+                              .filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName))
+                              .findFirst()
                               .map(r -> r.findRigidBodyFrameNode(rigidBodyName));
             }
             else
@@ -68,7 +70,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
             result.ifPresent(rigidBodyFrameNode ->
             {
                if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
-                  messager.submitMessage(topics.getCameraTrackObject(), new CameraObjectTrackingRequest(rigidBodyFrameNode.getNode()));
+                  messager.submitMessage(topics.getCamera3DRequest(), Camera3DRequest.trackNode(rigidBodyFrameNode.getNode()));
             });
          }
       });

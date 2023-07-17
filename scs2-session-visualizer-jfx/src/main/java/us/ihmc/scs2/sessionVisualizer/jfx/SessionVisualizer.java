@@ -361,7 +361,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         submitMessage(getTopics().getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
+         submitMessage(getTopics().getCamera3DRequest(), Camera3DRequest.trackRobot(robotName, rigidBodyName));
       }
 
       @Override
