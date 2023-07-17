@@ -29,12 +29,17 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointTargetTracker;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 public class MainViewport3DManager implements SingleViewport3DManager
@@ -42,6 +47,9 @@ public class MainViewport3DManager implements SingleViewport3DManager
    private final Pane container;
    private final SubScene subScene;
    private final Group rootNode3D;
+   private final YoManager yoManager;
+   private final ReferenceFrameManager referenceFrameManager;
+
    private final PerspectiveCamera camera;
    private final PerspectiveCameraController cameraController;
 
@@ -51,6 +59,8 @@ public class MainViewport3DManager implements SingleViewport3DManager
                                 ReferenceFrameManager referenceFrameManager)
    {
       rootNode3D = mainView3DRoot;
+      this.yoManager = yoManager;
+      this.referenceFrameManager = referenceFrameManager;
 
       // Creating sub-scene
       subScene = new SubScene(rootNode3D, -1, -1, true, SceneAntialiasing.BALANCED);
@@ -123,9 +133,39 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    // Camera controls
 
+   public void setCameraTargetTypeToTrack(TrackingTargetType targetType)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getTargetTracker().targetTypeProperty().set(targetType));
+   }
+
    public void setCameraNodeToTrack(Node nodeToTrack)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getTargetTracker().nodeToTrackProperty().set(nodeToTrack));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         cameraController.getTargetTracker().nodeToTrackProperty().set(nodeToTrack);
+         cameraController.getTargetTracker().targetTypeProperty().set(TrackingTargetType.Node);
+      });
+   }
+
+   public void setCameraCoordinatesToTrack(YoTuple3DDefinition coordinatesToTrack)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         Tuple3DProperty tuple3DProperty;
+
+         try
+         {
+            tuple3DProperty = CompositePropertyTools.toTuple3DProperty(yoManager.getRootRegistryDatabase(), referenceFrameManager, coordinatesToTrack);
+         }
+         catch (Exception e)
+         {
+            // Print stack-trace and cancel operation
+            e.printStackTrace();
+            return;
+         }
+         cameraController.getTargetTracker().coordinatesToTrackProperty().setValue(tuple3DProperty);
+         cameraController.getTargetTracker().targetTypeProperty().set(TrackingTargetType.YoCoordinates);
+      });
    }
 
    public void setCameraPosition(double x, double y, double z)
@@ -174,7 +214,10 @@ public class MainViewport3DManager implements SingleViewport3DManager
                                 Node viewport,
                                 Predicate<Node> filter)
    {
-      ObjectProperty<Node> nodeToTrackProperty = cameraController.getTargetTracker().nodeToTrackProperty();
+      CameraFocalPointTargetTracker targetTracker = cameraController.getTargetTracker();
+      ObjectProperty<TrackingTargetType> targetTypeProperty = targetTracker.targetTypeProperty();
+      ObjectProperty<Node> nodeToTrackProperty = targetTracker.nodeToTrackProperty();
+
       MenuTools.setupContextMenu(viewport, (owner, event) ->
       {
 
@@ -184,14 +227,22 @@ public class MainViewport3DManager implements SingleViewport3DManager
              || !filter.test(intersectedNode))
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
-         menuItem.setOnAction(e -> nodeToTrackProperty.set(intersectedNode));
+         menuItem.setOnAction(e ->
+         {
+            nodeToTrackProperty.set(intersectedNode);
+            targetTypeProperty.set(TrackingTargetType.Node);
+         });
          return menuItem;
       }, (owner, event) ->
       {
          if (nodeToTrackProperty.get() == null)
             return null;
          MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeToTrackProperty.get().getId());
-         menuItem.setOnAction(e -> nodeToTrackProperty.set(null));
+         menuItem.setOnAction(e ->
+         {
+            nodeToTrackProperty.set(null);
+            targetTypeProperty.set(TrackingTargetType.Disabled);
+         });
          return menuItem;
       }, (owner, event) ->
       {

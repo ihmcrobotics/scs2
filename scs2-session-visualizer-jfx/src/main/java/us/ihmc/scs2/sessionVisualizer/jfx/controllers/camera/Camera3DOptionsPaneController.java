@@ -7,6 +7,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.PerspectiveCamera;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
@@ -14,7 +15,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraTargetTracker.TrackingTargetType;
+import javafx.scene.transform.Transform;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -84,7 +86,7 @@ public class Camera3DOptionsPaneController
       ToggleGroup toggleGroup = new ToggleGroup();
       toggleGroup.getToggles().addAll(trackCoordinatesButton, trackNodeButton); // TODO initialize which one is selected
 
-      CameraTargetTracker targetTracker = cameraController.getTargetTracker();
+      CameraFocalPointTargetTracker targetTracker = cameraController.getTargetTracker();
       ObjectProperty<TrackingTargetType> targetTypeProperty = targetTracker.targetTypeProperty();
 
       trackNodeButton.setSelected(targetTypeProperty.get() == TrackingTargetType.Node);
@@ -122,19 +124,25 @@ public class Camera3DOptionsPaneController
       targetTypeProperty.addListener(targetTypeChangeListener);
       targetTypeChangeListener.changed(targetTypeProperty, null, targetTypeProperty.get());
 
-      cameraController.getFocusPointViz().localToSceneTransformProperty().addListener((o, oldValue, newValue) ->
+      ChangeListener<? super Transform> focalPointTransformChangeListener = (o, oldValue, newValue) ->
       {
          xFocalPointCurrentTextField.setText(Double.toString(newValue.getTx()));
          yFocalPointCurrentTextField.setText(Double.toString(newValue.getTy()));
          zFocalPointCurrentTextField.setText(Double.toString(newValue.getTz()));
-      });
+      };
+      Node focalPoint = cameraController.getFocusPointViz();
+      focalPoint.localToSceneTransformProperty().addListener(focalPointTransformChangeListener);
+      focalPointTransformChangeListener.changed(focalPoint.localToSceneTransformProperty(), null, focalPoint.getLocalToSceneTransform());
 
-      cameraController.getCamera().localToSceneTransformProperty().addListener((o, oldValue, newValue) ->
+      ChangeListener<? super Transform> cameraTransformChangeListener = (o, oldValue, newValue) ->
       {
          xCameraCurrentTextField.setText(Double.toString(newValue.getTx()));
          yCameraCurrentTextField.setText(Double.toString(newValue.getTy()));
          zCameraCurrentTextField.setText(Double.toString(newValue.getTz()));
-      });
+      };
+      PerspectiveCamera camera = cameraController.getCamera();
+      camera.localToSceneTransformProperty().addListener(cameraTransformChangeListener);
+      cameraTransformChangeListener.changed(camera.localToSceneTransformProperty(), null, camera.getLocalToSceneTransform());
 
       YoCompositeCollection yoTuple3DCollection = searchManager.getYoTuple3DCollection();
       if (yoTuple3DCollection == null)

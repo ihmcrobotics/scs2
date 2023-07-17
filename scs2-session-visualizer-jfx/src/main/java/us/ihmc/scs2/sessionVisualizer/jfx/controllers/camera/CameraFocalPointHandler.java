@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import javafx.animation.AnimationTimer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
@@ -12,8 +11,9 @@ import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
-import javafx.scene.PerspectiveCamera;
+import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.transform.Transform;
@@ -21,26 +21,32 @@ import javafx.scene.transform.Translate;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 /**
- * This class provides the tools necessary to build a simple controller for computing the
- * translation of a JavaFX {@link PerspectiveCamera}. This class is ready to be used with an
- * {@link EventHandler} via {@link #createKeyEventHandler()}. The output of this calculator is the
- * {@link #translation} property which can be bound to an external property or used directly to
- * apply a transformation to the camera. This transformation is not implemented here to provide
- * increased flexibility. The translation computed by this calculator is expressed in world frame,
- * i.e. before applying a rotation to the camera.
+ * This class handles the control in position of the camera's focal point.
+ * <p>
+ * The focal point can be controlled:
+ * <ul>
+ * <li>Pressing keyboards keys (ASDW) to translate in the world's horizontal plane (independent of
+ * the camera's pitch angle).
+ * <li>Setting directly the location of the focal point.
+ * <li>Tracking a node or coordinates.
+ * </ul>
+ * </p>
  *
  * @author Sylvain Bertrand
  */
-public class CameraTranslationCalculator
+public class CameraFocalPointHandler
 {
-   /**
-    * The current translation of the camera. This is the output of this calculator which can be bound
-    * to an external property or used directly to apply a transformation to the camera.
-    */
-   private final Translate translation = new Translate();
+   /** The current translation of the focal point. */
+   private final Translate focalPointTranslation = new Translate();
+   /** The translation used to map keyboard to translation. It is expressed in world frame */
+   private final Translate offsetTranslation = new Translate();
    /** Current orientation of the camera necessary when translating the camera in its local frame. */
    private final ObjectProperty<Transform> cameraOrientation = new SimpleObjectProperty<>(this, "cameraOrientation", null);
    /**
@@ -89,8 +95,25 @@ public class CameraTranslationCalculator
    /** Key binding for moving the camera downward. Its default value is: {@code KeyCode.Z}. */
    private final ObjectProperty<KeyCode> downKey = new SimpleObjectProperty<>(this, "downKey", KeyCode.Z);
 
-   private final Vector3D down = new Vector3D();
+   // Following is for following a target
+   public enum TrackingTargetType
+   {
+      Disabled, Node, YoCoordinates
+   };
 
+   private final ObjectProperty<TrackingTargetType> targetType = new SimpleObjectProperty<>(this, "", TrackingTargetType.Disabled);
+   private final ObjectProperty<Tuple3DProperty> coordinatesTracked = new SimpleObjectProperty<>(this, "coordinatesTracked", null);
+   private final ObjectProperty<Node> nodeTracked = new SimpleObjectProperty<>(this, "nodeTracked", null);
+   private final TranslateSCS2 trackingTranslate = new TranslateSCS2();
+
+   private final ChangeListener<Transform> nodeTrackingListener = (o, oldTransform, newTransform) ->
+   {
+      if (targetType.get() == TrackingTargetType.Node)
+         trackingTranslate.setFrom(newTransform);
+   };
+
+   private final Vector3D down = new Vector3D();
+   private final List<Runnable> updateTasks = new ArrayList<>();
    private final List<Runnable> cleanupActions = new ArrayList<>();
 
    /**
@@ -98,9 +121,36 @@ public class CameraTranslationCalculator
     *
     * @param up indicates which way is up.
     */
-   public CameraTranslationCalculator(Vector3DReadOnly up)
+   public CameraFocalPointHandler(Vector3DReadOnly up)
    {
       down.setAndNegate(up);
+
+      nodeTracked.addListener((o, oldValue, newValue) ->
+      {
+         if (oldValue != null)
+            oldValue.localToSceneTransformProperty().removeListener(nodeTrackingListener);
+
+         if (newValue != null)
+         {
+            newValue.localToSceneTransformProperty().addListener(nodeTrackingListener);
+            nodeTrackingListener.changed(null, null, newValue.getLocalToSceneTransform());
+         }
+      });
+
+      updateTasks.add(() ->
+      {
+         Tuple3DProperty tuple = coordinatesTracked.get();
+         if (tuple != null && targetType.get() == TrackingTargetType.YoCoordinates)
+            trackingTranslate.set(tuple.toPoint3DInWorld());
+      });
+   }
+
+   public void update()
+   {
+      for (int i = 0; i < updateTasks.size(); i++)
+      {
+         updateTasks.get(i).run();
+      }
    }
 
    public void dispose()
@@ -117,17 +167,7 @@ public class CameraTranslationCalculator
    {
       final Vector3D activeTranslationOffset = new Vector3D();
 
-      AnimationTimer translateAnimation = new AnimationTimer()
-      {
-         @Override
-         public void handle(long now)
-         {
-            updateObserverTranslation(activeTranslationOffset);
-         }
-      };
-      translateAnimation.start();
-
-      cleanupActions.add(() -> translateAnimation.stop());
+      updateTasks.add(() -> translateCameraFrame(activeTranslationOffset));
 
       EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>()
       {
@@ -174,9 +214,9 @@ public class CameraTranslationCalculator
     *
     * @param translationOffset the translation offset in local frame to apply. Not modified.
     */
-   public void updateObserverTranslation(Vector3DReadOnly translationOffset)
+   public void translateCameraFrame(Vector3DReadOnly translationOffset)
    {
-      updateObserverTranslation(translationOffset.getX(), translationOffset.getY(), translationOffset.getZ());
+      translateCameraFrame(translationOffset.getX(), translationOffset.getY(), translationOffset.getZ());
    }
 
    /**
@@ -186,11 +226,11 @@ public class CameraTranslationCalculator
     * @param dy the left/right translation offset in the camera local frame.
     * @param dz the up/down translation offset in the camera local frame.
     */
-   public void updateObserverTranslation(double dx, double dy, double dz)
+   public void translateCameraFrame(double dx, double dy, double dz)
    {
       if (cameraOrientation.get() == null)
       {
-         updateWorldTranslation(dx, dy, dz);
+         translateWorldFrame(dx, dy, dz);
          return;
       }
 
@@ -218,7 +258,7 @@ public class CameraTranslationCalculator
          JavaFXMissingTools.applyTranform(cameraOrientation.get(), shift);
       }
 
-      JavaFXMissingTools.addEquals(translation, shift);
+      JavaFXMissingTools.addEquals(offsetTranslation, shift);
    }
 
    /**
@@ -228,10 +268,9 @@ public class CameraTranslationCalculator
     * @param dy the translation offset along the world y-axis.
     * @param dz the translation offset along the world z-axis.
     */
-   public void updateWorldTranslation(double dx, double dy, double dz)
+   public void translateWorldFrame(double dx, double dy, double dz)
    {
-      Vector3D shift = new Vector3D(dx, dy, dz);
-      JavaFXMissingTools.addEquals(translation, shift);
+      JavaFXMissingTools.addEquals(offsetTranslation, dx, dy, dz);
    }
 
    /**
@@ -264,7 +303,7 @@ public class CameraTranslationCalculator
     */
    public Translate getTranslation()
    {
-      return translation;
+      return focalPointTranslation;
    }
 
    public final BooleanProperty keepTranslationLeveledProperty()
