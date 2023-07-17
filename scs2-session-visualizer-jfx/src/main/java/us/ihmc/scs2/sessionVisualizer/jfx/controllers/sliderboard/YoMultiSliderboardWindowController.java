@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +43,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
@@ -50,7 +51,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 
-public class YoMultiBCF2000SliderboardWindowController
+public class YoMultiSliderboardWindowController
 {
    /**
     * The name used for the default sliderboard. The default sliderboard is created when no
@@ -63,9 +64,9 @@ public class YoMultiBCF2000SliderboardWindowController
    @FXML
    private Tab initialTab;
    @FXML
-   private YoBCF2000SliderboardWindowController initialSliderboardPaneController;
+   private YoSliderboardWindowControllerInterface initialSliderboardPaneController;
 
-   private final Map<Tab, YoBCF2000SliderboardWindowController> tabToControllerMap = new HashMap<>();
+   private final Map<Tab, YoSliderboardWindowControllerInterface> tabToControllerMap = new HashMap<>();
 
    private SessionVisualizerToolkit toolkit;
 
@@ -86,6 +87,8 @@ public class YoMultiBCF2000SliderboardWindowController
       MenuTools.setupContextMenu(sliderboardTabPane,
                                  TabPaneTools.addBeforeMenuItemFactory(this::newSliderboardTab),
                                  TabPaneTools.addAfterMenuItemFactory(this::newSliderboardTab),
+                                 TabPaneTools.addBeforeMenuItemFactory(this::newXtouchCompactTab),
+                                 TabPaneTools.addAfterMenuItemFactory(this::newXtouchCompactTab),
                                  TabPaneTools.removeMenuItemFactory(),
                                  TabPaneTools.removeAllMenuItemFactory(false),
                                  exportTabMenuItemFactory(),
@@ -283,7 +286,7 @@ public class YoMultiBCF2000SliderboardWindowController
    {
       for (Tab tab : sliderboardTabPane.getTabs())
       {
-         YoBCF2000SliderboardWindowController controller = tabToControllerMap.get(tab);
+         YoSliderboardWindowControllerInterface controller = tabToControllerMap.get(tab);
          controller.close();
       }
 
@@ -389,6 +392,28 @@ public class YoMultiBCF2000SliderboardWindowController
          Node node = loader.load();
          tab.setContent(node);
          YoBCF2000SliderboardWindowController controller = loader.getController();
+         controller.nameProperty().bindBidirectional(tabHeader.textProperty());
+         controller.initialize(window, toolkit);
+         tabToControllerMap.put(tab, controller);
+         return tab;
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+         return null;
+      }
+   }
+   
+   private Tab newXtouchCompactTab()
+   {
+      try
+      {
+         Tab tab = new Tab("XTouch Compact" + (sliderboardTabPane.getTabs().size() - 1));
+         Label tabHeader = TabPaneTools.editableTabHeader(tab);
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.YO_SLIDERBOARD_XTOUCHCOMPACT_WINDOW_URL);
+         Node node = loader.load();
+         tab.setContent(node);
+         YoSliderboardWindowControllerInterface controller = loader.getController();
          controller.nameProperty().bindBidirectional(tabHeader.textProperty());
          controller.initialize(window, toolkit);
          tabToControllerMap.put(tab, controller);
