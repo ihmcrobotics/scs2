@@ -1,6 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +32,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -483,7 +483,7 @@ public interface SessionVisualizerControls
     * Sets the configuration of the default sliderboard.
     * <p>
     * Note that the default sliderboard named
-    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
+    * {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
     * after clearing all sliderboards, in such case it is only cleared of its bindings.
     * </p>
     * 
@@ -513,9 +513,9 @@ public interface SessionVisualizerControls
     * </p>
     * <p>
     * Note that the default sliderboard named
-    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
+    * {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
     * after clearing all sliderboards. If the given configuration is named
-    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
+    * {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
     * sliderboard configuration overridden.
     * </p>
     * 
@@ -528,7 +528,7 @@ public interface SessionVisualizerControls
     * Removes the sliderboard that matches the given name.
     * <p>
     * If there is no existing sliderboard matching the given name, nothing happens. If the given name
-    * is {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
+    * is {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
     * sliderboard is cleared but not removed.
     * </p>
     * 

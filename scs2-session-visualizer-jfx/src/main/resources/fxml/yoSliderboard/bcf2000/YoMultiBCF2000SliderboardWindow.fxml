@@ -3,7 +3,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 
-<TabPane fx:id="sliderboardTabPane" stylesheets="@../../../css/GeneralStylesheet.css" tabClosingPolicy="ALL_TABS" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController">
+<TabPane fx:id="sliderboardTabPane" stylesheets="@../../../css/GeneralStylesheet.css" tabClosingPolicy="ALL_TABS" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController">
    <tabs>
       <Tab fx:id="initialTab" closable="false" text="Default">
          <content>

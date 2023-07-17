@@ -25,7 +25,6 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.Manager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -33,7 +32,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 
 public class YoSliderboardManager implements Manager
 {
-   private final Property<YoMultiBCF2000SliderboardWindowController> bcf2000Sliderboard = new SimpleObjectProperty<>(this, "bcf2000Sliderboard", null);
+   private final Property<YoMultiSliderboardWindowController> behringerSliderboard = new SimpleObjectProperty<>(this, "behringerSliderboard", null);
    private final SessionVisualizerToolkit toolkit;
    private final SessionVisualizerTopics topics;
    private final JavaFXMessager messager;
@@ -101,10 +100,10 @@ public class YoSliderboardManager implements Manager
       messager.removeFXTopicListener(topics.getYoSliderboardClearKnob(), clearKnobRequestListener);
       messager.removeFXTopicListener(topics.getYoSliderboardClearSlider(), clearSliderRequestListener);
 
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().close();
-         bcf2000Sliderboard.setValue(null);
+         behringerSliderboard.getValue().close();
+         behringerSliderboard.setValue(null);
       }
    }
 
@@ -118,8 +117,8 @@ public class YoSliderboardManager implements Manager
    private void handleSaveRequest(File file)
    {
       YoSliderboardListDefinition definitionToSave;
-      if (bcf2000Sliderboard.getValue() != null)
-         definitionToSave = bcf2000Sliderboard.getValue().toYoSliderboardListDefinition();
+      if (behringerSliderboard.getValue() != null)
+         definitionToSave = behringerSliderboard.getValue().toYoSliderboardListDefinition();
       else
          definitionToSave = initialConfiguration;
 
@@ -152,25 +151,25 @@ public class YoSliderboardManager implements Manager
 
    private void handleClearRequest(Boolean m)
    {
-      if (bcf2000Sliderboard.getValue() != null)
-         bcf2000Sliderboard.getValue().clear();
+      if (behringerSliderboard.getValue() != null)
+         behringerSliderboard.getValue().clear();
       else
          initialConfiguration = null;
    }
 
    private void handleSetRequest(YoSliderboardListDefinition definition)
    {
-      if (bcf2000Sliderboard.getValue() != null)
-         bcf2000Sliderboard.getValue().setInput(definition);
+      if (behringerSliderboard.getValue() != null)
+         behringerSliderboard.getValue().setInput(definition);
       else
          initialConfiguration = new YoSliderboardListDefinition(definition);
    }
 
    private void handleSetRequest(YoSliderboardDefinition definition)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().setSliderboard(definition);
+         behringerSliderboard.getValue().setSliderboard(definition);
       }
       else
       {
@@ -187,9 +186,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleRemoveRequest(String sliderboardName)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().closeSliderboard(sliderboardName);
+         behringerSliderboard.getValue().closeSliderboard(sliderboardName);
       }
       else
       {
@@ -204,9 +203,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleSetButtonRequest(String sliderboardName, YoButtonDefinition buttonDefinition)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().setButtonInput(sliderboardName, buttonDefinition);
+         behringerSliderboard.getValue().setButtonInput(sliderboardName, buttonDefinition);
       }
       else
       {
@@ -230,9 +229,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleSetKnobRequest(String sliderboardName, YoKnobDefinition knobDefinition)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().setKnobInput(sliderboardName, knobDefinition);
+         behringerSliderboard.getValue().setKnobInput(sliderboardName, knobDefinition);
       }
       else
       {
@@ -256,9 +255,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleSetSliderRequest(String sliderboardName, YoSliderDefinition sliderDefinition)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().setSliderInput(sliderboardName, sliderDefinition);
+         behringerSliderboard.getValue().setSliderInput(sliderboardName, sliderDefinition);
       }
       else
       {
@@ -282,9 +281,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleClearButtonRequest(String sliderboardName, int buttonIndex)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().removeButtonInput(sliderboardName, buttonIndex);
+         behringerSliderboard.getValue().removeButtonInput(sliderboardName, buttonIndex);
       }
       else
       {
@@ -311,9 +310,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleClearKnobRequest(String sliderboardName, int knobIndex)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().removeKnobInput(sliderboardName, knobIndex);
+         behringerSliderboard.getValue().removeKnobInput(sliderboardName, knobIndex);
       }
       else
       {
@@ -340,9 +339,9 @@ public class YoSliderboardManager implements Manager
 
    private void handleClearSliderRequest(String sliderboardName, int sliderIndex)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().removeSliderInput(sliderboardName, sliderIndex);
+         behringerSliderboard.getValue().removeSliderInput(sliderboardName, sliderIndex);
       }
       else
       {
@@ -383,11 +382,11 @@ public class YoSliderboardManager implements Manager
       return -1;
    }
 
-   public void openBCF2000SliderboardWindow(Window requestSource)
+   public void openBehringerSliderboardWindow(Window requestSource)
    {
-      if (bcf2000Sliderboard.getValue() != null)
+      if (behringerSliderboard.getValue() != null)
       {
-         bcf2000Sliderboard.getValue().showWindow();
+         behringerSliderboard.getValue().showWindow();
          return;
       }
 
@@ -395,14 +394,14 @@ public class YoSliderboardManager implements Manager
       {
          FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL);
          fxmlLoader.load();
-         YoMultiBCF2000SliderboardWindowController controller = fxmlLoader.getController();
+         YoMultiSliderboardWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          if (initialConfiguration != null)
          {
             controller.setInput(initialConfiguration);
             initialConfiguration = null;
          }
-         bcf2000Sliderboard.setValue(controller);
+         behringerSliderboard.setValue(controller);
          SecondaryWindowManager.initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }
