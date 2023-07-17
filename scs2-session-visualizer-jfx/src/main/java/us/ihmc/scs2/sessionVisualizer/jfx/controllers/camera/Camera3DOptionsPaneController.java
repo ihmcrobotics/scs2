@@ -1,8 +1,9 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -13,11 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import javafx.scene.transform.Transform;
-import javafx.scene.transform.TransformChangedEvent;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraTargetTracker;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraTargetTracker.TrackingTargetType;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -111,7 +108,7 @@ public class Camera3DOptionsPaneController
          updatingTarget.setFalse();
       });
 
-      targetTypeProperty.addListener((o, oldValue, newValue) ->
+      ChangeListener<? super TrackingTargetType> targetTypeChangeListener = (o, oldValue, newValue) ->
       {
          if (updatingTarget.booleanValue())
             return;
@@ -121,7 +118,9 @@ public class Camera3DOptionsPaneController
          trackCoordinatesButton.setSelected(targetTypeProperty.get() == TrackingTargetType.YoCoordinates);
 
          updatingTarget.setFalse();
-      });
+      };
+      targetTypeProperty.addListener(targetTypeChangeListener);
+      targetTypeChangeListener.changed(targetTypeProperty, null, targetTypeProperty.get());
 
       cameraController.getFocusPointViz().localToSceneTransformProperty().addListener((o, oldValue, newValue) ->
       {
@@ -162,10 +161,17 @@ public class Camera3DOptionsPaneController
       ObjectProperty<Node> nodeToTrack = targetTracker.nodeToTrackProperty();
       trackingNodeTextField.setText(nodeToTrack.get() == null ? "null" : nodeToTrack.get().getId());
 
-      nodeToTrack.addListener((o, oldValue, newValue) ->
+      ChangeListener<? super Node> nodeTrackedChangeListener = (o, oldValue, newValue) ->
       {
-         trackingNodeTextField.setText(newValue == null ? "null" : newValue.getId());
-      });
+         if (newValue == null)
+            trackingNodeTextField.setText("No node being tracked");
+         else if (newValue.getId() == null || newValue.getId().isBlank())
+            trackingNodeTextField.setText("Tracking node w/o id");
+         else
+            trackingNodeTextField.setText(newValue.getId());
+      };
+      nodeToTrack.addListener(nodeTrackedChangeListener);
+      nodeTrackedChangeListener.changed(nodeToTrack, null, nodeToTrack.get());
 
       cameraPositionComboxBox.setItems(FXCollections.observableArrayList(CameraPositionType.values()));
       // TODO setup the position controls
