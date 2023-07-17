@@ -151,7 +151,7 @@ public class SessionVisualizerIOTools
    public static final URL SESSION_DATA_EXPORT_STAGE_URL = getFXMLResource("SessionDataExportStage");
    public static final URL SESSION_VARIABLE_FILTER_PANE_URL = getFXMLResource("SessionVariableFilterPane");
    public static final URL PLOTTER2D_OPTIONS_STAGE_URL = getFXMLResource(YO_GRAPHIC, "Plotter2DOptionsStage");
-   public static final URL CAMERA3D_OPTIONS_PANE_URL = getFXMLResource("Camera3DOptionsPane");
+   public static final URL CAMERA3D_OPTIONS_PANE_URL = getFXMLResource("camera/Camera3DOptionsPane");
 
    public static final URL CHART_PANEL_FXML_URL = getFXMLResource(CHART, "YoChartPanel");
    public static final URL CHART_GROUP_PANEL_URL = getFXMLResource(CHART, "YoChartGroupPanel");
