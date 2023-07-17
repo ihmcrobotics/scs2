@@ -6,10 +6,10 @@
 
 <VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D.YoEllipsoidFX3DEditorController">
    <children>
-      <fx:include fx:id="positionEditor" source="../editor/YoCompositeEditorPane.fxml" />
-      <fx:include fx:id="orientationEditor" source="../editor/YoCompositeEditorPane.fxml" />
+      <fx:include fx:id="positionEditor" source="../../editor/YoCompositeEditorPane.fxml" />
+      <fx:include fx:id="orientationEditor" source="../../editor/YoCompositeEditorPane.fxml" />
       <Separator prefWidth="200.0" />
-      <fx:include fx:id="radiiEditor" source="../editor/YoCompositeEditorPane.fxml" />
+      <fx:include fx:id="radiiEditor" source="../../editor/YoCompositeEditorPane.fxml" />
       <Separator prefWidth="200.0" />
       <fx:include fx:id="styleEditor" source="../editor/YoGraphic3DStyleEditorPane.fxml" />
       <Separator prefWidth="200.0" />

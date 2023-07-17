@@ -30,7 +30,7 @@ import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.Camera3DOptionsPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
