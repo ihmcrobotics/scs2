@@ -19,6 +19,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -44,6 +45,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.xtouchcompact.YoXTouchCompactSliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
@@ -85,10 +87,10 @@ public class YoMultiSliderboardWindowController
 
       tabToControllerMap.put(initialTab, initialSliderboardPaneController);
       MenuTools.setupContextMenu(sliderboardTabPane,
-                                 TabPaneTools.addBeforeMenuItemFactory(this::newSliderboardTab),
-                                 TabPaneTools.addAfterMenuItemFactory(this::newSliderboardTab),
-                                 TabPaneTools.addBeforeMenuItemFactory(this::newXtouchCompactTab),
-                                 TabPaneTools.addAfterMenuItemFactory(this::newXtouchCompactTab),
+                                 TabPaneTools.addBeforeMenuItemFactory(this::newBFC2000SliderboardTab, "Add BFC2000 tab before"),
+                                 TabPaneTools.addAfterMenuItemFactory(this::newBFC2000SliderboardTab,  "Add BFC2000 tab after"),
+                                 TabPaneTools.addBeforeMenuItemFactory(this::newXtouchCompactTab, "Add XTouch tab before"),
+                                 TabPaneTools.addAfterMenuItemFactory(this::newXtouchCompactTab, "Add Xtouch tab after"),
                                  TabPaneTools.removeMenuItemFactory(),
                                  TabPaneTools.removeAllMenuItemFactory(false),
                                  exportTabMenuItemFactory(),
@@ -126,6 +128,8 @@ public class YoMultiSliderboardWindowController
             tabToControllerMap.get(oldValue).stop();
          if (newValue != null)
             tabToControllerMap.get(newValue).start();
+         
+         window.sizeToScene();
       };
       sliderboardTabPane.getSelectionModel().selectedItemProperty().addListener(controllerScheduler);
       cleanupTasks.add(() -> sliderboardTabPane.getSelectionModel().selectedItemProperty().removeListener(controllerScheduler));
@@ -168,7 +172,7 @@ public class YoMultiSliderboardWindowController
       tabs.retainAll(initialTab);
 
       while (tabs.size() < input.getYoSliderboards().size())
-         tabs.add(newSliderboardTab());
+         tabs.add(newBFC2000SliderboardTab());
 
       List<YoSliderboardDefinition> sliderboards = input.getYoSliderboards();
       for (int i = 0; i < sliderboards.size(); i++)
@@ -186,7 +190,7 @@ public class YoMultiSliderboardWindowController
       Tab tab = findTabByName(sliderboardDefinition.getName());
       if (tab == null)
       {
-         tab = newSliderboardTab();
+         tab = newBFC2000SliderboardTab();
          sliderboardTabPane.getTabs().add(tab);
       }
       tabToControllerMap.get(tab).setInput(sliderboardDefinition);
@@ -204,7 +208,7 @@ public class YoMultiSliderboardWindowController
       Tab tab = findTabByName(sliderboardName);
       if (tab == null)
       {
-         tab = newSliderboardTab();
+         tab = newBFC2000SliderboardTab();
          sliderboardTabPane.getTabs().add(tab);
       }
       tabToControllerMap.get(tab).setButtonInput(buttonDefinition);
@@ -223,7 +227,7 @@ public class YoMultiSliderboardWindowController
       Tab tab = findTabByName(sliderboardName);
       if (tab == null)
       {
-         tab = newSliderboardTab();
+         tab = newBFC2000SliderboardTab();
          sliderboardTabPane.getTabs().add(tab);
       }
       tabToControllerMap.get(tab).setKnobInput(knobDefinition);
@@ -242,7 +246,7 @@ public class YoMultiSliderboardWindowController
       Tab tab = findTabByName(sliderboardName);
       if (tab == null)
       {
-         tab = newSliderboardTab();
+         tab = newBFC2000SliderboardTab();
          sliderboardTabPane.getTabs().add(tab);
       }
       tabToControllerMap.get(tab).setSliderInput(sliderDefinition);
@@ -382,7 +386,7 @@ public class YoMultiSliderboardWindowController
       };
    }
 
-   private Tab newSliderboardTab()
+   private Tab newBFC2000SliderboardTab()
    {
       try
       {
@@ -465,7 +469,7 @@ public class YoMultiSliderboardWindowController
 
          for (int i = startIndex; i < yoEntryLists.size(); i++)
          {
-            Tab newEmptyTab = newSliderboardTab();
+            Tab newEmptyTab = newBFC2000SliderboardTab();
             tabToControllerMap.get(newEmptyTab).setInput(yoEntryLists.get(i));
             tabs.add(insertionIndex, newEmptyTab);
             sliderboardTabPane.getSelectionModel().select(insertionIndex);
@@ -492,5 +496,39 @@ public class YoMultiSliderboardWindowController
          definition.getYoSliderboards().add(tabToControllerMap.get(tab).toYoSliderboardDefinition());
       }
       return definition;
+   }
+   
+   public void ensureBFC2000Tab()
+   {
+      for(var controller : tabToControllerMap.entrySet())
+      {
+         if(controller.getValue() instanceof YoBCF2000SliderboardWindowController)
+         {
+            return;
+         }
+      }
+      
+      var tab = newBFC2000SliderboardTab();
+      
+      int index = sliderboardTabPane.getTabs().size();
+      sliderboardTabPane.getTabs().add(tab);
+      sliderboardTabPane.getSelectionModel().select(index);
+   }
+
+   public void ensureXTouchCompactTab()
+   {
+      for(var controller : tabToControllerMap.entrySet())
+      {
+         if(controller.getValue() instanceof YoXTouchCompactSliderboardWindowController)
+         {
+            return;
+         }
+      }
+      
+      var tab = newXtouchCompactTab();
+      
+      int index = sliderboardTabPane.getTabs().size();
+      sliderboardTabPane.getTabs().add(tab);
+      sliderboardTabPane.getSelectionModel().select(index);
    }
 }

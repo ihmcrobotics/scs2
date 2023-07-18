@@ -110,10 +110,15 @@ public class TabPaneTools
 
    public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(Supplier<Tab> addAction)
    {
-      return addBeforeMenuItemFactory(i -> addAction.get());
+      return addBeforeMenuItemFactory(addAction, "Add before");
+   }
+   
+   public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(Supplier<Tab> addAction, String title)
+   {
+      return addBeforeMenuItemFactory(i -> addAction.get(), title);
    }
 
-   public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(IntFunction<Tab> addAction)
+   public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(IntFunction<Tab> addAction, String title)
    {
       return tabPane ->
       {
@@ -122,7 +127,7 @@ public class TabPaneTools
 
          FontAwesomeIconView addBeforeIcon = new FontAwesomeIconView();
          addBeforeIcon.getStyleClass().add("add-icon-view");
-         MenuItem addBefore = new MenuItem("Add before", addBeforeIcon);
+         MenuItem addBefore = new MenuItem(title, addBeforeIcon);
 
          addBefore.setOnAction(e2 ->
          {
@@ -140,10 +145,15 @@ public class TabPaneTools
 
    public static Function<TabPane, MenuItem> addAfterMenuItemFactory(Supplier<Tab> addAction)
    {
-      return addAfterMenuItemFactory(i -> addAction.get());
+      return addAfterMenuItemFactory(addAction, "Add after");
+   }
+   
+   public static Function<TabPane, MenuItem> addAfterMenuItemFactory(Supplier<Tab> addAction, String title)
+   {
+      return addAfterMenuItemFactory(i -> addAction.get(), title);
    }
 
-   public static Function<TabPane, MenuItem> addAfterMenuItemFactory(IntFunction<Tab> addAction)
+   public static Function<TabPane, MenuItem> addAfterMenuItemFactory(IntFunction<Tab> addAction, String title)
    {
       return tabPane ->
       {
@@ -152,7 +162,7 @@ public class TabPaneTools
 
          FontAwesomeIconView addAfterIcon = new FontAwesomeIconView();
          addAfterIcon.getStyleClass().add("add-icon-view");
-         MenuItem addAfter = new MenuItem("Add after", addAfterIcon);
+         MenuItem addAfter = new MenuItem(title, addAfterIcon);
 
          addAfter.setOnAction(e2 ->
          {

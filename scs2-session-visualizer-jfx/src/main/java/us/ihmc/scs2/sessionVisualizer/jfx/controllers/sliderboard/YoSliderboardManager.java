@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
@@ -381,8 +382,8 @@ public class YoSliderboardManager implements Manager
       }
       return -1;
    }
-
-   public void openBehringerSliderboardWindow(Window requestSource)
+   
+   public void openSliderboardWindow(Window requestSource, URL initialSliderboardWindow)
    {
       if (behringerSliderboard.getValue() != null)
       {
@@ -392,7 +393,7 @@ public class YoSliderboardManager implements Manager
 
       try
       {
-         FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL);
+         FXMLLoader fxmlLoader = new FXMLLoader(initialSliderboardWindow);
          fxmlLoader.load();
          YoMultiSliderboardWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
@@ -409,5 +410,17 @@ public class YoSliderboardManager implements Manager
       {
          e.printStackTrace();
       }
+   }
+
+   public void openBFC2000SliderboardWindow(Window requestSource)
+   {
+      openSliderboardWindow(requestSource, SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL);
+      behringerSliderboard.getValue().ensureBFC2000Tab();
+   }
+
+   public void openXTouchCompactSliderboardWindow(Window requestSource)
+   {
+      openSliderboardWindow(requestSource, SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_XTOUCHCOMPACT_WINDOW_URL);
+      behringerSliderboard.getValue().ensureXTouchCompactTab();
    }
 }

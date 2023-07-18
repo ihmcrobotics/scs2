@@ -180,9 +180,9 @@ public class XTouchCompactSliderboardController
                                                                                       ThreadTools.createNamedDaemonThreadFactory(getClass().getSimpleName()));
    private ScheduledFuture<?> currentTask;
 
-   private final BehringerSliderController[] sliderControllers = new BehringerSliderController[8];
-   private final BehringerButtonController[] buttonControllers = new BehringerButtonController[16];
-   private final BehringerKnobController[] knobControllers = new BehringerKnobController[8];
+   private final BehringerSliderController[] sliderControllers = new BehringerSliderController[9];
+   private final BehringerButtonController[] buttonControllers = new BehringerButtonController[33];
+   private final BehringerKnobController[] knobControllers = new BehringerKnobController[16];
    private final BehringerChannelController[] allControllers;
 
    private final Receiver receiver = new Receiver()
@@ -340,7 +340,6 @@ public class XTouchCompactSliderboardController
       String name = info.getName();
       String description = info.getDescription();
 
-      System.out.println(name + " " + description);
       return name.contains(YoSliderboardDefinition.XTOUCHCOMPACT) || description.contains(YoSliderboardDefinition.XTOUCHCOMPACT);
    }
 
