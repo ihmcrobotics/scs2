@@ -122,14 +122,7 @@ public class CameraOrbitHandler
     * Zoom speed factor with respect to its current value. The larger is the zoom, the faster it
     * "goes".
     */
-   private final DoubleProperty distanceModifier = new SimpleDoubleProperty(this, "distanceModifier", 0.1);
-   /**
-    * <p>
-    * Only applicable when using the {@link EventHandler} via {@link #createScrollEventHandler()}.
-    * </p>
-    * When set to true, the direction of the zoom is reversed.
-    */
-   private final BooleanProperty invertZoomDirection = new SimpleBooleanProperty(this, "invertZoomDirection", false);
+   private final DoubleProperty distanceModifier = new SimpleDoubleProperty(this, "distanceModifier", -0.1);
 
    private final Vector3D up = new Vector3D();
    private final Vector3D down = new Vector3D();
@@ -169,12 +162,12 @@ public class CameraOrbitHandler
       cameraOrientation.addEventHandler(TransformChangedEvent.TRANSFORM_CHANGED, e ->
       {
          cameraPose.setToTransform(cameraOrientation);
-         cameraPose.appendTranslation(0.0, 0.0, distance.get());
+         cameraPose.appendTranslation(0.0, 0.0, -distance.get()); // we need to shift the camera backward
       });
       distance.addListener((o, oldValue, newValue) ->
       {
          cameraPose.setToTransform(cameraOrientation);
-         cameraPose.appendTranslation(0.0, 0.0, distance.get());
+         cameraPose.appendTranslation(0.0, 0.0, -distance.get()); // we need to shift the camera backward
       });
    }
 
@@ -260,8 +253,6 @@ public class CameraOrbitHandler
          public void handle(ScrollEvent event)
          {
             double direction = Math.signum(event.getDeltaY());
-            if (invertZoomDirection.get())
-               direction = -direction;
             double newDistance = distance.get() + direction * distance.get() * distanceModifier.get();
             newDistance = MathTools.clamp(newDistance, minDistance.get(), maxDistance.get());
             distance.set(newDistance);
@@ -480,10 +471,5 @@ public class CameraOrbitHandler
    public final DoubleProperty zoomSpeedFactorProperty()
    {
       return distanceModifier;
-   }
-
-   public final BooleanProperty invertZoomDirectionProperty()
-   {
-      return invertZoomDirection;
    }
 }
