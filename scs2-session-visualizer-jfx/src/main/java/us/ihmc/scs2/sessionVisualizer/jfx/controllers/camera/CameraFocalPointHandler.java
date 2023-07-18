@@ -17,7 +17,6 @@ import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.transform.Transform;
-import javafx.scene.transform.Translate;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -43,7 +42,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 public class CameraFocalPointHandler
 {
    /** The current translation of the focal point. */
-   private final Translate focalPointTranslation = new Translate();
+   private final TranslateSCS2 focalPointTranslation = new TranslateSCS2();
    /** The translation used to map keyboard to translation. It is expressed in world frame */
    private final TranslateSCS2 offsetTranslation = new TranslateSCS2();
    /** Current orientation of the camera necessary when translating the camera in its local frame. */
@@ -350,7 +349,7 @@ public class CameraFocalPointHandler
     *
     * @return the focal point position.
     */
-   public Translate getTranslation()
+   public TranslateSCS2 getTranslation()
    {
       return focalPointTranslation;
    }
