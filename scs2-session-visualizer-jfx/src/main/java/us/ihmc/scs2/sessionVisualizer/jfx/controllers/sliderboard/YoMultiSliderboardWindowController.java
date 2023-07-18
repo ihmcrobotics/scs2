@@ -12,14 +12,11 @@ import java.util.function.Function;
 
 import javax.xml.bind.JAXBException;
 
-import com.google.common.base.Objects;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -48,7 +45,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.xtouchcompact.YoXTouchCompactSliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
@@ -65,10 +61,6 @@ public class YoMultiSliderboardWindowController
    public static final YoSliderboardType DEFAULT_SLIDERBOARD_TYPE = YoSliderboardType.BCF2000;
    @FXML
    private TabPane sliderboardTabPane;
-   @FXML
-   private Tab initialTab;
-   @FXML
-   private YoSliderboardWindowControllerInterface initialSliderboardPaneController;
 
    private final Map<Tab, YoSliderboardWindowControllerInterface> tabToControllerMap = new HashMap<>();
 
@@ -76,6 +68,8 @@ public class YoMultiSliderboardWindowController
 
    private Stage window;
    private Window owner;
+   
+   private YoSliderboardType initialType = YoSliderboardType.BCF2000;
 
    private final List<Runnable> cleanupTasks = new ArrayList<>();
 
@@ -84,10 +78,8 @@ public class YoMultiSliderboardWindowController
       this.toolkit = toolkit;
       owner = toolkit.getMainWindow();
       window = new Stage(StageStyle.UTILITY);
-      initialSliderboardPaneController.initialize(window, toolkit);
-      Label initialTabHeader = TabPaneTools.editableTabHeader(initialTab);
+      
 
-      tabToControllerMap.put(initialTab, initialSliderboardPaneController);
       MenuTools.setupContextMenu(sliderboardTabPane,
                                  TabPaneTools.addBeforeMenuItemFactory(this::newBFC2000SliderboardTab, "Add BFC2000 tab before"),
                                  TabPaneTools.addAfterMenuItemFactory(this::newBFC2000SliderboardTab,  "Add BFC2000 tab after"),
@@ -99,7 +91,7 @@ public class YoMultiSliderboardWindowController
                                  exportAllTabMenuItemFactory(),
                                  importTabMenuItemFactory());
 
-      ListChangeListener<Tab> preserveInitialTabListener = (ListChangeListener<Tab>) change ->
+      ListChangeListener<Tab> preserveOneTabListener = (ListChangeListener<Tab>) change ->
       {
          while (change.next())
          {
@@ -107,22 +99,23 @@ public class YoMultiSliderboardWindowController
             {
                for (Tab removedTab : change.getRemoved())
                {
-                  if (removedTab == initialTab)
+                  var removed = tabToControllerMap.remove(removedTab);
+                  
+                  if(removed != null)
                   {
-                     JavaFXMissingTools.runLater(getClass(), () -> sliderboardTabPane.getTabs().add(initialTab));
-                     initialTabHeader.setText(DEFAULT_SLIDERBOARD_NAME);
-                     initialSliderboardPaneController.clear();
+                     initialType = removed.getType();
                   }
-                  else
+                  
+                  if(tabToControllerMap.isEmpty())
                   {
-                     tabToControllerMap.remove(removedTab);
+                     newInitialTab();
                   }
                }
             }
          }
       };
-      sliderboardTabPane.getTabs().addListener(preserveInitialTabListener);
-      cleanupTasks.add(() -> sliderboardTabPane.getTabs().removeListener(preserveInitialTabListener));
+      sliderboardTabPane.getTabs().addListener(preserveOneTabListener);
+      cleanupTasks.add(() -> sliderboardTabPane.getTabs().removeListener(preserveOneTabListener));
 
       ChangeListener<? super Tab> controllerScheduler = (o, oldValue, newValue) ->
       {
@@ -171,7 +164,7 @@ public class YoMultiSliderboardWindowController
 
       // FIXME The initialTab is not properly handled 
       ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
-      tabs.retainAll(initialTab);
+      tabs.clear();
 
 
       List<YoSliderboardDefinition> sliderboards = input.getYoSliderboards();
@@ -294,7 +287,16 @@ public class YoMultiSliderboardWindowController
 
       sliderboardTabPane.getTabs().clear();
       tabToControllerMap.clear();
-      tabToControllerMap.put(initialTab, initialSliderboardPaneController);
+      
+      newInitialTab();
+   }
+
+   private void newInitialTab()
+   {
+      var tab = newSliderboardTab(initialType);
+      
+      sliderboardTabPane.getTabs().add(tab);
+      sliderboardTabPane.getSelectionModel().select(0);
    }
 
    public void close()
