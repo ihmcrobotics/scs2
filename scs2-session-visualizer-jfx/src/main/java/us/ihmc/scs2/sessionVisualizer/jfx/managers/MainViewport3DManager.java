@@ -32,8 +32,8 @@ import us.ihmc.euclid.Axis3D;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointTargetTracker;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
@@ -135,15 +135,14 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraTargetTypeToTrack(TrackingTargetType targetType)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getTargetTracker().targetTypeProperty().set(targetType));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getFocalPointHandler().targetTypeProperty().set(targetType));
    }
 
    public void setCameraNodeToTrack(Node nodeToTrack)
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
-         cameraController.getTargetTracker().nodeToTrackProperty().set(nodeToTrack);
-         cameraController.getTargetTracker().targetTypeProperty().set(TrackingTargetType.Node);
+         cameraController.getFocalPointHandler().nodeToTrackProperty().set(nodeToTrack);
       });
    }
 
@@ -163,8 +162,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
             e.printStackTrace();
             return;
          }
-         cameraController.getTargetTracker().coordinatesToTrackProperty().setValue(tuple3DProperty);
-         cameraController.getTargetTracker().targetTypeProperty().set(TrackingTargetType.YoCoordinates);
+         cameraController.getFocalPointHandler().coordinatesToTrackProperty().setValue(tuple3DProperty);
       });
    }
 
@@ -214,9 +212,8 @@ public class MainViewport3DManager implements SingleViewport3DManager
                                 Node viewport,
                                 Predicate<Node> filter)
    {
-      CameraFocalPointTargetTracker targetTracker = cameraController.getTargetTracker();
-      ObjectProperty<TrackingTargetType> targetTypeProperty = targetTracker.targetTypeProperty();
-      ObjectProperty<Node> nodeToTrackProperty = targetTracker.nodeToTrackProperty();
+      CameraFocalPointHandler focalPointHandler = cameraController.getFocalPointHandler();
+      ObjectProperty<Node> nodeToTrackProperty = focalPointHandler.nodeToTrackProperty();
 
       MenuTools.setupContextMenu(viewport, (owner, event) ->
       {
@@ -230,18 +227,16 @@ public class MainViewport3DManager implements SingleViewport3DManager
          menuItem.setOnAction(e ->
          {
             nodeToTrackProperty.set(intersectedNode);
-            targetTypeProperty.set(TrackingTargetType.Node);
          });
          return menuItem;
       }, (owner, event) ->
       {
-         if (nodeToTrackProperty.get() == null)
+         if (nodeToTrackProperty.get() == null || focalPointHandler.isTrackingDisabled())
             return null;
          MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeToTrackProperty.get().getId());
          menuItem.setOnAction(e ->
          {
             nodeToTrackProperty.set(null);
-            targetTypeProperty.set(TrackingTargetType.Disabled);
          });
          return menuItem;
       }, (owner, event) ->
