@@ -20,6 +20,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
@@ -1130,45 +1131,45 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    @Override
-   public void removeSliderboard(String sliderboardName)
+   public void removeSliderboard(String sliderboardName, YoSliderboardType sliderboardType)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboard(sliderboardName));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboard(sliderboardName, sliderboardType));
    }
 
    @Override
-   public void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition)
+   public void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardButton(sliderboardName, buttonDefinition));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardButton(sliderboardName, sliderboardType, buttonDefinition));
    }
 
    @Override
-   public void clearSliderboardButton(String sliderboardName, int buttonIndex)
+   public void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardButton(sliderboardName, buttonIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardButton(sliderboardName, sliderboardType, buttonIndex));
    }
 
    @Override
-   public void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition)
+   public void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardKnob(sliderboardName, knobDefinition));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardKnob(sliderboardName, sliderboardType, knobDefinition));
    }
 
    @Override
-   public void clearSliderboardKnob(String sliderboardName, int knobIndex)
+   public void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, knobIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderboardType, knobIndex));
    }
 
    @Override
-   public void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition)
+   public void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardSlider(sliderboardName, sliderDefinition));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardSlider(sliderboardName, sliderboardType, sliderDefinition));
    }
 
    @Override
-   public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
+   public void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderboardType, sliderIndex));
    }
 
    @Override

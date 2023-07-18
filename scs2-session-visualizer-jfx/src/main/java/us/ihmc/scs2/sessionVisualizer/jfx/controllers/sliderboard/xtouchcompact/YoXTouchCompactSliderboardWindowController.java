@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.xtouchcompact;
 
-import static us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition.XTOUCHCOMPACT;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,6 +24,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardWindowControllerInterface;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000ButtonController;
@@ -230,6 +229,11 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
 
    public void setInput(YoSliderboardDefinition input)
    {
+      if(input.getType() != YoSliderboardType.XTOUCHCOMPACT)
+      {
+         throw new RuntimeException("Invalid definition type: " + input.getType());
+      }
+      
       clear();
 
       if (input.getName() != null)
@@ -384,7 +388,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
    {
       YoSliderboardDefinition definition = new YoSliderboardDefinition();
       definition.setName(nameProperty.get());
-      definition.setType(XTOUCHCOMPACT);
+      definition.setType(YoSliderboardType.XTOUCHCOMPACT);
       definition.setKnobs(knobControllers.stream().map(YoBCF2000KnobController::toYoKnobDefinition).collect(Collectors.toList()));
       definition.setButtons(buttonControllers.stream().map(YoBCF2000ButtonController::toYoButtonDefinition).collect(Collectors.toList()));
       definition.setSliders(sliderControllers.stream().map(YoBCF2000SliderController::toYoSliderDefinition).collect(Collectors.toList()));
@@ -400,5 +404,11 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       }
 
       return true;
+   }
+   
+   @Override
+   public YoSliderboardType getType()
+   {
+      return YoSliderboardType.XTOUCHCOMPACT;
    }
 }

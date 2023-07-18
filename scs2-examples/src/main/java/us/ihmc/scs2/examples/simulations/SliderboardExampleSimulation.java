@@ -5,6 +5,7 @@ import us.ihmc.scs2.SimulationConstructionSet2;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 
 public class SliderboardExampleSimulation
 {
@@ -20,16 +21,18 @@ public class SliderboardExampleSimulation
       scs.addTerrainObject(new SlopeGroundDefinition());
 
       scs.clearAllSliderboards();
-      scs.setSliderboard(createSliderboard());
-      scs.setSliderboardButton("AnotherSliderboard", 0, "is_rootJoint_pinned");
+      scs.setSliderboard(createSliderboard(YoSliderboardType.BCF2000));
+      scs.setSliderboard(createSliderboard(YoSliderboardType.XTOUCHCOMPACT));
+      scs.setSliderboardButton("AnotherSliderboard", YoSliderboardType.XTOUCHCOMPACT, 0, "is_rootJoint_pinned");
       scs.setDefaultSliderboardKnob(0, "qd_rootJoint_wZ");
 
       scs.start(true, false, false);
    }
 
-   private static YoSliderboardDefinition createSliderboard()
+   private static YoSliderboardDefinition createSliderboard(YoSliderboardType type)
    {
       YoSliderboardDefinition sliderboard = new YoSliderboardDefinition("Default");
+      sliderboard.setType(type);
       sliderboard.getSliders().add(new YoSliderDefinition("q_rootJoint_yaw", -1, -Math.PI, Math.PI));
       sliderboard.getSliders().add(new YoSliderDefinition("q_rootJoint_pitch", -1, -Math.PI / 2.0, Math.PI / 2.0));
       sliderboard.getSliders().add(new YoSliderDefinition("q_rootJoint_roll", -1, -Math.PI, Math.PI));
