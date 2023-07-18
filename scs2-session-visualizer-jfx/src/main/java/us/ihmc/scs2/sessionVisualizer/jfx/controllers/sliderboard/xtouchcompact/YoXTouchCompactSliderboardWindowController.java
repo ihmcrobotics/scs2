@@ -48,14 +48,15 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
    private AnchorPane mainAnchorPane;
    @FXML
    private YoBCF2000KnobController knob0Controller, knob1Controller, knob2Controller, knob3Controller, knob4Controller, knob5Controller, knob6Controller,
-         knob7Controller, knob9Controller, knob10Controller, knob11Controller, knob12Controller, knob13Controller, knob14Controller,
-         knob15Controller, knob16Controller;
+         knob7Controller, knob9Controller, knob10Controller, knob11Controller, knob12Controller, knob13Controller, knob14Controller, knob15Controller,
+         knob16Controller;
    @FXML
    private YoBCF2000ButtonController button0Controller, button1Controller, button2Controller, button3Controller, button4Controller, button5Controller,
          button6Controller, button7Controller, button8Controller, button9Controller, button10Controller, button11Controller, button12Controller,
          button13Controller, button14Controller, button15Controller, button16Controller, button17Controller, button18Controller, button19Controller,
          button20Controller, button21Controller, button22Controller, button23Controller, button24Controller, button25Controller, button26Controller,
-         button27Controller, button28Controller, button29Controller, button30Controller, button31Controller, button32Controller;
+         button27Controller, button28Controller, button29Controller, button30Controller, button31Controller, button32Controller, button33Controller,
+         button34Controller, button35Controller, button36Controller, button37Controller, button38Controller;
    @FXML
    private YoBCF2000SliderController slider0Controller, slider1Controller, slider2Controller, slider3Controller, slider4Controller, slider5Controller,
          slider6Controller, slider7Controller, mainSliderController;
@@ -125,7 +126,13 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
                                         button29Controller,
                                         button30Controller,
                                         button31Controller,
-                                        button32Controller);
+                                        button32Controller,
+                                        button33Controller,
+                                        button34Controller,
+                                        button35Controller,
+                                        button36Controller,
+                                        button37Controller,
+                                        button38Controller);
       sliderControllers = Arrays.asList(slider0Controller,
                                         slider1Controller,
                                         slider2Controller,
@@ -139,7 +146,6 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       allInputControllers.addAll(knobControllers);
       allInputControllers.addAll(buttonControllers);
       allInputControllers.addAll(sliderControllers);
-      
 
       sliderboard = XTouchCompactSliderboardController.searchAndConnectToDevice();
 
@@ -228,11 +234,11 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
 
    public void setInput(YoSliderboardDefinition input)
    {
-      if(input.getType() != YoSliderboardType.XTOUCHCOMPACT)
+      if (input.getType() != YoSliderboardType.XTOUCHCOMPACT)
       {
          throw new RuntimeException("Invalid definition type: " + input.getType());
       }
-      
+
       clear();
 
       if (input.getName() != null)
@@ -404,7 +410,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
 
       return true;
    }
-   
+
    @Override
    public YoSliderboardType getType()
    {

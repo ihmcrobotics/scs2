@@ -156,12 +156,19 @@
                   		<fx:include fx:id="knob11" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
                   		<fx:include fx:id="knob13" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
                   		<fx:include fx:id="knob15" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
+				        <fx:include fx:id="button33" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000ButtonControl.fxml" />
+				        <fx:include fx:id="button35" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000ButtonControl.fxml" />
+				        <fx:include fx:id="button37" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000ButtonControl.fxml" />
+                  		
           	      </VBox>
           	      <VBox alignment="TOP_CENTER" spacing="5.0" GridPane.columnIndex="10" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="1" GridPane.rowSpan="5">
                         <fx:include fx:id="knob10" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
                   		<fx:include fx:id="knob12" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
                   		<fx:include fx:id="knob14" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
                   		<fx:include fx:id="knob16" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000KnobControl.fxml" />
+                  		<fx:include fx:id="button34" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000ButtonControl.fxml" />
+                  		<fx:include fx:id="button36" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000ButtonControl.fxml" />
+                  		<fx:include fx:id="button38" maxWidth="1.7976931348623157E308" source="../bcf2000/YoBCF2000ButtonControl.fxml" />
           	      </VBox>
                   
                </children>

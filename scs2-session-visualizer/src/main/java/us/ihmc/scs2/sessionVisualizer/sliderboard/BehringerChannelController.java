@@ -13,10 +13,10 @@ public abstract class BehringerChannelController
    protected final Receiver midiOut;
    protected final int channel;
 
-   private boolean enable;
+   protected boolean enable;
 
-   private int currentDeviceValue = -1;
-   private int newDeviceValue = -1;
+   protected int currentDeviceValue = -1;
+   protected int newDeviceValue = -1;
 
    public BehringerChannelController(SliderboardVariable controlVariable, int channel, Receiver midiOut)
    {
@@ -70,12 +70,12 @@ public abstract class BehringerChannelController
       }
    }
 
-   public void pushControlVariableToDevice()
+   protected void pushControlVariableToDevice()
    {
       pushValueToDevice(controlVariable.getValue());
    }
 
-   public void pushValueToDevice(int value)
+   protected void pushValueToDevice(int value)
    {
       if (!enable || value == -1)
          return;
