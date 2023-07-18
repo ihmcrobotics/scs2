@@ -31,9 +31,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardW
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Button;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Knob;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Slider;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.BCF2000Button;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.BCF2000Knob;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.BCF2000Slider;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 
 public class YoBCF2000SliderboardWindowController implements YoSliderboardWindowControllerInterface
@@ -129,22 +129,22 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
       for (int i = 0; i < knobControllers.size(); i++)
       {
          YoBCF2000KnobController yoKnobController = knobControllers.get(i);
-         SliderboardVariable knob = sliderboard == null ? null : sliderboard.getKnob(Knob.values[i]);
-         yoKnobController.initialize(toolkit, Knob.values[i], knob);
+         SliderboardVariable knob = sliderboard == null ? null : sliderboard.getKnob(BCF2000Knob.values[i]);
+         yoKnobController.initialize(toolkit, BCF2000Knob.values[i], knob);
       }
 
       for (int i = 0; i < buttonControllers.size(); i++)
       {
          YoBCF2000ButtonController yoButtonController = buttonControllers.get(i);
-         SliderboardVariable button = sliderboard == null ? null : sliderboard.getButton(Button.values[i]);
-         yoButtonController.initialize(toolkit, Button.values[i], button);
+         SliderboardVariable button = sliderboard == null ? null : sliderboard.getButton(BCF2000Button.values[i]);
+         yoButtonController.initialize(toolkit, BCF2000Button.values[i], button);
       }
 
       for (int i = 0; i < sliderControllers.size(); i++)
       {
          YoBCF2000SliderController yoSliderController = sliderControllers.get(i);
-         SliderboardVariable slider = sliderboard == null ? null : sliderboard.getSlider(Slider.values[i]);
-         yoSliderController.initialize(toolkit, Slider.values[i], slider);
+         SliderboardVariable slider = sliderboard == null ? null : sliderboard.getSlider(BCF2000Slider.values[i]);
+         yoSliderController.initialize(toolkit, BCF2000Slider.values[i], slider);
       }
    }
 
