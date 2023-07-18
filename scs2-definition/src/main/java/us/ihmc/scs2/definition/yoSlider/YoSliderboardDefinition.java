@@ -23,7 +23,7 @@ public class YoSliderboardDefinition
     * Type value for the BCF2000.
     */
    public static final String BCF2000 = "BCF2000";
-   public static final String XTOUCHCOMPACT = "XTOUCHCompact";
+   public static final String XTOUCHCOMPACT = "X-TOUCH COMPACT";
 
    /**
     * The type of sliderboard to use with this definition.

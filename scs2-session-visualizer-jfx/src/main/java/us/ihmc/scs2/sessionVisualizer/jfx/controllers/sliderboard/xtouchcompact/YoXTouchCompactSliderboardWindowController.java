@@ -34,8 +34,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardController;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardController.XTouchButton;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardController.XTouchKnob;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardController.XTouchSlider;
 
 public class YoXTouchCompactSliderboardWindowController implements YoSliderboardWindowControllerInterface
 {
@@ -46,17 +49,17 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
    private AnchorPane mainAnchorPane;
    @FXML
    private YoBCF2000KnobController knob0Controller, knob1Controller, knob2Controller, knob3Controller, knob4Controller, knob5Controller, knob6Controller,
-         knob7Controller, knob8Controller, knob9Controller, knob10Controller, knob11Controller, knob12Controller, knob13Controller, knob14Controller,
+         knob7Controller, knob9Controller, knob10Controller, knob11Controller, knob12Controller, knob13Controller, knob14Controller,
          knob15Controller, knob16Controller;
    @FXML
    private YoBCF2000ButtonController button0Controller, button1Controller, button2Controller, button3Controller, button4Controller, button5Controller,
          button6Controller, button7Controller, button8Controller, button9Controller, button10Controller, button11Controller, button12Controller,
          button13Controller, button14Controller, button15Controller, button16Controller, button17Controller, button18Controller, button19Controller,
          button20Controller, button21Controller, button22Controller, button23Controller, button24Controller, button25Controller, button26Controller,
-         button27Controller, button28Controller, button29Controller, button30Controller, button31Controller, button32Controller, button33Controller;
+         button27Controller, button28Controller, button29Controller, button30Controller, button31Controller, button32Controller;
    @FXML
    private YoBCF2000SliderController slider0Controller, slider1Controller, slider2Controller, slider3Controller, slider4Controller, slider5Controller,
-         slider6Controller, slider7Controller, slider8Controller;
+         slider6Controller, slider7Controller, mainSliderController;
    @FXML
    private Label connectionStateLabel;
    @FXML
@@ -69,7 +72,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
    private List<YoBCF2000SliderController> sliderControllers;
    private List<YoBCF2000InputController> allInputControllers;
 
-//   private BCF2000SliderboardController sliderboard;
+   private XTouchCompactSliderboardController sliderboard;
    private Window owner;
 
    public void initialize(Window owner, SessionVisualizerToolkit toolkit)
@@ -83,7 +86,6 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
                                       knob5Controller,
                                       knob6Controller,
                                       knob7Controller,
-                                      knob8Controller,
                                       knob9Controller,
                                       knob10Controller,
                                       knob11Controller,
@@ -124,8 +126,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
                                         button29Controller,
                                         button30Controller,
                                         button31Controller,
-                                        button32Controller,
-                                        button33Controller);
+                                        button32Controller);
       sliderControllers = Arrays.asList(slider0Controller,
                                         slider1Controller,
                                         slider2Controller,
@@ -134,46 +135,48 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
                                         slider5Controller,
                                         slider6Controller,
                                         slider7Controller,
-                                        slider8Controller);
+                                        mainSliderController);
       allInputControllers = new ArrayList<>();
       allInputControllers.addAll(knobControllers);
       allInputControllers.addAll(buttonControllers);
       allInputControllers.addAll(sliderControllers);
+      
+      System.out.println(allInputControllers.toString());
 
-//      sliderboard = BCF2000SliderboardController.searchAndConnectToDevice();
-//
-//      if (sliderboard == null)
-//      {
-//         LogTools.error("Could not connect to XTouch Compact sliderboard");
-//         connectionStateLabel.setText(NOT_CONNECTED_STRING);
-//         connectionStateImageView.setImage(SessionVisualizerIOTools.INVALID_ICON_IMAGE);
-//      }
-//      else
-//      {
-//         connectionStateLabel.setText(CONNECTED_STRING);
-//         connectionStateImageView.setImage(SessionVisualizerIOTools.VALID_ICON_IMAGE);
-//      }
-//
-//      for (int i = 0; i < knobControllers.size(); i++)
-//      {
-//         YoBCF2000KnobController yoKnobController = knobControllers.get(i);
-//         SliderboardVariable knob = sliderboard == null ? null : sliderboard.getKnob(Knob.values[i]);
-//         yoKnobController.initialize(toolkit, Knob.values[i], knob);
-//      }
-//
-//      for (int i = 0; i < buttonControllers.size(); i++)
-//      {
-//         YoBCF2000ButtonController yoButtonController = buttonControllers.get(i);
-//         SliderboardVariable button = sliderboard == null ? null : sliderboard.getButton(Button.values[i]);
-//         yoButtonController.initialize(toolkit, Button.values[i], button);
-//      }
-//
-//      for (int i = 0; i < sliderControllers.size(); i++)
-//      {
-//         YoBCF2000SliderController yoSliderController = sliderControllers.get(i);
-//         SliderboardVariable slider = sliderboard == null ? null : sliderboard.getSlider(Slider.values[i]);
-//         yoSliderController.initialize(toolkit, Slider.values[i], slider);
-//      }
+      sliderboard = XTouchCompactSliderboardController.searchAndConnectToDevice();
+
+      if (sliderboard == null)
+      {
+         LogTools.error("Could not connect to XTouch Compact sliderboard");
+         connectionStateLabel.setText(NOT_CONNECTED_STRING);
+         connectionStateImageView.setImage(SessionVisualizerIOTools.INVALID_ICON_IMAGE);
+      }
+      else
+      {
+         connectionStateLabel.setText(CONNECTED_STRING);
+         connectionStateImageView.setImage(SessionVisualizerIOTools.VALID_ICON_IMAGE);
+      }
+
+      for (int i = 0; i < knobControllers.size(); i++)
+      {
+         YoBCF2000KnobController yoKnobController = knobControllers.get(i);
+         SliderboardVariable knob = sliderboard == null ? null : sliderboard.getKnob(XTouchKnob.values[i]);
+         yoKnobController.initialize(toolkit, XTouchKnob.values[i], knob);
+      }
+
+      for (int i = 0; i < buttonControllers.size(); i++)
+      {
+         YoBCF2000ButtonController yoButtonController = buttonControllers.get(i);
+         SliderboardVariable button = sliderboard == null ? null : sliderboard.getButton(XTouchButton.values[i]);
+         yoButtonController.initialize(toolkit, XTouchButton.values[i], button);
+      }
+
+      for (int i = 0; i < sliderControllers.size(); i++)
+      {
+         YoBCF2000SliderController yoSliderController = sliderControllers.get(i);
+         SliderboardVariable slider = sliderboard == null ? null : sliderboard.getSlider(XTouchSlider.values[i]);
+         yoSliderController.initialize(toolkit, XTouchSlider.values[i], slider);
+      }
    }
 
    @FXML
@@ -353,14 +356,14 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
 
    public void start()
    {
-//      if (sliderboard != null)
-//         sliderboard.start();
+      if (sliderboard != null)
+         sliderboard.start();
    }
 
    public void stop()
    {
-//      if (sliderboard != null)
-//         sliderboard.stop();
+      if (sliderboard != null)
+         sliderboard.stop();
    }
 
    public void close()
@@ -368,8 +371,8 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       stop();
       clear();
 
-//      if (sliderboard != null)
-//         sliderboard.closeAndDispose();
+      if (sliderboard != null)
+         sliderboard.closeAndDispose();
    }
 
    public StringProperty nameProperty()

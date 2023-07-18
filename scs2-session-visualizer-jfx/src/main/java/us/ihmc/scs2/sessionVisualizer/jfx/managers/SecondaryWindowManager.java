@@ -149,8 +149,11 @@ public class SecondaryWindowManager implements Manager
          case NewWindowRequest.GRAPHIC_EDITOR_WINDOW_TYPE:
             openYoGraphicEditor(request.requestSource);
             break;
-         case NewWindowRequest.BEHRINGER_SLIDERBOARD_WINDOW_TYPE:
-            sliderboardManager.openBehringerSliderboardWindow(request.requestSource);
+         case NewWindowRequest.BFC2000_SLIDERBOARD_WINDOW_TYPE:
+            sliderboardManager.openBFC2000SliderboardWindow(request.requestSource);
+            return;
+         case NewWindowRequest.XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE:
+            sliderboardManager.openXTouchCompactSliderboardWindow(request.requestSource);
             return;
          case NewWindowRequest.REGISTRY_STATISTICS_WINDOW_TYPE:
             openRegistryStatisticsWindow(request.requestSource, (String) request.additionalData);
@@ -366,7 +369,8 @@ public class SecondaryWindowManager implements Manager
    public static class NewWindowRequest
    {
       public static final String REGISTRY_STATISTICS_WINDOW_TYPE = "YoRegistryStatisticsWindow";
-      public static final String BEHRINGER_SLIDERBOARD_WINDOW_TYPE = "BehringerEditorWindow";
+      public static final String BFC2000_SLIDERBOARD_WINDOW_TYPE = "BFC2000EditorWindow";
+      public static final String XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE = "XTouchCompactEditorWindow";
       public static final String GRAPHIC_EDITOR_WINDOW_TYPE = "YoGraphicEditorWindow";
       public static final String COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE = "YoCompositeEditorWindow";
       public static final String SECONDARY_CHART_WINDOW_TYPE = "SecondaryChartWindow";
@@ -392,9 +396,13 @@ public class SecondaryWindowManager implements Manager
          return new NewWindowRequest(REGISTRY_STATISTICS_WINDOW_TYPE, requestSource, registry.getNamespace().toString());
       }
 
-      public static NewWindowRequest behringerSliderboardWindow(Window requestSource)
+      public static NewWindowRequest bfc2000SliderboardWindow(Window requestSource)
       {
-         return new NewWindowRequest(BEHRINGER_SLIDERBOARD_WINDOW_TYPE, requestSource);
+         return new NewWindowRequest(BFC2000_SLIDERBOARD_WINDOW_TYPE, requestSource);
+      }
+      public static NewWindowRequest xtouchCompactSliderboardWindow(Window requestSource)
+      {
+         return new NewWindowRequest(XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE, requestSource);
       }
 
       public static NewWindowRequest graphicEditorWindow(Window requestSource)

@@ -3,7 +3,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard;
 import java.io.File;
 
 import javafx.beans.property.StringProperty;
-import javafx.fxml.FXML;
 import javafx.stage.Window;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
