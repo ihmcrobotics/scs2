@@ -65,7 +65,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
                                                                                      rootNode3D));
       cameraView.addEventHandler(Event.ANY, cameraController);
 
-      Sphere focusPointViz = cameraController.getFocusPointViz();
+      Sphere focusPointViz = cameraController.getFocalPointViz();
       if (focusPointViz != null)
       {
          rootNode3D.getChildren().add(focusPointViz);

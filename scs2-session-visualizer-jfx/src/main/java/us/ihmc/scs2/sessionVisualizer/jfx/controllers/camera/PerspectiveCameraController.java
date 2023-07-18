@@ -65,7 +65,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
                                                                                                           "SCS2_GUI_CAMERA_FOCUS_SIZE",
                                                                                                           0.0025);
 
-   private final Sphere focusPointViz;
+   private final Sphere focalPointViz;
 
    /**
     * Rotation about the focus point. By construction it is meant to make the camera orbit about the
@@ -117,27 +117,27 @@ public class PerspectiveCameraController implements EventHandler<Event>
       Translate focalPointTranslate = focalPointHandler.getTranslation();
       translationEventHandler = focalPointHandler.createKeyEventHandler();
 
-      changeCameraPosition(-2.0, 0.7, 1.0);
+      setCameraPosition(-2.0, 0.7, 1.0);
 
       camera.getTransforms().addAll(focalPointTranslate, cameraOrientation, offsetFromFocusPoint);
 
       if (FOCUS_POINT_SHOW)
       {
-         focusPointViz = new Sphere(0.01);
+         focalPointViz = new Sphere(0.01);
          PhongMaterial material = new PhongMaterial();
          material.setDiffuseColor(Color.DARKRED);
          material.setSpecularColor(Color.RED);
-         focusPointViz.setMaterial(material);
-         focusPointViz.getTransforms().addAll(focalPointTranslate);
+         focalPointViz.setMaterial(material);
+         focalPointViz.getTransforms().addAll(focalPointTranslate);
          offsetFromFocusPoint.zProperty().addListener((o, oldValue, newValue) ->
          {
             double sphereRadius = FOCUS_POINT_SIZE * Math.abs(offsetFromFocusPoint.getTz());
-            focusPointViz.setRadius(sphereRadius);
+            focalPointViz.setRadius(sphereRadius);
          });
       }
       else
       {
-         focusPointViz = null;
+         focalPointViz = null;
       }
 
       setupCameraRotationHandler();
@@ -153,12 +153,12 @@ public class PerspectiveCameraController implements EventHandler<Event>
       updater.start();
    }
 
-   public void changeCameraPosition(double x, double y, double z)
+   public void setCameraPosition(Point3DReadOnly desiredCameraPosition)
    {
-      changeCameraPosition(new Point3D(x, y, z));
+      setCameraPosition(desiredCameraPosition.getX(), desiredCameraPosition.getY(), desiredCameraPosition.getZ());
    }
 
-   public void changeCameraPosition(Point3DReadOnly desiredCameraPosition)
+   public void setCameraPosition(double x, double y, double z)
    {
       Translate focalPoint = focalPointHandler.getTranslation();
       double dx = desiredCameraPosition.getX() - focalPoint.getX();
@@ -187,9 +187,9 @@ public class PerspectiveCameraController implements EventHandler<Event>
     * @param z               the z-coordinate of the new focus location.
     * @param translateCamera whether to translate or rotate the camera when updating the focus point.
     */
-   public void changeFocusPosition(double x, double y, double z, boolean translateCamera)
+   public void setFocalPoint(double x, double y, double z, boolean translateCamera)
    {
-      changeFocusPosition(new Point3D(x, y, z), translateCamera);
+      setFocalPoint(new Point3D(x, y, z), translateCamera);
    }
 
    /**
@@ -205,17 +205,16 @@ public class PerspectiveCameraController implements EventHandler<Event>
     * </ul>
     * </p>
     * 
-    * @param desiredFocusPosition the new focus location.
-    * @param translateCamera      whether to translate or rotate the camera when updating the focus
-    *                             point.
+    * @param desiredFocalPoint the new focus location.
+    * @param translateCamera   whether to translate or rotate the camera when updating the focus point.
     */
-   public void changeFocusPosition(Point3DReadOnly desiredFocusPosition, boolean translateCamera)
+   public void setFocalPoint(Point3DReadOnly desiredFocalPoint, boolean translateCamera)
    {
       focalPointHandler.disableTracking();
 
       if (translateCamera)
       {
-         focalPointHandler.setPositionWorldFrame(desiredFocusPosition);
+         focalPointHandler.setPositionWorldFrame(desiredFocalPoint);
       }
       else
       {
@@ -223,11 +222,11 @@ public class PerspectiveCameraController implements EventHandler<Event>
          Transform cameraTransform = camera.getLocalToSceneTransform();
          Point3D currentCameraPosition = new Point3D(cameraTransform.getTx(), cameraTransform.getTy(), cameraTransform.getTz());
 
-         focalPointHandler.setPositionWorldFrame(desiredFocusPosition);
+         focalPointHandler.setPositionWorldFrame(desiredFocalPoint);
 
-         double distanceFromFocusPoint = currentCameraPosition.distance(desiredFocusPosition);
+         double distanceFromFocusPoint = currentCameraPosition.distance(desiredFocalPoint);
          offsetFromFocusPoint.setZ(-distanceFromFocusPoint);
-         rotationCalculator.setRotationFromCameraAndFocusPositions(currentCameraPosition, desiredFocusPosition, 0.0);
+         rotationCalculator.setRotationFromCameraAndFocusPositions(currentCameraPosition, desiredFocalPoint, 0.0);
       }
    }
 
@@ -405,9 +404,9 @@ public class PerspectiveCameraController implements EventHandler<Event>
       updater.stop();
    }
 
-   public Sphere getFocusPointViz()
+   public Sphere getFocalPointViz()
    {
-      return focusPointViz;
+      return focalPointViz;
    }
 
    public PerspectiveCamera getCamera()
