@@ -40,7 +40,7 @@
                </padding>
             </VBox>
             <Separator orientation="VERTICAL" />
-            <GridPane hgap="5.0" vgap="5.0" HBox.hgrow="NEVER">
+            <GridPane hgap="5.0" maxHeight="-Infinity" vgap="5.0" HBox.hgrow="NEVER">
                <columnConstraints>
                   <ColumnConstraints hgrow="SOMETIMES" />
                   <ColumnConstraints hgrow="SOMETIMES" />
@@ -122,7 +122,7 @@
                </padding>
             </VBox>
             <Separator orientation="VERTICAL" HBox.hgrow="NEVER" />
-            <GridPane hgap="5.0" vgap="5.0" HBox.hgrow="NEVER">
+            <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" vgap="5.0" HBox.hgrow="NEVER">
                <columnConstraints>
                   <ColumnConstraints hgrow="SOMETIMES" />
                   <ColumnConstraints hgrow="SOMETIMES" />

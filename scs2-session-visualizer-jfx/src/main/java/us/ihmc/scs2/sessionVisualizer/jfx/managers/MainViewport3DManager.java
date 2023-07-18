@@ -83,7 +83,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       cameraController.enableShiftClickFocusTranslation();
       subScene.addEventHandler(Event.ANY, cameraController);
 
-      Sphere focusPointViz = cameraController.getFocusPointViz();
+      Sphere focusPointViz = cameraController.getFocalPointViz();
       if (focusPointViz != null)
       {
          rootNode3D.getChildren().add(focusPointViz);
@@ -168,7 +168,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraPosition(double x, double y, double z)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.changeCameraPosition(x, y, z));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.setCameraPosition(x, y, z));
    }
 
    public void setCameraOrientation(double latitude, double longitude, double roll)
@@ -178,7 +178,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraFocusPosition(double x, double y, double z)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.changeFocusPosition(x, y, z, false));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.setFocalPoint(x, y, z, false));
    }
 
    public void setCameraZoom(double distanceFromFocus)
