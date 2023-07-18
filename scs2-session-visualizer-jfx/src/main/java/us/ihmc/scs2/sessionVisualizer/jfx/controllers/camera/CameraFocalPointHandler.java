@@ -2,12 +2,12 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -47,11 +47,6 @@ public class CameraFocalPointHandler
    private final TranslateSCS2 offsetTranslation = new TranslateSCS2();
    /** Current orientation of the camera necessary when translating the camera in its local frame. */
    private final ObjectProperty<Transform> cameraOrientation = new SimpleObjectProperty<>(this, "cameraOrientation", null);
-   /**
-    * Current zoom of the camera. It is used to vary the translation speed when using the keyboard. As
-    * the zoom increases, the translation speed increases too.
-    */
-   private ReadOnlyDoubleProperty currentZoom = null;
 
    /**
     * When set to true, the translations forward/backward and left/right will be performed on a
@@ -70,13 +65,7 @@ public class CameraFocalPointHandler
     * in {@link #fastModifierPredicate} is fulfilled.
     */
    private final DoubleProperty fastModifier = new SimpleDoubleProperty(this, "fastModifier", 0.0125);
-   /** Minimum value of a translation offset when using the keyboard. */
-   private final DoubleProperty minTranslationOffset = new SimpleDoubleProperty(this, "minTranslationOffset", 0.1);
-   /**
-    * The zoom-to-translation pow is used to define the relation between the current zoom value and the
-    * translation speed of the camera.
-    */
-   private final DoubleProperty zoomToTranslationPow = new SimpleDoubleProperty(this, "zoomToTranslationPow", 0.75);
+   private DoubleUnaryOperator translationRateModifier;
 
    /** Key binding for moving the camera forward. Its default value is: {@code KeyCode.W}. */
    private final ObjectProperty<KeyCode> forwardKey = new SimpleObjectProperty<>(this, "forwardKey", KeyCode.W);
@@ -217,11 +206,8 @@ public class CameraFocalPointHandler
             else
                modifier = fastModifier.get();
 
-            if (currentZoom != null)
-            {
-               modifier *= Math.pow(Math.abs(currentZoom.get()), zoomToTranslationPow.get());
-               modifier = Math.min(modifier, minTranslationOffset.get());
-            }
+            if (translationRateModifier != null)
+               modifier = translationRateModifier.applyAsDouble(modifier);
 
             KeyCode keyDown = event.getCode();
             boolean isKeyReleased = event.getEventType() == KeyEvent.KEY_RELEASED;
@@ -333,15 +319,9 @@ public class CameraFocalPointHandler
       this.cameraOrientation.set(cameraOrientation);
    }
 
-   /**
-    * Sets the reference to the current camera zoom to enable translation speed varying on the zoom
-    * value.
-    *
-    * @param zoom
-    */
-   public void setZoom(ReadOnlyDoubleProperty zoom)
+   public void setTranslationRateModifier(DoubleUnaryOperator translationRateModifier)
    {
-      currentZoom = zoom;
+      this.translationRateModifier = translationRateModifier;
    }
 
    /**
@@ -382,16 +362,6 @@ public class CameraFocalPointHandler
    public final DoubleProperty fastModifierProperty()
    {
       return fastModifier;
-   }
-
-   public final DoubleProperty minTranslationOffsetProperty()
-   {
-      return minTranslationOffset;
-   }
-
-   public final DoubleProperty zoomToTranslationPowProperty()
-   {
-      return zoomToTranslationPow;
    }
 
    public final ObjectProperty<KeyCode> forwardKeyProperty()
