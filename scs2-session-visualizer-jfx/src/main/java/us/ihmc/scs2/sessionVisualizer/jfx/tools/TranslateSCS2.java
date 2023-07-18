@@ -23,6 +23,11 @@ public class TranslateSCS2 extends Translate implements Tuple3DBasics
       super(x, y);
    }
 
+   public void set(javafx.geometry.Point3D point3D)
+   {
+      set(point3D.getX(), point3D.getY(), point3D.getZ());
+   }
+
    public void setFrom(javafx.scene.transform.Transform transform)
    {
       setX(transform.getTx());

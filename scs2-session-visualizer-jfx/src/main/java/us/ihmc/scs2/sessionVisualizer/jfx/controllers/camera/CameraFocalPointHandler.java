@@ -20,10 +20,9 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import us.ihmc.euclid.matrix.RotationMatrix;
 import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
@@ -46,7 +45,7 @@ public class CameraFocalPointHandler
    /** The current translation of the focal point. */
    private final Translate focalPointTranslation = new Translate();
    /** The translation used to map keyboard to translation. It is expressed in world frame */
-   private final Translate offsetTranslation = new Translate();
+   private final TranslateSCS2 offsetTranslation = new TranslateSCS2();
    /** Current orientation of the camera necessary when translating the camera in its local frame. */
    private final ObjectProperty<Transform> cameraOrientation = new SimpleObjectProperty<>(this, "cameraOrientation", null);
    /**
@@ -114,7 +113,6 @@ public class CameraFocalPointHandler
 
    private final Vector3D down = new Vector3D();
    private final List<Runnable> updateTasks = new ArrayList<>();
-   private final List<Runnable> cleanupActions = new ArrayList<>();
 
    /**
     * Creates a calculator for the camera translation.
@@ -125,6 +123,15 @@ public class CameraFocalPointHandler
    {
       down.setAndNegate(up);
 
+      targetType.addListener((o, oldValue, newValue) ->
+      {
+         if (newValue == TrackingTargetType.Disabled)
+         {
+            offsetTranslation.set(trackingTranslate);
+            trackingTranslate.setToZero();
+         }
+      });
+
       nodeTracked.addListener((o, oldValue, newValue) ->
       {
          if (oldValue != null)
@@ -132,8 +139,30 @@ public class CameraFocalPointHandler
 
          if (newValue != null)
          {
+            targetType.set(TrackingTargetType.Node);
+            // Reset the focus translation whenever the target gets updated
+            offsetTranslation.setToZero();
+
             newValue.localToSceneTransformProperty().addListener(nodeTrackingListener);
             nodeTrackingListener.changed(null, null, newValue.getLocalToSceneTransform());
+         }
+         else if (targetType.get() == TrackingTargetType.Node)
+         {
+            disableTracking();
+         }
+      });
+
+      coordinatesTracked.addListener((o, oldValue, newValue) ->
+      {
+         if (newValue != null)
+         {
+            targetType.set(TrackingTargetType.YoCoordinates);
+            // Reset the focus translation whenever the target gets updated
+            offsetTranslation.setToZero();
+         }
+         else if (targetType.get() == TrackingTargetType.YoCoordinates)
+         {
+            disableTracking();
          }
       });
 
@@ -143,6 +172,20 @@ public class CameraFocalPointHandler
          if (tuple != null && targetType.get() == TrackingTargetType.YoCoordinates)
             trackingTranslate.set(tuple.toPoint3DInWorld());
       });
+
+      focalPointTranslation.xProperty().bind(trackingTranslate.xProperty().add(offsetTranslation.xProperty()));
+      focalPointTranslation.yProperty().bind(trackingTranslate.yProperty().add(offsetTranslation.yProperty()));
+      focalPointTranslation.zProperty().bind(trackingTranslate.zProperty().add(offsetTranslation.zProperty()));
+   }
+
+   public void disableTracking()
+   {
+      targetType.set(TrackingTargetType.Disabled);
+   }
+
+   public boolean isTrackingDisabled()
+   {
+      return targetType.get() == TrackingTargetType.Disabled;
    }
 
    public void update()
@@ -151,11 +194,6 @@ public class CameraFocalPointHandler
       {
          updateTasks.get(i).run();
       }
-   }
-
-   public void dispose()
-   {
-      cleanupActions.forEach(Runnable::run);
    }
 
    /**
@@ -258,7 +296,7 @@ public class CameraFocalPointHandler
          JavaFXMissingTools.applyTranform(cameraOrientation.get(), shift);
       }
 
-      JavaFXMissingTools.addEquals(offsetTranslation, shift);
+      offsetTranslation.add(shift);
    }
 
    /**
@@ -270,7 +308,19 @@ public class CameraFocalPointHandler
     */
    public void translateWorldFrame(double dx, double dy, double dz)
    {
-      JavaFXMissingTools.addEquals(offsetTranslation, dx, dy, dz);
+      offsetTranslation.add(dx, dy, dz);
+   }
+
+   public void setPositionWorldFrame(Tuple3DReadOnly position)
+   {
+      setPositionWorldFrame(position.getX(), position.getY(), position.getZ());
+   }
+
+   public void setPositionWorldFrame(double x, double y, double z)
+   {
+      offsetTranslation.set(x, y, z);
+      if (targetType.get() != TrackingTargetType.Disabled)
+         offsetTranslation.sub(trackingTranslate);
    }
 
    /**
@@ -296,14 +346,23 @@ public class CameraFocalPointHandler
    }
 
    /**
-    * Get the reference to the translation of the camera. This is the output of this calculator which
-    * can be bound to an external property or used directly to apply a transformation to the camera.
+    * Get the reference to the translation of the focal point expressed in world frame.
     *
-    * @return the camera's translation.
+    * @return the focal point position.
     */
    public Translate getTranslation()
    {
       return focalPointTranslation;
+   }
+
+   /**
+    * Gets the translation that can be set to change the focal point position.
+    * 
+    * @return
+    */
+   public TranslateSCS2 getOffsetTranslation()
+   {
+      return offsetTranslation;
    }
 
    public final BooleanProperty keepTranslationLeveledProperty()
@@ -364,5 +423,25 @@ public class CameraFocalPointHandler
    public final ObjectProperty<KeyCode> downKeyProperty()
    {
       return downKey;
+   }
+
+   public TranslateSCS2 getTrackingTranslate()
+   {
+      return trackingTranslate;
+   }
+
+   public ObjectProperty<TrackingTargetType> targetTypeProperty()
+   {
+      return targetType;
+   }
+
+   public ObjectProperty<Tuple3DProperty> coordinatesToTrackProperty()
+   {
+      return coordinatesTracked;
+   }
+
+   public ObjectProperty<Node> nodeToTrackProperty()
+   {
+      return nodeTracked;
    }
 }
