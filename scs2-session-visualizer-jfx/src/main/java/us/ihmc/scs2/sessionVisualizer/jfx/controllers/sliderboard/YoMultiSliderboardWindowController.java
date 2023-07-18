@@ -49,6 +49,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardController;
 
 public class YoMultiSliderboardWindowController
 {
@@ -307,6 +308,7 @@ public class YoMultiSliderboardWindowController
       window.close();
       // FIXME We should keep track of the device we're using and avoid randomly all devices
       BCF2000SliderboardController.closeMidiDevices();
+      XTouchCompactSliderboardController.closeMidiDevices();
    }
 
    public Stage getWindow()
@@ -511,37 +513,21 @@ public class YoMultiSliderboardWindowController
       return definition;
    }
    
-   public void ensureBFC2000Tab()
+   public void ensureTab(YoSliderboardType type)
    {
       for(var controller : tabToControllerMap.entrySet())
       {
-         if(controller.getValue() instanceof YoBCF2000SliderboardWindowController)
+         if(controller.getValue().getType() == type)
          {
             return;
          }
       }
       
-      var tab = newBFC2000SliderboardTab();
+      var tab = newSliderboardTab(type);
       
       int index = sliderboardTabPane.getTabs().size();
       sliderboardTabPane.getTabs().add(tab);
       sliderboardTabPane.getSelectionModel().select(index);
    }
 
-   public void ensureXTouchCompactTab()
-   {
-      for(var controller : tabToControllerMap.entrySet())
-      {
-         if(controller.getValue() instanceof YoXTouchCompactSliderboardWindowController)
-         {
-            return;
-         }
-      }
-      
-      var tab = newXtouchCompactTab();
-      
-      int index = sliderboardTabPane.getTabs().size();
-      sliderboardTabPane.getTabs().add(tab);
-      sliderboardTabPane.getSelectionModel().select(index);
-   }
 }

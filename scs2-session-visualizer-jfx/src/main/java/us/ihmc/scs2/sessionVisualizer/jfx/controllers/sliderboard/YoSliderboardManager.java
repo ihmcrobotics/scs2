@@ -391,6 +391,7 @@ public class YoSliderboardManager implements Manager
       if (behringerSliderboard.getValue() != null)
       {
          behringerSliderboard.getValue().showWindow();
+         behringerSliderboard.getValue().ensureTab(type);
          return;
       }
 
@@ -421,15 +422,4 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   public void openBFC2000SliderboardWindow(Window requestSource)
-   {
-      openSliderboardWindow(requestSource, YoSliderboardType.BCF2000);
-      behringerSliderboard.getValue().ensureBFC2000Tab();
-   }
-
-   public void openXTouchCompactSliderboardWindow(Window requestSource)
-   {
-      openSliderboardWindow(requestSource, YoSliderboardType.XTOUCHCOMPACT);
-      behringerSliderboard.getValue().ensureXTouchCompactTab();
-   }
 }
