@@ -386,7 +386,7 @@ public class YoSliderboardManager implements Manager
       return -1;
    }
    
-   public void openSliderboardWindow(Window requestSource, URL initialSliderboardWindow)
+   public void openSliderboardWindow(Window requestSource, YoSliderboardType type)
    {
       if (behringerSliderboard.getValue() != null)
       {
@@ -396,7 +396,7 @@ public class YoSliderboardManager implements Manager
 
       try
       {
-         FXMLLoader fxmlLoader = new FXMLLoader(initialSliderboardWindow);
+         FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_WINDOW_URL);
          fxmlLoader.load();
          YoMultiSliderboardWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
@@ -404,6 +404,12 @@ public class YoSliderboardManager implements Manager
          {
             controller.setInput(initialConfiguration);
             initialConfiguration = null;
+         }
+         else
+         {
+            YoSliderboardListDefinition initial = new YoSliderboardListDefinition();
+            initial.getYoSliderboards().add(new YoSliderboardDefinition(YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME, type));
+            controller.setInput(initial);
          }
          behringerSliderboard.setValue(controller);
          SecondaryWindowManager.initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
@@ -417,13 +423,13 @@ public class YoSliderboardManager implements Manager
 
    public void openBFC2000SliderboardWindow(Window requestSource)
    {
-      openSliderboardWindow(requestSource, SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL);
+      openSliderboardWindow(requestSource, YoSliderboardType.BCF2000);
       behringerSliderboard.getValue().ensureBFC2000Tab();
    }
 
    public void openXTouchCompactSliderboardWindow(Window requestSource)
    {
-      openSliderboardWindow(requestSource, SessionVisualizerIOTools.YO_MULTI_SLIDERBOARD_XTOUCHCOMPACT_WINDOW_URL);
+      openSliderboardWindow(requestSource, YoSliderboardType.XTOUCHCOMPACT);
       behringerSliderboard.getValue().ensureXTouchCompactTab();
    }
 }

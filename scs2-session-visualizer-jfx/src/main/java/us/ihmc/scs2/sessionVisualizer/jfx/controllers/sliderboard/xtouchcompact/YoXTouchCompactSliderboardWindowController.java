@@ -140,7 +140,6 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       allInputControllers.addAll(buttonControllers);
       allInputControllers.addAll(sliderControllers);
       
-      System.out.println(allInputControllers.toString());
 
       sliderboard = XTouchCompactSliderboardController.searchAndConnectToDevice();
 
