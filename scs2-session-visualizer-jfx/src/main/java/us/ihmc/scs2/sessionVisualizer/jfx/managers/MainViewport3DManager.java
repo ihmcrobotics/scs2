@@ -81,6 +81,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       // Setting up the camera controller.
       cameraController = new PerspectiveCameraController(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
       cameraController.enableShiftClickFocusTranslation();
+      cameraController.start();
       subScene.addEventHandler(Event.ANY, cameraController);
 
       Sphere focusPointViz = cameraController.getFocalPointViz();
@@ -128,7 +129,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
    @Override
    public void dispose()
    {
-      cameraController.dispose();
+      cameraController.stop();
    }
 
    // Camera controls

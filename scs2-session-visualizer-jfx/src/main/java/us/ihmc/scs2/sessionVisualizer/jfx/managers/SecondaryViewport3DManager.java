@@ -63,6 +63,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
                                                                                      image.getHeight(),
                                                                                      camera,
                                                                                      rootNode3D));
+      cameraController.start();
       cameraView.addEventHandler(Event.ANY, cameraController);
 
       Sphere focusPointViz = cameraController.getFocalPointViz();
@@ -117,7 +118,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    public void dispose()
    {
       animationTimer.stop();
-      cameraController.dispose();
+      cameraController.stop();
    }
 
    public ReadOnlyDoubleProperty widthProperty()
