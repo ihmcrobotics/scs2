@@ -11,11 +11,12 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
-import javafx.scene.PerspectiveCamera;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.TransformChangedEvent;
 import us.ihmc.commons.Epsilons;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.matrix.RotationMatrix;
@@ -28,38 +29,32 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 /**
- * This class provides the tools necessary to build a simple controller for computing the
- * orientation of a JavaFX {@link PerspectiveCamera}. This class is ready to be used with an
- * {@link EventHandler} via
- * {@link #createMouseEventHandler(ReadOnlyDoubleProperty, ReadOnlyDoubleProperty)}. The output of
- * this calculator is the {@link #rotation} property which can be bound to an external property or
- * used directly to apply a transformation to the camera. This transformation is not implemented
- * here to provide increased flexibility.
- * <p>
- * Note on the approach use to compute the rotation. The camera is assumed to be navigating on a
- * virtual sphere and directed to its center. Its orientation is computed from its geographic
- * coordinates (latitude, longitude). As for the geographic coordinates:
- * <li>the longitude is in the range [-180 degrees; +180 degrees],
- * <li>the latitude is in the range [-90 degrees; +90 degrees],
- * <li>a latitude of +90 degrees corresponds to the camera located at the north pole looking
- * straight down,
- * <li>a latitude of -90 degrees corresponds to the camera located at the south pole looking
- * straight up.
+ * This handles the camera position and orientation such that:
+ * <ul>
+ * <li>the camera is always fixing at a focal point located at (0, 0, 0).
+ * <li>the camera is a desired offset from the focal point.
+ * <li>the roll of the camera is directly controlled.
+ * </ul>
  *
  * @author Sylvain Bertrand
  */
-public class CameraRotationCalculator
+public class CameraOrbitHandler
 {
+   /**
+    * The current pose of the camera defining its orientation and distance from the focal point located
+    * at (0, 0, 0).
+    */
+   private final Affine cameraPose = new Affine();
    /**
     * The current orientation of the camera. This is the output of this calculator which can be bound
     * to an external property or used directly to apply a transformation to the camera.
     */
-   private final Affine rotation = new Affine();
+   private final Affine cameraOrientation = new Affine();
    /**
     * Rotation offset computed such that when the {@link #latitude}, {@link #longitude}, and
     * {@link #roll} are all zero, the camera is orientated as follows:
     * <li>the viewing direction (e.g. z-axis) of the camera is aligned with the given forward axis.
-    * <li>the vertical direction of the screen (e.g. y-axis) is colinear with the given up axis.
+    * <li>the vertical direction of the screen (e.g. y-axis) is collinear with the given up axis.
     */
    private final Affine offset = new Affine();
    /**
@@ -115,6 +110,27 @@ public class CameraRotationCalculator
    /** Maximum latitude of the camera. Only used when {@link #restrictLatitude} is set to true. */
    private final DoubleProperty maxLatitude = new SimpleDoubleProperty(this, "maxLatitude", Math.PI / 2.0 - 0.01);
 
+   /**
+    * Distance between camera and focal point, it serves for zooming in and out.
+    */
+   private final DoubleProperty distance = new SimpleDoubleProperty(this, "distance", 10.0);
+   /** Minimum value the zoom can be. */
+   private final DoubleProperty minDistance = new SimpleDoubleProperty(this, "minDistance", 0.1);
+   /** Maximum value the zoom can be. */
+   private final DoubleProperty maxDistance = new SimpleDoubleProperty(this, "maxDistance", 100.0);
+   /**
+    * Zoom speed factor with respect to its current value. The larger is the zoom, the faster it
+    * "goes".
+    */
+   private final DoubleProperty distanceModifier = new SimpleDoubleProperty(this, "distanceModifier", 0.1);
+   /**
+    * <p>
+    * Only applicable when using the {@link EventHandler} via {@link #createScrollEventHandler()}.
+    * </p>
+    * When set to true, the direction of the zoom is reversed.
+    */
+   private final BooleanProperty invertZoomDirection = new SimpleBooleanProperty(this, "invertZoomDirection", false);
+
    private final Vector3D up = new Vector3D();
    private final Vector3D down = new Vector3D();
    private final Vector3D forward = new Vector3D();
@@ -128,7 +144,7 @@ public class CameraRotationCalculator
     * @param forward indicates which is forward.
     * @throws RuntimeException if {@code up} and {@code forward} are not orthogonal.
     */
-   public CameraRotationCalculator(Vector3DReadOnly up, Vector3DReadOnly forward)
+   public CameraOrbitHandler(Vector3DReadOnly up, Vector3DReadOnly forward)
    {
       Vector3D left = new Vector3D();
       left.cross(up, forward);
@@ -144,11 +160,22 @@ public class CameraRotationCalculator
       ChangeListener<? super Number> listener = (o, oldValue, newValue) ->
       {
          if (!disableAffineAutoUpdate)
-            updateRotation();
+            updateCameraOrientation();
       };
       latitude.addListener(listener);
       longitude.addListener(listener);
       roll.addListener(listener);
+
+      cameraOrientation.addEventHandler(TransformChangedEvent.TRANSFORM_CHANGED, e ->
+      {
+         cameraPose.setToTransform(cameraOrientation);
+         cameraPose.appendTranslation(0.0, 0.0, distance.get());
+      });
+      distance.addListener((o, oldValue, newValue) ->
+      {
+         cameraPose.setToTransform(cameraOrientation);
+         cameraPose.appendTranslation(0.0, 0.0, distance.get());
+      });
    }
 
    private void computeOffset()
@@ -214,9 +241,30 @@ public class CameraRotationCalculator
             double rollShift = 0.0 * modifier * rollModifier.get() * drag.cross(centerToMouseLocation);
 
             drag.scale(modifier);
-            updateRotation(drag.getY(), -drag.getX(), rollShift);
+            shiftRotation(drag.getY(), -drag.getX(), rollShift);
 
             oldMouseLocation.set(newMouseLocation);
+         }
+      };
+   }
+
+   /**
+    * @return an {@link EventHandler} for {@link ScrollEvent} that uses the mouse wheel to update the
+    *         zoom value.
+    */
+   public EventHandler<ScrollEvent> createScrollEventHandler()
+   {
+      return new EventHandler<ScrollEvent>()
+      {
+         @Override
+         public void handle(ScrollEvent event)
+         {
+            double direction = Math.signum(event.getDeltaY());
+            if (invertZoomDirection.get())
+               direction = -direction;
+            double newDistance = distance.get() + direction * distance.get() * distanceModifier.get();
+            newDistance = MathTools.clamp(newDistance, minDistance.get(), maxDistance.get());
+            distance.set(newDistance);
          }
       };
    }
@@ -228,7 +276,7 @@ public class CameraRotationCalculator
     * @param deltaLongitude the shift in longitude to apply to the camera rotation.
     * @param deltaRoll      the shift in roll to apply to the camera rotation.
     */
-   public void updateRotation(double deltaLatitude, double deltaLongitude, double deltaRoll)
+   public void shiftRotation(double deltaLatitude, double deltaLongitude, double deltaRoll)
    {
       disableAffineAutoUpdate = true;
       double newLatitude = latitude.get() + deltaLatitude;
@@ -251,8 +299,8 @@ public class CameraRotationCalculator
          newRoll = EuclidCoreTools.trimAngleMinusPiToPi(newRoll);
          roll.set(newRoll);
       }
+      updateCameraOrientation();
       disableAffineAutoUpdate = false;
-      updateRotation();
    }
 
    /**
@@ -303,8 +351,8 @@ public class CameraRotationCalculator
       latitude.set(newLatitude);
       longitude.set(newLongitude);
       roll.set(cameraRoll);
+      updateCameraOrientation();
       disableAffineAutoUpdate = false;
-      updateRotation();
    }
 
    /**
@@ -324,23 +372,23 @@ public class CameraRotationCalculator
 
       this.longitude.set(EuclidCoreTools.trimAngleMinusPiToPi(longitude));
       this.roll.set(EuclidCoreTools.trimAngleMinusPiToPi(roll));
+      updateCameraOrientation();
       disableAffineAutoUpdate = false;
-      updateRotation();
    }
 
-   private void updateRotation()
+   private void updateCameraOrientation()
    {
-      Rotate latitudeRotate = new Rotate(Math.toDegrees(-latitude.get()), Rotate.X_AXIS);
-      Rotate longitudeRotate = new Rotate(Math.toDegrees(-longitude.get()), Rotate.Y_AXIS);
-      Rotate rollRotate = new Rotate(Math.toDegrees(roll.get()), Rotate.Z_AXIS);
-
       Affine newRotation = new Affine();
       newRotation.append(offset);
-      newRotation.append(longitudeRotate);
-      newRotation.append(latitudeRotate);
-      newRotation.append(rollRotate);
+      newRotation.append(new Rotate(Math.toDegrees(-longitude.get()), Rotate.Y_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(-latitude.get()), Rotate.X_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(roll.get()), Rotate.Z_AXIS));
+      cameraOrientation.setToTransform(newRotation);
+   }
 
-      rotation.setToTransform(newRotation);
+   public Affine getCameraPose()
+   {
+      return cameraPose;
    }
 
    /**
@@ -349,9 +397,9 @@ public class CameraRotationCalculator
     *
     * @return the camera's rotation.
     */
-   public Affine getRotation()
+   public Affine getCameraRotation()
    {
-      return rotation;
+      return cameraOrientation;
    }
 
    public final DoubleProperty latitudeProperty()
@@ -412,5 +460,30 @@ public class CameraRotationCalculator
    public final DoubleProperty maxLatitudeProperty()
    {
       return maxLatitude;
+   }
+
+   public final DoubleProperty distanceProperty()
+   {
+      return distance;
+   }
+
+   public final DoubleProperty minDistanceProperty()
+   {
+      return minDistance;
+   }
+
+   public final DoubleProperty maxDistanceProperty()
+   {
+      return maxDistance;
+   }
+
+   public final DoubleProperty zoomSpeedFactorProperty()
+   {
+      return distanceModifier;
+   }
+
+   public final BooleanProperty invertZoomDirectionProperty()
+   {
+      return invertZoomDirection;
    }
 }

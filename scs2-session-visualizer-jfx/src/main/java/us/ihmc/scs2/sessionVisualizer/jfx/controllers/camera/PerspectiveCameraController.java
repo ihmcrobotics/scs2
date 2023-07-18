@@ -8,7 +8,9 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -56,8 +58,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
  */
 public class PerspectiveCameraController implements EventHandler<Event>
 {
-   private static final double DEFAULT_DISTANCE_FROM_FOCUS_POINT = 10.0;
-
    private static final boolean FOCUS_POINT_SHOW = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.camera.focuspoint.show",
                                                                                                             "SCS2_GUI_CAMERA_FOCUS_SHOW",
                                                                                                             true);
@@ -67,20 +67,18 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
    private final Sphere focalPointViz;
 
-   /**
-    * Rotation about the focus point. By construction it is meant to make the camera orbit about the
-    * focus.
-    */
-   private final Affine cameraOrientation;
-   /** Translation to control the distance separating the camera from the focus point. */
-   private final Translate offsetFromFocusPoint = new Translate(0.0, 0.0, -DEFAULT_DISTANCE_FROM_FOCUS_POINT);
-
    private final CameraFocalPointHandler focalPointHandler;
-   private final CameraZoomCalculator zoomCalculator = new CameraZoomCalculator();
-   private final CameraRotationCalculator rotationCalculator;
+   private final CameraOrbitHandler orbitHandler;
 
-   private final EventHandler<ScrollEvent> zoomEventHandler = zoomCalculator.createScrollEventHandler();
-   /** For rotating around the focus point. */
+   /** Minimum value of a translation offset when using the keyboard. */
+   private final DoubleProperty minTranslationOffset = new SimpleDoubleProperty(this, "minTranslationOffset", 0.1);
+   /**
+    * The zoom-to-translation pow is used to define the relation between the current zoom value and the
+    * translation speed of the camera.
+    */
+   private final DoubleProperty zoomToTranslationPow = new SimpleDoubleProperty(this, "zoomToTranslationPow", 0.75);
+
+   private final EventHandler<ScrollEvent> zoomEventHandler;
    private final EventHandler<MouseEvent> orbitalRotationEventHandler;
    private final EventHandler<KeyEvent> translationEventHandler;
 
@@ -100,26 +98,27 @@ public class PerspectiveCameraController implements EventHandler<Event>
       if (!MathTools.epsilonEquals(left.norm(), 1.0, Epsilons.ONE_HUNDRED_THOUSANDTH))
          throw new RuntimeException("The vectors up and forward must be orthogonal. Received: up = " + up + ", forward = " + forward);
 
-      zoomCalculator.zoomProperty().bindBidirectional(offsetFromFocusPoint.zProperty());
-      zoomCalculator.invertZoomDirectionProperty().set(true);
-      zoomCalculator.minZoomProperty().set(-0.90 * camera.getFarClip());
-      zoomCalculator.maxZoomProperty().set(-1.10 * camera.getNearClip());
-
-      rotationCalculator = new CameraRotationCalculator(up, forward);
-      rotationCalculator.fastModifierPredicateProperty().set(event -> event.isShiftDown());
-      cameraOrientation = rotationCalculator.getRotation();
-      orbitalRotationEventHandler = rotationCalculator.createMouseEventHandler(sceneWidthProperty, sceneHeightProperty);
+      orbitHandler = new CameraOrbitHandler(up, forward);
+      orbitHandler.fastModifierPredicateProperty().set(event -> event.isShiftDown());
+      orbitalRotationEventHandler = orbitHandler.createMouseEventHandler(sceneWidthProperty, sceneHeightProperty);
+      zoomEventHandler = orbitHandler.createScrollEventHandler();
+      orbitHandler.invertZoomDirectionProperty().set(true);
+      orbitHandler.minDistanceProperty().set(-0.90 * camera.getFarClip());
+      orbitHandler.maxDistanceProperty().set(-1.10 * camera.getNearClip());
 
       focalPointHandler = new CameraFocalPointHandler(up);
       focalPointHandler.fastModifierPredicateProperty().set(event -> event.isShiftDown());
-      focalPointHandler.setCameraOrientation(cameraOrientation);
-      focalPointHandler.setZoom(zoomCalculator.zoomProperty());
-      Translate focalPointTranslate = focalPointHandler.getTranslation();
+      focalPointHandler.setCameraOrientation(orbitHandler.getCameraRotation());
       translationEventHandler = focalPointHandler.createKeyEventHandler();
+
+      focalPointHandler.setTranslationRateModifier(translationRate ->
+      {
+         return Math.min(translationRate * Math.pow(Math.abs(orbitHandler.distanceProperty().get()), zoomToTranslationPow.get()), minTranslationOffset.get());
+      });
 
       setCameraPosition(-2.0, 0.7, 1.0);
 
-      camera.getTransforms().addAll(focalPointTranslate, cameraOrientation, offsetFromFocusPoint);
+      camera.getTransforms().addAll(focalPointHandler.getTranslation(), orbitHandler.getCameraPose());
 
       if (FOCUS_POINT_SHOW)
       {
@@ -128,10 +127,10 @@ public class PerspectiveCameraController implements EventHandler<Event>
          material.setDiffuseColor(Color.DARKRED);
          material.setSpecularColor(Color.RED);
          focalPointViz.setMaterial(material);
-         focalPointViz.getTransforms().addAll(focalPointTranslate);
-         offsetFromFocusPoint.zProperty().addListener((o, oldValue, newValue) ->
+         focalPointViz.getTransforms().add(focalPointHandler.getTranslation());
+         orbitHandler.distanceProperty().addListener((o, oldValue, newValue) ->
          {
-            double sphereRadius = FOCUS_POINT_SIZE * Math.abs(offsetFromFocusPoint.getTz());
+            double sphereRadius = FOCUS_POINT_SIZE * Math.abs(newValue.doubleValue());
             focalPointViz.setRadius(sphereRadius);
          });
       }
@@ -185,8 +184,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
          y -= focalPoint.getY();
          z -= focalPoint.getZ();
 
-         offsetFromFocusPoint.setZ(-EuclidCoreTools.norm(x, y, z));
-         rotationCalculator.setLookDirection(x, y, z, 0.0);
+         orbitHandler.distanceProperty().set(-EuclidCoreTools.norm(x, y, z));
+         orbitHandler.setLookDirection(x, y, z, 0.0);
       }
    }
 
@@ -246,8 +245,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
          focalPointHandler.setPositionWorldFrame(desiredFocalPoint);
 
          double distanceFromFocusPoint = currentCameraPosition.distance(desiredFocalPoint);
-         offsetFromFocusPoint.setZ(-distanceFromFocusPoint);
-         rotationCalculator.setRotationFromCameraAndFocusPositions(currentCameraPosition, desiredFocalPoint, 0.0);
+         orbitHandler.distanceProperty().set(-distanceFromFocusPoint);
+         orbitHandler.setRotationFromCameraAndFocusPositions(currentCameraPosition, desiredFocalPoint, 0.0);
       }
    }
 
@@ -258,10 +257,11 @@ public class PerspectiveCameraController implements EventHandler<Event>
       Transform cameraTransform = camera.getLocalToSceneTransform();
       Point3D currentCameraPosition = new Point3D(cameraTransform.getTx(), cameraTransform.getTy(), cameraTransform.getTz());
 
-      rotationCalculator.updateRotation(deltaLatitude, deltaLongitude, deltaRoll);
+      orbitHandler.shiftRotation(deltaLatitude, deltaLongitude, deltaRoll);
 
+      Affine cameraOrientation = orbitHandler.getCameraRotation();
       Point3D newFocusPointTranslation = new Point3D(cameraOrientation.getMxz(), cameraOrientation.getMyz(), cameraOrientation.getMzz());
-      newFocusPointTranslation.scale(-offsetFromFocusPoint.getZ());
+      newFocusPointTranslation.scale(-orbitHandler.distanceProperty().get());
       newFocusPointTranslation.add(currentCameraPosition);
       focalPointHandler.setPositionWorldFrame(newFocusPointTranslation);
    }
@@ -440,13 +440,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
       return focalPointHandler;
    }
 
-   public CameraZoomCalculator getZoomCalculator()
+   public CameraOrbitHandler getOrbitHandler()
    {
-      return zoomCalculator;
-   }
-
-   public CameraRotationCalculator getRotationCalculator()
-   {
-      return rotationCalculator;
+      return orbitHandler;
    }
 }

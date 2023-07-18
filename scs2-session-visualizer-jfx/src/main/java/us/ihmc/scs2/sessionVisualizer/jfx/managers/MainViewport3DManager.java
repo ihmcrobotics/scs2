@@ -33,8 +33,8 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraZoomCalculator;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -173,7 +173,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraOrientation(double latitude, double longitude, double roll)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getRotationCalculator().setRotation(latitude, longitude, roll));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getOrbitHandler().setRotation(latitude, longitude, roll));
    }
 
    public void setCameraFocusPosition(double x, double y, double z)
@@ -185,13 +185,13 @@ public class MainViewport3DManager implements SingleViewport3DManager
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
-         CameraZoomCalculator zoomCalculator = cameraController.getZoomCalculator();
-         if (zoomCalculator.invertZoomDirectionProperty().get())
-            zoomCalculator.zoomProperty().set(-distanceFromFocus);
+         CameraOrbitHandler orbitHandler = cameraController.getOrbitHandler();
+         if (orbitHandler.invertZoomDirectionProperty().get())
+            orbitHandler.distanceProperty().set(-distanceFromFocus);
          else
          {
             final double zoom = distanceFromFocus;
-            zoomCalculator.zoomProperty().set(zoom);
+            orbitHandler.distanceProperty().set(zoom);
          }
       });
    }
