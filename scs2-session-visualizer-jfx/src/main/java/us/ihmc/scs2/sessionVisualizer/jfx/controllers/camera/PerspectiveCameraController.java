@@ -155,18 +155,39 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
    public void setCameraPosition(Point3DReadOnly desiredCameraPosition)
    {
-      setCameraPosition(desiredCameraPosition.getX(), desiredCameraPosition.getY(), desiredCameraPosition.getZ());
+      setCameraPosition(desiredCameraPosition, false);
+   }
+
+   public void setCameraPosition(Point3DReadOnly desiredCameraPosition, boolean translateFocalPoint)
+   {
+      setCameraPosition(desiredCameraPosition.getX(), desiredCameraPosition.getY(), desiredCameraPosition.getZ(), translateFocalPoint);
    }
 
    public void setCameraPosition(double x, double y, double z)
    {
-      Translate focalPoint = focalPointHandler.getTranslation();
-      double dx = desiredCameraPosition.getX() - focalPoint.getX();
-      double dy = desiredCameraPosition.getY() - focalPoint.getY();
-      double dz = desiredCameraPosition.getZ() - focalPoint.getZ();
+      setCameraPosition(x, y, z, false);
+   }
 
-      offsetFromFocusPoint.setZ(-EuclidCoreTools.norm(dx, dy, dz));
-      rotationCalculator.setLookDirection(dx, dy, dz, 0.0);
+   public void setCameraPosition(double x, double y, double z, boolean translateFocalPoint)
+   {
+      if (translateFocalPoint)
+      {
+         Transform cameraTransform = camera.getLocalToSceneTransform();
+         Point3D desiredFocalPoint = new Point3D(x, y, z);
+         desiredFocalPoint.sub(cameraTransform.getTx(), cameraTransform.getTy(), cameraTransform.getTz());
+         desiredFocalPoint.add(focalPointHandler.getTranslation());
+         focalPointHandler.setPositionWorldFrame(desiredFocalPoint);
+      }
+      else
+      {
+         Translate focalPoint = focalPointHandler.getTranslation();
+         x -= focalPoint.getX();
+         y -= focalPoint.getY();
+         z -= focalPoint.getZ();
+
+         offsetFromFocusPoint.setZ(-EuclidCoreTools.norm(x, y, z));
+         rotationCalculator.setLookDirection(x, y, z, 0.0);
+      }
    }
 
    /**
