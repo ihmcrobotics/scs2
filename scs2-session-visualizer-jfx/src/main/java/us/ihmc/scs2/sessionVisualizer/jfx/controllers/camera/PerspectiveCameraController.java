@@ -9,8 +9,10 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -24,9 +26,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
-import javafx.scene.transform.Affine;
 import javafx.scene.transform.Transform;
-import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import us.ihmc.commons.Epsilons;
 import us.ihmc.commons.MathTools;
@@ -37,9 +37,13 @@ import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler.Orbit2DCoordinateProvider;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler.OrbitCoordinateProvider;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 /**
  * This class provides a simple controller for a JavaFX {@link PerspectiveCamera}. The control is
@@ -56,7 +60,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
  *
  * @author Sylvain Bertrand
  */
-public class PerspectiveCameraController implements EventHandler<Event>
+public class PerspectiveCameraController extends ObservedAnimationTimer implements EventHandler<Event>
 {
    private static final boolean FOCUS_POINT_SHOW = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.camera.focuspoint.show",
                                                                                                             "SCS2_GUI_CAMERA_FOCUS_SHOW",
@@ -84,7 +88,11 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
    private final PerspectiveCamera camera;
 
-   private final ObservedAnimationTimer updater;
+   private final Property<Tuple3DProperty> cameraPositionCoordinatesToTrack = new SimpleObjectProperty<>(this, "cameraPositionCoordinatesToTrack", null);
+   private final Property<OrbitCoordinateProvider> cameraOrbitCoordinatesToTrack = new SimpleObjectProperty<>(this, "cameraOrbitCoordinatesToTrack", null);
+   private final Property<Orbit2DCoordinateProvider> cameraOrbit2DCoordinatesToTrack = new SimpleObjectProperty<>(this,
+                                                                                                                  "cameraOrbit2DCoordinatesToTrack",
+                                                                                                                  null);
 
    public PerspectiveCameraController(ReadOnlyDoubleProperty sceneWidthProperty,
                                       ReadOnlyDoubleProperty sceneHeightProperty,
@@ -119,6 +127,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
       camera.getTransforms().addAll(focalPointHandler.getTranslation(), orbitHandler.getCameraPose());
 
+      cameraPositionCoordinatesToTrack.addListener((o, oldValue);
+
       if (FOCUS_POINT_SHOW)
       {
          focalPointViz = new Sphere(0.01);
@@ -138,16 +148,12 @@ public class PerspectiveCameraController implements EventHandler<Event>
       }
 
       setupCameraRotationHandler();
+   }
 
-      updater = new ObservedAnimationTimer(getClass().getSimpleName())
-      {
-         @Override
-         public void handleImpl(long now)
-         {
-            focalPointHandler.update();
-         }
-      };
-      updater.start();
+   @Override
+   public void handleImpl(long now)
+   {
+      focalPointHandler.update();
    }
 
    public void setCameraPosition(Point3DReadOnly desiredCameraPosition)
@@ -177,13 +183,16 @@ public class PerspectiveCameraController implements EventHandler<Event>
       }
       else
       {
-         Translate focalPoint = focalPointHandler.getTranslation();
-         x -= focalPoint.getX();
-         y -= focalPoint.getY();
-         z -= focalPoint.getZ();
+         Point3D desiredCameraPosition = new Point3D();
+         desiredCameraPosition.set(x, y, z);
+         desiredCameraPosition.sub(focalPointHandler.getTranslation());
+         if (EuclidCoreTools.isZero(desiredCameraPosition.norm(), 1.0e-6))
+         {
+            LogTools.error("Cannot move camera to focal point, ignoring command.");
+            return;
+         }
 
-         orbitHandler.distanceProperty().set(EuclidCoreTools.norm(x, y, z));
-         orbitHandler.setLookDirection(x, y, z, 0.0);
+         orbitHandler.setPosition(desiredCameraPosition, 0.0);
       }
    }
 
@@ -238,30 +247,67 @@ public class PerspectiveCameraController implements EventHandler<Event>
       {
          // The focus position is used to compute the camera transform, so first want to get the camera position.
          Transform cameraTransform = camera.getLocalToSceneTransform();
-         Point3D currentCameraPosition = new Point3D(cameraTransform.getTx(), cameraTransform.getTy(), cameraTransform.getTz());
-
+         Point3D desiredCameraPosition = new Point3D(cameraTransform.getTx(), cameraTransform.getTy(), cameraTransform.getTz());
+         desiredCameraPosition.sub(desiredFocalPoint);
+         orbitHandler.setPosition(desiredCameraPosition, 0.0);
          focalPointHandler.setPositionWorldFrame(desiredFocalPoint);
-
-         double distanceFromFocusPoint = currentCameraPosition.distance(desiredFocalPoint);
-         orbitHandler.distanceProperty().set(distanceFromFocusPoint);
-         orbitHandler.setRotationFromCameraAndFocusPositions(currentCameraPosition, desiredFocalPoint, 0.0);
       }
    }
 
-   public void rotateCameraOnItself(double deltaLatitude, double deltaLongitude, double deltaRoll)
+   public void setCameraOrientation(double latitude, double longitude, double roll, boolean translateFocalPoint)
    {
-      focalPointHandler.disableTracking();
+      if (translateFocalPoint)
+      {
+         Vector3D focalPointShift = orbitHandler.setRotation(latitude, longitude, roll, true);
+         focalPointHandler.getTranslation().add(focalPointShift);
 
-      Transform cameraTransform = camera.getLocalToSceneTransform();
-      Point3D currentCameraPosition = new Point3D(cameraTransform.getTx(), cameraTransform.getTy(), cameraTransform.getTz());
+      }
+      else
+      {
+         orbitHandler.setRotation(latitude, longitude, roll);
+      }
+   }
 
-      orbitHandler.shiftRotation(deltaLatitude, deltaLongitude, deltaRoll);
+   public void setCameraOrbit(double distance, double latitude, double longitude, double roll, boolean translateFocalPoint)
+   {
+      if (translateFocalPoint)
+      {
+         Vector3D focalPointShift = orbitHandler.setOrbit(distance, latitude, longitude, roll, true);
+         focalPointHandler.getTranslation().add(focalPointShift);
 
-      Affine cameraOrientation = orbitHandler.getCameraRotation();
-      Point3D newFocusPointTranslation = new Point3D(cameraOrientation.getMxz(), cameraOrientation.getMyz(), cameraOrientation.getMzz());
-      newFocusPointTranslation.scale(orbitHandler.distanceProperty().get());
-      newFocusPointTranslation.add(currentCameraPosition);
-      focalPointHandler.setPositionWorldFrame(newFocusPointTranslation);
+      }
+      else
+      {
+         orbitHandler.setOrbit(distance, latitude, longitude, roll);
+      }
+   }
+
+   public void setCameraOrbit2D(double distance, double height, double longitude, double roll, boolean translateFocalPoint)
+   {
+      if (translateFocalPoint)
+      {
+         height -= focalPointHandler.getTranslation().getZ();
+         Vector3D focalPointShift = orbitHandler.setOrbit2D(distance, height, longitude, roll, true);
+         focalPointHandler.getTranslation().add(focalPointShift);
+
+      }
+      else
+      {
+         orbitHandler.setOrbit2D(distance, height, longitude, roll);
+      }
+   }
+
+   public void rotateCamera(double deltaLatitude, double deltaLongitude, double deltaRoll, boolean translateFocalPoint)
+   {
+      if (translateFocalPoint)
+      {
+         Vector3D focalPointShift = orbitHandler.rotate(deltaLatitude, deltaLongitude, deltaRoll, true);
+         focalPointHandler.getOffsetTranslation().add(focalPointShift);
+      }
+      else
+      {
+         orbitHandler.rotate(deltaLatitude, deltaLongitude, deltaRoll);
+      }
    }
 
    @Override
@@ -411,21 +457,21 @@ public class PerspectiveCameraController implements EventHandler<Event>
             Vector2D drag = new Vector2D();
             drag.sub(newMouseLocation, oldMouseLocation);
             drag.scale(modifier.getAsDouble());
-            rotateCameraOnItself(drag.getY(), -drag.getX(), 0.0);
+            focalPointHandler.disableTracking(); // Automatically disabling tracking when rotating the camera on itself
+            rotateCamera(drag.getY(), -drag.getX(), 0.0, true);
             oldMouseLocation.set(newMouseLocation);
          }
       };
    }
 
-   public void dispose()
-   {
-      cameraRotationEventHandler = null;
-      updater.stop();
-   }
-
    public Sphere getFocalPointViz()
    {
       return focalPointViz;
+   }
+
+   public TranslateSCS2 getFocalPointTranslate()
+   {
+      return focalPointHandler.getTranslation();
    }
 
    public PerspectiveCamera getCamera()
