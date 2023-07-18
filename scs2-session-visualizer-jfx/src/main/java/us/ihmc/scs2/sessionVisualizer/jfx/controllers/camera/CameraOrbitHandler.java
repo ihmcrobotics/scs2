@@ -128,7 +128,7 @@ public class CameraOrbitHandler
    private final Vector3D down = new Vector3D();
    private final Vector3D forward = new Vector3D();
 
-   private boolean disableAffineAutoUpdate = false;
+   private boolean disableCameraOrientationAutoUpdate = false;
 
    /**
     * Creates a calculator for the camera rotation.
@@ -152,23 +152,15 @@ public class CameraOrbitHandler
 
       ChangeListener<? super Number> listener = (o, oldValue, newValue) ->
       {
-         if (!disableAffineAutoUpdate)
-            updateCameraOrientation();
+         if (!disableCameraOrientationAutoUpdate)
+            updateCameraOrientation(false);
       };
       latitude.addListener(listener);
       longitude.addListener(listener);
       roll.addListener(listener);
 
-      cameraOrientation.addEventHandler(TransformChangedEvent.TRANSFORM_CHANGED, e ->
-      {
-         cameraPose.setToTransform(cameraOrientation);
-         cameraPose.appendTranslation(0.0, 0.0, -distance.get()); // we need to shift the camera backward
-      });
-      distance.addListener((o, oldValue, newValue) ->
-      {
-         cameraPose.setToTransform(cameraOrientation);
-         cameraPose.appendTranslation(0.0, 0.0, -distance.get()); // we need to shift the camera backward
-      });
+      cameraOrientation.addEventHandler(TransformChangedEvent.TRANSFORM_CHANGED, e -> updateCameraPose());
+      distance.addListener((o, oldValue, newValue) -> updateCameraPose());
    }
 
    private void computeOffset()
@@ -234,7 +226,7 @@ public class CameraOrbitHandler
             double rollShift = 0.0 * modifier * rollModifier.get() * drag.cross(centerToMouseLocation);
 
             drag.scale(modifier);
-            shiftRotation(drag.getY(), -drag.getX(), rollShift);
+            rotate(drag.getY(), -drag.getX(), rollShift);
 
             oldMouseLocation.set(newMouseLocation);
          }
@@ -267,9 +259,23 @@ public class CameraOrbitHandler
     * @param deltaLongitude the shift in longitude to apply to the camera rotation.
     * @param deltaRoll      the shift in roll to apply to the camera rotation.
     */
-   public void shiftRotation(double deltaLatitude, double deltaLongitude, double deltaRoll)
+   public void rotate(double deltaLatitude, double deltaLongitude, double deltaRoll)
    {
-      disableAffineAutoUpdate = true;
+      rotate(deltaLatitude, deltaLongitude, deltaRoll, false);
+   }
+
+   /**
+    * Update the camera rotation after applying rotation offsets.
+    *
+    * @param deltaLatitude  the shift in latitude to apply to the camera rotation.
+    * @param deltaLongitude the shift in longitude to apply to the camera rotation.
+    * @param deltaRoll      the shift in roll to apply to the camera rotation.
+    * @return the amount to translate the focal point to use for making the camera rotate on itself
+    *         instead of orbiting around a fixed focal point.
+    */
+   public Vector3D rotate(double deltaLatitude, double deltaLongitude, double deltaRoll, boolean computeFocalPointShift)
+   {
+      disableCameraOrientationAutoUpdate = true;
       double newLatitude = latitude.get() + deltaLatitude;
       if (restrictLatitude.get())
          newLatitude = MathTools.clamp(newLatitude, minLatitude.get(), maxLatitude.get());
@@ -290,42 +296,30 @@ public class CameraOrbitHandler
          newRoll = EuclidCoreTools.trimAngleMinusPiToPi(newRoll);
          roll.set(newRoll);
       }
-      updateCameraOrientation();
-      disableAffineAutoUpdate = false;
+      Vector3D focalPointTranslation = updateCameraOrientation(computeFocalPointShift);
+      disableCameraOrientationAutoUpdate = false;
+      return focalPointTranslation;
    }
 
    /**
-    * Computes and sets the camera rotation for given camera position and a given point to focus on.
-    *
-    * @param cameraPosition desired camera position. Not modified.
-    * @param focusPoint     desired focus position. Not modified.
-    * @param cameraRoll     desired camera roll.
-    */
-   public void setRotationFromCameraAndFocusPositions(Point3DReadOnly cameraPosition, Point3DReadOnly focusPoint, double cameraRoll)
-   {
-      setLookDirection(cameraPosition.getX() - focusPoint.getX(),
-                       cameraPosition.getY() - focusPoint.getY(),
-                       cameraPosition.getZ() - focusPoint.getZ(),
-                       cameraRoll);
-   }
-
-   /**
-    * Computes the camera orientation to align the focus direction to the given vector.
+    * Computes the camera orientation such that the camera position lands at the desired position
+    * without changing the focal point.
     * 
-    * @param lookDirection the direction the camera is to be looking at. Not modified.
-    * @param cameraRoll    desired camera roll.
+    * @param position desired camera position. Not modified.
+    * @param roll     desired camera roll.
     */
-   public void setLookDirection(Vector3DReadOnly lookDirection, double cameraRoll)
+   public void setPosition(Point3DReadOnly position, double roll)
    {
-      setLookDirection(lookDirection.getX(), lookDirection.getY(), lookDirection.getZ(), cameraRoll);
+      setPosition(position.getX(), position.getY(), position.getZ(), roll);
    }
 
-   public void setLookDirection(double lookDirectionX, double lookDirectionY, double lookDirectionZ, double cameraRoll)
+   public void setPosition(double x, double y, double z, double roll)
    {
-      disableAffineAutoUpdate = true;
+      disableCameraOrientationAutoUpdate = true;
       Vector3D fromCameraToFocus = new Vector3D();
-      fromCameraToFocus.set(-lookDirectionX, -lookDirectionY, -lookDirectionZ);
-      fromCameraToFocus.normalize();
+      fromCameraToFocus.set(-x, -y, -z);
+      distance.set(fromCameraToFocus.norm());
+      fromCameraToFocus.scale(1.0 / distance.get());
 
       double newLatitude = fromCameraToFocus.angle(up) - Math.PI / 2.0;
       // We remove the component along up to be able to compute the longitude
@@ -341,9 +335,9 @@ public class CameraOrbitHandler
 
       latitude.set(newLatitude);
       longitude.set(newLongitude);
-      roll.set(cameraRoll);
-      updateCameraOrientation();
-      disableAffineAutoUpdate = false;
+      this.roll.set(roll);
+      updateCameraOrientation(false);
+      disableCameraOrientationAutoUpdate = false;
    }
 
    /**
@@ -355,7 +349,21 @@ public class CameraOrbitHandler
     */
    public void setRotation(double latitude, double longitude, double roll)
    {
-      disableAffineAutoUpdate = true;
+      setRotation(latitude, longitude, roll, false);
+   }
+
+   /**
+    * Sets the camera's latitude, longitude, and roll.
+    *
+    * @param latitude  the new camera latitude.
+    * @param longitude the new camera longitude.
+    * @param roll      the new camera roll.
+    * @return the amount to translate the focal point to use for making the camera rotate on itself
+    *         instead of orbiting around a fixed focal point.
+    */
+   public Vector3D setRotation(double latitude, double longitude, double roll, boolean computeFocalPointShift)
+   {
+      disableCameraOrientationAutoUpdate = true;
       if (restrictLatitude.get())
          this.latitude.set(MathTools.clamp(latitude, minLatitude.get(), maxLatitude.get()));
       else
@@ -363,18 +371,106 @@ public class CameraOrbitHandler
 
       this.longitude.set(EuclidCoreTools.trimAngleMinusPiToPi(longitude));
       this.roll.set(EuclidCoreTools.trimAngleMinusPiToPi(roll));
-      updateCameraOrientation();
-      disableAffineAutoUpdate = false;
+      Vector3D focalPointTranslation = updateCameraOrientation(computeFocalPointShift);
+      disableCameraOrientationAutoUpdate = false;
+      return focalPointTranslation;
    }
 
-   private void updateCameraOrientation()
+   /**
+    * Sets the camera's distance from focal point, latitude, longitude, and roll.
+    *
+    * @param distance  the new distance between camera and focal point.
+    * @param latitude  the new camera latitude.
+    * @param longitude the new camera longitude.
+    * @param roll      the new camera roll.
+    */
+   public void setOrbit(double distance, double latitude, double longitude, double roll)
    {
+      setOrbit(distance, latitude, longitude, roll, false);
+   }
+
+   /**
+    * Sets the camera's distance from focal point, latitude, longitude, and roll.
+    *
+    * @param distance  the new distance between camera and focal point.
+    * @param latitude  the new camera latitude.
+    * @param longitude the new camera longitude.
+    * @param roll      the new camera roll.
+    * @return the amount to translate the focal point to use for making the camera rotate on itself
+    *         instead of orbiting around a fixed focal point.
+    */
+   public Vector3D setOrbit(double distance, double latitude, double longitude, double roll, boolean computeFocalPointShift)
+   {
+      this.distance.set(distance);
+      return setRotation(latitude, longitude, roll, computeFocalPointShift);
+   }
+
+   /**
+    * Sets the camera's distance from focal point, height, longitude, and roll.
+    *
+    * @param distance  the new distance between camera and focal point.
+    * @param height    the new camera height.
+    * @param longitude the new camera longitude.
+    * @param roll      the new camera roll.
+    */
+   public void setOrbit2D(double distance, double height, double longitude, double roll)
+   {
+      setOrbit2D(distance, height, longitude, roll, false);
+   }
+
+   /**
+    * Sets the camera's distance from focal point, height, longitude, and roll.
+    *
+    * @param distance  the new distance between camera and focal point.
+    * @param height    the new camera height.
+    * @param longitude the new camera longitude.
+    * @param roll      the new camera roll.
+    * @return the amount to translate the focal point to use for making the camera rotate on itself
+    *         instead of orbiting around a fixed focal point.
+    */
+   public Vector3D setOrbit2D(double distance, double height, double longitude, double roll, boolean computeFocalPointShift)
+   {
+      this.distance.set(distance);
+      disableCameraOrientationAutoUpdate = true;
+
+      latitude.set(Math.asin(height / distance));
+      this.longitude.set(EuclidCoreTools.trimAngleMinusPiToPi(longitude));
+      this.roll.set(EuclidCoreTools.trimAngleMinusPiToPi(roll));
+      Vector3D focalPointTranslation = updateCameraOrientation(computeFocalPointShift);
+      disableCameraOrientationAutoUpdate = false;
+      return focalPointTranslation;
+   }
+
+   private Vector3D updateCameraOrientation(boolean computeFocalPointShift)
+   {
+      Vector3D focalPointTranslation = null;
+
+      if (computeFocalPointShift)
+      {
+         focalPointTranslation = new Vector3D(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
+      }
+
       Affine newRotation = new Affine();
       newRotation.append(offset);
       newRotation.append(new Rotate(Math.toDegrees(-longitude.get()), Rotate.Y_AXIS));
       newRotation.append(new Rotate(Math.toDegrees(-latitude.get()), Rotate.X_AXIS));
       newRotation.append(new Rotate(Math.toDegrees(roll.get()), Rotate.Z_AXIS));
       cameraOrientation.setToTransform(newRotation);
+
+      if (computeFocalPointShift)
+      {
+         focalPointTranslation.add(distance.get() * cameraOrientation.getMxz(),
+                                   distance.get() * cameraOrientation.getMyz(),
+                                   distance.get() * cameraOrientation.getMzz());
+         return focalPointTranslation;
+      }
+      return null;
+   }
+
+   private void updateCameraPose()
+   {
+      cameraPose.setToTransform(cameraOrientation);
+      cameraPose.appendTranslation(0.0, 0.0, -distance.get()); // we need to shift the camera backward
    }
 
    public Affine getCameraPose()
@@ -471,5 +567,27 @@ public class CameraOrbitHandler
    public final DoubleProperty zoomSpeedFactorProperty()
    {
       return distanceModifier;
+   }
+
+   public static interface OrbitCoordinateProvider
+   {
+      double getDistance();
+
+      double getLatitude();
+
+      double getLongitude();
+
+      double getRoll();
+   }
+
+   public static interface Orbit2DCoordinateProvider
+   {
+      double getDistance();
+
+      double getLongitude();
+
+      double getHeight();
+
+      double getRoll();
    }
 }
