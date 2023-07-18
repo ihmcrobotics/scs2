@@ -86,8 +86,8 @@ public class Camera3DOptionsPaneController
       ToggleGroup toggleGroup = new ToggleGroup();
       toggleGroup.getToggles().addAll(trackCoordinatesButton, trackNodeButton); // TODO initialize which one is selected
 
-      CameraFocalPointTargetTracker targetTracker = cameraController.getTargetTracker();
-      ObjectProperty<TrackingTargetType> targetTypeProperty = targetTracker.targetTypeProperty();
+      CameraFocalPointHandler focalPointHandler = cameraController.getFocalPointHandler();
+      ObjectProperty<TrackingTargetType> targetTypeProperty = focalPointHandler.targetTypeProperty();
 
       trackNodeButton.setSelected(targetTypeProperty.get() == TrackingTargetType.Node);
       trackCoordinatesButton.setSelected(targetTypeProperty.get() == TrackingTargetType.YoCoordinates);
@@ -152,7 +152,7 @@ public class Camera3DOptionsPaneController
       }
       else
       {
-         ObjectProperty<Tuple3DProperty> coordinatesToTrack = targetTracker.coordinatesToTrackProperty();
+         ObjectProperty<Tuple3DProperty> coordinatesToTrack = focalPointHandler.coordinatesToTrackProperty();
          yoCoordinateEditorController.initialize(searchManager, referenceFrameManager, linkedRootRegistry, yoTuple3DCollection, true);
          yoCoordinateEditorController.setCompositeName("Tracking Coordinates");
          yoCoordinateEditorController.getMainPane().disableProperty().bind(trackCoordinatesButton.selectedProperty().not());
@@ -166,7 +166,7 @@ public class Camera3DOptionsPaneController
       trackingNodeTextField.setTooltip(new Tooltip("To select a node to track, right click on it in the 3D view and select in the context menu."));
       trackingNodeTextField.disableProperty().bind(trackNodeButton.selectedProperty().not());
 
-      ObjectProperty<Node> nodeToTrack = targetTracker.nodeToTrackProperty();
+      ObjectProperty<Node> nodeToTrack = focalPointHandler.nodeToTrackProperty();
       trackingNodeTextField.setText(nodeToTrack.get() == null ? "null" : nodeToTrack.get().getId());
 
       ChangeListener<? super Node> nodeTrackedChangeListener = (o, oldValue, newValue) ->
