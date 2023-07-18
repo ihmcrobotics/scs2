@@ -186,13 +186,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
          CameraOrbitHandler orbitHandler = cameraController.getOrbitHandler();
-         if (orbitHandler.invertZoomDirectionProperty().get())
-            orbitHandler.distanceProperty().set(-distanceFromFocus);
-         else
-         {
-            final double zoom = distanceFromFocus;
-            orbitHandler.distanceProperty().set(zoom);
-         }
+         orbitHandler.distanceProperty().set(distanceFromFocus);
       });
    }
 
