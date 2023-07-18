@@ -102,9 +102,8 @@ public class PerspectiveCameraController implements EventHandler<Event>
       orbitHandler.fastModifierPredicateProperty().set(event -> event.isShiftDown());
       orbitalRotationEventHandler = orbitHandler.createMouseEventHandler(sceneWidthProperty, sceneHeightProperty);
       zoomEventHandler = orbitHandler.createScrollEventHandler();
-      orbitHandler.invertZoomDirectionProperty().set(true);
-      orbitHandler.minDistanceProperty().set(-0.90 * camera.getFarClip());
-      orbitHandler.maxDistanceProperty().set(-1.10 * camera.getNearClip());
+      orbitHandler.minDistanceProperty().set(1.10 * camera.getNearClip());
+      orbitHandler.maxDistanceProperty().set(0.90 * camera.getFarClip());
 
       focalPointHandler = new CameraFocalPointHandler(up);
       focalPointHandler.fastModifierPredicateProperty().set(event -> event.isShiftDown());
@@ -113,7 +112,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
       focalPointHandler.setTranslationRateModifier(translationRate ->
       {
-         return Math.min(translationRate * Math.pow(Math.abs(orbitHandler.distanceProperty().get()), zoomToTranslationPow.get()), minTranslationOffset.get());
+         return Math.min(translationRate * Math.pow(orbitHandler.distanceProperty().get(), zoomToTranslationPow.get()), minTranslationOffset.get());
       });
 
       setCameraPosition(-2.0, 0.7, 1.0);
@@ -130,8 +129,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
          focalPointViz.getTransforms().add(focalPointHandler.getTranslation());
          orbitHandler.distanceProperty().addListener((o, oldValue, newValue) ->
          {
-            double sphereRadius = FOCUS_POINT_SIZE * Math.abs(newValue.doubleValue());
-            focalPointViz.setRadius(sphereRadius);
+            focalPointViz.setRadius(FOCUS_POINT_SIZE * newValue.doubleValue());
          });
       }
       else
@@ -184,7 +182,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
          y -= focalPoint.getY();
          z -= focalPoint.getZ();
 
-         orbitHandler.distanceProperty().set(-EuclidCoreTools.norm(x, y, z));
+         orbitHandler.distanceProperty().set(EuclidCoreTools.norm(x, y, z));
          orbitHandler.setLookDirection(x, y, z, 0.0);
       }
    }
@@ -245,7 +243,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
          focalPointHandler.setPositionWorldFrame(desiredFocalPoint);
 
          double distanceFromFocusPoint = currentCameraPosition.distance(desiredFocalPoint);
-         orbitHandler.distanceProperty().set(-distanceFromFocusPoint);
+         orbitHandler.distanceProperty().set(distanceFromFocusPoint);
          orbitHandler.setRotationFromCameraAndFocusPositions(currentCameraPosition, desiredFocalPoint, 0.0);
       }
    }
@@ -261,7 +259,7 @@ public class PerspectiveCameraController implements EventHandler<Event>
 
       Affine cameraOrientation = orbitHandler.getCameraRotation();
       Point3D newFocusPointTranslation = new Point3D(cameraOrientation.getMxz(), cameraOrientation.getMyz(), cameraOrientation.getMzz());
-      newFocusPointTranslation.scale(-orbitHandler.distanceProperty().get());
+      newFocusPointTranslation.scale(orbitHandler.distanceProperty().get());
       newFocusPointTranslation.add(currentCameraPosition);
       focalPointHandler.setPositionWorldFrame(newFocusPointTranslation);
    }
