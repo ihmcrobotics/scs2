@@ -16,7 +16,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -26,7 +25,6 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
-import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.JavaFXFrameConverter;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -53,6 +51,8 @@ public class VideoViewer
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
    private final BytedecoVideoReader reader;
    private final double defaultThumbnailSize;
+
+   private final JavaFXFrameConverter frameConverter = new JavaFXFrameConverter();
 
    private final ObjectProperty<Pane> imageViewRootPane = new SimpleObjectProperty<>(this, "imageViewRootPane", null);
 
@@ -196,27 +196,34 @@ public class VideoViewer
 
    public void update()
    {
-//      FrameData currentFrameData = reader.pollCurrentFrame();
-      Frame currentFrame = reader.getFrame();
+      FrameData currentFrameData = reader.pollCurrentFrame();
+      Image currentImage;
 
-      if (currentFrame == null)
+      if (currentFrameData.frame == null)
          return;
-
-
-      JavaFXFrameConverter frameConverter = new JavaFXFrameConverter();
 
       thumbnailContainer.setPrefWidth(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize);
       thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * reader.getImageHeight()/ reader.getImageWidth());
 
-      thumbnail.setImage(frameConverter.convert(currentFrame));
+      try
+      {
+         if (currentFrameData.frame.imageHeight > 0 && currentFrameData.frame.imageWidth > 0)
+         {
+            currentImage = frameConverter.convert(currentFrameData.frame);
+            thumbnail.setImage(currentImage);
+            videoView.setImage(currentImage);
+         }
+      }
+      catch(UnsupportedOperationException ignored)
+      {
+      }
 
       if (updateVideoView.get())
       {
-         videoView.setImage(frameConverter.convert(currentFrame));
-//         queryRobotTimestampLabel.setText(Long.toString(currentFrameData.queryRobotTimestamp));
-//         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
-//         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
-//         demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
+         queryRobotTimestampLabel.setText(Long.toString(currentFrameData.queryRobotTimestamp));
+         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
+         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
+         demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
 
          if (imageViewRootPane.get() != null)
          {

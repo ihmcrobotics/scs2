@@ -67,13 +67,14 @@ public class BytedecoVideoReader
         long currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
         demuxer.seekToPTS(videoTimestamp);
-//        FrameData copyForWriting = imageBuffer.getCopyForWriting();
-//        copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
-//        copyForWriting.robotTimestamp = currentRobotTimestamp;
-//        copyForWriting.cameraCurrentPTS = videoTimestamp;
-//            copyForWriting.demuxerCurrentPTS = demuxer.getCurrentPTS();
-//        Frame nextFrame = demuxer.getNextFrame(); // Increment frame index after getting frame.
-//            copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
+        FrameData copyForWriting = imageBuffer.getCopyForWriting();
+        copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
+        copyForWriting.robotTimestamp = currentRobotTimestamp;
+        copyForWriting.cameraCurrentPTS = videoTimestamp;
+        copyForWriting.demuxerCurrentPTS = demuxer.getCurrentPTS();
+        Frame nextFrame = demuxer.getNextFrame(); // Increment frame index after getting frame.
+        copyForWriting.frame = nextFrame;
+//        copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
 
         imageBuffer.commit();
     }
@@ -159,7 +160,7 @@ public class BytedecoVideoReader
 
     public static class FrameData
     {
-        public WritableImage frame;
+        public Frame frame;
         public long queryRobotTimestamp;
         public long robotTimestamp;
         public long cameraCurrentPTS;

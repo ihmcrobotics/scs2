@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session;
 
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.junit.jupiter.api.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.log.BytedecoVideoReader;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
 
 import java.io.File;
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TimestampScrubberTest
 {
-    private static VideoDataReader.TimestampScrubber scrubber;
+    private static BytedecoVideoReader.TimestampScrubber scrubber;
 
     private static long[] robotTimestamps;
     private static long[] videoTimestamps;
@@ -27,7 +28,7 @@ public class TimestampScrubberTest
 //        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
         File timestampFile = new File(Objects.requireNonNull(TimestampScrubberTest.class.getClassLoader().getResource("sessionLogs/Capture.dat")).toURI());
 
-        scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
+        scrubber = new BytedecoVideoReader.TimestampScrubber(timestampFile, true, false);
 
         // Need to have one video in the log or this will fail
         robotTimestamps = scrubber.getRobotTimestampsArray();

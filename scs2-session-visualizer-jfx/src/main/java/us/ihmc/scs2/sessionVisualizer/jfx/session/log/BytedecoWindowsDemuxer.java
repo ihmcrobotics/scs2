@@ -46,6 +46,11 @@ public class BytedecoWindowsDemuxer
         return grabber.getImageWidth();
     }
 
+    public long getCurrentPTS()
+    {
+        return grabber.getTimestamp();
+    }
+
     public void seekToPTS(long videoTimestamp)
     {
         try
