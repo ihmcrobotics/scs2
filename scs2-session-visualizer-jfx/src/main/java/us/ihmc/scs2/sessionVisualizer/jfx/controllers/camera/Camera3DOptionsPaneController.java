@@ -130,7 +130,7 @@ public class Camera3DOptionsPaneController
          yFocalPointCurrentTextField.setText(Double.toString(newValue.getTy()));
          zFocalPointCurrentTextField.setText(Double.toString(newValue.getTz()));
       };
-      Node focalPoint = cameraController.getFocusPointViz();
+      Node focalPoint = cameraController.getFocalPointViz();
       focalPoint.localToSceneTransformProperty().addListener(focalPointTransformChangeListener);
       focalPointTransformChangeListener.changed(focalPoint.localToSceneTransformProperty(), null, focalPoint.getLocalToSceneTransform());
 
