@@ -18,6 +18,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController;
@@ -28,6 +29,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardM
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.BCF2000Button;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -150,10 +152,10 @@ public class SecondaryWindowManager implements Manager
             openYoGraphicEditor(request.requestSource);
             break;
          case NewWindowRequest.BFC2000_SLIDERBOARD_WINDOW_TYPE:
-            sliderboardManager.openBFC2000SliderboardWindow(request.requestSource);
+            sliderboardManager.openSliderboardWindow(request.requestSource, YoSliderboardType.BCF2000);
             return;
          case NewWindowRequest.XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE:
-            sliderboardManager.openXTouchCompactSliderboardWindow(request.requestSource);
+            sliderboardManager.openSliderboardWindow(request.requestSource, YoSliderboardType.XTOUCHCOMPACT);
             return;
          case NewWindowRequest.REGISTRY_STATISTICS_WINDOW_TYPE:
             openRegistryStatisticsWindow(request.requestSource, (String) request.additionalData);
