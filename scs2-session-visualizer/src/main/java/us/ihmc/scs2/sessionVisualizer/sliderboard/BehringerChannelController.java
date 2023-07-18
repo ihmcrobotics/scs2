@@ -7,7 +7,7 @@ import javax.sound.midi.ShortMessage;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
-public abstract class BCF2000ChannelController
+public abstract class BehringerChannelController
 {
    protected final SliderboardVariable controlVariable;
    protected final Receiver midiOut;
@@ -18,7 +18,7 @@ public abstract class BCF2000ChannelController
    private int currentDeviceValue = -1;
    private int newDeviceValue = -1;
 
-   public BCF2000ChannelController(SliderboardVariable controlVariable, int channel, Receiver midiOut)
+   public BehringerChannelController(SliderboardVariable controlVariable, int channel, Receiver midiOut)
    {
       this.controlVariable = controlVariable;
       this.channel = channel;

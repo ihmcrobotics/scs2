@@ -35,9 +35,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Button;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Knob;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.Slider;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 
 public class YoXTouchCompactSliderboardWindowController implements YoSliderboardWindowControllerInterface
