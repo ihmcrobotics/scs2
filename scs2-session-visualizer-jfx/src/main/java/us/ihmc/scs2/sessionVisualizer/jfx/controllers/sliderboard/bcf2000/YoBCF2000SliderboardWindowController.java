@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000;
 
-import static us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition.BCF2000;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,6 +24,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardWindowControllerInterface;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -204,6 +203,11 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
    @Override
    public void setInput(YoSliderboardDefinition input)
    {
+      if (input.getType() != YoSliderboardType.BCF2000)
+      {
+         throw new RuntimeException("Invalid definition type: " + input.getType());
+      }
+
       clear();
 
       if (input.getName() != null)
@@ -370,7 +374,7 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
    {
       YoSliderboardDefinition definition = new YoSliderboardDefinition();
       definition.setName(nameProperty.get());
-      definition.setType(BCF2000);
+      definition.setType(YoSliderboardType.BCF2000);
       definition.setKnobs(knobControllers.stream().map(YoBCF2000KnobController::toYoKnobDefinition).collect(Collectors.toList()));
       definition.setButtons(buttonControllers.stream().map(YoBCF2000ButtonController::toYoButtonDefinition).collect(Collectors.toList()));
       definition.setSliders(sliderControllers.stream().map(YoBCF2000SliderController::toYoSliderDefinition).collect(Collectors.toList()));
@@ -387,5 +391,11 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
       }
 
       return true;
+   }
+
+   @Override
+   public YoSliderboardType getType()
+   {
+      return YoSliderboardType.BCF2000;
    }
 }

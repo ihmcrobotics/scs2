@@ -8,6 +8,7 @@ import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 
 public interface YoSliderboardWindowControllerInterface
@@ -46,6 +47,8 @@ public interface YoSliderboardWindowControllerInterface
    void close();
 
    StringProperty nameProperty();
+   
+   YoSliderboardType getType();
 
    YoSliderboardDefinition toYoSliderboardDefinition();
 

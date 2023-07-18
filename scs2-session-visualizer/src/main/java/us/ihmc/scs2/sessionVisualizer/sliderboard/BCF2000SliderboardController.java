@@ -9,14 +9,12 @@ import java.util.concurrent.TimeUnit;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiSystem;
-import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Transmitter;
 
 import us.ihmc.commons.thread.ThreadTools;
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 
 public class BCF2000SliderboardController
 {
@@ -331,7 +329,7 @@ public class BCF2000SliderboardController
    {
       String name = info.getName();
       String description = info.getDescription();
-      return name.contains(YoSliderboardDefinition.BCF2000) || description.contains(YoSliderboardDefinition.BCF2000);
+      return name.contains(YoSliderboardType.BCF2000.getTypeString()) || description.contains(YoSliderboardType.BCF2000.getTypeString());
    }
    
    public static void closeMidiDevices()

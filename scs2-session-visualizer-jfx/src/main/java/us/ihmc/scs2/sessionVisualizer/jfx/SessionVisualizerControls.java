@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_TYPE;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +32,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
@@ -48,6 +50,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public interface SessionVisualizerControls
 {
+
    /**
     * Sets the camera's orbit with respect to the focus point.
     * <p>
@@ -500,7 +503,7 @@ public interface SessionVisualizerControls
     */
    default void clearDefaultSliderboard()
    {
-      removeSliderboard(DEFAULT_SLIDERBOARD_NAME);
+      removeSliderboard(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE);
    }
 
    /**
@@ -533,8 +536,9 @@ public interface SessionVisualizerControls
     * </p>
     * 
     * @param sliderboardName the name of the sliderboard to remove.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     */
-   void removeSliderboard(String sliderboardName);
+   void removeSliderboard(String sliderboardName, YoSliderboardType sliderboardType);
 
    /**
     * Configures a button of the default sliderboard.
@@ -551,7 +555,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardButton(int buttonIndex, String variableName)
    {
-      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, new YoButtonDefinition(variableName, buttonIndex));
+      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, new YoButtonDefinition(variableName, buttonIndex));
    }
 
    /**
@@ -564,7 +568,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardButton(YoButtonDefinition buttonDefinition)
    {
-      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonDefinition);
+      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, buttonDefinition);
    }
 
    /**
@@ -573,6 +577,7 @@ public interface SessionVisualizerControls
     * @param sliderboardName used to retrieve the sliderboard for which the button is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param buttonIndex     the position of the button on the sliderboard. The first button has an
     *                        index of 0.
     * @param variableName    the name of the {@code YoVariable} the button should be bound to. The
@@ -580,9 +585,9 @@ public interface SessionVisualizerControls
     *                        no effect. The name can either be the fullname (including namespace) or
     *                        the simple name of the variable.
     */
-   default void setSliderboardButton(String sliderboardName, int buttonIndex, String variableName)
+   default void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex, String variableName)
    {
-      setSliderboardButton(sliderboardName, new YoButtonDefinition(variableName, buttonIndex));
+      setSliderboardButton(sliderboardName, sliderboardType, new YoButtonDefinition(variableName, buttonIndex));
    }
 
    /**
@@ -591,9 +596,10 @@ public interface SessionVisualizerControls
     * @param sliderboardName  used to retrieve the sliderboard for which the button is to be
     *                         configured. If no sliderboard could be found, a new empty sliderboard is
     *                         created and added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param buttonDefinition the new configuration for the button.
     */
-   void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition);
+   void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition);
 
    /**
     * Clears the configuration of a button of the default sliderboard.
@@ -603,7 +609,7 @@ public interface SessionVisualizerControls
     */
    default void clearDefaultSliderboardButton(int buttonIndex)
    {
-      clearSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonIndex);
+      clearSliderboardButton(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, buttonIndex);
    }
 
    /**
@@ -611,10 +617,11 @@ public interface SessionVisualizerControls
     * 
     * @param sliderboardName used to retrieve the sliderboard for which the button is to be cleared. If
     *                        no sliderboard could be found, this method has no effect.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param buttonIndex     the position of the button on the sliderboard. The first button has an
     *                        index of 0.
     */
-   void clearSliderboardButton(String sliderboardName, int buttonIndex);
+   void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex);
 
    /**
     * Configures a knob of the default sliderboard.
@@ -630,7 +637,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardKnob(int knobIndex, String variableName)
    {
-      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, new YoKnobDefinition(variableName, knobIndex));
+      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, new YoKnobDefinition(variableName, knobIndex));
    }
 
    /**
@@ -643,7 +650,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardKnob(YoKnobDefinition knobDefinition)
    {
-      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobDefinition);
+      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, knobDefinition);
    }
 
    /**
@@ -652,15 +659,16 @@ public interface SessionVisualizerControls
     * @param sliderboardName used to retrieve the sliderboard for which the knob is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param knobIndex       the position of the knob on the sliderboard. The first knob has an index
     *                        of 0.
     * @param variableName    the name of the {@code YoVariable} the knob should be bound to. The name
     *                        can either be the fullname (including namespace) or the simple name of the
     *                        variable.
     */
-   default void setSliderboardKnob(String sliderboardName, int knobIndex, String variableName)
+   default void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex, String variableName)
    {
-      setSliderboardKnob(sliderboardName, new YoKnobDefinition(variableName, knobIndex));
+      setSliderboardKnob(sliderboardName, sliderboardType, new YoKnobDefinition(variableName, knobIndex));
    }
 
    /**
@@ -669,9 +677,10 @@ public interface SessionVisualizerControls
     * @param sliderboardName used to retrieve the sliderboard for which the knob is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param knobDefinition  the new configuration for the knob.
     */
-   void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition);
+   void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition);
 
    /**
     * Clears the configuration of a knob of the default sliderboard.
@@ -680,7 +689,7 @@ public interface SessionVisualizerControls
     */
    default void clearDefaultSliderboardKnob(int knobIndex)
    {
-      clearSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobIndex);
+      clearSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, knobIndex);
    }
 
    /**
@@ -688,10 +697,11 @@ public interface SessionVisualizerControls
     * 
     * @param sliderboardName used to retrieve the sliderboard for which the knob is to be cleared. If
     *                        no sliderboard could be found, this method has no effect
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param knobIndex       the position of the knob on the sliderboard. The first knob has an index
     *                        of 0.
     */
-   void clearSliderboardKnob(String sliderboardName, int knobIndex);
+   void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex);
 
    /**
     * Configures a slider of the default sliderboard.
@@ -707,7 +717,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardSlider(int sliderIndex, String variableName)
    {
-      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, new YoSliderDefinition(variableName, sliderIndex));
+      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, new YoSliderDefinition(variableName, sliderIndex));
    }
 
    /**
@@ -720,7 +730,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardSlider(YoSliderDefinition sliderDefinition)
    {
-      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderDefinition);
+      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, sliderDefinition);
    }
 
    /**
@@ -729,15 +739,16 @@ public interface SessionVisualizerControls
     * @param sliderboardName used to retrieve the sliderboard for which the slider is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param sliderIndex     the position of the slider on the sliderboard. The first slider has an
     *                        index of 0.
     * @param variableName    the name of the {@code YoVariable} the slider should be bound to. The name
     *                        can either be the fullname (including namespace) or the simple name of the
     *                        variable.
     */
-   default void setSliderboardSlider(String sliderboardName, int sliderIndex, String variableName)
+   default void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex, String variableName)
    {
-      setSliderboardSlider(sliderboardName, new YoSliderDefinition(variableName, sliderIndex));
+      setSliderboardSlider(sliderboardName, sliderboardType, new YoSliderDefinition(variableName, sliderIndex));
    }
 
    /**
@@ -746,22 +757,24 @@ public interface SessionVisualizerControls
     * @param sliderboardName  used to retrieve the sliderboard for which the slider is to be
     *                         configured. If no sliderboard could be found, a new empty sliderboard is
     *                         created and added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param sliderDefinition the new configuration for the slider.
     */
-   void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition);
+   void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition);
 
    default void clearDefaultSliderboardSlider(int sliderIndex)
    {
-      clearSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderIndex);
+      clearSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, sliderIndex);
    }
 
    /**
     * Clears the configuration of a slider of the default sliderboard.
     * 
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param sliderIndex the position of the slider on the sliderboard. The first slider has an index
     *                    of 0.
     */
-   void clearSliderboardSlider(String sliderboardName, int sliderIndex);
+   void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex);
 
    /**
     * Registers a custom filter that can then be accessed when exporting session data via the GUI.

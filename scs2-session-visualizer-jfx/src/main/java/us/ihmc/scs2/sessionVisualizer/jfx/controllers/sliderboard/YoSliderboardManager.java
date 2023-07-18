@@ -9,6 +9,8 @@ import java.util.List;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
@@ -22,6 +24,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -58,13 +61,13 @@ public class YoSliderboardManager implements Manager
    private final TopicListener<Boolean> clearAllRequestListener = m -> handleClearRequest(m);
    private final TopicListener<YoSliderboardListDefinition> setMultiRequestListener = m -> handleSetRequest(m);
    private final TopicListener<YoSliderboardDefinition> setSingleRequestListener = m -> handleSetRequest(m);
-   private final TopicListener<String> removeRequestListener = m -> handleRemoveRequest(m);
-   private final TopicListener<Pair<String, YoButtonDefinition>> setButtonRequestListener = m -> handleSetButtonRequest(m.getKey(), m.getValue());
-   private final TopicListener<Pair<String, YoKnobDefinition>> setKnobRequestListener = m -> handleSetKnobRequest(m.getKey(), m.getValue());
-   private final TopicListener<Pair<String, YoSliderDefinition>> setSliderRequestListener = m -> handleSetSliderRequest(m.getKey(), m.getValue());
-   private final TopicListener<Pair<String, Integer>> clearButtonRequestListener = m -> handleClearButtonRequest(m.getKey(), m.getValue());
-   private final TopicListener<Pair<String, Integer>> clearKnobRequestListener = m -> handleClearKnobRequest(m.getKey(), m.getValue());
-   private final TopicListener<Pair<String, Integer>> clearSliderRequestListener = m -> handleClearSliderRequest(m.getKey(), m.getValue());
+   private final TopicListener<Pair<String, YoSliderboardType>> removeRequestListener = m -> handleRemoveRequest(m.getKey(), m.getValue());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> setButtonRequestListener = m -> handleSetButtonRequest(m.getLeft(), m.getMiddle(), m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> setKnobRequestListener = m -> handleSetKnobRequest(m.getLeft(), m.getMiddle(), m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> setSliderRequestListener = m -> handleSetSliderRequest(m.getLeft(), m.getMiddle(), m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearButtonRequestListener = m -> handleClearButtonRequest(m.getLeft(), m.getMiddle(), m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearKnobRequestListener = m -> handleClearKnobRequest(m.getLeft(), m.getMiddle(), m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearSliderRequestListener = m -> handleClearSliderRequest(m.getLeft(), m.getMiddle(), m.getRight());
 
    @Override
    public void startSession(Session session)
@@ -185,11 +188,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleRemoveRequest(String sliderboardName)
+   private void handleRemoveRequest(String sliderboardName, YoSliderboardType sliderboardType)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().closeSliderboard(sliderboardName);
+         behringerSliderboard.getValue().closeSliderboard(sliderboardName, sliderboardType);
       }
       else
       {
@@ -202,11 +205,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleSetButtonRequest(String sliderboardName, YoButtonDefinition buttonDefinition)
+   private void handleSetButtonRequest(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().setButtonInput(sliderboardName, buttonDefinition);
+         behringerSliderboard.getValue().setButtonInput(sliderboardName, sliderboardType, buttonDefinition);
       }
       else
       {
@@ -228,11 +231,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleSetKnobRequest(String sliderboardName, YoKnobDefinition knobDefinition)
+   private void handleSetKnobRequest(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().setKnobInput(sliderboardName, knobDefinition);
+         behringerSliderboard.getValue().setKnobInput(sliderboardName, sliderboardType, knobDefinition);
       }
       else
       {
@@ -254,11 +257,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleSetSliderRequest(String sliderboardName, YoSliderDefinition sliderDefinition)
+   private void handleSetSliderRequest(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().setSliderInput(sliderboardName, sliderDefinition);
+         behringerSliderboard.getValue().setSliderInput(sliderboardName, sliderboardType, sliderDefinition);
       }
       else
       {
@@ -280,11 +283,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleClearButtonRequest(String sliderboardName, int buttonIndex)
+   private void handleClearButtonRequest(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().removeButtonInput(sliderboardName, buttonIndex);
+         behringerSliderboard.getValue().removeButtonInput(sliderboardName, sliderboardType, buttonIndex);
       }
       else
       {
@@ -309,11 +312,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleClearKnobRequest(String sliderboardName, int knobIndex)
+   private void handleClearKnobRequest(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().removeKnobInput(sliderboardName, knobIndex);
+         behringerSliderboard.getValue().removeKnobInput(sliderboardName, sliderboardType, knobIndex);
       }
       else
       {
@@ -338,11 +341,11 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private void handleClearSliderRequest(String sliderboardName, int sliderIndex)
+   private void handleClearSliderRequest(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex)
    {
       if (behringerSliderboard.getValue() != null)
       {
-         behringerSliderboard.getValue().removeSliderInput(sliderboardName, sliderIndex);
+         behringerSliderboard.getValue().removeSliderInput(sliderboardName, sliderboardType, sliderIndex);
       }
       else
       {

@@ -15,6 +15,7 @@ import javax.sound.midi.Transmitter;
 
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 
 public class XTouchCompactSliderboardController
 {
@@ -340,7 +341,7 @@ public class XTouchCompactSliderboardController
       String name = info.getName();
       String description = info.getDescription();
 
-      return name.contains(YoSliderboardDefinition.XTOUCHCOMPACT) || description.contains(YoSliderboardDefinition.XTOUCHCOMPACT);
+      return name.contains(YoSliderboardType.XTOUCHCOMPACT.getTypeString()) || description.contains(YoSliderboardType.XTOUCHCOMPACT.getTypeString());
    }
 
    public static void closeMidiDevices()
