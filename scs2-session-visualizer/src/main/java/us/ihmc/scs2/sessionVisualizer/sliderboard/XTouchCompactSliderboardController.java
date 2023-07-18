@@ -14,7 +14,6 @@ import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Transmitter;
 
 import us.ihmc.commons.thread.ThreadTools;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 
 public class XTouchCompactSliderboardController
@@ -50,9 +49,14 @@ public class XTouchCompactSliderboardController
          return 127;
       }
 
-      public static XTouchKnob fromChannel(int channel)
+      public static XTouchKnob fromCommand(int channel, int data1)
       {
-         int knob = channel - CHANNEL_OFFSET;
+         if(channel != 176)
+         {
+            return null;
+         }
+         
+         int knob = data1 - CHANNEL_OFFSET;
          int ordinal = knob - 1;
 
          if (ordinal < 0 || ordinal >= values.length)
@@ -93,9 +97,14 @@ public class XTouchCompactSliderboardController
          return 127;
       }
 
-      public static XTouchSlider fromChannel(int channel)
+      public static XTouchSlider fromCommand(int channel, int data1)
       {
-         int slider = channel - CHANNEL_OFFSET;
+         if(channel != 176)
+         {
+            return null;
+         }
+         
+         int slider = data1 - CHANNEL_OFFSET;
          int ordinal = slider - 1;
 
          if (ordinal < 0 || ordinal >= values.length)
@@ -144,10 +153,16 @@ public class XTouchCompactSliderboardController
       BUTTON_31,
       BUTTON_32,
       // Fifth row
-      BUTTON_33;
+      BUTTON_33,
+      BUTTON_34,
+      BUTTON_35,
+      BUTTON_36,
+      BUTTON_37,
+      BUTTON_38,
+      BUTTON_39;
 
       public static final XTouchButton[] values = values();
-      private static final int CHANNEL_OFFSET = 15 + 127;
+      private static final int CHANNEL_OFFSET = 15;
 
       private final int channel;
 
@@ -162,9 +177,14 @@ public class XTouchCompactSliderboardController
          return channel;
       }
 
-      public static XTouchButton fromChannel(int channel)
+      public static XTouchButton fromCommand(int channel, int data1)
       {
-         int button = channel - CHANNEL_OFFSET;
+         if(channel != 128)
+         {
+            return null;
+         }
+         
+         int button = data1 - CHANNEL_OFFSET;
          int ordinal = button - 1;
 
          if (ordinal < 0 || ordinal >= values.length)
@@ -182,7 +202,7 @@ public class XTouchCompactSliderboardController
    private ScheduledFuture<?> currentTask;
 
    private final BehringerSliderController[] sliderControllers = new BehringerSliderController[9];
-   private final BehringerButtonController[] buttonControllers = new BehringerButtonController[33];
+   private final XTouchButtonController[] buttonControllers = new XTouchButtonController[39];
    private final BehringerKnobController[] knobControllers = new BehringerKnobController[16];
    private final BehringerChannelController[] allControllers;
 
@@ -195,8 +215,10 @@ public class XTouchCompactSliderboardController
             return;
 
          ShortMessage shortMessage = (ShortMessage) message;
+         
+         System.out.println(shortMessage.getCommand() + " " + shortMessage.getChannel() + " " + shortMessage.getData1() + " " + shortMessage.getData2());
 
-         XTouchSlider slider = XTouchSlider.fromChannel(shortMessage.getData1());
+         XTouchSlider slider = XTouchSlider.fromCommand(shortMessage.getCommand(), shortMessage.getData1());
 
          if (slider != null)
          {
@@ -204,7 +226,7 @@ public class XTouchCompactSliderboardController
                return;
          }
 
-         XTouchButton button = XTouchButton.fromChannel(shortMessage.getData1());
+         XTouchButton button = XTouchButton.fromCommand(shortMessage.getCommand(), shortMessage.getData1());
 
          if (button != null)
          {
@@ -212,7 +234,7 @@ public class XTouchCompactSliderboardController
                return;
          }
 
-         XTouchKnob knob = XTouchKnob.fromChannel(shortMessage.getData1());
+         XTouchKnob knob = XTouchKnob.fromCommand(shortMessage.getCommand(), shortMessage.getData1());
 
          if (knob != null)
          {
@@ -241,7 +263,7 @@ public class XTouchCompactSliderboardController
 
       for (XTouchButton button : XTouchButton.values)
       {
-         buttonControllers[button.ordinal()] = new BehringerButtonController(button, midiOut);
+         buttonControllers[button.ordinal()] = new XTouchButtonController(button, midiOut);
       }
 
       for (XTouchKnob knob : XTouchKnob.values)
