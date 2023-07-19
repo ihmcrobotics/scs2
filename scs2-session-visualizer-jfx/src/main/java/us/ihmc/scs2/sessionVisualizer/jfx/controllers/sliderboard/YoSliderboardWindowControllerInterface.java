@@ -16,11 +16,7 @@ public interface YoSliderboardWindowControllerInterface
 
    void initialize(Window owner, SessionVisualizerToolkit toolkit);
 
-   void importYoSliderboard();
-
    void load(File file);
-
-   void exportYoSliderboard();
 
    void save(File file);
 

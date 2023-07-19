@@ -147,15 +147,6 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
       }
    }
 
-   @Override
-   @FXML
-   public void importYoSliderboard()
-   {
-      File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
-
-      if (result != null)
-         load(result);
-   }
 
    @Override
    public void load(File file)
@@ -175,15 +166,6 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
       }
    }
 
-   @Override
-   @FXML
-   public void exportYoSliderboard()
-   {
-      File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
-
-      if (result != null)
-         save(result);
-   }
 
    @Override
    public void save(File file)

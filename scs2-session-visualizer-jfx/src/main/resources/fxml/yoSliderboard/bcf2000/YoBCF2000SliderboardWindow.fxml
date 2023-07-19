@@ -117,26 +117,6 @@
             </GridPane>
             <HBox spacing="10.0" style="-fx-background-color: derive( -fx-background, -5%);" VBox.vgrow="NEVER">
                <children>
-                  <JFXButton fx:id="exportButton" minWidth="-Infinity" onAction="#exportYoSliderboard" styleClass="graphic-editor-button" text="Export...">
-                     <graphic>
-                        <FontAwesomeIconView>
-                           <styleClass>
-                              <String fx:value="graphic-editor-icon-view" />
-                              <String fx:value="save-icon-view" />
-                           </styleClass>
-                        </FontAwesomeIconView>
-                     </graphic>
-                  </JFXButton>
-                  <JFXButton fx:id="importButton" minWidth="-Infinity" onAction="#importYoSliderboard" styleClass="graphic-editor-button" text="Import...">
-                     <graphic>
-                        <FontAwesomeIconView>
-                           <styleClass>
-                              <String fx:value="graphic-editor-icon-view" />
-                              <String fx:value="load-icon-view" />
-                           </styleClass>
-                        </FontAwesomeIconView>
-                     </graphic>
-                  </JFXButton>
                   <Label fx:id="connectionStateLabel" alignment="BOTTOM_RIGHT" contentDisplay="RIGHT" graphicTextGap="8.0" maxWidth="1.7976931348623157E308" text="Not connected" HBox.hgrow="ALWAYS">
                      <graphic>
                         <ImageView fx:id="connectionStateImageView" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">

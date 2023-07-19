@@ -141,9 +141,7 @@ public class SessionVisualizerIOTools
    // YoSliderboard resources:
    public static final URL YO_SLIDERBOARD_BCF2000_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_BCF2000, "YoBCF2000SliderboardWindow");
    public static final URL YO_SLIDERBOARD_XTOUCHCOMPACT_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_XTOUCHCOMPACT, "YoXTouchCompactSliderboardWindow");
-   public static final URL YO_MULTI_SLIDERBOARD_BCF2000_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_BCF2000, "YoMultiBCF2000SliderboardWindow");
    public static final URL YO_MULTI_SLIDERBOARD_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD, "YoMultiSliderboardWindow");
-   public static final URL YO_MULTI_SLIDERBOARD_XTOUCHCOMPACT_WINDOW_URL = getFXMLResource(YO_SLIDERBOARD_XTOUCHCOMPACT, "YoMultiXTouchCompactSliderboardWindow");
 
    public static final URL MAIN_WINDOW_URL = getFXMLResource("MainWindow");
    public static final URL SECONDARY_WINDOW_URL = getFXMLResource("SecondaryWindow");
