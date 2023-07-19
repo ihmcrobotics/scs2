@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -18,6 +19,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.transform.Transform;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -77,6 +79,9 @@ public class Camera3DOptionsPaneController
 
    @FXML
    private TextField xCameraCurrentTextField, yCameraCurrentTextField, zCameraCurrentTextField;
+
+   private final DoubleSearchField[] cameraCoordinatesSearchFields = new DoubleSearchField[3];
+   private final DoubleProperty[] cameraCoordinates = new DoubleProperty[3];
 
    public void initialize(PerspectiveCameraController cameraController,
                           YoCompositeSearchManager searchManager,
@@ -182,6 +187,42 @@ public class Camera3DOptionsPaneController
       nodeTrackedChangeListener.changed(nodeToTrack, null, nodeToTrack.get());
 
       cameraPositionComboxBox.setItems(FXCollections.observableArrayList(CameraPositionType.values()));
-      // TODO setup the position controls
+
+      cameraCoordinatesSearchFields[0] = new DoubleSearchField(cameraTextField1, searchManager, linkedRootRegistry, cameraValidImageView1);
+      cameraCoordinatesSearchFields[1] = new DoubleSearchField(cameraTextField2, searchManager, linkedRootRegistry, cameraValidImageView2);
+      cameraCoordinatesSearchFields[2] = new DoubleSearchField(cameraTextField3, searchManager, linkedRootRegistry, cameraValidImageView3);
+
+      for (int i = 0; i < cameraCoordinatesSearchFields.length; i++)
+      {
+         cameraCoordinatesSearchFields[i].setupAutoCompletion();
+
+         int supplierIndex = i;
+         cameraCoordinatesSearchFields[i].supplierProperty().addListener((o, oldValue, newValue) -> cameraCoordinates[supplierIndex] = newValue);
+      }
+
+      cameraPositionComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+      {
+         switch (newValue)
+         {
+            case Position:
+               cameraLabel1.setText("x");
+               cameraLabel2.setText("y");
+               cameraLabel3.setText("z");
+               break;
+            case Orbital:
+               cameraLabel1.setText("distance");
+               cameraLabel2.setText("longitude");
+               cameraLabel3.setText("latitude");
+               break;
+            case LevelOrbital:
+               cameraLabel1.setText("distance");
+               cameraLabel2.setText("longitude");
+               cameraLabel3.setText("z");
+               break;
+
+            default:
+               break;
+         }
+      });
    }
 }

@@ -284,6 +284,11 @@ public class CameraFocalPointHandler
       offsetTranslation.add(shift);
    }
 
+   public void translateWorldFrame(Tuple3DReadOnly translation)
+   {
+      translateWorldFrame(translation.getX(), translation.getY(), translation.getZ());
+   }
+
    /**
     * Update the camera translation after applying a translation offset in the world frame.
     *
@@ -293,7 +298,12 @@ public class CameraFocalPointHandler
     */
    public void translateWorldFrame(double dx, double dy, double dz)
    {
-      offsetTranslation.add(dx, dy, dz);
+      if (Double.isFinite(dx))
+         offsetTranslation.addX(dx);
+      if (Double.isFinite(dy))
+         offsetTranslation.addY(dy);
+      if (Double.isFinite(dz))
+         offsetTranslation.addZ(dz);
    }
 
    public void setPositionWorldFrame(Tuple3DReadOnly position)
@@ -303,9 +313,24 @@ public class CameraFocalPointHandler
 
    public void setPositionWorldFrame(double x, double y, double z)
    {
-      offsetTranslation.set(x, y, z);
-      if (targetType.get() != TrackingTargetType.Disabled)
-         offsetTranslation.sub(trackingTranslate);
+      if (Double.isFinite(x))
+      {
+         offsetTranslation.setX(x);
+         if (targetType.get() != TrackingTargetType.Disabled)
+            offsetTranslation.subX(trackingTranslate.getX());
+      }
+      if (Double.isFinite(y))
+      {
+         offsetTranslation.setY(y);
+         if (targetType.get() != TrackingTargetType.Disabled)
+            offsetTranslation.subY(trackingTranslate.getY());
+      }
+      if (Double.isFinite(z))
+      {
+         offsetTranslation.setZ(z);
+         if (targetType.get() != TrackingTargetType.Disabled)
+            offsetTranslation.subZ(trackingTranslate.getZ());
+      }
    }
 
    /**
