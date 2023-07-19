@@ -2,8 +2,44 @@
 
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import com.jfoenix.controls.JFXButton?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import java.lang.String?>
 
-<TabPane fx:id="sliderboardTabPane" stylesheets="@../../css/GeneralStylesheet.css" tabClosingPolicy="ALL_TABS" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController">
-   <tabs>
-   </tabs>
-</TabPane>
+
+  <VBox alignment="CENTER_RIGHT" spacing="5.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:id="sliderboardRoot" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController">
+     <children>
+		<TabPane fx:id="sliderboardTabPane"  tabClosingPolicy="ALL_TABS" >
+		   <tabs>
+		   </tabs>
+		</TabPane>
+	       <HBox spacing="10.0" style="-fx-background-color: derive( -fx-background, -5%);" VBox.vgrow="NEVER">
+	           <children>
+	   
+		         <JFXButton fx:id="exportButton" minWidth="-Infinity" onAction="#exportYoSliderboard" styleClass="graphic-editor-button" text="Export...">
+		             <graphic>
+		                <FontAwesomeIconView>
+		                   <styleClass>
+		                      <String fx:value="graphic-editor-icon-view" />
+		                      <String fx:value="save-icon-view" />
+		                   </styleClass>
+		                </FontAwesomeIconView>
+		             </graphic>
+		          </JFXButton>
+		          <JFXButton fx:id="importButton" minWidth="-Infinity" onAction="#importYoSliderboard" styleClass="graphic-editor-button" text="Import...">
+		             <graphic>
+		                <FontAwesomeIconView>
+		                   <styleClass>
+		                      <String fx:value="graphic-editor-icon-view" />
+		                      <String fx:value="load-icon-view" />
+		                   </styleClass>
+		                </FontAwesomeIconView>
+		             </graphic>
+		          </JFXButton>
+		   	</children>
+	    </HBox>
+    </children>
+  </VBox>
+

@@ -9,14 +9,14 @@ import us.ihmc.euclid.tools.EuclidCoreTools;
 
 public abstract class BehringerChannelController
 {
-   protected final SliderboardVariable controlVariable;
+   private final SliderboardVariable controlVariable;
    protected final Receiver midiOut;
    protected final int channel;
 
    protected boolean enable;
 
-   protected int currentDeviceValue = -1;
-   protected int newDeviceValue = -1;
+   private int currentDeviceValue = -1;
+   private int newDeviceValue = -1;
 
    public BehringerChannelController(SliderboardVariable controlVariable, int channel, Receiver midiOut)
    {
@@ -98,7 +98,7 @@ public abstract class BehringerChannelController
             int alpha = (value - controlVariable.getMin()) / (controlVariable.getMax() - controlVariable.getMax());
             msgData = (int) Math.round(EuclidCoreTools.interpolate(0, 127, alpha));
          }
-         message.setMessage(176, 0, channel, msgData);
+         message.setMessage(ShortMessage.CONTROL_CHANGE, 0, channel, msgData);
          midiOut.send(message, -1);
       }
       catch (InvalidMidiDataException e)
