@@ -180,7 +180,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int index = findSliderboardIndex(definition.getName());
+         int index = findSliderboardIndex(definition.getName(), definition.getType());
          if (index != -1)
             initialConfiguration.getYoSliderboards().get(index).set(definition);
          else
@@ -199,7 +199,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int index = findSliderboardIndex(sliderboardName);
+         int index = findSliderboardIndex(sliderboardName, sliderboardType);
          if (index != -1)
             initialConfiguration.getYoSliderboards().remove(index);
       }
@@ -216,7 +216,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int sliderboardIndex = findSliderboardIndex(sliderboardName);
+         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
          YoSliderboardDefinition sliderboard;
          if (sliderboardIndex != -1)
          {
@@ -242,7 +242,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int sliderboardIndex = findSliderboardIndex(sliderboardName);
+         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
          YoSliderboardDefinition sliderboard;
          if (sliderboardIndex != -1)
          {
@@ -268,7 +268,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int sliderboardIndex = findSliderboardIndex(sliderboardName);
+         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
          YoSliderboardDefinition sliderboard;
          if (sliderboardIndex != -1)
          {
@@ -294,7 +294,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int sliderboardIndex = findSliderboardIndex(sliderboardName);
+         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
 
          if (sliderboardIndex == -1)
             return;
@@ -323,7 +323,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int sliderboardIndex = findSliderboardIndex(sliderboardName);
+         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
 
          if (sliderboardIndex == -1)
             return;
@@ -352,7 +352,7 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration == null)
             initialConfiguration = new YoSliderboardListDefinition();
 
-         int sliderboardIndex = findSliderboardIndex(sliderboardName);
+         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
 
          if (sliderboardIndex == -1)
             return;
@@ -370,7 +370,7 @@ public class YoSliderboardManager implements Manager
       }
    }
 
-   private int findSliderboardIndex(String sliderboardName)
+   private int findSliderboardIndex(String sliderboardName, YoSliderboardType type)
    {
       if (sliderboardName == null)
          return -1;
@@ -380,7 +380,7 @@ public class YoSliderboardManager implements Manager
       for (int i = 0; i < yoSliderboards.size(); i++)
       {
          YoSliderboardDefinition sliderboard = yoSliderboards.get(i);
-         if (sliderboardName.equals(sliderboard.getName()))
+         if (sliderboardName.equals(sliderboard.getName()) && sliderboard.getType() == type)
             return i;
       }
       return -1;
