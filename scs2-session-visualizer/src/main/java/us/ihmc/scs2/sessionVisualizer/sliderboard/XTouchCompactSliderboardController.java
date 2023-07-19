@@ -49,9 +49,9 @@ public class XTouchCompactSliderboardController
          return 127;
       }
 
-      public static XTouchKnob fromCommand(int channel, int data1)
+      public static XTouchKnob fromCommand(int command, int data1)
       {
-         if(channel != 176)
+         if(command != ShortMessage.CONTROL_CHANGE)
          {
             return null;
          }
@@ -99,7 +99,7 @@ public class XTouchCompactSliderboardController
 
       public static XTouchSlider fromCommand(int channel, int data1)
       {
-         if(channel != 176)
+         if(channel != ShortMessage.CONTROL_CHANGE)
          {
             return null;
          }
@@ -179,7 +179,7 @@ public class XTouchCompactSliderboardController
 
       public static XTouchButton fromCommand(int channel, int data1)
       {
-         if(channel != 128)
+         if(channel != ShortMessage.NOTE_OFF)
          {
             return null;
          }
@@ -215,8 +215,6 @@ public class XTouchCompactSliderboardController
             return;
 
          ShortMessage shortMessage = (ShortMessage) message;
-         
-         System.out.println(shortMessage.getCommand() + " " + shortMessage.getChannel() + " " + shortMessage.getData1() + " " + shortMessage.getData2());
 
          XTouchSlider slider = XTouchSlider.fromCommand(shortMessage.getCommand(), shortMessage.getData1());
 

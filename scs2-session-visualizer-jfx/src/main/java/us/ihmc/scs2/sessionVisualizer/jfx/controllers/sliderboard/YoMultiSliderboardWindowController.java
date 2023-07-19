@@ -29,6 +29,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
@@ -62,6 +63,9 @@ public class YoMultiSliderboardWindowController
    public static final YoSliderboardType DEFAULT_SLIDERBOARD_TYPE = YoSliderboardType.BCF2000;
    @FXML
    private TabPane sliderboardTabPane;
+   
+   @FXML
+   private VBox sliderboardRoot;
 
    private final Map<Tab, YoSliderboardWindowControllerInterface> tabToControllerMap = new HashMap<>();
 
@@ -154,7 +158,7 @@ public class YoMultiSliderboardWindowController
       });
 
       window.setTitle("YoSliderboard controller");
-      window.setScene(new Scene(sliderboardTabPane));
+      window.setScene(new Scene(sliderboardRoot));
       window.initOwner(toolkit.getMainWindow());
    }
 
@@ -530,4 +534,26 @@ public class YoMultiSliderboardWindowController
       sliderboardTabPane.getSelectionModel().select(index);
    }
 
+
+   @FXML
+   public void exportYoSliderboard()
+   {
+      File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
+
+      if (result != null)
+      {
+//         save(result);
+      }
+   }
+   
+   @FXML
+   public void importYoSliderboard()
+   {
+      File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
+
+      if (result != null)
+      {
+//         load(result);
+      }
+   }
 }
