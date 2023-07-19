@@ -17,6 +17,10 @@ mainDependencies {
    api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer:source")
 
+   api("org.bytedeco:javacv:1.5.9")
+   api("org.bytedeco:javacpp:1.5.9")
+   api("org.bytedeco:javacv-platform:1.5.9")
+
    var javaFXVersion = "17.0.2"
    api(ihmc.javaFXModule("base", javaFXVersion))
    api(ihmc.javaFXModule("controls", javaFXVersion))
