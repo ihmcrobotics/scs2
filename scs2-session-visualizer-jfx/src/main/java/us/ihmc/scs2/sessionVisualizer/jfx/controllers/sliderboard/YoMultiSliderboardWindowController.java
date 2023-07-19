@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.xml.bind.JAXBException;
 
@@ -24,6 +25,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -44,7 +47,6 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.xtouchcompact.YoXTouchCompactSliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
@@ -66,6 +68,9 @@ public class YoMultiSliderboardWindowController
    
    @FXML
    private VBox sliderboardRoot;
+   
+   @FXML
+   private MenuBar sliderboardMenu;
 
    private final Map<Tab, YoSliderboardWindowControllerInterface> tabToControllerMap = new HashMap<>();
 
@@ -95,6 +100,21 @@ public class YoMultiSliderboardWindowController
                                  exportTabMenuItemFactory(),
                                  exportAllTabMenuItemFactory(),
                                  importTabMenuItemFactory());
+      
+      Menu fileMenu = new Menu("Import/Export");
+      
+      fileMenu.getItems().add(importTabMenuItem(() -> sliderboardTabPane.getSelectionModel().getSelectedItem()));
+      fileMenu.getItems().add(exportTabMenuItem(() -> sliderboardTabPane.getSelectionModel().getSelectedItem()));
+      fileMenu.getItems().add(exportAllTabMenuItemFactory().apply(sliderboardTabPane));
+      sliderboardMenu.getMenus().add(fileMenu);
+      
+      Menu sliderboardAddRemoveMenu = new Menu("Sliderboards");
+      sliderboardAddRemoveMenu.getItems().add(TabPaneTools.addLastMenuItem(sliderboardTabPane, this::newBFC2000SliderboardTab, "Add BFC2000 sliderboard"));
+      sliderboardAddRemoveMenu.getItems().add(TabPaneTools.addLastMenuItem(sliderboardTabPane, this::newXtouchCompactTab, "Add XTouch Compact sliderboard"));
+      sliderboardAddRemoveMenu.getItems().add(TabPaneTools.removeSelectedMenuItem("Remove current sliderboard", sliderboardTabPane));
+      sliderboardAddRemoveMenu.getItems().add(TabPaneTools.removeAllMenuItem("Remove all sliderboards", false, sliderboardTabPane));
+      sliderboardMenu.getMenus().add(sliderboardAddRemoveMenu);
+      
 
       ListChangeListener<Tab> preserveOneTabListener = (ListChangeListener<Tab>) change ->
       {
@@ -329,30 +349,36 @@ public class YoMultiSliderboardWindowController
          if (selectedTab == null)
             return null;
 
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
-         exportIcon.getStyleClass().add("save-icon-view");
-         MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
+         
+         return exportTabMenuItem(() -> selectedTab);
 
-         menuItem.setOnAction(e ->
-         {
-            File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
-            if (result != null)
-               tabToControllerMap.get(selectedTab).save(result);
-         });
-
-         return menuItem;
       };
+   }
+   
+   private MenuItem exportTabMenuItem(Supplier<Tab> selectedTab)
+   {
+      FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+      exportIcon.getStyleClass().add("save-icon-view");
+      MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
+
+      menuItem.setOnAction(e ->
+      {
+         if (selectedTab == null)
+            return;
+         
+         File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
+         if (result != null)
+            tabToControllerMap.get(selectedTab.get()).save(result);
+      });
+
+      return menuItem;
+
    }
 
    private Function<TabPane, MenuItem> exportAllTabMenuItemFactory()
    {
       return tabPane ->
       {
-         Tab selectedTab = sliderboardTabPane.getSelectionModel().getSelectedItem();
-
-         if (selectedTab == null)
-            return null;
-
          FontAwesomeIconView exportIcon = new FontAwesomeIconView();
          exportIcon.getStyleClass().add("save-icon-view");
          MenuItem menuItem = new MenuItem("Export all tabs...", exportIcon);
@@ -372,28 +398,41 @@ public class YoMultiSliderboardWindowController
    {
       return tabPane ->
       {
+
          Tab selectedTab = sliderboardTabPane.getSelectionModel().getSelectedItem();
 
          if (selectedTab == null)
             return null;
-
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
-         exportIcon.getStyleClass().add("load-icon-view");
-         MenuItem menuItem = new MenuItem("Import tab(s)...", exportIcon);
-
-         menuItem.setOnAction(e ->
-         {
-            File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
-            if (result != null)
-               importTabsAt(result, selectedTab);
-         });
-
-         return menuItem;
+         
+         return importTabMenuItem(() -> selectedTab);
       };
+   }
+   
+   private MenuItem importTabMenuItem(Supplier<Tab> selectedTab)
+   {
+      FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+      exportIcon.getStyleClass().add("load-icon-view");
+      MenuItem menuItem = new MenuItem("Import tab(s)...", exportIcon);
+      menuItem.setOnAction(e ->
+      {
+         if (selectedTab.get() == null)
+            return;
+         
+         File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
+         if (result != null)
+            importTabsAt(result, selectedTab.get());
+      });
+      return menuItem;
+
    }
 
    private Tab newSliderboardTab(YoSliderboardType type)
    {
+      if(type == null)
+      {
+         throw new RuntimeException("Cannot load configuration: Invalid sliderboard type");
+      }
+      
       switch(type)
       {
          case BCF2000:
@@ -477,14 +516,9 @@ public class YoMultiSliderboardWindowController
 
          int startIndex = 0;
 
-         if (isTabEmpty(insertionPoint))
-         {
-            tabToControllerMap.get(insertionPoint).setInput(yoEntryLists.get(0));
-            startIndex++;
-         }
-
          ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
-         int insertionIndex = tabs.indexOf(insertionPoint) + 1;
+         int insertionIndex = tabs.indexOf(insertionPoint);
+
 
          for (int i = startIndex; i < yoEntryLists.size(); i++)
          {
@@ -493,6 +527,12 @@ public class YoMultiSliderboardWindowController
             tabs.add(insertionIndex, newEmptyTab);
             sliderboardTabPane.getSelectionModel().select(insertionIndex);
             insertionIndex++;
+         }
+         
+         // Clear empty tab after import
+         if (isTabEmpty(insertionPoint))
+         {
+            sliderboardTabPane.getTabs().remove(insertionPoint);
          }
       }
       catch (IOException | JAXBException e)
@@ -535,25 +575,5 @@ public class YoMultiSliderboardWindowController
    }
 
 
-   @FXML
-   public void exportYoSliderboard()
-   {
-      File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
-
-      if (result != null)
-      {
-//         save(result);
-      }
-   }
-   
-   @FXML
-   public void importYoSliderboard()
-   {
-      File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
-
-      if (result != null)
-      {
-//         load(result);
-      }
-   }
+ 
 }
