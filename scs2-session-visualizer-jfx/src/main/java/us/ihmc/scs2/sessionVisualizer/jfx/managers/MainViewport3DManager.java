@@ -174,7 +174,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    public void setCameraOrientation(double latitude, double longitude, double roll)
    {
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getOrbitHandler().setRotation(latitude, longitude, roll));
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getOrbitHandler().setRotation(longitude, latitude, roll));
    }
 
    public void setCameraFocusPosition(double x, double y, double z)
