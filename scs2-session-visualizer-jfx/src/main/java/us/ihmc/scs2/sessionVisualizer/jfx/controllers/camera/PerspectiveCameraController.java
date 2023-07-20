@@ -36,8 +36,6 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler.LevelOrbitalCoordinateProvider;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler.OrbitalCoordinateProvider;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -86,10 +84,12 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
    private final PerspectiveCamera camera;
 
    private final Property<Tuple3DProperty> cameraPositionCoordinatesToTrack = new SimpleObjectProperty<>(this, "cameraPositionCoordinatesToTrack", null);
-   private final Property<OrbitalCoordinateProvider> cameraOrbitalCoordinatesToTrack = new SimpleObjectProperty<>(this, "cameraOrbitCoordinatesToTrack", null);
-   private final Property<LevelOrbitalCoordinateProvider> cameraLevelOrbitalCoordinatesToTrack = new SimpleObjectProperty<>(this,
-                                                                                                                            "cameraOrbit2DCoordinatesToTrack",
-                                                                                                                            null);
+   private final Property<CameraOrbitalCoordinateProperty> cameraOrbitalCoordinatesToTrack = new SimpleObjectProperty<>(this,
+                                                                                                                        "cameraOrbitCoordinatesToTrack",
+                                                                                                                        null);
+   private final Property<CameraLevelOrbitalCoordinateProperty> cameraLevelOrbitalCoordinatesToTrack = new SimpleObjectProperty<>(this,
+                                                                                                                                  "cameraOrbit2DCoordinatesToTrack",
+                                                                                                                                  null);
 
    public PerspectiveCameraController(ReadOnlyDoubleProperty sceneWidthProperty,
                                       ReadOnlyDoubleProperty sceneHeightProperty,
@@ -178,19 +178,34 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       {
          Tuple3DProperty newPosition = cameraPositionCoordinatesToTrack.getValue();
          if (newPosition != null)
-            setCameraPosition(newPosition.toPoint3DInWorld(), false);
+         {
+            double x = newPosition.xProperty() == null ? Double.NaN : newPosition.getX();
+            double y = newPosition.yProperty() == null ? Double.NaN : newPosition.getY();
+            double z = newPosition.zProperty() == null ? Double.NaN : newPosition.getZ();
+            setCameraPosition(x, y, z, false);
+         }
       }
 
       {
-         OrbitalCoordinateProvider newOrbit = cameraOrbitalCoordinatesToTrack.getValue();
+         CameraOrbitalCoordinateProperty newOrbit = cameraOrbitalCoordinatesToTrack.getValue();
          if (newOrbit != null)
-            setCameraOrbit(newOrbit.getDistance(), newOrbit.getLatitude(), newOrbit.getLongitude(), newOrbit.getRoll(), false);
+         {
+            double distance = newOrbit.distanceProperty() == null ? Double.NaN : newOrbit.distanceProperty().get();
+            double longitude = newOrbit.longitudeProperty() == null ? Double.NaN : newOrbit.longitudeProperty().get();
+            double latitude = newOrbit.latitudeProperty() == null ? Double.NaN : newOrbit.latitudeProperty().get();
+            setCameraOrbit(distance, longitude, latitude, 0, false);
+         }
       }
 
       {
-         LevelOrbitalCoordinateProvider newOrbit = cameraLevelOrbitalCoordinatesToTrack.getValue();
+         CameraLevelOrbitalCoordinateProperty newOrbit = cameraLevelOrbitalCoordinatesToTrack.getValue();
          if (newOrbit != null)
-            setCameraOrbit(newOrbit.getDistance(), newOrbit.getHeight(), newOrbit.getLongitude(), newOrbit.getRoll(), false);
+         {
+            double distance = newOrbit.distanceProperty() == null ? Double.NaN : newOrbit.distanceProperty().get();
+            double longitude = newOrbit.longitudeProperty() == null ? Double.NaN : newOrbit.longitudeProperty().get();
+            double height = newOrbit.heightProperty() == null ? Double.NaN : newOrbit.heightProperty().get();
+            setCameraOrbit(distance, longitude, height, 0, false);
+         }
       }
    }
 
@@ -279,59 +294,59 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       }
    }
 
-   public void setCameraOrientation(double latitude, double longitude, double roll, boolean translateFocalPoint)
+   public void setCameraOrientation(double longitude, double latitude, double roll, boolean translateFocalPoint)
    {
       if (translateFocalPoint)
       {
-         Vector3D focalPointShift = orbitHandler.setRotation(latitude, longitude, roll, true);
+         Vector3D focalPointShift = orbitHandler.setRotation(longitude, latitude, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
 
       }
       else
       {
-         orbitHandler.setRotation(latitude, longitude, roll);
+         orbitHandler.setRotation(longitude, latitude, roll);
       }
    }
 
-   public void setCameraOrbit(double distance, double latitude, double longitude, double roll, boolean translateFocalPoint)
+   public void setCameraOrbit(double distance, double longitude, double latitude, double roll, boolean translateFocalPoint)
    {
       if (translateFocalPoint)
       {
-         Vector3D focalPointShift = orbitHandler.setOrbit(distance, latitude, longitude, roll, true);
+         Vector3D focalPointShift = orbitHandler.setOrbit(distance, longitude, latitude, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
 
       }
       else
       {
-         orbitHandler.setOrbit(distance, latitude, longitude, roll);
+         orbitHandler.setOrbit(distance, longitude, latitude, roll);
       }
    }
 
-   public void setCameraLevelOrbit(double distance, double height, double longitude, double roll, boolean translateFocalPoint)
+   public void setCameraLevelOrbit(double distance, double longitude, double height, double roll, boolean translateFocalPoint)
    {
       if (translateFocalPoint)
       {
          height -= focalPointHandler.getTranslation().getZ();
-         Vector3D focalPointShift = orbitHandler.setLevelOrbit(distance, height, longitude, roll, true);
+         Vector3D focalPointShift = orbitHandler.setLevelOrbit(distance, longitude, height, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
 
       }
       else
       {
-         orbitHandler.setLevelOrbit(distance, height, longitude, roll);
+         orbitHandler.setLevelOrbit(distance, longitude, height, roll);
       }
    }
 
-   public void rotateCamera(double deltaLatitude, double deltaLongitude, double deltaRoll, boolean translateFocalPoint)
+   public void rotateCamera(double deltaLongitude, double deltaLatitude, double deltaRoll, boolean translateFocalPoint)
    {
       if (translateFocalPoint)
       {
-         Vector3D focalPointShift = orbitHandler.rotate(deltaLatitude, deltaLongitude, deltaRoll, true);
+         Vector3D focalPointShift = orbitHandler.rotate(deltaLongitude, deltaLatitude, deltaRoll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
       }
       else
       {
-         orbitHandler.rotate(deltaLatitude, deltaLongitude, deltaRoll);
+         orbitHandler.rotate(deltaLongitude, deltaLatitude, deltaRoll);
       }
    }
 
@@ -483,7 +498,7 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
             drag.sub(newMouseLocation, oldMouseLocation);
             drag.scale(modifier.getAsDouble());
             focalPointHandler.disableTracking(); // Automatically disabling tracking when rotating the camera on itself
-            rotateCamera(drag.getY(), -drag.getX(), 0.0, true);
+            rotateCamera(-drag.getX(), drag.getY(), 0.0, true);
             oldMouseLocation.set(newMouseLocation);
          }
       };
@@ -519,12 +534,12 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       return cameraPositionCoordinatesToTrack;
    }
 
-   public Property<OrbitalCoordinateProvider> cameraOrbitalCoordinatesToTrackProperty()
+   public Property<CameraOrbitalCoordinateProperty> cameraOrbitalCoordinatesToTrackProperty()
    {
       return cameraOrbitalCoordinatesToTrack;
    }
 
-   public Property<LevelOrbitalCoordinateProvider> cameraLevelOrbitalCoordinatesToTrackProperty()
+   public Property<CameraLevelOrbitalCoordinateProperty> cameraLevelOrbitalCoordinatesToTrackProperty()
    {
       return cameraLevelOrbitalCoordinatesToTrack;
    }
