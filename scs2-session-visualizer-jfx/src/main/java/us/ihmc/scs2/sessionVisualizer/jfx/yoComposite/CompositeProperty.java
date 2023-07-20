@@ -160,7 +160,7 @@ public class CompositeProperty implements ReferenceFrameHolder
 
    public <T extends Transformable> T toWorld(T transformable)
    {
-      if (referenceFrameProperty() == null || getReferenceFrame() == null)
+      if (referenceFrameProperty() == null || getReferenceFrame() == null || getReferenceFrame().isRootFrame())
          return transformable;
 
       getReferenceFrame().transformFromThisToDesiredFrame(getReferenceFrame().getRootFrame(), transformable);
