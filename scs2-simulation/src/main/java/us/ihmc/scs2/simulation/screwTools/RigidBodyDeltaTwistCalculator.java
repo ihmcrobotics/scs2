@@ -8,11 +8,7 @@ import org.ejml.data.DMatrixRMaj;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.mecano.algorithms.interfaces.RigidBodyTwistProvider;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.spatial.Twist;
 import us.ihmc.mecano.spatial.interfaces.TwistReadOnly;
 
@@ -71,6 +67,10 @@ public class RigidBodyDeltaTwistCalculator implements Function<RigidBodyReadOnly
             jointTwist.setReferenceFrame(parentJoint.getFrameAfterJoint());
             jointTwist.setBaseFrame(parentJoint.getFrameBeforeJoint());
             jointTwist.setBodyFrame(parentJoint.getFrameAfterJoint());
+         }
+         else if (parentJoint instanceof FixedJointReadOnly)
+         {
+            jointTwist.setToZero(body.getBodyFixedFrame());
          }
          else
          {
