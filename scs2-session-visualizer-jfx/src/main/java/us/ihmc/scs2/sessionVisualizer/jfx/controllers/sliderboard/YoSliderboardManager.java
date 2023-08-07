@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
@@ -62,12 +61,24 @@ public class YoSliderboardManager implements Manager
    private final TopicListener<YoSliderboardListDefinition> setMultiRequestListener = m -> handleSetRequest(m);
    private final TopicListener<YoSliderboardDefinition> setSingleRequestListener = m -> handleSetRequest(m);
    private final TopicListener<Pair<String, YoSliderboardType>> removeRequestListener = m -> handleRemoveRequest(m.getKey(), m.getValue());
-   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> setButtonRequestListener = m -> handleSetButtonRequest(m.getLeft(), m.getMiddle(), m.getRight());
-   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> setKnobRequestListener = m -> handleSetKnobRequest(m.getLeft(), m.getMiddle(), m.getRight());
-   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> setSliderRequestListener = m -> handleSetSliderRequest(m.getLeft(), m.getMiddle(), m.getRight());
-   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearButtonRequestListener = m -> handleClearButtonRequest(m.getLeft(), m.getMiddle(), m.getRight());
-   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearKnobRequestListener = m -> handleClearKnobRequest(m.getLeft(), m.getMiddle(), m.getRight());
-   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearSliderRequestListener = m -> handleClearSliderRequest(m.getLeft(), m.getMiddle(), m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> setButtonRequestListener = m -> handleSetButtonRequest(m.getLeft(),
+                                                                                                                                                      m.getMiddle(),
+                                                                                                                                                      m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> setKnobRequestListener = m -> handleSetKnobRequest(m.getLeft(),
+                                                                                                                                                m.getMiddle(),
+                                                                                                                                                m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> setSliderRequestListener = m -> handleSetSliderRequest(m.getLeft(),
+                                                                                                                                                      m.getMiddle(),
+                                                                                                                                                      m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearButtonRequestListener = m -> handleClearButtonRequest(m.getLeft(),
+                                                                                                                                               m.getMiddle(),
+                                                                                                                                               m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearKnobRequestListener = m -> handleClearKnobRequest(m.getLeft(),
+                                                                                                                                           m.getMiddle(),
+                                                                                                                                           m.getRight());
+   private final TopicListener<ImmutableTriple<String, YoSliderboardType, Integer>> clearSliderRequestListener = m -> handleClearSliderRequest(m.getLeft(),
+                                                                                                                                               m.getMiddle(),
+                                                                                                                                               m.getRight());
 
    @Override
    public void startSession(Session session)
@@ -385,7 +396,7 @@ public class YoSliderboardManager implements Manager
       }
       return -1;
    }
-   
+
    public void openSliderboardWindow(Window requestSource, YoSliderboardType type)
    {
       if (behringerSliderboard.getValue() != null)

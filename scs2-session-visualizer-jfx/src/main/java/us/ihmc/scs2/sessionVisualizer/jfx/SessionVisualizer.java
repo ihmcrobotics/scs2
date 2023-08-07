@@ -468,49 +468,49 @@ public class SessionVisualizer
       @Override
       public void removeSliderboard(String sliderboardName, YoSliderboardType sliderboardType)
       {
-         submitMessage(getTopics().getYoSliderboardRemove(), new Pair<String, YoSliderboardType>(sliderboardName, sliderboardType));
+         submitMessage(getTopics().getYoSliderboardRemove(), new Pair<>(sliderboardName, sliderboardType));
       }
 
       @Override
       public void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition)
       {
          submitMessage(getTopics().getYoSliderboardSetButton(),
-                       new ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>(sliderboardName, sliderboardType, buttonDefinition));
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, buttonDefinition));
       }
 
       @Override
       public void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
       {
          submitMessage(getTopics().getYoSliderboardClearButton(),
-                       new ImmutableTriple<String, YoSliderboardType, Integer>(sliderboardName, sliderboardType, buttonIndex));
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, buttonIndex));
       }
 
       @Override
       public void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition)
       {
          submitMessage(getTopics().getYoSliderboardSetKnob(),
-                       new ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>(sliderboardName, sliderboardType, knobDefinition));
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, knobDefinition));
       }
 
       @Override
       public void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex)
       {
          submitMessage(getTopics().getYoSliderboardClearKnob(),
-                       new ImmutableTriple<String, YoSliderboardType, Integer>(sliderboardName, sliderboardType, knobIndex));
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, knobIndex));
       }
 
       @Override
       public void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition)
       {
          submitMessage(getTopics().getYoSliderboardSetSlider(),
-                       new ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>(sliderboardName, sliderboardType, sliderDefinition));
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, sliderDefinition));
       }
 
       @Override
       public void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex)
       {
          submitMessage(getTopics().getYoSliderboardClearSlider(),
-                       new ImmutableTriple<String, YoSliderboardType, Integer>(sliderboardName, sliderboardType, sliderIndex));
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, sliderIndex));
       }
 
       @Override

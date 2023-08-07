@@ -43,7 +43,7 @@ public interface YoSliderboardWindowControllerInterface
    void close();
 
    StringProperty nameProperty();
-   
+
    YoSliderboardType getType();
 
    YoSliderboardDefinition toYoSliderboardDefinition();

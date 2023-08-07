@@ -5,18 +5,18 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.MenuBar?>
 
+<VBox stylesheets="@../../css/GeneralStylesheet.css" alignment="CENTER_RIGHT" spacing="5.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:id="sliderboardRoot"
+   fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController">
+   <children>
+      <MenuBar fx:id="sliderboardMenu" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+         <menus>
 
-  <VBox stylesheets="@../../css/GeneralStylesheet.css" alignment="CENTER_RIGHT" spacing="5.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:id="sliderboardRoot" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController">
-     <children>
-     <MenuBar fx:id="sliderboardMenu" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
-   		<menus>
-   		
-   		</menus>
-   	  </MenuBar>
-		<TabPane fx:id="sliderboardTabPane" tabClosingPolicy="ALL_TABS" >
-		   <tabs>
-		   </tabs>
-		</TabPane>
-    </children>
-  </VBox>
+         </menus>
+      </MenuBar>
+      <TabPane fx:id="sliderboardTabPane" tabClosingPolicy="ALL_TABS">
+         <tabs>
+         </tabs>
+      </TabPane>
+   </children>
+</VBox>
 

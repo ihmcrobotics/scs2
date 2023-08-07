@@ -1,13 +1,12 @@
 package us.ihmc.scs2.definition.yoSlider;
 
 /**
- * Type value for the BCF2000.
+ * Enum for referring to the type of sliderboard to use.
  */
 public enum YoSliderboardType
 {
-   BCF2000("BCF2000"),
-   XTOUCHCOMPACT("X-TOUCH COMPACT");
-   
+   BCF2000("BCF2000"), XTOUCHCOMPACT("X-TOUCH COMPACT");
+
    private final String typeString;
 
    YoSliderboardType(String typeString)
@@ -19,6 +18,4 @@ public enum YoSliderboardType
    {
       return typeString;
    }
-   
-   
 }

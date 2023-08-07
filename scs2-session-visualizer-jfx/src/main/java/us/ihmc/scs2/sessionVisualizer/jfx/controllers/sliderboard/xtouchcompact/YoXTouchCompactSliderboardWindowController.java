@@ -75,6 +75,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
    private XTouchCompactSliderboardController sliderboard;
    private Window owner;
 
+   @Override
    public void initialize(Window owner, SessionVisualizerToolkit toolkit)
    {
       this.owner = owner;
@@ -192,6 +193,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
          load(result);
    }
 
+   @Override
    public void load(File file)
    {
       LogTools.info("Loading from file: " + file);
@@ -218,6 +220,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
          save(result);
    }
 
+   @Override
    public void save(File file)
    {
       LogTools.info("Saving to file: " + file);
@@ -232,6 +235,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       }
    }
 
+   @Override
    public void setInput(YoSliderboardDefinition input)
    {
       if (input.getType() != YoSliderboardType.XTOUCHCOMPACT)
@@ -286,6 +290,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       }
    }
 
+   @Override
    public void setButtonInput(YoButtonDefinition buttonDefinition)
    {
       if (buttonDefinition.getIndex() < 0 || buttonDefinition.getIndex() >= buttonControllers.size())
@@ -298,6 +303,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       buttonController.setInput(buttonDefinition);
    }
 
+   @Override
    public void removeButtonInput(int buttonIndex)
    {
       if (buttonIndex < 0 || buttonIndex >= buttonControllers.size())
@@ -309,6 +315,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       buttonControllers.get(buttonIndex).clear();
    }
 
+   @Override
    public void setKnobInput(YoKnobDefinition knobDefinition)
    {
       if (knobDefinition.getIndex() < 0 || knobDefinition.getIndex() >= knobControllers.size())
@@ -321,6 +328,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       knobController.setInput(knobDefinition);
    }
 
+   @Override
    public void removeKnobInput(int knobIndex)
    {
       if (knobIndex < 0 || knobIndex >= knobControllers.size())
@@ -332,6 +340,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       knobControllers.get(knobIndex).clear();
    }
 
+   @Override
    public void setSliderInput(YoSliderDefinition sliderDefinition)
    {
       if (sliderDefinition.getIndex() < 0 || sliderDefinition.getIndex() >= sliderControllers.size())
@@ -344,6 +353,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       sliderController.setInput(sliderDefinition);
    }
 
+   @Override
    public void removeSliderInput(int sliderIndex)
    {
       if (sliderIndex < 0 || sliderIndex >= sliderControllers.size())
@@ -355,6 +365,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       sliderControllers.get(sliderIndex).clear();
    }
 
+   @Override
    public void clear()
    {
       for (YoBCF2000InputController controller : allInputControllers)
@@ -363,18 +374,21 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       }
    }
 
+   @Override
    public void start()
    {
       if (sliderboard != null)
          sliderboard.start();
    }
 
+   @Override
    public void stop()
    {
       if (sliderboard != null)
          sliderboard.stop();
    }
 
+   @Override
    public void close()
    {
       stop();
@@ -384,11 +398,13 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
          sliderboard.closeAndDispose();
    }
 
+   @Override
    public StringProperty nameProperty()
    {
       return nameProperty;
    }
 
+   @Override
    public YoSliderboardDefinition toYoSliderboardDefinition()
    {
       YoSliderboardDefinition definition = new YoSliderboardDefinition();
@@ -400,6 +416,7 @@ public class YoXTouchCompactSliderboardWindowController implements YoSliderboard
       return definition;
    }
 
+   @Override
    public boolean isEmpty()
    {
       for (YoBCF2000InputController controller : allInputControllers)
