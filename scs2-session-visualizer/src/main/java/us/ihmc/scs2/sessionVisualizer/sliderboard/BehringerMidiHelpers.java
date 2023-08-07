@@ -10,11 +10,8 @@ import us.ihmc.log.LogTools;
 
 public class BehringerMidiHelpers
 {
-   
+
    public static boolean DEBUG = false;
-
-
-
 
    public static Transmitter connectToMidiInDevice(MidiDevice.Info info)
    {

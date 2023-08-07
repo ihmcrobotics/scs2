@@ -6,7 +6,7 @@
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 
-<Menu mnemonicParsing="false" text="YoSliderboard" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoSliderboardMenuController">
+<Menu mnemonicParsing="false" text="YoSliderboard" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoSliderboardMenuController">
   <items>
     <MenuItem mnemonicParsing="false" onAction="#openBCF2000SliderboardWindow" text="Open BCF2000 sliderboard window">
          <graphic>
@@ -20,7 +20,7 @@
          <graphic>
             <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true">
                <image>
-                  <Image url="@../../icons/BCF2000Sliderboard.png" />
+                  <Image url="@../../icons/XTouchCompactSliderboard.png" />
                </image>
             </ImageView>
          </graphic></MenuItem>

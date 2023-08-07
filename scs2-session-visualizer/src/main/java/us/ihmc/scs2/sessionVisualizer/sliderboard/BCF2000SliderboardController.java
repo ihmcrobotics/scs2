@@ -32,16 +32,19 @@ public class BCF2000SliderboardController
          this.channel = ordinal() + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
       }
 
+      @Override
       public int getMin()
       {
          return 0;
       }
 
+      @Override
       public int getMax()
       {
          return 127;
@@ -53,7 +56,7 @@ public class BCF2000SliderboardController
             return null;
          return values[channel - CHANNEL_OFFSET];
       }
-   };
+   }
 
    public enum BCF2000Slider implements MidiChannelConfig
    {
@@ -69,16 +72,19 @@ public class BCF2000SliderboardController
          this.channel = ordinal() + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
       }
 
+      @Override
       public int getMin()
       {
          return 0;
       }
 
+      @Override
       public int getMax()
       {
          return 127;
@@ -90,7 +96,7 @@ public class BCF2000SliderboardController
             return null;
          return values[channel - CHANNEL_OFFSET];
       }
-   };
+   }
 
    public enum BCF2000Button implements MidiChannelConfig
    {
@@ -123,6 +129,7 @@ public class BCF2000SliderboardController
          channel = ordinal() + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
@@ -150,6 +157,7 @@ public class BCF2000SliderboardController
          channel = ordinal() + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
@@ -331,7 +339,7 @@ public class BCF2000SliderboardController
       String description = info.getDescription();
       return name.contains(YoSliderboardType.BCF2000.getTypeString()) || description.contains(YoSliderboardType.BCF2000.getTypeString());
    }
-   
+
    public static void closeMidiDevices()
    {
       MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();

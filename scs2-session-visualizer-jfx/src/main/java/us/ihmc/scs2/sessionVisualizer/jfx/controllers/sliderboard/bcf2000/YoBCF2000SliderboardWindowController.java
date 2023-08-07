@@ -68,12 +68,10 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
    private List<YoBCF2000InputController> allInputControllers;
 
    private BCF2000SliderboardController sliderboard;
-   private Window owner;
 
    @Override
    public void initialize(Window owner, SessionVisualizerToolkit toolkit)
    {
-      this.owner = owner;
       knobControllers = Arrays.asList(knob0Controller,
                                       knob1Controller,
                                       knob2Controller,
@@ -147,7 +145,6 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
       }
    }
 
-
    @Override
    public void load(File file)
    {
@@ -165,7 +162,6 @@ public class YoBCF2000SliderboardWindowController implements YoSliderboardWindow
          e.printStackTrace();
       }
    }
-
 
    @Override
    public void save(File file)

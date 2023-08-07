@@ -62,7 +62,7 @@ public class SliderboardVariable
 
    public static int longToInt(long valueLong, double minLong, double maxLong, int minInt, int maxInt)
    {
-      double percent = (double) (valueLong - minLong) / (double) (maxLong - minLong);
+      double percent = (valueLong - minLong) / (maxLong - minLong);
       percent = MathTools.clamp(percent, 0.0, 1.0);
       return (int) (Math.round(percent * (maxInt - minInt)) + minInt);
    }
@@ -82,6 +82,6 @@ public class SliderboardVariable
    public static boolean intToBoolean(int valueInt, int minInt, int maxInt)
    {
       double percent = (double) (valueInt - minInt) / (double) (maxInt - minInt);
-      return  percent > 0.5 ? true : false;
+      return percent > 0.5 ? true : false;
    }
 }
