@@ -87,7 +87,7 @@ public class SessionVisualizerTopics
    private Topic<YoSliderboardListDefinition> yoMultiSliderboardSet;
    private Topic<YoSliderboardDefinition> yoSliderboardSet;
    private Topic<Pair<String, YoSliderboardType>> yoSliderboardRemove;
-   
+
    private Topic<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> yoSliderboardSetButton;
    private Topic<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> yoSliderboardSetKnob;
    private Topic<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> yoSliderboardSetSlider;

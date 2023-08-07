@@ -34,16 +34,19 @@ public class XTouchCompactSliderboardController
          this.channel = knob + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
       }
 
+      @Override
       public int getMin()
       {
          return 0;
       }
 
+      @Override
       public int getMax()
       {
          return 127;
@@ -51,11 +54,11 @@ public class XTouchCompactSliderboardController
 
       public static XTouchKnob fromCommand(int command, int data1)
       {
-         if(command != ShortMessage.CONTROL_CHANGE)
+         if (command != ShortMessage.CONTROL_CHANGE)
          {
             return null;
          }
-         
+
          int knob = data1 - CHANNEL_OFFSET;
          int ordinal = knob - 1;
 
@@ -64,7 +67,7 @@ public class XTouchCompactSliderboardController
 
          return values[ordinal];
       }
-   };
+   }
 
    public enum XTouchSlider implements MidiChannelConfig
    {
@@ -82,16 +85,19 @@ public class XTouchCompactSliderboardController
          this.channel = slider + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
       }
 
+      @Override
       public int getMin()
       {
          return 0;
       }
 
+      @Override
       public int getMax()
       {
          return 127;
@@ -99,11 +105,11 @@ public class XTouchCompactSliderboardController
 
       public static XTouchSlider fromCommand(int channel, int data1)
       {
-         if(channel != ShortMessage.CONTROL_CHANGE)
+         if (channel != ShortMessage.CONTROL_CHANGE)
          {
             return null;
          }
-         
+
          int slider = data1 - CHANNEL_OFFSET;
          int ordinal = slider - 1;
 
@@ -112,7 +118,7 @@ public class XTouchCompactSliderboardController
 
          return values[ordinal];
       }
-   };
+   }
 
    public enum XTouchButton implements MidiChannelConfig
    {
@@ -172,6 +178,7 @@ public class XTouchCompactSliderboardController
          channel = button + CHANNEL_OFFSET;
       }
 
+      @Override
       public int getChannel()
       {
          return channel;
@@ -179,11 +186,11 @@ public class XTouchCompactSliderboardController
 
       public static XTouchButton fromCommand(int channel, int data1)
       {
-         if(channel != ShortMessage.NOTE_OFF)
+         if (channel != ShortMessage.NOTE_OFF)
          {
             return null;
          }
-         
+
          int button = data1 - CHANNEL_OFFSET;
          int ordinal = button - 1;
 

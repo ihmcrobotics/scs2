@@ -29,7 +29,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardM
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController.BCF2000Button;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -402,6 +401,7 @@ public class SecondaryWindowManager implements Manager
       {
          return new NewWindowRequest(BFC2000_SLIDERBOARD_WINDOW_TYPE, requestSource);
       }
+
       public static NewWindowRequest xtouchCompactSliderboardWindow(Window requestSource)
       {
          return new NewWindowRequest(XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE, requestSource);

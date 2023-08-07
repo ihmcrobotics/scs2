@@ -9,8 +9,7 @@ import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardContro
 public class XTouchButtonController extends BehringerChannelController
 {
    private final MidiChannelConfig button;
-   
-   
+
    private boolean changeCurrentDeviceState = false;
    private boolean currentDeviceValue = false;
 
@@ -32,7 +31,7 @@ public class XTouchButtonController extends BehringerChannelController
       if (!enable)
          return false;
 
-      if (channel != message.getData1()) 
+      if (channel != message.getData1())
          return false;
 
       changeCurrentDeviceState = true;
@@ -47,13 +46,13 @@ public class XTouchButtonController extends BehringerChannelController
          getControlVariable().setValue(getControlVariable().getValue() == 0 ? 1 : 0);
          changeCurrentDeviceState = false;
       }
-      
+
       if ((getControlVariable().getValue() != 0) != currentDeviceValue)
       {
          pushControlVariableToDevice();
       }
    }
-   
+
    @Override
    protected void pushValueToDevice(int value)
    {
@@ -64,8 +63,8 @@ public class XTouchButtonController extends BehringerChannelController
       {
          ShortMessage message = new ShortMessage();
          boolean state = value != 0;
-         
-         if(state)
+
+         if (state)
          {
             message.setMessage(ShortMessage.NOTE_ON, 0, channel, 127);
          }
@@ -73,11 +72,10 @@ public class XTouchButtonController extends BehringerChannelController
          {
             message.setMessage(ShortMessage.NOTE_OFF, 0, channel, 0);
          }
-         
+
          midiOut.send(message, -1);
-         
-         
-         currentDeviceValue = value != 0; 
+
+         currentDeviceValue = value != 0;
       }
       catch (InvalidMidiDataException e)
       {

@@ -65,10 +65,10 @@ public class YoMultiSliderboardWindowController
    public static final YoSliderboardType DEFAULT_SLIDERBOARD_TYPE = YoSliderboardType.BCF2000;
    @FXML
    private TabPane sliderboardTabPane;
-   
+
    @FXML
    private VBox sliderboardRoot;
-   
+
    @FXML
    private MenuBar sliderboardMenu;
 
@@ -78,7 +78,7 @@ public class YoMultiSliderboardWindowController
 
    private Stage window;
    private Window owner;
-   
+
    private YoSliderboardType initialType = YoSliderboardType.BCF2000;
 
    private final List<Runnable> cleanupTasks = new ArrayList<>();
@@ -88,11 +88,10 @@ public class YoMultiSliderboardWindowController
       this.toolkit = toolkit;
       owner = toolkit.getMainWindow();
       window = new Stage(StageStyle.UTILITY);
-      
 
       MenuTools.setupContextMenu(sliderboardTabPane,
                                  TabPaneTools.addBeforeMenuItemFactory(this::newBFC2000SliderboardTab, "Add BFC2000 tab before"),
-                                 TabPaneTools.addAfterMenuItemFactory(this::newBFC2000SliderboardTab,  "Add BFC2000 tab after"),
+                                 TabPaneTools.addAfterMenuItemFactory(this::newBFC2000SliderboardTab, "Add BFC2000 tab after"),
                                  TabPaneTools.addBeforeMenuItemFactory(this::newXtouchCompactTab, "Add XTouch tab before"),
                                  TabPaneTools.addAfterMenuItemFactory(this::newXtouchCompactTab, "Add Xtouch tab after"),
                                  TabPaneTools.removeMenuItemFactory(),
@@ -100,21 +99,20 @@ public class YoMultiSliderboardWindowController
                                  exportTabMenuItemFactory(),
                                  exportAllTabMenuItemFactory(),
                                  importTabMenuItemFactory());
-      
+
       Menu fileMenu = new Menu("Import/Export");
-      
+
       fileMenu.getItems().add(importTabMenuItem(() -> sliderboardTabPane.getSelectionModel().getSelectedItem()));
       fileMenu.getItems().add(exportTabMenuItem(() -> sliderboardTabPane.getSelectionModel().getSelectedItem()));
       fileMenu.getItems().add(exportAllTabMenuItemFactory().apply(sliderboardTabPane));
       sliderboardMenu.getMenus().add(fileMenu);
-      
+
       Menu sliderboardAddRemoveMenu = new Menu("Sliderboards");
       sliderboardAddRemoveMenu.getItems().add(TabPaneTools.addLastMenuItem(sliderboardTabPane, this::newBFC2000SliderboardTab, "Add BFC2000 sliderboard"));
       sliderboardAddRemoveMenu.getItems().add(TabPaneTools.addLastMenuItem(sliderboardTabPane, this::newXtouchCompactTab, "Add XTouch Compact sliderboard"));
       sliderboardAddRemoveMenu.getItems().add(TabPaneTools.removeSelectedMenuItem("Remove current sliderboard", sliderboardTabPane));
       sliderboardAddRemoveMenu.getItems().add(TabPaneTools.removeAllMenuItem("Remove all sliderboards", false, sliderboardTabPane));
       sliderboardMenu.getMenus().add(sliderboardAddRemoveMenu);
-      
 
       ListChangeListener<Tab> preserveOneTabListener = (ListChangeListener<Tab>) change ->
       {
@@ -125,13 +123,13 @@ public class YoMultiSliderboardWindowController
                for (Tab removedTab : change.getRemoved())
                {
                   var removed = tabToControllerMap.remove(removedTab);
-                  
-                  if(removed != null)
+
+                  if (removed != null)
                   {
                      initialType = removed.getType();
                   }
-                  
-                  if(tabToControllerMap.isEmpty())
+
+                  if (tabToControllerMap.isEmpty())
                   {
                      newInitialTab();
                   }
@@ -148,7 +146,7 @@ public class YoMultiSliderboardWindowController
             tabToControllerMap.get(oldValue).stop();
          if (newValue != null)
             tabToControllerMap.get(newValue).start();
-         
+
          window.sizeToScene();
       };
       sliderboardTabPane.getSelectionModel().selectedItemProperty().addListener(controllerScheduler);
@@ -191,7 +189,6 @@ public class YoMultiSliderboardWindowController
       ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
       tabs.clear();
 
-
       List<YoSliderboardDefinition> sliderboards = input.getYoSliderboards();
       for (int i = 0; i < sliderboards.size(); i++)
       {
@@ -205,7 +202,7 @@ public class YoMultiSliderboardWindowController
       Tab tab = findTabByNameAndType(sliderboardDefinition.getName(), sliderboardDefinition.getType());
       if (tab == null)
       {
-         tab = newSliderboardTab(sliderboardDefinition.getType());         
+         tab = newSliderboardTab(sliderboardDefinition.getType());
          sliderboardTabPane.getTabs().add(tab);
       }
       tabToControllerMap.get(tab).setInput(sliderboardDefinition);
@@ -229,7 +226,7 @@ public class YoMultiSliderboardWindowController
       tabToControllerMap.get(tab).setButtonInput(buttonDefinition);
    }
 
-   public void removeButtonInput(String sliderboardName, YoSliderboardType sliderboardType,  int buttonIndex)
+   public void removeButtonInput(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
    {
       Tab tab = findTabByNameAndType(sliderboardName, sliderboardType);
       if (tab == null)
@@ -312,14 +309,14 @@ public class YoMultiSliderboardWindowController
 
       sliderboardTabPane.getTabs().clear();
       tabToControllerMap.clear();
-      
+
       newInitialTab();
    }
 
    private void newInitialTab()
    {
       var tab = newSliderboardTab(initialType);
-      
+
       sliderboardTabPane.getTabs().add(tab);
       sliderboardTabPane.getSelectionModel().select(0);
    }
@@ -349,12 +346,11 @@ public class YoMultiSliderboardWindowController
          if (selectedTab == null)
             return null;
 
-         
          return exportTabMenuItem(() -> selectedTab);
 
       };
    }
-   
+
    private MenuItem exportTabMenuItem(Supplier<Tab> selectedTab)
    {
       FontAwesomeIconView exportIcon = new FontAwesomeIconView();
@@ -365,7 +361,7 @@ public class YoMultiSliderboardWindowController
       {
          if (selectedTab == null)
             return;
-         
+
          File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
          if (result != null)
             tabToControllerMap.get(selectedTab.get()).save(result);
@@ -403,11 +399,11 @@ public class YoMultiSliderboardWindowController
 
          if (selectedTab == null)
             return null;
-         
+
          return importTabMenuItem(() -> selectedTab);
       };
    }
-   
+
    private MenuItem importTabMenuItem(Supplier<Tab> selectedTab)
    {
       FontAwesomeIconView exportIcon = new FontAwesomeIconView();
@@ -417,7 +413,7 @@ public class YoMultiSliderboardWindowController
       {
          if (selectedTab.get() == null)
             return;
-         
+
          File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
          if (result != null)
             importTabsAt(result, selectedTab.get());
@@ -428,12 +424,12 @@ public class YoMultiSliderboardWindowController
 
    private Tab newSliderboardTab(YoSliderboardType type)
    {
-      if(type == null)
+      if (type == null)
       {
          throw new RuntimeException("Cannot load configuration: Invalid sliderboard type");
       }
-      
-      switch(type)
+
+      switch (type)
       {
          case BCF2000:
             return newBFC2000SliderboardTab();
@@ -442,8 +438,9 @@ public class YoMultiSliderboardWindowController
          default:
             throw new RuntimeException("Invalid sliderboard type: " + type);
       }
-      
+
    }
+
    private Tab newBFC2000SliderboardTab()
    {
       try
@@ -465,7 +462,7 @@ public class YoMultiSliderboardWindowController
          return null;
       }
    }
-   
+
    private Tab newXtouchCompactTab()
    {
       try
@@ -519,7 +516,6 @@ public class YoMultiSliderboardWindowController
          ObservableList<Tab> tabs = sliderboardTabPane.getTabs();
          int insertionIndex = tabs.indexOf(insertionPoint);
 
-
          for (int i = startIndex; i < yoEntryLists.size(); i++)
          {
             Tab newEmptyTab = newSliderboardTab(yoEntryLists.get(i).getType());
@@ -528,7 +524,7 @@ public class YoMultiSliderboardWindowController
             sliderboardTabPane.getSelectionModel().select(insertionIndex);
             insertionIndex++;
          }
-         
+
          // Clear empty tab after import
          if (isTabEmpty(insertionPoint))
          {
@@ -556,24 +552,22 @@ public class YoMultiSliderboardWindowController
       }
       return definition;
    }
-   
+
    public void ensureTab(YoSliderboardType type)
    {
-      for(var controller : tabToControllerMap.entrySet())
+      for (var controller : tabToControllerMap.entrySet())
       {
-         if(controller.getValue().getType() == type)
+         if (controller.getValue().getType() == type)
          {
             return;
          }
       }
-      
+
       var tab = newSliderboardTab(type);
-      
+
       int index = sliderboardTabPane.getTabs().size();
       sliderboardTabPane.getTabs().add(tab);
       sliderboardTabPane.getSelectionModel().select(index);
    }
 
-
- 
 }

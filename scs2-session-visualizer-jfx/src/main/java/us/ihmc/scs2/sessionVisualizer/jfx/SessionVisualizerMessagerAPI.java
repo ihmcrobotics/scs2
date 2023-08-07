@@ -194,12 +194,31 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<YoSliderboardDefinition> YoSliderboardSet = APIRoot.child(YoSliderboard).child(Single).topic(Set);
       public static final Topic<Pair<String, YoSliderboardType>> YoSliderboardRemove = APIRoot.child(YoSliderboard).child(Single).topic(Remove);
 
-      public static final Topic<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> YoSliderboardSetButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Set);
-      public static final Topic<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> YoSliderboardSetKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Set);
-      public static final Topic<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> YoSliderboardSetSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Set);
-      public static final Topic<ImmutableTriple<String, YoSliderboardType, Integer>> YoSliderboardClearButton = APIRoot.child(YoSliderboard).child(Single).child(Button).topic(Remove);
-      public static final Topic<ImmutableTriple<String, YoSliderboardType, Integer>> YoSliderboardClearKnob = APIRoot.child(YoSliderboard).child(Single).child(Knob).topic(Remove);
-      public static final Topic<ImmutableTriple<String, YoSliderboardType, Integer>> YoSliderboardClearSlider = APIRoot.child(YoSliderboard).child(Single).child(Slider).topic(Remove);   }
+      public static final Topic<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> YoSliderboardSetButton = APIRoot.child(YoSliderboard)
+                                                                                                                                .child(Single)
+                                                                                                                                .child(Button)
+                                                                                                                                .topic(Set);
+      public static final Topic<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> YoSliderboardSetKnob = APIRoot.child(YoSliderboard)
+                                                                                                                            .child(Single)
+                                                                                                                            .child(Knob)
+                                                                                                                            .topic(Set);
+      public static final Topic<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> YoSliderboardSetSlider = APIRoot.child(YoSliderboard)
+                                                                                                                                .child(Single)
+                                                                                                                                .child(Slider)
+                                                                                                                                .topic(Set);
+      public static final Topic<ImmutableTriple<String, YoSliderboardType, Integer>> YoSliderboardClearButton = APIRoot.child(YoSliderboard)
+                                                                                                                       .child(Single)
+                                                                                                                       .child(Button)
+                                                                                                                       .topic(Remove);
+      public static final Topic<ImmutableTriple<String, YoSliderboardType, Integer>> YoSliderboardClearKnob = APIRoot.child(YoSliderboard)
+                                                                                                                     .child(Single)
+                                                                                                                     .child(Knob)
+                                                                                                                     .topic(Remove);
+      public static final Topic<ImmutableTriple<String, YoSliderboardType, Integer>> YoSliderboardClearSlider = APIRoot.child(YoSliderboard)
+                                                                                                                       .child(Single)
+                                                                                                                       .child(Slider)
+                                                                                                                       .topic(Remove);
+   }
 
    public static class SessionAPI
    {
