@@ -11,39 +11,39 @@ import javafx.beans.property.SimpleDoubleProperty;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
 
-public class CameraOrbitalCoordinateProperty extends CompositeProperty
+public class OrbitalCoordinateProperty extends CompositeProperty
 {
-   public CameraOrbitalCoordinateProperty()
+   public OrbitalCoordinateProperty()
    {
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers);
    }
 
-   public CameraOrbitalCoordinateProperty(double distance, double longitude, double latitude)
+   public OrbitalCoordinateProperty(double distance, double longitude, double latitude)
    {
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers, distance, longitude, latitude);
    }
 
-   public CameraOrbitalCoordinateProperty(ReferenceFrame referenceFrame, double distance, double longitude, double latitude)
+   public OrbitalCoordinateProperty(ReferenceFrame referenceFrame, double distance, double longitude, double latitude)
    {
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers, referenceFrame, distance, longitude, latitude);
    }
 
-   public CameraOrbitalCoordinateProperty(DoubleProperty[] distanceLongitudeLatitudeProperties)
+   public OrbitalCoordinateProperty(DoubleProperty[] distanceLongitudeLatitudeProperties)
    {
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers, distanceLongitudeLatitudeProperties);
    }
 
-   public CameraOrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty[] distanceLongitudeLatitudeProperties)
+   public OrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty[] distanceLongitudeLatitudeProperties)
    {
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers, referenceFrameProperty, distanceLongitudeLatitudeProperties);
    }
 
-   public CameraOrbitalCoordinateProperty(DoubleProperty distanceProperty, DoubleProperty longitudeProperty, DoubleProperty latitudeProperty)
+   public OrbitalCoordinateProperty(DoubleProperty distanceProperty, DoubleProperty longitudeProperty, DoubleProperty latitudeProperty)
    {
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers, distanceProperty, longitudeProperty, latitudeProperty);
    }
 
-   public CameraOrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty,
+   public OrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty,
                                           DoubleProperty distanceProperty,
                                           DoubleProperty longitudeProperty,
                                           DoubleProperty latitudeProperty)
@@ -51,7 +51,7 @@ public class CameraOrbitalCoordinateProperty extends CompositeProperty
       super(YoCameraOrbital, YoCameraOrbitalIdentifiers, referenceFrameProperty, distanceProperty, longitudeProperty, latitudeProperty);
    }
 
-   public CameraOrbitalCoordinateProperty(CompositeProperty other)
+   public OrbitalCoordinateProperty(CompositeProperty other)
    {
       this();
       set(other);
@@ -119,7 +119,7 @@ public class CameraOrbitalCoordinateProperty extends CompositeProperty
       super.set(other);
    }
 
-   public void set(CameraOrbitalCoordinateProperty other)
+   public void set(OrbitalCoordinateProperty other)
    {
       set((CompositeProperty) other);
    }
@@ -155,8 +155,8 @@ public class CameraOrbitalCoordinateProperty extends CompositeProperty
    }
 
    @Override
-   public CameraOrbitalCoordinateProperty clone()
+   public OrbitalCoordinateProperty clone()
    {
-      return new CameraOrbitalCoordinateProperty(this);
+      return new OrbitalCoordinateProperty(this);
    }
 }

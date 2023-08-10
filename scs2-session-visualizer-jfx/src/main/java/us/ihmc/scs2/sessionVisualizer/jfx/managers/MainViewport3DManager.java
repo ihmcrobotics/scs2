@@ -270,7 +270,10 @@ public class MainViewport3DManager implements SingleViewport3DManager
          owner.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
          {
             if (!e.isConsumed())
+            {
                window.close();
+               controller.closeAndDispose();
+            }
          });
          window.initOwner(owner);
          window.setTitle("Camera 3D options");
