@@ -18,8 +18,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.transform.Transform;
 import us.ihmc.euclid.matrix.RotationMatrix;
+import us.ihmc.euclid.tools.EuclidCoreFactories;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
@@ -99,7 +101,7 @@ public class CameraFocalPointHandler
          trackingTranslate.setFrom(newTransform);
    };
 
-   private final Vector3D down = new Vector3D();
+   private final Vector3DReadOnly down;
    private final List<Runnable> updateTasks = new ArrayList<>();
 
    /**
@@ -109,7 +111,7 @@ public class CameraFocalPointHandler
     */
    public CameraFocalPointHandler(Vector3DReadOnly up)
    {
-      down.setAndNegate(up);
+      down = EuclidCoreFactories.newNegativeLinkedVector3D(up);
 
       targetType.addListener((o, oldValue, newValue) ->
       {
@@ -189,47 +191,105 @@ public class CameraFocalPointHandler
     *
     * @return an {@link EventHandler} to translate the camera with the keyboard.
     */
-   public EventHandler<KeyEvent> createKeyEventHandler()
+   public FocalPointKeyEventHandler createKeyEventHandler()
    {
-      final Vector3D activeTranslationOffset = new Vector3D();
-
-      updateTasks.add(() -> translateCameraFrame(activeTranslationOffset));
-
-      EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>()
-      {
-         @Override
-         public void handle(KeyEvent event)
-         {
-            double modifier;
-            if (fastModifierPredicate.get() == null || !fastModifierPredicate.get().test(event))
-               modifier = slowModifier.get();
-            else
-               modifier = fastModifier.get();
-
-            if (translationRateModifier != null)
-               modifier = translationRateModifier.applyAsDouble(modifier);
-
-            KeyCode keyDown = event.getCode();
-            boolean isKeyReleased = event.getEventType() == KeyEvent.KEY_RELEASED;
-
-            if (keyDown == forwardKey.get())
-               activeTranslationOffset.setZ(isKeyReleased ? 0.0 : modifier);
-            if (keyDown == backwardKey.get())
-               activeTranslationOffset.setZ(isKeyReleased ? 0.0 : -modifier);
-
-            if (keyDown == rightKey.get())
-               activeTranslationOffset.setX(isKeyReleased ? 0.0 : modifier);
-            if (keyDown == leftKey.get())
-               activeTranslationOffset.setX(isKeyReleased ? 0.0 : -modifier);
-
-            if (keyDown == downKey.get())
-               activeTranslationOffset.setY(isKeyReleased ? 0.0 : modifier);
-            if (keyDown == upKey.get())
-               activeTranslationOffset.setY(isKeyReleased ? 0.0 : -modifier);
-         }
-      };
-
+      FocalPointKeyEventHandler keyEventHandler = new FocalPointKeyEventHandler();
+      updateTasks.add(() -> keyEventHandler.update());
       return keyEventHandler;
+   }
+
+   public class FocalPointKeyEventHandler implements EventHandler<KeyEvent>
+   {
+      private boolean isTranslating = false;
+      private final Vector3D activeTranslationCameraFrame = new Vector3D();
+      private final Vector3D activeTranslationWorldFrame = new Vector3D();
+
+      private void update()
+      {
+         translateWorldFrame(activeTranslationWorldFrame);
+      }
+
+      @Override
+      public void handle(KeyEvent event)
+      {
+         double modifier;
+         if (fastModifierPredicate.get() == null || !fastModifierPredicate.get().test(event))
+            modifier = slowModifier.get();
+         else
+            modifier = fastModifier.get();
+
+         if (translationRateModifier != null)
+            modifier = translationRateModifier.applyAsDouble(modifier);
+
+         KeyCode keyDown = event.getCode();
+         boolean isKeyReleased = event.getEventType() == KeyEvent.KEY_RELEASED;
+
+         if (keyDown == forwardKey.get())
+            activeTranslationCameraFrame.setZ(isKeyReleased ? 0.0 : modifier);
+         if (keyDown == backwardKey.get())
+            activeTranslationCameraFrame.setZ(isKeyReleased ? 0.0 : -modifier);
+
+         if (keyDown == rightKey.get())
+            activeTranslationCameraFrame.setX(isKeyReleased ? 0.0 : modifier);
+         if (keyDown == leftKey.get())
+            activeTranslationCameraFrame.setX(isKeyReleased ? 0.0 : -modifier);
+
+         if (keyDown == downKey.get())
+            activeTranslationCameraFrame.setY(isKeyReleased ? 0.0 : modifier);
+         if (keyDown == upKey.get())
+            activeTranslationCameraFrame.setY(isKeyReleased ? 0.0 : -modifier);
+
+         isTranslating = activeTranslationCameraFrame.getX() != 0.0 || activeTranslationCameraFrame.getY() != 0.0 || activeTranslationCameraFrame.getZ() != 0.0;
+         toWorldFrame(activeTranslationCameraFrame, activeTranslationWorldFrame);
+      }
+
+      public boolean isTranslating()
+      {
+         return isTranslating;
+      }
+
+      public Vector3DReadOnly getActiveTranslationCameraFrame()
+      {
+         return activeTranslationCameraFrame;
+      }
+
+      public Vector3DReadOnly getActiveTranslationWorldFrame()
+      {
+         return activeTranslationWorldFrame;
+      }
+   }
+
+   public void toWorldFrame(Vector3DReadOnly inCameraFrame, Vector3DBasics outWorldFrame)
+   {
+      outWorldFrame.set(inCameraFrame);
+
+      if (outWorldFrame.getX() == 0.0 && outWorldFrame.getY() == 0.0 && outWorldFrame.getZ() == 0.0)
+         return;
+
+      if (cameraOrientation.get() == null)
+         return;
+
+      if (keepTranslationLeveled.get())
+      {
+         double mxz = cameraOrientation.get().getMxz();
+         double myz = cameraOrientation.get().getMyz();
+         double mzz = cameraOrientation.get().getMzz();
+         Vector3D cameraZAxis = new Vector3D(mxz, myz, mzz);
+         Vector3D xAxisLeveled = new Vector3D();
+         xAxisLeveled.cross(down, cameraZAxis);
+         xAxisLeveled.normalize();
+         Vector3D yAxisLeveled = new Vector3D(down);
+         Vector3D zAxisLeveled = new Vector3D();
+         zAxisLeveled.cross(xAxisLeveled, yAxisLeveled);
+
+         RotationMatrix rotation = new RotationMatrix();
+         rotation.setColumns(xAxisLeveled, yAxisLeveled, zAxisLeveled);
+         rotation.transform(outWorldFrame);
+      }
+      else
+      {
+         JavaFXMissingTools.applyTranform(cameraOrientation.get(), outWorldFrame);
+      }
    }
 
    /**
