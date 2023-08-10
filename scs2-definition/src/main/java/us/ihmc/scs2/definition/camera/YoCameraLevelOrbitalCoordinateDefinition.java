@@ -6,7 +6,7 @@ import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
 
 public class YoCameraLevelOrbitalCoordinateDefinition extends YoCompositeDefinition
 {
-   public static final String YoCameraLevelOrbital = "YoCameraOrbitalCoordinate";
+   public static final String YoCameraLevelOrbital = "YoCameraLevelOrbitalCoordinate";
    public static final String[] YoCameraLevelOrbitalIdentifiers = new String[] {"distance", "longitude", "height"};
 
    private String distance, longitude, height;

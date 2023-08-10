@@ -2,24 +2,27 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
 import java.util.function.Predicate;
 
+import org.apache.commons.lang3.mutable.MutableBoolean;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableDoubleValue;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
-import javafx.scene.transform.TransformChangedEvent;
 import us.ihmc.commons.Epsilons;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.matrix.RotationMatrix;
+import us.ihmc.euclid.tools.EuclidCoreFactories;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
@@ -27,6 +30,7 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 /**
  * This handles the camera position and orientation such that:
@@ -40,16 +44,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
  */
 public class CameraOrbitHandler
 {
+
    /**
     * The current pose of the camera defining its orientation and distance from the focal point located
     * at (0, 0, 0).
     */
    private final Affine cameraPose = new Affine();
-   /**
-    * The current orientation of the camera. This is the output of this calculator which can be bound
-    * to an external property or used directly to apply a transformation to the camera.
-    */
-   private final Affine cameraOrientation = new Affine();
    /**
     * Rotation offset computed such that when the {@link #latitude}, {@link #longitude}, and
     * {@link #roll} are all zero, the camera is orientated as follows:
@@ -57,6 +57,9 @@ public class CameraOrbitHandler
     * <li>the vertical direction of the screen (e.g. y-axis) is collinear with the given up axis.
     */
    private final Affine offset = new Affine();
+
+   private final Property<CameraControlMode> controlMode = new SimpleObjectProperty<>(this, "controlMode", CameraControlMode.Orbital);
+
    /**
     * Latitude of the camera on the virtual sphere:
     * <li>the latitude is in the range [-90 degrees; +90 degrees],
@@ -118,17 +121,24 @@ public class CameraOrbitHandler
    private final DoubleProperty minDistance = new SimpleDoubleProperty(this, "minDistance", 0.1);
    /** Maximum value the zoom can be. */
    private final DoubleProperty maxDistance = new SimpleDoubleProperty(this, "maxDistance", 100.0);
+
+   private final DoubleProperty x = new SimpleDoubleProperty(this, "xLocal", 0);
+   private final DoubleProperty y = new SimpleDoubleProperty(this, "yLocal", 0);
+   private final DoubleProperty z = new SimpleDoubleProperty(this, "zLocal", 0);
+   private DoubleProperty xWorld;
+   private DoubleProperty yWorld;
+   private DoubleProperty zWorld;
+
    /**
     * Zoom speed factor with respect to its current value. The larger is the zoom, the faster it
     * "goes".
     */
    private final DoubleProperty distanceModifier = new SimpleDoubleProperty(this, "distanceModifier", -0.1);
 
-   private final Vector3D up = new Vector3D();
-   private final Vector3D down = new Vector3D();
-   private final Vector3D forward = new Vector3D();
+   private final Vector3DReadOnly down;
+   private final Vector3DReadOnly forward;
 
-   private boolean disableCameraOrientationAutoUpdate = false;
+   private boolean disableCameraPoseAutoUpdate = false;
 
    /**
     * Creates a calculator for the camera rotation.
@@ -144,33 +154,141 @@ public class CameraOrbitHandler
       if (!MathTools.epsilonEquals(left.norm(), 1.0, Epsilons.ONE_HUNDRED_THOUSANDTH))
          throw new RuntimeException("The vectors up and forward must be orthogonal. Received: up = " + up + ", forward = " + forward);
 
-      this.up.set(up);
-      this.forward.set(forward);
-      down.setAndNegate(up);
+      this.forward = forward;
+      down = EuclidCoreFactories.newNegativeLinkedVector3D(up);
 
       computeOffset();
 
-      ChangeListener<? super Number> listener = (o, oldValue, newValue) ->
+      longitude.addListener((o, oldValue, newValue) ->
       {
-         if (!disableCameraOrientationAutoUpdate)
-            updateCameraOrientation(false);
-      };
-      latitude.addListener(listener);
-      longitude.addListener(listener);
-      roll.addListener(listener);
+         if (disableCameraPoseAutoUpdate)
+            return;
+         if (controlMode.getValue() != CameraControlMode.Position)
+         {
+            setOrbit(Double.NaN, newValue.doubleValue(), Double.NaN, Double.NaN);
+         }
+         else if (!longitude.isBound())
+         {
+            boolean disablePrevious = disableCameraPoseAutoUpdate;
+            disableCameraPoseAutoUpdate = true;
+            longitude.setValue(oldValue);
+            disableCameraPoseAutoUpdate = disablePrevious;
+         }
+      });
+      latitude.addListener((o, oldValue, newValue) ->
+      {
+         if (disableCameraPoseAutoUpdate)
+            return;
+         if (controlMode.getValue() == CameraControlMode.Orbital)
+         {
+            setOrbit(Double.NaN, Double.NaN, newValue.doubleValue(), Double.NaN);
+         }
+         else if (!latitude.isBound())
+         {
+            boolean disablePrevious = disableCameraPoseAutoUpdate;
+            disableCameraPoseAutoUpdate = true;
+            latitude.setValue(oldValue);
+            disableCameraPoseAutoUpdate = disablePrevious;
+         }
+      });
+      roll.addListener((o, oldValue, newValue) ->
+      {
+         if (!disableCameraPoseAutoUpdate)
+            setOrbit(Double.NaN, Double.NaN, Double.NaN, newValue.doubleValue());
+      });
 
-      cameraOrientation.addEventHandler(TransformChangedEvent.TRANSFORM_CHANGED, e -> updateCameraPose());
-      distance.addListener((o, oldValue, newValue) -> updateCameraPose());
+      x.addListener((o, oldValue, newValue) ->
+      {
+         if (disableCameraPoseAutoUpdate)
+            return;
+         if (controlMode.getValue() == CameraControlMode.Position)
+         {
+            setPosition(newValue.doubleValue(), Double.NaN, Double.NaN, Double.NaN);
+         }
+         else if (!isXBound())
+         {
+            boolean disablePrevious = disableCameraPoseAutoUpdate;
+            disableCameraPoseAutoUpdate = true;
+            x.set(oldValue.doubleValue());
+            disableCameraPoseAutoUpdate = disablePrevious;
+         }
+      });
+      y.addListener((o, oldValue, newValue) ->
+      {
+         if (disableCameraPoseAutoUpdate)
+            return;
+         if (controlMode.getValue() == CameraControlMode.Position)
+         {
+            setPosition(Double.NaN, newValue.doubleValue(), Double.NaN, Double.NaN);
+         }
+         else if (!isYBound())
+         {
+            boolean disablePrevious = disableCameraPoseAutoUpdate;
+            disableCameraPoseAutoUpdate = true;
+            y.setValue(oldValue);
+            disableCameraPoseAutoUpdate = disablePrevious;
+         }
+      });
+      z.addListener((o, oldValue, newValue) ->
+      {
+         if (disableCameraPoseAutoUpdate)
+            return;
+         if (controlMode.getValue() == CameraControlMode.Position)
+         {
+            setPosition(Double.NaN, Double.NaN, newValue.doubleValue(), Double.NaN);
+         }
+         else if (controlMode.getValue() == CameraControlMode.LevelOrbital)
+         {
+            setLevelOrbit(Double.NaN, Double.NaN, newValue.doubleValue(), Double.NaN);
+         }
+         else if (!isZBound())
+         {
+            boolean disablePrevious = disableCameraPoseAutoUpdate;
+            disableCameraPoseAutoUpdate = true;
+            z.setValue(oldValue);
+            disableCameraPoseAutoUpdate = disablePrevious;
+         }
+      });
+
+      distance.addListener((o, oldValue, newValue) ->
+      {
+         if (disableCameraPoseAutoUpdate)
+            return;
+         if (controlMode.getValue() != CameraControlMode.Position)
+         {
+            setOrbit(newValue.doubleValue(), Double.NaN, Double.NaN, Double.NaN);
+         }
+         else if (!distance.isBound())
+         {
+            boolean disablePrevious = disableCameraPoseAutoUpdate;
+            disableCameraPoseAutoUpdate = true;
+            distance.setValue(oldValue);
+            disableCameraPoseAutoUpdate = disablePrevious;
+         }
+      });
+   }
+
+   private boolean isXBound()
+   {
+      return x.isBound() || (xWorld != null && xWorld.isBound());
+   }
+
+   private boolean isYBound()
+   {
+      return y.isBound() || (yWorld != null && yWorld.isBound());
+   }
+
+   private boolean isZBound()
+   {
+      return z.isBound() || (zWorld != null && zWorld.isBound());
    }
 
    private void computeOffset()
    {
-      Vector3D cameraZAxis = new Vector3D(forward);
-      Vector3D cameraYAxis = new Vector3D(down);
       Vector3D cameraXAxis = new Vector3D();
-      cameraXAxis.cross(cameraYAxis, cameraZAxis);
+      cameraXAxis.cross(down, forward);
       RotationMatrix rotationOffset = new RotationMatrix();
-      rotationOffset.setColumns(cameraXAxis, cameraYAxis, cameraZAxis);
+      rotationOffset.setColumns(cameraXAxis, down, forward);
       JavaFXMissingTools.convertRotationMatrixToAffine(rotationOffset, offset);
    }
 
@@ -183,7 +301,7 @@ public class CameraOrbitHandler
     */
    public EventHandler<MouseEvent> createMouseEventHandler(ReadOnlyDoubleProperty sceneWidthProperty, ReadOnlyDoubleProperty sceneHeightProperty)
    {
-      return new EventHandler<MouseEvent>()
+      return new EventHandler<>()
       {
          private final Point2D oldMouseLocation = new Point2D();
 
@@ -221,12 +339,45 @@ public class CameraOrbitHandler
             Vector2D drag = new Vector2D();
             drag.sub(newMouseLocation, oldMouseLocation);
 
-            Vector2D centerToMouseLocation = new Vector2D();
-            centerToMouseLocation.sub(newMouseLocation, centerLocation);
-            double rollShift = 0.0 * modifier * rollModifier.get() * drag.cross(centerToMouseLocation);
+            double rollShift;
+            if (keepRotationLeveled.get())
+            {
+               rollShift = Double.NaN;
+            }
+            else
+            {
+               Vector2D centerToMouseLocation = new Vector2D();
+               centerToMouseLocation.sub(newMouseLocation, centerLocation);
+               rollShift = modifier * rollModifier.get() * drag.cross(centerToMouseLocation);
+            }
 
             drag.scale(modifier);
-            rotate(-drag.getX(), drag.getY(), rollShift);
+            switch (controlMode.getValue())
+            {
+               case Position:
+               {
+                  double dxy = Math.cos(latitude.get() + drag.getY()) * distance.get();
+                  setPosition(-Math.cos(longitude.get() - drag.getX()) * dxy,
+                              -Math.sin(longitude.get() - drag.getX()) * dxy,
+                              Math.sin(latitude.get() + drag.getY()) * distance.get(),
+                              roll.get() + rollShift);
+                  break;
+               }
+               case Orbital:
+               {
+                  setOrbit(Double.NaN, longitude.get() - drag.getX(), latitude.get() + drag.getY(), roll.get() + rollShift);
+                  break;
+               }
+               case LevelOrbital:
+               {
+                  setLevelOrbit(Double.NaN, longitude.get() - drag.getX(), z.get() + Math.sin(drag.getY()) * distance.get(), roll.get() + rollShift);
+                  break;
+               }
+               default:
+               {
+                  throw new IllegalArgumentException("Unexpected value: " + controlMode.getValue());
+               }
+            }
 
             oldMouseLocation.set(newMouseLocation);
          }
@@ -239,15 +390,44 @@ public class CameraOrbitHandler
     */
    public EventHandler<ScrollEvent> createScrollEventHandler()
    {
-      return new EventHandler<ScrollEvent>()
+      return new EventHandler<>()
       {
          @Override
          public void handle(ScrollEvent event)
          {
+            if (distance.isBound())
+               return;
+
             double direction = Math.signum(event.getDeltaY());
             double newDistance = distance.get() + direction * distance.get() * distanceModifier.get();
-            newDistance = MathTools.clamp(newDistance, minDistance.get(), maxDistance.get());
-            distance.set(newDistance);
+
+            switch (controlMode.getValue())
+            {
+               case Position:
+               {
+                  newDistance = MathTools.clamp(newDistance, minDistance.get(), maxDistance.get());
+                  double scale = newDistance / distance.get();
+                  setPosition(x.get() * scale, y.get() * scale, z.get() * scale, Double.NaN);
+                  break;
+               }
+               case Orbital:
+               {
+                  setOrbit(newDistance, Double.NaN, Double.NaN, Double.NaN);
+                  break;
+               }
+               case LevelOrbital:
+               {
+                  // Changing the distance to zoom in/out is expected to preserve the latitude not the height.
+                  newDistance = MathTools.clamp(newDistance, minDistance.get(), maxDistance.get());
+                  double newHeight = z.get() + (newDistance - distance.get()) * Math.sin(latitude.get());
+                  setLevelOrbit(newDistance, Double.NaN, newHeight, Double.NaN);
+                  break;
+               }
+               default:
+               {
+                  throw new IllegalArgumentException("Unexpected value: " + controlMode.getValue());
+               }
+            }
          }
       };
    }
@@ -257,6 +437,7 @@ public class CameraOrbitHandler
     * <p>
     * Non-finite values are ignored.
     * </p>
+    *
     * @param deltaLongitude the shift in longitude to apply to the camera rotation.
     * @param deltaLatitude  the shift in latitude to apply to the camera rotation.
     * @param deltaRoll      the shift in roll to apply to the camera rotation.
@@ -271,46 +452,16 @@ public class CameraOrbitHandler
     * <p>
     * Non-finite values are ignored.
     * </p>
+    *
     * @param deltaLongitude the shift in longitude to apply to the camera rotation.
     * @param deltaLatitude  the shift in latitude to apply to the camera rotation.
     * @param deltaRoll      the shift in roll to apply to the camera rotation.
-    *
     * @return the amount to translate the focal point to use for making the camera rotate on itself
     *         instead of orbiting around a fixed focal point.
     */
    public Vector3D rotate(double deltaLongitude, double deltaLatitude, double deltaRoll, boolean computeFocalPointShift)
    {
-      disableCameraOrientationAutoUpdate = true;
-      if (Double.isFinite(deltaLatitude))
-      {
-         double newLatitude = latitude.get() + deltaLatitude;
-         if (restrictLatitude.get())
-            newLatitude = MathTools.clamp(newLatitude, minLatitude.get(), maxLatitude.get());
-         else
-            newLatitude = MathTools.clamp(newLatitude, Math.PI);
-         latitude.set(newLatitude);
-      }
-
-      if (Double.isFinite(deltaLongitude))
-      {
-         double newLongitude = longitude.get() + deltaLongitude;
-         newLongitude = EuclidCoreTools.trimAngleMinusPiToPi(newLongitude);
-         longitude.set(newLongitude);
-      }
-
-      if (keepRotationLeveled.get())
-      {
-         roll.set(0.0);
-      }
-      else if (Double.isFinite(deltaRoll))
-      {
-         double newRoll = roll.get() + deltaRoll;
-         newRoll = EuclidCoreTools.trimAngleMinusPiToPi(newRoll);
-         roll.set(newRoll);
-      }
-      Vector3D focalPointTranslation = updateCameraOrientation(computeFocalPointShift);
-      disableCameraOrientationAutoUpdate = false;
-      return focalPointTranslation;
+      return setRotation(longitude.get() + deltaLongitude, latitude.get() + deltaLatitude, roll.get() + deltaRoll, computeFocalPointShift);
    }
 
    /**
@@ -319,7 +470,7 @@ public class CameraOrbitHandler
     * <p>
     * Non-finite values are ignored.
     * </p>
-    * 
+    *
     * @param position desired camera position. Not modified.
     * @param roll     desired camera roll.
     */
@@ -334,7 +485,7 @@ public class CameraOrbitHandler
     * <p>
     * Non-finite values are ignored.
     * </p>
-    * 
+    *
     * @param x    the desired camera x-coordinate.
     * @param y    the desired camera y-coordinate.
     * @param z    the desired camera z-coordinate.
@@ -342,31 +493,60 @@ public class CameraOrbitHandler
     */
    public void setPosition(double x, double y, double z, double roll)
    {
-      disableCameraOrientationAutoUpdate = true;
-      Vector3D fromCameraToFocus = new Vector3D();
-      fromCameraToFocus.setX(Double.isFinite(x) ? -x : cameraPose.getTx());
-      fromCameraToFocus.setY(Double.isFinite(y) ? -y : cameraPose.getTy());
-      fromCameraToFocus.setZ(Double.isFinite(z) ? -z : cameraPose.getTz());
-      distance.set(fromCameraToFocus.norm());
-      fromCameraToFocus.scale(1.0 / distance.get());
+      if (this.distance.isBound())
+         throw new IllegalStateException("Cannot set position, distance coordinate is bound.");
+      if (this.longitude.isBound())
+         throw new IllegalStateException("Cannot set position, longitude coordinate is bound.");
+      if (this.latitude.isBound())
+         throw new IllegalStateException("Cannot set position, latitude coordinate is bound.");
 
-      double newLatitude = fromCameraToFocus.angle(up) - Math.PI / 2.0;
-      // We remove the component along up to be able to compute the longitude
-      fromCameraToFocus.scaleAdd(-fromCameraToFocus.dot(up), up, fromCameraToFocus);
+      disableCameraPoseAutoUpdate = true;
 
-      double newLongitude = fromCameraToFocus.angle(forward);
+      if (!Double.isFinite(x) || isXBound())
+         x = this.x.get();
+      else
+         this.x.set(x);
+      if (!Double.isFinite(y) || isYBound())
+         y = this.y.get();
+      else
+         this.y.set(y);
+      if (!Double.isFinite(z) || isZBound())
+         z = this.z.get();
+      else
+         this.z.set(z);
 
-      Vector3D cross = new Vector3D();
-      cross.cross(fromCameraToFocus, forward);
+      double distance = EuclidCoreTools.norm(x, y, z);
+      double longitude = Math.atan2(-y, -x);
+      double latitude = Math.atan(z / EuclidCoreTools.norm(x, y));
 
-      if (cross.dot(up) > 0.0)
-         newLongitude = -newLongitude;
+      this.distance.set(distance);
+      this.longitude.set(longitude);
+      this.latitude.set(latitude);
 
-      latitude.set(newLatitude);
-      longitude.set(newLongitude);
-      this.roll.set(roll);
-      updateCameraOrientation(false);
-      disableCameraOrientationAutoUpdate = false;
+      if (keepRotationLeveled.get() && !this.roll.isBound())
+      {
+         roll = 0;
+         this.roll.set(0);
+      }
+      else if (Double.isFinite(roll) && !this.roll.isBound())
+      {
+         roll = EuclidCoreTools.trimAngleMinusPiToPi(roll);
+         this.roll.set(roll);
+      }
+      else
+      {
+         roll = this.roll.get();
+      }
+
+      Affine newRotation = new Affine();
+      newRotation.append(offset);
+      newRotation.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      cameraPose.setToTransform(newRotation);
+      cameraPose.appendTranslation(0.0, 0.0, -distance); // we need to shift the camera backward
+
+      disableCameraPoseAutoUpdate = false;
    }
 
    /**
@@ -374,6 +554,7 @@ public class CameraOrbitHandler
     * <p>
     * Non-finite values are ignored.
     * </p>
+    *
     * @param longitude the new camera longitude.
     * @param latitude  the new camera latitude.
     * @param roll      the new camera roll.
@@ -388,33 +569,16 @@ public class CameraOrbitHandler
     * <p>
     * Non-finite values are ignored.
     * </p>
+    *
     * @param longitude the new camera longitude.
     * @param latitude  the new camera latitude.
     * @param roll      the new camera roll.
-    *
     * @return the amount to translate the focal point to use for making the camera rotate on itself
     *         instead of orbiting around a fixed focal point.
     */
    public Vector3D setRotation(double longitude, double latitude, double roll, boolean computeFocalPointShift)
    {
-      disableCameraOrientationAutoUpdate = true;
-      if (Double.isFinite(latitude))
-      {
-         if (restrictLatitude.get())
-            this.latitude.set(MathTools.clamp(latitude, minLatitude.get(), maxLatitude.get()));
-         else
-            this.latitude.set(MathTools.clamp(latitude, Math.PI / 2.0));
-      }
-
-      if (Double.isFinite(longitude))
-         this.longitude.set(EuclidCoreTools.trimAngleMinusPiToPi(longitude));
-
-      if (Double.isFinite(roll))
-         this.roll.set(EuclidCoreTools.trimAngleMinusPiToPi(roll));
-
-      Vector3D focalPointTranslation = updateCameraOrientation(computeFocalPointShift);
-      disableCameraOrientationAutoUpdate = false;
-      return focalPointTranslation;
+      return setOrbit(Double.NaN, longitude, latitude, roll, computeFocalPointShift);
    }
 
    /**
@@ -448,9 +612,85 @@ public class CameraOrbitHandler
     */
    public Vector3D setOrbit(double distance, double longitude, double latitude, double roll, boolean computeFocalPointShift)
    {
-      if (Double.isFinite(distance))
+      if (isXBound())
+         throw new IllegalStateException("Cannot set orbit, x coordinate is bound.");
+      if (isYBound())
+         throw new IllegalStateException("Cannot set orbit, y coordinate is bound.");
+      if (isZBound())
+         throw new IllegalStateException("Cannot set orbit, z coordinate is bound.");
+
+      disableCameraPoseAutoUpdate = true;
+
+      if (Double.isFinite(distance) && !this.distance.isBound())
+      {
+         distance = MathTools.clamp(distance, minDistance.get(), maxDistance.get());
          this.distance.set(distance);
-      return setRotation(longitude, latitude, roll, computeFocalPointShift);
+      }
+      else
+      {
+         distance = this.distance.get();
+      }
+
+      if (Double.isFinite(latitude) && !this.latitude.isBound())
+      {
+         if (restrictLatitude.get())
+            latitude = MathTools.clamp(latitude, minLatitude.get(), maxLatitude.get());
+         else
+            latitude = MathTools.clamp(latitude, Math.PI / 2.0);
+         this.latitude.set(latitude);
+      }
+      else
+      {
+         latitude = this.latitude.get();
+      }
+
+      if (Double.isFinite(longitude) && !this.longitude.isBound())
+      {
+         longitude = EuclidCoreTools.trimAngleMinusPiToPi(longitude);
+         this.longitude.set(longitude);
+      }
+      else
+      {
+         longitude = this.longitude.get();
+      }
+
+      if (keepRotationLeveled.get() && !this.roll.isBound())
+      {
+         roll = 0;
+         this.roll.set(0);
+      }
+      else if (Double.isFinite(roll) && !this.roll.isBound())
+      {
+         roll = EuclidCoreTools.trimAngleMinusPiToPi(roll);
+         this.roll.set(roll);
+      }
+      else
+      {
+         roll = this.roll.get();
+      }
+
+      Vector3D focalPointTranslation = null;
+
+      if (computeFocalPointShift)
+         focalPointTranslation = new Vector3D(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
+
+      Affine newRotation = new Affine();
+      newRotation.append(offset);
+      newRotation.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      cameraPose.setToTransform(newRotation);
+      cameraPose.appendTranslation(0.0, 0.0, -distance); // we need to shift the camera backward
+
+      if (computeFocalPointShift)
+         focalPointTranslation.add(distance * cameraPose.getMxz(), distance * cameraPose.getMyz(), distance * cameraPose.getMzz());
+
+      x.set(cameraPose.getTx());
+      y.set(cameraPose.getTy());
+      z.set(cameraPose.getTz());
+
+      disableCameraPoseAutoUpdate = false;
+      return focalPointTranslation;
    }
 
    /**
@@ -484,54 +724,186 @@ public class CameraOrbitHandler
     */
    public Vector3D setLevelOrbit(double distance, double longitude, double height, double roll, boolean computeFocalPointShift)
    {
-      if (Double.isFinite(distance))
+      if (isXBound())
+         throw new IllegalStateException("Cannot set level-orbit, x coordinate is bound.");
+      if (isYBound())
+         throw new IllegalStateException("Cannot set level-orbit, y coordinate is bound.");
+      if (latitude.isBound())
+         throw new IllegalStateException("Cannot set level-orbit, latitude coordinate is bound.");
+
+      disableCameraPoseAutoUpdate = true;
+
+      if (Double.isFinite(distance) && !this.distance.isBound())
+      {
+         distance = MathTools.clamp(distance, minDistance.get(), maxDistance.get());
          this.distance.set(distance);
-      disableCameraOrientationAutoUpdate = true;
+      }
+      else
+      {
+         distance = this.distance.get();
+      }
 
-      if (Double.isFinite(height))
-         latitude.set(Math.asin(height / this.distance.get()));
+      if (!Double.isFinite(height) || isZBound())
+      {
+         height = z.get();
 
-      if (Double.isFinite(longitude))
-         this.longitude.set(EuclidCoreTools.trimAngleMinusPiToPi(longitude));
+         // Cannot use the height to control the min/max latitude, so using the distance instead.
+         if (!this.distance.isBound())
+         {
+            if (restrictLatitude.get())
+            {
+               if (height > 0.0)
+                  distance = Math.max(distance, height / Math.sin(maxLatitude.get()));
+               else
+                  distance = Math.max(distance, height / Math.sin(minLatitude.get()));
+            }
+            else
+            {
+               distance = Math.max(distance, height);
+            }
+            this.distance.set(distance);
+         }
+      }
+      else
+      {
+         if (restrictLatitude.get())
+            height = MathTools.clamp(height, Math.sin(minLatitude.get()) * distance, Math.sin(maxLatitude.get()) * distance);
+         z.set(height);
+      }
 
-      if (Double.isFinite(roll))
-         this.roll.set(EuclidCoreTools.trimAngleMinusPiToPi(roll));
+      double latitude = Math.asin(MathTools.clamp(height / distance, 1.0));
+      this.latitude.set(latitude);
 
-      Vector3D focalPointTranslation = updateCameraOrientation(computeFocalPointShift);
-      disableCameraOrientationAutoUpdate = false;
-      return focalPointTranslation;
-   }
+      if (Double.isFinite(longitude) && !this.longitude.isBound())
+      {
+         longitude = EuclidCoreTools.trimAngleMinusPiToPi(longitude);
+         this.longitude.set(longitude);
+      }
+      else
+      {
+         longitude = this.longitude.get();
+      }
 
-   private Vector3D updateCameraOrientation(boolean computeFocalPointShift)
-   {
+      if (keepRotationLeveled.get() && !this.roll.isBound())
+      {
+         roll = 0;
+         this.roll.set(0);
+      }
+      else if (Double.isFinite(roll) && !this.roll.isBound())
+      {
+         roll = EuclidCoreTools.trimAngleMinusPiToPi(roll);
+         this.roll.set(roll);
+      }
+      else
+      {
+         roll = this.roll.get();
+      }
+
       Vector3D focalPointTranslation = null;
 
       if (computeFocalPointShift)
-      {
          focalPointTranslation = new Vector3D(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
-      }
 
       Affine newRotation = new Affine();
       newRotation.append(offset);
-      newRotation.append(new Rotate(Math.toDegrees(-longitude.get()), Rotate.Y_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(-latitude.get()), Rotate.X_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(roll.get()), Rotate.Z_AXIS));
-      cameraOrientation.setToTransform(newRotation);
+      newRotation.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      newRotation.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      cameraPose.setToTransform(newRotation);
+      cameraPose.appendTranslation(0.0, 0.0, -distance); // we need to shift the camera backward
 
       if (computeFocalPointShift)
-      {
-         focalPointTranslation.add(distance.get() * cameraOrientation.getMxz(),
-                                   distance.get() * cameraOrientation.getMyz(),
-                                   distance.get() * cameraOrientation.getMzz());
-         return focalPointTranslation;
-      }
-      return null;
+         focalPointTranslation.add(distance * cameraPose.getMxz(), distance * cameraPose.getMyz(), distance * cameraPose.getMzz());
+
+      x.set(cameraPose.getTx());
+      y.set(cameraPose.getTy());
+
+      disableCameraPoseAutoUpdate = false;
+      return focalPointTranslation;
    }
 
-   private void updateCameraPose()
+   public Tuple3DProperty createCameraWorldCoordinates(ObservableDoubleValue xOffset, ObservableDoubleValue yOffset, ObservableDoubleValue zOffset)
    {
-      cameraPose.setToTransform(cameraOrientation);
-      cameraPose.appendTranslation(0.0, 0.0, -distance.get()); // we need to shift the camera backward
+      if (xWorld != null)
+         return new Tuple3DProperty(xWorld, yWorld, zWorld);
+
+      xWorld = new SimpleDoubleProperty(this, "xWorld", 0);
+      yWorld = new SimpleDoubleProperty(this, "yWorld", 0);
+      zWorld = new SimpleDoubleProperty(this, "zWorld", 0);
+      DoubleProperty[] cameraWorldCoordinates = {xWorld, yWorld, zWorld};
+      DoubleProperty[] orbitHandlerCartesianCoordinates = {x, y, z};
+      ObservableDoubleValue[] offsets = {xOffset, yOffset, zOffset};
+
+      for (int i = 0; i < 2; i++)
+      { // Doing x and y coordinates only, z is slightly different because of the level-orbit mode
+         MutableBoolean updating = new MutableBoolean(false);
+
+         DoubleProperty orbitHandlerCartesianCoordinate = orbitHandlerCartesianCoordinates[i];
+         ObservableDoubleValue offset = offsets[i];
+         DoubleProperty cameraWorldCoordinate = cameraWorldCoordinates[i];
+
+         cameraWorldCoordinate.addListener((o, oldValue, newValue) ->
+         {
+            if (updating.isTrue())
+               return;
+            updating.setTrue();
+            orbitHandlerCartesianCoordinate.set(cameraWorldCoordinate.get() - offset.get());
+            updating.setFalse();
+         });
+         offset.addListener((o, oldValue, newValue) ->
+         {
+            updating.setTrue();
+            if (controlMode.getValue() == CameraControlMode.Position)
+               orbitHandlerCartesianCoordinate.set(cameraWorldCoordinate.get() - offset.get());
+            else
+               cameraWorldCoordinate.set(orbitHandlerCartesianCoordinate.get() + offset.get());
+            updating.setFalse();
+         });
+         orbitHandlerCartesianCoordinate.addListener((o, oldValue, newValue) ->
+         {
+            if (updating.isTrue())
+               return;
+            updating.setTrue();
+            cameraWorldCoordinate.set(orbitHandlerCartesianCoordinate.get() + offset.get());
+            updating.setFalse();
+         });
+      }
+
+      {
+         MutableBoolean updating = new MutableBoolean(false);
+
+         DoubleProperty orbitHandlerCartesianCoordinate = orbitHandlerCartesianCoordinates[2];
+         ObservableDoubleValue offset = offsets[2];
+         DoubleProperty cameraWorldCoordinate = cameraWorldCoordinates[2];
+
+         cameraWorldCoordinate.addListener((o, oldValue, newValue) ->
+         {
+            if (updating.isTrue())
+               return;
+            updating.setTrue();
+            orbitHandlerCartesianCoordinate.set(cameraWorldCoordinate.get() - offset.get());
+            updating.setFalse();
+         });
+         offset.addListener((o, oldValue, newValue) ->
+         {
+            updating.setTrue();
+            if (controlMode.getValue() == CameraControlMode.Orbital)
+               cameraWorldCoordinate.set(orbitHandlerCartesianCoordinate.get() + offset.get());
+            else
+               orbitHandlerCartesianCoordinate.set(cameraWorldCoordinate.get() - offset.get());
+            updating.setFalse();
+         });
+         orbitHandlerCartesianCoordinate.addListener((o, oldValue, newValue) ->
+         {
+            if (updating.isTrue())
+               return;
+            updating.setTrue();
+            cameraWorldCoordinate.set(orbitHandlerCartesianCoordinate.get() + offset.get());
+            updating.setFalse();
+         });
+      }
+
+      return new Tuple3DProperty(cameraWorldCoordinates);
    }
 
    public Affine getCameraPose()
@@ -539,15 +911,9 @@ public class CameraOrbitHandler
       return cameraPose;
    }
 
-   /**
-    * Get the reference to the rotation of the camera. This is the output of this calculator which can
-    * be bound to an external property or used directly to apply a transformation to the camera.
-    *
-    * @return the camera's rotation.
-    */
-   public Affine getCameraRotation()
+   public Property<CameraControlMode> controlMode()
    {
-      return cameraOrientation;
+      return controlMode;
    }
 
    public final DoubleProperty latitudeProperty()
@@ -563,6 +929,36 @@ public class CameraOrbitHandler
    public final DoubleProperty rollProperty()
    {
       return roll;
+   }
+
+   public DoubleProperty xProperty()
+   {
+      return x;
+   }
+
+   public DoubleProperty yProperty()
+   {
+      return y;
+   }
+
+   public DoubleProperty zProperty()
+   {
+      return z;
+   }
+
+   public DoubleProperty xWorldProperty()
+   {
+      return xWorld;
+   }
+
+   public DoubleProperty yWorldProperty()
+   {
+      return yWorld;
+   }
+
+   public DoubleProperty zWorldProperty()
+   {
+      return zWorld;
    }
 
    public final BooleanProperty keepRotationLeveledProperty()

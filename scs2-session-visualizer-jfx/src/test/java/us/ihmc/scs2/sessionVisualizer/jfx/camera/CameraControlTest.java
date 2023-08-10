@@ -37,6 +37,12 @@ public class CameraControlTest
       EuclidCoreTestTools.assertEquals(expectedCameraLookDirection, cameraLookDirection(camera), EPSILON);
       EuclidCoreTestTools.assertEquals(expectedCameraRightDirection, cameraRightDirection(camera), EPSILON);
 
+      controller.setCameraPosition(Double.NaN, Double.NaN, Double.NaN, false);
+      EuclidCoreTestTools.assertEquals(expectedFocalPoint, controller.getFocalPointTranslate(), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraPosition, cameraPosition(camera), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraLookDirection, cameraLookDirection(camera), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraRightDirection, cameraRightDirection(camera), EPSILON);
+
       expectedFocalPoint.add(0, 0, 1.0);
       controller.setFocalPoint(expectedFocalPoint, false);
 
@@ -51,6 +57,26 @@ public class CameraControlTest
       expectedCameraPosition.add(0, 0, 1);
       controller.setCameraPosition(expectedCameraPosition, true);
 
+      EuclidCoreTestTools.assertEquals(expectedFocalPoint, controller.getFocalPointTranslate(), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraPosition, cameraPosition(camera), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraLookDirection, cameraLookDirection(camera), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraRightDirection, cameraRightDirection(camera), EPSILON);
+
+      expectedFocalPoint = new Point3D();
+      expectedCameraPosition = new Point3D(-1, 0, 0);
+      controller.setFocalPoint(expectedFocalPoint, true);
+      controller.setCameraPosition(expectedCameraPosition, false);
+
+      expectedCameraLookDirection = new Vector3D(1, 0, 0);
+      expectedCameraRightDirection = new Vector3D(0, -1, 0);
+
+      EuclidCoreTestTools.assertEquals(expectedFocalPoint, controller.getFocalPointTranslate(), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraPosition, cameraPosition(camera), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraLookDirection, cameraLookDirection(camera), EPSILON);
+      EuclidCoreTestTools.assertEquals(expectedCameraRightDirection, cameraRightDirection(camera), EPSILON);
+
+      expectedCameraPosition = new Point3D(-2, 0, 0);
+      controller.setCameraOrbit(2, Double.NaN, Double.NaN, Double.NaN, false);
       EuclidCoreTestTools.assertEquals(expectedFocalPoint, controller.getFocalPointTranslate(), EPSILON);
       EuclidCoreTestTools.assertEquals(expectedCameraPosition, cameraPosition(camera), EPSILON);
       EuclidCoreTestTools.assertEquals(expectedCameraLookDirection, cameraLookDirection(camera), EPSILON);

@@ -1,11 +1,15 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -24,6 +28,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPa
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
@@ -39,13 +46,8 @@ public class Camera3DOptionsPaneController
    @FXML
    private TextField xFocalPointCurrentTextField, yFocalPointCurrentTextField, zFocalPointCurrentTextField;
 
-   private enum CameraPositionType
-   {
-      Position, Orbital, LevelOrbital
-   };
-
    @FXML
-   private ComboBox<CameraPositionType> cameraPositionComboxBox;
+   private ComboBox<CameraControlMode> cameraPositionComboxBox;
 
    // The following controls are for either:
    //  - x, y, z
@@ -82,27 +84,32 @@ public class Camera3DOptionsPaneController
    @FXML
    private TextField xCameraCurrentTextField, yCameraCurrentTextField, zCameraCurrentTextField;
 
+   private Label[] cameraLabels;
+   private TextField[] cameraTextFields;
    private final DoubleSearchField[] cameraCoordinatesSearchFields = new DoubleSearchField[3];
-   private final DoubleProperty[] cameraCoordinates = new DoubleProperty[3];
 
-   private final Property<Tuple3DProperty> cameraPositionCoordinatesToTrack = new SimpleObjectProperty<>(this, "cameraPositionCoordinatesToTrack", null);
-   private final Property<CameraOrbitalCoordinateProperty> cameraOrbitalCoordinatesToTrack = new SimpleObjectProperty<>(this,
-                                                                                                                        "cameraOrbitCoordinatesToTrack",
-                                                                                                                        null);
-   private final Property<CameraLevelOrbitalCoordinateProperty> cameraLevelOrbitalCoordinatesToTrack = new SimpleObjectProperty<>(this,
-                                                                                                                                  "cameraOrbit2DCoordinatesToTrack",
-                                                                                                                                  null);
+   private final List<Runnable> cleanupTasks = new ArrayList<>();
 
    public void initialize(PerspectiveCameraController cameraController,
                           YoCompositeSearchManager searchManager,
                           LinkedYoRegistry linkedRootRegistry,
                           ReferenceFrameManager referenceFrameManager)
    {
-      ToggleGroup toggleGroup = new ToggleGroup();
-      toggleGroup.getToggles().addAll(trackCoordinatesButton, trackNodeButton); // TODO initialize which one is selected
+      initializeFocalPointControls(cameraController, searchManager, linkedRootRegistry, referenceFrameManager);
+      initializeCameraControls(cameraController, searchManager, linkedRootRegistry);
+   }
 
+   public void initializeFocalPointControls(PerspectiveCameraController cameraController,
+                                            YoCompositeSearchManager searchManager,
+                                            LinkedYoRegistry linkedRootRegistry,
+                                            ReferenceFrameManager referenceFrameManager)
+   {
+      PerspectiveCamera camera = cameraController.getCamera();
       CameraFocalPointHandler focalPointHandler = cameraController.getFocalPointHandler();
       ObjectProperty<TrackingTargetType> targetTypeProperty = focalPointHandler.targetTypeProperty();
+
+      ToggleGroup toggleGroup = new ToggleGroup();
+      toggleGroup.getToggles().addAll(trackCoordinatesButton, trackNodeButton); // TODO initialize which one is selected
 
       trackNodeButton.setSelected(targetTypeProperty.get() == TrackingTargetType.Node);
       trackCoordinatesButton.setSelected(targetTypeProperty.get() == TrackingTargetType.YoCoordinates);
@@ -137,6 +144,7 @@ public class Camera3DOptionsPaneController
          updatingTarget.setFalse();
       };
       targetTypeProperty.addListener(targetTypeChangeListener);
+      cleanupTasks.add(() -> targetTypeProperty.removeListener(targetTypeChangeListener));
       targetTypeChangeListener.changed(targetTypeProperty, null, targetTypeProperty.get());
 
       ChangeListener<? super Transform> focalPointTransformChangeListener = (o, oldValue, newValue) ->
@@ -147,6 +155,7 @@ public class Camera3DOptionsPaneController
       };
       Node focalPoint = cameraController.getFocalPointViz();
       focalPoint.localToSceneTransformProperty().addListener(focalPointTransformChangeListener);
+      cleanupTasks.add(() -> focalPoint.localToSceneTransformProperty().removeListener(focalPointTransformChangeListener));
       focalPointTransformChangeListener.changed(focalPoint.localToSceneTransformProperty(), null, focalPoint.getLocalToSceneTransform());
 
       ChangeListener<? super Transform> cameraTransformChangeListener = (o, oldValue, newValue) ->
@@ -155,8 +164,8 @@ public class Camera3DOptionsPaneController
          yCameraCurrentTextField.setText(Double.toString(newValue.getTy()));
          zCameraCurrentTextField.setText(Double.toString(newValue.getTz()));
       };
-      PerspectiveCamera camera = cameraController.getCamera();
       camera.localToSceneTransformProperty().addListener(cameraTransformChangeListener);
+      cleanupTasks.add(() -> camera.localToSceneTransformProperty().removeListener(cameraTransformChangeListener));
       cameraTransformChangeListener.changed(camera.localToSceneTransformProperty(), null, camera.getLocalToSceneTransform());
 
       YoCompositeCollection yoTuple3DCollection = searchManager.getYoTuple3DCollection();
@@ -194,13 +203,30 @@ public class Camera3DOptionsPaneController
             trackingNodeTextField.setText(newValue.getId());
       };
       nodeToTrack.addListener(nodeTrackedChangeListener);
+      cleanupTasks.add(() -> nodeToTrack.removeListener(nodeTrackedChangeListener));
       nodeTrackedChangeListener.changed(nodeToTrack, null, nodeToTrack.get());
+   }
 
-      cameraPositionComboxBox.setItems(FXCollections.observableArrayList(CameraPositionType.values()));
+   @SuppressWarnings({"rawtypes", "unchecked"})
+   public void initializeCameraControls(PerspectiveCameraController cameraController,
+                                        YoCompositeSearchManager searchManager,
+                                        LinkedYoRegistry linkedRootRegistry)
+   {
+      ReadOnlyObjectProperty<Transform> currentCameraPose = cameraController.getCamera().localToSceneTransformProperty();
+      CameraOrbitHandler orbitHandler = cameraController.getOrbitHandler();
+      Property<Tuple3DProperty> cameraPositionCoordinatesToTrack = cameraController.cameraPositionCoordinatesToTrackProperty();
+      Property<OrbitalCoordinateProperty> cameraOrbitalCoordinatesToTrack = cameraController.cameraOrbitalCoordinatesToTrackProperty();
+      Property<LevelOrbitalCoordinateProperty> cameraLevelOrbitalCoordinatesToTrack = cameraController.cameraLevelOrbitalCoordinatesToTrackProperty();
 
+      cameraLabels = new Label[] {cameraLabel1, cameraLabel2, cameraLabel3};
+      cameraTextFields = new TextField[] {cameraTextField1, cameraTextField2, cameraTextField3};
+
+      cameraPositionComboxBox.setItems(FXCollections.observableArrayList(CameraControlMode.values()));
       cameraCoordinatesSearchFields[0] = new DoubleSearchField(cameraTextField1, searchManager, linkedRootRegistry, cameraValidImageView1);
       cameraCoordinatesSearchFields[1] = new DoubleSearchField(cameraTextField2, searchManager, linkedRootRegistry, cameraValidImageView2);
       cameraCoordinatesSearchFields[2] = new DoubleSearchField(cameraTextField3, searchManager, linkedRootRegistry, cameraValidImageView3);
+
+      MutableBoolean updatingCameraTextFields = new MutableBoolean(false);
 
       for (int i = 0; i < cameraCoordinatesSearchFields.length; i++)
       {
@@ -209,17 +235,29 @@ public class Camera3DOptionsPaneController
          int supplierIndex = i;
          cameraCoordinatesSearchFields[i].supplierProperty().addListener((o, oldValue, newValue) ->
          {
-            cameraCoordinates[supplierIndex] = newValue;
-            switch (cameraPositionComboxBox.getSelectionModel().getSelectedItem())
+            if (updatingCameraTextFields.booleanValue())
+               return;
+
+            CameraControlMode controlMode = cameraController.cameraControlMode().getValue();
+            CompositeProperty composite = switch (controlMode)
+            {
+               case Position -> cameraPositionCoordinatesToTrack.getValue();
+               case Orbital -> cameraOrbitalCoordinatesToTrack.getValue();
+               case LevelOrbital -> cameraLevelOrbitalCoordinatesToTrack.getValue();
+            };
+            DoubleProperty[] components = Arrays.copyOf(composite.componentValueProperties(), 3);
+            components[supplierIndex] = newValue;
+
+            switch (controlMode)
             {
                case Position:
-                  cameraPositionCoordinatesToTrack.getValue().setComponentValueProperties(cameraCoordinates);
+                  cameraPositionCoordinatesToTrack.setValue(new Tuple3DProperty(components));
                   break;
                case Orbital:
-                  cameraOrbitalCoordinatesToTrack.getValue().setComponentValueProperties(cameraCoordinates);
+                  cameraOrbitalCoordinatesToTrack.setValue(new OrbitalCoordinateProperty(components));
                   break;
                case LevelOrbital:
-                  cameraLevelOrbitalCoordinatesToTrack.getValue().setComponentValueProperties(cameraCoordinates);
+                  cameraLevelOrbitalCoordinatesToTrack.setValue(new LevelOrbitalCoordinateProperty(components));
                   break;
             }
          });
@@ -227,71 +265,105 @@ public class Camera3DOptionsPaneController
 
       cameraPositionComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
       {
-         switch (newValue)
+         cameraController.cameraControlMode().setValue(newValue);
+
+         CompositeProperty composite = switch (newValue)
          {
             case Position:
-               cameraLabel1.setText("x");
-               cameraLabel2.setText("y");
-               cameraLabel3.setText("z");
-               break;
+               if (cameraPositionCoordinatesToTrack.getValue() == null)
+                  cameraPositionCoordinatesToTrack.setValue(new Tuple3DProperty(currentCameraPose.get().getTx(),
+                                                                                currentCameraPose.get().getTy(),
+                                                                                currentCameraPose.get().getTz()));
+               yield cameraPositionCoordinatesToTrack.getValue();
             case Orbital:
-               cameraLabel1.setText("distance");
-               cameraLabel2.setText("longitude");
-               cameraLabel3.setText("latitude");
-               break;
+               if (cameraOrbitalCoordinatesToTrack.getValue() == null)
+                  cameraOrbitalCoordinatesToTrack.setValue(new OrbitalCoordinateProperty(orbitHandler.distanceProperty().get(),
+                                                                                         orbitHandler.longitudeProperty().get(),
+                                                                                         orbitHandler.latitudeProperty().get()));
+               yield cameraOrbitalCoordinatesToTrack.getValue();
             case LevelOrbital:
-               cameraLabel1.setText("distance");
-               cameraLabel2.setText("longitude");
-               cameraLabel3.setText("z");
-               break;
+               if (cameraLevelOrbitalCoordinatesToTrack.getValue() == null)
+                  cameraLevelOrbitalCoordinatesToTrack.setValue(new LevelOrbitalCoordinateProperty(orbitHandler.distanceProperty().get(),
+                                                                                                   orbitHandler.longitudeProperty().get(),
+                                                                                                   currentCameraPose.get().getTz()));
+               yield cameraLevelOrbitalCoordinatesToTrack.getValue();
             default:
                throw new IllegalStateException("Unexpected type: " + newValue);
+         };
+
+         updatingCameraTextFields.setTrue();
+         for (int i = 0; i < 3; i++)
+         {
+            cameraLabels[i].setText(composite.getComponentIdentifiers()[i]);
+            cameraTextFields[i].setText(CompositePropertyTools.toDoublePropertyName(composite.componentValueProperties()[i]));
          }
+         updatingCameraTextFields.setFalse();
       });
 
-      Transform currentCameraPose = cameraController.getCamera().getLocalToSceneTransform();
-      CameraOrbitHandler orbitHandler = cameraController.getOrbitHandler();
+      {
+         CameraControlMode[] controlModes = {CameraControlMode.Position, CameraControlMode.Orbital, CameraControlMode.LevelOrbital};
+         Property[] cameraCoordinatesProperties = {cameraPositionCoordinatesToTrack, cameraOrbitalCoordinatesToTrack, cameraLevelOrbitalCoordinatesToTrack};
 
-      if (cameraController.cameraPositionCoordinatesToTrackProperty().getValue() != null)
-      {
-         cameraPositionCoordinatesToTrack.setValue(new Tuple3DProperty(cameraController.cameraPositionCoordinatesToTrackProperty().getValue()));
-         cameraPositionComboxBox.getSelectionModel().select(CameraPositionType.Position);
-      }
-      else
-      {
-         cameraPositionCoordinatesToTrack.setValue(new Tuple3DProperty(currentCameraPose.getTx(), currentCameraPose.getTy(), currentCameraPose.getTz()));
+         for (int i = 0; i < cameraCoordinatesProperties.length; i++)
+         {
+            CameraControlMode controlMode = controlModes[i];
+            Property cameraCoordinatesProperty = cameraCoordinatesProperties[i];
+
+            List<ChangeListener<? super Number>> componentChangeListeners = new ArrayList<>();
+            for (int componentIndex = 0; componentIndex < 3; componentIndex++)
+            {
+               int componentIndexFinal = componentIndex;
+               componentChangeListeners.add((o, oldValue, newValue) ->
+               {
+                  if (cameraController.cameraControlMode().getValue() != controlMode)
+                     return;
+                  if (cameraTextFields[componentIndexFinal].isFocused())
+                     return;
+                  updatingCameraTextFields.setTrue();
+                  CompositeProperty cameraCoordinates = (CompositeProperty) cameraCoordinatesProperty.getValue();
+                  cameraTextFields[componentIndexFinal].setText(CompositePropertyTools.toDoublePropertyName(cameraCoordinates.componentValueProperties()[componentIndexFinal]));
+                  updatingCameraTextFields.setFalse();
+               });
+            }
+
+            ChangeListener<? super CompositeProperty> cameraCoordinatesChangeListener = (o, oldValue, newValue) ->
+            {
+               if (oldValue != null && oldValue.componentValueProperties() != null)
+               {
+                  for (int componentIndex = 0; componentIndex < 3; componentIndex++)
+                  {
+                     DoubleProperty componentValueProperty = oldValue.componentValueProperties()[componentIndex];
+                     if (componentValueProperty != null && !(componentValueProperty instanceof YoDoubleProperty))
+                        componentValueProperty.removeListener(componentChangeListeners.get(componentIndex));
+                  }
+               }
+
+               if (newValue != null && newValue.componentValueProperties() != null)
+               {
+                  for (int componentIndex = 0; componentIndex < 3; componentIndex++)
+                  {
+                     DoubleProperty componentValueProperty = newValue.componentValueProperties()[componentIndex];
+                     if (componentValueProperty != null && !(componentValueProperty instanceof YoDoubleProperty))
+                        componentValueProperty.addListener(componentChangeListeners.get(componentIndex));
+                  }
+               }
+            };
+            cameraCoordinatesProperty.addListener(cameraCoordinatesChangeListener);
+            cleanupTasks.add(() ->
+            {
+               cameraCoordinatesProperty.removeListener(cameraCoordinatesChangeListener);
+               // Remove component listeners
+               cameraCoordinatesChangeListener.changed(null, (CompositeProperty) cameraCoordinatesProperty.getValue(), null);
+            });
+         }
       }
 
-      if (cameraController.cameraOrbitalCoordinatesToTrackProperty().getValue() != null)
-      {
-         cameraOrbitalCoordinatesToTrack.setValue(new CameraOrbitalCoordinateProperty(cameraController.cameraOrbitalCoordinatesToTrackProperty().getValue()));
-         cameraPositionComboxBox.getSelectionModel().select(CameraPositionType.Orbital);
-      }
-      else
-      {
-         cameraOrbitalCoordinatesToTrack.setValue(new CameraOrbitalCoordinateProperty(orbitHandler.distanceProperty().get(),
-                                                                                      orbitHandler.longitudeProperty().get(),
-                                                                                      orbitHandler.latitudeProperty().get()));
-      }
+      cameraPositionComboxBox.getSelectionModel().select(cameraController.cameraControlMode().getValue());
+   }
 
-      if (cameraController.cameraLevelOrbitalCoordinatesToTrackProperty().getValue() != null)
-      {
-         cameraLevelOrbitalCoordinatesToTrack.setValue(new CameraLevelOrbitalCoordinateProperty(cameraController.cameraLevelOrbitalCoordinatesToTrackProperty()
-                                                                                                                .getValue()));
-         cameraPositionComboxBox.getSelectionModel().select(CameraPositionType.LevelOrbital);
-      }
-      else
-      {
-         cameraLevelOrbitalCoordinatesToTrack.setValue(new CameraLevelOrbitalCoordinateProperty(orbitHandler.distanceProperty().get(),
-                                                                                                orbitHandler.longitudeProperty().get(),
-                                                                                                currentCameraPose.getTz()));
-      }
-
-      cameraPositionCoordinatesToTrack.addListener((o, oldValue, newValue) -> cameraController.cameraPositionCoordinatesToTrackProperty().setValue(newValue));
-      cameraLevelOrbitalCoordinatesToTrack.addListener((o, oldValue, newValue) -> cameraController.cameraLevelOrbitalCoordinatesToTrackProperty()
-                                                                                                  .setValue(newValue));
-      cameraLevelOrbitalCoordinatesToTrack.addListener((o, oldValue, newValue) -> cameraController.cameraLevelOrbitalCoordinatesToTrackProperty()
-                                                                                                  .setValue(newValue));
-
+   public void closeAndDispose()
+   {
+      cleanupTasks.forEach(Runnable::run);
+      cleanupTasks.clear();
    }
 }
