@@ -11,9 +11,12 @@ import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
+import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -1034,9 +1037,9 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
-   public void setCameraFocusPosition(double x, double y, double z)
+   public void setCameraFocalPosition(double x, double y, double z)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setCameraFocusPosition(x, y, z));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setCameraFocalPosition(x, y, z));
    }
 
    /** {@inheritDoc} */
@@ -1051,6 +1054,34 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void requestCameraRigidBodyTracking(String robotName, String rigidBodyName)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.requestCameraRigidBodyTracking(robotName, rigidBodyName));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestCameraFocalPositionTracking(YoTuple3DDefinition coordinatesToTrack)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestCameraFocalPositionTracking(coordinatesToTrack));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestCameraPositionTracking(YoTuple3DDefinition cameraCoordinates)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestCameraPositionTracking(cameraCoordinates));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestCameraOrbitTracking(YoOrbitalCoordinateDefinition cameraCoordinates)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestCameraOrbitTracking(cameraCoordinates));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestCameraLevelOrbitTracking(YoLevelOrbitalCoordinateDefinition cameraCoordinates)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestCameraLevelOrbitTracking(cameraCoordinates));
    }
 
    /** {@inheritDoc} */

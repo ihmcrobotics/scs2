@@ -30,8 +30,11 @@ import javafx.util.Pair;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
+import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
+import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
@@ -43,6 +46,8 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.CameraControlRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
@@ -341,11 +346,11 @@ public class SessionVisualizer
       }
 
       @Override
-      public void setCameraFocusPosition(double x, double y, double z)
+      public void setCameraFocalPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         toolkit.getViewport3DManager().getMainViewport().setCameraFocusPosition(x, y, z);
+         toolkit.getViewport3DManager().getMainViewport().setCameraFocalPosition(x, y, z);
       }
 
       @Override
@@ -361,7 +366,39 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         submitMessage(getTopics().getCamera3DRequest(), Camera3DRequest.trackRobot(robotName, rigidBodyName));
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackRobot(robotName, rigidBodyName)));
+      }
+
+      @Override
+      public void requestCameraFocalPositionTracking(YoTuple3DDefinition coordinatesToTrack)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackCoordinates(coordinatesToTrack)));
+      }
+
+      @Override
+      public void requestCameraPositionTracking(YoTuple3DDefinition cameraCoordinates)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(CameraControlRequest.trackPosition(cameraCoordinates)));
+      }
+
+      @Override
+      public void requestCameraOrbitTracking(YoOrbitalCoordinateDefinition cameraCoordinates)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(CameraControlRequest.trackOrbit(cameraCoordinates)));
+      }
+
+      @Override
+      public void requestCameraLevelOrbitTracking(YoLevelOrbitalCoordinateDefinition cameraCoordinates)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(CameraControlRequest.trackLevelOrbit(cameraCoordinates)));
       }
 
       @Override
