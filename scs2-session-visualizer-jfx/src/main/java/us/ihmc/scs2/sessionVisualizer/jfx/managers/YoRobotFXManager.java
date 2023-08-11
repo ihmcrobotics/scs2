@@ -15,6 +15,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -48,8 +49,12 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
          if (!isSessionLoaded())
             throw new IllegalOperationException("Session has not been loaded yet.");
 
-         String rigidBodyName = request.getRigidBodyName();
-         String robotName = request.getRobotName();
+         FocalPointRequest focalPointRequest = request.getFocalPointRequest();
+         if (focalPointRequest == null)
+            return;
+
+         String rigidBodyName = focalPointRequest.getRigidBodyName();
+         String robotName = focalPointRequest.getRobotName();
 
          if (rigidBodyName != null)
          {
@@ -70,7 +75,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
             result.ifPresent(rigidBodyFrameNode ->
             {
                if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
-                  messager.submitMessage(topics.getCamera3DRequest(), Camera3DRequest.trackNode(rigidBodyFrameNode.getNode()));
+                  messager.submitMessage(topics.getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
             });
          }
       });

@@ -29,6 +29,7 @@ import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
@@ -459,7 +460,7 @@ public class CameraOrbitHandler
     * @return the amount to translate the focal point to use for making the camera rotate on itself
     *         instead of orbiting around a fixed focal point.
     */
-   public Vector3D rotate(double deltaLongitude, double deltaLatitude, double deltaRoll, boolean computeFocalPointShift)
+   public Vector3DReadOnly rotate(double deltaLongitude, double deltaLatitude, double deltaRoll, boolean computeFocalPointShift)
    {
       return setRotation(longitude.get() + deltaLongitude, latitude.get() + deltaLatitude, roll.get() + deltaRoll, computeFocalPointShift);
    }
@@ -494,11 +495,20 @@ public class CameraOrbitHandler
    public void setPosition(double x, double y, double z, double roll)
    {
       if (this.distance.isBound())
-         throw new IllegalStateException("Cannot set position, distance coordinate is bound.");
+      {
+         LogTools.error("Cannot set position, distance coordinate is bound.");
+         return;
+      }
       if (this.longitude.isBound())
-         throw new IllegalStateException("Cannot set position, longitude coordinate is bound.");
+      {
+         LogTools.error("Cannot set position, longitude coordinate is bound.");
+         return;
+      }
       if (this.latitude.isBound())
-         throw new IllegalStateException("Cannot set position, latitude coordinate is bound.");
+      {
+         LogTools.error("Cannot set position, latitude coordinate is bound.");
+         return;
+      }
 
       disableCameraPoseAutoUpdate = true;
 
@@ -538,13 +548,16 @@ public class CameraOrbitHandler
          roll = this.roll.get();
       }
 
-      Affine newRotation = new Affine();
-      newRotation.append(offset);
-      newRotation.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
-      cameraPose.setToTransform(newRotation);
-      cameraPose.appendTranslation(0.0, 0.0, -distance); // we need to shift the camera backward
+      Affine newPose = new Affine();
+      newPose.append(offset);
+      newPose.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newPose.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      if (roll != 0.0)
+         newPose.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      newPose.setTx(x);
+      newPose.setTy(y);
+      newPose.setTz(z);
+      cameraPose.setToTransform(newPose);
 
       disableCameraPoseAutoUpdate = false;
    }
@@ -576,7 +589,7 @@ public class CameraOrbitHandler
     * @return the amount to translate the focal point to use for making the camera rotate on itself
     *         instead of orbiting around a fixed focal point.
     */
-   public Vector3D setRotation(double longitude, double latitude, double roll, boolean computeFocalPointShift)
+   public Vector3DReadOnly setRotation(double longitude, double latitude, double roll, boolean computeFocalPointShift)
    {
       return setOrbit(Double.NaN, longitude, latitude, roll, computeFocalPointShift);
    }
@@ -610,14 +623,23 @@ public class CameraOrbitHandler
     * @return the amount to translate the focal point to use for making the camera rotate on itself
     *         instead of orbiting around a fixed focal point.
     */
-   public Vector3D setOrbit(double distance, double longitude, double latitude, double roll, boolean computeFocalPointShift)
+   public Vector3DReadOnly setOrbit(double distance, double longitude, double latitude, double roll, boolean computeFocalPointShift)
    {
       if (isXBound())
-         throw new IllegalStateException("Cannot set orbit, x coordinate is bound.");
+      {
+         LogTools.error("Cannot set orbit, x coordinate is bound.");
+         return EuclidCoreTools.zeroVector3D;
+      }
       if (isYBound())
-         throw new IllegalStateException("Cannot set orbit, y coordinate is bound.");
+      {
+         LogTools.error("Cannot set orbit, y coordinate is bound.");
+         return EuclidCoreTools.zeroVector3D;
+      }
       if (isZBound())
-         throw new IllegalStateException("Cannot set orbit, z coordinate is bound.");
+      {
+         LogTools.error("Cannot set orbit, z coordinate is bound.");
+         return EuclidCoreTools.zeroVector3D;
+      }
 
       disableCameraPoseAutoUpdate = true;
 
@@ -674,16 +696,20 @@ public class CameraOrbitHandler
       if (computeFocalPointShift)
          focalPointTranslation = new Vector3D(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
 
-      Affine newRotation = new Affine();
-      newRotation.append(offset);
-      newRotation.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
-      cameraPose.setToTransform(newRotation);
-      cameraPose.appendTranslation(0.0, 0.0, -distance); // we need to shift the camera backward
+      Affine newPose = new Affine();
+      newPose.append(offset);
+      newPose.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newPose.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      if (roll != 0.0)
+         newPose.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      // we need to shift the camera backward
+      newPose.setTx(-distance * newPose.getMxz());
+      newPose.setTy(-distance * newPose.getMyz());
+      newPose.setTz(-distance * newPose.getMzz());
+      cameraPose.setToTransform(newPose);
 
       if (computeFocalPointShift)
-         focalPointTranslation.add(distance * cameraPose.getMxz(), distance * cameraPose.getMyz(), distance * cameraPose.getMzz());
+         focalPointTranslation.sub(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
 
       x.set(cameraPose.getTx());
       y.set(cameraPose.getTy());
@@ -722,14 +748,23 @@ public class CameraOrbitHandler
     * @return the amount to translate the focal point to use for making the camera rotate on itself
     *         instead of orbiting around a fixed focal point.
     */
-   public Vector3D setLevelOrbit(double distance, double longitude, double height, double roll, boolean computeFocalPointShift)
+   public Vector3DReadOnly setLevelOrbit(double distance, double longitude, double height, double roll, boolean computeFocalPointShift)
    {
       if (isXBound())
-         throw new IllegalStateException("Cannot set level-orbit, x coordinate is bound.");
+      {
+         LogTools.error("Cannot set level-orbit, x coordinate is bound.");
+         return EuclidCoreTools.zeroVector3D;
+      }
       if (isYBound())
-         throw new IllegalStateException("Cannot set level-orbit, y coordinate is bound.");
+      {
+         LogTools.error("Cannot set level-orbit, y coordinate is bound.");
+         return EuclidCoreTools.zeroVector3D;
+      }
       if (latitude.isBound())
-         throw new IllegalStateException("Cannot set level-orbit, latitude coordinate is bound.");
+      {
+         LogTools.error("Cannot set level-orbit, latitude coordinate is bound.");
+         return EuclidCoreTools.zeroVector3D;
+      }
 
       disableCameraPoseAutoUpdate = true;
 
@@ -804,21 +839,60 @@ public class CameraOrbitHandler
       if (computeFocalPointShift)
          focalPointTranslation = new Vector3D(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
 
-      Affine newRotation = new Affine();
-      newRotation.append(offset);
-      newRotation.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
-      newRotation.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
-      cameraPose.setToTransform(newRotation);
-      cameraPose.appendTranslation(0.0, 0.0, -distance); // we need to shift the camera backward
+      Affine newPose = new Affine();
+      newPose.append(offset);
+      newPose.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newPose.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      if (roll != 0.0)
+         newPose.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      // we need to shift the camera backward
+      newPose.setTx(-distance * newPose.getMxz());
+      newPose.setTy(-distance * newPose.getMyz());
+      newPose.setTz(-distance * newPose.getMzz());
+      cameraPose.setToTransform(newPose);
 
       if (computeFocalPointShift)
-         focalPointTranslation.add(distance * cameraPose.getMxz(), distance * cameraPose.getMyz(), distance * cameraPose.getMzz());
+         focalPointTranslation.sub(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
 
       x.set(cameraPose.getTx());
       y.set(cameraPose.getTy());
 
       disableCameraPoseAutoUpdate = false;
+      return focalPointTranslation;
+   }
+
+   public Vector3DReadOnly computeFocalPointShift(double deltaDistance, double deltaLongitude, double deltaLatitude, double deltaRoll)
+   {
+      if (!Double.isFinite(deltaDistance))
+         deltaDistance = 0.0;
+      if (!Double.isFinite(deltaLongitude))
+         deltaLongitude = 0.0;
+      if (!Double.isFinite(deltaLatitude))
+         deltaLatitude = 0.0;
+      if (!Double.isFinite(deltaRoll))
+         deltaRoll = 0.0;
+
+      if (deltaDistance == 0.0 && deltaLongitude == 0.0 && deltaLatitude == 0.0)
+         return EuclidCoreTools.zeroVector3D;
+
+      double distance = deltaDistance + this.distance.get();
+      double longitude = deltaLongitude + this.longitude.get();
+      double latitude = deltaLatitude + this.latitude.get();
+      double roll = deltaRoll + this.roll.get();
+
+      Affine newPose = new Affine();
+      newPose.append(offset);
+      newPose.append(new Rotate(Math.toDegrees(-longitude), Rotate.Y_AXIS));
+      newPose.append(new Rotate(Math.toDegrees(-latitude), Rotate.X_AXIS));
+      if (roll != 0.0)
+         newPose.append(new Rotate(Math.toDegrees(roll), Rotate.Z_AXIS));
+      // we need to shift the camera backward
+      newPose.setTx(-distance * newPose.getMxz());
+      newPose.setTy(-distance * newPose.getMyz());
+      newPose.setTz(-distance * newPose.getMzz());
+
+      Vector3D focalPointTranslation = new Vector3D(cameraPose.getTx(), cameraPose.getTy(), cameraPose.getTz());
+      focalPointTranslation.sub(newPose.getTx(), newPose.getTy(), newPose.getTz());
       return focalPointTranslation;
    }
 

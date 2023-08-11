@@ -311,7 +311,7 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
    {
       if (translateFocalPoint)
       {
-         Vector3D focalPointShift = orbitHandler.setRotation(longitude, latitude, roll, true);
+         Vector3DReadOnly focalPointShift = orbitHandler.setRotation(longitude, latitude, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
 
       }
@@ -325,7 +325,7 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
    {
       if (translateFocalPoint)
       {
-         Vector3D focalPointShift = orbitHandler.setOrbit(distance, longitude, latitude, roll, true);
+         Vector3DReadOnly focalPointShift = orbitHandler.setOrbit(distance, longitude, latitude, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
 
       }
@@ -340,7 +340,7 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       if (translateFocalPoint)
       {
          height -= focalPointHandler.getTranslation().getZ();
-         Vector3D focalPointShift = orbitHandler.setLevelOrbit(distance, longitude, height, roll, true);
+         Vector3DReadOnly focalPointShift = orbitHandler.setLevelOrbit(distance, longitude, height, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
 
       }
@@ -354,7 +354,23 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
    {
       if (translateFocalPoint)
       {
-         Vector3D focalPointShift = orbitHandler.rotate(deltaLongitude, deltaLatitude, deltaRoll, true);
+         Vector3DReadOnly focalPointShift = switch (cameraControlMode().getValue())
+         {
+            case Position:
+               yield orbitHandler.computeFocalPointShift(0.0, deltaLongitude, deltaLatitude, deltaRoll);
+            case Orbital:
+               yield orbitHandler.rotate(deltaLongitude, deltaLatitude, deltaRoll, true);
+            case LevelOrbital:
+            {
+               Vector3D shift = new Vector3D(orbitHandler.setLevelOrbit(Double.NaN,
+                                                                        orbitHandler.longitudeProperty().get() + deltaLongitude,
+                                                                        Double.NaN,
+                                                                        orbitHandler.rollProperty().get() + deltaRoll,
+                                                                        true));
+               shift.setZ(orbitHandler.computeFocalPointShift(0.0, deltaLongitude, deltaLatitude, deltaRoll).getZ());
+               yield shift;
+            }
+         };
          focalPointHandler.translateWorldFrame(focalPointShift);
       }
       else

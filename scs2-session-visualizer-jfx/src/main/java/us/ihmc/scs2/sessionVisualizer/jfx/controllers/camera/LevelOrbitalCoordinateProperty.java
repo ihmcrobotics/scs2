@@ -1,7 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
-import static us.ihmc.scs2.definition.camera.YoCameraLevelOrbitalCoordinateDefinition.YoCameraLevelOrbital;
-import static us.ihmc.scs2.definition.camera.YoCameraLevelOrbitalCoordinateDefinition.YoCameraLevelOrbitalIdentifiers;
+import static us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition.YoLevelOrbital;
+import static us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition.YoLevelOrbitalIdentifiers;
 
 import java.util.Objects;
 
@@ -15,32 +15,32 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
 {
    public LevelOrbitalCoordinateProperty()
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers);
    }
 
    public LevelOrbitalCoordinateProperty(double distance, double longitude, double height)
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers, distance, longitude, height);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers, distance, longitude, height);
    }
 
    public LevelOrbitalCoordinateProperty(ReferenceFrame referenceFrame, double distance, double longitude, double height)
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers, referenceFrame, distance, longitude, height);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers, referenceFrame, distance, longitude, height);
    }
 
    public LevelOrbitalCoordinateProperty(DoubleProperty[] distanceLongitudeHeightProperties)
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers, distanceLongitudeHeightProperties);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers, distanceLongitudeHeightProperties);
    }
 
    public LevelOrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty[] distanceLongitudeHeightProperties)
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers, referenceFrameProperty, distanceLongitudeHeightProperties);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers, referenceFrameProperty, distanceLongitudeHeightProperties);
    }
 
    public LevelOrbitalCoordinateProperty(DoubleProperty distanceProperty, DoubleProperty longitudeProperty, DoubleProperty heightProperty)
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers, distanceProperty, longitudeProperty, heightProperty);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers, distanceProperty, longitudeProperty, heightProperty);
    }
 
    public LevelOrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty,
@@ -48,7 +48,7 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
                                                DoubleProperty longitudeProperty,
                                                DoubleProperty heightProperty)
    {
-      super(YoCameraLevelOrbital, YoCameraLevelOrbitalIdentifiers, referenceFrameProperty, distanceProperty, longitudeProperty, heightProperty);
+      super(YoLevelOrbital, YoLevelOrbitalIdentifiers, referenceFrameProperty, distanceProperty, longitudeProperty, heightProperty);
    }
 
    public LevelOrbitalCoordinateProperty(CompositeProperty other)

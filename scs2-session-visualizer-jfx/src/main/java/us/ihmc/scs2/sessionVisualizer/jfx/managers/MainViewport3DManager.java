@@ -29,12 +29,16 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.euclid.Axis3D;
+import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
+import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.LevelOrbitalCoordinateProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.OrbitalCoordinateProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -134,12 +138,12 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
    // Camera controls
 
-   public void setCameraTargetTypeToTrack(TrackingTargetType targetType)
+   public void setCameraFocalTargetTypeToTrack(TrackingTargetType targetType)
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getFocalPointHandler().targetTypeProperty().set(targetType));
    }
 
-   public void setCameraNodeToTrack(Node nodeToTrack)
+   public void setCameraFocalNodeToTrack(Node nodeToTrack)
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
@@ -147,15 +151,15 @@ public class MainViewport3DManager implements SingleViewport3DManager
       });
    }
 
-   public void setCameraCoordinatesToTrack(YoTuple3DDefinition coordinatesToTrack)
+   public void setCameraFocalPositionToTrack(YoTuple3DDefinition coordinatesToTrack)
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
-         Tuple3DProperty tuple3DProperty;
+         Tuple3DProperty coordinatesProperty;
 
          try
          {
-            tuple3DProperty = CompositePropertyTools.toTuple3DProperty(yoManager.getRootRegistryDatabase(), referenceFrameManager, coordinatesToTrack);
+            coordinatesProperty = CompositePropertyTools.toTuple3DProperty(yoManager.getRootRegistryDatabase(), referenceFrameManager, coordinatesToTrack);
          }
          catch (Exception e)
          {
@@ -163,7 +167,71 @@ public class MainViewport3DManager implements SingleViewport3DManager
             e.printStackTrace();
             return;
          }
-         cameraController.getFocalPointHandler().coordinatesToTrackProperty().setValue(tuple3DProperty);
+         cameraController.getFocalPointHandler().coordinatesToTrackProperty().setValue(coordinatesProperty);
+      });
+   }
+
+   public void setCameraPositionToTrack(YoTuple3DDefinition coordinatesToTrack)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         Tuple3DProperty coordinatesProperty;
+
+         try
+         {
+            coordinatesProperty = CompositePropertyTools.toTuple3DProperty(yoManager.getRootRegistryDatabase(), referenceFrameManager, coordinatesToTrack);
+         }
+         catch (Exception e)
+         {
+            // Print stack-trace and cancel operation
+            e.printStackTrace();
+            return;
+         }
+         cameraController.cameraPositionCoordinatesToTrackProperty().setValue(coordinatesProperty);
+      });
+   }
+
+   public void setCameraOrbitToTrack(YoOrbitalCoordinateDefinition coordinatesToTrack)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         OrbitalCoordinateProperty coordinatesProperty;
+
+         try
+         {
+            coordinatesProperty = new OrbitalCoordinateProperty(CompositePropertyTools.toCompositeProperty(yoManager.getRootRegistryDatabase(),
+                                                                                                           referenceFrameManager,
+                                                                                                           coordinatesToTrack));
+         }
+         catch (Exception e)
+         {
+            // Print stack-trace and cancel operation
+            e.printStackTrace();
+            return;
+         }
+         cameraController.cameraOrbitalCoordinatesToTrackProperty().setValue(coordinatesProperty);
+      });
+   }
+
+   public void setCameraLevelOrbitToTrack(YoLevelOrbitalCoordinateDefinition coordinatesToTrack)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         LevelOrbitalCoordinateProperty coordinatesProperty;
+
+         try
+         {
+            coordinatesProperty = new LevelOrbitalCoordinateProperty(CompositePropertyTools.toCompositeProperty(yoManager.getRootRegistryDatabase(),
+                                                                                                                referenceFrameManager,
+                                                                                                                coordinatesToTrack));
+         }
+         catch (Exception e)
+         {
+            // Print stack-trace and cancel operation
+            e.printStackTrace();
+            return;
+         }
+         cameraController.cameraLevelOrbitalCoordinatesToTrackProperty().setValue(coordinatesProperty);
       });
    }
 
@@ -177,7 +245,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.getOrbitHandler().setRotation(longitude, latitude, roll));
    }
 
-   public void setCameraFocusPosition(double x, double y, double z)
+   public void setCameraFocalPosition(double x, double y, double z)
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.setFocalPoint(x, y, z, false));
    }
@@ -216,7 +284,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
          PickResult pickResult = event.getPickResult();
          Node intersectedNode = pickResult.getIntersectedNode();
          if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == viewport || intersectedNode == nodeToTrackProperty.get()
-             || !filter.test(intersectedNode))
+               || !filter.test(intersectedNode))
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
          menuItem.setOnAction(e ->
