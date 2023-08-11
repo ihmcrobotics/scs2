@@ -66,11 +66,10 @@ public class CompositePropertyTools
       if (definition == null)
          return null;
 
-      CompositeProperty property = new CompositeProperty(definition.getType(),
-                                                         definition.getComponentIdentifiers(),
-                                                         toReferenceFrameProperty(yoVariableDatabase, referenceFrameManager, definition.getReferenceFrame()),
-                                                         toDoublePropertyArray(yoVariableDatabase, definition.getComponentValues()));
-      return property;
+      return new CompositeProperty(definition.getType(),
+                                   definition.getComponentIdentifiers(),
+                                   toReferenceFrameProperty(yoVariableDatabase, referenceFrameManager, definition.getReferenceFrame()),
+                                   toDoublePropertyArray(yoVariableDatabase, definition.getComponentValues()));
    }
 
    public static Tuple2DProperty toTuple2DProperty(YoVariableDatabase yoVariableDatabase,

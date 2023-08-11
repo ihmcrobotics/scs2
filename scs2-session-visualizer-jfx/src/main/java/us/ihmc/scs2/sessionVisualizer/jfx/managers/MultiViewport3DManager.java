@@ -10,6 +10,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.CameraControlRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 
 public class MultiViewport3DManager
@@ -45,21 +47,44 @@ public class MultiViewport3DManager
    // TODO Only available for the main viewport for now, need to expand this.
    public void submitRequest(Camera3DRequest request)
    {
-      if (request.getTrackingTargetType() == null)
-         return;
-      switch (request.getTrackingTargetType())
+      FocalPointRequest focalPointRequest = request.getFocalPointRequest();
+
+      if (focalPointRequest != null && focalPointRequest.getTrackingTargetType() != null)
       {
-         case Node:
-            mainViewport.setCameraNodeToTrack(request.getNode());
-            break;
-         case YoCoordinates:
-            mainViewport.setCameraCoordinatesToTrack(request.getCoordinatesToTrack());
-            break;
-         case Disabled:
-            mainViewport.setCameraTargetTypeToTrack(TrackingTargetType.Disabled);
-            break;
-         default:
-            throw new IllegalStateException("Unexpected target type: " + request.getTrackingTargetType());
+         switch (focalPointRequest.getTrackingTargetType())
+         {
+            case Node:
+               mainViewport.setCameraFocalNodeToTrack(focalPointRequest.getNode());
+               break;
+            case YoCoordinates:
+               mainViewport.setCameraFocalPositionToTrack(focalPointRequest.getCoordinatesToTrack());
+               break;
+            case Disabled:
+               mainViewport.setCameraFocalTargetTypeToTrack(TrackingTargetType.Disabled);
+               break;
+            default:
+               throw new IllegalStateException("Unexpected target type: " + focalPointRequest.getTrackingTargetType());
+         }
+      }
+
+      CameraControlRequest cameraControlRequest = request.getCameraControlRequest();
+
+      if (cameraControlRequest != null && cameraControlRequest.getControlMode() != null)
+      {
+         switch (cameraControlRequest.getControlMode())
+         {
+            case Position:
+               mainViewport.setCameraPositionToTrack(cameraControlRequest.getPositionToTrack());
+               break;
+            case Orbital:
+               mainViewport.setCameraOrbitToTrack(cameraControlRequest.getOrbitToTrack());
+               break;
+            case LevelOrbital:
+               mainViewport.setCameraLevelOrbitToTrack(cameraControlRequest.getLevelOrbitToTrack());
+               break;
+            default:
+               throw new IllegalStateException("Unexpected control mode: " + cameraControlRequest.getControlMode());
+         }
       }
    }
 

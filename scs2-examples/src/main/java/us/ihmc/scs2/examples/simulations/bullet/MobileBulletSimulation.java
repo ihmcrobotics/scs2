@@ -67,13 +67,13 @@ public class MobileBulletSimulation
       if (VISUALIZE_WITH_DEBUG_DRAWING)
       {
          SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getSessionVisualizerControls().setCameraFocusPosition(0.0, 0.0, 0.7);
+         sessionVisualizer.getSessionVisualizerControls().setCameraFocalPosition(0.0, 0.0, 0.7);
          sessionVisualizer.getToolkit().getSession().runTick();
       }
       else
       {
          SessionVisualizerControls sessionVisualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, null);
-         sessionVisualizerControls.setCameraFocusPosition(0.0, 0.0, 0.7);
+         sessionVisualizerControls.setCameraFocalPosition(0.0, 0.0, 0.7);
       }
    }
 }

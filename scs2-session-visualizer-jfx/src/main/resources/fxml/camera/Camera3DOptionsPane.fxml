@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXCheckBox?>
 <?import com.jfoenix.controls.JFXComboBox?>
 <?import com.jfoenix.controls.JFXRadioButton?>
 <?import com.jfoenix.controls.JFXTextField?>
@@ -84,7 +83,6 @@
                         <ColumnConstraints halignment="RIGHT" hgrow="NEVER" />
                         <ColumnConstraints hgrow="SOMETIMES" />
                         <ColumnConstraints hgrow="NEVER" />
-                        <ColumnConstraints hgrow="NEVER" />
                      </columnConstraints>
                      <rowConstraints>
                         <RowConstraints vgrow="SOMETIMES" />
@@ -113,9 +111,6 @@
                               <Image url="@../../icons/invalid-icon.png" />
                            </image>
                         </ImageView>
-                        <JFXCheckBox text="Dolly" GridPane.columnIndex="3" />
-                        <JFXCheckBox text="Dolly" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                        <JFXCheckBox text="Dolly" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                      </children>
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
