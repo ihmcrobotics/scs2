@@ -761,6 +761,30 @@ public class SharedMemoryIOTools
          {
             // TODO Should be replaced with YoRegistry.getChild(String) when available.
             YoRegistry registry = parentRegistry.findRegistry(new YoNamespace(fieldName));
+
+            if (registry == null)
+            { // First check if the variable name may have been truncated.
+               if (fieldName.length() == MATLAB_VARNAME_MAX_LENGTH)
+               {
+                  // Look for variables with names that are too long and start the same as our fieldName
+                  List<YoRegistry> candidates = parentRegistry.getChildren()
+                                                              .stream()
+                                                              .filter(child -> child.getName().length() > MATLAB_VARNAME_MAX_LENGTH
+                                                                               && child.getName().startsWith(fieldName))
+                                                              .toList();
+                  // We succeed only if there's a single candidate variable
+                  if (candidates.size() == 1)
+                     registry = candidates.get(0);
+                  else if (candidates.size() > 1)
+                     LogTools.error("Found multiple candidate registries for the possibly truncated name {}. Candidates: {}.",
+                                    fieldName,
+                                    candidates.stream().map(YoRegistry::getName).toList());
+               }
+            }
+
+            if (registry == null)
+               throw new IllegalArgumentException("Could not find the registry " + fieldName + " in " + parentRegistry);
+
             importMatlabStruct((Struct) field, registry, buffer);
          }
       }
