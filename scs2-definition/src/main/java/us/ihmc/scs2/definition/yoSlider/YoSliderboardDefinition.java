@@ -20,14 +20,9 @@ public class YoSliderboardDefinition
    private String name;
 
    /**
-    * Type value for the BCF2000.
-    */
-   public static final String BCF2000 = "BCF2000";
-
-   /**
     * The type of sliderboard to use with this definition.
     */
-   private String type = BCF2000;
+   private YoSliderboardType type = YoSliderboardType.BCF2000;
    private List<YoKnobDefinition> knobs = new ArrayList<>();
    private List<YoButtonDefinition> buttons = new ArrayList<>();
    private List<YoSliderDefinition> sliders = new ArrayList<>();
@@ -41,7 +36,7 @@ public class YoSliderboardDefinition
       this.name = name;
    }
 
-   public YoSliderboardDefinition(String name, String type)
+   public YoSliderboardDefinition(String name, YoSliderboardType type)
    {
       this.name = name;
       this.type = type;
@@ -77,7 +72,7 @@ public class YoSliderboardDefinition
    }
 
    @XmlAttribute
-   public void setType(String type)
+   public void setType(YoSliderboardType type)
    {
       this.type = type;
    }
@@ -105,7 +100,7 @@ public class YoSliderboardDefinition
       return name;
    }
 
-   public String getType()
+   public YoSliderboardType getType()
    {
       return type;
    }

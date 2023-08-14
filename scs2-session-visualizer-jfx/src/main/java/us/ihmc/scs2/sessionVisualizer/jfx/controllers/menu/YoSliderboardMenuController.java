@@ -25,6 +25,12 @@ public class YoSliderboardMenuController implements VisualizerController
    @FXML
    public void openBCF2000SliderboardWindow()
    {
-      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.bcf2000SliderboardWindow(owner));
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.bfc2000SliderboardWindow(owner));
+   }
+
+   @FXML
+   public void openXTouchSliderboardWindow()
+   {
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.xtouchCompactSliderboardWindow(owner));
    }
 }

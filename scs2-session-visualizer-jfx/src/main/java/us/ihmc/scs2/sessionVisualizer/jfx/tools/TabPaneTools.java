@@ -88,12 +88,20 @@ public class TabPaneTools
    {
       return tabPane ->
       {
-         FontAwesomeIconView removeAllIcon = new FontAwesomeIconView();
-         removeAllIcon.getStyleClass().add("remove-icon-view");
-         MenuItem removeMenuItem = new MenuItem(text, removeAllIcon);
+         return removeAllMenuItem(text, removeOnlyClosableTabs, tabPane);
+      };
+   }
 
+   public static MenuItem removeAllMenuItem(String text, boolean removeOnlyClosableTabs, TabPane tabPane)
+   {
+      FontAwesomeIconView removeAllIcon = new FontAwesomeIconView();
+      removeAllIcon.getStyleClass().add("remove-icon-view");
+      MenuItem removeMenuItem = new MenuItem(text, removeAllIcon);
+
+      removeMenuItem.setOnAction(e2 ->
+      {
          if (tabPane.getTabs().isEmpty())
-            return null;
+            return;
 
          List<Tab> tabsToclose;
          if (removeOnlyClosableTabs)
@@ -102,27 +110,35 @@ public class TabPaneTools
             tabsToclose = tabPane.getTabs();
 
          if (tabsToclose.isEmpty())
-            return null;
-         removeMenuItem.setOnAction(e2 -> tabPane.getTabs().removeAll(tabsToclose));
-         return removeMenuItem;
-      };
+            return;
+
+         tabPane.getTabs().removeAll(tabsToclose);
+
+      });
+      return removeMenuItem;
    }
 
    public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(Supplier<Tab> addAction)
    {
-      return addBeforeMenuItemFactory(i -> addAction.get());
+      return addBeforeMenuItemFactory(addAction, "Add before");
    }
 
-   public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(IntFunction<Tab> addAction)
+   public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(Supplier<Tab> addAction, String title)
+   {
+      return addBeforeMenuItemFactory(i -> addAction.get(), title);
+   }
+
+   public static Function<TabPane, MenuItem> addBeforeMenuItemFactory(IntFunction<Tab> addAction, String title)
    {
       return tabPane ->
       {
+
          ObservableList<Tab> tabs = tabPane.getTabs();
          int selectedIndex = tabPane.getSelectionModel().getSelectedIndex();
 
          FontAwesomeIconView addBeforeIcon = new FontAwesomeIconView();
          addBeforeIcon.getStyleClass().add("add-icon-view");
-         MenuItem addBefore = new MenuItem("Add before", addBeforeIcon);
+         MenuItem addBefore = new MenuItem(title, addBeforeIcon);
 
          addBefore.setOnAction(e2 ->
          {
@@ -140,10 +156,15 @@ public class TabPaneTools
 
    public static Function<TabPane, MenuItem> addAfterMenuItemFactory(Supplier<Tab> addAction)
    {
-      return addAfterMenuItemFactory(i -> addAction.get());
+      return addAfterMenuItemFactory(addAction, "Add after");
    }
 
-   public static Function<TabPane, MenuItem> addAfterMenuItemFactory(IntFunction<Tab> addAction)
+   public static Function<TabPane, MenuItem> addAfterMenuItemFactory(Supplier<Tab> addAction, String title)
+   {
+      return addAfterMenuItemFactory(i -> addAction.get(), title);
+   }
+
+   public static Function<TabPane, MenuItem> addAfterMenuItemFactory(IntFunction<Tab> addAction, String title)
    {
       return tabPane ->
       {
@@ -152,7 +173,7 @@ public class TabPaneTools
 
          FontAwesomeIconView addAfterIcon = new FontAwesomeIconView();
          addAfterIcon.getStyleClass().add("add-icon-view");
-         MenuItem addAfter = new MenuItem("Add after", addAfterIcon);
+         MenuItem addAfter = new MenuItem(title, addAfterIcon);
 
          addAfter.setOnAction(e2 ->
          {
@@ -165,6 +186,56 @@ public class TabPaneTools
          });
 
          return addAfter;
+
       };
+   }
+
+   public static MenuItem addLastMenuItem(TabPane tabPane, Supplier<Tab> addAction, String title)
+   {
+      FontAwesomeIconView addAfterIcon = new FontAwesomeIconView();
+      addAfterIcon.getStyleClass().add("add-icon-view");
+      MenuItem addLast = new MenuItem(title, addAfterIcon);
+
+      addLast.setOnAction(e2 ->
+      {
+         Tab newTab = addAction.get();
+         if (newTab != null)
+         {
+            ObservableList<Tab> tabs = tabPane.getTabs();
+            tabs.add(newTab);
+            tabPane.getSelectionModel().selectLast();
+         }
+      });
+
+      return addLast;
+   }
+
+   public static MenuItem removeSelectedMenuItem(String title, TabPane tabPane)
+   {
+      FontAwesomeIconView removeIcon = new FontAwesomeIconView();
+      removeIcon.getStyleClass().add("remove-icon-view");
+      MenuItem removeMenuItem = new MenuItem(title, removeIcon);
+
+      removeMenuItem.setOnAction(e2 ->
+      {
+         int selectedIndex = tabPane.getSelectionModel().getSelectedIndex();
+         if (selectedIndex < 0)
+            return;
+         tabPane.getTabs().remove(selectedIndex);
+
+         if (tabPane.getTabs().size() > 0)
+         {
+            if (selectedIndex == 0)
+            {
+               tabPane.getSelectionModel().select(0);
+            }
+            else
+            {
+               tabPane.getSelectionModel().select(selectedIndex - 1);
+            }
+         }
+      });
+
+      return removeMenuItem;
    }
 }
