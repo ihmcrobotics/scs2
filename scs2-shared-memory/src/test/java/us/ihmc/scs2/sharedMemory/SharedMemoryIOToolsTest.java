@@ -10,12 +10,14 @@ import java.util.Random;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryRandomTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTestTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 public class SharedMemoryIOToolsTest
 {
@@ -110,5 +112,35 @@ public class SharedMemoryIOToolsTest
 
       Files.delete(Paths.get(dataFileName));
       Files.delete(Paths.get(registryFileName));
+   }
+
+   @Test
+   public void testExportImportMatlabLongName() throws JAXBException, IOException
+   {
+      Random random = new Random(35453);
+
+      String dataFileName = "./bufferMatlabExport.scs2.mat";
+      String registryFileName = "./bufferMatlabExport.scs2.registry";
+
+      for (int i = 0; i < 100; i++)
+      {
+         YoRegistry exportedRoot = SharedMemoryRandomTools.nextYoRegistryTree(random, 20, 20)[0];
+         new YoDouble(SharedMemoryRandomTools.nextAlphanumericString(random, 256, 300), exportedRoot);
+
+         YoSharedBuffer exportedBuffer = SharedMemoryRandomTools.nextYoSharedBuffer(random, exportedRoot);
+         SharedMemoryIOTools.exportRegistry(exportedRoot, new FileOutputStream(registryFileName));
+         SharedMemoryIOTools.exportDataMatlab(exportedBuffer, new File(dataFileName));
+
+         YoRegistry importedRoot = SharedMemoryIOTools.importRegistry(new FileInputStream(registryFileName));
+         SharedMemoryTestTools.assertYoRegistryEquals(exportedRoot, importedRoot);
+         YoSharedBuffer importedBuffer = SharedMemoryIOTools.importDataMatlab(new File(dataFileName), importedRoot);
+
+         exportedBuffer.cropBuffer(new CropBufferRequest(exportedBuffer.getProperties().getInPoint(), exportedBuffer.getProperties().getOutPoint()));
+
+         SharedMemoryTestTools.assertYoSharedBufferEquals(exportedBuffer, importedBuffer, 0.0);
+      }
+
+//      Files.delete(Paths.get(dataFileName));
+//      Files.delete(Paths.get(registryFileName));
    }
 }
