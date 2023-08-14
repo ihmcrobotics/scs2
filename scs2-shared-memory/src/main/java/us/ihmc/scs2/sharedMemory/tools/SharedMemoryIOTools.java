@@ -29,6 +29,7 @@ import us.hebi.matlab.mat.types.MatFile;
 import us.hebi.matlab.mat.types.MatFile.Entry;
 import us.hebi.matlab.mat.types.Matrix;
 import us.hebi.matlab.mat.types.Struct;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoVariable.YoBooleanDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoDoubleDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEnumDefinition;
@@ -56,6 +57,8 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SharedMemoryIOTools
 {
+   public static final int MATLAB_VARNAME_MAX_LENGTH = 63;
+
    public enum DataFormat
    {
       ASCII(".scs2.ascii"), CSV(".scs2.csv"), MATLAB(".scs2.mat");
@@ -280,7 +283,8 @@ public class SharedMemoryIOTools
       if (registryFilter != null)
       {
          List<YoRegistry> filteredRegistries = YoSearchTools.filterRegistries(registryFilter, buffer.getRootRegistry());
-         yoVariableBufferStream = filteredRegistries.stream().flatMap(registry -> registry.getVariables().stream())
+         yoVariableBufferStream = filteredRegistries.stream()
+                                                    .flatMap(registry -> registry.getVariables().stream())
                                                     .map(yoVariable -> buffer.getRegistryBuffer().findYoVariableBuffer(yoVariable));
       }
       else
@@ -323,7 +327,8 @@ public class SharedMemoryIOTools
       if (registryFilter != null)
       {
          List<YoRegistry> filteredRegistries = YoSearchTools.filterRegistries(registryFilter, buffer.getRootRegistry());
-         yoVariableBufferStream = filteredRegistries.stream().flatMap(registry -> registry.getVariables().stream())
+         yoVariableBufferStream = filteredRegistries.stream()
+                                                    .flatMap(registry -> registry.getVariables().stream())
                                                     .map(yoVariable -> buffer.getRegistryBuffer().findYoVariableBuffer(yoVariable));
       }
       else
@@ -381,7 +386,7 @@ public class SharedMemoryIOTools
             byte[] byteBuffer = (byte[]) internalBuffer;
             String[] enumConstants = ((YoEnum<?>) yoVariableBuffer.getYoVariable()).getEnumValuesAsString();
             return (IntConsumer) position -> printStream.print(byteBuffer[position] == YoEnum.NULL_VALUE ? YoEnum.NULL_VALUE_STRING
-                  : enumConstants[byteBuffer[position]]);
+                                                                                                         : enumConstants[byteBuffer[position]]);
          }
 
          throw new IllegalArgumentException("Unhandled buffer type: " + yoVariableBuffer);
@@ -419,7 +424,8 @@ public class SharedMemoryIOTools
       if (registryFilter != null)
       {
          List<YoRegistry> filteredRegistries = YoSearchTools.filterRegistries(registryFilter, rootRegistry);
-         yoVariableBufferStream = filteredRegistries.stream().flatMap(registry -> registry.getVariables().stream())
+         yoVariableBufferStream = filteredRegistries.stream()
+                                                    .flatMap(registry -> registry.getVariables().stream())
                                                     .map(yoVariable -> buffer.getRegistryBuffer().findYoVariableBuffer(yoVariable));
       }
       else
@@ -727,7 +733,28 @@ public class SharedMemoryIOTools
          {
             YoVariable variable = parentRegistry.getVariable(fieldName);
             if (variable == null)
+            { // First check if the variable name may have been truncated.
+               if (fieldName.length() == MATLAB_VARNAME_MAX_LENGTH)
+               {
+                  // Look for variables with names that are too long and start the same as our fieldName
+                  List<YoVariable> candidates = parentRegistry.getVariables()
+                                                              .stream()
+                                                              .filter(child -> child.getName().length() > MATLAB_VARNAME_MAX_LENGTH
+                                                                               && child.getName().startsWith(fieldName))
+                                                              .toList();
+                  // We succeed only if there's a single candidate variable
+                  if (candidates.size() == 1)
+                     variable = candidates.get(0);
+                  else if (candidates.size() > 1)
+                     LogTools.error("Found multiple candidate variables for the possibly truncated name {}. Candidates: {}.",
+                                    fieldName,
+                                    candidates.stream().map(YoVariable::getName).toList());
+               }
+            }
+
+            if (variable == null)
                throw new IllegalArgumentException("Could not find the variable " + fieldName + " in " + parentRegistry);
+
             importMatlabMatrix(variable, (Matrix) field, buffer);
          }
          else if (field instanceof Struct)
