@@ -1,5 +1,7 @@
 package us.ihmc.scs2.sharedMemory;
 
+import static us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.MATLAB_VARNAME_MAX_LENGTH;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -16,6 +18,7 @@ import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryRandomTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTestTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 public class SharedMemoryIOToolsTest
 {
@@ -101,6 +104,41 @@ public class SharedMemoryIOToolsTest
 
          YoRegistry importedRoot = SharedMemoryIOTools.importRegistry(new FileInputStream(registryFileName));
          SharedMemoryTestTools.assertYoRegistryEquals(exportedBuffer.getRootRegistry(), importedRoot);
+         YoSharedBuffer importedBuffer = SharedMemoryIOTools.importDataMatlab(new File(dataFileName), importedRoot);
+
+         exportedBuffer.cropBuffer(new CropBufferRequest(exportedBuffer.getProperties().getInPoint(), exportedBuffer.getProperties().getOutPoint()));
+
+         SharedMemoryTestTools.assertYoSharedBufferEquals(exportedBuffer, importedBuffer, 0.0);
+      }
+
+      Files.delete(Paths.get(dataFileName));
+      Files.delete(Paths.get(registryFileName));
+   }
+
+   @Test
+   public void testExportImportMatlabLongName() throws JAXBException, IOException
+   {
+      Random random = new Random(35453);
+
+      String dataFileName = "./bufferMatlabExport.scs2.mat";
+      String registryFileName = "./bufferMatlabExport.scs2.registry";
+
+      for (int i = 0; i < 100; i++)
+      {
+         YoRegistry exportedRoot = SharedMemoryRandomTools.nextYoRegistryTree(random, 20, 20)[0];
+         new YoDouble(SharedMemoryRandomTools.nextAlphanumericString(random, MATLAB_VARNAME_MAX_LENGTH + 1, MATLAB_VARNAME_MAX_LENGTH + 100), exportedRoot);
+         YoRegistry longNameRegistry = new YoRegistry(SharedMemoryRandomTools.nextAlphanumericString(random,
+                                                                                                     MATLAB_VARNAME_MAX_LENGTH + 1,
+                                                                                                     MATLAB_VARNAME_MAX_LENGTH + 100));
+         exportedRoot.addChild(longNameRegistry);
+         new YoDouble("bloppy", longNameRegistry);
+
+         YoSharedBuffer exportedBuffer = SharedMemoryRandomTools.nextYoSharedBuffer(random, exportedRoot);
+         SharedMemoryIOTools.exportRegistry(exportedRoot, new FileOutputStream(registryFileName));
+         SharedMemoryIOTools.exportDataMatlab(exportedBuffer, new File(dataFileName));
+
+         YoRegistry importedRoot = SharedMemoryIOTools.importRegistry(new FileInputStream(registryFileName));
+         SharedMemoryTestTools.assertYoRegistryEquals(exportedRoot, importedRoot);
          YoSharedBuffer importedBuffer = SharedMemoryIOTools.importDataMatlab(new File(dataFileName), importedRoot);
 
          exportedBuffer.cropBuffer(new CropBufferRequest(exportedBuffer.getProperties().getInPoint(), exportedBuffer.getProperties().getOutPoint()));
