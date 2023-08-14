@@ -164,9 +164,13 @@ public class CameraOrbitHandler
       {
          if (disableCameraPoseAutoUpdate)
             return;
-         if (controlMode.getValue() != CameraControlMode.Position)
+         if (controlMode.getValue() == CameraControlMode.Orbital)
          {
             setOrbit(Double.NaN, newValue.doubleValue(), Double.NaN, Double.NaN);
+         }
+         else if (controlMode.getValue() == CameraControlMode.LevelOrbital)
+         {
+            setLevelOrbit(Double.NaN, newValue.doubleValue(), Double.NaN, Double.NaN);
          }
          else if (!longitude.isBound())
          {
@@ -255,9 +259,13 @@ public class CameraOrbitHandler
       {
          if (disableCameraPoseAutoUpdate)
             return;
-         if (controlMode.getValue() != CameraControlMode.Position)
+         if (controlMode.getValue() == CameraControlMode.Orbital)
          {
             setOrbit(newValue.doubleValue(), Double.NaN, Double.NaN, Double.NaN);
+         }
+         else if (controlMode.getValue() == CameraControlMode.LevelOrbital)
+         {
+            setLevelOrbit(newValue.doubleValue(), Double.NaN, Double.NaN, Double.NaN);
          }
          else if (!distance.isBound())
          {
