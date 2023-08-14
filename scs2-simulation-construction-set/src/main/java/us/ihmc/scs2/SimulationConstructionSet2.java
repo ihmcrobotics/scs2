@@ -20,6 +20,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
@@ -60,7 +61,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * <p>
  * Example for using {@code SimulationConstructionSet2} for setting up a simulation that will be
  * controlled via the visualizer:<br>
- * 
+ *
  * <pre>
  * SimulationConstructionSet2 scs = new SimulationConstructionSet2();
  * scs.addRobot(robot);
@@ -77,7 +78,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * <p>
  * Example for using {@code SimulationConstructionSet2} for doing an end-to-end simulation test
  * environment:<br>
- * 
+ *
  * <pre>
  * SimulationConstructionSet2 scs = new SimulationConstructionSet2();
  * scs.addRobot(robot);
@@ -86,35 +87,35 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * // Set nice camera angle, there are more methods for setting up the camera.
  * scs.setCameraFocusPosition(0.0, 0.0, 1.0);
  * scs.setCameraPosition(8.0, 0.0, 3.0);
- * 
+ *
  * for (int i = 0; i < numberOfChecks; i++)
  * {
  *    // Provide some input to the controller to test
  *    boolean successfullySimulated = scs.simulateNow(duration); // Simulate for the given duration and return when done
  *    assertTrue(successfullySimulated); // We check that the simulation completed normally without any exceptions.
  *    assert (robotIsWhereItShouldBe); // Perform some assertions
- * 
+ *
  *    // Provide some more input to the controller to test
  *    MutableObject<Throwable> robotDidNotDoSoGood = new MutableObject<Throwable>(null);
  *    scs.addSimulationThrowableListener(thrown -> robotDidNotDoSoGood.setValue(thrown)); // Allows to save any exception being thrown by a controller for instance.
  *    scs.addExternalTerminalCondition(() -> robotMadeItBeforeSimulationDuration); // This allows to terminate the next simulation early if the robot made it in advance.
- * 
+ *
  *    successfullySimulated = scs.simulateNow(forSomeMoreTime);
- * 
+ *
  *    assertTrue(successfullySimulated);
  *    assertNull(robotDidNotDoSoGood.getValue); // We can check that no exception has been thrown for instance (it is redundant with successfullySimulated though).
  * }
- * 
+ *
  * // Make sure we pause before resuming the thread.
  * scs.pause();
  * // Re-start the simulation thread so the visualizer is functional.
  * scs.startSimulationThread();
- * 
+ *
  * if (keepVisualizerUp)
  * { // This will cause this thread to pause and resume only once the user closes the visualizer.
  *    scs.waitUntilVisualizerDown();
  * }
- * 
+ *
  * // On shutdown, the visualizer already does that, so just being extra cautious here.
  * scs.shutdownSession();
  * // Free up that memory
@@ -123,7 +124,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * </p>
  * <p>
  * Example for using {@code SimulationConstructionSet2} for visualization:<br>
- * 
+ *
  * <pre>
  * // Use the do-nothing physics engine, that way you have 100% control on what the robot is doing.
  * SimulationConstructionSet2 scs = new SimulationConstructionSet2(SimulationConstructionSet2.doNothingPhysicsEngine());
@@ -132,7 +133,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * // Set nice camera angle, there are more methods for setting up the camera.
  * scs.setCameraFocusPosition(0.0, 0.0, 1.0);
  * scs.setCameraPosition(8.0, 0.0, 3.0);
- * 
+ *
  * for (int i = 0; i < numberOfThingsToDo; i++)
  * {
  *    // Do smart calculations
@@ -140,24 +141,24 @@ import us.ihmc.yoVariables.variable.YoVariable;
  *    // This will record the data in the buffer and also let the visualizer know to update its graphics.
  *    scs.simulateNow(1);
  * }
- * 
+ *
  * // Make sure we pause before resuming the thread.
  * scs.pause();
  * // Re-start the simulation thread so the visualizer is functional.
  * scs.startSimulationThread();
- * 
+ *
  * if (keepVisualizerUp)
  * { // This will cause this thread to pause and resume only once the user closes the visualizer.
  *    scs.waitUntilVisualizerDown();
  * }
- * 
+ *
  * // On shutdown, the visualizer already does that, so just being extra cautious here.
  * scs.shutdownSession();
  * // Free up that memory
  * scs = null;
  * </pre>
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public class SimulationConstructionSet2 implements YoVariableHolder, SimulationSessionControls, SessionVisualizerControls
@@ -169,7 +170,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * {@code true} by default.
     */
    public static final boolean DEFAULT_VISUALIZER_ENABLED = SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true)
-                                                            && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
+         && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
 
    private final SimulationSession simulationSession;
 
@@ -188,7 +189,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    /**
     * Factory for setting up a contact point based physics engine. It is the default physics engine and
     * is an adaptation of SCS1's physics engine.
-    * 
+    *
     * @return the physics engine factory.
     */
    public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory()
@@ -199,7 +200,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    /**
     * Factory for setting up a contact point based physics engine. It is the default physics engine and
     * is an adaptation of SCS1's physics engine.
-    * 
+    *
     * @param contactParameters the parameters to use for resolving contacts.
     * @return the physics engine factory.
     */
@@ -211,7 +212,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    /**
     * Factory for setting up an impulse based physics engine. It is still at the experimental phase but
     * can handle complex contact interactions.
-    * 
+    *
     * @return the physics engine factory.
     */
    public static PhysicsEngineFactory impulseBasedPhysicsEngineFactory()
@@ -222,7 +223,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    /**
     * Factory for setting up an impulse based physics engine. It is still at the experimental phase but
     * can handle complex contact interactions.
-    * 
+    *
     * @param contactParameters the parameters to use for resolving contacts.
     * @return the physics engine factory.
     */
@@ -238,7 +239,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * will still run the controllers attached to the robot and apply their output, but that's it. The
     * robot sensors are not updated.
     * </p>
-    * 
+    *
     * @return the physics engine factory.
     */
    public static PhysicsEngineFactory doNothingPhysicsEngine()
@@ -266,7 +267,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
-    * 
+    *
     * @param simulationName the name of the simulation.
     */
    public SimulationConstructionSet2(String simulationName)
@@ -281,7 +282,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
-    * 
+    *
     * @param physicsEngineFactory the factory to use for setting the physics engine.
     */
    public SimulationConstructionSet2(PhysicsEngineFactory physicsEngineFactory)
@@ -296,7 +297,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
-    * 
+    *
     * @param simulationName       the name of the simulation.
     * @param physicsEngineFactory the factory to use for setting the physics engine.
     */
@@ -308,7 +309,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Gets the internal session.
-    * 
+    *
     * @return the simulation session.
     */
    public SimulationSession getSimulationSession()
@@ -318,7 +319,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Gets the instance of the physics engine used in this simulation.
-    * 
+    *
     * @return the physics engine.
     */
    public PhysicsEngine getPhysicsEngine()
@@ -352,7 +353,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * When {@code false}, the visualizer can be closed and then restarted via
     * {@link #startSimulationThread()}.
     * </p>
-    * 
+    *
     * @param shutdownSessionOnVisualizerClose whether the visualizer should shut down the simulation
     *                                         when being closed. Default value {@code true}.
     */
@@ -417,7 +418,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Gets the list of robots being simulated.
-    * 
+    *
     * @return the simulated robots.
     */
    public List<? extends Robot> getRobots()
@@ -427,7 +428,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Adds a robot to this simulation.
-    * 
+    *
     * @param robotDefinition the definition to use for creating a new robot to add to this simulation.
     * @return the instantiated robot.
     */
@@ -438,7 +439,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Adds a robot to this simulation.
-    * 
+    *
     * @param robot the robot to add.
     */
    public void addRobot(Robot robot)
@@ -448,7 +449,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Adds a robots to this simulation.
-    * 
+    *
     * @param robots the robots to add.
     */
    public void addRobots(Collection<? extends Robot> robots)
@@ -458,7 +459,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Adds a terrain (static) object to the environment.
-    * 
+    *
     * @param terrainObjectDefinition the definition used to create the new terrain object.
     */
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
@@ -468,7 +469,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Adds terrain (static) objects to the environment.
-    * 
+    *
     * @param terrainObjectDefinitions the definitions used to create the new terrain objects.
     */
    public void addTerrainObjects(Collection<? extends TerrainObjectDefinition> terrainObjectDefinitions)
@@ -478,7 +479,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Convenience method for start the simulation environment and configuring a couple things at once.
-    * 
+    *
     * @param waitUntilVisualizerFullyUp setting it to {@code true} is recommended, especially if
     *                                   {@link ReferenceFrame}s or {@link YoVariable}s are to be added
     *                                   right after calling this method. This will let the visualizer
@@ -507,7 +508,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Gets the variable holding the current time (in seconds) in this simulation.
-    * 
+    *
     * @return the current time (in seconds) variable.
     */
    public YoDouble getTime()
@@ -520,7 +521,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <p>
     * It is typically <b>not</b> equal to {@link ReferenceFrame#getWorldFrame()}.
     * </p>
-    * 
+    *
     * @return the inertial frame.
     */
    public ReferenceFrame getInertialFrame()
@@ -533,7 +534,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <p>
     * This vector can be modified to change gravity for this simulation.
     * </p>
-    * 
+    *
     * @return the gravity vector used for this simulation. Default value is {@code (0, 0, -9.81)}.
     */
    public YoFrameVector3D getGravity()
@@ -561,7 +562,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Gets the simulation's root registry.
-    * 
+    *
     * @return the root registry.
     */
    public YoRegistry getRootRegistry()
@@ -571,7 +572,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /**
     * Adds a registry to the simulation's root registry.
-    * 
+    *
     * @param registry the registry to add.
     */
    public void addRegistry(YoRegistry registry)
@@ -1000,7 +1001,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>immediately if the call is done in the JavaFX thread,
     * <li>on the next iteration of the JavaFX thread if the call is done from another thread.
     * </p>
-    * 
+    *
     * @param task the task to schedule for when the visualizer is up.
     */
    public void executeOrScheduleVisualizerTask(Runnable task)
@@ -1130,45 +1131,45 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    }
 
    @Override
-   public void removeSliderboard(String sliderboardName)
+   public void removeSliderboard(String sliderboardName, YoSliderboardType sliderboardType)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboard(sliderboardName));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.removeSliderboard(sliderboardName, sliderboardType));
    }
 
    @Override
-   public void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition)
+   public void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardButton(sliderboardName, buttonDefinition));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardButton(sliderboardName, sliderboardType, buttonDefinition));
    }
 
    @Override
-   public void clearSliderboardButton(String sliderboardName, int buttonIndex)
+   public void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardButton(sliderboardName, buttonIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardButton(sliderboardName, sliderboardType, buttonIndex));
    }
 
    @Override
-   public void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition)
+   public void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardKnob(sliderboardName, knobDefinition));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardKnob(sliderboardName, sliderboardType, knobDefinition));
    }
 
    @Override
-   public void clearSliderboardKnob(String sliderboardName, int knobIndex)
+   public void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, knobIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderboardType, knobIndex));
    }
 
    @Override
-   public void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition)
+   public void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardSlider(sliderboardName, sliderDefinition));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.setSliderboardSlider(sliderboardName, sliderboardType, sliderDefinition));
    }
 
    @Override
-   public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
+   public void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex)
    {
-      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderIndex));
+      executeOrScheduleVisualizerTask(() -> visualizerControls.clearSliderboardSlider(sliderboardName, sliderboardType, sliderIndex));
    }
 
    @Override

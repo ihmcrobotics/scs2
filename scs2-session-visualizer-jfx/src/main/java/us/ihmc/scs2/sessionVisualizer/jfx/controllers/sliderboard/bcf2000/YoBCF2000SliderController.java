@@ -10,7 +10,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoVariableSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
-import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
+import us.ihmc.scs2.sessionVisualizer.sliderboard.MidiChannelConfig;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.SliderboardVariable;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -31,9 +31,9 @@ public class YoBCF2000SliderController extends YoBCF2000InputController
 
    private YoVariableSlider yoVariableSlider;
    private YoManager yoManager;
-   private BCF2000SliderboardController.Slider sliderChannel;
+   private MidiChannelConfig sliderChannel;
 
-   public void initialize(SessionVisualizerToolkit toolkit, BCF2000SliderboardController.Slider sliderChannel, SliderboardVariable sliderVariable)
+   public void initialize(SessionVisualizerToolkit toolkit, MidiChannelConfig sliderChannel, SliderboardVariable sliderVariable)
    {
       this.sliderChannel = sliderChannel;
       this.sliderVariable = sliderVariable;
