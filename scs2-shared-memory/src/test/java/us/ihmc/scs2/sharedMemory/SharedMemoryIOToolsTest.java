@@ -1,5 +1,7 @@
 package us.ihmc.scs2.sharedMemory;
 
+import static us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.MATLAB_VARNAME_MAX_LENGTH;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -124,7 +126,12 @@ public class SharedMemoryIOToolsTest
       for (int i = 0; i < 100; i++)
       {
          YoRegistry exportedRoot = SharedMemoryRandomTools.nextYoRegistryTree(random, 20, 20)[0];
-         new YoDouble(SharedMemoryRandomTools.nextAlphanumericString(random, 256, 300), exportedRoot);
+         new YoDouble(SharedMemoryRandomTools.nextAlphanumericString(random, MATLAB_VARNAME_MAX_LENGTH + 1, MATLAB_VARNAME_MAX_LENGTH + 100), exportedRoot);
+         YoRegistry longNameRegistry = new YoRegistry(SharedMemoryRandomTools.nextAlphanumericString(random,
+                                                                                                     MATLAB_VARNAME_MAX_LENGTH + 1,
+                                                                                                     MATLAB_VARNAME_MAX_LENGTH + 100));
+         exportedRoot.addChild(longNameRegistry);
+         new YoDouble("bloppy", longNameRegistry);
 
          YoSharedBuffer exportedBuffer = SharedMemoryRandomTools.nextYoSharedBuffer(random, exportedRoot);
          SharedMemoryIOTools.exportRegistry(exportedRoot, new FileOutputStream(registryFileName));
