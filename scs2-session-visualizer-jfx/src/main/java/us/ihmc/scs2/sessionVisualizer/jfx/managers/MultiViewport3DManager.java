@@ -85,6 +85,7 @@ public class MultiViewport3DManager
             default:
                throw new IllegalStateException("Unexpected control mode: " + cameraControlRequest.getControlMode());
          }
+         mainViewport.setCameraControlMode(cameraControlRequest.getControlMode());
       }
    }
 

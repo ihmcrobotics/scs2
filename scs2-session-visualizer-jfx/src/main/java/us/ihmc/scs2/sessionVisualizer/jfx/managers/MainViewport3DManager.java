@@ -34,6 +34,7 @@ import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraControlMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.TrackingTargetType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraOrbitHandler;
@@ -250,6 +251,11 @@ public class MainViewport3DManager implements SingleViewport3DManager
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.setFocalPoint(x, y, z, false));
    }
 
+   public void setCameraControlMode(CameraControlMode cameraControlMode)
+   {
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> cameraController.cameraControlMode().setValue(cameraControlMode));
+   }
+
    public void setCameraZoom(double distanceFromFocus)
    {
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
@@ -284,7 +290,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
          PickResult pickResult = event.getPickResult();
          Node intersectedNode = pickResult.getIntersectedNode();
          if (intersectedNode == null || intersectedNode instanceof SubScene || intersectedNode == viewport || intersectedNode == nodeToTrackProperty.get()
-               || !filter.test(intersectedNode))
+             || !filter.test(intersectedNode))
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
          menuItem.setOnAction(e ->
