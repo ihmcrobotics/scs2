@@ -3,11 +3,13 @@ package us.ihmc.scs2.examples.simulations;
 import us.ihmc.euclid.geometry.Pose3D;
 import us.ihmc.scs2.SimulationConstructionSet2;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
-import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraControlMode;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class CameraExampleSimulation
 {
+   private static final CameraControlMode controlModeToBind = CameraControlMode.Orbital;
+
    public static void main(String[] args)
    {
       BoxRobotDefinition definition = new BoxRobotDefinition();
@@ -36,21 +38,23 @@ public class CameraExampleSimulation
 
       scs.addAfterPhysicsCallback(time ->
       {
-         cameraX.set(0.25 * Math.sin(2.0 * Math.PI / 2.0) + Math.toRadians(30));
-         cameraY.set(0.25 * Math.sin(2.0 * Math.PI / 2.0) + Math.toRadians(60));
-         cameraZ.set(0.25 * Math.sin(2.0 * Math.PI / 2.0) + Math.toRadians(90));
+         cameraX.set(2.0 + 0.25 * Math.sin(2.0 * Math.PI / 2.0 * time + Math.toRadians(30)));
+         cameraY.set(3.5 + 0.25 * Math.sin(2.0 * Math.PI / 2.0 * time + Math.toRadians(60)));
+         cameraZ.set(1.0 + 0.25 * Math.sin(2.0 * Math.PI / 2.0 * time + Math.toRadians(90)));
 
-         cameraDistance.set(0.25 * (1.0 + Math.sin(2.0 * Math.PI / 2.0) + Math.toRadians(30)));
-         cameraLongitude.set(0.25 * Math.sin(2.0 * Math.PI / 2.0) + Math.toRadians(60));
-         cameraLatitude.set(0.25 * Math.sin(2.0 * Math.PI / 2.0) + Math.toRadians(90));
+         cameraDistance.set(5.0 + 0.5 * (1 + Math.sin(2.0 * Math.PI / 2.0 * time + Math.toRadians(30))));
+         cameraLongitude.set(Math.toRadians(180) + Math.toRadians(90) * Math.sin(2.0 * Math.PI / 10.0 * time + Math.toRadians(60)));
+         cameraLatitude.set(Math.toRadians(30.0) * (1 + Math.sin(2.0 * Math.PI / 2.0 * time + Math.toRadians(30))));
       });
 
       scs.requestCameraRigidBodyTracking(definition.getName(), definition.getFloatingRootJointDefinition().getSuccessor().getName());
-//      scs.requestCameraPositionTracking(cameraX, cameraY, cameraZ);
-//      scs.requestCameraOrbitTracking(cameraDistance, cameraLongitude, cameraLatitude);
-      scs.requestCameraLevelOrbitTracking(cameraDistance, cameraLongitude, cameraZ);
-      
-      
+      if (controlModeToBind == CameraControlMode.Position)
+         scs.requestCameraPositionTracking(cameraX, cameraY, cameraZ);
+      else if (controlModeToBind == CameraControlMode.Orbital)
+         scs.requestCameraOrbitTracking(cameraDistance, cameraLongitude, cameraLatitude);
+      else if (controlModeToBind == CameraControlMode.LevelOrbital)
+         scs.requestCameraLevelOrbitTracking(cameraDistance, cameraLongitude, cameraZ);
+
       scs.initializeBufferSize(100000);
       scs.setRealTimeRateSimulation(true);
       scs.start(true, false, false);
