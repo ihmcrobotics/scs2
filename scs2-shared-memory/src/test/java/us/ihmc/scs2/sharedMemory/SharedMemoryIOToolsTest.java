@@ -10,7 +10,6 @@ import java.util.Random;
 
 import javax.xml.bind.JAXBException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
@@ -140,7 +139,7 @@ public class SharedMemoryIOToolsTest
          SharedMemoryTestTools.assertYoSharedBufferEquals(exportedBuffer, importedBuffer, 0.0);
       }
 
-//      Files.delete(Paths.get(dataFileName));
-//      Files.delete(Paths.get(registryFileName));
+      Files.delete(Paths.get(dataFileName));
+      Files.delete(Paths.get(registryFileName));
    }
 }
