@@ -18,6 +18,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController;
@@ -149,8 +150,11 @@ public class SecondaryWindowManager implements Manager
          case NewWindowRequest.GRAPHIC_EDITOR_WINDOW_TYPE:
             openYoGraphicEditor(request.requestSource);
             break;
-         case NewWindowRequest.BCF2000_SLIDERBOARD_WINDOW_TYPE:
-            sliderboardManager.openBCF2000SliderboardWindow(request.requestSource);
+         case NewWindowRequest.BFC2000_SLIDERBOARD_WINDOW_TYPE:
+            sliderboardManager.openSliderboardWindow(request.requestSource, YoSliderboardType.BCF2000);
+            return;
+         case NewWindowRequest.XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE:
+            sliderboardManager.openSliderboardWindow(request.requestSource, YoSliderboardType.XTOUCHCOMPACT);
             return;
          case NewWindowRequest.REGISTRY_STATISTICS_WINDOW_TYPE:
             openRegistryStatisticsWindow(request.requestSource, (String) request.additionalData);
@@ -366,7 +370,8 @@ public class SecondaryWindowManager implements Manager
    public static class NewWindowRequest
    {
       public static final String REGISTRY_STATISTICS_WINDOW_TYPE = "YoRegistryStatisticsWindow";
-      public static final String BCF2000_SLIDERBOARD_WINDOW_TYPE = "BC2000EditorWindow";
+      public static final String BFC2000_SLIDERBOARD_WINDOW_TYPE = "BFC2000EditorWindow";
+      public static final String XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE = "XTouchCompactEditorWindow";
       public static final String GRAPHIC_EDITOR_WINDOW_TYPE = "YoGraphicEditorWindow";
       public static final String COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE = "YoCompositeEditorWindow";
       public static final String SECONDARY_CHART_WINDOW_TYPE = "SecondaryChartWindow";
@@ -392,9 +397,14 @@ public class SecondaryWindowManager implements Manager
          return new NewWindowRequest(REGISTRY_STATISTICS_WINDOW_TYPE, requestSource, registry.getNamespace().toString());
       }
 
-      public static NewWindowRequest bcf2000SliderboardWindow(Window requestSource)
+      public static NewWindowRequest bfc2000SliderboardWindow(Window requestSource)
       {
-         return new NewWindowRequest(BCF2000_SLIDERBOARD_WINDOW_TYPE, requestSource);
+         return new NewWindowRequest(BFC2000_SLIDERBOARD_WINDOW_TYPE, requestSource);
+      }
+
+      public static NewWindowRequest xtouchCompactSliderboardWindow(Window requestSource)
+      {
+         return new NewWindowRequest(XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE, requestSource);
       }
 
       public static NewWindowRequest graphicEditorWindow(Window requestSource)

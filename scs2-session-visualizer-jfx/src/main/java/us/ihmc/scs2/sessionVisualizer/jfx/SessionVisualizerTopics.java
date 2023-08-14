@@ -4,6 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+
 import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
@@ -16,6 +18,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
@@ -83,13 +86,14 @@ public class SessionVisualizerTopics
    private Topic<Boolean> yoMultiSliderboardClearAll;
    private Topic<YoSliderboardListDefinition> yoMultiSliderboardSet;
    private Topic<YoSliderboardDefinition> yoSliderboardSet;
-   private Topic<String> yoSliderboardRemove;
-   private Topic<Pair<String, YoButtonDefinition>> yoSliderboardSetButton;
-   private Topic<Pair<String, YoKnobDefinition>> yoSliderboardSetKnob;
-   private Topic<Pair<String, YoSliderDefinition>> yoSliderboardSetSlider;
-   private Topic<Pair<String, Integer>> yoSliderboardClearButton;
-   private Topic<Pair<String, Integer>> yoSliderboardClearKnob;
-   private Topic<Pair<String, Integer>> yoSliderboardClearSlider;
+   private Topic<Pair<String, YoSliderboardType>> yoSliderboardRemove;
+
+   private Topic<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> yoSliderboardSetButton;
+   private Topic<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> yoSliderboardSetKnob;
+   private Topic<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> yoSliderboardSetSlider;
+   private Topic<ImmutableTriple<String, YoSliderboardType, Integer>> yoSliderboardClearButton;
+   private Topic<ImmutableTriple<String, YoSliderboardType, Integer>> yoSliderboardClearKnob;
+   private Topic<ImmutableTriple<String, YoSliderboardType, Integer>> yoSliderboardClearSlider;
 
    private Topic<Integer> controlsNumberPrecision;
 
@@ -432,37 +436,37 @@ public class SessionVisualizerTopics
       return yoSliderboardSet;
    }
 
-   public Topic<String> getYoSliderboardRemove()
+   public Topic<Pair<String, YoSliderboardType>> getYoSliderboardRemove()
    {
       return yoSliderboardRemove;
    }
 
-   public Topic<Pair<String, YoButtonDefinition>> getYoSliderboardSetButton()
+   public Topic<ImmutableTriple<String, YoSliderboardType, YoButtonDefinition>> getYoSliderboardSetButton()
    {
       return yoSliderboardSetButton;
    }
 
-   public Topic<Pair<String, YoKnobDefinition>> getYoSliderboardSetKnob()
+   public Topic<ImmutableTriple<String, YoSliderboardType, YoKnobDefinition>> getYoSliderboardSetKnob()
    {
       return yoSliderboardSetKnob;
    }
 
-   public Topic<Pair<String, YoSliderDefinition>> getYoSliderboardSetSlider()
+   public Topic<ImmutableTriple<String, YoSliderboardType, YoSliderDefinition>> getYoSliderboardSetSlider()
    {
       return yoSliderboardSetSlider;
    }
 
-   public Topic<Pair<String, Integer>> getYoSliderboardClearButton()
+   public Topic<ImmutableTriple<String, YoSliderboardType, Integer>> getYoSliderboardClearButton()
    {
       return yoSliderboardClearButton;
    }
 
-   public Topic<Pair<String, Integer>> getYoSliderboardClearKnob()
+   public Topic<ImmutableTriple<String, YoSliderboardType, Integer>> getYoSliderboardClearKnob()
    {
       return yoSliderboardClearKnob;
    }
 
-   public Topic<Pair<String, Integer>> getYoSliderboardClearSlider()
+   public Topic<ImmutableTriple<String, YoSliderboardType, Integer>> getYoSliderboardClearSlider()
    {
       return yoSliderboardClearSlider;
    }

@@ -7,18 +7,18 @@ import javax.sound.midi.ShortMessage;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
-public abstract class BCF2000ChannelController
+public abstract class BehringerChannelController
 {
-   protected final SliderboardVariable controlVariable;
+   private final SliderboardVariable controlVariable;
    protected final Receiver midiOut;
    protected final int channel;
 
-   private boolean enable;
+   protected boolean enable;
 
    private int currentDeviceValue = -1;
    private int newDeviceValue = -1;
 
-   public BCF2000ChannelController(SliderboardVariable controlVariable, int channel, Receiver midiOut)
+   public BehringerChannelController(SliderboardVariable controlVariable, int channel, Receiver midiOut)
    {
       this.controlVariable = controlVariable;
       this.channel = channel;
@@ -70,12 +70,12 @@ public abstract class BCF2000ChannelController
       }
    }
 
-   public void pushControlVariableToDevice()
+   protected void pushControlVariableToDevice()
    {
       pushValueToDevice(controlVariable.getValue());
    }
 
-   public void pushValueToDevice(int value)
+   protected void pushValueToDevice(int value)
    {
       if (!enable || value == -1)
          return;
@@ -98,7 +98,7 @@ public abstract class BCF2000ChannelController
             int alpha = (value - controlVariable.getMin()) / (controlVariable.getMax() - controlVariable.getMax());
             msgData = (int) Math.round(EuclidCoreTools.interpolate(0, 127, alpha));
          }
-         message.setMessage(176, 0, channel, msgData);
+         message.setMessage(ShortMessage.CONTROL_CHANGE, 0, channel, msgData);
          midiOut.send(message, -1);
       }
       catch (InvalidMidiDataException e)

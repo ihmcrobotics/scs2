@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_TYPE;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,8 +32,9 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoMultiBCF2000SliderboardWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -48,13 +50,14 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public interface SessionVisualizerControls
 {
+
    /**
     * Sets the camera's orbit with respect to the focus point.
     * <p>
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param latitude  controls the look up/down angle while keeping the focus point unchanged.
     * @param longitude controls the look left/right angle while keeping the focus point unchanged.
     * @see <a href=
@@ -65,7 +68,7 @@ public interface SessionVisualizerControls
 
    /**
     * Convenience methods to set the camera position.
-    * 
+    *
     * @param position the new camera position. Not modified.
     * @see #setCameraPosition(double, double, double)
     * @see <a href=
@@ -83,7 +86,7 @@ public interface SessionVisualizerControls
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param x the new x-coordinate for the camera position.
     * @param y the new y-coordinate for the camera position.
     * @param z the new z-coordinate for the camera position.
@@ -95,7 +98,7 @@ public interface SessionVisualizerControls
 
    /**
     * Convenience methods to set the camera position.
-    * 
+    *
     * @param position the new focus position. Not modified.
     * @see #setCameraFocusPosition(double, double, double)
     * @see <a href=
@@ -113,7 +116,7 @@ public interface SessionVisualizerControls
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param x the new x-coordinate for the focus point.
     * @param y the new y-coordinate for the focus point.
     * @param z the new z-coordinate for the focus point.
@@ -129,7 +132,7 @@ public interface SessionVisualizerControls
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
-    * 
+    *
     * @param distanceFromFocus the new distance between the camera and the focus point.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
@@ -139,7 +142,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the camera to track the rigid-body of a robot.
-    * 
+    *
     * @param robotName     the name of the robot to track.
     * @param rigidBodyName the name of the body to track.
     * @see <a href=
@@ -150,7 +153,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests to show the overhead view next to the 3D viewport where 2D graphics are displayed.
-    * 
+    *
     * @param show whether the plotter 2D should be visible or not.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
@@ -160,7 +163,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the plotter to track the {@code YoVariable} coordinates.
-    * 
+    *
     * @param position the position to track.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
@@ -173,7 +176,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the plotter to track the {@code YoVariable} coordinates.
-    * 
+    *
     * @param position  the position to track.
     * @param frameName the name of the reference frame in which the coordinates are expressed. If
     *                  {@code null}, world frame is used.
@@ -188,7 +191,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the plotter to track the {@code YoVariable} coordinates.
-    * 
+    *
     * @param xVariable the {@code YoVariable} to track for the x-coordinate.
     * @param yVariable the {@code YoVariable} to track for the y-coordinate.
     * @param frameName the name of the reference frame in which the coordinates are expressed. If
@@ -204,7 +207,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the plotter to track the {@code YoVariable} coordinates.
-    * 
+    *
     * @param xVariableName the name (fullname or short name) of the {@code YoVariable} to track. Can be
     *                      a double value.
     * @param yVariableName the name (fullname or short name) of the {@code YoVariable} to track. Can be
@@ -219,7 +222,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds a static graphic to the 3D scene.
-    * 
+    *
     * @param visualDefinition the visual to be added to the 3D scene.
     * @see VisualDefinitionFactory
     */
@@ -227,7 +230,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds a collection of static graphic to the 3D scene.
-    * 
+    *
     * @param visualDefinitions the collection of visuals to be added to the 3D scene.
     * @see VisualDefinitionFactory
     */
@@ -242,7 +245,7 @@ public interface SessionVisualizerControls
    /**
     * Removes a static graphic that was previously added via
     * {@link #addStaticVisual(VisualDefinition)}.
-    * 
+    *
     * @param visualDefinition the visual to remove from the 3D scene.
     * @see VisualDefinitionFactory
     */
@@ -251,7 +254,7 @@ public interface SessionVisualizerControls
    /**
     * Removes a collection of static graphics that were previously added via
     * {@link #addStaticVisual(VisualDefinition)}.
-    * 
+    *
     * @param visualDefinitions the visuals to remove from the 3D scene.
     */
    default void removeStaticVisuals(Collection<? extends VisualDefinition> visualDefinitions)
@@ -276,7 +279,7 @@ public interface SessionVisualizerControls
     * <p>
     * If the yoGraphic found is a group, it is removed as well as all of its children and descendants.
     * </p>
-    * 
+    *
     * @param name the name of the yoGraphic to remove. If the name contains
     *             {@value YoGraphicDefinition#SEPARATOR}, it is split at the last occurrence to extract
     *             a namespace and the actual yoGraphic name.
@@ -298,7 +301,7 @@ public interface SessionVisualizerControls
     * If the yoGraphic found is a group, it is sets the visible property for all of its children and
     * descendants as well.
     * </p>
-    * 
+    *
     * @param name the name of the yoGraphic to remove. If the name contains
     *             {@value YoGraphicDefinition#SEPARATOR}, it is split at the last occurrence to extract
     *             a namespace and the actual yoGraphic name.
@@ -307,7 +310,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
-    * 
+    *
     * @param yoGraphicDefinition the definition of the graphic to be added.
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
@@ -318,7 +321,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds dynamic graphics to the 3D scene. The new graphics are added to root group.
-    * 
+    *
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
@@ -335,7 +338,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds a dynamic graphic to the 3D scene.
-    * 
+    *
     * @param namespace           the desired namespace for the new graphic. The separator used is
     *                            {@value YoGraphicDefinition#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
@@ -364,7 +367,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds dynamic graphics to the 3D scene.
-    * 
+    *
     * @param namespace            the desired namespace for the new graphics. The separator used is
     *                             {@value YoGraphicDefinition#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
@@ -395,7 +398,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds a variable entry to the default entry tab.
-    * 
+    *
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
@@ -408,7 +411,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds variable entries to the default entry tab.
-    * 
+    *
     * @param variableNames the name of the variables to add. The variables will be looked up using
     *                      {@link YoRegistry#findVariable(String)}.
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
@@ -422,7 +425,7 @@ public interface SessionVisualizerControls
    /**
     * Adds a variable entry to the entry tab named {@code groupName}. The tab will be created if it
     * doesn't exist yet.
-    * 
+    *
     * @param groupName    the name of the tab.
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
@@ -437,7 +440,7 @@ public interface SessionVisualizerControls
    /**
     * Adds variable entries to the entry tab named {@code groupName}. The tab will be created if it
     * doesn't exist yet.
-    * 
+    *
     * @param groupName    the name of the tab.
     * @param variableName the name of the variables to add. The variables will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
@@ -448,7 +451,7 @@ public interface SessionVisualizerControls
 
    /**
     * Loads a sliderboard configuration from an input stream and overrides the current configuration.
-    * 
+    *
     * @param inputStream the input stream used to load the sliderboard configuration.
     * @see FileInputStream
     */
@@ -466,7 +469,7 @@ public interface SessionVisualizerControls
 
    /**
     * Overrides the current sliderboard configuration with the given list of sliderboards.
-    * 
+    *
     * @param sliderboardListDefinition the list of sliderboard configurations to use.
     */
    void setSliderboards(YoSliderboardListDefinition sliderboardListDefinition);
@@ -483,10 +486,10 @@ public interface SessionVisualizerControls
     * Sets the configuration of the default sliderboard.
     * <p>
     * Note that the default sliderboard named
-    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
-    * after clearing all sliderboards, in such case it is only cleared of its bindings.
+    * {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even after
+    * clearing all sliderboards, in such case it is only cleared of its bindings.
     * </p>
-    * 
+    *
     * @param sliderboardDefinition the new configuration for the default sliderboard.
     */
    default void setDefaultSliderboard(YoSliderboardDefinition sliderboardDefinition)
@@ -500,7 +503,7 @@ public interface SessionVisualizerControls
     */
    default void clearDefaultSliderboard()
    {
-      removeSliderboard(DEFAULT_SLIDERBOARD_NAME);
+      removeSliderboard(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE);
    }
 
    /**
@@ -513,12 +516,12 @@ public interface SessionVisualizerControls
     * </p>
     * <p>
     * Note that the default sliderboard named
-    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even
-    * after clearing all sliderboards. If the given configuration is named
-    * {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
+    * {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME} always exists even after
+    * clearing all sliderboards. If the given configuration is named
+    * {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
     * sliderboard configuration overridden.
     * </p>
-    * 
+    *
     * @param sliderboardDefinition the sliderboard configuration to set or add, depending if there is
     *                              an existing sliderboard matching the name or not.
     */
@@ -528,20 +531,22 @@ public interface SessionVisualizerControls
     * Removes the sliderboard that matches the given name.
     * <p>
     * If there is no existing sliderboard matching the given name, nothing happens. If the given name
-    * is {@value YoMultiBCF2000SliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
+    * is {@value YoMultiSliderboardWindowController#DEFAULT_SLIDERBOARD_NAME}, then the default
     * sliderboard is cleared but not removed.
     * </p>
-    * 
+    *
     * @param sliderboardName the name of the sliderboard to remove.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     */
-   void removeSliderboard(String sliderboardName);
+   void removeSliderboard(String sliderboardName, YoSliderboardType sliderboardType);
 
    /**
     * Configures a button of the default sliderboard.
     * <p>
     * If the button was already configured, then its configuration is overridden.
     * </p>
-    * 
+    *
     * @param buttonIndex  the position of the button on the sliderboard. The first button has an index
     *                     of 0.
     * @param variableName the name of the {@code YoVariable} the button should be bound to. The
@@ -551,7 +556,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardButton(int buttonIndex, String variableName)
    {
-      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, new YoButtonDefinition(variableName, buttonIndex));
+      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, new YoButtonDefinition(variableName, buttonIndex));
    }
 
    /**
@@ -559,20 +564,22 @@ public interface SessionVisualizerControls
     * <p>
     * If the button was already configured, then its configuration is overridden.
     * </p>
-    * 
+    *
     * @param buttonDefinition the new configuration for the button.
     */
    default void setDefaultSliderboardButton(YoButtonDefinition buttonDefinition)
    {
-      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonDefinition);
+      setSliderboardButton(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, buttonDefinition);
    }
 
    /**
     * Configures a button of a sliderboard.
-    * 
+    *
     * @param sliderboardName used to retrieve the sliderboard for which the button is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param buttonIndex     the position of the button on the sliderboard. The first button has an
     *                        index of 0.
     * @param variableName    the name of the {@code YoVariable} the button should be bound to. The
@@ -580,48 +587,52 @@ public interface SessionVisualizerControls
     *                        no effect. The name can either be the fullname (including namespace) or
     *                        the simple name of the variable.
     */
-   default void setSliderboardButton(String sliderboardName, int buttonIndex, String variableName)
+   default void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex, String variableName)
    {
-      setSliderboardButton(sliderboardName, new YoButtonDefinition(variableName, buttonIndex));
+      setSliderboardButton(sliderboardName, sliderboardType, new YoButtonDefinition(variableName, buttonIndex));
    }
 
    /**
     * Configures a button of a sliderboard.
-    * 
+    *
     * @param sliderboardName  used to retrieve the sliderboard for which the button is to be
     *                         configured. If no sliderboard could be found, a new empty sliderboard is
     *                         created and added to the current list of available sliderboards.
+    * @param sliderboardType  the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                         YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param buttonDefinition the new configuration for the button.
     */
-   void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition);
+   void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition);
 
    /**
     * Clears the configuration of a button of the default sliderboard.
-    * 
+    *
     * @param buttonIndex the position of the button on the sliderboard. The first button has an index
     *                    of 0.
     */
    default void clearDefaultSliderboardButton(int buttonIndex)
    {
-      clearSliderboardButton(DEFAULT_SLIDERBOARD_NAME, buttonIndex);
+      clearSliderboardButton(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, buttonIndex);
    }
 
    /**
     * Clears the configuration of a button.
-    * 
+    *
     * @param sliderboardName used to retrieve the sliderboard for which the button is to be cleared. If
     *                        no sliderboard could be found, this method has no effect.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param buttonIndex     the position of the button on the sliderboard. The first button has an
     *                        index of 0.
     */
-   void clearSliderboardButton(String sliderboardName, int buttonIndex);
+   void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex);
 
    /**
     * Configures a knob of the default sliderboard.
     * <p>
     * If the knob was already configured, then its configuration is overridden.
     * </p>
-    * 
+    *
     * @param knobIndex    the position of the knob on the sliderboard. The first knob has an index of
     *                     0.
     * @param variableName the name of the {@code YoVariable} the knob should be bound to. The name can
@@ -630,7 +641,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardKnob(int knobIndex, String variableName)
    {
-      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, new YoKnobDefinition(variableName, knobIndex));
+      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, new YoKnobDefinition(variableName, knobIndex));
    }
 
    /**
@@ -638,67 +649,73 @@ public interface SessionVisualizerControls
     * <p>
     * If the knob was already configured, then its configuration is overridden.
     * </p>
-    * 
+    *
     * @param knobDefinition the new configuration for the knob.
     */
    default void setDefaultSliderboardKnob(YoKnobDefinition knobDefinition)
    {
-      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobDefinition);
+      setSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, knobDefinition);
    }
 
    /**
     * Configures a knob of a sliderboard.
-    * 
+    *
     * @param sliderboardName used to retrieve the sliderboard for which the knob is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param knobIndex       the position of the knob on the sliderboard. The first knob has an index
     *                        of 0.
     * @param variableName    the name of the {@code YoVariable} the knob should be bound to. The name
     *                        can either be the fullname (including namespace) or the simple name of the
     *                        variable.
     */
-   default void setSliderboardKnob(String sliderboardName, int knobIndex, String variableName)
+   default void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex, String variableName)
    {
-      setSliderboardKnob(sliderboardName, new YoKnobDefinition(variableName, knobIndex));
+      setSliderboardKnob(sliderboardName, sliderboardType, new YoKnobDefinition(variableName, knobIndex));
    }
 
    /**
     * Configures a knob of a sliderboard.
-    * 
+    *
     * @param sliderboardName used to retrieve the sliderboard for which the knob is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param knobDefinition  the new configuration for the knob.
     */
-   void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition);
+   void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition);
 
    /**
     * Clears the configuration of a knob of the default sliderboard.
-    * 
+    *
     * @param knobIndex the position of the knob on the sliderboard. The first knob has an index of 0.
     */
    default void clearDefaultSliderboardKnob(int knobIndex)
    {
-      clearSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, knobIndex);
+      clearSliderboardKnob(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, knobIndex);
    }
 
    /**
     * Clears the configuration of a knob.
-    * 
+    *
     * @param sliderboardName used to retrieve the sliderboard for which the knob is to be cleared. If
     *                        no sliderboard could be found, this method has no effect
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param knobIndex       the position of the knob on the sliderboard. The first knob has an index
     *                        of 0.
     */
-   void clearSliderboardKnob(String sliderboardName, int knobIndex);
+   void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex);
 
    /**
     * Configures a slider of the default sliderboard.
     * <p>
     * If the slider was already configured, then its configuration is overridden.
     * </p>
-    * 
+    *
     * @param sliderIndex  the position of the slider on the sliderboard. The first slider has an index
     *                     of 0.
     * @param variableName the name of the {@code YoVariable} the slider should be bound to. The name
@@ -707,7 +724,7 @@ public interface SessionVisualizerControls
     */
    default void setDefaultSliderboardSlider(int sliderIndex, String variableName)
    {
-      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, new YoSliderDefinition(variableName, sliderIndex));
+      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, new YoSliderDefinition(variableName, sliderIndex));
    }
 
    /**
@@ -715,57 +732,63 @@ public interface SessionVisualizerControls
     * <p>
     * If the slider was already configured, then its configuration is overridden.
     * </p>
-    * 
+    *
     * @param sliderDefinition the new configuration for the slider.
     */
    default void setDefaultSliderboardSlider(YoSliderDefinition sliderDefinition)
    {
-      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderDefinition);
+      setSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, sliderDefinition);
    }
 
    /**
     * Configures a slider of a sliderboard.
-    * 
+    *
     * @param sliderboardName used to retrieve the sliderboard for which the slider is to be configured.
     *                        If no sliderboard could be found, a new empty sliderboard is created and
     *                        added to the current list of available sliderboards.
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param sliderIndex     the position of the slider on the sliderboard. The first slider has an
     *                        index of 0.
     * @param variableName    the name of the {@code YoVariable} the slider should be bound to. The name
     *                        can either be the fullname (including namespace) or the simple name of the
     *                        variable.
     */
-   default void setSliderboardSlider(String sliderboardName, int sliderIndex, String variableName)
+   default void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex, String variableName)
    {
-      setSliderboardSlider(sliderboardName, new YoSliderDefinition(variableName, sliderIndex));
+      setSliderboardSlider(sliderboardName, sliderboardType, new YoSliderDefinition(variableName, sliderIndex));
    }
 
    /**
     * Configures a slider of a sliderboard.
-    * 
+    *
     * @param sliderboardName  used to retrieve the sliderboard for which the slider is to be
     *                         configured. If no sliderboard could be found, a new empty sliderboard is
     *                         created and added to the current list of available sliderboards.
+    * @param sliderboardType  the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                         YoSliderBoardDefinition.XTOUCHCOMPACT)
     * @param sliderDefinition the new configuration for the slider.
     */
-   void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition);
+   void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition);
 
    default void clearDefaultSliderboardSlider(int sliderIndex)
    {
-      clearSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, sliderIndex);
+      clearSliderboardSlider(DEFAULT_SLIDERBOARD_NAME, DEFAULT_SLIDERBOARD_TYPE, sliderIndex);
    }
 
    /**
     * Clears the configuration of a slider of the default sliderboard.
-    * 
-    * @param sliderIndex the position of the slider on the sliderboard. The first slider has an index
-    *                    of 0.
+    *
+    * @param sliderboardType the type of the sliderboard (YoSliderBoardDefintion.BFC2000 or
+    *                        YoSliderBoardDefinition.XTOUCHCOMPACT)
+    * @param sliderIndex     the position of the slider on the sliderboard. The first slider has an
+    *                        index of 0.
     */
-   void clearSliderboardSlider(String sliderboardName, int sliderIndex);
+   void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex);
 
    /**
     * Registers a custom filter that can then be accessed when exporting session data via the GUI.
-    * 
+    *
     * @param name           the name of the custom filter for easy retrieval.
     * @param variableFilter the filter to be applied on the {@code YoVariable}. Only the variables for
     *                       which this filter returns {@code true} will be exported.
@@ -777,7 +800,7 @@ public interface SessionVisualizerControls
 
    /**
     * Registers a custom filter that can then be accessed when exporting session data via the GUI.
-    * 
+    *
     * @param filterParameters the custom filter to add to this session.
     */
    void addSessionDataFilterParameters(SessionDataFilterParameters filterParameters);
@@ -787,7 +810,7 @@ public interface SessionVisualizerControls
     * <p>
     * The file extension should be {@value SessionVisualizerIOTools#videoFileExtension}.
     * </p>
-    * 
+    *
     * @param file the target file where the video is to be written.
     */
    default void exportVideo(File file)
@@ -799,7 +822,7 @@ public interface SessionVisualizerControls
 
    /**
     * Captures a video of the 3D scene from the playback data.
-    * 
+    *
     * @param request the request.
     */
    void exportVideo(SceneVideoRecordingRequest request);
@@ -817,7 +840,7 @@ public interface SessionVisualizerControls
 
    /**
     * Gets the main window's instance.
-    * 
+    *
     * @return the main window.
     */
    Window getPrimaryGUIWindow();
@@ -825,14 +848,14 @@ public interface SessionVisualizerControls
    /**
     * Adds a custom JavaFX control, for instance a {@link Button}, which is displayed in the user side
     * panel on the right side of the main window.
-    * 
+    *
     * @param control the custom control to add.
     */
    void addCustomGUIControl(Node control);
 
    /**
     * Removes a custom JavaFX control that was previously added via {@link #addCustomGUIControl(Node)}.
-    * 
+    *
     * @param control the control to be removed.
     * @return whether the control was found and removed successfully.
     */
@@ -841,7 +864,7 @@ public interface SessionVisualizerControls
    /**
     * Loads and adds a mini-GUI from an FXML file. The GUI is displayed in the user side panel on the
     * right side of the main window.
-    * 
+    *
     * @param name         the title of the new pane.
     * @param fxmlResource the locator to the FXML resource.
     */
@@ -849,7 +872,7 @@ public interface SessionVisualizerControls
 
    /**
     * Adds a mini-GUI to the user side panel on the right side of the main window.
-    * 
+    *
     * @param name the title of the new pane.
     * @param pane the pane to be added.
     */
@@ -858,7 +881,7 @@ public interface SessionVisualizerControls
    /**
     * Removes a pane previously added via {@link #loadCustomGUIPane(String, URL)} or
     * {@link #addCustomGUIPane(String, Pane)}.
-    * 
+    *
     * @param name the title of the pane to remove.
     */
    boolean removeCustomGUIPane(String name);
@@ -876,7 +899,7 @@ public interface SessionVisualizerControls
     * <p>
     * A session has to be active to be able to create a new property.
     * </p>
-    * 
+    *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
     *         variable doesn't match, or there is no active session.
@@ -896,7 +919,7 @@ public interface SessionVisualizerControls
     * <p>
     * A session has to be active to be able to create a new property.
     * </p>
-    * 
+    *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
     *         variable doesn't match, or there is no active session.
@@ -916,7 +939,7 @@ public interface SessionVisualizerControls
     * <p>
     * A session has to be active to be able to create a new property.
     * </p>
-    * 
+    *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
     *         variable doesn't match, or there is no active session.
@@ -936,7 +959,7 @@ public interface SessionVisualizerControls
     * <p>
     * A session has to be active to be able to create a new property.
     * </p>
-    * 
+    *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
     *         variable doesn't match, or there is no active session.
@@ -956,7 +979,7 @@ public interface SessionVisualizerControls
     * <p>
     * A session has to be active to be able to create a new property.
     * </p>
-    * 
+    *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
     *         variable doesn't match, or there is no active session.
@@ -968,14 +991,14 @@ public interface SessionVisualizerControls
     * <p>
     * This is particularly useful for initializing controls once the session has changed.
     * </p>
-    * 
+    *
     * @param listener the session changed listener.
     */
    void addSessionChangedListener(SessionChangeListener listener);
 
    /**
     * Removes a listener previously added.
-    * 
+    *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed.
     */
@@ -1005,14 +1028,14 @@ public interface SessionVisualizerControls
 
    /**
     * Indicates whether the visualizer has been shutdown or not.
-    * 
+    *
     * @return {@code true} if the visualizer has been shutdown, {@code false} otherwise.
     */
    boolean isVisualizerShutdown();
 
    /**
     * Adds a listener to be notified when the visualizer just shutdown.
-    * 
+    *
     * @param listener the shutdown listener.
     */
    void addVisualizerShutdownListener(Runnable listener);

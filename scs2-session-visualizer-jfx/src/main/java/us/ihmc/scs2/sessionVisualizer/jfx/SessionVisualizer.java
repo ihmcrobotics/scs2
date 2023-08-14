@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
@@ -37,6 +39,7 @@ import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
@@ -51,9 +54,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 public class SessionVisualizer
@@ -463,45 +466,51 @@ public class SessionVisualizer
       }
 
       @Override
-      public void removeSliderboard(String sliderboardName)
+      public void removeSliderboard(String sliderboardName, YoSliderboardType sliderboardType)
       {
-         submitMessage(getTopics().getYoSliderboardRemove(), sliderboardName);
+         submitMessage(getTopics().getYoSliderboardRemove(), new Pair<>(sliderboardName, sliderboardType));
       }
 
       @Override
-      public void setSliderboardButton(String sliderboardName, YoButtonDefinition buttonDefinition)
+      public void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition)
       {
-         submitMessage(getTopics().getYoSliderboardSetButton(), new Pair<>(sliderboardName, buttonDefinition));
+         submitMessage(getTopics().getYoSliderboardSetButton(),
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, buttonDefinition));
       }
 
       @Override
-      public void clearSliderboardButton(String sliderboardName, int buttonIndex)
+      public void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
       {
-         submitMessage(getTopics().getYoSliderboardClearButton(), new Pair<>(sliderboardName, buttonIndex));
+         submitMessage(getTopics().getYoSliderboardClearButton(),
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, buttonIndex));
       }
 
       @Override
-      public void setSliderboardKnob(String sliderboardName, YoKnobDefinition knobDefinition)
+      public void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition)
       {
-         submitMessage(getTopics().getYoSliderboardSetKnob(), new Pair<>(sliderboardName, knobDefinition));
+         submitMessage(getTopics().getYoSliderboardSetKnob(),
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, knobDefinition));
       }
 
       @Override
-      public void clearSliderboardKnob(String sliderboardName, int knobIndex)
+      public void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex)
       {
-         submitMessage(getTopics().getYoSliderboardClearKnob(), new Pair<>(sliderboardName, knobIndex));
+         submitMessage(getTopics().getYoSliderboardClearKnob(),
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, knobIndex));
       }
 
       @Override
-      public void setSliderboardSlider(String sliderboardName, YoSliderDefinition sliderDefinition)
+      public void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition)
       {
-         submitMessage(getTopics().getYoSliderboardSetSlider(), new Pair<>(sliderboardName, sliderDefinition));
+         submitMessage(getTopics().getYoSliderboardSetSlider(),
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, sliderDefinition));
       }
 
       @Override
-      public void clearSliderboardSlider(String sliderboardName, int sliderIndex)
+      public void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex)
       {
-         submitMessage(getTopics().getYoSliderboardClearSlider(), new Pair<>(sliderboardName, sliderIndex));
+         submitMessage(getTopics().getYoSliderboardClearSlider(),
+                       new ImmutableTriple<>(sliderboardName, sliderboardType, sliderIndex));
       }
 
       @Override
