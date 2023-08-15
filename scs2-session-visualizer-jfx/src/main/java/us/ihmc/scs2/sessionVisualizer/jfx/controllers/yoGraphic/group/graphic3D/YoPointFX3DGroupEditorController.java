@@ -12,9 +12,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXResource;
@@ -39,7 +39,7 @@ public class YoPointFX3DGroupEditorController extends YoGroupFXEditorController<
 
    private ObservableBooleanValue inputsValidityProperty;
 
-   private YoDoubleTextField yoSizeTextField;
+   private DoubleSearchField yoSizeTextField;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit, YoGroupFX yoGraphicToEdit)

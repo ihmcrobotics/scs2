@@ -14,7 +14,7 @@
 
 <VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic2D.YoPointcloudFX2DEditorController">
    <children>
-      <fx:include fx:id="pointListEditor" source="../editor/YoCompositeListEditorPane.fxml" VBox.vgrow="ALWAYS" />
+      <fx:include fx:id="pointListEditor" source="../../editor/YoCompositeListEditorPane.fxml" VBox.vgrow="ALWAYS" />
       <Separator prefWidth="200.0" />
       <GridPane hgap="10.0" styleClass="graphic-editor-gridpane" vgap="10.0">
          <columnConstraints>

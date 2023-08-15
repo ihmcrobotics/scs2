@@ -23,8 +23,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
@@ -48,6 +48,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final EnvironmentManager environmentManager;
    private final SecondaryWindowManager secondaryWindowManager;
    private final SessionDataPreferenceManager sessionDataPreferenceManager;
+   private final MultiViewport3DManager viewport3DManager;
 
    private final Stage mainWindow;
    private final SubScene mainScene3D;
@@ -58,10 +59,9 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final ObservableList<TerrainObjectDefinition> sessionTerrainObjectDefinitions = FXCollections.observableArrayList();
    private final ConcurrentLinkedQueue<SessionChangeListener> sessionChangeListeners = new ConcurrentLinkedQueue<>();
 
-   public SessionVisualizerToolkit(Stage mainWindow, SubScene mainScene3D, Group mainView3DRoot) throws Exception
+   public SessionVisualizerToolkit(Stage mainWindow, Group mainView3DRoot) throws Exception
    {
       this.mainWindow = mainWindow;
-      this.mainScene3D = mainScene3D;
       this.mainView3DRoot = mainView3DRoot;
 
       MessagerAPIFactory apiFactory = new MessagerAPIFactory();
@@ -73,13 +73,21 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       messager.startMessager();
 
       snapshotManager = new SnapshotManager(mainWindow, messager, topics);
-      videoRecordingManager = new VideoRecordingManager(mainScene3D, mainView3DRoot, topics, messager, backgroundExecutorManager);
       chartDataManager = new ChartDataManager(messager, topics, yoManager, backgroundExecutorManager);
       yoGraphicFXManager = new YoGraphicFXManager(messager, topics, yoManager, backgroundExecutorManager, referenceFrameManager);
       yoCompositeSearchManager = new YoCompositeSearchManager(messager, topics, yoManager, backgroundExecutorManager);
       keyFrameManager = new KeyFrameManager(messager, topics);
       yoRobotFXManager = new YoRobotFXManager(messager, topics, yoManager, referenceFrameManager, backgroundExecutorManager);
       environmentManager = new EnvironmentManager(messager, topics, backgroundExecutorManager);
+
+      viewport3DManager = new MultiViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager);
+      this.mainScene3D = viewport3DManager.getMainViewport().getSubScene();
+      mainView3DRoot.getChildren().addAll(yoGraphicFXManager.getRootNode3D(), yoRobotFXManager.getRootNode(), environmentManager.getRootNode());
+      environmentManager.addSkybox(viewport3DManager.getMainViewport().getCamera());
+
+      messager.addFXTopicListener(topics.getCamera3DRequest(), viewport3DManager::submitRequest);
+
+      videoRecordingManager = new VideoRecordingManager(mainScene3D, mainView3DRoot, topics, messager, backgroundExecutorManager);
       secondaryWindowManager = new SecondaryWindowManager(this);
       sessionDataPreferenceManager = new SessionDataPreferenceManager(messager, topics);
       cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, messager, topics, yoRobotFXManager);
@@ -220,6 +228,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       backgroundExecutorManager.shutdown();
       environmentManager.dispose();
       messager.closeMessager();
+      viewport3DManager.dispose();
+      mainView3DRoot.getChildren().clear();
    }
 
    public SCS2JavaFXMessager getMessager()
@@ -245,6 +255,11 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public Group getMainView3DRoot()
    {
       return mainView3DRoot;
+   }
+
+   public MultiViewport3DManager getViewport3DManager()
+   {
+      return viewport3DManager;
    }
 
    public YoManager getYoManager()

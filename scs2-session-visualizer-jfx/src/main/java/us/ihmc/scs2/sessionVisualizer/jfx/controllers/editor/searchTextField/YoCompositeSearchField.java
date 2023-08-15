@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +20,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-public class YoCompositeTextField
+public class YoCompositeSearchField
 {
    private final TextField textField;
    private final int numberOfComponents;
@@ -31,7 +31,7 @@ public class YoCompositeTextField
 
    private TextField[] componentTextFields;
 
-   public YoCompositeTextField(YoCompositeSearchManager searchManager, YoCompositeCollection yoCompositeCollection, TextField textField)
+   public YoCompositeSearchField(YoCompositeSearchManager searchManager, YoCompositeCollection yoCompositeCollection, TextField textField)
    {
       this.textField = textField;
       this.yoCompositeCollection = yoCompositeCollection;

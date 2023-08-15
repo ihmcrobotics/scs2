@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.color;
 
 import java.util.Arrays;
 
@@ -10,11 +10,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBAIntFX;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBADoubleFX;
 
-public class YoColorRGBAIntEditorController extends PaintEditorController<YoColorRGBAIntFX>
+public class YoColorRGBADoubleEditorController extends PaintEditorController<YoColorRGBADoubleFX>
 {
    @FXML
    private GridPane mainPane;
@@ -28,27 +28,27 @@ public class YoColorRGBAIntEditorController extends PaintEditorController<YoColo
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
    {
-      super.initialize(toolkit, new YoColorRGBAIntFX());
+      super.initialize(toolkit, new YoColorRGBADoubleFX());
 
       for (Label label : Arrays.asList(searchRedLabel, searchGreenLabel, searchBlueLabel, searchAlphaLabel))
-         label.setText(label.getText() + " [0-255]");
+         label.setText(label.getText() + " [0.0-1.0]");
 
-      setupIntegerPropertyEditor(searchRedTextField, redValidImageView, YoColorRGBAIntFX::setRed);
-      setupIntegerPropertyEditor(searchGreenTextField, greenValidImageView, YoColorRGBAIntFX::setGreen);
-      setupIntegerPropertyEditor(searchBlueTextField, blueValidImageView, YoColorRGBAIntFX::setBlue);
-      setupIntegerPropertyEditor(searchAlphaTextField, alphaValidImageView, YoColorRGBAIntFX::setAlpha);
+      setupDoublePropertyEditor(searchRedTextField, redValidImageView, YoColorRGBADoubleFX::setRed);
+      setupDoublePropertyEditor(searchGreenTextField, greenValidImageView, YoColorRGBADoubleFX::setGreen);
+      setupDoublePropertyEditor(searchBlueTextField, blueValidImageView, YoColorRGBADoubleFX::setBlue);
+      setupDoublePropertyEditor(searchAlphaTextField, alphaValidImageView, YoColorRGBADoubleFX::setAlpha);
    }
 
    @Override
    public void setInput(PaintDefinition input)
    {
-      if (input instanceof YoColorRGBAIntDefinition colorDefinition)
+      if (input instanceof YoColorRGBADoubleDefinition colorDefinition)
          setInput(colorDefinition);
       else
          LogTools.error("Unexpected input: {}", input);
    }
 
-   public void setInput(YoColorRGBAIntDefinition definition)
+   public void setInput(YoColorRGBADoubleDefinition definition)
    {
       String red = definition.getRed();
       String green = definition.getGreen();

@@ -23,7 +23,6 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
@@ -35,8 +34,9 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 
 public class CameraSensorsManager extends ObservedAnimationTimer implements Manager
 {
@@ -239,7 +239,7 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
          {
             actualCameraPose.set(sensorFrame.getTransformToRoot());
             actualCameraPose.appendOrientation(cameraViewOrientationOffset);
-            JavaFXTools.convertRigidBodyTransformToAffine(actualCameraPose, cameraTransform);
+            JavaFXMissingTools.convertRigidBodyTransformToAffine(actualCameraPose, cameraTransform);
             image = mainSceneRoot.snapshot(snapshotParameters, image);
             bufferedImage = SwingFXUtils.fromFXImage(image, bufferedImage);
             messager.submitMessage(topics.getCameraSensorFrame(), new SensorMessage<>(robotName, sensorName, bufferedImage));

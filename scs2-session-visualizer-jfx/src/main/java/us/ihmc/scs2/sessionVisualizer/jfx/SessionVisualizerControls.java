@@ -19,11 +19,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
+import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
@@ -43,7 +47,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.yoVariables.euclid.YoTuple2D;
+import us.ihmc.yoVariables.euclid.YoTuple3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple2D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameTuple3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -52,14 +58,14 @@ public interface SessionVisualizerControls
 {
 
    /**
-    * Sets the camera's orbit with respect to the focus point.
+    * Sets the camera's orbit with respect to the focal point.
     * <p>
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
     *
-    * @param latitude  controls the look up/down angle while keeping the focus point unchanged.
-    * @param longitude controls the look left/right angle while keeping the focus point unchanged.
+    * @param latitude  controls the look up/down angle while keeping the focal point unchanged.
+    * @param longitude controls the look left/right angle while keeping the focal point unchanged.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
     *      controls: 3D viewport navigation</a>
@@ -81,7 +87,7 @@ public interface SessionVisualizerControls
    }
 
    /**
-    * Sets the camera position without moving the focus point.
+    * Sets the camera position without moving the focal point.
     * <p>
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
@@ -96,44 +102,58 @@ public interface SessionVisualizerControls
     */
    void setCameraPosition(double x, double y, double z);
 
-   /**
-    * Convenience methods to set the camera position.
-    *
-    * @param position the new focus position. Not modified.
-    * @see #setCameraFocusPosition(double, double, double)
-    * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
-    */
+   /** @deprecated Use {@link #setCameraFocalPosition(Point3DReadOnly)} instead. */
+   @Deprecated
    default void setCameraFocusPosition(Point3DReadOnly position)
    {
-      setCameraFocusPosition(position.getX(), position.getY(), position.getZ());
+      setCameraFocalPosition(position);
+   }
+
+   /** @deprecated Use {@link #setCameraFocalPosition(double, double, double)} instead. */
+   @Deprecated
+   default void setCameraFocusPosition(double x, double y, double z)
+   {
+      setCameraFocalPosition(x, y, z);
    }
 
    /**
-    * Sets the position of the focus point, i.e. what the camera is looking at.
-    * <p>
-    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
-    * rotate around that target.
-    * </p>
+    * Convenience methods to set the camera position.
     *
-    * @param x the new x-coordinate for the focus point.
-    * @param y the new y-coordinate for the focus point.
-    * @param z the new z-coordinate for the focus point.
+    * @param position the new focal position. Not modified.
+    * @see #setCameraFocalPosition(double, double, double)
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
     *      controls: 3D viewport navigation</a>
     */
-   void setCameraFocusPosition(double x, double y, double z);
+   default void setCameraFocalPosition(Point3DReadOnly position)
+   {
+      setCameraFocalPosition(position.getX(), position.getY(), position.getZ());
+   }
 
    /**
-    * Sets the distance between the camera and focus point by moving the camera only.
+    * Sets the position of the focal point, i.e. what the camera is looking at.
     * <p>
     * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
     * rotate around that target.
     * </p>
     *
-    * @param distanceFromFocus the new distance between the camera and the focus point.
+    * @param x the new x-coordinate for the focal point.
+    * @param y the new y-coordinate for the focal point.
+    * @param z the new z-coordinate for the focal point.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   void setCameraFocalPosition(double x, double y, double z);
+
+   /**
+    * Sets the distance between the camera and focal point by moving the camera only.
+    * <p>
+    * The camera is using orbit controls, i.e. the camera is always looking at a target and easily
+    * rotate around that target.
+    * </p>
+    *
+    * @param distanceFromFocus the new distance between the camera and the focal point.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
     *      controls: 3D viewport navigation</a>
@@ -141,7 +161,7 @@ public interface SessionVisualizerControls
    void setCameraZoom(double distanceFromFocus);
 
    /**
-    * Requests the camera to track the rigid-body of a robot.
+    * Requests the camera's focal point to track the rigid-body of a robot.
     *
     * @param robotName     the name of the robot to track.
     * @param rigidBodyName the name of the body to track.
@@ -150,6 +170,318 @@ public interface SessionVisualizerControls
     *      controls: 3D viewport navigation</a>
     */
    void requestCameraRigidBodyTracking(String robotName, String rigidBodyName);
+
+   /**
+    * Requests the camera's focal point to track the given coordinates.
+    *
+    * @param coordinatesToTrack the coordinates to track.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraFocalPositionTracking(YoFrameTuple3D coordinatesToTrack)
+   {
+      requestCameraFocalPositionTracking(coordinatesToTrack.getYoX(),
+                                         coordinatesToTrack.getYoY(),
+                                         coordinatesToTrack.getYoZ(),
+                                         coordinatesToTrack.getReferenceFrame());
+   }
+
+   /**
+    * Requests the camera's focal point to track the given coordinates.
+    *
+    * @param xCoordinateToTrack the x coordinate to track.
+    * @param yCoordinateToTrack the y coordinate to track.
+    * @param zCoordinateToTrack the z coordinate to track.
+    * @param referenceFrame     the reference frame in which the coordinates are expressed.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraFocalPositionTracking(YoDouble xCoordinateToTrack,
+                                                   YoDouble yCoordinateToTrack,
+                                                   YoDouble zCoordinateToTrack,
+                                                   ReferenceFrame referenceFrame)
+   {
+      requestCameraFocalPositionTracking(xCoordinateToTrack == null ? null : xCoordinateToTrack.getFullNameString(),
+                                         yCoordinateToTrack == null ? null : yCoordinateToTrack.getFullNameString(),
+                                         zCoordinateToTrack == null ? null : zCoordinateToTrack.getFullNameString(),
+                                         referenceFrame == null ? null : referenceFrame.getNameId());
+   }
+
+   /**
+    * Requests the camera's focal point to track the given coordinates.
+    *
+    * @param xCoordinateNameToTrack the name (fullname or short name) of the {@code YoVariable} to
+    *                               track for the x coordinate. Can be a double value.
+    * @param yCoordinateNameToTrack the name (fullname or short name) of the {@code YoVariable} to
+    *                               track for the y coordinate. Can be a double value.
+    * @param zCoordinateNameToTrack the name (fullname or short name) of the {@code YoVariable} to
+    *                               track for the z coordinate. Can be a double value.
+    * @param referenceFrameName     the name of the reference frame in which the coordinates are
+    *                               expressed. If {@code null}, world frame is used.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraFocalPositionTracking(String xCoordinateNameToTrack,
+                                                   String yCoordinateNameToTrack,
+                                                   String zCoordinateNameToTrack,
+                                                   String referenceFrameName)
+   {
+      requestCameraFocalPositionTracking(new YoTuple3DDefinition(xCoordinateNameToTrack, yCoordinateNameToTrack, zCoordinateNameToTrack, referenceFrameName));
+   }
+
+   /**
+    * Requests the camera's focal point to track the given coordinates.
+    *
+    * @param coordinatesToTrack the coordinates to track.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   void requestCameraFocalPositionTracking(YoTuple3DDefinition coordinatesToTrack);
+
+   // Camera coordinates control:
+   // Cartesian control:
+   /**
+    * Requests the camera to follow the given cartesian coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
+    * point.
+    * </p>
+    *
+    * @param cameraCoordinates the cartesian coordinates of the camera.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraPositionTracking(YoTuple3D cameraCoordinates)
+   {
+      requestCameraPositionTracking(cameraCoordinates.getYoX(), cameraCoordinates.getYoY(), cameraCoordinates.getYoZ());
+   }
+
+   /**
+    * Requests the camera to follow the given cartesian coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
+    * point.
+    * </p>
+    *
+    * @param xCameraCoordinate the x coordinate of the camera.
+    * @param yCameraCoordinate the y coordinate of the camera.
+    * @param zCameraCoordinate the z coordinate of the camera.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraPositionTracking(YoDouble xCameraCoordinate, YoDouble yCameraCoordinate, YoDouble zCameraCoordinate)
+   {
+      requestCameraPositionTracking(xCameraCoordinate == null ? null : xCameraCoordinate.getFullNameString(),
+                                    yCameraCoordinate == null ? null : yCameraCoordinate.getFullNameString(),
+                                    zCameraCoordinate == null ? null : zCameraCoordinate.getFullNameString());
+   }
+
+   /**
+    * Requests the camera to follow the given cartesian coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
+    * point.
+    * </p>
+    *
+    * @param xCameraCoordinateName the name (fullname or short name) of the {@code YoVariable} for the
+    *                              x coordinate of the camera. Can be a double value.
+    * @param yCameraCoordinateName the name (fullname or short name) of the {@code YoVariable} for the
+    *                              y coordinate of the camera. Can be a double value.
+    * @param zCameraCoordinateName the name (fullname or short name) of the {@code YoVariable} for the
+    *                              z coordinate of the camera. Can be a double value.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraPositionTracking(String xCameraCoordinateName, String yCameraCoordinateName, String zCameraCoordinateName)
+   {
+      requestCameraPositionTracking(new YoTuple3DDefinition(xCameraCoordinateName, yCameraCoordinateName, zCameraCoordinateName));
+   }
+
+   /**
+    * Requests the camera to follow the given cartesian coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
+    * point.
+    * </p>
+    *
+    * @param cameraCoordinates the cartesian coordinates of the camera.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   void requestCameraPositionTracking(YoTuple3DDefinition cameraCoordinates);
+
+   // Orbital control:
+
+   /**
+    * Requests the camera to follow the given orbital coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will be translating by the same amount as the focal point preserving the
+    * orientation of the camera.
+    * </p>
+    *
+    * @param distanceCameraCoordinate  the distance coordinate of the camera, range ]0, +&infin;[.
+    *                                  Controls how far the camera is from the focal point.
+    * @param longitudeCameraCoordinate the longitude coordinate of the camera, range [-<i>pi</i>,
+    *                                  <i>pi</i>[. Controls the longitude/yaw orientation of the
+    *                                  camera, at 0 the camera is pointing x+, at <i>pi</i>/2 it points
+    *                                  y+, at <i>pi</i> towards x-, and at -<i>pi</i>/2 it points y-.
+    * @param latitudeCameraCoordinate  the latitude coordinate of the camera, range [-<i>pi</i>/2,
+    *                                  <i>pi</i>/2]. Controls the latitude/pitch of the camera, at
+    *                                  -<i>pi</i>/2 the camera is under the focal point looking upward,
+    *                                  at <i>pi</i>/2 the camera is above the focal point looking
+    *                                  downward.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraOrbitTracking(YoDouble distanceCameraCoordinate, YoDouble longitudeCameraCoordinate, YoDouble latitudeCameraCoordinate)
+   {
+      requestCameraOrbitTracking(distanceCameraCoordinate == null ? null : distanceCameraCoordinate.getFullNameString(),
+                                 longitudeCameraCoordinate == null ? null : longitudeCameraCoordinate.getFullNameString(),
+                                 latitudeCameraCoordinate == null ? null : latitudeCameraCoordinate.getFullNameString());
+   }
+
+   /**
+    * Requests the camera to follow the given orbital coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will be translating by the same amount as the focal point preserving the
+    * orientation of the camera.
+    * </p>
+    *
+    * @param distanceCameraCoordinateName  the name (fullname or short name) of the {@code YoVariable}
+    *                                      for the distance coordinate of the camera, range ]0,
+    *                                      +&infin;[. Can be a double value. Controls how far the
+    *                                      camera is from the focal point.
+    * @param longitudeCameraCoordinateName the name (fullname or short name) of the {@code YoVariable}
+    *                                      for the longitude coordinate of the camera, range
+    *                                      [-<i>pi</i>, <i>pi</i>[. Can be a double value. Controls the
+    *                                      longitude/yaw orientation of the camera, at 0 the camera is
+    *                                      pointing x+, at <i>pi</i>/2 it points y+, at <i>pi</i>
+    *                                      towards x-, and at -<i>pi</i>/2 it points y-.
+    * @param latitudeCameraCoordinateName  the name (fullname or short name) of the {@code YoVariable}
+    *                                      for the latitude coordinate of the camera, range
+    *                                      [-<i>pi</i>/2, <i>pi</i>/2]. Can be a double value. Controls
+    *                                      the latitude/pitch of the camera, at -<i>pi</i>/2 the camera
+    *                                      is under the focal point looking upward, at <i>pi</i>/2 the
+    *                                      camera is above the focal point looking downward.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraOrbitTracking(String distanceCameraCoordinateName, String longitudeCameraCoordinateName, String latitudeCameraCoordinateName)
+   {
+      requestCameraOrbitTracking(new YoOrbitalCoordinateDefinition(distanceCameraCoordinateName, longitudeCameraCoordinateName, latitudeCameraCoordinateName));
+   }
+
+   /**
+    * Requests the camera to follow the given orbital coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, such that if the focal point is tracking a node or
+    * coordinate, the camera will be translating by the same amount as the focal point preserving the
+    * orientation of the camera.
+    * </p>
+    *
+    * @param cameraCoordinates the camera's coordinates.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   void requestCameraOrbitTracking(YoOrbitalCoordinateDefinition cameraCoordinates);
+
+   // Level-Orbital control:
+
+   /**
+    * Requests the camera to follow the given level-orbital coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, this is an hybrid mode between cartesian and orbital
+    * control. On the horizontal plane, the camera translates together with the focal point.
+    * Vertically, the focal point translation doesn't affect the camera position, instead the camera
+    * pitches to follow the focal point.
+    * </p>
+    *
+    * @param distanceCameraCoordinate  the distance coordinate of the camera, range ]0, +&infin;[.
+    *                                  Controls how far the camera is from the focal point.
+    * @param longitudeCameraCoordinate the longitude coordinate of the camera, range [-<i>pi</i>,
+    *                                  <i>pi</i>[. Controls the longitude/yaw orientation of the
+    *                                  camera, at 0 the camera is pointing x+, at <i>pi</i>/2 it points
+    *                                  y+, at <i>pi</i> towards x-, and at -<i>pi</i>/2 it points y-.
+    * @param heightCameraCoordinate    the z coordinate of the camera. Controls the height of the
+    *                                  camera.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraLevelOrbitTracking(YoDouble distanceCameraCoordinate, YoDouble longitudeCameraCoordinate, YoDouble heightCameraCoordinate)
+   {
+      requestCameraLevelOrbitTracking(distanceCameraCoordinate == null ? null : distanceCameraCoordinate.getFullNameString(),
+                                      longitudeCameraCoordinate == null ? null : longitudeCameraCoordinate.getFullNameString(),
+                                      heightCameraCoordinate == null ? null : heightCameraCoordinate.getFullNameString());
+   }
+
+   /**
+    * Requests the camera to follow the given level-orbital coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, this is an hybrid mode between cartesian and orbital
+    * control. On the horizontal plane, the camera translates together with the focal point.
+    * Vertically, the focal point translation doesn't affect the camera position, instead the camera
+    * pitches to follow the focal point.
+    * </p>
+    *
+    * @param distanceCameraCoordinateName  the name (fullname or short name) of the {@code YoVariable}
+    *                                      for the distance coordinate of the camera, range ]0,
+    *                                      +&infin;[. Can be a double value. Controls how far the
+    *                                      camera is from the focal point.
+    * @param longitudeCameraCoordinateName the name (fullname or short name) of the {@code YoVariable}
+    *                                      for the longitude coordinate of the camera, range
+    *                                      [-<i>pi</i>, <i>pi</i>[. Can be a double value. Controls the
+    *                                      longitude/yaw orientation of the camera, at 0 the camera is
+    *                                      pointing x+, at <i>pi</i>/2 it points y+, at <i>pi</i>
+    *                                      towards x-, and at -<i>pi</i>/2 it points y-.
+    * @param heightCameraCoordinateName    the name (fullname or short name) of the {@code YoVariable}
+    *                                      for the height coordinate of the camera. Can be a double
+    *                                      value.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   default void requestCameraLevelOrbitTracking(String distanceCameraCoordinateName, String longitudeCameraCoordinateName, String heightCameraCoordinateName)
+   {
+      requestCameraLevelOrbitTracking(new YoLevelOrbitalCoordinateDefinition(distanceCameraCoordinateName,
+                                                                             longitudeCameraCoordinateName,
+                                                                             heightCameraCoordinateName));
+   }
+
+   /**
+    * Requests the camera to follow the given level-orbital coordinates expressed in world.
+    * <p>
+    * This changes the control mode of the camera, this is an hybrid mode between cartesian and orbital
+    * control. On the horizontal plane, the camera translates together with the focal point.
+    * Vertically, the focal point translation doesn't affect the camera position, instead the camera
+    * pitches to follow the focal point.
+    * </p>
+    *
+    * @param cameraCoordinates the camera's coordinates.
+    * @see <a href=
+    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *      controls: 3D viewport navigation</a>
+    */
+   void requestCameraLevelOrbitTracking(YoLevelOrbitalCoordinateDefinition cameraCoordinates);
+
+   // End of section for: Camera coordinates control
 
    /**
     * Requests to show the overhead view next to the 3D viewport where 2D graphics are displayed.

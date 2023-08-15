@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,13 +25,20 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 
-public abstract class YoVariableTextField<T extends Property<?>>
+/**
+ * Wrapper around a simple {@link TextField} to add search functionality, auto-completion,
+ * validation.
+ * 
+ * @author Sylvain Bertrand
+ * @param <T>
+ */
+public abstract class PropertySearchField<T extends Property<?>>
 {
    private final TextField textField;
-   private final BooleanProperty validityProperty = new SimpleBooleanProperty(this, "yoTextFieldValidity", false);
+   private final BooleanProperty validityProperty = new SimpleBooleanProperty(this, "searchFieldEntryValidity", false);
    private final ObjectProperty<T> supplierProperty = new SimpleObjectProperty<>(this, "supplier", null);
 
-   public YoVariableTextField(TextField textField, ImageView validImageView)
+   public PropertySearchField(TextField textField, ImageView validImageView)
    {
       this.textField = textField;
 
@@ -82,6 +89,16 @@ public abstract class YoVariableTextField<T extends Property<?>>
             e.consume();
          }
       });
+   }
+
+   public void enable()
+   {
+
+   }
+
+   public void disable()
+   {
+
    }
 
    public void attachValidImageView(ImageView imageView)

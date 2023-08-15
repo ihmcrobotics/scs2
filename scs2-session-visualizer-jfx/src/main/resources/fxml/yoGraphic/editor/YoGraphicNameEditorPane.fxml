@@ -8,7 +8,8 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<GridPane fx:id="mainPane" styleClass="graphic-editor-gridpane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController">
+<GridPane fx:id="mainPane" styleClass="graphic-editor-gridpane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+   fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" minWidth="-Infinity" />
       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />

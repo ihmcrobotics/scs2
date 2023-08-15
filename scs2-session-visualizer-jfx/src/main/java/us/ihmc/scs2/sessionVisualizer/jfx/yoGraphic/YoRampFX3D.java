@@ -6,9 +6,9 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Scale;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.javaFXToolkit.JavaFXTools;
 import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -52,7 +52,7 @@ public class YoRampFX3D extends YoGraphicFX3D
          scale.setZ(0.0);
       }
 
-      affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
+      affine.setToTransform(JavaFXMissingTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
       if (color == null)
          color = new SimpleColorFX();
       material.setDiffuseColor(color.get());

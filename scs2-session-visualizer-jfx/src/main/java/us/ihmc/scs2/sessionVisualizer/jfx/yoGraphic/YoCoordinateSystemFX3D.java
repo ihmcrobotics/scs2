@@ -17,8 +17,9 @@ import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.axisAngle.AxisAngle;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Point3D;
-import us.ihmc.javaFXToolkit.JavaFXTools;
-import us.ihmc.javaFXToolkit.shapes.JavaFXMeshBuilder;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DBuilder;
+import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -72,7 +73,7 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
 
       newData = newCoordinateSystemData(bodyLength, bodyRadius, headLength, headRadius);
 
-      affine.setToTransform(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
+      affine.setToTransform(JavaFXMissingTools.createAffineFromOrientation3DAndTuple(orientation.toQuaternionInWorld(), position.toPoint3DInWorld()));
       if (color == null)
          color = new SimpleColorFX();
       material.setDiffuseColor(color.get());
@@ -178,11 +179,11 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
             body.getTransforms().add(axisBodyRotates[axis]);
          body.getTransforms().add(axisBodyTranslate);
 
-         JavaFXMeshBuilder meshBuilder = new JavaFXMeshBuilder();
+         TriangleMesh3DBuilder meshBuilder = new TriangleMesh3DBuilder();
          Point3D headPosition = new Point3D();
          headPosition.setElement(axis, data.bodyLength);
          meshBuilder.addCone(data.headLength, data.headRadius, headPosition, axisHeadOrientations[axis]);
-         MeshView head = new MeshView(meshBuilder.generateMesh());
+         MeshView head = new MeshView(JavaFXVisualTools.toTriangleMesh(meshBuilder.generateTriangleMesh3D()));
          head.setMaterial(new PhongMaterial(axisColors[axis]));
          head.idProperty().bind(nameProperty.concat(" (").concat(Axis3D.values[axis].name()).concat("-head)"));
 

@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.color;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 

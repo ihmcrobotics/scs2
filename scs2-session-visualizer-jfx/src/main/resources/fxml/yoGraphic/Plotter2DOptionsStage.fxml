@@ -5,20 +5,19 @@
 <?import javafx.scene.Scene?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.stage.Stage?>
-
 <Stage fx:id="stage" title="Plotter Options" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.Plotter2DOptionsStageController">
    <scene>
       <Scene stylesheets="@../../css/GeneralStylesheet.css">
          <VBox spacing="10.0">
             <children>
-               <JFXToggleButton fx:id="enableTrackingToggleButton" size="6.0" text="Enable Tracking" />
-               <fx:include fx:id="trackedPositionEditor" source="./editor/YoCompositeEditorPane.fxml" />
+               <JFXToggleButton fx:id="enableTrackingToggleButton" size="6.0" text="Enable Tracking"/>
+               <fx:include fx:id="trackedPositionEditor" source="../editor/YoCompositeEditorPane.fxml"/>
             </children>
             <opaqueInsets>
-               <Insets />
+               <Insets/>
             </opaqueInsets>
             <padding>
-               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
             </padding>
          </VBox>
       </Scene>

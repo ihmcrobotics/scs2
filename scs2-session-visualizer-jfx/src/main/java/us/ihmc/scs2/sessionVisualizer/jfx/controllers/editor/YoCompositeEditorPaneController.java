@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
@@ -26,10 +26,10 @@ import javafx.scene.layout.GridPane;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.ReferenceFrameSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.YoCompositeSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoCompositeTextField;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoReferenceFrameTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -55,8 +55,8 @@ public class YoCompositeEditorPaneController
    private TextField[] componentSearchTextFields;
    private ImageView[] componentValidImageViews;
 
-   private YoCompositeTextField yoCompositeTextField;
-   private YoDoubleTextField[] yoComponentTextFields;
+   private YoCompositeSearchField yoCompositeTextField;
+   private DoubleSearchField[] yoComponentTextFields;
 
    private int numberOfComponents;
    private YoCompositePattern yoCompositePattern;
@@ -71,13 +71,25 @@ public class YoCompositeEditorPaneController
    private ImageView referenceFrameValidImageView;
    private ReferenceFrameManager referenceFrameManager;
 
-   private YoReferenceFrameTextField yoReferenceFrameTextField;
+   private ReferenceFrameSearchField yoReferenceFrameTextField;
 
    public void initialize(SessionVisualizerToolkit toolkit, YoCompositeCollection yoCompositeCollection, boolean setupReferenceFrameFields)
    {
-      YoCompositeSearchManager searchManager = toolkit.getYoCompositeSearchManager();
+      initialize(toolkit.getYoCompositeSearchManager(),
+                 toolkit.getReferenceFrameManager(),
+                 toolkit.getYoManager().getLinkedRootRegistry(),
+                 yoCompositeCollection,
+                 setupReferenceFrameFields);
+   }
+
+   public void initialize(YoCompositeSearchManager searchManager,
+                          ReferenceFrameManager referenceFrameManager,
+                          LinkedYoRegistry linkedRootRegistry,
+                          YoCompositeCollection yoCompositeCollection,
+                          boolean setupReferenceFrameFields)
+   {
       yoCompositePattern = yoCompositeCollection.getPattern();
-      referenceFrameManager = toolkit.getReferenceFrameManager();
+      this.referenceFrameManager = referenceFrameManager;
 
       numberOfComponents = yoCompositePattern.getComponentIdentifiers() != null ? yoCompositePattern.getComponentIdentifiers().length : 1;
 
@@ -85,13 +97,12 @@ public class YoCompositeEditorPaneController
       if (setupReferenceFrameFields)
          setupReferenceFrameFields();
 
-      yoComponentTextFields = new YoDoubleTextField[numberOfComponents];
+      yoComponentTextFields = new DoubleSearchField[numberOfComponents];
       compositeSupplierProperty.set(new DoubleProperty[numberOfComponents]);
 
       for (int i = 0; i < numberOfComponents; i++)
       {
-         LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
-         YoDoubleTextField yoComponentTextField = new YoDoubleTextField(componentSearchTextFields[i],
+         DoubleSearchField yoComponentTextField = new DoubleSearchField(componentSearchTextFields[i],
                                                                         searchManager,
                                                                         linkedRootRegistry,
                                                                         componentValidImageViews[i]);
@@ -118,7 +129,7 @@ public class YoCompositeEditorPaneController
 
       if (numberOfComponents > 1)
       {
-         yoCompositeTextField = new YoCompositeTextField(searchManager, yoCompositeCollection, searchYoCompositeTextField);
+         yoCompositeTextField = new YoCompositeSearchField(searchManager, yoCompositeCollection, searchYoCompositeTextField);
          yoCompositeTextField.setupAutoCompletion();
          yoCompositeTextField.attachIndividualComponentFields(componentSearchTextFields);
       }
@@ -218,7 +229,7 @@ public class YoCompositeEditorPaneController
       GridPane.setConstraints(referenceFrameSearchTextField, 1, numberOfComponents + 1, 1, 1, HPos.CENTER, VPos.CENTER);
       GridPane.setConstraints(referenceFrameValidImageView, 2, numberOfComponents + 1, 1, 1, HPos.LEFT, VPos.CENTER);
 
-      yoReferenceFrameTextField = new YoReferenceFrameTextField(referenceFrameSearchTextField, referenceFrameManager, referenceFrameValidImageView);
+      yoReferenceFrameTextField = new ReferenceFrameSearchField(referenceFrameSearchTextField, referenceFrameManager, referenceFrameValidImageView);
       yoReferenceFrameTextField.setupAutoCompletion();
       referenceFrameSearchTextField.setText(referenceFrameManager.getWorldFrame().getName());
    }

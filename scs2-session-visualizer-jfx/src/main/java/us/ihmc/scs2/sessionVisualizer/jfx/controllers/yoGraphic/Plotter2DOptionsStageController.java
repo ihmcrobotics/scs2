@@ -16,7 +16,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;

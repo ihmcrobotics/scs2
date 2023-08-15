@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicSTPBox3DDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoSTPBoxFX3D;

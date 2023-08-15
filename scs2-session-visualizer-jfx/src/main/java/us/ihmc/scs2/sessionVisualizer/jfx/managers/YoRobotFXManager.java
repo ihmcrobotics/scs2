@@ -14,7 +14,8 @@ import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.sessionVisualizer.jfx.CameraObjectTrackingRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -43,13 +44,17 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       this.referenceFrameManager = referenceFrameManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
 
-      messager.addTopicListener(topics.getCameraTrackObject(), request ->
+      messager.addTopicListener(topics.getCamera3DRequest(), request ->
       {
          if (!isSessionLoaded())
             throw new IllegalOperationException("Session has not been loaded yet.");
 
-         String rigidBodyName = request.getRigidBodyName();
-         String robotName = request.getRobotName();
+         FocalPointRequest focalPointRequest = request.getFocalPointRequest();
+         if (focalPointRequest == null)
+            return;
+
+         String rigidBodyName = focalPointRequest.getRigidBodyName();
+         String robotName = focalPointRequest.getRobotName();
 
          if (rigidBodyName != null)
          {
@@ -57,7 +62,9 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
             if (robotName != null)
             {
-               result = robots.stream().filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName)).findFirst()
+               result = robots.stream()
+                              .filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName))
+                              .findFirst()
                               .map(r -> r.findRigidBodyFrameNode(rigidBodyName));
             }
             else
@@ -68,7 +75,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
             result.ifPresent(rigidBodyFrameNode ->
             {
                if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
-                  messager.submitMessage(topics.getCameraTrackObject(), new CameraObjectTrackingRequest(rigidBodyFrameNode.getNode()));
+                  messager.submitMessage(topics.getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
             });
          }
       });

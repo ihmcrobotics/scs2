@@ -6,9 +6,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
@@ -28,7 +28,7 @@ public class YoPolygonExtrudedFX3DGroupEditorController extends YoGroupFXEditorC
    @FXML
    private ImageView thicknessValidImageView;
 
-   private YoDoubleTextField yoThicknessTextField;
+   private DoubleSearchField yoThicknessTextField;
    private ObservableBooleanValue inputsValidityProperty;
 
    @Override
