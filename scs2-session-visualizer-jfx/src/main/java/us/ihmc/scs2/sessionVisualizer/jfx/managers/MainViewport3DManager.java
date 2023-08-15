@@ -32,6 +32,7 @@ import us.ihmc.euclid.Axis3D;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraControlMode;
@@ -96,6 +97,27 @@ public class MainViewport3DManager implements SingleViewport3DManager
          focusPointViz.visibleProperty().bind(subScene.focusedProperty());
       }
       setupContextMenu(cameraController, yoCompositeSearchManager, yoManager, referenceFrameManager, subScene);
+   }
+
+   @Override
+   public void startSession(Session session)
+   {
+   }
+
+   @Override
+   public void stopSession()
+   {
+      cameraController.cameraPositionCoordinatesToTrackProperty().setValue(null);
+      cameraController.cameraOrbitalCoordinatesToTrackProperty().setValue(null);
+      cameraController.cameraLevelOrbitalCoordinatesToTrackProperty().setValue(null);
+      cameraController.getFocalPointHandler().coordinatesToTrackProperty().set(null);
+      cameraController.getFocalPointHandler().nodeToTrackProperty().set(null);
+   }
+
+   @Override
+   public boolean isSessionLoaded()
+   {
+      return true;
    }
 
    @Override

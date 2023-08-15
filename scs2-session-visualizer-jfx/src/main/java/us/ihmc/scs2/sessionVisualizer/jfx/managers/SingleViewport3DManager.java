@@ -4,9 +4,8 @@ import javafx.scene.PerspectiveCamera;
 import javafx.scene.layout.Pane;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 
-public interface SingleViewport3DManager
+public interface SingleViewport3DManager extends Manager
 {
-
    Pane getPane();
 
    void dispose();
@@ -14,5 +13,4 @@ public interface SingleViewport3DManager
    PerspectiveCameraController getCameraController();
 
    PerspectiveCamera getCamera();
-
 }
