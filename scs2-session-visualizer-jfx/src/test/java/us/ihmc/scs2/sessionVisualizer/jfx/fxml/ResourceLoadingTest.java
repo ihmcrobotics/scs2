@@ -2,15 +2,20 @@ package us.ihmc.scs2.sessionVisualizer.jfx.fxml;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -50,11 +55,12 @@ public class ResourceLoadingTest
       {
          try
          {
-            List<File> fxmlFiles = findResourceFiles("fxml", file -> file.getName().endsWith(".fxml"));
+            List<URL> fxmlResources = findResources("fxml", path -> path.getFileName().toString().endsWith(".fxml"));
 
-            for (File fxmlFile : fxmlFiles)
+            for (URL fxmlResource : fxmlResources)
             {
-               FXMLLoader loader = new FXMLLoader(fxmlFile.toURI().toURL());
+               System.out.println(fxmlResource);
+               FXMLLoader loader = new FXMLLoader(fxmlResource);
                Object rootPane = assertDoesNotThrow(() -> loader.load());
                assertNotNull(rootPane);
 
@@ -92,13 +98,7 @@ public class ResourceLoadingTest
          if (field.getType() != URL.class)
             continue;
 
-         assertDoesNotThrow(() ->
-         {
-            URL urlResource = (URL) field.get(null);
-            File fileResource = Paths.get(urlResource.toURI()).toFile();
-            assertTrue(fileResource.exists());
-            assertTrue(fileResource.isFile());
-         }, "Test failed for field: " + field.getName());
+         assertNotNull(field.get(null), "Test failed for field: " + field.getName());
       }
    }
 
@@ -121,31 +121,32 @@ public class ResourceLoadingTest
       }
    }
 
-   private static List<File> findResourceFiles(String folder, Predicate<File> filter) throws URISyntaxException
+   private static List<URL> findResources(String folder, Predicate<Path> filter) throws URISyntaxException, IOException
    {
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
       URL url = loader.getResource(folder);
-      return collectFilesDeep(Paths.get(url.toURI()).toFile(), filter);
-   }
+      URI uri = url.toURI();
 
-   public static List<File> collectFilesDeep(File start, Predicate<File> filter)
-   {
-      return collectFilesDeep(start, filter, new ArrayList<>());
-   }
-
-   public static List<File> collectFilesDeep(File start, Predicate<File> filter, List<File> filesToPack)
-   {
-      if (start.isFile())
+      Path myPath;
+      if (uri.getScheme().equals("jar"))
       {
-         if (filter.test(start))
-            filesToPack.add(start);
+         FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+         myPath = fileSystem.getPath(folder);
       }
       else
       {
-         for (File child : start.listFiles())
-            collectFilesDeep(child, filter, filesToPack);
+         myPath = Paths.get(uri);
       }
-
-      return filesToPack;
+      return Files.walk(myPath, Integer.MAX_VALUE).filter(filter).map(path ->
+      {
+         try
+         {
+            return path.toUri().toURL();
+         }
+         catch (MalformedURLException e)
+         {
+            throw new RuntimeException(e);
+         }
+      }).toList();
    }
 }
