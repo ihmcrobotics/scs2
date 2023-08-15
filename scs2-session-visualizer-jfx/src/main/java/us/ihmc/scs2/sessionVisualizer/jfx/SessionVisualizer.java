@@ -30,8 +30,11 @@ import javafx.util.Pair;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
+import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
+import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
@@ -43,9 +46,10 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.CameraControlRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiViewport3DManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -77,9 +81,7 @@ public class SessionVisualizer
    private final SessionVisualizerToolkit toolkit;
    private final MultiSessionManager multiSessionManager;
 
-   private final Group view3DRoot;
    private final MainWindowController mainWindowController;
-   private final MultiViewport3DManager viewport3DManager;
    private final SCS2JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
    private final SessionVisualizerControlsImpl sessionVisualizerControls = new SessionVisualizerControlsImpl();
@@ -100,11 +102,8 @@ public class SessionVisualizer
 
       Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
       scene3DBuilder.addDefaultLighting();
-      view3DRoot = scene3DBuilder.getRoot();
-      viewport3DManager = new MultiViewport3DManager(view3DRoot);
-      viewport3DManager.createMainViewport();
 
-      toolkit = new SessionVisualizerToolkit(primaryStage, viewport3DManager.getMainViewport().getSubScene(), view3DRoot);
+      toolkit = new SessionVisualizerToolkit(primaryStage, scene3DBuilder.getRoot());
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
@@ -113,22 +112,9 @@ public class SessionVisualizer
       mainWindowController = loader.getController();
       mainWindowController.initialize(new SessionVisualizerWindowToolkit(primaryStage, toolkit));
 
-      scene3DBuilder.addNodeToView(toolkit.getYoRobotFXManager().getRootNode());
-      scene3DBuilder.addNodeToView(toolkit.getEnvironmentManager().getRootNode());
-
-      messager.addFXTopicListener(topics.getCameraTrackObject(), request ->
-      {
-         if (request.getNode() != null)
-            viewport3DManager.getMainViewport().setCameraNodeToTrack(request.getNode());
-      });
-
       if (SHOW_WORLD_FRAME)
          toolkit.getEnvironmentManager().addWorldCoordinateSystem(0.3);
-      toolkit.getEnvironmentManager().addSkybox(viewport3DManager.getMainViewport().getCamera());
       messager.addFXTopicListener(topics.getSessionVisualizerCloseRequest(), m -> stop());
-
-      scene3DBuilder.addNodeToView(toolkit.getYoGraphicFXManager().getRootNode3D());
-      mainWindowController.setupViewport3D(viewport3DManager.getPane());
 
       // This is workaround to get the lights working when doing snapshots.
       Group clonedLightGroup = new Group();
@@ -218,7 +204,6 @@ public class SessionVisualizer
 
       try
       {
-         viewport3DManager.dispose();
          multiSessionManager.stopSession(saveConfiguration, shutdownSessionOnClose);
          multiSessionManager.shutdown();
          mainWindowController.stop();
@@ -226,7 +211,6 @@ public class SessionVisualizer
          if (primaryStage.isShowing())
             primaryStage.close();
          primaryStage.setScene(null);
-         view3DRoot.getChildren().clear();
 
          stopListeners.forEach(Runnable::run);
       }
@@ -350,7 +334,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         viewport3DManager.getMainViewport().setCameraOrientation(latitude, longitude, 0);
+         toolkit.getViewport3DManager().getMainViewport().setCameraOrientation(latitude, longitude, 0);
       }
 
       @Override
@@ -358,15 +342,15 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         viewport3DManager.getMainViewport().setCameraPosition(x, y, z);
+         toolkit.getViewport3DManager().getMainViewport().setCameraPosition(x, y, z);
       }
 
       @Override
-      public void setCameraFocusPosition(double x, double y, double z)
+      public void setCameraFocalPosition(double x, double y, double z)
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         viewport3DManager.getMainViewport().setCameraFocusPosition(x, y, z);
+         toolkit.getViewport3DManager().getMainViewport().setCameraFocalPosition(x, y, z);
       }
 
       @Override
@@ -374,7 +358,7 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         viewport3DManager.getMainViewport().setCameraZoom(distanceFromFocus);
+         toolkit.getViewport3DManager().getMainViewport().setCameraZoom(distanceFromFocus);
       }
 
       @Override
@@ -382,7 +366,39 @@ public class SessionVisualizer
       {
          checkVisualizerRunning();
          waitUntilVisualizerFullyUp();
-         submitMessage(getTopics().getCameraTrackObject(), new CameraObjectTrackingRequest(robotName, rigidBodyName));
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackRobot(robotName, rigidBodyName)));
+      }
+
+      @Override
+      public void requestCameraFocalPositionTracking(YoTuple3DDefinition coordinatesToTrack)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackCoordinates(coordinatesToTrack)));
+      }
+
+      @Override
+      public void requestCameraPositionTracking(YoTuple3DDefinition cameraCoordinates)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(CameraControlRequest.trackPosition(cameraCoordinates)));
+      }
+
+      @Override
+      public void requestCameraOrbitTracking(YoOrbitalCoordinateDefinition cameraCoordinates)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(CameraControlRequest.trackOrbit(cameraCoordinates)));
+      }
+
+      @Override
+      public void requestCameraLevelOrbitTracking(YoLevelOrbitalCoordinateDefinition cameraCoordinates)
+      {
+         checkVisualizerRunning();
+         waitUntilVisualizerFullyUp();
+         submitMessage(getTopics().getCamera3DRequest(), new Camera3DRequest(CameraControlRequest.trackLevelOrbit(cameraCoordinates)));
       }
 
       @Override

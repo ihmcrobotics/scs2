@@ -82,6 +82,12 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
          linkedBuffer.push();
    }
 
+   @Override
+   public String toString()
+   {
+      return "Yo" + super.toString();
+   }
+
    private void pullYoDoubleValue()
    {
       super.set(yoDouble.getValue());

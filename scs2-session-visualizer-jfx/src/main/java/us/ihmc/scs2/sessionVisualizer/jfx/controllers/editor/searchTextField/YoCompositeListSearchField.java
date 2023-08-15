@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
 import java.util.List;
 import java.util.Map;
@@ -14,14 +14,14 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 
-public class YoCompositeListTextField
+public class YoCompositeListSearchField
 {
    private TextField textField;
    private final Map<String, List<YoComposite>> yoCompositeListMap;
    private final ObjectProperty<List<YoComposite>> compositeListProperty = new SimpleObjectProperty<>(this, "compositeList", null);
    private AutoCompletionBinding<String> autoCompletionBinding;
 
-   public YoCompositeListTextField(Map<String, List<YoComposite>> yoCompositeListMap, TextField textField)
+   public YoCompositeListSearchField(Map<String, List<YoComposite>> yoCompositeListMap, TextField textField)
    {
       this.textField = textField;
       this.yoCompositeListMap = yoCompositeListMap;

@@ -129,7 +129,7 @@ public class Tuple3DProperty extends CompositeProperty implements FrameTuple3DRe
 
    public DoubleProperty xProperty()
    {
-      return componentValueProperties[0];
+      return componentValueProperties == null ? null : componentValueProperties[0];
    }
 
    @Override
@@ -140,7 +140,7 @@ public class Tuple3DProperty extends CompositeProperty implements FrameTuple3DRe
 
    public DoubleProperty yProperty()
    {
-      return componentValueProperties[1];
+      return componentValueProperties == null ? null : componentValueProperties[1];
    }
 
    @Override
@@ -151,17 +151,17 @@ public class Tuple3DProperty extends CompositeProperty implements FrameTuple3DRe
 
    public DoubleProperty zProperty()
    {
-      return componentValueProperties[2];
+      return componentValueProperties == null ? null : componentValueProperties[2];
    }
 
    public Point3D toPoint3DInWorld()
    {
-      return toWorld(new Point3D(this));
+      return componentValueProperties == null ? null : toWorld(new Point3D(this));
    }
 
    public Vector3D toVector3DInWorld()
    {
-      return toWorld(new Vector3D(this));
+      return componentValueProperties == null ? null : toWorld(new Vector3D(this));
    }
 
    @Override

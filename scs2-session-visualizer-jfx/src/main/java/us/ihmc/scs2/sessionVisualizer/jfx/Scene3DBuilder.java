@@ -12,7 +12,6 @@ import javafx.scene.LightBase;
 import javafx.scene.Node;
 import javafx.scene.PointLight;
 import javafx.scene.paint.Color;
-import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
 import us.ihmc.log.LogTools;
 
 public class Scene3DBuilder
@@ -137,18 +136,6 @@ public class Scene3DBuilder
       light.setTranslateY(y);
       light.setTranslateZ(z);
       addNodeToView(light);
-   }
-
-   /**
-    * Display the world coordinate system.
-    * 
-    * @param arrowLength length of each axis of the coordinate system.
-    */
-   public void addWorldCoordinateSystem(double arrowLength)
-   {
-      JavaFXCoordinateSystem worldCoordinateSystem = new JavaFXCoordinateSystem(arrowLength);
-      worldCoordinateSystem.setMouseTransparent(true);
-      addNodeToView(worldCoordinateSystem);
    }
 
    /**

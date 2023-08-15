@@ -13,11 +13,11 @@
 
 <VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D.YoPolynomialFX3DEditorController">
    <children>
-      <fx:include fx:id="coefficientsXListEditor" source="../editor/YoCompositeListEditorPane.fxml" />
+      <fx:include fx:id="coefficientsXListEditor" source="../../editor/YoCompositeListEditorPane.fxml" />
       <Separator prefWidth="200.0" />
-      <fx:include fx:id="coefficientsYListEditor" source="../editor/YoCompositeListEditorPane.fxml" />
+      <fx:include fx:id="coefficientsYListEditor" source="../../editor/YoCompositeListEditorPane.fxml" />
       <Separator prefWidth="200.0" />
-      <fx:include fx:id="coefficientsZListEditor" source="../editor/YoCompositeListEditorPane.fxml" />
+      <fx:include fx:id="coefficientsZListEditor" source="../../editor/YoCompositeListEditorPane.fxml" />
       <Separator prefWidth="200.0" />
       <GridPane fx:id="propertyPane" hgap="10.0" styleClass="graphic-editor-gridpane" vgap="10.0">
          <columnConstraints>

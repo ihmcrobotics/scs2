@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicLine2DDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;

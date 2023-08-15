@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Region;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicPolygon2DDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeListEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeListEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoPolygonFX2D;

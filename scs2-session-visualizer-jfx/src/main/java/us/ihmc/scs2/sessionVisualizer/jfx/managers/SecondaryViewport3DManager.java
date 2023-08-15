@@ -13,7 +13,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXExtensions.raycast.CustomPickRayTools;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
+import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
 public class SecondaryViewport3DManager implements SingleViewport3DManager
@@ -23,7 +24,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    private WritableImage image;
    private final ImageView cameraView;
    private final PerspectiveCamera camera;
-   private final FocusBasedCameraMouseEventHandler cameraController;
+   private final PerspectiveCameraController cameraController;
 
    private final SnapshotParameters snapshotParameters = new SnapshotParameters();
 
@@ -36,7 +37,10 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
       }
    };
 
-   public SecondaryViewport3DManager(Group mainView3DRoot)
+   public SecondaryViewport3DManager(Group mainView3DRoot,
+                                     YoManager yoManager,
+                                     YoCompositeSearchManager yoCompositeSearchManager,
+                                     ReferenceFrameManager referenceFrameManager)
    {
       this.rootNode3D = mainView3DRoot;
 
@@ -53,19 +57,23 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
       camera.setFarClip(2.0e5);
 
       // Setting up the camera controller.
-      cameraController = new FocusBasedCameraMouseEventHandler(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
+      cameraController = new PerspectiveCameraController(widthProperty(), heightProperty(), camera, Axis3D.Z, Axis3D.X);
       cameraController.enableShiftClickFocusTranslation(e -> CustomPickRayTools.pick(e.getX(),
                                                                                      e.getY(),
                                                                                      image.getWidth(),
                                                                                      image.getHeight(),
                                                                                      camera,
                                                                                      rootNode3D));
+      cameraController.start();
       cameraView.addEventHandler(Event.ANY, cameraController);
 
-      Sphere focusPointViz = cameraController.getFocusPointViz();
-      rootNode3D.getChildren().add(focusPointViz);
-      focusPointViz.visibleProperty().bind(cameraView.focusedProperty());
-      MainViewport3DManager.setupNodeTrackingContextMenu(cameraController, cameraView);
+      Sphere focusPointViz = cameraController.getFocalPointViz();
+      if (focusPointViz != null)
+      {
+         rootNode3D.getChildren().add(focusPointViz);
+         focusPointViz.visibleProperty().bind(cameraView.focusedProperty());
+      }
+      MainViewport3DManager.setupContextMenu(cameraController, yoCompositeSearchManager, yoManager, referenceFrameManager, cameraView);
 
       snapshotParameters.setCamera(camera);
       snapshotParameters.setDepthBuffer(true);
@@ -90,6 +98,27 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    }
 
    @Override
+   public void startSession(Session session)
+   {
+   }
+
+   @Override
+   public void stopSession()
+   {
+      cameraController.cameraPositionCoordinatesToTrackProperty().setValue(null);
+      cameraController.cameraOrbitalCoordinatesToTrackProperty().setValue(null);
+      cameraController.cameraLevelOrbitalCoordinatesToTrackProperty().setValue(null);
+      cameraController.getFocalPointHandler().coordinatesToTrackProperty().set(null);
+      cameraController.getFocalPointHandler().nodeToTrackProperty().set(null);
+   }
+
+   @Override
+   public boolean isSessionLoaded()
+   {
+      return true;
+   }
+
+   @Override
    public Pane getPane()
    {
       return container;
@@ -102,7 +131,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    }
 
    @Override
-   public FocusBasedCameraMouseEventHandler getCameraController()
+   public PerspectiveCameraController getCameraController()
    {
       return cameraController;
    }
@@ -111,7 +140,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
    public void dispose()
    {
       animationTimer.stop();
-      cameraController.dispose();
+      cameraController.stop();
    }
 
    public ReadOnlyDoubleProperty widthProperty()

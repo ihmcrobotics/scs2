@@ -6,10 +6,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
@@ -30,8 +30,8 @@ public class YoSTPBoxFX3DGroupEditorController extends YoGroupFXEditorController
    @FXML
    private ImageView minimumMarginValidImageView, maximumMarginValidImageView;
 
-   private YoDoubleTextField yoMinimumMarginTextField;
-   private YoDoubleTextField yoMaximumMarginTextField;
+   private DoubleSearchField yoMinimumMarginTextField;
+   private DoubleSearchField yoMaximumMarginTextField;
    private ObservableBooleanValue inputsValidityProperty;
 
    @Override

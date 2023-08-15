@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.addAfterMenuItemFactory;
 import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.addBeforeMenuItemFactory;
@@ -56,10 +56,10 @@ import javafx.scene.layout.VBox;
 import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.IntegerSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.ReferenceFrameSearchField;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.YoCompositeListSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoCompositeListTextField;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoIntegerTextField;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoReferenceFrameTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -98,8 +98,8 @@ public class YoCompositeListEditorPaneController
 
    private ObservableBooleanValue inputsValidityProperty;
    private BooleanProperty compositesValidityProperty = new SimpleBooleanProperty(this, "compositesValidity", false);
-   private YoReferenceFrameTextField yoReferenceFrameTextField;
-   private YoIntegerTextField yoNumberOfCompositesTextField;
+   private ReferenceFrameSearchField yoReferenceFrameTextField;
+   private IntegerSearchField yoNumberOfCompositesTextField;
 
    private final ObjectProperty<IntegerProperty> numberOfCompositesProperty = new SimpleObjectProperty<>(this, "numberOfComposites", null);
    private final ObjectProperty<List<DoubleProperty[]>> compositeListProperty = new SimpleObjectProperty<>(this, "compositeList", null);
@@ -118,7 +118,7 @@ public class YoCompositeListEditorPaneController
 
       YoCompositeSearchManager yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
       LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
-      yoNumberOfCompositesTextField = new YoIntegerTextField(numberOfCompositesTextField,
+      yoNumberOfCompositesTextField = new IntegerSearchField(numberOfCompositesTextField,
                                                              yoCompositeSearchManager,
                                                              linkedRootRegistry,
                                                              true,
@@ -130,7 +130,7 @@ public class YoCompositeListEditorPaneController
          yoCompositeSearchManager.requestSearchListOfYoComposites(yoCompositeCollection.getPattern(),
                                                                   (Consumer<Map<String, List<YoComposite>>>) compositeListMap ->
                                                                   {
-                                                                     YoCompositeListTextField yoCompositeListTextField = new YoCompositeListTextField(compositeListMap,
+                                                                     YoCompositeListSearchField yoCompositeListTextField = new YoCompositeListSearchField(compositeListMap,
                                                                                                                                                       compositeListSearchTextField);
                                                                      yoCompositeListTextField.setupAutoCompletion();
                                                                      yoCompositeListTextField.compositeListProperty()
@@ -146,7 +146,7 @@ public class YoCompositeListEditorPaneController
       else
       {
          ReferenceFrameManager referenceFrameManager = toolkit.getReferenceFrameManager();
-         yoReferenceFrameTextField = new YoReferenceFrameTextField(referenceFrameSearchTextField, referenceFrameManager);
+         yoReferenceFrameTextField = new ReferenceFrameSearchField(referenceFrameSearchTextField, referenceFrameManager);
          yoReferenceFrameTextField.setupAutoCompletion();
          yoReferenceFrameTextField.supplierProperty().addListener((o, oldValue, newValue) ->
          {
