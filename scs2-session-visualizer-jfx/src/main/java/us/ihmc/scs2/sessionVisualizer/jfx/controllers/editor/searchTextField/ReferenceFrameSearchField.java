@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,16 +17,16 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 
-public class YoReferenceFrameTextField extends YoVariableTextField<Property<ReferenceFrame>>
+public class ReferenceFrameSearchField extends PropertySearchField<Property<ReferenceFrame>>
 {
    private final ReferenceFrameManager referenceFrameManager;
 
-   public YoReferenceFrameTextField(TextField textField, ReferenceFrameManager referenceFrameManager)
+   public ReferenceFrameSearchField(TextField textField, ReferenceFrameManager referenceFrameManager)
    {
       this(textField, referenceFrameManager, null);
    }
 
-   public YoReferenceFrameTextField(TextField textField, ReferenceFrameManager referenceFrameManager, ImageView validImageView)
+   public ReferenceFrameSearchField(TextField textField, ReferenceFrameManager referenceFrameManager, ImageView validImageView)
    {
       super(textField, validImageView);
       this.referenceFrameManager = referenceFrameManager;

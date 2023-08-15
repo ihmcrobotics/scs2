@@ -7,7 +7,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<GridPane fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" styleClass="graphic-editor-gridpane" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoCompositeEditorPaneController">
+<GridPane fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" styleClass="graphic-editor-gridpane"
+   fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" />
       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />

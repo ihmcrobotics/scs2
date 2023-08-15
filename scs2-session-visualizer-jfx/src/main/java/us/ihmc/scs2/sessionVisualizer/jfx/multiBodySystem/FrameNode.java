@@ -3,7 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem;
 import javafx.scene.Node;
 import javafx.scene.transform.Affine;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.javaFXToolkit.JavaFXTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class FrameNode
 {
@@ -20,7 +20,7 @@ public class FrameNode
 
    public void updatePose()
    {
-      nodePose.setToTransform(JavaFXTools.createRigidBodyTransformToAffine(referenceFrame.getTransformToRoot()));
+      nodePose.setToTransform(JavaFXMissingTools.createRigidBodyTransformToAffine(referenceFrame.getTransformToRoot()));
    }
 
    public Node getNode()

@@ -7,7 +7,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphic3DDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.color.ColorEditorController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.color.ColorEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;

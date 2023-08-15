@@ -25,6 +25,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
+import javafx.scene.transform.Affine;
+import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Transform;
@@ -34,7 +36,10 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import us.ihmc.euclid.axisAngle.interfaces.AxisAngleReadOnly;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
+import us.ihmc.euclid.matrix.interfaces.RotationMatrixReadOnly;
+import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
@@ -49,10 +54,137 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
 public class JavaFXMissingTools
 {
+   public static void zero(Translate translate)
+   {
+      translate.setX(0.0);
+      translate.setY(0.0);
+      translate.setZ(0.0);
+   }
+
+   public static void setTranslate(Translate translateToPack, double x, double y, double z)
+   {
+      translateToPack.setX(x);
+      translateToPack.setY(y);
+      translateToPack.setZ(z);
+   }
+
    public static void addEquals(Translate translateToModify, Tuple2DReadOnly offset)
    {
       translateToModify.setX(translateToModify.getX() + offset.getX());
       translateToModify.setY(translateToModify.getY() + offset.getY());
+   }
+
+   public static void addEquals(Translate translateToModify, Tuple3DReadOnly offset)
+   {
+      addEquals(translateToModify, offset.getX(), offset.getY(), offset.getZ());
+   }
+
+   public static void addEquals(Translate translateToModify, double dx, double dy, double dz)
+   {
+      translateToModify.setX(translateToModify.getX() + dx);
+      translateToModify.setY(translateToModify.getY() + dy);
+      translateToModify.setZ(translateToModify.getZ() + dz);
+   }
+
+   public static void subEquals(Translate translateToModify, Tuple3DReadOnly offset)
+   {
+      translateToModify.setX(translateToModify.getX() - offset.getX());
+      translateToModify.setY(translateToModify.getY() - offset.getY());
+      translateToModify.setZ(translateToModify.getZ() - offset.getZ());
+   }
+
+   public static void applyTranform(Transform transform, Vector3DBasics vectorToTransform)
+   {
+      javafx.geometry.Point3D temporaryVector = transform.deltaTransform(vectorToTransform.getX(), vectorToTransform.getY(), vectorToTransform.getZ());
+      vectorToTransform.set(temporaryVector.getX(), temporaryVector.getY(), temporaryVector.getZ());
+   }
+
+   public static void applyTranform(Transform transform, Point3DBasics pointToTransform)
+   {
+      javafx.geometry.Point3D temporaryVector = transform.transform(pointToTransform.getX(), pointToTransform.getY(), pointToTransform.getZ());
+      pointToTransform.set(temporaryVector.getX(), temporaryVector.getY(), temporaryVector.getZ());
+   }
+
+   public static void applyInvertTranform(Transform transform, Vector3DBasics vectorToTransform)
+   {
+      javafx.geometry.Point3D temporaryVector = new javafx.geometry.Point3D(vectorToTransform.getX(), vectorToTransform.getY(), vectorToTransform.getZ());
+      try
+      {
+         transform.inverseDeltaTransform(temporaryVector);
+      }
+      catch (NonInvertibleTransformException e)
+      {
+         e.printStackTrace();
+      }
+      vectorToTransform.set(temporaryVector.getX(), temporaryVector.getY(), temporaryVector.getZ());
+   }
+
+   public static void convertAxisAngleToRotate(AxisAngleReadOnly axisAngle, Rotate rotateToPack)
+   {
+      rotateToPack.setAngle(axisAngle.getAngle());
+      rotateToPack.setPivotX(0.0);
+      rotateToPack.setPivotY(0.0);
+      rotateToPack.setPivotZ(0.0);
+      rotateToPack.setAxis(new javafx.geometry.Point3D(axisAngle.getX(), axisAngle.getY(), axisAngle.getZ()));
+   }
+
+   public static Affine createAffineFromOrientation3DAndTuple(Orientation3DReadOnly orientation3D, Tuple3DReadOnly translation)
+   {
+      return createRigidBodyTransformToAffine(new RigidBodyTransform(orientation3D, translation));
+   }
+
+   public static Affine createRigidBodyTransformToAffine(RigidBodyTransform rigidBodyTransform)
+   {
+      Affine ret = new Affine();
+      convertRigidBodyTransformToAffine(rigidBodyTransform, ret);
+      return ret;
+   }
+
+   public static void convertRigidBodyTransformToAffine(RigidBodyTransform rigidBodyTransform, Affine affineToPack)
+   {
+      affineToPack.setMxx(rigidBodyTransform.getM00());
+      affineToPack.setMxy(rigidBodyTransform.getM01());
+      affineToPack.setMxz(rigidBodyTransform.getM02());
+      affineToPack.setMyx(rigidBodyTransform.getM10());
+      affineToPack.setMyy(rigidBodyTransform.getM11());
+      affineToPack.setMyz(rigidBodyTransform.getM12());
+      affineToPack.setMzx(rigidBodyTransform.getM20());
+      affineToPack.setMzy(rigidBodyTransform.getM21());
+      affineToPack.setMzz(rigidBodyTransform.getM22());
+
+      affineToPack.setTx(rigidBodyTransform.getM03());
+      affineToPack.setTy(rigidBodyTransform.getM13());
+      affineToPack.setTz(rigidBodyTransform.getM23());
+   }
+
+   public static void convertRotationMatrixToAffine(RotationMatrixReadOnly rotation, Affine affineToModify)
+   {
+      affineToModify.setMxx(rotation.getM00());
+      affineToModify.setMxy(rotation.getM01());
+      affineToModify.setMxz(rotation.getM02());
+      affineToModify.setMyx(rotation.getM10());
+      affineToModify.setMyy(rotation.getM11());
+      affineToModify.setMyz(rotation.getM12());
+      affineToModify.setMzx(rotation.getM20());
+      affineToModify.setMzy(rotation.getM21());
+      affineToModify.setMzz(rotation.getM22());
+   }
+
+   public static void convertEuclidAffineToJavaFXAffine(AffineTransform euclidAffine, Affine javaFxAffineToPack)
+   {
+      javaFxAffineToPack.setMxx(euclidAffine.getM00());
+      javaFxAffineToPack.setMxy(euclidAffine.getM01());
+      javaFxAffineToPack.setMxz(euclidAffine.getM02());
+      javaFxAffineToPack.setMyx(euclidAffine.getM10());
+      javaFxAffineToPack.setMyy(euclidAffine.getM11());
+      javaFxAffineToPack.setMyz(euclidAffine.getM12());
+      javaFxAffineToPack.setMzx(euclidAffine.getM20());
+      javaFxAffineToPack.setMzy(euclidAffine.getM21());
+      javaFxAffineToPack.setMzz(euclidAffine.getM22());
+
+      javaFxAffineToPack.setTx(euclidAffine.getM03());
+      javaFxAffineToPack.setTy(euclidAffine.getM13());
+      javaFxAffineToPack.setTz(euclidAffine.getM23());
    }
 
    public static void runLater(Class<?> caller, Runnable task)

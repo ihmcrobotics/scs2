@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField;
+package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,23 +21,23 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.yoVariables.variable.YoInteger;
 
-public class YoIntegerTextField extends YoVariableTextField<IntegerProperty>
+public class IntegerSearchField extends PropertySearchField<IntegerProperty>
 {
    private final YoCompositeCollection yoIntegerCollection;
    private final LinkedYoRegistry linkedRootRegistry;
    private final boolean isInputOptional;
 
-   public YoIntegerTextField(TextField textField, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry)
+   public IntegerSearchField(TextField textField, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry)
    {
       this(textField, searchManager, linkedRootRegistry, null);
    }
 
-   public YoIntegerTextField(TextField textField, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry, ImageView validImageView)
+   public IntegerSearchField(TextField textField, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry, ImageView validImageView)
    {
       this(textField, searchManager, linkedRootRegistry, false, validImageView);
    }
 
-   public YoIntegerTextField(TextField textField,
+   public IntegerSearchField(TextField textField,
                              YoCompositeSearchManager searchManager,
                              LinkedYoRegistry linkedRootRegistry,
                              boolean isInputOptional,

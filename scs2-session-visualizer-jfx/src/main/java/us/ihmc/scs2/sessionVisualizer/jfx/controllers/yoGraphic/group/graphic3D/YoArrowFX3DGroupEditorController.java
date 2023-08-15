@@ -9,9 +9,9 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphic3DStyleEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.YoGraphicNameEditorPaneController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor.yoTextField.YoDoubleTextField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -38,10 +38,10 @@ public class YoArrowFX3DGroupEditorController extends YoGroupFXEditorController<
    @FXML
    private ImageView bodyRadiusValidImageView, headRadiusValidImageView;
 
-   private YoDoubleTextField yoBodyLengthTextField;
-   private YoDoubleTextField yoBodyRadiusTextField;
-   private YoDoubleTextField yoHeadLengthTextField;
-   private YoDoubleTextField yoHeadRadiusTextField;
+   private DoubleSearchField yoBodyLengthTextField;
+   private DoubleSearchField yoBodyRadiusTextField;
+   private DoubleSearchField yoHeadLengthTextField;
+   private DoubleSearchField yoHeadRadiusTextField;
    private ObservableBooleanValue inputsValidityProperty;
 
    @Override
