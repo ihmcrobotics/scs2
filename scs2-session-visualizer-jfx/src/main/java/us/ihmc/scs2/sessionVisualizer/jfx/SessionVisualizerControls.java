@@ -102,6 +102,20 @@ public interface SessionVisualizerControls
     */
    void setCameraPosition(double x, double y, double z);
 
+   /** @deprecated Use {@link #setCameraFocalPosition(Point3DReadOnly)} instead. */
+   @Deprecated
+   default void setCameraFocusPosition(Point3DReadOnly position)
+   {
+      setCameraFocalPosition(position);
+   }
+
+   /** @deprecated Use {@link #setCameraFocalPosition(double, double, double)} instead. */
+   @Deprecated
+   default void setCameraFocusPosition(double x, double y, double z)
+   {
+      setCameraFocalPosition(x, y, z);
+   }
+
    /**
     * Convenience methods to set the camera position.
     *
@@ -159,7 +173,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the camera's focal point to track the given coordinates.
-    * 
+    *
     * @param coordinatesToTrack the coordinates to track.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
@@ -175,7 +189,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the camera's focal point to track the given coordinates.
-    * 
+    *
     * @param xCoordinateToTrack the x coordinate to track.
     * @param yCoordinateToTrack the y coordinate to track.
     * @param zCoordinateToTrack the z coordinate to track.
@@ -197,7 +211,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the camera's focal point to track the given coordinates.
-    * 
+    *
     * @param xCoordinateNameToTrack the name (fullname or short name) of the {@code YoVariable} to
     *                               track for the x coordinate. Can be a double value.
     * @param yCoordinateNameToTrack the name (fullname or short name) of the {@code YoVariable} to
@@ -220,7 +234,7 @@ public interface SessionVisualizerControls
 
    /**
     * Requests the camera's focal point to track the given coordinates.
-    * 
+    *
     * @param coordinatesToTrack the coordinates to track.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
@@ -237,7 +251,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
     * point.
     * </p>
-    * 
+    *
     * @param cameraCoordinates the cartesian coordinates of the camera.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
@@ -255,7 +269,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
     * point.
     * </p>
-    * 
+    *
     * @param xCameraCoordinate the x coordinate of the camera.
     * @param yCameraCoordinate the y coordinate of the camera.
     * @param zCameraCoordinate the z coordinate of the camera.
@@ -277,7 +291,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
     * point.
     * </p>
-    * 
+    *
     * @param xCameraCoordinateName the name (fullname or short name) of the {@code YoVariable} for the
     *                              x coordinate of the camera. Can be a double value.
     * @param yCameraCoordinateName the name (fullname or short name) of the {@code YoVariable} for the
@@ -300,7 +314,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will remain at the same location, thus rotating to follow to the focal
     * point.
     * </p>
-    * 
+    *
     * @param cameraCoordinates the cartesian coordinates of the camera.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
@@ -317,7 +331,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will be translating by the same amount as the focal point preserving the
     * orientation of the camera.
     * </p>
-    * 
+    *
     * @param distanceCameraCoordinate  the distance coordinate of the camera, range ]0, +&infin;[.
     *                                  Controls how far the camera is from the focal point.
     * @param longitudeCameraCoordinate the longitude coordinate of the camera, range [-<i>pi</i>,
@@ -347,7 +361,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will be translating by the same amount as the focal point preserving the
     * orientation of the camera.
     * </p>
-    * 
+    *
     * @param distanceCameraCoordinateName  the name (fullname or short name) of the {@code YoVariable}
     *                                      for the distance coordinate of the camera, range ]0,
     *                                      +&infin;[. Can be a double value. Controls how far the
@@ -380,7 +394,7 @@ public interface SessionVisualizerControls
     * coordinate, the camera will be translating by the same amount as the focal point preserving the
     * orientation of the camera.
     * </p>
-    * 
+    *
     * @param cameraCoordinates the camera's coordinates.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
@@ -398,7 +412,7 @@ public interface SessionVisualizerControls
     * Vertically, the focal point translation doesn't affect the camera position, instead the camera
     * pitches to follow the focal point.
     * </p>
-    * 
+    *
     * @param distanceCameraCoordinate  the distance coordinate of the camera, range ]0, +&infin;[.
     *                                  Controls how far the camera is from the focal point.
     * @param longitudeCameraCoordinate the longitude coordinate of the camera, range [-<i>pi</i>,
@@ -426,7 +440,7 @@ public interface SessionVisualizerControls
     * Vertically, the focal point translation doesn't affect the camera position, instead the camera
     * pitches to follow the focal point.
     * </p>
-    * 
+    *
     * @param distanceCameraCoordinateName  the name (fullname or short name) of the {@code YoVariable}
     *                                      for the distance coordinate of the camera, range ]0,
     *                                      +&infin;[. Can be a double value. Controls how far the
@@ -459,7 +473,7 @@ public interface SessionVisualizerControls
     * Vertically, the focal point translation doesn't affect the camera position, instead the camera
     * pitches to follow the focal point.
     * </p>
-    * 
+    *
     * @param cameraCoordinates the camera's coordinates.
     * @see <a href=
     *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
