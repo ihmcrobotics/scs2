@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.javaFXExtensions.raycast.CustomPickRayTools;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 
@@ -94,6 +95,27 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
       }
 
       rootNode3D.snapshot(snapshotParameters, image);
+   }
+
+   @Override
+   public void startSession(Session session)
+   {
+   }
+
+   @Override
+   public void stopSession()
+   {
+      cameraController.cameraPositionCoordinatesToTrackProperty().setValue(null);
+      cameraController.cameraOrbitalCoordinatesToTrackProperty().setValue(null);
+      cameraController.cameraLevelOrbitalCoordinatesToTrackProperty().setValue(null);
+      cameraController.getFocalPointHandler().coordinatesToTrackProperty().set(null);
+      cameraController.getFocalPointHandler().nodeToTrackProperty().set(null);
+   }
+
+   @Override
+   public boolean isSessionLoaded()
+   {
+      return true;
    }
 
    @Override
