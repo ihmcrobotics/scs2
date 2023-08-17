@@ -203,15 +203,21 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
 
    private void setupYoGraphicDefinition(YoGraphicDefinition definition)
    {
-      backgroundExecutorManager.queueTaskToExecuteInBackground(this, () ->
+      // TODO: Workaround for when a reference frame and a yoGraphic that depends on that frame are added somewhat at the same time.
+      // By queueing to with the referenceFrameManager, we syncing the loading with the frame loading.
+      // Maybe a better solution would be to attempt to load the yoGraphic ASAP, if the frame is missing, use a placeholder and try to resolve it later.
+      backgroundExecutorManager.queueTaskToExecuteInBackground(referenceFrameManager, () ->
       {
-         YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager.getRootRegistryDatabase(),
-                                                                 root,
-                                                                 yoGraphicFXResourceManager,
-                                                                 referenceFrameManager,
-                                                                 definition);
-         if (item != null)
-            JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+         backgroundExecutorManager.queueTaskToExecuteInBackground(this, () ->
+         {
+            YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager.getRootRegistryDatabase(),
+                                                                    root,
+                                                                    yoGraphicFXResourceManager,
+                                                                    referenceFrameManager,
+                                                                    definition);
+            if (item != null)
+               JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+         });
       });
    }
 
