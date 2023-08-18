@@ -7,10 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 import java.util.function.ObjIntConsumer;
@@ -23,6 +20,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import us.hebi.matlab.mat.format.Mat5;
 import us.hebi.matlab.mat.format.Mat5File;
 import us.hebi.matlab.mat.types.Array;
@@ -59,6 +57,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 public class SharedMemoryIOTools
 {
    public static final int MATLAB_VARNAME_MAX_LENGTH = 63;
+   public static final int MATLAB_VARNAME_OVERFLOW_SUFFIX_CHARS = 3;
 
    public enum DataFormat
    {
@@ -445,7 +444,7 @@ public class SharedMemoryIOTools
 
       Struct nameHelperStruct = Mat5.newStruct();
       matFile.addArray("NameOverflow", nameHelperStruct);
-      AtomicInteger nameOverflowCounter = new AtomicInteger(0);
+      Map<String, MutableInt> nameOverflowCounter = new HashMap<>();
 
       yoVariableBufferStream.forEach(yoVariableBuffer ->
       {
@@ -489,18 +488,23 @@ public class SharedMemoryIOTools
       rootStruct.close();
    }
 
-   private static String checkAndRegisterLongName(String name, AtomicInteger nameOverflowCounter, Struct nameHelperStruct)
+   private static String checkAndRegisterLongName(String name, Map<String, MutableInt> nameOverflowCounter, Struct nameHelperStruct)
    {
       if (name.length() <= MATLAB_VARNAME_MAX_LENGTH)
          return name;
 
-      String uniqueNameIndex = Integer.toString(nameOverflowCounter.getAndIncrement());
-      int nameLength = name.length();
-      Matrix nameMatrix = Mat5.newMatrix(nameLength, 1);
-      for (int i = 0; i < nameLength; i++)
+      String shortenedName = name.substring(0, MATLAB_VARNAME_MAX_LENGTH - MATLAB_VARNAME_OVERFLOW_SUFFIX_CHARS);
+      int idSuffix = nameOverflowCounter.computeIfAbsent(name, n -> new MutableInt(0)).getAndIncrement();
+      String matlabFieldName = shortenedName + idSuffix;
+
+      if (matlabFieldName.length() > MATLAB_VARNAME_MAX_LENGTH)
+         throw new RuntimeException("Too many instances of shortened variable name " + shortenedName);
+
+      Matrix nameMatrix = Mat5.newMatrix(name.length(), 1);
+      for (int i = 0; i < name.length(); i++)
          nameMatrix.setInt(i, name.charAt(i));
-      nameHelperStruct.set(uniqueNameIndex, nameMatrix);
-      return uniqueNameIndex;
+      nameHelperStruct.set(matlabFieldName, nameMatrix);
+      return matlabFieldName;
    }
 
    private static void writeBuffer(Object buffer, Matrix matrix, int start, int length)
@@ -775,18 +779,16 @@ public class SharedMemoryIOTools
 
       try
       {
-         Integer.parseInt(fieldName);
+         Matrix matrix = nameHelperStruct.getMatrix(fieldName);
+         StringBuilder fullName = new StringBuilder();
+         for (int i = 0; i < matrix.getNumRows(); i++)
+            fullName.append((char) matrix.getInt(i));
+         return fullName.toString();
       }
-      catch (NumberFormatException e)
+      catch (IllegalArgumentException e)
       {
          return fieldName;
       }
-
-      Matrix matrix = nameHelperStruct.getMatrix(fieldName);
-      StringBuilder fullName = new StringBuilder();
-      for (int i = 0; i < matrix.getNumRows(); i++)
-         fullName.append((char) matrix.getInt(i));
-      return fullName.toString();
    }
 
    private static void importMatlabMatrix(YoVariable variable, Matrix matlabMatrix, YoSharedBuffer buffer)
