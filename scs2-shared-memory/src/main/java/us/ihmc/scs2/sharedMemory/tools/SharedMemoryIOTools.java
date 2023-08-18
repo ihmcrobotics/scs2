@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
@@ -442,6 +443,10 @@ public class SharedMemoryIOTools
       Struct rootStruct = Mat5.newStruct();
       matFile.addArray(rootRegistry.getName(), rootStruct);
 
+      Struct nameHelperStruct = Mat5.newStruct();
+      matFile.addArray("NameOverflow", nameHelperStruct);
+      AtomicInteger nameOverflowCounter = new AtomicInteger(0);
+
       yoVariableBufferStream.forEach(yoVariableBuffer ->
       {
          YoBufferPropertiesReadOnly properties = yoVariableBuffer.getProperties();
@@ -466,20 +471,36 @@ public class SharedMemoryIOTools
                catch (IllegalArgumentException e)
                {
                   childStruct = Mat5.newStruct();
-                  parentStruct.set(subName, childStruct);
+                  String registryStructName = checkAndRegisterLongName(subName, nameOverflowCounter, nameHelperStruct);
+                  parentStruct.set(registryStructName, childStruct);
                }
 
                parentStruct = childStruct;
             }
          }
 
+         String variableStructName = checkAndRegisterLongName(yoVariableBuffer.getYoVariable().getName(), nameOverflowCounter, nameHelperStruct);
          Matrix matMatrix = Mat5.newMatrix(properties.getActiveBufferLength(), 1);
          writeBuffer(yoVariableBuffer.getBuffer(), matMatrix, properties.getInPoint(), properties.getActiveBufferLength());
-         parentStruct.set(yoVariableBuffer.getYoVariable().getName(), matMatrix);
+         parentStruct.set(variableStructName, matMatrix);
       });
 
       Mat5.writeToFile(matFile, outputFile);
       rootStruct.close();
+   }
+
+   private static String checkAndRegisterLongName(String name, AtomicInteger nameOverflowCounter, Struct nameHelperStruct)
+   {
+      if (name.length() <= MATLAB_VARNAME_MAX_LENGTH)
+         return name;
+
+      String uniqueNameIndex = Integer.toString(nameOverflowCounter.getAndIncrement());
+      int nameLength = name.length();
+      Matrix nameMatrix = Mat5.newMatrix(nameLength, 1);
+      for (int i = 0; i < nameLength; i++)
+         nameMatrix.setInt(i, name.charAt(i));
+      nameHelperStruct.set(uniqueNameIndex, nameMatrix);
+      return uniqueNameIndex;
    }
 
    private static void writeBuffer(Object buffer, Matrix matrix, int start, int length)
@@ -710,84 +731,62 @@ public class SharedMemoryIOTools
 
       if (entries.size() == 0)
          throw new IllegalArgumentException("Empty data structure");
-      if (entries.size() != 1 || !(entries.get(0).getValue() instanceof Struct))
-         throw new IllegalArgumentException("Unexpected data structure");
+      if (entries.size() > 2)
+         throw new IllegalArgumentException("Unexpected number of structs");
 
       Entry entry = entries.get(0);
       if (!entry.getName().equals(root.getName()))
          throw new IllegalArgumentException("Registry name mismatch");
       Struct rootStruct = (Struct) entry.getValue();
 
-      importMatlabStruct(rootStruct, root, buffer);
+      Struct nameHelperStruct = entries.size() == 2 ? (Struct) entries.get(1).getValue() : null;
+      importMatlabStruct(rootStruct, root, buffer, nameHelperStruct);
 
       return buffer;
    }
 
-   private static void importMatlabStruct(Struct matlabStruct, YoRegistry parentRegistry, YoSharedBuffer buffer)
+   private static void importMatlabStruct(Struct matlabStruct, YoRegistry parentRegistry, YoSharedBuffer buffer, Struct nameHelperStruct)
    {
-      for (String fieldName : matlabStruct.getFieldNames())
+      for (String rawFieldName : matlabStruct.getFieldNames())
       {
-         Array field = matlabStruct.get(fieldName);
+         String fieldName = checkAndRetrieveLongName(rawFieldName, nameHelperStruct);
+         Array field = matlabStruct.get(rawFieldName);
 
          if (field instanceof Matrix)
          {
             YoVariable variable = parentRegistry.getVariable(fieldName);
             if (variable == null)
-            { // First check if the variable name may have been truncated.
-               if (fieldName.length() == MATLAB_VARNAME_MAX_LENGTH)
-               {
-                  // Look for variables with names that are too long and start the same as our fieldName
-                  List<YoVariable> candidates = parentRegistry.getVariables()
-                                                              .stream()
-                                                              .filter(child -> child.getName().length() > MATLAB_VARNAME_MAX_LENGTH
-                                                                               && child.getName().startsWith(fieldName))
-                                                              .toList();
-                  // We succeed only if there's a single candidate variable
-                  if (candidates.size() == 1)
-                     variable = candidates.get(0);
-                  else if (candidates.size() > 1)
-                     LogTools.error("Found multiple candidate variables for the possibly truncated name {}. Candidates: {}.",
-                                    fieldName,
-                                    candidates.stream().map(YoVariable::getName).toList());
-               }
-            }
-
-            if (variable == null)
                throw new IllegalArgumentException("Could not find the variable " + fieldName + " in " + parentRegistry);
-
             importMatlabMatrix(variable, (Matrix) field, buffer);
          }
          else if (field instanceof Struct)
          {
             // TODO Should be replaced with YoRegistry.getChild(String) when available.
             YoRegistry registry = parentRegistry.findRegistry(new YoNamespace(fieldName));
-
-            if (registry == null)
-            { // First check if the variable name may have been truncated.
-               if (fieldName.length() == MATLAB_VARNAME_MAX_LENGTH)
-               {
-                  // Look for variables with names that are too long and start the same as our fieldName
-                  List<YoRegistry> candidates = parentRegistry.getChildren()
-                                                              .stream()
-                                                              .filter(child -> child.getName().length() > MATLAB_VARNAME_MAX_LENGTH
-                                                                               && child.getName().startsWith(fieldName))
-                                                              .toList();
-                  // We succeed only if there's a single candidate variable
-                  if (candidates.size() == 1)
-                     registry = candidates.get(0);
-                  else if (candidates.size() > 1)
-                     LogTools.error("Found multiple candidate registries for the possibly truncated name {}. Candidates: {}.",
-                                    fieldName,
-                                    candidates.stream().map(YoRegistry::getName).toList());
-               }
-            }
-
-            if (registry == null)
-               throw new IllegalArgumentException("Could not find the registry " + fieldName + " in " + parentRegistry);
-
-            importMatlabStruct((Struct) field, registry, buffer);
+            importMatlabStruct((Struct) field, registry, buffer, nameHelperStruct);
          }
       }
+   }
+
+   private static String checkAndRetrieveLongName(String fieldName, Struct nameHelperStruct)
+   {
+      if (nameHelperStruct == null)
+         return fieldName;
+
+      try
+      {
+         Integer.parseInt(fieldName);
+      }
+      catch (NumberFormatException e)
+      {
+         return fieldName;
+      }
+
+      Matrix matrix = nameHelperStruct.getMatrix(fieldName);
+      StringBuilder fullName = new StringBuilder();
+      for (int i = 0; i < matrix.getNumRows(); i++)
+         fullName.append((char) matrix.getInt(i));
+      return fullName.toString();
    }
 
    private static void importMatlabMatrix(YoVariable variable, Matrix matlabMatrix, YoSharedBuffer buffer)
@@ -845,5 +844,14 @@ public class SharedMemoryIOTools
 
       buffer.setInPoint(0);
       buffer.setOutPoint(newSize - 1);
+   }
+
+   public static void main(String[] args)
+   {
+      String a = "3289";
+      String b = "thisIsAWord";
+
+      Integer.parseInt(a);
+      Integer.parseInt(b);
    }
 }
