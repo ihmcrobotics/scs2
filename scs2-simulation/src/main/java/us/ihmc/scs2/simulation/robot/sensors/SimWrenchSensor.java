@@ -56,10 +56,10 @@ public class SimWrenchSensor extends SimSensor
                                       new YoFrameVector3D(name + "Moment", getFrame(), registry),
                                       new YoFrameVector3D(name + "Force", getFrame(), registry));
 
-      filterBreakFrequency = new YoDouble(parentJoint.getName() + name + "FilterBreakFrequency", registry);
+      filterBreakFrequency = new YoDouble(name + "FilterBreakFrequency", registry);
       filterBreakFrequency.set(Double.POSITIVE_INFINITY);
       getSamplingRate().addListener(v -> filterBreakFrequency.set(getSamplingRate().getValue() * ANTIALIASING_FILTER_RATIO));
-      filterInitialized = new YoBoolean(parentJoint.getName() + name + "FilterInitialized", registry);
+      filterInitialized = new YoBoolean(name + "FilterInitialized", registry);
       wrenchFiltered = new YoFixedFrameWrench(parentJoint.getSuccessor().getBodyFixedFrame(),
                                               new YoFrameVector3D(name + "MomentFiltered", getFrame(), registry),
                                               new YoFrameVector3D(name + "ForceFiltered", getFrame(), registry));
