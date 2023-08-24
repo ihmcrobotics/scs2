@@ -160,7 +160,7 @@ public class SharedMemoryIOTools
       Stream<YoRegistry> childrenStream = yoRegistry.getChildren().stream();
       if (registryFilter != null)
          childrenStream = childrenStream.filter(registryFilter);
-      definition.setYoRegistries(childrenStream.map(SharedMemoryIOTools::toYoRegistryDefinition).collect(Collectors.toList()));
+      definition.setYoRegistries(childrenStream.map(childRegistry -> toYoRegistryDefinition(childRegistry, variableFilter, registryFilter)).collect(Collectors.toList()));
 
       return definition;
    }
