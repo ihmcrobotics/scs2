@@ -40,17 +40,17 @@ public class SimIMUSensor extends SimSensor
       super(name, parentJoint, transformToParent);
       ReferenceFrame rootFrame = parentJoint.getFrameAfterJoint().getRootFrame();
       YoRegistry registry = parentJoint.getRegistry();
-      orientation = new YoFrameQuaternion(parentJoint.getName() + name + "Orientation", rootFrame, registry);
-      angularVelocity = new YoFrameVector3D(parentJoint.getName() + name + "AngularVelocity", getFrame(), registry);
-      linearAcceleration = new YoFrameVector3D(parentJoint.getName() + name + "LinearAcceleration", getFrame(), registry);
+      orientation = new YoFrameQuaternion(name + "Orientation", rootFrame, registry);
+      angularVelocity = new YoFrameVector3D(name + "AngularVelocity", getFrame(), registry);
+      linearAcceleration = new YoFrameVector3D(name + "LinearAcceleration", getFrame(), registry);
 
-      filterBreakFrequency = new YoDouble(parentJoint.getName() + name + "FilterBreakFrequency", registry);
+      filterBreakFrequency = new YoDouble(name + "FilterBreakFrequency", registry);
       filterBreakFrequency.set(Double.POSITIVE_INFINITY);
       getSamplingRate().addListener(v -> filterBreakFrequency.set(getSamplingRate().getValue() * ANTIALIASING_FILTER_RATIO));
-      filterInitialized = new YoBoolean(parentJoint.getName() + name + "FilterInitialized", registry);
-      orientationFiltered = new YoFrameQuaternion(parentJoint.getName() + name + "OrientationFiltered", rootFrame, registry);
-      angularVelocityFiltered = new YoFrameVector3D(parentJoint.getName() + name + "AngularVelocityFiltered", getFrame(), registry);
-      linearAccelerationFiltered = new YoFrameVector3D(parentJoint.getName() + name + "LinearAccelerationFiltered", getFrame(), registry);
+      filterInitialized = new YoBoolean(name + "FilterInitialized", registry);
+      orientationFiltered = new YoFrameQuaternion(name + "OrientationFiltered", rootFrame, registry);
+      angularVelocityFiltered = new YoFrameVector3D(name + "AngularVelocityFiltered", getFrame(), registry);
+      linearAccelerationFiltered = new YoFrameVector3D(name + "LinearAccelerationFiltered", getFrame(), registry);
    }
 
    private final FramePoint3D bodyFixedPoint = new FramePoint3D();
