@@ -59,10 +59,10 @@ public class MultiVideoDataReader
 
          if (progressConsumer != null)
          {
-            progressConsumer.info("Cropping video " + camera.getNameAsString());
+            progressConsumer.info("Cropping video (%s)".formatted(camera.getVideoFileAsString()));
             double progressPercentage = (double) i / (double) readers.size();
             progressConsumer.progress(progressPercentage);
-            subProgressConsumer = progressConsumer.subProgress(progressPercentage, (i + 1.0) / readers.size());
+            subProgressConsumer = progressConsumer.subProgress("Cropping video (%s): ".formatted(camera.getVideoFileAsString()), progressPercentage, (i + 1.0) / readers.size());
          }
 
          File timestampFile = new File(selectedDirectory, camera.getTimestampFileAsString());
