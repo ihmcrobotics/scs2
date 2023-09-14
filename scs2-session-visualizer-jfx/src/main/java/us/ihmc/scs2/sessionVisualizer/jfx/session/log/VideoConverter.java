@@ -48,6 +48,7 @@ public class VideoConverter
 
          if (progressConsumer != null)
          {
+            progressConsumer.info("frame %d/%d".formatted(demuxer.getCurrentFrame() - startFrame, numberOfFrames));
             progressConsumer.progress((double) (demuxer.getCurrentFrame() - startFrame) / (double) numberOfFrames);
          }
       }
