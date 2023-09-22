@@ -14,10 +14,15 @@ public interface ProgressConsumer
 
    default ProgressConsumer subProgress(double from, double to)
    {
-      return subProgress(this, from, to);
+      return subProgress(this, null, from, to);
    }
 
-   static ProgressConsumer subProgress(ProgressConsumer original, double from, double to)
+   default ProgressConsumer subProgress(String prefix, double from, double to)
+   {
+      return subProgress(this, prefix, from, to);
+   }
+
+   static ProgressConsumer subProgress(ProgressConsumer original, String prefix, double from, double to)
    {
       return new ProgressConsumer()
       {
@@ -29,13 +34,19 @@ public interface ProgressConsumer
          @Override
          public void info(String info)
          {
-            original.info(info);
+            if (prefix != null)
+               original.info(prefix + info);
+            else
+               original.info(info);
          }
 
          @Override
          public void error(String error)
          {
-            original.error(error);
+            if (prefix != null)
+               original.error(prefix + error);
+            else
+               original.error(error);
          }
 
          @Override
