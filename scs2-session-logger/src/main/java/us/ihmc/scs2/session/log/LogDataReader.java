@@ -52,7 +52,6 @@ public class LogDataReader
 
    private final int numberOfEntries;
    private final long initialTimestamp;
-   private final long finalTimestamp = 0;
 
    public LogDataReader(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -110,7 +109,11 @@ public class LogDataReader
       {
          if (compressed)
          {
-            initialTimestamp = logIndex.getInitialTimestamp();
+            // Workaround for Nadia controller which logs a blank line initially
+            if (logIndex.getInitialTimestamp() == 0)
+               initialTimestamp = logIndex.timestamps[1];
+            else
+               initialTimestamp = logIndex.getInitialTimestamp();
             positionChannel(0);
          }
          else
@@ -129,11 +132,6 @@ public class LogDataReader
    public long getInitialTimestamp()
    {
       return initialTimestamp;
-   }
-
-   public long getFinalTimestamp()
-   {
-      return finalTimestamp;
    }
 
    public int getNumberOfEntries()

@@ -90,7 +90,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
          FileOutputStream indexStream = new FileOutputStream(indexFile);
          FileChannel indexChannel = indexStream.getChannel();
 
-         progressConsumer.info("Writing variable data");
+         progressConsumer.info("Writing variable data %d/%d".formatted(0, to - from));
 
          ProgressConsumer dataCopyingProgress;
          if (multiVideoDataReader == null || multiVideoDataReader.getNumberOfVideos() == 0)
@@ -101,6 +101,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
          ByteBuffer indexBuffer = ByteBuffer.allocateDirect(16);
          for (int i = from; i <= to; i++)
          {
+            progressConsumer.info("Writing variable data %d/%d".formatted(i - from, to - from));
             dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
             ByteBuffer compressedData = readCompressedData(i);
 
