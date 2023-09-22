@@ -29,7 +29,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.converter.DoubleStringConverter;
 import us.ihmc.javaFXExtensions.control.LongSpinnerValueFactory;
-import us.ihmc.javaFXExtensions.control.UnboundedDoubleSpinnerValueFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
@@ -50,8 +49,6 @@ import us.ihmc.yoVariables.variable.YoVariable;
 // FIXME Need to manually do some cleanup when the cell is being updated.
 public class YoCompositeListCell extends ListCell<YoComposite>
 {
-   private static final double DOUBLE_SPINNER_STEP_SIZE = 0.1;
-
    private static final double GRAPHIC_PREF_WIDTH = 100.0;
 
    private final YoManager yoManager;
@@ -172,14 +169,13 @@ public class YoCompositeListCell extends ListCell<YoComposite>
    {
       YoDoubleProperty yoDoubleProperty = new YoDoubleProperty(yoDouble, this);
       yoDoubleProperty.setLinkedBuffer(isDisabled() ? null : linkedRegistry.linkYoVariable(yoDouble, yoDoubleProperty));
-      disabledProperty().addListener((o, oldValue, newValue) -> yoDoubleProperty.setLinkedBuffer(newValue ? null
-            : linkedRegistry.linkYoVariable(yoDouble, yoDoubleProperty)));
+      disabledProperty().addListener((o,
+                                      oldValue,
+                                      newValue) -> yoDoubleProperty.setLinkedBuffer(newValue ? null
+                                                                                             : linkedRegistry.linkYoVariable(yoDouble, yoDoubleProperty)));
       yoVariableProperties.add(yoDoubleProperty);
 
-      UnboundedDoubleSpinnerValueFactory valueFactory = new UnboundedDoubleSpinnerValueFactory(Double.NEGATIVE_INFINITY,
-                                                                                               Double.POSITIVE_INFINITY,
-                                                                                               yoDoubleProperty.getValue(),
-                                                                                               DOUBLE_SPINNER_STEP_SIZE);
+      YoDoubleSpinnerValueFactory valueFactory = new YoDoubleSpinnerValueFactory(yoDoubleProperty.getValue());
       DoubleStringConverter rawDoubleStringConverter = new DoubleStringConverter();
       ScientificDoubleStringConverter scientificDoubleStringConverter = new ScientificDoubleStringConverter(numberPrecision);
       valueFactory.setConverter(scientificDoubleStringConverter);
@@ -208,8 +204,10 @@ public class YoCompositeListCell extends ListCell<YoComposite>
    {
       YoBooleanProperty yoBooleanProperty = new YoBooleanProperty(yoBoolean, this);
       yoBooleanProperty.setLinkedBuffer(isDisabled() ? null : linkedRegistry.linkYoVariable(yoBoolean, yoBooleanProperty));
-      disabledProperty().addListener((o, oldValue, newValue) -> yoBooleanProperty.setLinkedBuffer(newValue ? null
-            : linkedRegistry.linkYoVariable(yoBoolean, yoBooleanProperty)));
+      disabledProperty().addListener((o,
+                                      oldValue,
+                                      newValue) -> yoBooleanProperty.setLinkedBuffer(newValue ? null
+                                                                                              : linkedRegistry.linkYoVariable(yoBoolean, yoBooleanProperty)));
       yoVariableProperties.add(yoBooleanProperty);
 
       CheckBox checkBox = new CheckBox();
@@ -256,8 +254,10 @@ public class YoCompositeListCell extends ListCell<YoComposite>
    {
       YoIntegerProperty yoIntegerProperty = new YoIntegerProperty(yoInteger, this);
       yoIntegerProperty.setLinkedBuffer(isDisabled() ? null : linkedRegistry.linkYoVariable(yoInteger, yoIntegerProperty));
-      disabledProperty().addListener((o, oldValue, newValue) -> yoIntegerProperty.setLinkedBuffer(newValue ? null
-            : linkedRegistry.linkYoVariable(yoInteger, yoIntegerProperty)));
+      disabledProperty().addListener((o,
+                                      oldValue,
+                                      newValue) -> yoIntegerProperty.setLinkedBuffer(newValue ? null
+                                                                                              : linkedRegistry.linkYoVariable(yoInteger, yoIntegerProperty)));
       yoVariableProperties.add(yoIntegerProperty);
 
       IntegerSpinnerValueFactory valueFactory = new IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE, yoIntegerProperty.getValue(), 1);
