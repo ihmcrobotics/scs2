@@ -1290,6 +1290,7 @@ public class VisualDefinitionFactory
       double radius = 0.02 * length;
       double coneRadius = 2.0 * radius;
 
+//      AffineTransform currentPreviousTransform = new AffineTransform(this.previousTransform);
       saveCurrentTransform();
 
       switch (axis)
@@ -1313,6 +1314,7 @@ public class VisualDefinitionFactory
       addCone(coneHeight, coneRadius, headMaterial);
 
       resetCurrentTransform();
+//      this.previousTransform.set(currentPreviousTransform);
    }
 
    /**
