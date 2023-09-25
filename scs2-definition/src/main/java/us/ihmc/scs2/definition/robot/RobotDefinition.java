@@ -12,9 +12,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import us.ihmc.euclid.matrix.Matrix3D;
-import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
+import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
@@ -499,7 +500,13 @@ public class RobotDefinition
     */
    public static void transformAllFramesToZUp(JointDefinition jointDefinition)
    {
-      Orientation3DBasics jointRotation = jointDefinition.getTransformToParent().getRotation();
+      transformAllFramesToZUp(jointDefinition, new RigidBodyTransform(jointDefinition.getTransformToParent()));
+   }
+
+   // Switching the transform type for the joint definition from YawPitchRollDefinition to RigidBodyTransform to avoid gimbal lock when concatenating rotations.
+   private static void transformAllFramesToZUp(JointDefinition jointDefinition, RigidBodyTransformReadOnly jointTransform)
+   {
+      Orientation3DReadOnly jointRotation = jointTransform.getRotation();
       if (jointDefinition instanceof OneDoFJointDefinition)
          jointRotation.transform(((OneDoFJointDefinition) jointDefinition).getAxis());
       RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
@@ -526,11 +533,13 @@ public class RobotDefinition
 
       for (JointDefinition childDefinition : jointDefinition.getSuccessor().getChildrenJoints())
       {
-         childDefinition.getTransformToParent().prependOrientation(jointRotation);
-         transformAllFramesToZUp(childDefinition);
+         RigidBodyTransform childTransform = new RigidBodyTransform(childDefinition.getTransformToParent());
+         childTransform.prependOrientation(jointRotation);
+         childDefinition.getTransformToParent().set(childTransform);
+         transformAllFramesToZUp(childDefinition, childTransform);
       }
 
-      jointRotation.setToZero();
+      jointDefinition.getTransformToParent().getRotation().setToZero();
    }
 
    /**
