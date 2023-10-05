@@ -425,7 +425,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
                valueWriter.add(longValue ->
                {
                   int ordinal = (int) longValue;
-                  printStream.print(ordinal == YoEnum.NULL_VALUE ? YoEnum.NULL_VALUE_STRING : yoEnum.getEnumValues()[ordinal]);
+                  printStream.print(ordinal == YoEnum.NULL_VALUE ? YoEnum.NULL_VALUE_STRING : yoEnum.getEnumValuesAsString()[ordinal]);
                });
          }
 
