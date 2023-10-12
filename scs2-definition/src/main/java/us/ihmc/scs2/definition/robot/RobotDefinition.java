@@ -513,7 +513,9 @@ public class RobotDefinition
       RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
       RigidBodyTransformBasics inertiaPose = new RigidBodyTransform(linkDefinition.getInertiaPose());
       inertiaPose.prependOrientation(jointRotation);
-      inertiaPose.transform(linkDefinition.getMomentOfInertia());
+      Matrix3D momentOfInertia = new Matrix3D(linkDefinition.getMomentOfInertia());
+      inertiaPose.transform(momentOfInertia);
+      linkDefinition.getMomentOfInertia().set(momentOfInertia);
       linkDefinition.getInertiaPose().getRotation().setToZero();
       linkDefinition.getInertiaPose().getTranslation().set(inertiaPose.getTranslation());
 
