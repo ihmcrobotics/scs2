@@ -6,17 +6,9 @@ import java.util.List;
 import javafx.scene.paint.Color;
 import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
 import us.ihmc.euclid.shape.convexPolytope.tools.EuclidPolytopeFactories;
-import us.ihmc.euclid.tools.EuclidCoreTools;
-import us.ihmc.euclid.tools.RotationMatrixTools;
-import us.ihmc.euclid.tuple2D.Point2D;
-import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.examples.sessionVisualizer.jfx.Simple3DViewer;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoSTPCapsuleFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoSTPConvexPolytopeFX3D;
-import us.ihmc.scs2.simulation.shapes.STPConvexPolytope3D;
 
 public class YoSTPConvexPolytope3DVisualizer
 {

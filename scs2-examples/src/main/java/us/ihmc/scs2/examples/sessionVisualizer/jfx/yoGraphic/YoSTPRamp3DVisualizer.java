@@ -1,7 +1,6 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx.yoGraphic;
 
 import javafx.scene.paint.Color;
-import org.apache.commons.lang3.ThreadUtils;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.examples.sessionVisualizer.jfx.Simple3DViewer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;

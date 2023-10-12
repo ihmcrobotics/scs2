@@ -2,11 +2,9 @@ package us.ihmc.scs2.examples.sessionVisualizer.jfx.yoGraphic;
 
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.paint.Color;
-import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.examples.sessionVisualizer.jfx.Simple3DViewer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoSTPCylinderFX3D;
-//import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoCylinderFX3D;
 
 public class YoSTPCylinder3DVisualizer
 {
