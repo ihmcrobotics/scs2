@@ -6,6 +6,7 @@ import us.ihmc.scs2.examples.sessionVisualizer.jfx.Simple3DViewer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoSTPBoxFX3D;
+//import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoBoxFX3D;
 
 public class YoSTPBox3DVisualizer
 {

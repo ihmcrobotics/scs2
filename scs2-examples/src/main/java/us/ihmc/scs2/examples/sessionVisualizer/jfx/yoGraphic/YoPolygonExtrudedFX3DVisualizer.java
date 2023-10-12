@@ -13,9 +13,10 @@ public class YoPolygonExtrudedFX3DVisualizer
    {
       YoConvexPolytopeFX3D yoPolygonExtrudedFX3D = new YoConvexPolytopeFX3D();
 
-      ConvexPolytope3D polytope = EuclidPolytopeFactories.newIcosahedron(0.24);
+      ConvexPolytope3D polytope = EuclidPolytopeFactories.newIcosahedron(0.1);
       polytope.getVertices().forEach(v -> yoPolygonExtrudedFX3D.addVertex(new Tuple3DProperty(v.getX(), v.getY(), v.getZ())));
       yoPolygonExtrudedFX3D.setNumberOfVertices(polytope.getNumberOfVertices());
+
 
       yoPolygonExtrudedFX3D.setColor(Color.AQUAMARINE);
       yoPolygonExtrudedFX3D.render();
