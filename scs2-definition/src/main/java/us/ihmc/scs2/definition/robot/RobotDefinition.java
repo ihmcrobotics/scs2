@@ -510,10 +510,10 @@ public class RobotDefinition
       if (jointDefinition instanceof OneDoFJointDefinition)
          jointRotation.transform(((OneDoFJointDefinition) jointDefinition).getAxis());
       RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
-      YawPitchRollTransformDefinition inertiaPose = linkDefinition.getInertiaPose();
+      RigidBodyTransform inertiaPose = new RigidBodyTransform(linkDefinition.getInertiaPose());
       inertiaPose.prependOrientation(jointRotation);
       inertiaPose.transform(linkDefinition.getMomentOfInertia());
-      inertiaPose.getRotation().setToZero();
+      linkDefinition.getInertiaPose().getRotation().setToZero();
 
       for (KinematicPointDefinition kinematicPointDefinition : jointDefinition.getKinematicPointDefinitions())
          kinematicPointDefinition.getTransformToParent().prependOrientation(jointRotation);
