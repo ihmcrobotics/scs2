@@ -20,7 +20,7 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.20.0")
    api("us.ihmc:ihmc-messager:0.2.0")
-   api("us.ihmc:ihmc-yovariables:0.9.18")
+   api("us.ihmc:ihmc-yovariables:0.9.19")
    api("us.ihmc:mecano-yovariables:17-0.12.3")
 
    apiBytedecoNatives("javacpp")
