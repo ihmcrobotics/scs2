@@ -1036,7 +1036,8 @@ public class VisualDefinitionFactory
     */
    public VisualDefinition addShape(Shape3DReadOnly shape, MaterialDefinition material)
    {
-      saveCurrentTransform();
+      // Avoid using the save/resetCurrentTransform feature and leave it for the user.
+      AffineTransform localSaveCurrentTransform = new AffineTransform(currentTransform);
       VisualDefinition visual;
 
       if (shape instanceof Box3DReadOnly)
@@ -1102,7 +1103,7 @@ public class VisualDefinitionFactory
          return null;
       }
 
-      resetCurrentTransform();
+      currentTransform.set(localSaveCurrentTransform);
       return visual;
    }
 
@@ -1290,7 +1291,8 @@ public class VisualDefinitionFactory
       double radius = 0.02 * length;
       double coneRadius = 2.0 * radius;
 
-      saveCurrentTransform();
+      // Avoid using the save/resetCurrentTransform feature and leave it for the user.
+      AffineTransform localSaveCurrentTransform = new AffineTransform(currentTransform);
 
       switch (axis)
       {
@@ -1312,7 +1314,7 @@ public class VisualDefinitionFactory
       appendTranslation(0.0, 0.0, 0.5 * cylinderLength);
       addCone(coneHeight, coneRadius, headMaterial);
 
-      resetCurrentTransform();
+      currentTransform.set(localSaveCurrentTransform);
    }
 
    /**
