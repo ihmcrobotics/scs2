@@ -16,6 +16,7 @@ import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformBasics;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
@@ -510,10 +511,13 @@ public class RobotDefinition
       if (jointDefinition instanceof OneDoFJointDefinition)
          jointRotation.transform(((OneDoFJointDefinition) jointDefinition).getAxis());
       RigidBodyDefinition linkDefinition = jointDefinition.getSuccessor();
-      YawPitchRollTransformDefinition inertiaPose = linkDefinition.getInertiaPose();
+      RigidBodyTransformBasics inertiaPose = new RigidBodyTransform(linkDefinition.getInertiaPose());
       inertiaPose.prependOrientation(jointRotation);
-      inertiaPose.transform(linkDefinition.getMomentOfInertia());
-      inertiaPose.getRotation().setToZero();
+      Matrix3D momentOfInertia = new Matrix3D(linkDefinition.getMomentOfInertia());
+      inertiaPose.transform(momentOfInertia);
+      linkDefinition.getMomentOfInertia().set(momentOfInertia);
+      linkDefinition.getInertiaPose().getRotation().setToZero();
+      linkDefinition.getInertiaPose().getTranslation().set(inertiaPose.getTranslation());
 
       for (KinematicPointDefinition kinematicPointDefinition : jointDefinition.getKinematicPointDefinitions())
          kinematicPointDefinition.getTransformToParent().prependOrientation(jointRotation);
