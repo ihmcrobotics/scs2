@@ -11,7 +11,7 @@ ihmc {
    configurePublications()
 }
 
-val javaCPPVersion = "1.5.8"
+val javaCPPVersion = "1.5.9"
 
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
@@ -24,7 +24,7 @@ mainDependencies {
    api("us.ihmc:mecano-yovariables:17-0.12.3")
 
    apiBytedecoNatives("javacpp")
-   apiBytedecoNatives("bullet", "3.24-")
+   apiBytedecoNatives("bullet", "3.25-")
 }
 
 debugDependencies {
