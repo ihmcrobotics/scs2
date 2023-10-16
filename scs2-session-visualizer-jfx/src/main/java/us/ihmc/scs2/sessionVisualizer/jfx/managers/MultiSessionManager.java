@@ -36,6 +36,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionInfoController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPLogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.remote.RemoteSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
@@ -158,6 +159,12 @@ public class MultiSessionManager
          {
             fxml = SessionVisualizerIOTools.REMOTE_SESSION_MANAGER_PANE_FXML_URL;
             controllerType = RemoteSessionManagerController.class;
+            break;
+         }
+         case MCAP:
+         {
+            fxml = SessionVisualizerIOTools.MCAP_LOG_SESSION_MANAGER_PANE_FXML_URL;
+            controllerType = MCAPLogSessionManagerController.class;
             break;
          }
          default:

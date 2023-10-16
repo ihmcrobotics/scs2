@@ -6,7 +6,7 @@ public class OpenSessionControlsRequest
 {
    public enum SessionType
    {
-      LOG, REMOTE
+      LOG, REMOTE, MCAP
    };
 
    private final Window source;
