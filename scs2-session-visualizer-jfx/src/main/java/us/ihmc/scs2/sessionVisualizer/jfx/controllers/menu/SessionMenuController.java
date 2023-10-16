@@ -39,4 +39,10 @@ public class SessionMenuController implements VisualizerController
    {
       messager.submitMessage(topics.getOpenSessionControlsRequest(), new OpenSessionControlsRequest(owner, SessionType.REMOTE));
    }
+
+   @FXML
+   void startMCAPLogSession()
+   {
+      messager.submitMessage(topics.getOpenSessionControlsRequest(), new OpenSessionControlsRequest(owner, SessionType.MCAP));
+   }
 }
