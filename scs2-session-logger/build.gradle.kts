@@ -17,7 +17,6 @@ mainDependencies {
 
    api("us.ihmc:ihmc-robot-data-logger:0.28.6")
    api("io.kaitai:kaitai-struct-runtime:0.10")
-   api("org.lz4:lz4-java:1.8.0")
 }
 
 testDependencies {
