@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Locale;
 
 import net.jpountz.lz4.LZ4Exception;
@@ -68,7 +70,6 @@ public class LZ4FrameDecoder
    private final XXHash32 checksum;
    private final byte[] headerArray = new byte[LZ4_MAX_HEADER_LENGTH];
    private final ByteBuffer headerBuffer = ByteBuffer.wrap(headerArray).order(ByteOrder.LITTLE_ENDIAN);
-   private final boolean readSingleFrame;
    private byte[] compressedBuffer;
    private byte[] rawBuffer = null;
    private int maxBlockSize = -1;
@@ -95,50 +96,17 @@ public class LZ4FrameDecoder
    }
 
    /**
-    * Creates a new {@link InputStream} that will decompress data using fastest instances of
-    * {@link LZ4SafeDecompressor} and {@link XXHash32}.
-    *
-    * @param in              the stream to decompress
-    * @param readSingleFrame whether read is stopped after the first non-skippable frame
-    * @throws IOException if an I/O error occurs
-    * @see #LZ4FrameInputStream(InputStream, LZ4SafeDecompressor, XXHash32)
-    * @see LZ4Factory#fastestInstance()
-    * @see XXHashFactory#fastestInstance()
-    */
-   public LZ4FrameDecoder(boolean readSingleFrame) throws IOException
-   {
-      this(LZ4Factory.fastestInstance().safeDecompressor(), XXHashFactory.fastestInstance().hash32(), readSingleFrame);
-   }
-
-   /**
-    * Creates a new {@link InputStream} that will decompress data using the LZ4 algorithm. This
-    * instance will decompress all concatenated frames in their sequential order.
+    * Creates a new {@link InputStream} that will decompress data using the LZ4 algorithm.
     *
     * @param in           the stream to decompress
     * @param decompressor the decompressor to use
     * @param checksum     the hash function to use
     * @throws IOException if an I/O error occurs
-    * @see #LZ4FrameInputStream(InputStream, LZ4SafeDecompressor, XXHash32, boolean)
     */
    public LZ4FrameDecoder(LZ4SafeDecompressor decompressor, XXHash32 checksum) throws IOException
    {
-      this(decompressor, checksum, false);
-   }
-
-   /**
-    * Creates a new {@link InputStream} that will decompress data using the LZ4 algorithm.
-    *
-    * @param in              the stream to decompress
-    * @param decompressor    the decompressor to use
-    * @param checksum        the hash function to use
-    * @param readSingleFrame whether read is stopped after the first non-skippable frame
-    * @throws IOException if an I/O error occurs
-    */
-   public LZ4FrameDecoder(LZ4SafeDecompressor decompressor, XXHash32 checksum, boolean readSingleFrame) throws IOException
-   {
       this.decompressor = decompressor;
       this.checksum = checksum;
-      this.readSingleFrame = readSingleFrame;
    }
 
    /**
@@ -214,8 +182,8 @@ public class LZ4FrameDecoder
          throw new IOException(DESCRIPTOR_HASH_MISMATCH);
 
       maxBlockSize = frameInfo.getBD().getBlockMaximumSize();
-      compressedBuffer = new byte[maxBlockSize]; // Reused during different compressions
-      rawBuffer = new byte[maxBlockSize];
+      compressedBuffer = new byte[2 * maxBlockSize]; // Reused during different compressions
+      rawBuffer = new byte[2 * maxBlockSize];
       firstFrameHeaderRead = true;
    }
 
@@ -297,63 +265,29 @@ public class LZ4FrameDecoder
       return out;
    }
 
-   public ByteBuffer decode(byte[] in) throws IOException
+   public List<ByteBuffer> decode(byte[] in) throws IOException
    {
       return decode(ByteBuffer.wrap(in));
    }
 
-   public ByteBuffer decode(ByteBuffer in) throws IOException
+   public List<ByteBuffer> decode(ByteBuffer in) throws IOException
    {
+      List<ByteBuffer> outs = new ArrayList<>();
       in.order(ByteOrder.LITTLE_ENDIAN);
 
-      ByteBuffer out = null;
-
-      while (!firstFrameHeaderRead || out == null)
+      while (in.hasRemaining())
       {
          if (!firstFrameHeaderRead || frameInfo.isFinished())
          {
-            if (firstFrameHeaderRead && readSingleFrame)
-               return null;
             if (!nextFrameInfo(in))
                return null;
          }
-         out = readBlock(in);
+         ByteBuffer newBlock = readBlock(in);
+         if (newBlock == null)
+            break; // Reached the end
+         outs.add(newBlock);
       }
-      return out;
-   }
-
-   /**
-    * Returns the optional Content Size value set in Frame Descriptor. If the Content Size is not set
-    * (FLG.Bits.CONTENT_SIZE not enabled) in compressed stream, -1L is returned. A call to this method
-    * is valid only when this instance is supposed to read only one frame (readSingleFrame == true).
-    *
-    * @return the expected content size, or -1L if no expected content size is set in the frame.
-    * @throws IOException On input stream read exception
-    * @see #LZ4FrameInputStream(InputStream, LZ4SafeDecompressor, XXHash32, boolean)
-    */
-   public long getExpectedContentSize(ByteBuffer in) throws IOException
-   {
-      if (!readSingleFrame)
-         throw new UnsupportedOperationException("Operation not permitted when multiple frames can be read");
-      if (!firstFrameHeaderRead && !nextFrameInfo(in))
-         return -1L;
-      return expectedContentSize;
-   }
-
-   /**
-    * Checks if the optionnal Content Size is set (FLG.Bits.CONTENT_SIZE is enabled).
-    *
-    * @return true if this instance is supposed to read only one frame and if the optional content size
-    *         is set in the frame.
-    * @throws IOException On input stream read exception
-    */
-   public boolean isExpectedContentSizeDefined(ByteBuffer in) throws IOException
-   {
-      if (!readSingleFrame)
-         return false;
-      if (!firstFrameHeaderRead && !nextFrameInfo(in))
-         return false;
-      return expectedContentSize >= 0;
+      return outs;
    }
 
    static class FrameInfo
