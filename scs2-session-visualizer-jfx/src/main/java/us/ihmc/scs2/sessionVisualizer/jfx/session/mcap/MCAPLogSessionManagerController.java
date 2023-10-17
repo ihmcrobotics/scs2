@@ -1,7 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -93,14 +95,19 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          {
             debugTextArea.clear();
             LogTools.info("Creating log session.");
+            File debugFile = new File("debugMCAP.txt");
+            debugFile.delete();
+            PrintWriter printWriter = new PrintWriter(debugFile);
             newSession = new MCAPLogSession(result, new MCAPDebugPrinter()
             {
                @Override
                public void print(String string)
                {
-                  JavaFXMissingTools.runLater(getClass(), () -> debugTextArea.appendText(string));
+//                  JavaFXMissingTools.runLater(getClass(), () -> debugTextArea.appendText(string));
+                  printWriter.write(string);
                }
             });
+            printWriter.close();
             LogTools.info("Created log session.");
             JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
             SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
