@@ -241,14 +241,13 @@ public class MCAPLogSession extends Session
                   {
                      byte[] sourceByteArray = (byte[]) chunk.records();
 //                     ByteBuffer compressedBuffer = ByteBuffer.wrap(sourceByteArray);
-//                     ByteBuffer decompressedBuffer = ByteBuffer.allocate(uncompressedSize);
-//                     LZ4SafeDecompressor decompressor = LZ4Factory.safeInstance().safeDecompressor();
-//                     System.out.println(getDecompressedLength(compressedBuffer, 0));
-//                     decompressor.decompress(compressedBuffer, 0, compressedSize, decompressedBuffer, 0, uncompressedSize);
+                     // ByteBuffer decompressedBuffer = ByteBuffer.allocate(uncompressedSize);
+                     // LZ4SafeDecompressor decompressor = LZ4Factory.safeInstance().safeDecompressor();
+                     // System.out.println(getDecompressedLength(compressedBuffer, 0));
+                     // decompressor.decompress(compressedBuffer, 0, compressedSize, decompressedBuffer, 0, uncompressedSize);
 
-                     ByteBuf compressedBuffer = Unpooled.copiedBuffer(sourceByteArray);
-                     List<ByteBuf> data = new Lz4FrameDecoder().decode(compressedBuffer);
-                     System.out.println(data.size());
+                     ByteBuffer decompressedBuffer = new LZ4FrameDecoder().decode(sourceByteArray);
+                     System.out.println(decompressedBuffer.remaining());
 
                   }
                   catch (Exception e)
