@@ -1,19 +1,22 @@
 package us.ihmc.scs2.session.mcap;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 // This requires the project kaitai-struct-runtime, which is at github at
 // https://github.com/kaitai-io/kaitai_struct_java_runtime
 
 //This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 import io.kaitai.struct.ByteBufferKaitaiStream;
-import io.kaitai.struct.KaitaiStruct;
 import io.kaitai.struct.KaitaiStream;
-import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.nio.charset.Charset;
-import java.util.Arrays;
+import io.kaitai.struct.KaitaiStruct;
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary
@@ -21,7 +24,7 @@ import java.util.Arrays;
  * under various workloads, resource constraints, and durability requirements. Time values
  * (`log_time`, `publish_time`, `create_time`) are represented in nanoseconds since a
  * user-understood epoch (i.e. Unix epoch, robot boot time, etc.)
- * 
+ *
  * @see <a href="https://github.com/foxglove/mcap/tree/c1cc51d/docs/specification#readme">Source</a>
  */
 public class Mcap extends KaitaiStruct
@@ -61,7 +64,7 @@ public class Mcap extends KaitaiStruct
          return id;
       }
 
-      private static final Map<Long, Opcode> byId = new HashMap<Long, Opcode>(15);
+      private static final Map<Long, Opcode> byId = new HashMap<>(15);
       static
       {
          for (Opcode e : Opcode.values())
@@ -95,7 +98,7 @@ public class Mcap extends KaitaiStruct
    private void _read()
    {
       this.headerMagic = new Magic(this._io, this, _root);
-      this.records = new ArrayList<Record>();
+      this.records = new ArrayList<>();
       {
          Record _it;
          int i = 0;
@@ -110,7 +113,15 @@ public class Mcap extends KaitaiStruct
       this.footerMagic = new Magic(this._io, this, _root);
    }
 
-   public static class PrefixedStr extends KaitaiStruct
+   private static String indent(String stringToIndent, int indent)
+   {
+      if (indent <= 0)
+         return stringToIndent;
+      String indentStr = "\t".repeat(indent);
+      return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
+   }
+
+   public static class PrefixedStr extends KaitaiStructToStringEnabled
    {
       public static PrefixedStr fromFile(String fileName) throws IOException
       {
@@ -161,13 +172,20 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
+      @Override
       public KaitaiStruct _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         return str;
+      }
    }
 
-   public static class Chunk extends KaitaiStruct
+   public static class Chunk extends KaitaiStructToStringEnabled
    {
       public static Chunk fromFile(String fileName) throws IOException
       {
@@ -179,12 +197,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Chunk(KaitaiStream _io, Mcap.Record _parent)
+      public Chunk(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Chunk(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Chunk(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -225,7 +243,7 @@ public class Mcap extends KaitaiStruct
       private long lenRecords;
       private Object records;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_records;
 
       public long messageStartTime()
@@ -272,7 +290,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -281,9 +300,22 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_records;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-messageStartTime = " + messageStartTime;
+         out += "\n\t-messageEndTime = " + messageEndTime;
+         out += "\n\t-compression = " + compression;
+         out += "\n\t-compressedSize = " + lenRecords;
+         out += "\n\t-uncompressedSize = " + uncompressedSize;
+         out += "\n\t-uncompressedCrc32 = " + uncompressedCrc32;
+         return out;
+      }
    }
 
-   public static class DataEnd extends KaitaiStruct
+   public static class DataEnd extends KaitaiStructToStringEnabled
    {
       public static DataEnd fromFile(String fileName) throws IOException
       {
@@ -295,12 +327,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public DataEnd(KaitaiStream _io, Mcap.Record _parent)
+      public DataEnd(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public DataEnd(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public DataEnd(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -315,7 +347,7 @@ public class Mcap extends KaitaiStruct
 
       private long dataSectionCrc32;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       /**
        * CRC-32 of all bytes in the data section. A value of 0 indicates the CRC-32 is not available.
@@ -330,13 +362,20 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         return getClass().getSimpleName() + ":\n\t-dataSectionCrc32 = " + dataSectionCrc32;
+      }
    }
 
-   public static class Channel extends KaitaiStruct
+   public static class Channel extends KaitaiStructToStringEnabled
    {
       public static Channel fromFile(String fileName) throws IOException
       {
@@ -348,12 +387,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Channel(KaitaiStream _io, Mcap.Record _parent)
+      public Channel(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Channel(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Channel(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -376,7 +415,7 @@ public class Mcap extends KaitaiStruct
       private PrefixedStr messageEncoding;
       private MapStrStr metadata;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       public int id()
       {
@@ -408,13 +447,26 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-id = " + id;
+         out += "\n\t-schemaId = " + schemaId;
+         out += "\n\t-topic = " + topic;
+         out += "\n\t-messageEncoding = " + messageEncoding;
+         out += "\n\t-metadata = [%s]".formatted(metadata.toString());
+         return out;
+      }
    }
 
-   public static class MessageIndex extends KaitaiStruct
+   public static class MessageIndex extends KaitaiStructToStringEnabled
    {
       public static MessageIndex fromFile(String fileName) throws IOException
       {
@@ -426,12 +478,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public MessageIndex(KaitaiStream _io, Mcap.Record _parent)
+      public MessageIndex(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public MessageIndex(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public MessageIndex(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -448,7 +500,7 @@ public class Mcap extends KaitaiStruct
          this.records = new MessageIndexEntries(_io__raw_records, this, _root);
       }
 
-      public static class MessageIndexEntry extends KaitaiStruct
+      public static class MessageIndexEntry extends KaitaiStructToStringEnabled
       {
          public static MessageIndexEntry fromFile(String fileName) throws IOException
          {
@@ -460,12 +512,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public MessageIndexEntry(KaitaiStream _io, Mcap.MessageIndex.MessageIndexEntries _parent)
+         public MessageIndexEntry(KaitaiStream _io, MessageIndex.MessageIndexEntries _parent)
          {
             this(_io, _parent, null);
          }
 
-         public MessageIndexEntry(KaitaiStream _io, Mcap.MessageIndex.MessageIndexEntries _parent, Mcap _root)
+         public MessageIndexEntry(KaitaiStream _io, MessageIndex.MessageIndexEntries _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -482,7 +534,7 @@ public class Mcap extends KaitaiStruct
          private long logTime;
          private long offset;
          private Mcap _root;
-         private Mcap.MessageIndex.MessageIndexEntries _parent;
+         private MessageIndex.MessageIndexEntries _parent;
 
          public long logTime()
          {
@@ -499,13 +551,29 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.MessageIndex.MessageIndexEntries _parent()
+         @Override
+         public MessageIndex.MessageIndexEntries _parent()
          {
             return _parent;
          }
+
+         @Override
+         public String toString()
+         {
+            return toString(0);
+         }
+
+         @Override
+         public String toString(int indent)
+         {
+            String out = getClass().getSimpleName() + ":";
+            out += "\n\t-logTime = " + logTime;
+            out += "\n\t-offset = " + offset;
+            return indent(out, indent);
+         }
       }
 
-      public static class MessageIndexEntries extends KaitaiStruct
+      public static class MessageIndexEntries extends KaitaiStructToStringEnabled
       {
          public static MessageIndexEntries fromFile(String fileName) throws IOException
          {
@@ -517,12 +585,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public MessageIndexEntries(KaitaiStream _io, Mcap.MessageIndex _parent)
+         public MessageIndexEntries(KaitaiStream _io, MessageIndex _parent)
          {
             this(_io, _parent, null);
          }
 
-         public MessageIndexEntries(KaitaiStream _io, Mcap.MessageIndex _parent, Mcap _root)
+         public MessageIndexEntries(KaitaiStream _io, MessageIndex _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -532,7 +600,7 @@ public class Mcap extends KaitaiStruct
 
          private void _read()
          {
-            this.entries = new ArrayList<MessageIndexEntry>();
+            this.entries = new ArrayList<>();
             {
                int i = 0;
                while (!this._io.isEof())
@@ -545,7 +613,7 @@ public class Mcap extends KaitaiStruct
 
          private ArrayList<MessageIndexEntry> entries;
          private Mcap _root;
-         private Mcap.MessageIndex _parent;
+         private MessageIndex _parent;
 
          public ArrayList<MessageIndexEntry> entries()
          {
@@ -557,9 +625,24 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.MessageIndex _parent()
+         @Override
+         public MessageIndex _parent()
          {
             return _parent;
+         }
+
+         @Override
+         public String toString()
+         {
+            return toString(0);
+         }
+
+         @Override
+         public String toString(int indent)
+         {
+            String out = getClass().getSimpleName();
+            out += "\n\t-entries = " + (entries == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", entries, e -> e.toString(indent + 1)));
+            return indent(out, indent);
          }
       }
 
@@ -567,7 +650,7 @@ public class Mcap extends KaitaiStruct
       private long lenRecords;
       private MessageIndexEntries records;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_records;
 
       public int channelId()
@@ -590,7 +673,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -599,9 +683,25 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_records;
       }
+
+      @Override
+      public String toString()
+      {
+         return toString(0);
+      }
+
+      @Override
+      public String toString(int indent)
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-channelId = " + channelId;
+         out += "\n\t-lenRecords = " + lenRecords;
+         out += "\n\t-records = " + (records == null ? "null" : "\n" + records.toString(indent + 1));
+         return indent(out, indent);
+      }
    }
 
-   public static class Statistics extends KaitaiStruct
+   public static class Statistics extends KaitaiStructToStringEnabled
    {
       public static Statistics fromFile(String fileName) throws IOException
       {
@@ -613,12 +713,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Statistics(KaitaiStream _io, Mcap.Record _parent)
+      public Statistics(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Statistics(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Statistics(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -642,7 +742,7 @@ public class Mcap extends KaitaiStruct
          this.channelMessageCounts = new ChannelMessageCounts(_io__raw_channelMessageCounts, this, _root);
       }
 
-      public static class ChannelMessageCounts extends KaitaiStruct
+      public static class ChannelMessageCounts extends KaitaiStructToStringEnabled
       {
          public static ChannelMessageCounts fromFile(String fileName) throws IOException
          {
@@ -654,12 +754,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public ChannelMessageCounts(KaitaiStream _io, Mcap.Statistics _parent)
+         public ChannelMessageCounts(KaitaiStream _io, Statistics _parent)
          {
             this(_io, _parent, null);
          }
 
-         public ChannelMessageCounts(KaitaiStream _io, Mcap.Statistics _parent, Mcap _root)
+         public ChannelMessageCounts(KaitaiStream _io, Statistics _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -669,7 +769,7 @@ public class Mcap extends KaitaiStruct
 
          private void _read()
          {
-            this.entries = new ArrayList<ChannelMessageCount>();
+            this.entries = new ArrayList<>();
             {
                int i = 0;
                while (!this._io.isEof())
@@ -682,7 +782,7 @@ public class Mcap extends KaitaiStruct
 
          private ArrayList<ChannelMessageCount> entries;
          private Mcap _root;
-         private Mcap.Statistics _parent;
+         private Statistics _parent;
 
          public ArrayList<ChannelMessageCount> entries()
          {
@@ -694,13 +794,28 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.Statistics _parent()
+         @Override
+         public Statistics _parent()
          {
             return _parent;
          }
+
+         @Override
+         public String toString()
+         {
+            return toString(0);
+         }
+
+         @Override
+         public String toString(int indent)
+         {
+            String out = getClass().getSimpleName() + ":";
+            //            out += "\n\t-entries = " + (entries == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", entries, e -> e.toString(indent + 1)));
+            return indent(out, indent);
+         }
       }
 
-      public static class ChannelMessageCount extends KaitaiStruct
+      public static class ChannelMessageCount extends KaitaiStructToStringEnabled
       {
          public static ChannelMessageCount fromFile(String fileName) throws IOException
          {
@@ -712,12 +827,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public ChannelMessageCount(KaitaiStream _io, Mcap.Statistics.ChannelMessageCounts _parent)
+         public ChannelMessageCount(KaitaiStream _io, Statistics.ChannelMessageCounts _parent)
          {
             this(_io, _parent, null);
          }
 
-         public ChannelMessageCount(KaitaiStream _io, Mcap.Statistics.ChannelMessageCounts _parent, Mcap _root)
+         public ChannelMessageCount(KaitaiStream _io, Statistics.ChannelMessageCounts _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -734,7 +849,7 @@ public class Mcap extends KaitaiStruct
          private int channelId;
          private long messageCount;
          private Mcap _root;
-         private Mcap.Statistics.ChannelMessageCounts _parent;
+         private Statistics.ChannelMessageCounts _parent;
 
          public int channelId()
          {
@@ -751,9 +866,25 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.Statistics.ChannelMessageCounts _parent()
+         @Override
+         public Statistics.ChannelMessageCounts _parent()
          {
             return _parent;
+         }
+
+         @Override
+         public String toString()
+         {
+            return toString(0);
+         }
+
+         @Override
+         public String toString(int indent)
+         {
+            String out = getClass().getSimpleName() + ":";
+            out += "\n\t-channelId = " + channelId;
+            out += "\n\t-messageCount = " + messageCount;
+            return indent(out, indent);
          }
       }
 
@@ -768,7 +899,7 @@ public class Mcap extends KaitaiStruct
       private long lenChannelMessageCounts;
       private ChannelMessageCounts channelMessageCounts;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_channelMessageCounts;
 
       public long messageCount()
@@ -826,7 +957,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -835,9 +967,26 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_channelMessageCounts;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-messageCount = " + messageCount;
+         out += "\n\t-schemaCount = " + schemaCount;
+         out += "\n\t-channelCount = " + channelCount;
+         out += "\n\t-attachmentCount = " + attachmentCount;
+         out += "\n\t-metadataCount = " + metadataCount;
+         out += "\n\t-chunkCount = " + chunkCount;
+         out += "\n\t-messageStartTime = " + messageStartTime;
+         out += "\n\t-messageEndTime = " + messageEndTime;
+         out += "\n\t-lenChannelMessageCounts = " + lenChannelMessageCounts;
+         out += "\n\t-channelMessageCounts = \n" + channelMessageCounts.toString(1);
+         return out;
+      }
    }
 
-   public static class AttachmentIndex extends KaitaiStruct
+   public static class AttachmentIndex extends KaitaiStructToStringEnabled
    {
       public static AttachmentIndex fromFile(String fileName) throws IOException
       {
@@ -849,12 +998,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public AttachmentIndex(KaitaiStream _io, Mcap.Record _parent)
+      public AttachmentIndex(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public AttachmentIndex(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public AttachmentIndex(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -897,7 +1046,7 @@ public class Mcap extends KaitaiStruct
       private PrefixedStr name;
       private PrefixedStr mediaType;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_attachment;
 
       public long ofsAttachment()
@@ -940,7 +1089,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -949,9 +1099,23 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_attachment;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-ofsAttachment = " + ofsAttachment;
+         out += "\n\t-lenAttachment = " + lenAttachment;
+         out += "\n\t-logTime = " + logTime;
+         out += "\n\t-createTime = " + createTime;
+         out += "\n\t-dataSize = " + dataSize;
+         out += "\n\t-name = " + name;
+         out += "\n\t-mediaType = " + mediaType;
+         return out;
+      }
    }
 
-   public static class Schema extends KaitaiStruct
+   public static class Schema extends KaitaiStructToStringEnabled
    {
       public static Schema fromFile(String fileName) throws IOException
       {
@@ -963,12 +1127,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Schema(KaitaiStream _io, Mcap.Record _parent)
+      public Schema(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Schema(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Schema(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -991,7 +1155,7 @@ public class Mcap extends KaitaiStruct
       private long lenData;
       private byte[] data;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       public int id()
       {
@@ -1023,13 +1187,26 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-id = " + id;
+         out += "\n\t-name = " + name;
+         out += "\n\t-encoding = " + encoding;
+         out += "\n\t-lenData = " + lenData;
+         out += "\n\t-data = " + data;
+         return out;
+      }
    }
 
-   public static class MapStrStr extends KaitaiStruct
+   public static class MapStrStr extends KaitaiStructToStringEnabled
    {
       public static MapStrStr fromFile(String fileName) throws IOException
       {
@@ -1062,7 +1239,7 @@ public class Mcap extends KaitaiStruct
          this.entries = new Entries(_io__raw_entries, this, _root);
       }
 
-      public static class Entries extends KaitaiStruct
+      public static class Entries extends KaitaiStructToStringEnabled
       {
          public static Entries fromFile(String fileName) throws IOException
          {
@@ -1074,12 +1251,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public Entries(KaitaiStream _io, Mcap.MapStrStr _parent)
+         public Entries(KaitaiStream _io, MapStrStr _parent)
          {
             this(_io, _parent, null);
          }
 
-         public Entries(KaitaiStream _io, Mcap.MapStrStr _parent, Mcap _root)
+         public Entries(KaitaiStream _io, MapStrStr _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -1089,7 +1266,7 @@ public class Mcap extends KaitaiStruct
 
          private void _read()
          {
-            this.entries = new ArrayList<TupleStrStr>();
+            this.entries = new ArrayList<>();
             {
                int i = 0;
                while (!this._io.isEof())
@@ -1102,7 +1279,7 @@ public class Mcap extends KaitaiStruct
 
          private ArrayList<TupleStrStr> entries;
          private Mcap _root;
-         private Mcap.MapStrStr _parent;
+         private MapStrStr _parent;
 
          public ArrayList<TupleStrStr> entries()
          {
@@ -1114,9 +1291,23 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.MapStrStr _parent()
+         @Override
+         public MapStrStr _parent()
          {
             return _parent;
+         }
+
+         @Override
+         public String toString()
+         {
+            if (entries == null)
+               return "null";
+            return EuclidCoreIOTools.getCollectionString(", ", entries, e -> "(%s)".formatted(Objects.toString(e)));
+         }
+
+         public String toKeysString()
+         {
+            return EuclidCoreIOTools.getCollectionString(", ", entries, e -> e.key().str());
          }
       }
 
@@ -1141,6 +1332,7 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
+      @Override
       public KaitaiStruct _parent()
       {
          return _parent;
@@ -1150,9 +1342,20 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_entries;
       }
+
+      @Override
+      public String toString()
+      {
+         return Objects.toString(entries);
+      }
+
+      public String toKeysString()
+      {
+         return entries.toKeysString();
+      }
    }
 
-   public static class SummaryOffset extends KaitaiStruct
+   public static class SummaryOffset extends KaitaiStructToStringEnabled
    {
       public static SummaryOffset fromFile(String fileName) throws IOException
       {
@@ -1164,12 +1367,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public SummaryOffset(KaitaiStream _io, Mcap.Record _parent)
+      public SummaryOffset(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public SummaryOffset(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public SummaryOffset(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1179,7 +1382,7 @@ public class Mcap extends KaitaiStruct
 
       private void _read()
       {
-         this.groupOpcode = Mcap.Opcode.byId(this._io.readU1());
+         this.groupOpcode = Opcode.byId(this._io.readU1());
          this.ofsGroup = this._io.readU8le();
          this.lenGroup = this._io.readU8le();
       }
@@ -1204,7 +1407,7 @@ public class Mcap extends KaitaiStruct
       private long ofsGroup;
       private long lenGroup;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_group;
 
       public Opcode groupOpcode()
@@ -1227,7 +1430,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -1236,9 +1440,19 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_group;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-groupOpcode = " + groupOpcode;
+         out += "\n\t-ofsGroup = " + ofsGroup;
+         out += "\n\t-lenGroup = " + lenGroup;
+         return out;
+      }
    }
 
-   public static class Attachment extends KaitaiStruct
+   public static class Attachment extends KaitaiStructToStringEnabled
    {
       public static Attachment fromFile(String fileName) throws IOException
       {
@@ -1250,12 +1464,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Attachment(KaitaiStream _io, Mcap.Record _parent)
+      public Attachment(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Attachment(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Attachment(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1284,7 +1498,7 @@ public class Mcap extends KaitaiStruct
       {
          if (this.crc32InputEnd != null)
             return this.crc32InputEnd;
-         int _tmp = (int) (_io().pos());
+         int _tmp = (_io().pos());
          this.crc32InputEnd = _tmp;
          return this.crc32InputEnd;
       }
@@ -1311,7 +1525,7 @@ public class Mcap extends KaitaiStruct
       private byte[] invokeCrc32InputEnd;
       private long crc32;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       public long logTime()
       {
@@ -1362,13 +1576,29 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-logTime = " + logTime;
+         out += "\n\t-createTime = " + createTime;
+         out += "\n\t-name = " + name;
+         out += "\n\t-mediaType = " + mediaType;
+         out += "\n\t-lenData = " + lenData;
+         //         out += "\n\t-data = " + data;
+         out += "\n\t-invokeCrc32InputEnd = " + invokeCrc32InputEnd;
+         out += "\n\t-crc32 = " + crc32;
+         return out;
+      }
    }
 
-   public static class Metadata extends KaitaiStruct
+   public static class Metadata extends KaitaiStructToStringEnabled
    {
       public static Metadata fromFile(String fileName) throws IOException
       {
@@ -1380,12 +1610,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Metadata(KaitaiStream _io, Mcap.Record _parent)
+      public Metadata(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Metadata(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Metadata(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1402,7 +1632,7 @@ public class Mcap extends KaitaiStruct
       private PrefixedStr name;
       private MapStrStr metadata;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       public PrefixedStr name()
       {
@@ -1419,13 +1649,23 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-name = " + name;
+         out += "\n\t-metadata = " + metadata.toKeysString();
+         return out;
+      }
    }
 
-   public static class Header extends KaitaiStruct
+   public static class Header extends KaitaiStructToStringEnabled
    {
       public static Header fromFile(String fileName) throws IOException
       {
@@ -1437,12 +1677,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Header(KaitaiStream _io, Mcap.Record _parent)
+      public Header(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Header(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Header(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1459,7 +1699,7 @@ public class Mcap extends KaitaiStruct
       private PrefixedStr profile;
       private PrefixedStr library;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       public PrefixedStr profile()
       {
@@ -1476,13 +1716,23 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-profile = " + profile;
+         out += "\n\t-library = " + library;
+         return out;
+      }
    }
 
-   public static class Message extends KaitaiStruct
+   public static class Message extends KaitaiStructToStringEnabled
    {
       public static Message fromFile(String fileName) throws IOException
       {
@@ -1494,12 +1744,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Message(KaitaiStream _io, Mcap.Record _parent)
+      public Message(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Message(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Message(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1522,7 +1772,7 @@ public class Mcap extends KaitaiStruct
       private long publishTime;
       private byte[] data;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
 
       public int channelId()
       {
@@ -1554,13 +1804,26 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-channelId = " + channelId;
+         out += "\n\t-sequence = " + sequence;
+         out += "\n\t-logTime = " + logTime;
+         out += "\n\t-publishTime = " + publishTime;
+         //         out += "\n\t-data = " + data;
+         return out;
+      }
    }
 
-   public static class TupleStrStr extends KaitaiStruct
+   public static class TupleStrStr extends KaitaiStructToStringEnabled
    {
       public static TupleStrStr fromFile(String fileName) throws IOException
       {
@@ -1572,12 +1835,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public TupleStrStr(KaitaiStream _io, Mcap.MapStrStr.Entries _parent)
+      public TupleStrStr(KaitaiStream _io, MapStrStr.Entries _parent)
       {
          this(_io, _parent, null);
       }
 
-      public TupleStrStr(KaitaiStream _io, Mcap.MapStrStr.Entries _parent, Mcap _root)
+      public TupleStrStr(KaitaiStream _io, MapStrStr.Entries _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1594,7 +1857,7 @@ public class Mcap extends KaitaiStruct
       private PrefixedStr key;
       private PrefixedStr value;
       private Mcap _root;
-      private Mcap.MapStrStr.Entries _parent;
+      private MapStrStr.Entries _parent;
 
       public PrefixedStr key()
       {
@@ -1611,13 +1874,20 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.MapStrStr.Entries _parent()
+      @Override
+      public MapStrStr.Entries _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         return (key.str() + ": " + value.str()).replace("\n", "");
+      }
    }
 
-   public static class MetadataIndex extends KaitaiStruct
+   public static class MetadataIndex extends KaitaiStructToStringEnabled
    {
       public static MetadataIndex fromFile(String fileName) throws IOException
       {
@@ -1629,12 +1899,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public MetadataIndex(KaitaiStream _io, Mcap.Record _parent)
+      public MetadataIndex(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public MetadataIndex(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public MetadataIndex(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1669,7 +1939,7 @@ public class Mcap extends KaitaiStruct
       private long lenMetadata;
       private PrefixedStr name;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_metadata;
 
       public long ofsMetadata()
@@ -1692,7 +1962,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -1701,9 +1972,19 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_metadata;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ": ";
+         out += "\n\t-ofsMetadata = " + ofsMetadata;
+         out += "\n\t-lenMetadata = " + lenMetadata;
+         out += "\n\t-name = " + name;
+         return out;
+      }
    }
 
-   public static class Magic extends KaitaiStruct
+   public static class Magic extends KaitaiStructToStringEnabled
    {
       public static Magic fromFile(String fileName) throws IOException
       {
@@ -1751,13 +2032,28 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
+      @Override
       public Mcap _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         return toString(0);
+      }
+
+      @Override
+      public String toString(int indent)
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-magic = " + magic;
+         return indent(out, indent);
+      }
    }
 
-   public static class Records extends KaitaiStruct
+   public static class Records extends KaitaiStructToStringEnabled
    {
       public static Records fromFile(String fileName) throws IOException
       {
@@ -1784,7 +2080,7 @@ public class Mcap extends KaitaiStruct
 
       private void _read()
       {
-         this.records = new ArrayList<Record>();
+         this.records = new ArrayList<>();
          {
             int i = 0;
             while (!this._io.isEof())
@@ -1809,13 +2105,28 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
+      @Override
       public KaitaiStruct _parent()
       {
          return _parent;
       }
+
+      @Override
+      public String toString()
+      {
+         return toString(0);
+      }
+
+      @Override
+      public String toString(int indent)
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-records = " + (records == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", records, r -> r.toString(indent + 1)));
+         return indent(out, indent);
+      }
    }
 
-   public static class Footer extends KaitaiStruct
+   public static class Footer extends KaitaiStructToStringEnabled
    {
       public static Footer fromFile(String fileName) throws IOException
       {
@@ -1827,12 +2138,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public Footer(KaitaiStream _io, Mcap.Record _parent)
+      public Footer(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public Footer(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public Footer(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -1914,7 +2225,7 @@ public class Mcap extends KaitaiStruct
       private long ofsSummaryOffsetSection;
       private long summaryCrc32;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_summarySection;
       private byte[] _raw_summaryOffsetSection;
 
@@ -1943,7 +2254,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -1957,9 +2269,19 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_summaryOffsetSection;
       }
+
+      @Override
+      public String toString()
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-ofsSummarySection = " + ofsSummarySection;
+         out += "\n\t-ofsSummaryOffsetSection = " + ofsSummaryOffsetSection;
+         out += "\n\t-summaryCrc32 = " + summaryCrc32;
+         return out;
+      }
    }
 
-   public static class Record extends KaitaiStruct
+   public static class Record extends KaitaiStructToStringEnabled
    {
       public static Record fromFile(String fileName) throws IOException
       {
@@ -1986,7 +2308,7 @@ public class Mcap extends KaitaiStruct
 
       private void _read()
       {
-         this.op = Mcap.Opcode.byId(this._io.readU1());
+         this.op = Opcode.byId(this._io.readU1());
          this.lenBody = this._io.readU8le();
          {
             Opcode on = op();
@@ -2140,6 +2462,7 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
+      @Override
       public KaitaiStruct _parent()
       {
          return _parent;
@@ -2149,9 +2472,25 @@ public class Mcap extends KaitaiStruct
       {
          return _raw_body;
       }
+
+      @Override
+      public String toString()
+      {
+         return toString(0);
+      }
+
+      @Override
+      public String toString(int indent)
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-op = " + op;
+         out += "\n\t-lenBody = " + lenBody;
+         out += "\n\t-body = " + (body == null ? "null" : "\n" + ((KaitaiStructToStringEnabled) body).toString(indent + 2));
+         return indent(out, indent);
+      }
    }
 
-   public static class ChunkIndex extends KaitaiStruct
+   public static class ChunkIndex extends KaitaiStructToStringEnabled
    {
       public static ChunkIndex fromFile(String fileName) throws IOException
       {
@@ -2163,12 +2502,12 @@ public class Mcap extends KaitaiStruct
          this(_io, null, null);
       }
 
-      public ChunkIndex(KaitaiStream _io, Mcap.Record _parent)
+      public ChunkIndex(KaitaiStream _io, Record _parent)
       {
          this(_io, _parent, null);
       }
 
-      public ChunkIndex(KaitaiStream _io, Mcap.Record _parent, Mcap _root)
+      public ChunkIndex(KaitaiStream _io, Record _parent, Mcap _root)
       {
          super(_io);
          this._parent = _parent;
@@ -2192,7 +2531,7 @@ public class Mcap extends KaitaiStruct
          this.uncompressedSize = this._io.readU8le();
       }
 
-      public static class MessageIndexOffset extends KaitaiStruct
+      public static class MessageIndexOffset extends KaitaiStructToStringEnabled
       {
          public static MessageIndexOffset fromFile(String fileName) throws IOException
          {
@@ -2204,12 +2543,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public MessageIndexOffset(KaitaiStream _io, Mcap.ChunkIndex.MessageIndexOffsets _parent)
+         public MessageIndexOffset(KaitaiStream _io, ChunkIndex.MessageIndexOffsets _parent)
          {
             this(_io, _parent, null);
          }
 
-         public MessageIndexOffset(KaitaiStream _io, Mcap.ChunkIndex.MessageIndexOffsets _parent, Mcap _root)
+         public MessageIndexOffset(KaitaiStream _io, ChunkIndex.MessageIndexOffsets _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -2226,7 +2565,7 @@ public class Mcap extends KaitaiStruct
          private int channelId;
          private long offset;
          private Mcap _root;
-         private Mcap.ChunkIndex.MessageIndexOffsets _parent;
+         private ChunkIndex.MessageIndexOffsets _parent;
 
          public int channelId()
          {
@@ -2243,13 +2582,29 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.ChunkIndex.MessageIndexOffsets _parent()
+         @Override
+         public ChunkIndex.MessageIndexOffsets _parent()
          {
             return _parent;
          }
+
+         @Override
+         public String toString()
+         {
+            return toString(0);
+         }
+
+         @Override
+         public String toString(int indent)
+         {
+            String out = getClass().getSimpleName() + ":";
+            out += "\n\t-channelId = " + channelId;
+            out += "\n\t-offset = " + offset;
+            return indent(out, indent);
+         }
       }
 
-      public static class MessageIndexOffsets extends KaitaiStruct
+      public static class MessageIndexOffsets extends KaitaiStructToStringEnabled
       {
          public static MessageIndexOffsets fromFile(String fileName) throws IOException
          {
@@ -2261,12 +2616,12 @@ public class Mcap extends KaitaiStruct
             this(_io, null, null);
          }
 
-         public MessageIndexOffsets(KaitaiStream _io, Mcap.ChunkIndex _parent)
+         public MessageIndexOffsets(KaitaiStream _io, ChunkIndex _parent)
          {
             this(_io, _parent, null);
          }
 
-         public MessageIndexOffsets(KaitaiStream _io, Mcap.ChunkIndex _parent, Mcap _root)
+         public MessageIndexOffsets(KaitaiStream _io, ChunkIndex _parent, Mcap _root)
          {
             super(_io);
             this._parent = _parent;
@@ -2276,7 +2631,7 @@ public class Mcap extends KaitaiStruct
 
          private void _read()
          {
-            this.entries = new ArrayList<MessageIndexOffset>();
+            this.entries = new ArrayList<>();
             {
                int i = 0;
                while (!this._io.isEof())
@@ -2289,7 +2644,7 @@ public class Mcap extends KaitaiStruct
 
          private ArrayList<MessageIndexOffset> entries;
          private Mcap _root;
-         private Mcap.ChunkIndex _parent;
+         private ChunkIndex _parent;
 
          public ArrayList<MessageIndexOffset> entries()
          {
@@ -2301,9 +2656,24 @@ public class Mcap extends KaitaiStruct
             return _root;
          }
 
-         public Mcap.ChunkIndex _parent()
+         @Override
+         public ChunkIndex _parent()
          {
             return _parent;
+         }
+
+         @Override
+         public String toString()
+         {
+            return toString(0);
+         }
+
+         @Override
+         public String toString(int indent)
+         {
+            String out = getClass().getSimpleName() + ":";
+            out += "\n\t-entries = " + (entries == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", entries, e -> e.toString(indent + 1)));
+            return indent(out, indent);
          }
       }
 
@@ -2334,7 +2704,7 @@ public class Mcap extends KaitaiStruct
       private long compressedSize;
       private long uncompressedSize;
       private Mcap _root;
-      private Mcap.Record _parent;
+      private Record _parent;
       private byte[] _raw_messageIndexOffsets;
       private byte[] _raw_chunk;
 
@@ -2393,7 +2763,8 @@ public class Mcap extends KaitaiStruct
          return _root;
       }
 
-      public Mcap.Record _parent()
+      @Override
+      public Record _parent()
       {
          return _parent;
       }
@@ -2406,6 +2777,45 @@ public class Mcap extends KaitaiStruct
       public byte[] _raw_chunk()
       {
          return _raw_chunk;
+      }
+
+      @Override
+      public String toString()
+      {
+         return toString(0);
+      }
+
+      @Override
+      public String toString(int indent)
+      {
+         String out = getClass().getSimpleName() + ":";
+         out += "\n\t-messageStartTime = " + messageStartTime;
+         out += "\n\t-messageEndTime = " + messageEndTime;
+         out += "\n\t-ofsChunk = " + ofsChunk;
+         out += "\n\t-lenChunk = " + lenChunk;
+         out += "\n\t-lenMessageIndexOffsets = " + lenMessageIndexOffsets;
+         out += "\n\t-messageIndexOffsets = " + (messageIndexOffsets == null ? "null" : "\n" + messageIndexOffsets.toString(indent + 1));
+         out += "\n\t-messageIndexLength = " + messageIndexLength;
+         out += "\n\t-compression = " + compression;
+         out += "\n\t-compressedSize = " + compressedSize;
+         out += "\n\t-uncompressedSize = " + uncompressedSize;
+         return indent(out, indent);
+      }
+   }
+
+   private abstract static class KaitaiStructToStringEnabled extends KaitaiStruct
+   {
+      public KaitaiStructToStringEnabled(KaitaiStream _io)
+      {
+         super(_io);
+      }
+
+      @Override
+      public abstract String toString();
+
+      public String toString(int indent)
+      {
+         return indent(toString(), indent);
       }
    }
 
@@ -2462,6 +2872,7 @@ public class Mcap extends KaitaiStruct
       return _root;
    }
 
+   @Override
    public KaitaiStruct _parent()
    {
       return _parent;
