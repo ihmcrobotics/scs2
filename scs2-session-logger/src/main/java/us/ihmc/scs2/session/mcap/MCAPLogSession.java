@@ -11,10 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.jpountz.lz4.LZ4DecompressorWithLength;
-import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.lz4.LZ4FastDecompressor;
-import net.jpountz.lz4.LZ4SafeDecompressor;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -33,18 +31,15 @@ import us.ihmc.scs2.session.mcap.Mcap.Header;
 import us.ihmc.scs2.session.mcap.Mcap.Magic;
 import us.ihmc.scs2.session.mcap.Mcap.MapStrStr;
 import us.ihmc.scs2.session.mcap.Mcap.MessageIndex;
-import us.ihmc.scs2.session.mcap.Mcap.MessageIndex.MessageIndexEntries;
 import us.ihmc.scs2.session.mcap.Mcap.MessageIndex.MessageIndexEntry;
 import us.ihmc.scs2.session.mcap.Mcap.Metadata;
 import us.ihmc.scs2.session.mcap.Mcap.MetadataIndex;
 import us.ihmc.scs2.session.mcap.Mcap.Opcode;
-import us.ihmc.scs2.session.mcap.Mcap.PrefixedStr;
 import us.ihmc.scs2.session.mcap.Mcap.Record;
 import us.ihmc.scs2.session.mcap.Mcap.Schema;
 import us.ihmc.scs2.session.mcap.Mcap.SummaryOffset;
 import us.ihmc.scs2.session.mcap.Mcap.TupleStrStr;
 import us.ihmc.scs2.simulation.robot.Robot;
-import us.ihmc.tools.compression.LZ4CompressionImplementation;
 
 public class MCAPLogSession extends Session
 {
@@ -245,24 +240,15 @@ public class MCAPLogSession extends Session
                   try
                   {
                      byte[] sourceByteArray = (byte[]) chunk.records();
-                     byte[] extendedByteArray  = new byte[sourceByteArray.length];
-                     extendedByteArray[0] = (byte) ((uncompressedSize >> 0) & 0xFF);
-                     extendedByteArray[1] = (byte) ((uncompressedSize >> 8) & 0xFF);
-                     extendedByteArray[2] = (byte) ((uncompressedSize >> 16) & 0xFF);
-                     extendedByteArray[3] = (byte) ((uncompressedSize >> 24) & 0xFF);
-                     for (int i = 0; i < sourceByteArray.length; i++)
-                     {
-                        extendedByteArray[i] = sourceByteArray[i];
-                     }
+//                     ByteBuffer compressedBuffer = ByteBuffer.wrap(sourceByteArray);
+//                     ByteBuffer decompressedBuffer = ByteBuffer.allocate(uncompressedSize);
+//                     LZ4SafeDecompressor decompressor = LZ4Factory.safeInstance().safeDecompressor();
+//                     System.out.println(getDecompressedLength(compressedBuffer, 0));
+//                     decompressor.decompress(compressedBuffer, 0, compressedSize, decompressedBuffer, 0, uncompressedSize);
 
-                     ByteBuffer compressedBuffer = ByteBuffer.wrap(extendedByteArray);
-                     //                     compressedBuffer.
-                     ByteBuffer decompressedBuffer = ByteBuffer.allocate(uncompressedSize);
-                     LZ4SafeDecompressor decompressor = LZ4Factory.safeInstance().safeDecompressor();
-                     System.out.println(getDecompressedLength(compressedBuffer, 0));
-                     //                     decompressor.decompress(compressedBuffer, 0, decompressedBuffer, 0, uncompressedSize);
-                     //                     decompressor.decompress(compressedBuffer, decompressedBuffer);
-                     decompressor.decompress(compressedBuffer, 0, compressedSize, decompressedBuffer, 0, uncompressedSize);
+                     ByteBuf compressedBuffer = Unpooled.copiedBuffer(sourceByteArray);
+                     List<ByteBuf> data = new Lz4FrameDecoder().decode(compressedBuffer);
+                     System.out.println(data.size());
 
                   }
                   catch (Exception e)
@@ -346,7 +332,7 @@ public class MCAPLogSession extends Session
 
    public static int getDecompressedLength(ByteBuffer src, int srcOff)
    {
-      System.out.println(Long.toHexString(src.order(ByteOrder.LITTLE_ENDIAN).getLong(0)));
+      System.out.println(Long.toHexString(src.order(ByteOrder.LITTLE_ENDIAN).getInt(0)));
       byte byte0 = src.get(srcOff + 3);
       byte byte1 = src.get(srcOff + 2);
       byte byte2 = src.get(srcOff + 1);
