@@ -135,7 +135,8 @@ public class YoROS2Message
          {
             YoBoolean yoBoolean = new YoBoolean(name, registry);
             return buffer -> yoBoolean.set(buffer.get() != 0);
-         } ;
+         }
+         ;
          case "float64":
          {
             YoDouble yoDouble = new YoDouble(name, registry);
@@ -151,17 +152,37 @@ public class YoROS2Message
             YoInteger yoInteger = new YoInteger(name, registry);
             return buffer -> yoInteger.set(buffer.get());
          }
-         case "int16":
+         case "int16", "uint16":
          {
             YoInteger yoInteger = new YoInteger(name, registry);
             return buffer -> yoInteger.set(buffer.getShort());
          }
-         case "uint16": -> YoVariableType.INTEGER;
-         case "byte", "int16", "uint16", "int32" -> YoVariableType.INTEGER;
-         case "byte", "int16", "uint16", "int32" -> YoVariableType.INTEGER;
-         case "uint32", "int64", "uint64" -> YoVariableType.LONG;
-         //         case "string" -> YoVariableType.STRING; TODO Gonna need to implement YoString
-      } ;
+         case "int32":
+         {
+            YoInteger yoInteger = new YoInteger(name, registry);
+            return buffer -> yoInteger.set(buffer.getInt());
+         }
+         case "uint32":
+         {
+            YoLong yoLong = new YoLong(name, registry);
+            return buffer -> yoLong.set(buffer.getInt());
+         }
+         case "int64", "uint64":
+         {
+            YoLong yoLong = new YoLong(name, registry);
+            return buffer -> yoLong.set(buffer.getLong());
+         }
+         case "string":
+         {
+            LogTools.warn("YoString not implemented yet. name = " + registry.getName() + ", field = " + field);
+            return buffer ->
+            {
+               int length = buffer.getInt();
+               buffer.position(buffer.position() + length);
+            };
+         }
+      }
+      ;
    }
 
    private static YoVariable[] createYoVariableArray(String name, YoVariableType type, int length, YoRegistry registry)
