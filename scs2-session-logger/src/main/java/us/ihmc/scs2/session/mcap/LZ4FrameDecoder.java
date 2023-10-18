@@ -9,6 +9,8 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Locale;
 
+import org.bouncycastle.util.Arrays;
+
 import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
@@ -182,8 +184,8 @@ public class LZ4FrameDecoder
          throw new IOException(DESCRIPTOR_HASH_MISMATCH);
 
       maxBlockSize = frameInfo.getBD().getBlockMaximumSize();
-      compressedBuffer = new byte[2 * maxBlockSize]; // Reused during different compressions
-      rawBuffer = new byte[2 * maxBlockSize];
+      compressedBuffer = new byte[maxBlockSize]; // Reused during different compressions
+      rawBuffer = new byte[maxBlockSize];
       firstFrameHeaderRead = true;
    }
 
@@ -259,7 +261,7 @@ public class LZ4FrameDecoder
          frameInfo.updateStreamHash(rawBuffer, 0, currentBufferSize);
 
       totalContentSize += currentBufferSize;
-      ByteBuffer out = ByteBuffer.wrap(rawBuffer);
+      ByteBuffer out = ByteBuffer.wrap(Arrays.copyOf(rawBuffer, currentBufferSize));
       out.limit(currentBufferSize);
       out.rewind();
       return out;
