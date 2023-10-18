@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
@@ -91,12 +92,26 @@ public class MCAPLogSession extends Session
          {
             if ("ros2msg".equals(schema.encoding().str()))
             {
-               File schemaFile = new File(schema.name().str() + "-schema.ros2msg");
+               File schemaFile = new File(schema.name().str().replace(":", "-") + "-schema-b.ros2msg");
+               
                if (schemaFile.exists())
                   schemaFile.delete();
-               PrintWriter writer = new PrintWriter(schemaFile);
-               writer.write(new String(schema.data()));
-               writer.close();
+               try
+               {
+                  schemaFile.createNewFile();
+               }
+               catch (IOException e)
+               {
+                  LogTools.error(schemaFile.getName());
+                  LogTools.error(schemaFile.getAbsolutePath());
+                  e.printStackTrace();
+               }
+               FileOutputStream os = new FileOutputStream(schemaFile);
+               os.write(schema.data(), 0, schema.data().length);
+               os.close();
+//               PrintWriter writer = new PrintWriter(schemaFile);
+//               writer.write(schema.data());
+//               writer.close();
             }
          }
       }
