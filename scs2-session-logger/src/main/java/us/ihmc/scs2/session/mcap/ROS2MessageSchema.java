@@ -9,14 +9,21 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
 
 public class ROS2MessageSchema
 {
+   private int id;
    private String name;
    private List<ROS2Field> fields;
    private Map<String, ROS2MessageSchema> subSchemaMap;
 
-   public static ROS2MessageSchema loadSchema(String name, byte[] data)
+   public static ROS2MessageSchema loadSchema(Mcap.Schema mcapSchema)
+   {
+      return loadSchema(mcapSchema.name().str(), mcapSchema.id(), mcapSchema.data());
+   }
+
+   public static ROS2MessageSchema loadSchema(String name, int id, byte[] data)
    {
       ROS2MessageSchema schema = new ROS2MessageSchema();
       schema.name = name;
+      schema.id = id;
 
       String schemasBundledString = new String(data);
       schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
@@ -34,7 +41,9 @@ public class ROS2MessageSchema
          int firstNewLineCharacter = schemaString.indexOf("\n");
          String firstLine = schemaString.substring(0, firstNewLineCharacter);
          subSchema.name = firstLine.replace("MSG: fastdds/", "").trim();
-         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1, schemaString.length()).lines().map(ROS2Field::fromLine)
+         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1, schemaString.length())
+                                        .lines()
+                                        .map(ROS2Field::fromLine)
                                         .collect(Collectors.toList());
          schema.subSchemaMap.put(subSchema.name, subSchema);
       }
@@ -42,14 +51,14 @@ public class ROS2MessageSchema
       return schema;
    }
 
+   public int getId()
+   {
+      return id;
+   }
+
    public String getName()
    {
       return name;
-   }
-
-   public void setName(String name)
-   {
-      this.name = name;
    }
 
    public List<ROS2Field> getFields()
@@ -57,19 +66,9 @@ public class ROS2MessageSchema
       return fields;
    }
 
-   public void setFields(List<ROS2Field> fields)
-   {
-      this.fields = fields;
-   }
-
    public Map<String, ROS2MessageSchema> getSubSchemaMap()
    {
       return subSchemaMap;
-   }
-
-   public void setSubSchemaMap(Map<String, ROS2MessageSchema> subSchemaMap)
-   {
-      this.subSchemaMap = subSchemaMap;
    }
 
    @Override
@@ -85,10 +84,11 @@ public class ROS2MessageSchema
       if (fields != null)
          out += "\n\t-fields=\n" + EuclidCoreIOTools.getCollectionString("\n", fields, f -> f.toString(indent + 2));
       if (subSchemaMap != null)
-         out += "\n\t-subSchemaMap=\n" + indentString(indent + 2)
-               + EuclidCoreIOTools.getCollectionString("\n" + indentString(indent + 2),
-                                                       subSchemaMap.entrySet(),
-                                                       e -> e.getKey() + "->\n" + e.getValue().toString(indent + 3).replace("^(\t*)", ""));
+         out += "\n\t-subSchemaMap=\n" + indentString(indent + 2) + EuclidCoreIOTools.getCollectionString("\n" + indentString(indent + 2),
+                                                                                                          subSchemaMap.entrySet(),
+                                                                                                          e -> e.getKey() + "->\n" + e.getValue()
+                                                                                                                                      .toString(indent + 3)
+                                                                                                                                      .replace("^(\t*)", ""));
       return indent(out, indent);
    }
 
