@@ -4,12 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
 import java.util.Locale;
-
-import org.bouncycastle.util.Arrays;
 
 import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
@@ -195,7 +191,7 @@ public class LZ4FrameDecoder
     *
     * @throws IOException
     */
-   private ByteBuffer readBlock(ByteBuffer in) throws IOException
+   private ByteBuffer readBlock(ByteBuffer in, ByteBuffer out) throws IOException
    {
       int blockSize = in.getInt();
       final boolean compressed = (blockSize & LZ4_FRAME_INCOMPRESSIBLE_MASK) == 0;
@@ -261,35 +257,72 @@ public class LZ4FrameDecoder
          frameInfo.updateStreamHash(rawBuffer, 0, currentBufferSize);
 
       totalContentSize += currentBufferSize;
-      ByteBuffer out = ByteBuffer.wrap(Arrays.copyOf(rawBuffer, currentBufferSize));
-      out.limit(currentBufferSize);
-      out.rewind();
-      return out;
+      if (out != null)
+      { // Could check if capacity is big enough, but might just crash to avoid sneaky surprise of a buffer swap.
+         out.put(rawBuffer, 0, currentBufferSize);
+         return out;
+      }
+      else
+      {
+         ByteBuffer blockOut = ByteBuffer.wrap(rawBuffer);
+         blockOut.limit(currentBufferSize);
+         blockOut.position(0);
+         return blockOut;
+      }
    }
 
-   public List<ByteBuffer> decode(byte[] in) throws IOException
+   public byte[] decode(byte[] in, byte[] out) throws IOException
    {
-      return decode(ByteBuffer.wrap(in));
+      ByteBuffer result = decode(ByteBuffer.wrap(in), out == null ? null : ByteBuffer.wrap(out));
+      return result == null ? null : result.array();
    }
 
-   public List<ByteBuffer> decode(ByteBuffer in) throws IOException
+   public ByteBuffer decode(ByteBuffer in, ByteBuffer out) throws IOException
    {
-      List<ByteBuffer> outs = new ArrayList<>();
       in.order(ByteOrder.LITTLE_ENDIAN);
+
+      ByteBuffer whenOutIsNull = null;
 
       while (in.hasRemaining())
       {
          if (!firstFrameHeaderRead || frameInfo.isFinished())
          {
             if (!nextFrameInfo(in))
-               return null;
+               throw new IllegalStateException("Could not find the Frame Descriptor!");
          }
-         ByteBuffer newBlock = readBlock(in);
-         if (newBlock == null)
+         ByteBuffer blockOut = readBlock(in, out);
+
+         if (blockOut == null)
             break; // Reached the end
-         outs.add(newBlock);
+
+         if (out == null)
+         {
+            if (whenOutIsNull == null)
+            {
+               // Need to make a copy of the data as it will be reused for the next blocks.
+               whenOutIsNull = ByteBuffer.allocate(blockOut.remaining());
+               // whenOutIsNull.put(blockOut); <= apparently this does not perform a deep copy.
+               whenOutIsNull.put(0, blockOut, 0, blockOut.limit());
+            }
+            else
+            {
+               ByteBuffer extended = ByteBuffer.allocate(whenOutIsNull.remaining() + blockOut.remaining());
+               extended.put(whenOutIsNull);
+               extended.put(blockOut);
+               whenOutIsNull = extended;
+            }
+         }
       }
-      return outs;
+      if (out != null)
+      {
+         out.flip();
+         return out;
+      }
+      else
+      {
+         whenOutIsNull.flip();
+         return whenOutIsNull;
+      }
    }
 
    static class FrameInfo

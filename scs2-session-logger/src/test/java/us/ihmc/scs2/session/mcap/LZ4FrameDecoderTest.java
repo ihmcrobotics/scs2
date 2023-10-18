@@ -22,8 +22,7 @@ public class LZ4FrameDecoderTest
          byteList.add((byte) scanner.nextByte());
       scanner.close();
 
-      ByteBuffer compressedBuffer = ByteBuffer.wrap(byteList.toArray());
-      List<ByteBuffer> decompressedBuffer = new LZ4FrameDecoder().decode(compressedBuffer);
-      System.out.println(decompressedBuffer.size());
+      byte[] decompressedBuffer = new LZ4FrameDecoder().decode(byteList.toArray(), null);
+      System.out.println(decompressedBuffer.length);
    }
 }

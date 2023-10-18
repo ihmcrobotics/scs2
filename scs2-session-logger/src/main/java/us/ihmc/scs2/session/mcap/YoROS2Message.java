@@ -5,30 +5,57 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 import us.ihmc.scs2.session.mcap.ROS2MessageSchema.ROS2Field;
 
-import java.util.Map;
-import java.util.Objects;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class YoROS2Message
 {
    private final YoRegistry registry;
    private final ROS2MessageSchema schema;
+   private final int channelId;
+   private final List<Consumer<ByteBuffer>> deserializers = new ArrayList<>();
 
-   public YoROS2Message(ROS2MessageSchema schema)
+   public YoROS2Message(int channelId, ROS2MessageSchema schema)
    {
-      this(schema.getName(), schema);
+      this(schema.getName(), channelId, schema);
    }
 
-   public YoROS2Message(String name, ROS2MessageSchema schema)
+   public YoROS2Message(String name, int channelId, ROS2MessageSchema schema)
    {
-      this(schema, new YoRegistry(name));
+      this(schema, channelId, new YoRegistry(name));
    }
 
-   public YoROS2Message(ROS2MessageSchema schema, YoRegistry registry)
+   public YoROS2Message(ROS2MessageSchema schema, int channelId, YoRegistry registry)
    {
       this.schema = schema;
       this.registry = registry;
+      this.channelId = channelId;
 
-      instantiateSchema(schema, schema.getSubSchemaMap(), registry);
+      instantiateSchema(schema, schema.getSubSchemaMap(), registry, deserializers);
+   }
+
+   public void readMessage(Mcap.Message message)
+   {
+      if (message.channelId() != channelId)
+         throw new IllegalArgumentException("Expected channel ID: " + channelId + ", but received: " + message.channelId());
+
+      ByteBuffer dataBuffer = ByteBuffer.wrap(message.data());
+      dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+      for (Object variable : variablesInOrder)
+      {
+         if (variable instanceof YoBoolean yoBoolean)
+         {
+            // TODO Not sure how boolean are serialized, no mention of it in the MCAP doc.
+            yoBoolean.set(dataBuffer.get() != 0);
+         }
+         else if (variable instanceof YoDouble)
+         {
+
+         }
+      }
    }
 
    public ROS2MessageSchema getSchema()
@@ -41,7 +68,10 @@ public class YoROS2Message
       return registry;
    }
 
-   private YoRegistry instantiateSchema(ROS2MessageSchema schema, Map<String, ROS2MessageSchema> subSchemaMap, YoRegistry schemaRegistry)
+   private static YoRegistry instantiateSchema(ROS2MessageSchema schema,
+                                               Map<String, ROS2MessageSchema> subSchemaMap,
+                                               YoRegistry schemaRegistry,
+                                               List<Consumer<ByteBuffer>> deserializers)
    {
       Objects.requireNonNull(schema, "Schema cannot be null. name = " + schemaRegistry.getName());
 
@@ -52,16 +82,23 @@ public class YoROS2Message
          boolean isArray = field.isArray();
          int arrayLength = field.getMaxLength();
 
+         Consumer<ByteBuffer> deserializer = null;
+         deserializer = createYoVariable(field, schemaRegistry);
+
+         if (deserializer != null)
+            continue;
+
          if (type != null)
          {
             if (!isArray)
-               createYoVariable(fieldName, type, schemaRegistry);
+               deserializers.add();
             else
-               createYoVariableArray(fieldName, type, arrayLength, schemaRegistry);
+               deserializers.add(createYoVariableArray(fieldName, type, arrayLength, schemaRegistry));
          }
          else if ("string".equals(field.getType()))
          {
             LogTools.warn("YoString not implemented yet. name = " + schemaRegistry.getName() + ", field = " + field);
+            deserializers.add(""); // Mark the position for the string to skip it when reading a message.
          }
          else
          {
@@ -72,7 +109,7 @@ public class YoROS2Message
             {
                YoRegistry fieldRegistry = new YoRegistry(fieldName);
                schemaRegistry.addChild(fieldRegistry);
-               instantiateSchema(subSchema, subSchemaMap, fieldRegistry);
+               instantiateSchema(subSchema, subSchemaMap, fieldRegistry, deserializers);
             }
             else
             {
@@ -80,7 +117,7 @@ public class YoROS2Message
                {
                   YoRegistry fieldRegistry = new YoRegistry(fieldName + "[" + i + "]");
                   schemaRegistry.addChild(fieldRegistry);
-                  instantiateSchema(subSchema, subSchemaMap, fieldRegistry);
+                  instantiateSchema(subSchema, subSchemaMap, fieldRegistry, deserializers);
                }
             }
          }
@@ -88,16 +125,43 @@ public class YoROS2Message
       return schemaRegistry;
    }
 
-   private static YoVariable createYoVariable(String name, YoVariableType type, YoRegistry registry)
+   private static Consumer<ByteBuffer> createYoVariable(ROS2Field field, YoRegistry registry)
    {
-      return switch (type)
+      String name = field.getName();
+
+      switch (field.getType())
       {
-         case BOOLEAN -> new YoBoolean(name, registry);
-         case DOUBLE -> new YoDouble(name, registry);
-         case INTEGER -> new YoInteger(name, registry);
-         case LONG -> new YoLong(name, registry);
-         default -> null;
-      };
+         case "bool":
+         {
+            YoBoolean yoBoolean = new YoBoolean(name, registry);
+            return buffer -> yoBoolean.set(buffer.get() != 0);
+         } ;
+         case "float64":
+         {
+            YoDouble yoDouble = new YoDouble(name, registry);
+            return buffer -> yoDouble.set(buffer.getDouble());
+         }
+         case "float32":
+         {
+            YoDouble yoDouble = new YoDouble(name, registry);
+            return buffer -> yoDouble.set(buffer.getFloat());
+         }
+         case "byte":
+         {
+            YoInteger yoInteger = new YoInteger(name, registry);
+            return buffer -> yoInteger.set(buffer.get());
+         }
+         case "int16":
+         {
+            YoInteger yoInteger = new YoInteger(name, registry);
+            return buffer -> yoInteger.set(buffer.getShort());
+         }
+         case "uint16": -> YoVariableType.INTEGER;
+         case "byte", "int16", "uint16", "int32" -> YoVariableType.INTEGER;
+         case "byte", "int16", "uint16", "int32" -> YoVariableType.INTEGER;
+         case "uint32", "int64", "uint64" -> YoVariableType.LONG;
+         //         case "string" -> YoVariableType.STRING; TODO Gonna need to implement YoString
+      } ;
    }
 
    private static YoVariable[] createYoVariableArray(String name, YoVariableType type, int length, YoRegistry registry)
