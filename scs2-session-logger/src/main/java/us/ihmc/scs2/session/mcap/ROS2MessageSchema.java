@@ -19,6 +19,7 @@ public class ROS2MessageSchema
       schema.name = name;
 
       String schemasBundledString = new String(data);
+      schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
       String[] schemasStrings = schemasBundledString.split("\n(=+)\n");
 
       schema.fields = schemasStrings[0].lines().map(ROS2Field::fromLine).collect(Collectors.toList());
