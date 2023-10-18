@@ -13,6 +13,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import gnu.trove.map.hash.TIntObjectHashMap;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
@@ -40,7 +41,11 @@ import us.ihmc.scs2.session.mcap.Mcap.Record;
 import us.ihmc.scs2.session.mcap.Mcap.Schema;
 import us.ihmc.scs2.session.mcap.Mcap.SummaryOffset;
 import us.ihmc.scs2.session.mcap.Mcap.TupleStrStr;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.yoVariables.registry.YoNamespace;
+import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.tools.YoTools;
 
 public class MCAPLogSession extends Session
 {
@@ -52,9 +57,13 @@ public class MCAPLogSession extends Session
    private final Runnable robotStateUpdater;
    private Mcap mcap;
 
+   private final YoRegistry mcapRegistry = new YoRegistry("MCAP");
+   private final File mcapFile;
+
    public MCAPLogSession(File mcapFile, MCAPDebugPrinter printer) throws IOException
    {
       // FIXME Do we need this guy?
+      this.mcapFile = mcapFile;
       robotStateUpdater = null;
       mcap = Mcap.fromFile(mcapFile.getAbsolutePath());
       Magic headerMagic = mcap.headerMagic();
@@ -65,54 +74,39 @@ public class MCAPLogSession extends Session
       List<Record> records = mcap.records();
       printer.println("Number of records: " + records.size());
 
-      int metadataCount = 0;
-      int metadataIndexCount = 0;
-      int dataEndCount = 0;
-      int messageIndexCount = 0;
-      int chunkIndexCount = 0;
-      int chunkCount = 0;
-      int schemaCount = 0;
-      int channelCount = 0;
-      int summaryOffsetCount = 0;
-      int attachmentCount = 0;
+      TIntObjectHashMap<ROS2MessageSchema> schemas = new TIntObjectHashMap<>();
 
-      int unsuccessfulDecompressedChunks = 0;
+      for (Record record : records)
+      {
+         if (record.op() == Opcode.SCHEMA)
+         {
+            Schema schema = (Schema) record.body();
+            schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema.name().str(), schema.data()));
+         }
+      }
+
+      List<YoROS2Message> loadedChannels = new ArrayList<>();
+
+      for (Record record : records)
+      {
+         if (record.op() == Opcode.CHANNEL)
+         {
+            Channel channel = (Channel) record.body();
+            loadedChannels.add(instantiateChannel(channel, schemas, mcapRegistry));
+         }
+      }
+
+
+
       EnumSet<Opcode> alreadyPrintedOp = EnumSet.noneOf(Opcode.class);
 
       for (Record record : records)
       {
-         long lenBody = record.lenBody();
          Opcode op = record.op();
 
          if (alreadyPrintedOp.add(op))
          {
             printer.println(record.toString());
-         }
-         if (record.body() instanceof Schema schema)
-         {
-            if ("ros2msg".equals(schema.encoding().str()))
-            {
-               File schemaFile = new File(schema.name().str().replace(":", "-") + "-schema-b.ros2msg");
-               
-               if (schemaFile.exists())
-                  schemaFile.delete();
-               try
-               {
-                  schemaFile.createNewFile();
-               }
-               catch (IOException e)
-               {
-                  LogTools.error(schemaFile.getName());
-                  LogTools.error(schemaFile.getAbsolutePath());
-                  e.printStackTrace();
-               }
-               FileOutputStream os = new FileOutputStream(schemaFile);
-               os.write(schema.data(), 0, schema.data().length);
-               os.close();
-//               PrintWriter writer = new PrintWriter(schemaFile);
-//               writer.write(schema.data());
-//               writer.close();
-            }
          }
       }
 
@@ -125,18 +119,21 @@ public class MCAPLogSession extends Session
          printer.println("");
       }
 
-      printer.println("summaryOffsetCount = " + summaryOffsetCount);
-      printer.println("attachmentCount = " + attachmentCount);
-      printer.println("channelCount = " + channelCount);
-      printer.println("chunkCount = " + chunkCount + ", successful decomp. = " + (chunkCount - unsuccessfulDecompressedChunks));
-      printer.println("chunkIndexCount = " + chunkIndexCount);
-      printer.println("dataEndCount = " + dataEndCount);
+      rootRegistry.addChild(mcapRegistry);
+   }
 
-      printer.println("messageIndexCount = " + messageIndexCount);
-      printer.println("metadataCount = " + metadataCount);
-      printer.println("metadataIndexCount = " + metadataIndexCount);
-
-      printer.println("schemaCount = " + schemaCount);
+   private static YoROS2Message instantiateChannel(Channel channel, TIntObjectHashMap<ROS2MessageSchema> schemas, YoRegistry mcapRegistry)
+   {
+      String topic = channel.topic().str();
+      topic = topic.replace("/", YoTools.NAMESPACE_SEPERATOR_STRING);
+      if (topic.startsWith(YoTools.NAMESPACE_SEPERATOR_STRING))
+         topic = topic.substring(YoTools.NAMESPACE_SEPERATOR_STRING.length());
+      YoNamespace namespace = new YoNamespace(topic);
+      namespace = namespace.prepend(mcapRegistry.getNamespace());
+      System.out.println(namespace);
+      YoRegistry channelRegistry = SharedMemoryTools.ensurePathExists(mcapRegistry, namespace);
+      YoROS2Message message = new YoROS2Message(schemas.get(channel.schemaId()), channelRegistry);
+      return message;
    }
 
    @Override
@@ -173,5 +170,10 @@ public class MCAPLogSession extends Session
    public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
       return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
+   }
+
+   public File getMCAPFile()
+   {
+      return mcapFile;
    }
 }

@@ -15,8 +15,20 @@ public class YoROS2Message
 
    public YoROS2Message(ROS2MessageSchema schema)
    {
+      this(schema.getName(), schema);
+   }
+
+   public YoROS2Message(String name, ROS2MessageSchema schema)
+   {
+      this(schema, new YoRegistry(name));
+   }
+
+   public YoROS2Message(ROS2MessageSchema schema, YoRegistry registry)
+   {
       this.schema = schema;
-      registry = instantiateSchema(schema.getName(), schema, schema.getSubSchemaMap());
+      this.registry = registry;
+
+      instantiateSchema(schema, schema.getSubSchemaMap(), registry);
    }
 
    public ROS2MessageSchema getSchema()
@@ -29,11 +41,9 @@ public class YoROS2Message
       return registry;
    }
 
-   private YoRegistry instantiateSchema(String schemaName, ROS2MessageSchema schema, Map<String, ROS2MessageSchema> subSchemaMap)
+   private YoRegistry instantiateSchema(ROS2MessageSchema schema, Map<String, ROS2MessageSchema> subSchemaMap, YoRegistry schemaRegistry)
    {
-      Objects.requireNonNull(schema, "Schema cannot be null. schemaName = " + schemaName);
-
-      YoRegistry schemaRegistry = new YoRegistry(schemaName);
+      Objects.requireNonNull(schema, "Schema cannot be null. name = " + schemaRegistry.getName());
 
       for (ROS2Field field : schema.getFields())
       {
@@ -51,7 +61,7 @@ public class YoROS2Message
          }
          else if ("string".equals(field.getType()))
          {
-            LogTools.warn("YoString not implemented yet. schemaName = " + schemaName + ", field = " + field);
+            LogTools.warn("YoString not implemented yet. name = " + schemaRegistry.getName() + ", field = " + field);
          }
          else
          {
@@ -60,12 +70,18 @@ public class YoROS2Message
                throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
             if (!isArray)
             {
-               schemaRegistry.addChild(instantiateSchema(fieldName, subSchema, subSchemaMap));
+               YoRegistry fieldRegistry = new YoRegistry(fieldName);
+               schemaRegistry.addChild(fieldRegistry);
+               instantiateSchema(subSchema, subSchemaMap, fieldRegistry);
             }
             else
             {
                for (int i = 0; i < arrayLength; i++)
-                  schemaRegistry.addChild(instantiateSchema(fieldName + "[" + i + "]", subSchema, subSchemaMap));
+               {
+                  YoRegistry fieldRegistry = new YoRegistry(fieldName + "[" + i + "]");
+                  schemaRegistry.addChild(fieldRegistry);
+                  instantiateSchema(subSchema, subSchemaMap, fieldRegistry);
+               }
             }
          }
       }
