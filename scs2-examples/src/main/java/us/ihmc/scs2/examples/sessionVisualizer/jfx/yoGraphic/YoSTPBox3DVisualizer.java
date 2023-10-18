@@ -19,7 +19,7 @@ public class YoSTPBox3DVisualizer
       yoBoxFX3D.setOrientation(new QuaternionProperty(q.getX(), q.getY(), q.getZ(), q.getS()));
       yoBoxFX3D.setSize(new Tuple3DProperty(0.25, 0.25, 0.25));
       yoBoxFX3D.setColor(Color.AQUAMARINE);
-      yoBoxFX3D.setMinimumMargin(0.015);
+      yoBoxFX3D.setMinimumMargin(0.01);
       yoBoxFX3D.setMaximumMargin(0.035);
       yoBoxFX3D.render();
       yoBoxFX3D.computeBackground();
