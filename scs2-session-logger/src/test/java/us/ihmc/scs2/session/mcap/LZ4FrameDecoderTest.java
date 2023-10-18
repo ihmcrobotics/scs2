@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Scanner;
 
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ public class LZ4FrameDecoderTest
       scanner.close();
 
       ByteBuffer compressedBuffer = ByteBuffer.wrap(byteList.toArray());
-      ByteBuffer decompressedBuffer = new LZ4FrameDecoder().decode(compressedBuffer);
-      System.out.println(decompressedBuffer.remaining());
+      List<ByteBuffer> decompressedBuffer = new LZ4FrameDecoder().decode(compressedBuffer);
+      System.out.println(decompressedBuffer.size());
    }
 }
