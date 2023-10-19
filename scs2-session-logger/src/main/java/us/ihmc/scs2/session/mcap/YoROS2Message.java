@@ -49,6 +49,16 @@ public class YoROS2Message
                                                    (name, registry) -> new YoInteger(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_type_9()),
                                                    yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("int8",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_9()),
+                                                   yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("uint8",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(Byte.toUnsignedInt(cdr.read_type_9())),
+                                                   yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("int16",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),

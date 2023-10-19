@@ -111,7 +111,17 @@ public class ROS2MessageSchema
          if (lBracketIndex < rBracketIndex)
          {
             field.isArray = true;
-            field.maxLength = Integer.parseInt(field.type.substring(lBracketIndex + 1, rBracketIndex));
+            String maxLengthStr = field.type.substring(lBracketIndex + 1, rBracketIndex);
+            try
+            {
+               field.maxLength = Integer.parseInt(maxLengthStr);
+            }
+            catch (NumberFormatException e)
+            {
+               // The length is probably defined as a maximum length "array[<=54]"
+               maxLengthStr = maxLengthStr.replace("<=", "");
+               field.maxLength = Integer.parseInt(maxLengthStr);
+            }
             field.type = field.type.substring(0, lBracketIndex);
          }
          else

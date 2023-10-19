@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,7 +82,23 @@ public class MCAPLogSession extends Session
          if (record.op() == Opcode.SCHEMA)
          {
             Schema schema = (Schema) record.body();
-            schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
+            try
+            {
+               schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
+            }
+            catch (Exception e)
+            {
+               File debugFile = new File("mcap-debug/schemas/" + schema.name().str() + "-schema.txt");
+               debugFile.getParentFile().mkdirs();
+               if (debugFile.exists())
+                  debugFile.delete();
+               debugFile.createNewFile();
+               FileOutputStream os = new FileOutputStream(debugFile);
+               os.write(schema.data());
+               os.close();
+
+               throw e;
+            }
          }
       }
 
@@ -105,7 +122,7 @@ public class MCAPLogSession extends Session
          Opcode op = record.op();
 
          //         if (alreadyPrintedOp.add(op))
-//         if (op == Opcode.SCHEMA)
+         //         if (op == Opcode.SCHEMA)
          {
             printer.println(record.toString());
          }
