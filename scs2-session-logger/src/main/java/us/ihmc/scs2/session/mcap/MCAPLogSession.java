@@ -105,7 +105,7 @@ public class MCAPLogSession extends Session
          Opcode op = record.op();
 
          //         if (alreadyPrintedOp.add(op))
-         if (op == Opcode.SCHEMA)
+//         if (op == Opcode.SCHEMA)
          {
             printer.println(record.toString());
          }
@@ -149,6 +149,9 @@ public class MCAPLogSession extends Session
 
    private static YoROS2Message instantiateChannel(Channel channel, TIntObjectHashMap<ROS2MessageSchema> schemas, YoRegistry mcapRegistry)
    {
+      if (!"cdr".equalsIgnoreCase(channel.messageEncoding().str()))
+         throw new UnsupportedOperationException("Only CDR encoding is supported for now.");
+
       String topic = channel.topic().str();
       topic = topic.replace("/", YoTools.NAMESPACE_SEPERATOR_STRING);
       if (topic.startsWith(YoTools.NAMESPACE_SEPERATOR_STRING))
@@ -248,7 +251,14 @@ public class MCAPLogSession extends Session
          YoROS2Message yoROS2Message = yoMessageMap.get(message.channelId());
          if (yoROS2Message == null)
             throw new IllegalStateException("No YoROS2Message found for channel ID " + message.channelId());
-         yoROS2Message.readMessage(message);
+         try
+         {
+            yoROS2Message.readMessage(message);
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
          currentChunkMessages.pollFirst();
          if (currentChunkMessages.isEmpty())
             break;
