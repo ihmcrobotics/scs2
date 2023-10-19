@@ -1,9 +1,8 @@
 package us.ihmc.scs2.session.mcap;
 
 import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,7 +11,9 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import us.ihmc.idl.CDR;
 import us.ihmc.log.LogTools;
+import us.ihmc.pubsub.common.SerializedPayload;
 import us.ihmc.scs2.session.mcap.ROS2MessageSchema.ROS2Field;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -31,59 +32,64 @@ public class YoROS2Message
       allConversions.add(new YoConversionToolbox<>("bool",
                                                    YoBoolean.class,
                                                    (name, registry) -> new YoBoolean(name, registry),
-                                                   (variable, buffer) -> variable.set(Byte.toUnsignedInt(buffer.get()) != 0),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_7()),
                                                    yoBoolean -> yoBoolean.set(false)));
       allConversions.add(new YoConversionToolbox<>("float64",
                                                    YoDouble.class,
                                                    (name, registry) -> new YoDouble(name, registry),
-                                                   (variable, buffer) -> variable.set(buffer.getDouble()),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_6()),
                                                    yoDouble -> yoDouble.set(Double.NaN)));
       allConversions.add(new YoConversionToolbox<>("float32",
                                                    YoDouble.class,
                                                    (name, registry) -> new YoDouble(name, registry),
-                                                   (variable, buffer) -> variable.set(buffer.getFloat()),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_5()),
                                                    yoDouble -> yoDouble.set(Double.NaN)));
       allConversions.add(new YoConversionToolbox<>("byte",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),
-                                                   (variable, buffer) -> variable.set(Byte.toUnsignedInt(buffer.get())),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_9()),
                                                    yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("int16",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),
-                                                   (variable, buffer) -> variable.set(buffer.getShort()),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_1()),
                                                    yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("uint16",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),
-                                                   (variable, buffer) -> variable.set(Short.toUnsignedInt(buffer.getShort())),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_3()),
                                                    yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("int32",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),
-                                                   (variable, buffer) -> variable.set(buffer.getInt()),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_2()),
                                                    yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("uint32",
                                                    YoLong.class,
                                                    (name, registry) -> new YoLong(name, registry),
-                                                   (variable, buffer) -> variable.set(Integer.toUnsignedLong(buffer.getInt())),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_4()),
                                                    yoLong -> yoLong.set(0)));
       allConversions.add(new YoConversionToolbox<>("int64",
                                                    YoLong.class,
                                                    (name, registry) -> new YoLong(name, registry),
-                                                   (variable, buffer) -> variable.set(buffer.getLong()),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_11()),
                                                    yoLong -> yoLong.set(0)));
       // TODO uint64 deserializer: Risk of overflow
       allConversions.add(new YoConversionToolbox<>("uint64",
                                                    YoLong.class,
                                                    (name, registry) -> new YoLong(name, registry),
-                                                   (variable, buffer) -> variable.set(buffer.getLong()),
+                                                   (variable, cdr) -> variable.set(cdr.read_type_12()),
                                                    yoLong -> yoLong.set(0)));
-      // TODO string deserializer: Preserving the BiConsumer signature to remain consistent with the other deserializers. Only skipping string in ByteBuffer for now.
-      allConversions.add(new YoConversionToolbox<>("string", null, null, (variable, buffer) ->
+      // TODO string deserializer: Preserving the BiConsumer signature to remain consistent with the other deserializers. Only skipping string in CDR for now.
+      allConversions.add(new YoConversionToolbox<>("string", null, null, new BiConsumer<YoVariable, CDR>()
       {
-         int length = (int) Integer.toUnsignedLong(buffer.getInt());
-         buffer.position(buffer.position() + length);
+         private final StringBuilder sb = new StringBuilder();
+
+         @Override
+         public void accept(YoVariable variable, CDR cdr)
+         {
+            cdr.read_type_d(sb);
+         }
       }, null));
       conversionMap = allConversions.stream().collect(Collectors.toMap(conversion -> conversion.primitiveType, conversion -> conversion));
    }
@@ -91,7 +97,12 @@ public class YoROS2Message
    private final ROS2MessageSchema schema;
    private final int channelId;
    private final YoRegistry registry;
-   private final Consumer<ByteBuffer> deserializer;
+   private final Consumer<CDR> deserializer;
+
+   /**
+    * Used to deserialize a message data.
+    */
+   private final CDR cdr = new CDR();
 
    public static YoROS2Message newMessage(int channelId, ROS2MessageSchema schema)
    {
@@ -112,14 +123,14 @@ public class YoROS2Message
    {
       Objects.requireNonNull(schema, "Schema cannot be null. name = " + messageRegistry.getName());
 
-      List<Consumer<ByteBuffer>> deserializers = new ArrayList<>();
+      List<Consumer<CDR>> deserializers = new ArrayList<>();
 
       for (ROS2Field field : schema.getFields())
       {
          String fieldName = field.getName();
          boolean isArray = field.isArray();
 
-         Consumer<ByteBuffer> deserializer = null;
+         Consumer<CDR> deserializer = null;
          deserializer = createYoVariable(field, messageRegistry);
 
          if (deserializer != null)
@@ -158,18 +169,18 @@ public class YoROS2Message
                YoROS2Message newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
                messageRegistry.addChild(newElement.getRegistry());
                return newElement;
-            }, (message, buffer) -> message.deserialize(buffer), (message) -> message.clearData(), fieldName, field.getMaxLength(), messageRegistry);
+            }, (message, cdr) -> message.deserialize(cdr), (message) -> message.clearData(), fieldName, field.getMaxLength(), messageRegistry);
          }
       }
 
-      return new YoROS2Message(schema, channelId, messageRegistry, buffer ->
+      return new YoROS2Message(schema, channelId, messageRegistry, cdr ->
       {
-         for (Consumer<ByteBuffer> deserializer : deserializers)
-            deserializer.accept(buffer);
+         for (Consumer<CDR> deserializer : deserializers)
+            deserializer.accept(cdr);
       });
    }
 
-   private YoROS2Message(ROS2MessageSchema schema, int channelId, YoRegistry registry, Consumer<ByteBuffer> deserializer)
+   private YoROS2Message(ROS2MessageSchema schema, int channelId, YoRegistry registry, Consumer<CDR> deserializer)
    {
       this.schema = schema;
       this.channelId = channelId;
@@ -182,26 +193,28 @@ public class YoROS2Message
       if (message.channelId() != channelId)
          throw new IllegalArgumentException("Expected channel ID: " + channelId + ", but received: " + message.channelId());
 
-      ByteBuffer dataBuffer = ByteBuffer.wrap(message.data());
-      dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
-
-      if (registry.getName().equals("floating_base_pose"))
-         System.out.println();
+      SerializedPayload payload = new SerializedPayload(message.data().length);
+      payload.getData().put(message.data());
+      payload.getData().position(0);
+      payload.getData().limit(payload.getData().capacity());
+      cdr.deserialize(payload);
 
       try
       {
-         deserialize(dataBuffer);
+         deserialize(cdr);
+         cdr.finishDeserialize();
       }
       catch (Exception e)
       {
-         LogTools.error("Deserialization failed for message: " + registry.getName());
+         LogTools.error("Deserialization failed for message: " + registry.getName() + ", schema ID: " + schema.getId() + ", schema name: " + schema.getName()
+                        + ", message data: " + Arrays.toString(message.data()));
          throw e;
       }
    }
 
-   private void deserialize(ByteBuffer buffer)
+   private void deserialize(CDR cdr)
    {
-      deserializer.accept(buffer);
+      deserializer.accept(cdr);
    }
 
    private void clearData()
@@ -224,7 +237,8 @@ public class YoROS2Message
       return registry;
    }
 
-   private static Consumer<ByteBuffer> createYoVariable(ROS2Field field, YoRegistry registry)
+   @SuppressWarnings({"rawtypes", "unchecked"})
+   private static Consumer<CDR> createYoVariable(ROS2Field field, YoRegistry registry)
    {
       String fieldName = field.getName();
       String fieldType = field.getType();
@@ -234,7 +248,7 @@ public class YoROS2Message
    }
 
    @SuppressWarnings({"unchecked", "rawtypes"})
-   private static Consumer<ByteBuffer> createYoVariableArray(ROS2Field field, YoRegistry registry)
+   private static Consumer<CDR> createYoVariableArray(ROS2Field field, YoRegistry registry)
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();
@@ -246,29 +260,30 @@ public class YoROS2Message
       return null;
    }
 
-   private static <T> Consumer<ByteBuffer> createFieldArray(Class<T> variableType,
-                                                            BiFunction<String, YoRegistry, T> elementBuilder,
-                                                            BiConsumer<T, ByteBuffer> elementDeserializer,
-                                                            Consumer<T> elementResetter,
-                                                            String name,
-                                                            int length,
-                                                            YoRegistry registry)
+   private static <T> Consumer<CDR> createFieldArray(Class<T> variableType,
+                                                     BiFunction<String, YoRegistry, T> elementBuilder,
+                                                     BiConsumer<T, CDR> elementDeserializer,
+                                                     Consumer<T> elementResetter,
+                                                     String name,
+                                                     int length,
+                                                     YoRegistry registry)
    {
+      @SuppressWarnings("unchecked")
       T[] array = (T[]) Array.newInstance(variableType, length);
       for (int i = 0; i < length; i++)
          array[i] = elementBuilder.apply(name + "[" + i + "]", registry);
-      return buffer ->
+      return cdr ->
       {
-         if (buffer == null)
+         if (cdr == null)
          {
             for (int i = 0; i < length; i++)
                elementResetter.accept(array[i]);
          }
          else
          {
-            int arrayLength = (int) Integer.toUnsignedLong(buffer.getInt());
+            int arrayLength = (int) cdr.read_type_4();
             for (int i = 0; i < arrayLength; i++)
-               elementDeserializer.accept(array[i], buffer);
+               elementDeserializer.accept(array[i], cdr);
             for (int i = arrayLength; i < length; i++)
                elementResetter.accept(array[i]);
          }
@@ -280,13 +295,13 @@ public class YoROS2Message
       private final String primitiveType;
       private final Class<T> yoType;
       private final BiFunction<String, YoRegistry, T> yoBuilder;
-      private final BiConsumer<T, ByteBuffer> deserializer;
+      private final BiConsumer<T, CDR> deserializer;
       private final Consumer<T> yoResetter;
 
       private YoConversionToolbox(String primitiveType,
                                   Class<T> yoType,
                                   BiFunction<String, YoRegistry, T> yoBuilder,
-                                  BiConsumer<T, ByteBuffer> deserializer,
+                                  BiConsumer<T, CDR> deserializer,
                                   Consumer<T> yoResetter)
       {
          this.primitiveType = primitiveType;
@@ -296,14 +311,14 @@ public class YoROS2Message
          this.yoResetter = yoResetter;
       }
 
-      public Consumer<ByteBuffer> createYoVariable(String name, YoRegistry registry)
+      public Consumer<CDR> createYoVariable(String name, YoRegistry registry)
       {
          if (yoBuilder != null)
          {
             T yoVariable = yoBuilder.apply(name, registry);
-            return buffer ->
+            return cdr ->
             {
-               if (buffer == null)
+               if (cdr == null)
                {
                   try
                   {
@@ -319,7 +334,7 @@ public class YoROS2Message
                {
                   try
                   {
-                     deserializer.accept(yoVariable, buffer);
+                     deserializer.accept(yoVariable, cdr);
                   }
                   catch (Exception e)
                   {
@@ -331,11 +346,11 @@ public class YoROS2Message
          }
          else if (deserializer != null)
          {
-            return buffer ->
+            return cdr ->
             {
                try
                {
-                  deserializer.accept(null, buffer);
+                  deserializer.accept(null, cdr);
                }
                catch (Exception e)
                {
