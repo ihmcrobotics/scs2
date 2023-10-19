@@ -221,6 +221,9 @@ public class YoCompositeSearchManager implements Manager
          return;
       }
 
+      if (pattern.getType().toLowerCase().contains("quaternion"))
+         System.out.println();
+
       activeSearches.put(pattern, Object.class);
       try
       {
