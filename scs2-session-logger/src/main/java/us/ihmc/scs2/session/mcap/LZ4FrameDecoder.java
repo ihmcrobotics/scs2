@@ -82,9 +82,7 @@ public class LZ4FrameDecoder
     * {@link LZ4SafeDecompressor} and {@link XXHash32}. This instance will decompress all concatenated
     * frames in their sequential order.
     *
-    * @param in the stream to decompress
     * @throws IOException if an I/O error occurs
-    * @see #LZ4FrameInputStream(InputStream, LZ4SafeDecompressor, XXHash32)
     * @see LZ4Factory#fastestInstance()
     * @see XXHashFactory#fastestInstance()
     */
@@ -96,7 +94,6 @@ public class LZ4FrameDecoder
    /**
     * Creates a new {@link InputStream} that will decompress data using the LZ4 algorithm.
     *
-    * @param in           the stream to decompress
     * @param decompressor the decompressor to use
     * @param checksum     the hash function to use
     * @throws IOException if an I/O error occurs
@@ -111,14 +108,13 @@ public class LZ4FrameDecoder
     * Try and load in the next valid frame info. This will skip over skippable frames.
     * 
     * @return True if a frame was loaded. False if there are no more frames in the stream.
-    * @throws IOException On input stream read exception
     */
-   private boolean nextFrameInfo(ByteBuffer in) throws IOException
+   private boolean nextFrameInfo(ByteBuffer in)
    {
       while (true)
       {
          if (in.remaining() < INTEGER_BYTES)
-            throw new IOException(PREMATURE_EOS);
+            throw new IllegalStateException(PREMATURE_EOS);
 
          int magic = in.getInt();
 
@@ -133,12 +129,12 @@ public class LZ4FrameDecoder
          }
          else
          {
-            throw new IOException(NOT_SUPPORTED);
+            throw new IllegalStateException(NOT_SUPPORTED);
          }
       }
    }
 
-   private void skippableFrame(ByteBuffer in) throws IOException
+   private void skippableFrame(ByteBuffer in)
    {
       int skipSize = in.getInt();
       in.position(in.position() + skipSize);
@@ -149,9 +145,8 @@ public class LZ4FrameDecoder
     * Reads the frame descriptor from the underlying {@link InputStream}.
     * 
     * @param in
-    * @throws IOException
     */
-   private void readHeader(ByteBuffer in) throws IOException
+   private void readHeader(ByteBuffer in)
    {
       headerBuffer.rewind();
 
@@ -177,7 +172,7 @@ public class LZ4FrameDecoder
       byte expectedHash = in.get();
 
       if (hash != expectedHash)
-         throw new IOException(DESCRIPTOR_HASH_MISMATCH);
+         throw new IllegalStateException(DESCRIPTOR_HASH_MISMATCH);
 
       maxBlockSize = frameInfo.getBD().getBlockMaximumSize();
       compressedBuffer = new byte[maxBlockSize]; // Reused during different compressions
@@ -188,10 +183,8 @@ public class LZ4FrameDecoder
    /**
     * Decompress (if necessary) buffered data, optionally computes and validates a XXHash32 checksum,
     * and writes the result to a buffer.
-    *
-    * @throws IOException
     */
-   private ByteBuffer readBlock(ByteBuffer in, ByteBuffer out) throws IOException
+   private ByteBuffer readBlock(ByteBuffer in, ByteBuffer out)
    {
       int blockSize = in.getInt();
       final boolean compressed = (blockSize & LZ4_FRAME_INCOMPRESSIBLE_MASK) == 0;
@@ -204,10 +197,10 @@ public class LZ4FrameDecoder
          {
             final int contentChecksum = in.getInt();
             if (contentChecksum != frameInfo.currentStreamHash())
-               throw new IOException("Content checksum mismatch");
+               throw new IllegalStateException("Content checksum mismatch");
          }
          if (frameInfo.isEnabled(FLG.Bits.CONTENT_SIZE) && expectedContentSize != totalContentSize)
-            throw new IOException("Size check mismatch");
+            throw new IllegalStateException("Size check mismatch");
          frameInfo.finish();
          return null;
       }
@@ -223,7 +216,7 @@ public class LZ4FrameDecoder
       }
       if (blockSize > maxBlockSize)
       {
-         throw new IOException(String.format(Locale.ROOT, "Block size %s exceeded max: %s", blockSize, maxBlockSize));
+         throw new IllegalStateException(String.format(Locale.ROOT, "Block size %s exceeded max: %s", blockSize, maxBlockSize));
       }
 
       in.get(tmpBuffer, 0, blockSize);
@@ -233,7 +226,7 @@ public class LZ4FrameDecoder
       {
          final int hashCheck = in.getInt();
          if (hashCheck != checksum.hash(tmpBuffer, 0, blockSize, 0))
-            throw new IOException(BLOCK_HASH_MISMATCH);
+            throw new IllegalStateException(BLOCK_HASH_MISMATCH);
       }
 
       final int currentBufferSize;
@@ -246,7 +239,7 @@ public class LZ4FrameDecoder
          }
          catch (LZ4Exception e)
          {
-            throw new IOException(e);
+            throw new IllegalStateException(e);
          }
       }
       else
@@ -271,13 +264,13 @@ public class LZ4FrameDecoder
       }
    }
 
-   public byte[] decode(byte[] in, byte[] out) throws IOException
+   public byte[] decode(byte[] in, byte[] out)
    {
       ByteBuffer result = decode(ByteBuffer.wrap(in), out == null ? null : ByteBuffer.wrap(out));
       return result == null ? null : result.array();
    }
 
-   public ByteBuffer decode(ByteBuffer in, ByteBuffer out) throws IOException
+   public ByteBuffer decode(ByteBuffer in, ByteBuffer out)
    {
       in.order(ByteOrder.LITTLE_ENDIAN);
 
