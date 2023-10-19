@@ -3,8 +3,7 @@
 <YoCompositePatternList name='defaultComposites'>
    <yoCompositePatterns name='YoTuple2D'>
       <crossRegistry>false</crossRegistry>
-      <identifiers>x</identifiers>
-      <identifiers>y</identifiers>
+      <identifiers>x,y</identifiers>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -20,9 +19,7 @@
    </yoCompositePatterns>
    <yoCompositePatterns name='YoTuple3D'>
       <crossRegistry>false</crossRegistry>
-      <identifiers>x</identifiers>
-      <identifiers>y</identifiers>
-      <identifiers>z</identifiers>
+      <identifiers>x,y,z</identifiers>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -41,10 +38,8 @@
    </yoCompositePatterns>
    <yoCompositePatterns name='YoQuaternion'>
       <crossRegistry>false</crossRegistry>
-      <identifiers>qx</identifiers>
-      <identifiers>qy</identifiers>
-      <identifiers>qz</identifiers>
-      <identifiers>qs</identifiers>
+      <identifiers>qx,qy,qz,qs</identifiers>
+      <alternateIdentifiers>x,y,z,w</alternateIdentifiers>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -66,9 +61,7 @@
    </yoCompositePatterns>
    <yoCompositePatterns name='YoYawPitchRoll'>
       <crossRegistry>false</crossRegistry>
-      <identifiers>yaw</identifiers>
-      <identifiers>pitch</identifiers>
-      <identifiers>roll</identifiers>
+      <identifiers>yaw,pitch,roll</identifiers>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>

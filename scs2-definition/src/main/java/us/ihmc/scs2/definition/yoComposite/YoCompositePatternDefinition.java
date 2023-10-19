@@ -14,7 +14,8 @@ public class YoCompositePatternDefinition
 {
    private String name;
    private boolean crossRegistry = false;
-   private final List<String> identifiers = new ArrayList<>();
+   private String[] identifiers;
+   private final List<String[]> alternateIdentifiers = new ArrayList<>();
    private final List<YoChartGroupModelDefinition> preferredConfigurations = new ArrayList<>();
 
    public YoCompositePatternDefinition()
@@ -33,7 +34,8 @@ public class YoCompositePatternDefinition
 
       setName(other.name);
       setCrossRegistry(other.crossRegistry);
-      setIdentifiers(other.identifiers);
+      identifiers = other.identifiers;
+      alternateIdentifiers.addAll(other.alternateIdentifiers);
       setPreferredConfigurations(other.preferredConfigurations);
    }
 
@@ -50,10 +52,16 @@ public class YoCompositePatternDefinition
    }
 
    @XmlElement
-   public void setIdentifiers(List<String> identifiers)
+   public void setIdentifiers(String csvIdentifiers)
    {
-      this.identifiers.clear();
-      this.identifiers.addAll(identifiers);
+      this.identifiers = csvIdentifiers.split(",");
+   }
+
+   @XmlElement
+   public void setAlternateIdentifiers(List<String> alternateCSVIdentifiers)
+   {
+      this.alternateIdentifiers.clear();
+      this.alternateIdentifiers.addAll(alternateCSVIdentifiers.stream().map(csvId -> csvId.split(",")).toList());
    }
 
    @XmlElement
@@ -74,9 +82,14 @@ public class YoCompositePatternDefinition
       return crossRegistry;
    }
 
-   public List<String> getIdentifiers()
+   public String[] getIdentifiers()
    {
       return identifiers;
+   }
+
+   public List<String[]> getAlternateIdentifiers()
+   {
+      return alternateIdentifiers;
    }
 
    public List<YoChartGroupModelDefinition> getPreferredConfigurations()

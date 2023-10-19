@@ -1,5 +1,8 @@
 package us.ihmc.scs2.definition.yoComposite;
 
+import java.util.Collections;
+import java.util.List;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -30,6 +33,7 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
 {
    public static final String YoQuaternion = "YoQuaternion";
    public static final String[] YoQuaternionIdentifiers = new String[] {"qx", "qy", "qz", "qs"};
+   public static final List<String[]> YoQuaternionAlternateIdentifiers = Collections.singletonList(new String[] {"x, y, z, w"});
 
    /**
     * The components of this quaternion.
@@ -226,6 +230,12 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
    public String[] getComponentIdentifiers()
    {
       return YoQuaternionIdentifiers;
+   }
+
+   @Override
+   public List<String[]> getAlternateComponentIdentifiers()
+   {
+      return YoQuaternionAlternateIdentifiers;
    }
 
    @Override
