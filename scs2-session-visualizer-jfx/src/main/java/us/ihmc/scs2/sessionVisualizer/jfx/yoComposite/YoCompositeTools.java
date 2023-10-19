@@ -66,8 +66,9 @@ public class YoCompositeTools
       if (candidateNames == null || candidateNames.length == 0)
          return null;
 
-      Map<String, YoVariable> yoVariableMap = yoCompositeComponentSet.stream().collect(Collectors.toMap(yoVariable -> yoVariable.getName().toLowerCase(),
-                                                                                                        Function.identity()));
+      Map<String, YoVariable> yoVariableMap = yoCompositeComponentSet.stream()
+                                                                     .collect(Collectors.toMap(yoVariable -> yoVariable.getName().toLowerCase(),
+                                                                                               Function.identity()));
 
       for (YoCompositeName candidateName : candidateNames)
       {
@@ -92,7 +93,9 @@ public class YoCompositeTools
    {
       Map<String, List<YoComposite>> result = new LinkedHashMap<>();
 
-      List<YoComposite> candidates = collection.getYoComposites().stream().filter(yoComposite -> containsInteger(yoComposite.getName(), 0))
+      List<YoComposite> candidates = collection.getYoComposites()
+                                               .stream()
+                                               .filter(yoComposite -> containsInteger(yoComposite.getName(), 0))
                                                .collect(Collectors.toList());
       List<YoComposite> others = collection.getYoComposites();
       others = others.stream().filter(yoComposite -> yoComposite.getName().split("[^0-9]+").length > 0).collect(Collectors.toList());
@@ -119,18 +122,22 @@ public class YoCompositeTools
                if (listCandidateUniqueName.getSuffix().isEmpty())
                   continue;
 
-               possibleOtherElements = others.stream().filter(yoComposite -> yoComposite.getUniqueName().endsWith(listCandidateUniqueName.getSuffix()))
+               possibleOtherElements = others.stream()
+                                             .filter(yoComposite -> yoComposite.getUniqueName().endsWith(listCandidateUniqueName.getSuffix()))
                                              .collect(Collectors.toList());
             }
             else if (listCandidateUniqueName.getSuffix().isEmpty())
             {
-               possibleOtherElements = others.stream().filter(yoComposite -> yoComposite.getUniqueName().startsWith(listCandidateUniqueName.getPrefix()))
+               possibleOtherElements = others.stream()
+                                             .filter(yoComposite -> yoComposite.getUniqueName().startsWith(listCandidateUniqueName.getPrefix()))
                                              .collect(Collectors.toList());
             }
             else
             {
-               possibleOtherElements = others.stream().filter(yoComposite -> yoComposite.getUniqueName().startsWith(listCandidateUniqueName.getPrefix())
-                     && yoComposite.getUniqueName().endsWith(listCandidateUniqueName.getSuffix())).collect(Collectors.toList());
+               possibleOtherElements = others.stream()
+                                             .filter(yoComposite -> yoComposite.getUniqueName().startsWith(listCandidateUniqueName.getPrefix())
+                                                                    && yoComposite.getUniqueName().endsWith(listCandidateUniqueName.getSuffix()))
+                                             .collect(Collectors.toList());
             }
 
             if (!possibleOtherElements.isEmpty())
@@ -253,100 +260,97 @@ public class YoCompositeTools
                                                                                YoNamespace namespace,
                                                                                boolean useUniqueNames)
    {
-      variables = variables.stream().filter(variable -> containsAnyIgnoreCase(variable.getName(), pattern.getComponentIdentifiers()))
-                           .collect(Collectors.toList());
-
-      if (variables.isEmpty())
-         return new Pair<>(Collections.emptyList(), Collections.emptyList());
+      List<String[]> allComponentIdentifiers = new ArrayList<>();
+      allComponentIdentifiers.add(pattern.getComponentIdentifiers());
+      allComponentIdentifiers.addAll(pattern.getAlternateComponentIdentifiers());
 
       List<YoComposite> result = new ArrayList<>();
       List<YoVariable> unresolvedCandidates = new ArrayList<>();
 
-      // Using list to cover the edge case where 2 variables have the same (ignoring the case).
-      Map<String, List<NamedObjectHolder<YoVariable>>> variableMap = new LinkedHashMap<>();
-
-      if (useUniqueNames)
+      for (String[] componentIdentifiers : allComponentIdentifiers)
       {
-         Map<YoVariable, String> variableToUniqueNameMap = computeUniqueNames(variables, v -> v.getNamespace().getSubNames(), YoVariable::getName);
+         variables = variables.stream().filter(variable -> containsAnyIgnoreCase(variable.getName(), componentIdentifiers)).collect(Collectors.toList());
 
-         for (Entry<YoVariable, String> entry : variableToUniqueNameMap.entrySet())
+         if (variables.isEmpty())
+            continue;
+
+         // Using list to cover the edge case where 2 variables have the same (ignoring the case).
+         Map<String, List<NamedObjectHolder<YoVariable>>> variableMap = new LinkedHashMap<>();
+
+         if (useUniqueNames)
          {
-            String variableKey = entry.getValue().toLowerCase();
+            Map<YoVariable, String> variableToUniqueNameMap = computeUniqueNames(variables, v -> v.getNamespace().getSubNames(), YoVariable::getName);
+
+            for (Entry<YoVariable, String> entry : variableToUniqueNameMap.entrySet())
+            {
+               String variableKey = entry.getValue().toLowerCase();
+               List<NamedObjectHolder<YoVariable>> container = variableMap.computeIfAbsent(variableKey, k -> new ArrayList<>());
+               container.add(NamedObjectHolder.newUniqueNamedYoVariable(entry.getValue(), entry.getKey()));
+            }
+         }
+         else
+         {
+            for (YoVariable variable : variables)
+            {
+               String variableKey = variable.getName().toLowerCase();
+               List<NamedObjectHolder<YoVariable>> container = variableMap.computeIfAbsent(variableKey, k -> new ArrayList<>());
+               container.add(NamedObjectHolder.newUniqueNamedYoVariable(variable.getName(), variable));
+            }
+         }
+
+         while (!variableMap.isEmpty())
+         {
+            String yoVariableName = variableMap.values().iterator().next().get(0).getUniqueName();
+            String variableKey = yoVariableName.toLowerCase();
+
+            YoCompositeName[] candidateNames = fromComponentIdentifiers(yoVariableName, componentIdentifiers);
+
+            for (YoCompositeName candidateName : candidateNames)
+            {
+               String[] componentNames = toComponentNames(componentIdentifiers, candidateName);
+               boolean isCompositeValid = Stream.of(componentNames).map(String::toLowerCase).allMatch(variableMap::containsKey);
+               if (!isCompositeValid)
+                  continue;
+
+               YoVariable[] components = new YoVariable[componentNames.length];
+
+               for (int i = 0; i < componentNames.length; i++)
+               {
+                  String componentName = componentNames[i];
+                  String componentKey = componentName.toLowerCase();
+
+                  List<NamedObjectHolder<YoVariable>> container = variableMap.get(componentKey);
+
+                  if (container.size() == 1)
+                  {
+                     components[i] = container.get(0).getOriginalObject();
+                     variableMap.remove(componentKey);
+                  }
+                  else
+                  {
+                     throw new RuntimeException("Implement this edge case. Name collision: " + EuclidCoreIOTools.getCollectionString("\n\t",
+                                                                                                                                     "",
+                                                                                                                                     "\n\t",
+                                                                                                                                     container,
+                                                                                                                                     Object::toString));
+                  }
+               }
+
+               if (namespace == null)
+                  namespace = findCommonNamespace(components);
+               result.add(new YoComposite(pattern, candidateName.getName(), namespace, Arrays.asList(components)));
+
+               break;
+            }
+
             List<NamedObjectHolder<YoVariable>> container = variableMap.get(variableKey);
 
-            if (container == null)
+            if (container != null)
             {
-               container = new ArrayList<>();
-               variableMap.put(variableKey, container);
+               unresolvedCandidates.add(container.remove(0).getOriginalObject());
+               if (container.isEmpty())
+                  variableMap.remove(variableKey);
             }
-            container.add(NamedObjectHolder.newUniqueNamedYoVariable(entry.getValue(), entry.getKey()));
-         }
-      }
-      else
-      {
-         for (YoVariable variable : variables)
-         {
-            String variableKey = variable.getName().toLowerCase();
-            List<NamedObjectHolder<YoVariable>> container = variableMap.get(variableKey);
-
-            if (container == null)
-            {
-               container = new ArrayList<>();
-               variableMap.put(variableKey, container);
-            }
-            container.add(NamedObjectHolder.newUniqueNamedYoVariable(variable.getName(), variable));
-         }
-      }
-
-      while (!variableMap.isEmpty())
-      {
-         String yoVariableName = variableMap.values().iterator().next().get(0).getUniqueName();
-         String variableKey = yoVariableName.toLowerCase();
-
-         YoCompositeName[] candidateNames = fromComponentIdentifiers(yoVariableName, pattern.getComponentIdentifiers());
-
-         for (YoCompositeName candidateName : candidateNames)
-         {
-            String[] componentNames = toComponentNames(pattern.getComponentIdentifiers(), candidateName);
-            boolean isCompositeValid = Stream.of(componentNames).map(String::toLowerCase).allMatch(variableMap::containsKey);
-            if (!isCompositeValid)
-               continue;
-
-            YoVariable[] components = new YoVariable[componentNames.length];
-
-            for (int i = 0; i < componentNames.length; i++)
-            {
-               String componentName = componentNames[i];
-               String componentKey = componentName.toLowerCase();
-
-               List<NamedObjectHolder<YoVariable>> container = variableMap.get(componentKey);
-
-               if (container.size() == 1)
-               {
-                  components[i] = container.get(0).getOriginalObject();
-                  variableMap.remove(componentKey);
-               }
-               else
-               {
-                  throw new RuntimeException("Implement this edge case. Name collision: "
-                        + EuclidCoreIOTools.getCollectionString("\n\t", "", "\n\t", container, Object::toString));
-               }
-            }
-
-            if (namespace == null)
-               namespace = findCommonNamespace(components);
-            result.add(new YoComposite(pattern, candidateName.getName(), namespace, Arrays.asList(components)));
-
-            break;
-         }
-
-         List<NamedObjectHolder<YoVariable>> container = variableMap.get(variableKey);
-
-         if (container != null)
-         {
-            unresolvedCandidates.add(container.remove(0).getOriginalObject());
-            if (container.isEmpty())
-               variableMap.remove(variableKey);
          }
       }
 
@@ -501,8 +505,8 @@ public class YoCompositeTools
 
             if (namespace1 == null ? namespace2 == null : namespace1.equals(namespace2))
             {
-               throw new IllegalArgumentException("Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and "
-                     + h2.originalObject);
+               throw new IllegalArgumentException(
+                     "Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and " + h2.originalObject);
             }
 
             int namespaceIndex1 = namespace1.size() - 1;
@@ -525,8 +529,8 @@ public class YoCompositeTools
                }
 
                if (namespaceIndex1 == 0 && namespaceIndex2 == 0 && h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()))
-                  throw new IllegalArgumentException("Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and "
-                        + h2.originalObject);
+                  throw new IllegalArgumentException(
+                        "Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and " + h2.originalObject);
             }
             while (h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()));
          }
@@ -565,12 +569,12 @@ public class YoCompositeTools
                List<NamedObjectHolder<T>> homonymsToProcess = new ArrayList<>();
                TIntArrayList namespaceIndexOfHomonymsToProcess = new TIntArrayList();
 
-               for (int h1Index = 0; h1Index < homonyms.size();)
+               for (int h1Index = 0; h1Index < homonyms.size(); )
                {
                   boolean isH1Unique = true;
                   NamedObjectHolder<T> h1 = homonyms.get(h1Index);
 
-                  for (int h2Index = h1Index + 1; h2Index < homonyms.size();)
+                  for (int h2Index = h1Index + 1; h2Index < homonyms.size(); )
                   {
                      NamedObjectHolder<T> h2 = homonyms.get(h2Index);
 
@@ -657,8 +661,11 @@ public class YoCompositeTools
    {
       String type = definition.getName();
       boolean crossRegistry = definition.isCrossRegistry();
-      String[] componentIdentifiers = definition.getIdentifiers().stream().toArray(String[]::new);
-      List<ChartGroupModel> preferredChartConfigurations = definition.getPreferredConfigurations().stream().map(ChartTools::toChartIdentifierList)
+      String[] componentIdentifiers = definition.getIdentifiers();
+      List<String[]> alternateIdentifiers = definition.getAlternateIdentifiers();
+      List<ChartGroupModel> preferredChartConfigurations = definition.getPreferredConfigurations()
+                                                                     .stream()
+                                                                     .map(ChartTools::toChartIdentifierList)
                                                                      .collect(Collectors.toList());
       return new YoCompositePattern(type, crossRegistry, componentIdentifiers, preferredChartConfigurations);
    }
