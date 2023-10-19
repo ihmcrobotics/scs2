@@ -1,7 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,12 +12,12 @@ import java.util.stream.Collectors;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 import io.kaitai.struct.ByteBufferKaitaiStream;
-import org.apache.commons.lang3.mutable.MutableLong;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.mcap.Mcap.Channel;
 import us.ihmc.scs2.session.mcap.Mcap.Chunk;
 import us.ihmc.scs2.session.mcap.Mcap.Footer;
@@ -44,6 +43,7 @@ public class MCAPLogSession extends Session
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
    private final Runnable robotStateUpdater;
+   private final TIntObjectHashMap<YoROS2Message> yoMessageMap = new TIntObjectHashMap<>();
    private Mcap mcap;
 
    private final YoRegistry mcapRegistry = new YoRegistry("MCAP");
@@ -52,6 +52,8 @@ public class MCAPLogSession extends Session
    private final List<Chunk> allChunks = new ArrayList<>();
    private final YoInteger chunkIndex = new YoInteger("MCAPChunkIndex", mcapRegistry);
    private final YoLong currentTimestamp = new YoLong("MCAPCurrentTimestamp", mcapRegistry);
+   private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", mcapRegistry);
+   private final YoLong currentChunkEndTimestamp = new YoLong("MCAPCurrentChunkEndTimestamp", mcapRegistry);
 
    private final long initialTime;
 
@@ -90,7 +92,9 @@ public class MCAPLogSession extends Session
          if (record.op() == Opcode.CHANNEL)
          {
             Channel channel = (Channel) record.body();
-            loadedChannels.add(instantiateChannel(channel, schemas, mcapRegistry));
+            YoROS2Message message = instantiateChannel(channel, schemas, mcapRegistry);
+            loadedChannels.add(message);
+            yoMessageMap.put(channel.id(), message);
          }
       }
 
@@ -118,18 +122,18 @@ public class MCAPLogSession extends Session
 
       initialTime = allChunks.get(0).messageStartTime();
 
-      for (int i = 0; i < allChunks.size(); i++)
-      {
-         Chunk chunk = allChunks.get(i);
-
-         File file = new File("chunkData[%d]".formatted(i));
-         if (file.exists())
-            file.delete();
-         file.createNewFile();
-         FileOutputStream os = new FileOutputStream(file);
-         os.write((byte[]) chunk.records());
-         os.close();
-      }
+      //      for (int i = 0; i < allChunks.size(); i++)
+      //      {
+      //         Chunk chunk = allChunks.get(i);
+      //
+      //         File file = new File("chunkData[%d]".formatted(i));
+      //         if (file.exists())
+      //            file.delete();
+      //         file.createNewFile();
+      //         FileOutputStream os = new FileOutputStream(file);
+      //         os.write((byte[]) chunk.records());
+      //         os.close();
+      //      }
 
       Record footer = mcap.footer();
       if (footer != null)
@@ -153,7 +157,7 @@ public class MCAPLogSession extends Session
       namespace = namespace.prepend(mcapRegistry.getNamespace());
       System.out.println(namespace);
       YoRegistry channelRegistry = SharedMemoryTools.ensurePathExists(mcapRegistry, namespace);
-      YoROS2Message message = new YoROS2Message(schemas.get(channel.schemaId()), channel.id(), channelRegistry);
+      YoROS2Message message = YoROS2Message.newMessage(schemas.get(channel.schemaId()), channel.id(), channelRegistry);
       return message;
    }
 
@@ -163,39 +167,93 @@ public class MCAPLogSession extends Session
       chunkIndex.set(0);
       Chunk chunk = allChunks.get(chunkIndex.getValue());
       currentTimestamp.set(chunk.messageStartTime());
+      currentChunkStartTimestamp.set(chunk.messageStartTime());
+      currentChunkEndTimestamp.set(chunk.messageEndTime());
+      initializeMessages(chunk);
+      Message message = currentChunkMessages.getFirst();
+      if (chunk.messageStartTime() != message.logTime())
+         throw new IllegalStateException("First message time (%d) does not match chunk start time (%d)".formatted(message.logTime(), chunk.messageStartTime()));
 
-      try
-      {
-         byte[] decompressedChunk = new byte[(int) chunk.uncompressedSize()];
-         chunkDataDecoder.decode((byte[]) chunk.records(), decompressedChunk);
-         Records records = new Records(new ByteBufferKaitaiStream(decompressedChunk));
-         currentChunkMessages.clear();
-         MutableLong previousMessageLogTime = new MutableLong(-1);
-         records.records().stream().filter(r -> r.op() == Opcode.MESSAGE).map(r -> (Message) r.body()).forEach(m ->
-                                                                                                               {
-                                                                                                                  if (previousMessageLogTime.longValue() != -1)
-                                                                                                                  {
-                                                                                                                     if (previousMessageLogTime.longValue() > m.logTime())
-                                                                                                                        throw new IllegalStateException("Messages are not sorted by time.");
-                                                                                                                  }
-                                                                                                                  currentChunkMessages.add(m);
-                                                                                                                  previousMessageLogTime.setValue(m.logTime());
-                                                                                                               });
-         Message message = currentChunkMessages.get(0);
-         if (chunk.messageStartTime() != message.logTime())
-            throw new IllegalStateException("First message time (%d) does not match chunk start time (%d)".formatted(message.logTime(),
-                                                                                                                     chunk.messageStartTime()));
-      }
-      catch (IOException e)
-      {
-         throw new RuntimeException(e);
-      }
+      readMessagesAtCurrentTimestamp();
    }
 
    @Override
    protected double doSpecificRunTick()
    {
-      return 0;
+      loadNextMessageBatch();
+      return (currentTimestamp.getValue() - initialTime) * 1.0e-9;
+   }
+
+   private boolean loadNextMessageBatch()
+   {
+      if (currentChunkMessages.isEmpty())
+      {
+         // Load the next chunk
+         chunkIndex.increment();
+         if (chunkIndex.getValue() >= allChunks.size())
+         {
+            setSessionMode(SessionMode.PAUSE);
+            return true;
+         }
+         Chunk chunk = allChunks.get(chunkIndex.getValue());
+         currentTimestamp.set(chunk.messageStartTime());
+         currentChunkStartTimestamp.set(chunk.messageStartTime());
+         currentChunkEndTimestamp.set(chunk.messageEndTime());
+
+         initializeMessages(chunk);
+
+         Message message = currentChunkMessages.get(0);
+         if (chunk.messageStartTime() != message.logTime())
+            throw new IllegalStateException("First message time (%d) does not match chunk start time (%d)".formatted(message.logTime(),
+                                                                                                                     chunk.messageStartTime()));
+      }
+      else
+      {
+         currentTimestamp.set(currentChunkMessages.peek().logTime());
+      }
+
+      readMessagesAtCurrentTimestamp();
+      return false;
+   }
+
+   public void initializeMessages(Chunk chunk)
+   {
+      byte[] decompressedChunk = new byte[(int) chunk.uncompressedSize()];
+      chunkDataDecoder.decode((byte[]) chunk.records(), decompressedChunk);
+      Records records = new Records(new ByteBufferKaitaiStream(decompressedChunk));
+      currentChunkMessages.clear();
+      long previousMessageLogTime = -1;
+      for (Record record : records.records())
+      {
+         if (record.op() != Opcode.MESSAGE)
+            continue;
+         Message message = (Message) record.body();
+
+         if (previousMessageLogTime != -1)
+         {
+            if (previousMessageLogTime > message.logTime())
+               throw new IllegalStateException("Messages are not sorted by time.");
+         }
+         currentChunkMessages.add(message);
+         previousMessageLogTime = message.logTime();
+      }
+   }
+
+   public void readMessagesAtCurrentTimestamp()
+   {
+      Message message = currentChunkMessages.getFirst();
+
+      while (message.logTime() == currentTimestamp.getValue())
+      {
+         YoROS2Message yoROS2Message = yoMessageMap.get(message.channelId());
+         if (yoROS2Message == null)
+            throw new IllegalStateException("No YoROS2Message found for channel ID " + message.channelId());
+         yoROS2Message.readMessage(message);
+         currentChunkMessages.pollFirst();
+         if (currentChunkMessages.isEmpty())
+            break;
+         message = currentChunkMessages.getFirst();
+      }
    }
 
    @Override
