@@ -22,7 +22,6 @@ public class STPBox3DVisualizer
                                                                                                                                smallRadius,
                                                                                                                                largeRadius,
                                                                                                                                false));
-
       MeshView meshView = new MeshView(mesh);
       meshView.setMaterial(new PhongMaterial(Color.AQUAMARINE));
       Simple3DViewer.view3DObjects(meshView);
