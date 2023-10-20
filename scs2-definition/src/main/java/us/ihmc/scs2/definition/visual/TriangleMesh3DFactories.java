@@ -40,25 +40,8 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.geometry.ArcTorus3DDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
-import us.ihmc.scs2.definition.geometry.ExtrudedPolygon2DDefinition;
-import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.geometry.HemiEllipsoid3DDefinition;
-import us.ihmc.scs2.definition.geometry.Polygon2DDefinition;
-import us.ihmc.scs2.definition.geometry.Polygon3DDefinition;
-import us.ihmc.scs2.definition.geometry.PyramidBox3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
-import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
-import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
+
 
 /**
  * This class provides factories to create generic meshes, i.e. {@code TriangleMesh3DDefinition}, to
@@ -88,6 +71,9 @@ public class TriangleMesh3DFactories
    private static final float FOURTH_SQRT6 = SQRT6 / 4.0f;
 
    private static final float ONE_THIRD = 1.0f / 3.0f;
+
+   private static boolean stpRadiiDirty = true;
+   private static double smallRadius, largeRadius;
 
    private TriangleMesh3DFactories()
    {
@@ -145,6 +131,8 @@ public class TriangleMesh3DFactories
          mesh = TruncatedCone((TruncatedCone3DDefinition) description);
       else if (description instanceof Ramp3DDefinition)
          mesh = Ramp((Ramp3DDefinition) description);
+      else if (description instanceof STPCapsule3DDefinition)
+         mesh = STPCapsule((STPCapsule3DDefinition) description);
 
       if (mesh == null)
       {
@@ -3047,6 +3035,78 @@ public class TriangleMesh3DFactories
       return new TriangleMesh3DDefinition("ConvexPolytope Factory", vertices, texturePoints, normals, triangleIndices);
    }
 
+
+   public static TriangleMesh3DDefinition STPCapsule(STPCapsule3DDefinition description)
+   {
+      TriangleMesh3DDefinition meshDataHolder = STPCapsule(description.getLength(),
+                                                           description.getRadiusX(),
+                                                           description.getRadiusY(),
+                                                           description.getRadiusZ(),
+                                                           description.getResolution(),
+                                                           description.getResolution(),
+                                                           description.getMinimumMargin(),
+                                                           description.getMaximumMargin());
+      if (meshDataHolder != null)
+         meshDataHolder.setName(description.getName());
+      return meshDataHolder;
+   }
+
+   public static TriangleMesh3DDefinition STPCapsule(double length, double radiusX, double radiusY, double radiusZ, int latitudeResolution,
+                                                  int longitudeResolution, double minimumMargin, double maximumMargin)
+   {
+      return STPCapsule((float) length, (float) radiusX, (float) radiusY, (float) radiusZ, latitudeResolution, longitudeResolution, minimumMargin, maximumMargin);
+   }
+
+   public static TriangleMesh3DDefinition STPCapsule(float length, float radiusX, float radiusY, float radiusZ, int latitudeResolution, int longitudeResolution, double minimumMargin, double maximumMargin)
+   {
+      float[] arr = {radiusX, radiusY, radiusZ};
+
+      Arrays.sort(arr);
+
+      updateRadii(length, arr[2], minimumMargin, maximumMargin);
+
+      return toSTPCapsule3DMesh(null,arr[2],length,smallRadius,largeRadius,false);
+   }
+
+
+   protected static void updateRadii(float length, float radius, double minimumMargin, double maximumMargin)
+   {
+      if(!stpRadiiDirty)
+         return;
+
+      stpRadiiDirty = false;
+
+
+      if(minimumMargin == 0.0 && maximumMargin == 0)
+      {
+         smallRadius = Double.NaN;
+         largeRadius = Double.NaN;
+      }
+      else
+      {
+         smallRadius = radius + minimumMargin;
+         largeRadius = radius + computeLargeRadiusFromMargins(minimumMargin, maximumMargin, EuclidCoreTools.square(length));
+      }
+
+   }
+
+   protected static double computeLargeRadiusFromMargins(double minimumMargin, double maximumMargin, double maximumEdgeLengthSquared)
+   {
+      double safeMaximumMargin = maximumMargin;
+
+      if (EuclidCoreTools.square(maximumMargin - minimumMargin) > 0.25 * maximumEdgeLengthSquared)
+      {
+         safeMaximumMargin = 0.99 * (0.5 * EuclidCoreTools.squareRoot(maximumEdgeLengthSquared) + minimumMargin);
+         LogTools.error("Unachievable margins, modified maximumMargin from: {}, down to: {}.", maximumMargin, safeMaximumMargin);
+      }
+
+      double smallRadius = minimumMargin;
+      double smallRadiusSquared = EuclidCoreTools.square(smallRadius);
+      double maximumMarginSquared = EuclidCoreTools.square(safeMaximumMargin);
+      double largeRadius = smallRadiusSquared - maximumMarginSquared - 0.25 * maximumEdgeLengthSquared;
+      largeRadius /= 2.0 * (smallRadius - safeMaximumMargin);
+      return largeRadius;
+   }
    /*
     * TODO: The following is for drawing STP shapes. Needs some cleanup.
     */
