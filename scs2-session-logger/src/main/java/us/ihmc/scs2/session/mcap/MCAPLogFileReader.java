@@ -1,17 +1,5 @@
 package us.ihmc.scs2.session.mcap;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.stream.Collectors;
-
 import gnu.trove.map.hash.TIntObjectHashMap;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import us.ihmc.commons.nio.FileTools;
@@ -23,6 +11,15 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
+
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.stream.Collectors;
 
 public class MCAPLogFileReader
 {
@@ -43,6 +40,8 @@ public class MCAPLogFileReader
    private final YoRegistry propertiesRegistry = new YoRegistry("MCAPProperties");
 
    private final File mcapFile;
+   private final FileInputStream mcapFileInputStream;
+   private final FileChannel mcapFileChannel;
    private final MCAPDebugPrinter printer;
    private final YoRegistry mcapRegistry;
    private final Mcap mcap;
@@ -65,6 +64,10 @@ public class MCAPLogFileReader
 
       mcapRegistry.addChild(propertiesRegistry);
       mcap = Mcap.fromFile(mcapFile.getAbsolutePath());
+
+      mcapFileInputStream = new FileInputStream(mcapFile);
+      mcapFileChannel = mcapFileInputStream.getChannel();
+
       allChunks.addAll(mcap.records().stream().filter(r -> r.op() == Mcap.Opcode.CHUNK).map(r -> (Mcap.Chunk) r.body()).collect(Collectors.toList()));
    }
 
