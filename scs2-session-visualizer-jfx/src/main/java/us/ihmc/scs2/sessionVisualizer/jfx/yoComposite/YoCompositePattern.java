@@ -34,7 +34,6 @@ public class YoCompositePattern
       if (componentIdentifiers != null)
       {
          componentIdentifiers = Stream.of(componentIdentifiers).toArray(String[]::new);
-         alternateComponentIdentifiers.forEach(this::addAlternateComponentIdentifiers);
 
          if (preferredChartConfigurations == null)
             preferredChartConfigurations = new ArrayList<>();
@@ -50,9 +49,16 @@ public class YoCompositePattern
             }
          }
       }
+      if (componentIdentifiers == null && !alternateComponentIdentifiers.isEmpty())
+      {
+         throw new IllegalArgumentException("Unexpected alternate component identifiers for composite " + type + ".\n"
+                                            + "The alternate component identifiers can only be set if the component identifiers are set.\n"
+                                            + "Problematic alternate component identifiers: " + alternateComponentIdentifiers);
+      }
 
       this.componentIdentifiers = componentIdentifiers;
       this.preferredChartConfigurations = preferredChartConfigurations;
+      alternateComponentIdentifiers.forEach(this::addAlternateComponentIdentifiers);
    }
 
    public void addAlternateComponentIdentifiers(String[] alternateComponentIdentifiers)

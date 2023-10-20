@@ -1,21 +1,25 @@
 package us.ihmc.scs2.definition.yoComposite;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlType;
 
 import us.ihmc.scs2.definition.yoChart.YoChartGroupModelDefinition;
 
 @XmlRootElement(name = "YoCompositePattern")
+@XmlType(propOrder = {"name", "crossRegistry", "ids", "altIds", "preferredConfigurations"})
 public class YoCompositePatternDefinition
 {
    private String name;
    private boolean crossRegistry = false;
    private String[] identifiers;
-   private final List<List<String>> alternateIdentifiers = new ArrayList<>();
+   private final List<String> altIds = new ArrayList<>();
    private final List<YoChartGroupModelDefinition> preferredConfigurations = new ArrayList<>();
 
    public YoCompositePatternDefinition()
@@ -35,7 +39,7 @@ public class YoCompositePatternDefinition
       setName(other.name);
       setCrossRegistry(other.crossRegistry);
       identifiers = other.identifiers;
-      alternateIdentifiers.addAll(other.alternateIdentifiers);
+      altIds.addAll(other.altIds);
       setPreferredConfigurations(other.preferredConfigurations);
    }
 
@@ -62,11 +66,11 @@ public class YoCompositePatternDefinition
       this.identifiers = ids.replaceAll(" ", "").split(",");
    }
 
-   @XmlElement(name="alternateIdentifiers")
-   public void setAlternateIdentifiers(List<String> alternateIdentifiers)
+   @XmlElement
+   public void setAltIds(List<String> altIds)
    {
-      this.alternateIdentifiers.clear();
-      this.alternateIdentifiers.addAll(alternateIdentifiers.stream().map(csvId -> csvId.split(",")).toList());
+      this.altIds.clear();
+      this.altIds.addAll(altIds);
    }
 
    @XmlElement
@@ -87,14 +91,28 @@ public class YoCompositePatternDefinition
       return crossRegistry;
    }
 
+   public String getIds()
+   {
+      return String.join(",", identifiers);
+   }
+
+   @XmlTransient
    public String[] getIdentifiers()
    {
       return identifiers;
    }
 
+   public List<String> getAltIds()
+   {
+      return altIds;
+   }
+
+   @XmlTransient
    public List<String[]> getAlternateIdentifiers()
    {
-      return alternateIdentifiers;
+      if (altIds.isEmpty())
+         return Collections.emptyList();
+      return altIds.stream().map(ids -> ids.split(",")).toList();
    }
 
    public List<YoChartGroupModelDefinition> getPreferredConfigurations()

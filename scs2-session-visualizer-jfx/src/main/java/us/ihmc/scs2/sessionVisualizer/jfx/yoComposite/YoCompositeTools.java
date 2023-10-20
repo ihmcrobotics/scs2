@@ -264,17 +264,16 @@ public class YoCompositeTools
       allComponentIdentifiers.add(pattern.getComponentIdentifiers());
       allComponentIdentifiers.addAll(pattern.getAlternateComponentIdentifiers());
 
-      if (pattern.getType().toLowerCase().contains("quaternion"))
-         System.out.println();
-
       List<YoComposite> result = new ArrayList<>();
       List<YoVariable> unresolvedCandidates = new ArrayList<>();
 
       for (String[] componentIdentifiers : allComponentIdentifiers)
       {
-         variables = variables.stream().filter(variable -> containsAnyIgnoreCase(variable.getName(), componentIdentifiers)).collect(Collectors.toList());
+         List<YoVariable> candidates = variables.stream()
+                                                .filter(variable -> containsAnyIgnoreCase(variable.getName(), componentIdentifiers))
+                                                .collect(Collectors.toList());
 
-         if (variables.isEmpty())
+         if (candidates.isEmpty())
             continue;
 
          // Using list to cover the edge case where 2 variables have the same (ignoring the case).
@@ -282,7 +281,7 @@ public class YoCompositeTools
 
          if (useUniqueNames)
          {
-            Map<YoVariable, String> variableToUniqueNameMap = computeUniqueNames(variables, v -> v.getNamespace().getSubNames(), YoVariable::getName);
+            Map<YoVariable, String> variableToUniqueNameMap = computeUniqueNames(candidates, v -> v.getNamespace().getSubNames(), YoVariable::getName);
 
             for (Entry<YoVariable, String> entry : variableToUniqueNameMap.entrySet())
             {
@@ -293,7 +292,7 @@ public class YoCompositeTools
          }
          else
          {
-            for (YoVariable variable : variables)
+            for (YoVariable variable : candidates)
             {
                String variableKey = variable.getName().toLowerCase();
                List<NamedObjectHolder<YoVariable>> container = variableMap.computeIfAbsent(variableKey, k -> new ArrayList<>());
@@ -331,11 +330,8 @@ public class YoCompositeTools
                   }
                   else
                   {
-                     throw new RuntimeException("Implement this edge case. Name collision: " + EuclidCoreIOTools.getCollectionString("\n\t",
-                                                                                                                                     "",
-                                                                                                                                     "\n\t",
-                                                                                                                                     container,
-                                                                                                                                     Object::toString));
+                     throw new RuntimeException("Implement this edge case. Name collision: "
+                                                + EuclidCoreIOTools.getCollectionString("\n\t", "", "\n\t", container, Object::toString));
                   }
                }
 
@@ -508,8 +504,8 @@ public class YoCompositeTools
 
             if (namespace1 == null ? namespace2 == null : namespace1.equals(namespace2))
             {
-               throw new IllegalArgumentException(
-                     "Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and " + h2.originalObject);
+               throw new IllegalArgumentException("Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and "
+                                                  + h2.originalObject);
             }
 
             int namespaceIndex1 = namespace1.size() - 1;
@@ -532,8 +528,8 @@ public class YoCompositeTools
                }
 
                if (namespaceIndex1 == 0 && namespaceIndex2 == 0 && h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()))
-                  throw new IllegalArgumentException(
-                        "Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and " + h2.originalObject);
+                  throw new IllegalArgumentException("Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and "
+                                                     + h2.originalObject);
             }
             while (h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()));
          }
@@ -572,12 +568,12 @@ public class YoCompositeTools
                List<NamedObjectHolder<T>> homonymsToProcess = new ArrayList<>();
                TIntArrayList namespaceIndexOfHomonymsToProcess = new TIntArrayList();
 
-               for (int h1Index = 0; h1Index < homonyms.size(); )
+               for (int h1Index = 0; h1Index < homonyms.size();)
                {
                   boolean isH1Unique = true;
                   NamedObjectHolder<T> h1 = homonyms.get(h1Index);
 
-                  for (int h2Index = h1Index + 1; h2Index < homonyms.size(); )
+                  for (int h2Index = h1Index + 1; h2Index < homonyms.size();)
                   {
                      NamedObjectHolder<T> h2 = homonyms.get(h2Index);
 
