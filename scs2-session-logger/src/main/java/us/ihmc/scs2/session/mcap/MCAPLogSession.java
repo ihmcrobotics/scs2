@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.stream.Collectors;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -59,7 +59,7 @@ public class MCAPLogSession extends Session
    private final long initialTime;
 
    private final LZ4FrameDecoder chunkDataDecoder = new LZ4FrameDecoder();
-   private LinkedList<Message> currentChunkMessages = new LinkedList<>();
+   private final PriorityQueue<Message> currentChunkMessages = new PriorityQueue<>((m1, m2) -> Long.compare(m1.logTime(), m2.logTime()));
 
    public MCAPLogSession(File mcapFile, MCAPDebugPrinter printer) throws IOException
    {
@@ -190,7 +190,7 @@ public class MCAPLogSession extends Session
       currentChunkStartTimestamp.set(chunk.messageStartTime());
       currentChunkEndTimestamp.set(chunk.messageEndTime());
       initializeMessages(chunk);
-      Message message = currentChunkMessages.getFirst();
+      Message message = currentChunkMessages.peek();
       if (chunk.messageStartTime() != message.logTime())
          throw new IllegalStateException("First message time (%d) does not match chunk start time (%d)".formatted(message.logTime(), chunk.messageStartTime()));
 
@@ -222,7 +222,7 @@ public class MCAPLogSession extends Session
 
          initializeMessages(chunk);
 
-         Message message = currentChunkMessages.get(0);
+         Message message = currentChunkMessages.peek();
          if (chunk.messageStartTime() != message.logTime())
             throw new IllegalStateException("First message time (%d) does not match chunk start time (%d)".formatted(message.logTime(),
                                                                                                                      chunk.messageStartTime()));
@@ -242,26 +242,19 @@ public class MCAPLogSession extends Session
       chunkDataDecoder.decode((byte[]) chunk.records(), decompressedChunk);
       Records records = new Records(new ByteBufferKaitaiStream(decompressedChunk));
       currentChunkMessages.clear();
-      long previousMessageLogTime = -1;
       for (Record record : records.records())
       {
          if (record.op() != Opcode.MESSAGE)
             continue;
          Message message = (Message) record.body();
 
-         if (previousMessageLogTime != -1)
-         {
-            if (previousMessageLogTime > message.logTime())
-               throw new IllegalStateException("Messages are not sorted by time.");
-         }
          currentChunkMessages.add(message);
-         previousMessageLogTime = message.logTime();
       }
    }
 
    public void readMessagesAtCurrentTimestamp()
    {
-      Message message = currentChunkMessages.getFirst();
+      Message message = currentChunkMessages.peek();
 
       while (message.logTime() == currentTimestamp.getValue())
       {
@@ -276,10 +269,10 @@ public class MCAPLogSession extends Session
          {
             e.printStackTrace();
          }
-         currentChunkMessages.pollFirst();
+         currentChunkMessages.poll();
          if (currentChunkMessages.isEmpty())
             break;
-         message = currentChunkMessages.getFirst();
+         message = currentChunkMessages.peek();
       }
    }
 
