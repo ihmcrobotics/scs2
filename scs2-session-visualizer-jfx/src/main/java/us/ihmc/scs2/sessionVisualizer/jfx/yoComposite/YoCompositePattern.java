@@ -25,7 +25,8 @@ public class YoCompositePattern
    {
       this(type, crossRegistry, componentIdentifiers, Collections.emptyList(), preferredChartConfigurations);
    }
-   public YoCompositePattern(String type, boolean crossRegistry, String[] componentIdentifiers, List<String> alternateComponentIdentifiers, List<ChartGroupModel> preferredChartConfigurations)
+
+   public YoCompositePattern(String type, boolean crossRegistry, String[] componentIdentifiers, List<String[]> alternateComponentIdentifiers, List<ChartGroupModel> preferredChartConfigurations)
    {
       this.type = type;
       this.crossRegistry = crossRegistry;
@@ -33,6 +34,7 @@ public class YoCompositePattern
       if (componentIdentifiers != null)
       {
          componentIdentifiers = Stream.of(componentIdentifiers).toArray(String[]::new);
+         alternateComponentIdentifiers.forEach(this::addAlternateComponentIdentifiers);
 
          if (preferredChartConfigurations == null)
             preferredChartConfigurations = new ArrayList<>();

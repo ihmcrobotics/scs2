@@ -15,7 +15,7 @@ public class YoCompositePatternDefinition
    private String name;
    private boolean crossRegistry = false;
    private String[] identifiers;
-   private final List<String[]> alternateIdentifiers = new ArrayList<>();
+   private final List<List<String>> alternateIdentifiers = new ArrayList<>();
    private final List<YoChartGroupModelDefinition> preferredConfigurations = new ArrayList<>();
 
    public YoCompositePatternDefinition()
@@ -45,23 +45,28 @@ public class YoCompositePatternDefinition
       this.name = name;
    }
 
-   @XmlElement
+   @XmlAttribute
    public void setCrossRegistry(boolean crossRegistry)
    {
       this.crossRegistry = crossRegistry;
    }
 
-   @XmlElement
-   public void setIdentifiers(String csvIdentifiers)
+   public void setIdentifiers(String[] identifiers)
    {
-      this.identifiers = csvIdentifiers.split(",");
+      this.identifiers = identifiers;
    }
 
-   @XmlElement
-   public void setAlternateIdentifiers(List<String> alternateCSVIdentifiers)
+   @XmlAttribute
+   public void setIds(String ids)
+   {
+      this.identifiers = ids.replaceAll(" ", "").split(",");
+   }
+
+   @XmlElement(name="alternateIdentifiers")
+   public void setAlternateIdentifiers(List<String> alternateIdentifiers)
    {
       this.alternateIdentifiers.clear();
-      this.alternateIdentifiers.addAll(alternateCSVIdentifiers.stream().map(csvId -> csvId.split(",")).toList());
+      this.alternateIdentifiers.addAll(alternateIdentifiers.stream().map(csvId -> csvId.split(",")).toList());
    }
 
    @XmlElement

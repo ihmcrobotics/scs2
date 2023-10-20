@@ -264,6 +264,9 @@ public class YoCompositeTools
       allComponentIdentifiers.add(pattern.getComponentIdentifiers());
       allComponentIdentifiers.addAll(pattern.getAlternateComponentIdentifiers());
 
+      if (pattern.getType().toLowerCase().contains("quaternion"))
+         System.out.println();
+
       List<YoComposite> result = new ArrayList<>();
       List<YoVariable> unresolvedCandidates = new ArrayList<>();
 
@@ -667,7 +670,7 @@ public class YoCompositeTools
                                                                      .stream()
                                                                      .map(ChartTools::toChartIdentifierList)
                                                                      .collect(Collectors.toList());
-      return new YoCompositePattern(type, crossRegistry, componentIdentifiers, preferredChartConfigurations);
+      return new YoCompositePattern(type, crossRegistry, componentIdentifiers, alternateIdentifiers, preferredChartConfigurations);
    }
 
    public static YoCompositePatternListDefinition toYoCompositePatternListDefinition(List<YoCompositePattern> yoCompositePatterns)
@@ -688,7 +691,7 @@ public class YoCompositeTools
       definition.setName(yoCompositePattern.getType());
       definition.setCrossRegistry(yoCompositePattern.isCrossRegistry());
       if (yoCompositePattern.getComponentIdentifiers() != null)
-         definition.setIdentifiers(new ArrayList<>(Arrays.asList(yoCompositePattern.getComponentIdentifiers())));
+         definition.setIdentifiers(yoCompositePattern.getComponentIdentifiers());
       definition.setPreferredConfigurations(ChartTools.toYoChartGroupModelDefinitions(yoCompositePattern.getPreferredChartConfigurations()));
       return definition;
    }
