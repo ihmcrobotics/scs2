@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <YoCompositePatternList name='defaultComposites'>
-   <yoCompositePatterns name='YoTuple2D'>
-      <crossRegistry>false</crossRegistry>
-      <ids>'x,y'</ids>
-      <altIds>'x,y,z,w'</altIds>
-      <altIds>'x,y,z,w'</altIds>
-      <altIds>'x,y,z,w'</altIds>
-      <altIds>'x,y,z,w'</altIds>
+   <yoCompositePatterns name='YoTuple2D' crossRegistry='false' ids='x,y'>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -21,9 +15,7 @@
          <chartIdentifiers row='1' column='0'/>
       </preferredConfigurations>
    </yoCompositePatterns>
-   <yoCompositePatterns name='YoTuple3D'>
-      <crossRegistry>false</crossRegistry>
-      <ids>'x,y,z'</ids>
+   <yoCompositePatterns name='YoTuple3D' crossRegistry='false' ids='x,y,z'>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -40,10 +32,8 @@
          <chartIdentifiers row='2' column='0'/>
       </preferredConfigurations>
    </yoCompositePatterns>
-   <yoCompositePatterns name='YoQuaternion'>
-      <crossRegistry>false</crossRegistry>
-      <ids>'qx,qy,qz,qs'</ids>
-      <altIds>'x,y,z,w'</altIds>
+   <yoCompositePatterns name='YoQuaternion' crossRegistry='false' ids='qx,qy,qz,qs'>
+      <altIds>x,y,z,w</altIds>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -63,9 +53,7 @@
          <chartIdentifiers row='3' column='0'/>
       </preferredConfigurations>
    </yoCompositePatterns>
-   <yoCompositePatterns name='YoYawPitchRoll'>
-      <crossRegistry>false</crossRegistry>
-      <ids>'yaw,pitch,roll'</ids>
+   <yoCompositePatterns name='YoYawPitchRoll' crossRegistry='false' ids='yaw,pitch,roll'>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
