@@ -94,7 +94,7 @@ public class LogSessionManagerController implements SessionControlsController
 
    private enum OutputFormat
    {
-      Default, MATLAB;
+      Default, MATLAB, CSV;
    };
 
    private final ObjectProperty<MultiVideoViewer> multiVideoViewerProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
@@ -267,7 +267,7 @@ public class LogSessionManagerController implements SessionControlsController
 
       outputFormatComboxBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
       outputFormatComboxBox.getSelectionModel().select(OutputFormat.Default);
-      enableVariableFilterToggleButton.setDisable(true); // Only available if export format is MATLAB for now.
+      enableVariableFilterToggleButton.setDisable(true); // Only available if export format is MATLAB/CSV for now.
 
       outputFormatComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
       {
@@ -428,6 +428,14 @@ public class LogSessionManagerController implements SessionControlsController
                                                                   LOG_FILE_KEY);
             break;
          }
+         case CSV:
+         {
+            destination = SessionVisualizerIOTools.showSaveDialog(stage,
+                                                                  "Export CSV data",
+                                                                  new ExtensionFilter("Comma-Separated Value format", "*.csv"),
+                                                                  LOG_FILE_KEY);
+            break;
+         }
          case Default:
          default:
          {
@@ -474,6 +482,8 @@ public class LogSessionManagerController implements SessionControlsController
 
             if (outputFormat == OutputFormat.MATLAB)
                logCropper.cropMATLAB(destination, logVariables, variableFilter, registryFilter, from, to, controller);
+            else if (outputFormat == OutputFormat.CSV)
+               logCropper.cropCSV(destination, logVariables, variableFilter, registryFilter, from, to, controller);
             else
                logCropper.crop(destination, from, to, controller);
          }

@@ -3,11 +3,13 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 
 import gnu.trove.list.array.TIntArrayList;
@@ -322,5 +324,159 @@ public class YoVariableLogCropper extends YoVariableLogReader
    private interface MatlabEntryWriter
    {
       void accept(int index, long longValue);
+   }
+
+   public void cropCSV(File destination,
+                       List<YoVariable> logVariables,
+                       Predicate<YoVariable> variableFilter,
+                       Predicate<YoRegistry> registryFilter,
+                       int from,
+                       int to,
+                       ProgressConsumer progressConsumer)
+   {
+      progressConsumer.started("Cropping data file");
+      progressConsumer.info("Initializing cropper");
+      progressConsumer.progress(0.0);
+
+      if (!initialize())
+      {
+         return;
+      }
+
+      TIntArrayList logVariableIndices = null;
+      List<YoVariable> logVariablesFiltered = null;
+
+      if (variableFilter != null || registryFilter != null)
+      {
+         logVariableIndices = new TIntArrayList();
+         logVariablesFiltered = new ArrayList<>();
+
+         for (int varIndex = 0; varIndex < logVariables.size(); varIndex++)
+         {
+            boolean keepVariable = true;
+            YoVariable logVariable = logVariables.get(varIndex);
+
+            if (variableFilter != null && !variableFilter.test(logVariable))
+               keepVariable = false;
+
+            if (keepVariable)
+            {
+               if (registryFilter != null && !registryFilter.test(logVariable.getRegistry()))
+                  keepVariable = false;
+            }
+
+            if (keepVariable)
+            {
+               logVariableIndices.add(varIndex);
+               logVariablesFiltered.add(logVariable);
+            }
+         }
+      }
+
+      try
+      {
+         progressConsumer.info("Creating directories");
+         progressConsumer.progress(0.03);
+
+         if (destination.exists())
+         {
+            progressConsumer.error("Destination " + destination.getAbsolutePath() + " already exists.");
+            progressConsumer.done();
+            return;
+         }
+         else
+         {
+            File parent = destination.getCanonicalFile().getParentFile();
+
+            if (parent != null && !parent.mkdirs() && !parent.isDirectory())
+            {
+               progressConsumer.error("Cannot make parent directory for " + destination.getAbsolutePath());
+               progressConsumer.done();
+               return;
+            }
+         }
+
+         progressConsumer.info("Seeking variable data");
+         progressConsumer.progress(0.04);
+
+         int numberOfYoVariables = logVariablesFiltered != null ? logVariablesFiltered.size() : logVariables.size();
+         PrintStream printStream = new PrintStream(new FileOutputStream(destination));
+         List<LongConsumer> valueWriter = new ArrayList<>();
+
+         for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
+         {
+            YoVariable yoVariable = logVariablesFiltered != null ? logVariablesFiltered.get(varIndex) : logVariables.get(varIndex);
+
+            printStream.print(yoVariable.getFullNameString());
+            if (varIndex < numberOfYoVariables - 1)
+               printStream.print(", ");
+            else
+               printStream.println();
+
+            if (yoVariable instanceof YoBoolean)
+               valueWriter.add(longValue -> printStream.print(longValue == 1));
+            else if (yoVariable instanceof YoDouble)
+               valueWriter.add(longValue -> printStream.print(Double.longBitsToDouble(longValue)));
+            else if (yoVariable instanceof YoInteger)
+               valueWriter.add(longValue -> printStream.print((int) longValue));
+            else if (yoVariable instanceof YoLong)
+               valueWriter.add(longValue -> printStream.print(longValue));
+            else if (yoVariable instanceof YoEnum yoEnum)
+               valueWriter.add(longValue ->
+               {
+                  int ordinal = (int) longValue;
+                  printStream.print(ordinal == YoEnum.NULL_VALUE ? YoEnum.NULL_VALUE_STRING : yoEnum.getEnumValuesAsString()[ordinal]);
+               });
+         }
+
+         progressConsumer.info("Writing variable data");
+         ProgressConsumer dataCopyingProgress = progressConsumer.subProgress(0.04, 1.00);
+
+         if (logVariablesFiltered != null)
+         {
+            for (int i = from; i <= to; i++)
+            {
+               progressConsumer.info("Writing variable data %d/%d".formatted(i - from, to - from));
+               dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
+               LongBuffer data = readData(i).asLongBuffer();
+
+               for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
+               {
+                  valueWriter.get(varIndex).accept(data.get(logVariableIndices.get(varIndex) + 1));
+                  if (varIndex < numberOfYoVariables - 1)
+                     printStream.print(", ");
+                  else
+                     printStream.println();
+               }
+            }
+         }
+         else
+         {
+            for (int i = from; i <= to; i++)
+            {
+               progressConsumer.info("Writing variable data %d/%d".formatted(i - from, to - from));
+               dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
+               LongBuffer data = readData(i).asLongBuffer();
+
+               data.get(); // Time entry
+
+               for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
+               {
+                  valueWriter.get(varIndex).accept(data.get());
+                  if (varIndex < numberOfYoVariables - 1)
+                     printStream.print(", ");
+                  else
+                     printStream.println();
+               }
+            }
+         }
+
+         printStream.close();
+         progressConsumer.done();
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
    }
 }
