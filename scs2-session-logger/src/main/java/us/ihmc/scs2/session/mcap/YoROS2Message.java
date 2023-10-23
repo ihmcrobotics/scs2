@@ -141,23 +141,15 @@ public class YoROS2Message
          boolean isArray = field.isArray();
 
          Consumer<CDR> deserializer = null;
-         deserializer = createYoVariable(field, messageRegistry);
+         if (!isArray)
+            deserializer = createYoVariable(field, messageRegistry);
+         else
+            deserializer = createYoVariableArray(field, messageRegistry);
 
          if (deserializer != null)
          {
             deserializers.add(deserializer);
             continue;
-         }
-
-         if (isArray)
-         {
-            deserializer = createYoVariableArray(field, messageRegistry);
-
-            if (deserializer != null)
-            {
-               deserializers.add(deserializer);
-               continue;
-            }
          }
 
          ROS2MessageSchema subSchema = subSchemaMap.get(field.getType());
@@ -217,7 +209,7 @@ public class YoROS2Message
       catch (Exception e)
       {
          LogTools.error("Deserialization failed for message: " + registry.getName() + ", schema ID: " + schema.getId() + ", schema name: " + schema.getName()
-                        + ", message data: " + Arrays.toString(message.data()));
+               + ", message data: " + Arrays.toString(message.data()));
          throw e;
       }
    }
