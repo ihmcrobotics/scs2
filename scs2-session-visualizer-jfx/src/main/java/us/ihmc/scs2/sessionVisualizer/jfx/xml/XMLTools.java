@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.xml;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,10 +52,7 @@ public class XMLTools
       {
          JAXBContext context = JAXBContext.newInstance(YoCompositePatternListDefinition.class);
          Unmarshaller unmarshaller = context.createUnmarshaller();
-         unmarshaller.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
-         YoCompositePatternListDefinition unmarshal = (YoCompositePatternListDefinition) unmarshaller.unmarshal(inputStream);
-         saveYoCompositePatternListDefinition(new FileOutputStream(new File("blop.xml")), unmarshal);
-         return unmarshal;
+         return (YoCompositePatternListDefinition) unmarshaller.unmarshal(inputStream);
       }
       finally
       {
