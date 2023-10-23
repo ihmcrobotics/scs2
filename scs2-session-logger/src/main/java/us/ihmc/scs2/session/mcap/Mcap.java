@@ -5,11 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 // This requires the project kaitai-struct-runtime, which is at github at
 // https://github.com/kaitai-io/kaitai_struct_java_runtime
@@ -18,6 +14,7 @@ import java.util.Objects;
 
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import io.kaitai.struct.KaitaiStream;
+import io.netty.buffer.ByteBuf;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 
 /**
@@ -38,21 +35,8 @@ public class Mcap
 
    public enum Opcode
    {
-      HEADER(1),
-      FOOTER(2),
-      SCHEMA(3),
-      CHANNEL(4),
-      MESSAGE(5),
-      CHUNK(6),
-      MESSAGE_INDEX(7),
-      CHUNK_INDEX(8),
-      ATTACHMENT(9),
-      ATTACHMENT_INDEX(10),
-      STATISTICS(11),
-      METADATA(12),
-      METADATA_INDEX(13),
-      SUMMARY_OFFSET(14),
-      DATA_END(15);
+      HEADER(1), FOOTER(2), SCHEMA(3), CHANNEL(4), MESSAGE(5), CHUNK(6), MESSAGE_INDEX(7), CHUNK_INDEX(8), ATTACHMENT(9), ATTACHMENT_INDEX(10), STATISTICS(11), METADATA(
+         12), METADATA_INDEX(13), SUMMARY_OFFSET(14), DATA_END(15);
 
       private final long id;
 
@@ -80,7 +64,7 @@ public class Mcap
       }
    }
 
-   public Mcap(FileChannel _io)
+   public Mcap(FileChannel _io) throws IOException
    {
       this._io = _io;
       _read();
@@ -91,22 +75,22 @@ public class Mcap
       return _io;
    }
 
-   private void _read()
+   private void _read() throws IOException
    {
-      this.headerMagic = new Magic(_io, 0, 8);
-      this.records = new ArrayList<>();
+      long currentPos = 0;
+      headerMagic = new Magic(_io, currentPos);
+      currentPos += headerMagic.getItemTotalLength();
+      records = new ArrayList<>();
+      Record lastRecord = null;
+      do
       {
-         Record _it;
-         int i = 0;
-         do
-         {
-            _it = new Record(this._io);
-            this.records.add(_it);
-            i++;
-         }
-         while (!(_it.op() == Opcode.FOOTER));
+         lastRecord = new Record(_io, currentPos);
+         currentPos += lastRecord.getItemTotalLength();
+         records.add(lastRecord);
       }
-      this.footerMagic = new Magic(this._io);
+      while (!(lastRecord.op() == Opcode.FOOTER));
+
+      footerMagic = new Magic(_io, currentPos);
    }
 
    private static String indent(String stringToIndent, int indent)
@@ -119,21 +103,35 @@ public class Mcap
 
    public static class PrefixedStr extends KaitaiStructToStringEnabled
    {
-      public PrefixedStr(KaitaiStream _io)
+      private long lenStr;
+      private String str;
+
+      public PrefixedStr(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      public PrefixedStr(ByteBuffer buffer) throws IOException
+      {
+         super(buffer);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.lenStr = this._io.readU4le();
-         this.str = new String(this._io.readBytes(lenStr()), Charset.forName("UTF-8"));
+         _readIntoBuffer();
+         lenStr = Integer.toUnsignedLong(buffer.getInt());
+         str = new String(buffer.array(), 1, (int) lenStr, Charset.forName("UTF-8"));
+         setComputedLength((int) lenStr + Integer.BYTES);
       }
 
-      private long lenStr;
-      private String str;
+      @Override
+      public int getItemTotalLength()
+      {
+         return (int) lenStr + Integer.BYTES;
+      }
 
       public long lenStr()
       {
@@ -154,38 +152,6 @@ public class Mcap
 
    public static class Chunk extends KaitaiStructToStringEnabled
    {
-      public Chunk(KaitaiStream _io)
-      {
-         super(_io);
-         _read();
-      }
-
-      @Override
-      private void _read()
-      {
-         this.messageStartTime = this._io.readU8le();
-         this.messageEndTime = this._io.readU8le();
-         this.uncompressedSize = this._io.readU8le();
-         this.uncompressedCrc32 = this._io.readU4le();
-         this.compression = new PrefixedStr(this._io);
-         this.lenRecords = this._io.readU8le();
-         switch (compression().str())
-         {
-            case "":
-            {
-               this._raw_records = this._io.readBytes(lenRecords());
-               KaitaiStream _io__raw_records = new ByteBufferKaitaiStream(_raw_records);
-               this.records = new Records(_io__raw_records);
-               break;
-            }
-            default:
-            {
-               this.records = this._io.readBytes(lenRecords());
-               break;
-            }
-         }
-      }
-
       private long messageStartTime;
       private long messageEndTime;
       private long uncompressedSize;
@@ -194,6 +160,39 @@ public class Mcap
       private long lenRecords;
       private Object records;
       private byte[] _raw_records;
+
+      public Chunk(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      @Override
+      public void _read() throws IOException
+      {
+         _readIntoBuffer();
+         messageStartTime = buffer.getLong();
+         messageEndTime = buffer.getLong();
+         uncompressedSize = buffer.getLong();
+         uncompressedCrc32 = Integer.toUnsignedLong(buffer.getInt());
+         compression = new PrefixedStr(buffer);
+         lenRecords = buffer.getLong();
+         switch (compression.str())
+         {
+            case "":
+            {
+               records = new Records(_io, _pos + buffer.position(), (int) lenRecords);
+               break;
+            }
+            default:
+            {
+               records = new byte[(int) lenRecords];
+               buffer.get((byte[]) records);
+               break;
+            }
+         }
+         setComputedLength(3 * Long.BYTES + Integer.BYTES + compression.getItemTotalLength() + Long.BYTES + (int) lenRecords);
+      }
 
       public long messageStartTime()
       {
@@ -255,19 +254,21 @@ public class Mcap
 
    public static class DataEnd extends KaitaiStructToStringEnabled
    {
-      public DataEnd(KaitaiStream _io)
+      private long dataSectionCrc32;
+
+      public DataEnd(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.dataSectionCrc32 = this._io.readU4le();
+         _readIntoBuffer();
+         dataSectionCrc32 = Integer.toUnsignedLong(buffer.getInt());
+         setComputedLength(Integer.BYTES);
       }
-
-      private long dataSectionCrc32;
 
       /**
        * CRC-32 of all bytes in the data section. A value of 0 indicates the CRC-32 is not available.
@@ -286,27 +287,29 @@ public class Mcap
 
    public static class Channel extends KaitaiStructToStringEnabled
    {
-      public Channel(KaitaiStream _io)
-      {
-         super(_io);
-         _read();
-      }
-
-      @Override
-      private void _read()
-      {
-         this.id = this._io.readU2le();
-         this.schemaId = this._io.readU2le();
-         this.topic = new PrefixedStr(this._io);
-         this.messageEncoding = new PrefixedStr(this._io);
-         this.metadata = new MapStrStr(this._io);
-      }
-
       private int id;
       private int schemaId;
       private PrefixedStr topic;
       private PrefixedStr messageEncoding;
       private MapStrStr metadata;
+
+      public Channel(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      @Override
+      public void _read() throws IOException
+      {
+         _readIntoBuffer();
+         id = Short.toUnsignedInt(buffer.getShort());
+         schemaId = Short.toUnsignedInt(buffer.getShort());
+         topic = new PrefixedStr(buffer);
+         messageEncoding = new PrefixedStr(buffer);
+         metadata = new MapStrStr(buffer);
+         setComputedLength(2 * Short.BYTES + topic.getItemTotalLength() + messageEncoding.getItemTotalLength() + metadata.getItemTotalLength());
+      }
 
       public int id()
       {
@@ -348,39 +351,44 @@ public class Mcap
 
    public static class MessageIndex extends KaitaiStructToStringEnabled
    {
-      public MessageIndex(KaitaiStream _io)
+      private int channelId;
+      private long lenRecords;
+      private MessageIndexEntries records;
+
+      public MessageIndex(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.channelId = this._io.readU2le();
-         this.lenRecords = this._io.readU4le();
-         this._raw_records = this._io.readBytes(lenRecords());
-         KaitaiStream _io__raw_records = new ByteBufferKaitaiStream(_raw_records);
-         this.records = new MessageIndexEntries(_io__raw_records);
+         _readIntoBuffer();
+         channelId = Short.toUnsignedInt(buffer.getShort());
+         lenRecords = Integer.toUnsignedLong(buffer.getInt());
+         records = new MessageIndexEntries(buffer, (int) lenRecords);
       }
 
       public static class MessageIndexEntry extends KaitaiStructToStringEnabled
       {
-         public MessageIndexEntry(KaitaiStream _io)
+         private long logTime;
+         private long offset;
+
+         public MessageIndexEntry(ByteBuffer buffer) throws IOException
          {
-            super(_io);
+            super(buffer);
             _read();
          }
 
          @Override
-         private void _read()
+         public void _read() throws IOException
          {
-            this.logTime = this._io.readU8le();
-            this.offset = this._io.readU8le();
+            _readIntoBuffer();
+            logTime = buffer.getLong();
+            offset = buffer.getLong();
+            setComputedLength(2 * Long.BYTES);
          }
-
-         private long logTime;
-         private long offset;
 
          public long logTime()
          {
@@ -410,29 +418,30 @@ public class Mcap
 
       public static class MessageIndexEntries extends KaitaiStructToStringEnabled
       {
-         public MessageIndexEntries(KaitaiStream _io)
+         private List<MessageIndexEntry> entries;
+
+         public MessageIndexEntries(ByteBuffer buffer, int _length) throws IOException
          {
-            super(_io);
+            super(buffer, _length);
             _read();
          }
 
          @Override
-         private void _read()
+         public void _read() throws IOException
          {
-            this.entries = new ArrayList<>();
+            _readIntoBuffer();
+            int remaining = _length;
+            entries = new ArrayList<>();
+
+            while (remaining > 0)
             {
-               int i = 0;
-               while (!this._io.isEof())
-               {
-                  this.entries.add(new MessageIndexEntry(this._io));
-                  i++;
-               }
+               MessageIndexEntry entry = new MessageIndexEntry(buffer);
+               entries.add(entry);
+               remaining -= entry.getItemTotalLength();
             }
          }
 
-         private ArrayList<MessageIndexEntry> entries;
-
-         public ArrayList<MessageIndexEntry> entries()
+         public List<MessageIndexEntry> entries()
          {
             return entries;
          }
@@ -452,11 +461,6 @@ public class Mcap
          }
       }
 
-      private int channelId;
-      private long lenRecords;
-      private MessageIndexEntries records;
-      private byte[] _raw_records;
-
       public int channelId()
       {
          return channelId;
@@ -470,11 +474,6 @@ public class Mcap
       public MessageIndexEntries records()
       {
          return records;
-      }
-
-      public byte[] _raw_records()
-      {
-         return _raw_records;
       }
 
       @Override
@@ -496,54 +495,67 @@ public class Mcap
 
    public static class Statistics extends KaitaiStructToStringEnabled
    {
-      public Statistics(KaitaiStream _io)
+      private long messageCount;
+      private int schemaCount;
+      private long channelCount;
+      private long attachmentCount;
+      private long metadataCount;
+      private long chunkCount;
+      private long messageStartTime;
+      private long messageEndTime;
+      private long lenChannelMessageCounts;
+      private ChannelMessageCounts channelMessageCounts;
+
+      public Statistics(FileChannel _io, long position, int length) throws IOException
       {
-         super(_io);
+         super(_io, position, length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.messageCount = this._io.readU8le();
-         this.schemaCount = this._io.readU2le();
-         this.channelCount = this._io.readU4le();
-         this.attachmentCount = this._io.readU4le();
-         this.metadataCount = this._io.readU4le();
-         this.chunkCount = this._io.readU4le();
-         this.messageStartTime = this._io.readU8le();
-         this.messageEndTime = this._io.readU8le();
-         this.lenChannelMessageCounts = this._io.readU4le();
-         this._raw_channelMessageCounts = this._io.readBytes(lenChannelMessageCounts());
-         KaitaiStream _io__raw_channelMessageCounts = new ByteBufferKaitaiStream(_raw_channelMessageCounts);
-         this.channelMessageCounts = new ChannelMessageCounts(_io__raw_channelMessageCounts);
+         _readIntoBuffer();
+         messageCount = buffer.getLong();
+         schemaCount = Short.toUnsignedInt(buffer.getShort());
+         channelCount = Integer.toUnsignedLong(buffer.getInt());
+         attachmentCount = Integer.toUnsignedLong(buffer.getInt());
+         metadataCount = Integer.toUnsignedLong(buffer.getInt());
+         chunkCount = Integer.toUnsignedLong(buffer.getInt());
+         messageStartTime = buffer.getLong();
+         messageEndTime = buffer.getLong();
+         lenChannelMessageCounts = Integer.toUnsignedLong(buffer.getInt());
+         channelMessageCounts = new ChannelMessageCounts(buffer, (int) lenChannelMessageCounts);
       }
 
       public static class ChannelMessageCounts extends KaitaiStructToStringEnabled
       {
-         public ChannelMessageCounts(KaitaiStream _io)
+         private List<ChannelMessageCount> entries;
+
+         public ChannelMessageCounts(ByteBuffer buffer, int _length) throws IOException
          {
-            super(_io);
+            super(buffer, _length);
             _read();
          }
 
          @Override
-         private void _read()
+         public void _read() throws IOException
          {
-            this.entries = new ArrayList<>();
+            _readIntoBuffer();
+
+            int remaining = _length;
+
+            entries = new ArrayList<>();
+
+            while (remaining > 0)
             {
-               int i = 0;
-               while (!this._io.isEof())
-               {
-                  this.entries.add(new ChannelMessageCount(this._io));
-                  i++;
-               }
+               ChannelMessageCount entry = new ChannelMessageCount(buffer);
+               entries.add(entry);
+               remaining -= entry.getItemTotalLength();
             }
          }
 
-         private ArrayList<ChannelMessageCount> entries;
-
-         public ArrayList<ChannelMessageCount> entries()
+         public List<ChannelMessageCount> entries()
          {
             return entries;
          }
@@ -565,21 +577,23 @@ public class Mcap
 
       public static class ChannelMessageCount extends KaitaiStructToStringEnabled
       {
-         public ChannelMessageCount(KaitaiStream _io)
+         private int channelId;
+         private long messageCount;
+
+         public ChannelMessageCount(ByteBuffer buffer) throws IOException
          {
-            super(_io);
+            super(buffer);
             _read();
          }
 
          @Override
-         private void _read()
+         public void _read() throws IOException
          {
-            this.channelId = this._io.readU2le();
-            this.messageCount = this._io.readU8le();
+            _readIntoBuffer();
+            channelId = Short.toUnsignedInt(buffer.getShort());
+            messageCount = buffer.getLong();
+            setComputedLength(Short.BYTES + Long.BYTES);
          }
-
-         private int channelId;
-         private long messageCount;
 
          public int channelId()
          {
@@ -606,18 +620,6 @@ public class Mcap
             return indent(out, indent);
          }
       }
-
-      private long messageCount;
-      private int schemaCount;
-      private long channelCount;
-      private long attachmentCount;
-      private long metadataCount;
-      private long chunkCount;
-      private long messageStartTime;
-      private long messageEndTime;
-      private long lenChannelMessageCounts;
-      private ChannelMessageCounts channelMessageCounts;
-      private byte[] _raw_channelMessageCounts;
 
       public long messageCount()
       {
@@ -669,11 +671,6 @@ public class Mcap
          return channelMessageCounts;
       }
 
-      public byte[] _raw_channelMessageCounts()
-      {
-         return _raw_channelMessageCounts;
-      }
-
       @Override
       public String toString()
       {
@@ -694,40 +691,6 @@ public class Mcap
 
    public static class AttachmentIndex extends KaitaiStructToStringEnabled
    {
-      public AttachmentIndex(KaitaiStream _io)
-      {
-         super(_io);
-         _read();
-      }
-
-      @Override
-      private void _read()
-      {
-         this.ofsAttachment = this._io.readU8le();
-         this.lenAttachment = this._io.readU8le();
-         this.logTime = this._io.readU8le();
-         this.createTime = this._io.readU8le();
-         this.dataSize = this._io.readU8le();
-         this.name = new PrefixedStr(this._io);
-         this.mediaType = new PrefixedStr(this._io);
-      }
-
-      private Record attachment;
-
-      public Record attachment()
-      {
-         if (this.attachment != null)
-            return this.attachment;
-         KaitaiStream io = _root()._io();
-         long _pos = io.pos();
-         io.seek(ofsAttachment());
-         this._raw_attachment = io.readBytes(lenAttachment());
-         KaitaiStream _io__raw_attachment = new ByteBufferKaitaiStream(_raw_attachment);
-         this.attachment = new Record(_io__raw_attachment);
-         io.seek(_pos);
-         return this.attachment;
-      }
-
       private long ofsAttachment;
       private long lenAttachment;
       private long logTime;
@@ -735,7 +698,39 @@ public class Mcap
       private long dataSize;
       private PrefixedStr name;
       private PrefixedStr mediaType;
-      private byte[] _raw_attachment;
+
+      private Record attachment;
+
+      public AttachmentIndex(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      @Override
+      public void _read() throws IOException
+      {
+         _readIntoBuffer();
+         ofsAttachment = buffer.getLong();
+         lenAttachment = buffer.getLong();
+         logTime = buffer.getLong();
+         createTime = buffer.getLong();
+         dataSize = buffer.getLong();
+         name = new PrefixedStr(buffer);
+         mediaType = new PrefixedStr(buffer);
+         setComputedLength(5 * Long.BYTES + name.getItemTotalLength() + mediaType.getItemTotalLength());
+      }
+
+      public Record attachment() throws IOException
+      {
+         if (attachment == null)
+         {
+            // TODO Check if we can use the lenAttachment for verification or something.
+            attachment = new Record(_io, ofsAttachment);
+         }
+
+         return attachment;
+      }
 
       public long ofsAttachment()
       {
@@ -772,11 +767,6 @@ public class Mcap
          return mediaType;
       }
 
-      public byte[] _raw_attachment()
-      {
-         return _raw_attachment;
-      }
-
       @Override
       public String toString()
       {
@@ -794,27 +784,30 @@ public class Mcap
 
    public static class Schema extends KaitaiStructToStringEnabled
    {
-      public Schema(KaitaiStream _io)
-      {
-         super(_io);
-         _read();
-      }
-
-      @Override
-      private void _read()
-      {
-         this.id = this._io.readU2le();
-         this.name = new PrefixedStr(this._io);
-         this.encoding = new PrefixedStr(this._io);
-         this.lenData = this._io.readU4le();
-         this.data = this._io.readBytes(lenData());
-      }
-
       private int id;
       private PrefixedStr name;
       private PrefixedStr encoding;
       private long lenData;
       private byte[] data;
+
+      public Schema(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      @Override
+      public void _read() throws IOException
+      {
+         _readIntoBuffer();
+         id = Short.toUnsignedInt(buffer.getShort());
+         name = new PrefixedStr(buffer);
+         encoding = new PrefixedStr(buffer);
+         lenData = Integer.toUnsignedLong(buffer.getInt());
+         // TODO See if we can skip creating an array.
+         data = new byte[(int) lenData];
+         buffer.get(data);
+      }
 
       public int id()
       {
@@ -856,44 +849,63 @@ public class Mcap
 
    public static class MapStrStr extends KaitaiStructToStringEnabled
    {
-      public MapStrStr(KaitaiStream _io)
+      public MapStrStr(ByteBuffer buffer) throws IOException
       {
-         super(_io);
+         super(buffer);
+         _read();
+      }
+
+      public MapStrStr(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.lenEntries = this._io.readU4le();
-         this._raw_entries = this._io.readBytes(lenEntries());
-         KaitaiStream _io__raw_entries = new ByteBufferKaitaiStream(_raw_entries);
-         this.entries = new Entries(_io__raw_entries);
+         _readIntoBuffer();
+
+         lenEntries = Integer.toUnsignedLong(buffer.getInt());
+         entries = new Entries(buffer, (int) lenEntries);
+         int computedLength = Integer.BYTES + entries.getItemTotalLength();
+         if (_length == -1)
+            _length = computedLength;
+         else if (_length != computedLength)
+            throw new ValidationNotEqualError(computedLength, _length, buffer, "/types/map_str_str/seq/1");
       }
 
       public static class Entries extends KaitaiStructToStringEnabled
       {
-         public Entries(KaitaiStream _io)
+         private ArrayList<TupleStrStr> entries;
+
+         public Entries(ByteBuffer buffer, int _length) throws IOException
          {
-            super(_io);
+            super(buffer, _length);
+            _read();
+         }
+
+         public Entries(FileChannel _io, long _pos, int _length) throws IOException
+         {
+            super(_io, _pos, _length);
             _read();
          }
 
          @Override
-         private void _read()
+         public void _read() throws IOException
          {
-            this.entries = new ArrayList<>();
+            _readIntoBuffer();
+
+            int remaining = _length;
+            entries = new ArrayList<>();
+
+            while (remaining > 0)
             {
-               int i = 0;
-               while (!this._io.isEof())
-               {
-                  this.entries.add(new TupleStrStr(this._io));
-                  i++;
-               }
+               TupleStrStr entry = new TupleStrStr(buffer);
+               entries.add(entry);
+               remaining -= entry.getItemTotalLength();
             }
          }
-
-         private ArrayList<TupleStrStr> entries;
 
          public ArrayList<TupleStrStr> entries()
          {
@@ -947,34 +959,31 @@ public class Mcap
 
    public static class SummaryOffset extends KaitaiStructToStringEnabled
    {
-      public SummaryOffset(KaitaiStream _io)
+      public SummaryOffset(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.groupOpcode = Opcode.byId(this._io.readU1());
-         this.ofsGroup = this._io.readU8le();
-         this.lenGroup = this._io.readU8le();
+         _readIntoBuffer();
+         groupOpcode = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
+         ofsGroup = buffer.getLong();
+         lenGroup = buffer.getLong();
+         setComputedLength(Byte.BYTES + 2 * Long.BYTES);
       }
 
       private Records group;
 
-      public Records group()
+      public Records group() throws IOException
       {
-         if (this.group != null)
-            return this.group;
-         KaitaiStream io = _root()._io();
-         long _pos = io.pos();
-         io.seek(ofsGroup());
-         this._raw_group = io.readBytes(lenGroup());
-         KaitaiStream _io__raw_group = new ByteBufferKaitaiStream(_raw_group);
-         this.group = new Records(_io__raw_group);
-         io.seek(_pos);
-         return this.group;
+         if (group == null)
+         {
+            group = new Records(_io, ofsGroup, (int) lenGroup);
+         }
+         return group;
       }
 
       private Opcode groupOpcode;
@@ -1015,51 +1024,6 @@ public class Mcap
 
    public static class Attachment extends KaitaiStructToStringEnabled
    {
-      public Attachment(KaitaiStream _io)
-      {
-         super(_io);
-         _read();
-      }
-
-      @Override
-      private void _read()
-      {
-         this.logTime = this._io.readU8le();
-         this.createTime = this._io.readU8le();
-         this.name = new PrefixedStr(this._io);
-         this.mediaType = new PrefixedStr(this._io);
-         this.lenData = this._io.readU8le();
-         this.data = this._io.readBytes(lenData());
-         if (crc32InputEnd() >= 0)
-         {
-            this.invokeCrc32InputEnd = this._io.readBytes(0);
-         }
-         this.crc32 = this._io.readU4le();
-      }
-
-      private Integer crc32InputEnd;
-
-      public Integer crc32InputEnd()
-      {
-         if (this.crc32InputEnd != null)
-            return this.crc32InputEnd;
-         int _tmp = (_io.pos());
-         this.crc32InputEnd = _tmp;
-         return this.crc32InputEnd;
-      }
-
-      private byte[] crc32Input;
-
-      public byte[] crc32Input()
-      {
-         if (this.crc32Input != null)
-            return this.crc32Input;
-         long _pos = this._io.pos();
-         this._io.seek(0);
-         this.crc32Input = this._io.readBytes(crc32InputEnd());
-         this._io.seek(_pos);
-         return this.crc32Input;
-      }
 
       private long logTime;
       private long createTime;
@@ -1067,8 +1031,53 @@ public class Mcap
       private PrefixedStr mediaType;
       private long lenData;
       private byte[] data;
-      private byte[] invokeCrc32InputEnd;
       private long crc32;
+
+      public Attachment(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      @Override
+      public void _read() throws IOException
+      {
+         _readIntoBuffer();
+         logTime = buffer.getLong();
+         createTime = buffer.getLong();
+         name = new PrefixedStr(buffer);
+         mediaType = new PrefixedStr(buffer);
+         lenData = buffer.getLong();
+         // TODO See if we can skip creating an array.
+         data = new byte[(int) lenData()];
+         buffer.get(data);
+         crc32InputEnd = buffer.position();
+         crc32 = Integer.toUnsignedLong(buffer.getInt());
+         setComputedLength(3 * Long.BYTES + name.getItemTotalLength() + mediaType.getItemTotalLength() + (int) lenData + Integer.BYTES);
+      }
+
+      private long crc32InputStart;
+      private int crc32InputEnd;
+
+      public int crc32InputEnd()
+      {
+         return crc32InputEnd;
+      }
+
+      private byte[] crc32Input;
+
+      public byte[] crc32Input()
+      {
+         if (crc32Input == null)
+         {
+            int _pos = buffer.position();
+            buffer.position(0);
+            crc32Input = new byte[crc32InputEnd()];
+            buffer.get(crc32Input);
+            buffer.position(_pos);
+         }
+         return crc32Input;
+      }
 
       public long logTime()
       {
@@ -1100,11 +1109,6 @@ public class Mcap
          return data;
       }
 
-      public byte[] invokeCrc32InputEnd()
-      {
-         return invokeCrc32InputEnd;
-      }
-
       /**
        * CRC-32 checksum of preceding fields in the record. A value of zero indicates that CRC validation
        * should not be performed.
@@ -1124,7 +1128,6 @@ public class Mcap
          out += "\n\t-mediaType = " + mediaType;
          out += "\n\t-lenData = " + lenData;
          //         out += "\n\t-data = " + data;
-         out += "\n\t-invokeCrc32InputEnd = " + invokeCrc32InputEnd;
          out += "\n\t-crc32 = " + crc32;
          return out;
       }
@@ -1132,21 +1135,23 @@ public class Mcap
 
    public static class Metadata extends KaitaiStructToStringEnabled
    {
-      public Metadata(KaitaiStream _io)
+      private PrefixedStr name;
+      private MapStrStr metadata;
+
+      public Metadata(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.name = new PrefixedStr(this._io);
-         this.metadata = new MapStrStr(this._io);
+         _readIntoBuffer();
+         name = new PrefixedStr(buffer);
+         metadata = new MapStrStr(buffer);
+         setComputedLength(name.getItemTotalLength() + metadata.getItemTotalLength());
       }
-
-      private PrefixedStr name;
-      private MapStrStr metadata;
 
       public PrefixedStr name()
       {
@@ -1170,21 +1175,23 @@ public class Mcap
 
    public static class Header extends KaitaiStructToStringEnabled
    {
-      public Header(KaitaiStream _io)
+      private PrefixedStr profile;
+      private PrefixedStr library;
+
+      public Header(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.profile = new PrefixedStr(this._io);
-         this.library = new PrefixedStr(this._io);
+         _readIntoBuffer();
+         profile = new PrefixedStr(buffer);
+         library = new PrefixedStr(buffer);
+         setComputedLength(profile.getItemTotalLength() + library.getItemTotalLength());
       }
-
-      private PrefixedStr profile;
-      private PrefixedStr library;
 
       public PrefixedStr profile()
       {
@@ -1208,27 +1215,29 @@ public class Mcap
 
    public static class Message extends KaitaiStructToStringEnabled
    {
-      public Message(KaitaiStream _io)
-      {
-         super(_io);
-         _read();
-      }
-
-      @Override
-      private void _read()
-      {
-         this.channelId = this._io.readU2le();
-         this.sequence = this._io.readU4le();
-         this.logTime = this._io.readU8le();
-         this.publishTime = this._io.readU8le();
-         this.data = this._io.readBytesFull();
-      }
-
       private int channelId;
       private long sequence;
       private long logTime;
       private long publishTime;
       private byte[] data;
+
+      public Message(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
+         _read();
+      }
+
+      @Override
+      public void _read() throws IOException
+      {
+         _readIntoBuffer();
+         channelId = Short.toUnsignedInt(buffer.getShort());
+         sequence = Integer.toUnsignedLong(buffer.getInt());
+         logTime = buffer.getLong();
+         publishTime = buffer.getLong();
+         data = new byte[buffer.remaining()];
+         buffer.get(data);
+      }
 
       public int channelId()
       {
@@ -1270,21 +1279,29 @@ public class Mcap
 
    public static class TupleStrStr extends KaitaiStructToStringEnabled
    {
-      public TupleStrStr(KaitaiStream _io)
+      private PrefixedStr key;
+      private PrefixedStr value;
+
+      public TupleStrStr(ByteBuffer buffer) throws IOException
       {
-         super(_io);
+         super(buffer);
+         _read();
+      }
+
+      public TupleStrStr(FileChannel _io, long _pos, int _length) throws IOException
+      {
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.key = new PrefixedStr(this._io);
-         this.value = new PrefixedStr(this._io);
+         _readIntoBuffer();
+         key = new PrefixedStr(buffer);
+         value = new PrefixedStr(buffer);
+         _length = key.getItemTotalLength() + value.getItemTotalLength();
       }
-
-      private PrefixedStr key;
-      private PrefixedStr value;
 
       public PrefixedStr key()
       {
@@ -1305,40 +1322,36 @@ public class Mcap
 
    public static class MetadataIndex extends KaitaiStructToStringEnabled
    {
-      public MetadataIndex(KaitaiStream _io)
+      private long ofsMetadata;
+      private long lenMetadata;
+      private PrefixedStr name;
+      private Record metadata;
+
+      public MetadataIndex(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.ofsMetadata = this._io.readU8le();
-         this.lenMetadata = this._io.readU8le();
-         this.name = new PrefixedStr(this._io);
+         _readIntoBuffer();
+         ofsMetadata = buffer.getLong();
+         lenMetadata = buffer.getLong();
+         name = new PrefixedStr(buffer);
+         setComputedLength(2 * Long.BYTES + name.getItemTotalLength());
       }
 
-      private Record metadata;
-
-      public Record metadata()
+      public Record metadata() throws IOException
       {
-         if (this.metadata != null)
-            return this.metadata;
-         KaitaiStream io = _root()._io();
-         long _pos = io.pos();
-         io.seek(ofsMetadata());
-         this._raw_metadata = io.readBytes(lenMetadata());
-         KaitaiStream _io__raw_metadata = new ByteBufferKaitaiStream(_raw_metadata);
-         this.metadata = new Record(_io__raw_metadata);
-         io.seek(_pos);
-         return this.metadata;
+         if (metadata == null)
+         {
+            // TODO Check if we can use the lenMetadata for verification or something.
+            metadata = new Record(_io, ofsMetadata);
+         }
+         return metadata;
       }
-
-      private long ofsMetadata;
-      private long lenMetadata;
-      private PrefixedStr name;
-      private byte[] _raw_metadata;
 
       public long ofsMetadata()
       {
@@ -1355,11 +1368,6 @@ public class Mcap
          return name;
       }
 
-      public byte[] _raw_metadata()
-      {
-         return _raw_metadata;
-      }
-
       @Override
       public String toString()
       {
@@ -1373,29 +1381,31 @@ public class Mcap
 
    public static class Magic extends KaitaiStructToStringEnabled
    {
-      private final ByteBuffer magic;
+      public static final int MAGIC_SIZE = 8;
+      public static final byte[] MAGIC_BYTES = {-119, 77, 67, 65, 80, 48, 13, 10};
 
-      public Magic(FileChannel _io, long _pos, int _length) throws IOException
+      private byte[] magic;
+
+      public Magic(FileChannel _io, long _pos) throws IOException
       {
-         super(_io, _pos, _length);
-         magic = ByteBuffer.allocate(_length);
+         super(_io, _pos, MAGIC_SIZE);
          _read();
       }
 
       @Override
       public void _read() throws IOException
       {
-         _io.position(_pos);
-         _io.read(magic);
-         if (!(Arrays.equals(magic(), new byte[] {-119, 77, 67, 65, 80, 48, 13, 10})))
+         _readIntoBuffer();
+         magic = buffer.array();
+         if (!(Arrays.equals(magic(), MAGIC_BYTES)))
          {
-            throw new KaitaiStream.ValidationNotEqualError(new byte[] {-119, 77, 67, 65, 80, 48, 13, 10}, magic(), _io(), "/types/magic/seq/0");
+            throw new ValidationNotEqualError(MAGIC_BYTES, magic(), buffer, "/types/magic/seq/0");
          }
       }
 
       public byte[] magic()
       {
-         return magic.array();
+         return magic;
       }
 
       @Override
@@ -1415,30 +1425,34 @@ public class Mcap
 
    public static class Records extends KaitaiStructToStringEnabled
    {
+      private List<Record> records;
+      private int totalRecordLength;
+
       public Records(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(_io, _pos, -1); // Setting the super._length to -1 to avoid creating a buffer.
+         totalRecordLength = _length;
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.records = new ArrayList<>();
-         {
-            int i = 0;
-            while (!this._io.isEof())
-            {
+         records = new ArrayList<>();
 
-               this.records.add(new Record(this._io));
-               i++;
-            }
+         int remaining = totalRecordLength;
+         long currentPos = _pos;
+
+         while (remaining > 0)
+         {
+            Record record = new Record(_io, currentPos);
+            records.add(record);
+            currentPos += record.getItemTotalLength();
+            remaining -= record.getItemTotalLength();
          }
       }
 
-      private ArrayList<Record> records;
-
-      public ArrayList<Record> records()
+      public List<Record> records()
       {
          return records;
       }
@@ -1460,94 +1474,71 @@ public class Mcap
 
    public static class Footer extends KaitaiStructToStringEnabled
    {
-      private final ByteBuffer buffer;
+
+      private long ofsSummarySection;
+      private long ofsSummaryOffsetSection;
+      private long summaryCrc32;
+      private Integer ofsSummaryCrc32Input;
+      private Records summaryOffsetSection;
+      private Records summarySection;
 
       public Footer(FileChannel _io, long _pos, int _length) throws IOException
       {
          super(_io, _pos, _length);
          _read();
-         buffer = ByteBuffer.allocate(_length);
-         buffer.order(ByteOrder.LITTLE_ENDIAN);
       }
 
       @Override
       public void _read() throws IOException
       {
-         _io.position(_pos);
-         _io.read(buffer);
-         this.ofsSummarySection = buffer.getLong();
-         this.ofsSummaryOffsetSection = buffer.getLong();
-         this.summaryCrc32 = Integer.toUnsignedLong(buffer.getInt());
+         _readIntoBuffer();
+         ofsSummarySection = buffer.getLong();
+         ofsSummaryOffsetSection = buffer.getLong();
+         summaryCrc32 = Integer.toUnsignedLong(buffer.getInt());
+         setComputedLength(2 * Long.BYTES + Integer.BYTES);
       }
 
-      private Records summarySection;
-
-      public Records summarySection()
+      public Records summarySection() throws IOException
       {
-         if (this.summarySection != null)
-            return this.summarySection;
-         if (ofsSummarySection() != 0)
+         if (summarySection == null && ofsSummarySection != 0)
          {
-            KaitaiStream io = _root()._io();
-            long _pos = io.pos();
-            io.seek(ofsSummarySection());
-            this._raw_summarySection = io.readBytes(((ofsSummaryOffsetSection() != 0 ? ofsSummaryOffsetSection() : _root().ofsFooter()) - ofsSummarySection()));
-            KaitaiStream _io__raw_summarySection = new ByteBufferKaitaiStream(_raw_summarySection);
-            this.summarySection = new Records(_io__raw_summarySection);
-            io.seek(_pos);
+            long length = ((ofsSummaryOffsetSection != 0 ? ofsSummaryOffsetSection : computeOffsetFooter(_io)) - ofsSummarySection);
+            summarySection = new Records(_io, ofsSummarySection, (int) length);
          }
-         return this.summarySection;
+         return summarySection;
       }
 
-      private Records summaryOffsetSection;
-
-      public Records summaryOffsetSection()
+      public Records summaryOffsetSection() throws IOException
       {
-         if (this.summaryOffsetSection != null)
-            return this.summaryOffsetSection;
-         if (ofsSummaryOffsetSection() != 0)
+         if (summaryOffsetSection == null && ofsSummaryOffsetSection != 0)
          {
-            KaitaiStream io = _root()._io();
-            long _pos = io.pos();
-            io.seek(ofsSummaryOffsetSection());
-            this._raw_summaryOffsetSection = io.readBytes((_root().ofsFooter() - ofsSummaryOffsetSection()));
-            KaitaiStream _io__raw_summaryOffsetSection = new ByteBufferKaitaiStream(_raw_summaryOffsetSection);
-            this.summaryOffsetSection = new Records(_io__raw_summaryOffsetSection);
-            io.seek(_pos);
+            summaryOffsetSection = new Records(_io, ofsSummaryOffsetSection, (int) (computeOffsetFooter(_io) - ofsSummaryOffsetSection));
          }
-         return this.summaryOffsetSection;
+         return summaryOffsetSection;
       }
 
-      private Integer ofsSummaryCrc32Input;
-
-      public Integer ofsSummaryCrc32Input()
+      public Integer ofsSummaryCrc32Input() throws IOException
       {
-         if (this.ofsSummaryCrc32Input != null)
-            return this.ofsSummaryCrc32Input;
-         int _tmp = (int) ((ofsSummarySection() != 0 ? ofsSummarySection() : _root().ofsFooter()));
-         this.ofsSummaryCrc32Input = _tmp;
-         return this.ofsSummaryCrc32Input;
+         if (ofsSummaryCrc32Input == null)
+         {
+            ofsSummaryCrc32Input = (int) ((ofsSummarySection() != 0 ? ofsSummarySection() : computeOffsetFooter(_io)));
+         }
+         return ofsSummaryCrc32Input;
       }
 
       private byte[] summaryCrc32Input;
 
-      public byte[] summaryCrc32Input()
+      public byte[] summaryCrc32Input() throws IOException
       {
-         if (this.summaryCrc32Input != null)
-            return this.summaryCrc32Input;
-         KaitaiStream io = _root()._io();
-         long _pos = io.pos();
-         io.seek(ofsSummaryCrc32Input());
-         this.summaryCrc32Input = io.readBytes((((_root()._io().size() - ofsSummaryCrc32Input()) - 8) - 4));
-         io.seek(_pos);
-         return this.summaryCrc32Input;
+         if (summaryCrc32Input == null)
+         {
+            ByteBuffer tmpBuffer = ByteBuffer.allocate((int) (_io.size() - ofsSummaryCrc32Input() - 8 - 4));
+            _io.position(ofsSummaryCrc32Input());
+            _io.read(tmpBuffer);
+            summaryCrc32Input = tmpBuffer.array();
+         }
+         return summaryCrc32Input;
       }
-
-      private long ofsSummarySection;
-      private long ofsSummaryOffsetSection;
-      private long summaryCrc32;
-      private byte[] _raw_summarySection;
-      private byte[] _raw_summaryOffsetSection;
 
       public long ofsSummarySection()
       {
@@ -1569,16 +1560,6 @@ public class Mcap
          return summaryCrc32;
       }
 
-      public byte[] _raw_summarySection()
-      {
-         return _raw_summarySection;
-      }
-
-      public byte[] _raw_summaryOffsetSection()
-      {
-         return _raw_summaryOffsetSection;
-      }
-
       @Override
       public String toString()
       {
@@ -1592,146 +1573,60 @@ public class Mcap
 
    public static class Record extends KaitaiStructToStringEnabled
    {
-      public Record(KaitaiStream _io)
+      public static final int RECORD_HEADER_LENGTH = 9;
+      private Opcode op;
+      private long lenBody;
+      private Object body;
+
+      public Record(FileChannel _io, long _pos) throws IOException
       {
-         super(_io);
+         super(_io, _pos, RECORD_HEADER_LENGTH);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.op = Opcode.byId(this._io.readU1());
-         this.lenBody = this._io.readU8le();
+         _readIntoBuffer();
+         op = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
+         lenBody = buffer.getLong();
+         long bodyPos = _pos + _length;
+
+         Opcode on = op();
+         if (on != null)
          {
-            Opcode on = op();
-            if (on != null)
+            body = switch (op())
             {
-               switch (op())
+               case MESSAGE -> new Message(_io, bodyPos, (int) lenBody);
+               case METADATA_INDEX -> new MetadataIndex(_io, bodyPos, (int) lenBody);
+               case CHUNK -> new Chunk(_io, bodyPos, (int) lenBody);
+               case SCHEMA -> new Schema(_io, bodyPos, (int) lenBody);
+               case CHUNK_INDEX -> new ChunkIndex(_io, bodyPos, (int) lenBody);
+               case DATA_END -> new DataEnd(_io, bodyPos, (int) lenBody);
+               case ATTACHMENT_INDEX -> new AttachmentIndex(_io, bodyPos, (int) lenBody);
+               case STATISTICS -> new Statistics(_io, bodyPos, (int) lenBody);
+               case MESSAGE_INDEX -> new MessageIndex(_io, bodyPos, (int) lenBody);
+               case CHANNEL -> new Channel(_io, bodyPos, (int) lenBody);
+               case METADATA -> new Metadata(_io, bodyPos, (int) lenBody);
+               case ATTACHMENT -> new Attachment(_io, bodyPos, (int) lenBody);
+               case HEADER -> new Header(_io, bodyPos, (int) lenBody);
+               case FOOTER -> new Footer(_io, bodyPos, (int) lenBody);
+               case SUMMARY_OFFSET -> new SummaryOffset(_io, bodyPos, (int) lenBody);
+               default ->
                {
-                  case MESSAGE:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Message(_io__raw_body);
-                     break;
-                  }
-                  case METADATA_INDEX:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new MetadataIndex(_io__raw_body);
-                     break;
-                  }
-                  case CHUNK:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Chunk(_io__raw_body);
-                     break;
-                  }
-                  case SCHEMA:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Schema(_io__raw_body);
-                     break;
-                  }
-                  case CHUNK_INDEX:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new ChunkIndex(_io__raw_body);
-                     break;
-                  }
-                  case DATA_END:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new DataEnd(_io__raw_body);
-                     break;
-                  }
-                  case ATTACHMENT_INDEX:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new AttachmentIndex(_io__raw_body);
-                     break;
-                  }
-                  case STATISTICS:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Statistics(_io__raw_body);
-                     break;
-                  }
-                  case MESSAGE_INDEX:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new MessageIndex(_io__raw_body);
-                     break;
-                  }
-                  case CHANNEL:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Channel(_io__raw_body);
-                     break;
-                  }
-                  case METADATA:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Metadata(_io__raw_body);
-                     break;
-                  }
-                  case ATTACHMENT:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Attachment(_io__raw_body);
-                     break;
-                  }
-                  case HEADER:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Header(_io__raw_body);
-                     break;
-                  }
-                  case FOOTER:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new Footer(_io__raw_body);
-                     break;
-                  }
-                  case SUMMARY_OFFSET:
-                  {
-                     this._raw_body = this._io.readBytes(lenBody());
-                     KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
-                     this.body = new SummaryOffset(_io__raw_body);
-                     break;
-                  }
-                  default:
-                  {
-                     this.body = this._io.readBytes(lenBody());
-                     break;
-                  }
+                  ByteBuffer bb = ByteBuffer.allocate((int) lenBody());
+                  _io.read(bb);
+                  yield bb.array();
                }
-            }
-            else
-            {
-               this.body = this._io.readBytes(lenBody());
-            }
+            };
+         }
+         else
+         {
+            ByteBuffer bb = ByteBuffer.allocate((int) lenBody());
+            _io.read(bb);
+            body = bb.array();
          }
       }
-
-      private Opcode op;
-      private long lenBody;
-      private Object body;
-      private byte[] _raw_body;
 
       public Opcode op()
       {
@@ -1746,11 +1641,6 @@ public class Mcap
       public Object body()
       {
          return body;
-      }
-
-      public byte[] _raw_body()
-      {
-         return _raw_body;
       }
 
       @Override
@@ -1772,42 +1662,44 @@ public class Mcap
 
    public static class ChunkIndex extends KaitaiStructToStringEnabled
    {
-      public ChunkIndex(KaitaiStream _io)
+      public ChunkIndex(FileChannel _io, long _pos, int _length) throws IOException
       {
-         super(_io);
+         super(_io, _pos, _length);
          _read();
       }
 
       @Override
-      private void _read()
+      public void _read() throws IOException
       {
-         this.messageStartTime = this._io.readU8le();
-         this.messageEndTime = this._io.readU8le();
-         this.ofsChunk = this._io.readU8le();
-         this.lenChunk = this._io.readU8le();
-         this.lenMessageIndexOffsets = this._io.readU4le();
-         this._raw_messageIndexOffsets = this._io.readBytes(lenMessageIndexOffsets());
-         KaitaiStream _io__raw_messageIndexOffsets = new ByteBufferKaitaiStream(_raw_messageIndexOffsets);
-         this.messageIndexOffsets = new MessageIndexOffsets(_io__raw_messageIndexOffsets);
-         this.messageIndexLength = this._io.readU8le();
-         this.compression = new PrefixedStr(this._io);
-         this.compressedSize = this._io.readU8le();
-         this.uncompressedSize = this._io.readU8le();
+         _readIntoBuffer();
+         messageStartTime = buffer.getLong();
+         messageEndTime = buffer.getLong();
+         ofsChunk = buffer.getLong();
+         lenChunk = buffer.getLong();
+         lenMessageIndexOffsets = Integer.toUnsignedLong(buffer.getInt());
+         messageIndexOffsets = new MessageIndexOffsets(buffer);
+         messageIndexLength = buffer.getLong();
+         compression = new PrefixedStr(buffer);
+         compressedSize = buffer.getLong();
+         uncompressedSize = buffer.getLong();
+         setComputedLength(7 * Long.BYTES + Integer.BYTES + messageIndexOffsets.getItemTotalLength() + compression.getItemTotalLength());
       }
 
       public static class MessageIndexOffset extends KaitaiStructToStringEnabled
       {
-         public MessageIndexOffset(KaitaiStream _io)
+         public MessageIndexOffset(ByteBuffer buffer)
          {
-            super(_io);
+            super(buffer);
             _read();
          }
 
          @Override
-         private void _read()
+         public void _read() throws IOException
          {
-            this.channelId = this._io.readU2le();
-            this.offset = this._io.readU8le();
+            _readIntoBuffer();
+            channelId = Short.toUnsignedInt(buffer.getShort());
+            offset = buffer.getLong();
+            setComputedLength(Short.BYTES + Long.BYTES);
          }
 
          private int channelId;
@@ -1850,12 +1742,12 @@ public class Mcap
          @Override
          private void _read()
          {
-            this.entries = new ArrayList<>();
+            entries = new ArrayList<>();
             {
                int i = 0;
-               while (!this._io.isEof())
+               while (!_io.isEof())
                {
-                  this.entries.add(new MessageIndexOffset(this._io));
+                  entries.add(new MessageIndexOffset(_io));
                   i++;
                }
             }
@@ -1887,16 +1779,16 @@ public class Mcap
 
       public Record chunk()
       {
-         if (this.chunk != null)
-            return this.chunk;
+         if (chunk != null)
+            return chunk;
          KaitaiStream io = _root()._io();
          long _pos = io.pos();
          io.seek(ofsChunk());
-         this._raw_chunk = io.readBytes(lenChunk());
+         _raw_chunk = io.readBytes(lenChunk());
          KaitaiStream _io__raw_chunk = new ByteBufferKaitaiStream(_raw_chunk);
-         this.chunk = new Record(_io__raw_chunk);
+         chunk = new Record(_io__raw_chunk);
          io.seek(_pos);
-         return this.chunk;
+         return chunk;
       }
 
       private long messageStartTime;
@@ -1909,8 +1801,6 @@ public class Mcap
       private PrefixedStr compression;
       private long compressedSize;
       private long uncompressedSize;
-      private byte[] _raw_messageIndexOffsets;
-      private byte[] _raw_chunk;
 
       public long messageStartTime()
       {
@@ -2002,14 +1892,65 @@ public class Mcap
       protected long _pos;
       protected int _length;
 
+      protected ByteBuffer buffer;
+
+      public KaitaiStructToStringEnabled(ByteBuffer buffer)
+      {
+         this(buffer, -1);
+      }
+
+      public KaitaiStructToStringEnabled(ByteBuffer buffer, int _length)
+      {
+         this.buffer = buffer;
+         _io = null;
+         _pos = 0;
+         this._length = _length;
+      }
+
       public KaitaiStructToStringEnabled(FileChannel _io, long _pos, int _length)
       {
          this._io = _io;
          this._pos = _pos;
          this._length = _length;
+         createBuffer(_length);
+      }
+
+      private void createBuffer(int _length)
+      {
+         if (_length == -1)
+         {
+            buffer = null;
+         }
+         else
+         {
+            buffer = ByteBuffer.allocate(_length);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+         }
+      }
+
+      protected void _readIntoBuffer() throws IOException
+      {
+         if (_io == null)
+            return;
+
+         _io.position(_pos);
+         _io.read(buffer);
       }
 
       public abstract void _read() throws IOException;
+
+      protected void setComputedLength(int computedLength)
+      {
+         if (_length == -1)
+            _length = computedLength;
+         else if (_length != computedLength)
+            throw new ValidationNotEqualError(computedLength, _length, buffer, "noidea");
+      }
+
+      public int getItemTotalLength()
+      {
+         return _length;
+      }
 
       @Override
       public abstract String toString();
@@ -2024,26 +1965,20 @@ public class Mcap
 
    public Record footer()
    {
-      if (this.footer != null)
-         return this.footer;
-      long _pos = this._io.pos();
-      this._io.seek(ofsFooter());
-      this._raw_footer = this._io.readBytesFull();
+      if (footer != null)
+         return footer;
+      long _pos = _io.pos();
+      _io.seek(computeOffsetFooter(_io));
+      _raw_footer = _io.readBytesFull();
       KaitaiStream _io__raw_footer = new ByteBufferKaitaiStream(_raw_footer);
-      this.footer = new Record(_io__raw_footer);
-      this._io.seek(_pos);
-      return this.footer;
+      footer = new Record(_io__raw_footer);
+      _io.seek(_pos);
+      return footer;
    }
 
-   private Integer ofsFooter;
-
-   public Integer ofsFooter()
+   public static int computeOffsetFooter(FileChannel _io) throws IOException
    {
-      if (this.ofsFooter != null)
-         return this.ofsFooter;
-      int _tmp = (int) (((((_io().size() - 1) - 8) - 20) - 8));
-      this.ofsFooter = _tmp;
-      return this.ofsFooter;
+      return (int) (((((_io.size() - 1) - 8) - 20) - 8));
    }
 
    private Magic headerMagic;
@@ -2069,5 +2004,155 @@ public class Mcap
    public byte[] _raw_footer()
    {
       return _raw_footer;
+   }
+
+   /**
+    * Exception class for an error that occurs when some fixed content was expected to appear, but
+    * actual data read was different.
+    *
+    * @deprecated Not used anymore in favour of {@code Validation*}-exceptions.
+    */
+   @Deprecated
+   public static class UnexpectedDataError extends RuntimeException
+   {
+      public UnexpectedDataError(byte[] actual, byte[] expected)
+      {
+         super("Unexpected fixed contents: got " + byteArrayToHex(actual) + ", was waiting for " + byteArrayToHex(expected));
+      }
+
+      private static String byteArrayToHex(byte[] arr)
+      {
+         StringBuilder sb = new StringBuilder();
+         for (int i = 0; i < arr.length; i++)
+         {
+            if (i > 0)
+               sb.append(' ');
+            sb.append(String.format("%02x", arr[i]));
+         }
+         return sb.toString();
+      }
+   }
+
+   /**
+    * Error that occurs when default endianness should be decided with a switch, but nothing matches
+    * (although using endianness expression implies that there should be some positive result).
+    */
+   public static class UndecidedEndiannessError extends RuntimeException
+   {
+   }
+
+   /**
+    * Common ancestor for all error originating from Kaitai Struct usage. Stores KSY source path,
+    * pointing to an element supposedly guilty of an error.
+    */
+   public static class KaitaiStructError extends RuntimeException
+   {
+      public KaitaiStructError(String msg, String srcPath)
+      {
+         super(srcPath + ": " + msg);
+         this.srcPath = srcPath;
+      }
+
+      protected String srcPath;
+   }
+
+   /**
+    * Common ancestor for all validation failures. Stores pointer to KaitaiStream IO object which was
+    * involved in an error.
+    */
+   public static class ValidationFailedError extends KaitaiStructError
+   {
+      protected ByteBuffer io;
+
+      public ValidationFailedError(String msg, ByteBuffer io, String srcPath)
+      {
+         super("at pos " + io.position() + ": validation failed: " + msg, srcPath);
+         this.io = io;
+      }
+
+      protected static String byteArrayToHex(byte[] arr)
+      {
+         StringBuilder sb = new StringBuilder("[");
+         for (int i = 0; i < arr.length; i++)
+         {
+            if (i > 0)
+               sb.append(' ');
+            sb.append(String.format("%02x", arr[i]));
+         }
+         sb.append(']');
+         return sb.toString();
+      }
+   }
+
+   /**
+    * Signals validation failure: we required "actual" value to be equal to "expected", but it turned
+    * out that it's not.
+    */
+   public static class ValidationNotEqualError extends ValidationFailedError
+   {
+      public ValidationNotEqualError(byte[] expected, byte[] actual, ByteBuffer io, String srcPath)
+      {
+         super("not equal, expected " + byteArrayToHex(expected) + ", but got " + byteArrayToHex(actual), io, srcPath);
+      }
+
+      public ValidationNotEqualError(Object expected, Object actual, ByteBuffer io, String srcPath)
+      {
+         super("not equal, expected " + expected + ", but got " + actual, io, srcPath);
+      }
+
+      protected Object expected;
+      protected Object actual;
+   }
+
+   public static class ValidationLessThanError extends ValidationFailedError
+   {
+      public ValidationLessThanError(byte[] expected, byte[] actual, ByteBuffer io, String srcPath)
+      {
+         super("not in range, min " + byteArrayToHex(expected) + ", but got " + byteArrayToHex(actual), io, srcPath);
+      }
+
+      public ValidationLessThanError(Object min, Object actual, ByteBuffer io, String srcPath)
+      {
+         super("not in range, min " + min + ", but got " + actual, io, srcPath);
+      }
+
+      protected Object min;
+      protected Object actual;
+   }
+
+   public static class ValidationGreaterThanError extends ValidationFailedError
+   {
+      public ValidationGreaterThanError(byte[] expected, byte[] actual, ByteBuffer io, String srcPath)
+      {
+         super("not in range, max " + byteArrayToHex(expected) + ", but got " + byteArrayToHex(actual), io, srcPath);
+      }
+
+      public ValidationGreaterThanError(Object max, Object actual, ByteBuffer io, String srcPath)
+      {
+         super("not in range, max " + max + ", but got " + actual, io, srcPath);
+      }
+
+      protected Object max;
+      protected Object actual;
+   }
+
+   public static class ValidationNotAnyOfError extends ValidationFailedError
+   {
+      public ValidationNotAnyOfError(Object actual, ByteBuffer io, String srcPath)
+      {
+         super("not any of the list, got " + actual, io, srcPath);
+      }
+
+      protected Object actual;
+   }
+
+   public static class ValidationExprError extends ValidationFailedError
+   {
+      public ValidationExprError(Object actual, ByteBuffer io, String srcPath)
+      {
+         super("not matching the expression, got " + actual, io, srcPath);
+      }
+
+      protected Object actual;
    }
 }
