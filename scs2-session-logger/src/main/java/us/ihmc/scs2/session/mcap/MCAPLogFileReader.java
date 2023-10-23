@@ -1,7 +1,20 @@
 package us.ihmc.scs2.session.mcap;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.stream.Collectors;
+
 import gnu.trove.map.hash.TIntObjectHashMap;
-import io.kaitai.struct.ByteBufferKaitaiStream;
 import us.ihmc.commons.nio.FileTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.SessionIOTools;
@@ -11,15 +24,6 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
-
-import java.io.*;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.stream.Collectors;
 
 public class MCAPLogFileReader
 {
@@ -63,10 +67,10 @@ public class MCAPLogFileReader
       this.mcapRegistry = mcapRegistry;
 
       mcapRegistry.addChild(propertiesRegistry);
-      mcap = Mcap.fromFile(mcapFile.getAbsolutePath());
 
       mcapFileInputStream = new FileInputStream(mcapFile);
       mcapFileChannel = mcapFileInputStream.getChannel();
+      mcap = new Mcap(mcapFileChannel);
 
       allChunks.addAll(mcap.records().stream().filter(r -> r.op() == Mcap.Opcode.CHUNK).map(r -> (Mcap.Chunk) r.body()).collect(Collectors.toList()));
    }
@@ -164,7 +168,14 @@ public class MCAPLogFileReader
       currentChunkStartTimestamp.set(chunk.messageStartTime());
       currentChunkEndTimestamp.set(chunk.messageEndTime());
       currentTimestamp.set(chunk.messageStartTime());
-      initializeMessages(chunk);
+      try
+      {
+         initializeMessages(chunk);
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
       Mcap.Message message = currentChunkMessages.peek();
       if (chunk.messageStartTime() != message.logTime())
          throw new IllegalStateException("First message time (%d) does not match chunk start time (%d)".formatted(message.logTime(), chunk.messageStartTime()));
@@ -185,7 +196,14 @@ public class MCAPLogFileReader
          currentChunkStartTimestamp.set(chunk.messageStartTime());
          currentChunkEndTimestamp.set(chunk.messageEndTime());
 
-         initializeMessages(chunk);
+         try
+         {
+            initializeMessages(chunk);
+         }
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
 
          Mcap.Message message = currentChunkMessages.peek();
          if (chunk.messageStartTime() != message.logTime())
@@ -203,11 +221,11 @@ public class MCAPLogFileReader
 
    private final LZ4FrameDecoder chunkDataDecoder = new LZ4FrameDecoder();
 
-   public void initializeMessages(Mcap.Chunk chunk)
+   public void initializeMessages(Mcap.Chunk chunk) throws IOException
    {
-      byte[] decompressedChunk = new byte[(int) chunk.uncompressedSize()];
-      chunkDataDecoder.decode((byte[]) chunk.records(), decompressedChunk);
-      Mcap.Records records = new Mcap.Records(new ByteBufferKaitaiStream(decompressedChunk));
+      ByteBuffer decompressedChunk = ByteBuffer.allocate((int) chunk.uncompressedSize());
+      chunkDataDecoder.decode(ByteBuffer.wrap((byte[]) chunk.records()), decompressedChunk);
+      Mcap.Records records = new Mcap.Records(decompressedChunk);
       currentChunkMessages.clear();
       for (Mcap.Record record : records.records())
       {
@@ -243,7 +261,7 @@ public class MCAPLogFileReader
       }
    }
 
-   public void printStatistics() throws UnsupportedEncodingException
+   public void printStatistics() throws IOException
    {
       Mcap.Magic headerMagic = mcap.headerMagic();
       byte[] magic = headerMagic.magic();
