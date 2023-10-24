@@ -2,6 +2,7 @@ package us.ihmc.scs2.session.mcap;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -95,13 +96,7 @@ public class MCAPLogFileReader
          }
          catch (Exception e)
          {
-            File debugFile = SCS2_MCAP_DEBUG_HOME.resolve("schema-%s-%s.txt".formatted(schema.name().str(), e.getClass().getSimpleName())).toFile();
-            if (debugFile.exists())
-               debugFile.delete();
-            debugFile.createNewFile();
-            FileOutputStream os = new FileOutputStream(debugFile);
-            os.write(schema.data());
-            os.close();
+            File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
             LogTools.info("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
             throw e;
          }
@@ -143,14 +138,7 @@ public class MCAPLogFileReader
          }
          catch (Exception e)
          {
-            File debugFile = SCS2_MCAP_DEBUG_HOME.resolve("channel-%d-schema-%s-%s.txt".formatted(channel.id(), schema.getName(), e.getClass().getSimpleName()))
-                                                 .toFile();
-            if (debugFile.exists())
-               debugFile.delete();
-            debugFile.createNewFile();
-            PrintWriter pw = new PrintWriter(debugFile);
-            pw.write(channel.toString());
-            pw.close();
+            exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, schema, e);
             throw e;
          }
       }
@@ -263,6 +251,14 @@ public class MCAPLogFileReader
 
    public void printStatistics() throws IOException
    {
+      //      mcap.records().stream().filter(r -> r.op() != Opcode.MESSAGE_INDEX && r.op() != Opcode.CHUNK_INDEX).forEach(r -> printer.println(r.toString()));
+      //      for (Mcap.Record record : mcap.records())
+      //      {
+      //         if (record.body() instanceof Mcap.Schema schema)
+      //            exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, null);
+      //         if (record.body() instanceof Mcap.Channel channel)
+      //            exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, yoMessageMap.get(channel.id()).getSchema(), null);
+      //      }
       Mcap.Magic headerMagic = mcap.headerMagic();
       byte[] magic = headerMagic.magic();
       byte[] restOfMagic = Arrays.copyOfRange(magic, 1, magic.length);
@@ -279,6 +275,40 @@ public class MCAPLogFileReader
          printer.println("Footer: summaryCrc32 = " + summaryCrc32);
          printer.println("");
       }
+   }
+
+   public File exportSchemaToFile(Path path, Mcap.Schema schema, Exception e) throws IOException, FileNotFoundException
+   {
+      String filename;
+      if (e != null)
+         filename = "schema-%s-%s.txt".formatted(schema.name().str().replace(':', '-'), e.getClass().getSimpleName());
+      else
+         filename = "schema-%s.txt".formatted(schema.name().str().replace(':', '-'));
+      File debugFile = path.resolve(filename).toFile();
+      if (debugFile.exists())
+         debugFile.delete();
+      debugFile.createNewFile();
+      FileOutputStream os = new FileOutputStream(debugFile);
+      os.write(schema.data());
+      os.close();
+      return debugFile;
+   }
+
+   private static void exportChannelToFile(Path path, Mcap.Channel channel, ROS2MessageSchema schema, Exception e) throws IOException
+   {
+      File debugFile;
+      if (e != null)
+         debugFile = path.resolve("channel-%d-schema-%s-%s.txt".formatted(channel.id(), schema.getName().replace(':', '-'), e.getClass().getSimpleName()))
+                         .toFile();
+      else
+         debugFile = path.resolve("channel-%d-schema-%s.txt".formatted(channel.id(), schema.getName().replace(':', '-'))).toFile();
+
+      if (debugFile.exists())
+         debugFile.delete();
+      debugFile.createNewFile();
+      PrintWriter pw = new PrintWriter(debugFile);
+      pw.write(channel.toString());
+      pw.close();
    }
 
    public File getMcapFile()
