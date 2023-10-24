@@ -284,6 +284,8 @@ public class YoROS2Message
          else
          {
             int arrayLength = (int) cdr.read_type_4();
+            if (arrayLength > array.length)
+               throw new RuntimeException("Array length mismatch, expected: " + array.length + ", received: " + arrayLength);
             for (int i = 0; i < arrayLength; i++)
                elementDeserializer.accept(array[i], cdr);
             for (int i = arrayLength; i < length; i++)
