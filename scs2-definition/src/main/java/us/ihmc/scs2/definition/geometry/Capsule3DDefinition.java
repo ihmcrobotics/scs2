@@ -18,6 +18,7 @@ public class Capsule3DDefinition extends GeometryDefinition
    private double radiusX;
    private double radiusY;
    private double radiusZ;
+   private double radius;
    private int resolution = 64;
 
    /**
@@ -36,11 +37,15 @@ public class Capsule3DDefinition extends GeometryDefinition
     *               spheres.
     * @param radius the capsule's radius.
     */
+//   public Capsule3DDefinition(double length, double radius)
+//   {
+//      this(length, radius, radius, radius);
+//   }
    public Capsule3DDefinition(double length, double radius)
    {
-      this(length, radius, radius, radius);
+      this.length = length;
+      this.radius = radius;
    }
-
    /**
     * Creates and initializes a definition for a 3D capsule.
     * 
@@ -222,6 +227,13 @@ public class Capsule3DDefinition extends GeometryDefinition
    {
       return radiusY;
    }
+
+   /**
+    *  Returns the capsule's radius, when only one radius in input.
+    *
+    * @return the radius
+    */
+   public double getRadius(){return radius;}
 
    /**
     * Returns the capsule's radius along the z-axis.

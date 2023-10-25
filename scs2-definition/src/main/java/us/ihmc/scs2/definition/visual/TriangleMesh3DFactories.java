@@ -72,7 +72,6 @@ public class TriangleMesh3DFactories
 
    private static final float ONE_THIRD = 1.0f / 3.0f;
 
-   private static boolean stpRadiiDirty = true;
    private static double smallRadius, largeRadius;
 
    private TriangleMesh3DFactories()
@@ -131,8 +130,6 @@ public class TriangleMesh3DFactories
          mesh = TruncatedCone((TruncatedCone3DDefinition) description);
       else if (description instanceof Ramp3DDefinition)
          mesh = Ramp((Ramp3DDefinition) description);
-      else if (description instanceof STPCapsule3DDefinition)
-         mesh = STPCapsule((STPCapsule3DDefinition) description);
 
       if (mesh == null)
       {
@@ -409,7 +406,7 @@ public class TriangleMesh3DFactories
     *                                 transform is applied.
     * @param cwOrderedPolygonVertices the clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code cwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonClockwise(RigidBodyTransformReadOnly polygonPose, List<? extends Point2DReadOnly> cwOrderedPolygonVertices)
    {
@@ -426,7 +423,7 @@ public class TriangleMesh3DFactories
     *                                  no transform is applied.
     * @param ccwOrderedPolygonVertices the counter-clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonCounterClockwise(RigidBodyTransformReadOnly polygonPose,
                                                                   List<? extends Point2DReadOnly> ccwOrderedPolygonVertices)
@@ -446,7 +443,7 @@ public class TriangleMesh3DFactories
     * @param counterClockwiseOrdered {@code true} to indicate that the vertices are counter-clockwise
     *                                ordered, {@code false} for clockwise ordered.
     * @return the generic triangle mesh or {@code null} if {@code convexPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition Polygon(RigidBodyTransformReadOnly polygonPose, List<? extends Point2DReadOnly> polygonVertices,
                                                   boolean counterClockwiseOrdered)
@@ -550,7 +547,7 @@ public class TriangleMesh3DFactories
     *
     * @param cwOrderedPolygonVertices the clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code cwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonClockwise(List<? extends Point3DReadOnly> cwOrderedPolygonVertices)
    {
@@ -565,7 +562,7 @@ public class TriangleMesh3DFactories
     *
     * @param ccwOrderedPolygonVertices the counter-clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonCounterClockwise(List<? extends Point3DReadOnly> ccwOrderedPolygonVertices)
    {
@@ -582,7 +579,7 @@ public class TriangleMesh3DFactories
     * @param counterClockwiseOrdered {@code true} to indicate that the vertices are counter-clockwise
     *                                ordered, {@code false} for clockwise ordered.
     * @return the generic triangle mesh or {@code null} if {@code convexPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition Polygon(List<? extends Point3DReadOnly> convexPolygonVertices, boolean counterClockwiseOrdered)
    {
@@ -736,7 +733,7 @@ public class TriangleMesh3DFactories
     * @param extrusionHeight           thickness of the extrusion. The polygon is extruded upward along
     *                                  the z-axis.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition ExtrudedPolygon(List<? extends Point2DReadOnly> ccwOrderedPolygonVertices, double extrusionHeight)
    {
@@ -755,7 +752,7 @@ public class TriangleMesh3DFactories
     * @param bottomZ                   offset along the z-axis that is applied on all the vertices of
     *                                  the resulting mesh.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition ExtrudedPolygonCounterClockwise(List<? extends Point2DReadOnly> ccwOrderedPolygonVertices, double topZ,
                                                                           double bottomZ)
@@ -1142,7 +1139,7 @@ public class TriangleMesh3DFactories
     * The cylinder's axis is aligned with the z-axis. When {@code centered} is true, the cylinder is
     * centered at the origin, when false its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param radius     the cylinder's radius.
     * @param height     the cylinder's height or length.
     * @param resolution the resolution for the cylindrical part.
@@ -1239,7 +1236,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the cone's properties.
     * @return the generic triangle mesh.
     */
@@ -1257,7 +1254,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height     the height of the cone.
     * @param radius     the radius of the base.
     * @param resolution the resolution for the cylindrical part of the cone.
@@ -1274,7 +1271,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height     the height of the cone.
     * @param radius     the radius of the base.
     * @param resolution the resolution for the cylindrical part of the cone.
@@ -1347,7 +1344,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the cone's properties.
     * @return the generic triangle mesh.
     */
@@ -1371,7 +1368,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height      the cone's height.
     * @param baseRadiusX radius around the x-axis of the base ellipse.
     * @param baseRadiusY radius around the y-axis of the base ellipse.
@@ -1394,7 +1391,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height      the cone's height.
     * @param baseRadiusX radius around the x-axis of the base ellipse.
     * @param baseRadiusY radius around the y-axis of the base ellipse.
@@ -1495,7 +1492,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the torus's properties.
     * @return the generic triangle mesh.
     */
@@ -1512,7 +1509,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     * @param minorRadius the radius of the tube.
     * @param resolution  used to define the longitudinal and radial resolutions.
@@ -1528,7 +1525,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     * @param minorRadius the radius of the tube.
     * @param resolution  used to define the longitudinal and radial resolutions.
@@ -1544,7 +1541,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the torus's properties.
     * @return the generic triangle mesh.
     */
@@ -1565,7 +1562,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param startAngle  the angle at which the torus starts. The angle is in radians, it is expressed
     *                    with respect to the x-axis, and a positive angle corresponds to a
     *                    counter-clockwise rotation.
@@ -1587,7 +1584,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param startAngle  the angle at which the torus starts. The angle is in radians, it is expressed
     *                    with respect to the x-axis, and a positive angle corresponds to a
     *                    counter-clockwise rotation.
@@ -1955,7 +1952,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param sizeX the rectangle size along the x-axis.
     * @param sizeY the rectangle size along the y-axis.
     * @param z     the height of the rectangle.
@@ -1968,7 +1965,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param sizeX the rectangle size along the x-axis.
     * @param sizeY the rectangle size along the y-axis.
     * @param z     the height of the rectangle.
@@ -1981,7 +1978,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param minX the rectangle's lower-bound along the x-axis.
     * @param maxX the rectangle's upper-bound along the x-axis.
     * @param minY the rectangle's lower-bound along the y-axis.
@@ -1996,7 +1993,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param minX the rectangle's lower-bound along the x-axis.
     * @param maxX the rectangle's upper-bound along the x-axis.
     * @param minY the rectangle's lower-bound along the y-axis.
@@ -2043,7 +2040,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The ramp is positioned such that its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the ramp's properties.
     * @return the generic triangle mesh.
     */
@@ -2060,7 +2057,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The ramp is positioned such that its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param sizeX ramp size along the x-axis.
     * @param sizeY ramp size along the y-axis.
     * @param sizeZ ramp size along the z-axis.
@@ -2076,7 +2073,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The ramp is positioned such that its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param sizeX ramp size along the x-axis.
     * @param sizeY ramp size along the y-axis.
     * @param sizeZ ramp size along the z-axis.
@@ -2205,7 +2202,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a 3D box which bottom and top faces are extended with a pyramid.
-    * 
+    *
     * @param description the description holding the box's properties.
     * @return the generic triangle mesh.
     */
@@ -2222,7 +2219,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a 3D box which bottom and top faces are extended with a pyramid.
-    * 
+    *
     * @param boxSizeX      box size along the x-axis.
     * @param boxSizeY      box size along the y-axis.
     * @param boxSizeZ      box size along the z-axis.
@@ -2236,7 +2233,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a 3D box which bottom and top faces are extended with a pyramid.
-    * 
+    *
     * @param boxSizeX      box size along the x-axis.
     * @param boxSizeY      box size along the y-axis.
     * @param boxSizeZ      box size along the z-axis.
@@ -2487,7 +2484,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The line segment is implemented as an elongated 3D box.
     * </p>
-    * 
+    *
     * @param lineSegment used to define the mesh end points.
     * @param width       the thickness of the line.
     * @return the generic triangle mesh.
@@ -2518,7 +2515,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The line segment is implemented as an elongated 3D box.
     * </p>
-    * 
+    *
     * @param x0    the x-coordinate of the first endpoint for the line segment.
     * @param y0    the y-coordinate of the first endpoint for the line segment.
     * @param z0    the z-coordinate of the first endpoint for the line segment.
@@ -2538,7 +2535,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The line segment is implemented as an elongated 3D box.
     * </p>
-    * 
+    *
     * @param x0    the x-coordinate of the first endpoint for the line segment.
     * @param y0    the y-coordinate of the first endpoint for the line segment.
     * @param z0    the z-coordinate of the first endpoint for the line segment.
@@ -2805,7 +2802,7 @@ public class TriangleMesh3DFactories
     * <p>
     * Its base is centered at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the tetrahedron's properties.
     * @return the generic triangle mesh.
     */
@@ -2822,7 +2819,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The tetrahedron is centered at the origin.
     * </p>
-    * 
+    *
     * @param edgeLength length of the tetrahedron's edges.
     * @return the generic triangle mesh.
     */
@@ -2839,7 +2836,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The tetrahedron is centered at the origin.
     * </p>
-    * 
+    *
     * @param edgeLength length of the tetrahedron's edges.
     * @return the generic triangle mesh.
     */
@@ -3036,14 +3033,19 @@ public class TriangleMesh3DFactories
    }
 
 
+   /**
+    * Creates a triangle mesh for a STP 3D capsule with its ends being half ellipsoids.
+    * <p>
+    * The STPcapsule's axis is aligned with the z-axis and it is centered at the origin.
+    * </p>
+    *
+    * @param description the description holding the capsule's properties.
+    * @return the generic triangle mesh.
+    */
    public static TriangleMesh3DDefinition STPCapsule(STPCapsule3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = STPCapsule(description.getLength(),
-                                                           description.getRadiusX(),
-                                                           description.getRadiusY(),
-                                                           description.getRadiusZ(),
-                                                           description.getResolution(),
-                                                           description.getResolution(),
+                                                           description.getRadius(),
                                                            description.getMinimumMargin(),
                                                            description.getMaximumMargin());
       if (meshDataHolder != null)
@@ -3051,40 +3053,57 @@ public class TriangleMesh3DFactories
       return meshDataHolder;
    }
 
-   public static TriangleMesh3DDefinition STPCapsule(double length, double radiusX, double radiusY, double radiusZ, int latitudeResolution,
-                                                  int longitudeResolution, double minimumMargin, double maximumMargin)
+   /**
+    *  Calling the method or calculating Radius
+    *  return the creating 3DMesh method.
+    *
+    * @param length length of the capsule
+    * @param radius radius of the capsule    *
+    * @param minimumMargin minumumMargin to be used to calculate the smallRadius and largeRadius
+    * @param maximumMargin maximumMargin to be used to calculalte the smallRadius and largeRadius
+    * @return
+    */
+   public static TriangleMesh3DDefinition STPCapsule(double length, double radius, double minimumMargin, double maximumMargin)
    {
-      return STPCapsule((float) length, (float) radiusX, (float) radiusY, (float) radiusZ, latitudeResolution, longitudeResolution, minimumMargin, maximumMargin);
+      updateRadii((float) length, (float) radius, minimumMargin, maximumMargin);
+
+      return toSTPCapsule3DMesh(null,radius,length,smallRadius,largeRadius,false);
    }
 
-   public static TriangleMesh3DDefinition STPCapsule(float length, float radiusX, float radiusY, float radiusZ, int latitudeResolution, int longitudeResolution, double minimumMargin, double maximumMargin)
-   {
-      float[] arr = {radiusX, radiusY, radiusZ};
 
-      Arrays.sort(arr);
 
-      updateRadii(length, arr[2], minimumMargin, maximumMargin);
-
-      return toSTPCapsule3DMesh(null,arr[2],length,smallRadius,largeRadius,false);
-   }
-
+   /**
+    * <pre>
+    * r = h
+    *      r^2 - g^2 - 0.25 * l<sub>max</sub>
+    * R = ------------------------
+    *           2 * (r - g)
+    * </pre>
+    *
+    * where:
+    * <ul>
+    * <li><tt>R</tt> is {@link #largeRadius}
+    * <li><tt>r</tt> is {@link #smallRadius}
+    * <li><tt>h</tt> is minimumMargin}
+    * <li><tt>g</tt> is maximumMargin}
+    * <li><tt>l<sub>max</max></tt> is the maximum edge length that needs to be covered by the large
+    * bounding sphere.
+    * </ul>
+    *
+    * method of computeLargeRadiusFromMargin is used.
+    */
 
    protected static void updateRadii(float length, float radius, double minimumMargin, double maximumMargin)
    {
-      if(!stpRadiiDirty)
-         return;
-
-      stpRadiiDirty = false;
-
-
-      if(minimumMargin == 0.0 && maximumMargin == 0)
+      if(minimumMargin == 0.0 && maximumMargin == 0.0)
       {
          smallRadius = Double.NaN;
          largeRadius = Double.NaN;
       }
       else
       {
-         smallRadius = radius + minimumMargin;
+
+         smallRadius = minimumMargin;
          largeRadius = radius + computeLargeRadiusFromMargins(minimumMargin, maximumMargin, EuclidCoreTools.square(length));
       }
 

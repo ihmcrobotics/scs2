@@ -13,10 +13,10 @@ public class STPCapsule3DVisulizer
 {
    public static void main(String[] args)
    {
-      STPCapsule3DDefinition stpCapsule3D = new STPCapsule3DDefinition(0.5, 0.1);
-      stpCapsule3D.setMargins(0.01, 0.035);
+      STPCapsule3DDefinition stpCapsule3D = new STPCapsule3DDefinition(0.3, 0.05);
+      stpCapsule3D.setMargins(0.01, 0.05);
 
-      TriangleMesh3DDefinition stpCapsule3Ddata = TriangleMesh3DFactories.TriangleMesh(stpCapsule3D);
+      TriangleMesh3DDefinition stpCapsule3Ddata = TriangleMesh3DFactories.STPCapsule(stpCapsule3D);
       TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(stpCapsule3Ddata);
 
       MeshView meshView = new MeshView(mesh);
