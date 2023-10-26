@@ -72,7 +72,7 @@ public class TriangleMesh3DFactories
 
    private static final float ONE_THIRD = 1.0f / 3.0f;
 
-   private static double smallRadius, largeRadius;
+//   private static double smallRadius, largeRadius;
 
    private TriangleMesh3DFactories()
    {
@@ -3042,10 +3042,14 @@ public class TriangleMesh3DFactories
     * @param description the description holding the capsule's properties.
     * @return the generic triangle mesh.
     */
-   public static TriangleMesh3DDefinition STPCapsule(STPCapsule3DDefinition description)
+   public static TriangleMesh3DDefinition stpCapsule3D(STPCapsule3DDefinition description)
    {
-      TriangleMesh3DDefinition meshDataHolder = STPCapsule(description.getLength(),
-                                                           description.getRadius(),
+      if(!description.isRegular())
+         throw new UnsupportedOperationException("Irregular STP capsule is not supported");
+
+      double radius = description.getRadiusX();
+      TriangleMesh3DDefinition meshDataHolder = stpCapsule3D(description.getLength(),
+                                                           radius,
                                                            description.getMinimumMargin(),
                                                            description.getMaximumMargin());
       if (meshDataHolder != null)
@@ -3063,38 +3067,11 @@ public class TriangleMesh3DFactories
     * @param maximumMargin maximumMargin to be used to calculalte the smallRadius and largeRadius
     * @return
     */
-   public static TriangleMesh3DDefinition STPCapsule(double length, double radius, double minimumMargin, double maximumMargin)
+   public static TriangleMesh3DDefinition stpCapsule3D(double length, double radius, double minimumMargin, double maximumMargin)
    {
-      updateRadii((float) length, (float) radius, minimumMargin, maximumMargin);
+//      updateRadii((float) length, (float) radius, minimumMargin, maximumMargin);
 
-      return toSTPCapsule3DMesh(null,radius,length,smallRadius,largeRadius,false);
-   }
-
-
-
-   /**
-    * <pre>
-    * r = h
-    *      r^2 - g^2 - 0.25 * l<sub>max</sub>
-    * R = ------------------------
-    *           2 * (r - g)
-    * </pre>
-    *
-    * where:
-    * <ul>
-    * <li><tt>R</tt> is {@link #largeRadius}
-    * <li><tt>r</tt> is {@link #smallRadius}
-    * <li><tt>h</tt> is minimumMargin}
-    * <li><tt>g</tt> is maximumMargin}
-    * <li><tt>l<sub>max</max></tt> is the maximum edge length that needs to be covered by the large
-    * bounding sphere.
-    * </ul>
-    *
-    * method of computeLargeRadiusFromMargin is used.
-    */
-
-   protected static void updateRadii(float length, float radius, double minimumMargin, double maximumMargin)
-   {
+      double smallRadius, largeRadius;
       if(minimumMargin == 0.0 && maximumMargin == 0.0)
       {
          smallRadius = Double.NaN;
@@ -3107,7 +3084,9 @@ public class TriangleMesh3DFactories
          largeRadius = radius + computeLargeRadiusFromMargins(minimumMargin, maximumMargin, EuclidCoreTools.square(length));
       }
 
+      return toSTPCapsule3DMesh(null,radius,length,smallRadius,largeRadius,false);
    }
+
 
    protected static double computeLargeRadiusFromMargins(double minimumMargin, double maximumMargin, double maximumEdgeLengthSquared)
    {
@@ -3129,7 +3108,94 @@ public class TriangleMesh3DFactories
    /*
     * TODO: The following is for drawing STP shapes. Needs some cleanup.
     */
-   
+
+   /**
+    * Creates a triangle mesh for a STP 3D box with its ends being half ellipsoids.
+    * <p>
+    *
+    * </p>
+    *
+    * @param description the description holding the box's properties.
+    * @return the generic triangle mesh.
+    */
+   public static TriangleMesh3DDefinition stpBox3D(STPBox3DDefinition description)
+   {
+      TriangleMesh3DDefinition meshDataHolder = stpBox3D(description.getSizeX(), description.getSizeY(), description.getSizeZ(),
+                                                           description.getMinimumMargin(),
+                                                           description.getMaximumMargin());
+      if (meshDataHolder != null)
+         meshDataHolder.setName(description.getName());
+      return meshDataHolder;
+   }
+
+   /**
+    *  Calling the method or calculating Radius
+    *  return the creating 3DMesh method.
+    *
+    *  size x,y,z of the 3D box    *
+    * @param minimumMargin minumumMargin to be used to calculate the smallRadius and largeRadius
+    * @param maximumMargin maximumMargin to be used to calculalte the smallRadius and largeRadius
+    * @return
+    */
+   public static TriangleMesh3DDefinition stpBox3D(double sizeX, double sizeY, double sizeZ, double minimumMargin, double maximumMargin)
+   {
+      double smallRadius, largeRadius;
+
+         smallRadius = minimumMargin;
+         largeRadius = computeLargeRadiusFromMargins(minimumMargin,maximumMargin,EuclidCoreTools.max(EuclidCoreTools.normSquared(sizeX, sizeY),
+                                                                                                    EuclidCoreTools.normSquared(sizeX, sizeZ),
+                                                                                                    EuclidCoreTools.normSquared(sizeY, sizeZ)));
+
+
+      return toSTPBox3DMesh(null,sizeX, sizeY, sizeZ,smallRadius,largeRadius,false);
+   }
+
+   public static TriangleMesh3DDefinition stpCylinder3D(STPCylinder3DDefinition description)
+   {
+      TriangleMesh3DDefinition meshDataHolder = stpCylinder3D(description.getRadius(), description.getLength(),
+                                                         description.getMinimumMargin(),
+                                                         description.getMaximumMargin());
+      if (meshDataHolder != null)
+         meshDataHolder.setName(description.getName());
+      return meshDataHolder;
+   }
+
+   public static TriangleMesh3DDefinition stpCylinder3D(double radius, double length, double minimumMargin, double maximumMargin)
+   {
+      double smallRadius, largeRadius;
+      double maximumEdgeLengthSquared = Math.max(length, 2.0 * radius);
+
+      smallRadius = minimumMargin;
+      largeRadius = computeLargeRadiusFromMargins(minimumMargin, maximumMargin, maximumEdgeLengthSquared*maximumEdgeLengthSquared);
+
+      return toSTPCylinder3DMesh(null,radius, length, smallRadius, largeRadius,false);
+   }
+
+   public static TriangleMesh3DDefinition stpRamp3D(STPRamp3DDefinition description)
+   {
+      TriangleMesh3DDefinition meshDataHolder = stpRamp3D(description.getSizeX(), description.getSizeY(), description.getSizeZ(),
+                                                         description.getMinimumMargin(),
+                                                         description.getMaximumMargin());
+      if (meshDataHolder != null)
+         meshDataHolder.setName(description.getName());
+      return meshDataHolder;
+   }
+
+   public static TriangleMesh3DDefinition stpRamp3D(double sizeX, double sizeY, double sizeZ, double minimumMargin, double maximumMargin)
+   {
+      double smallRadius, largeRadius;
+
+      smallRadius = minimumMargin;
+      largeRadius = computeLargeRadiusFromMargins(minimumMargin,
+                                                  maximumMargin,
+                                                  EuclidCoreTools.max(EuclidCoreTools.normSquared(sizeX, sizeY),
+                                                                      EuclidCoreTools.normSquared(sizeY, sizeZ),
+                                                                      EuclidCoreTools.normSquared(sizeX, sizeZ) + EuclidCoreTools.square(sizeY)));
+
+
+      return toSTPRamp3DMesh(null,sizeX, sizeY, sizeZ,smallRadius,largeRadius,false);
+   }
+
    public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose, Tuple3DReadOnly size, double smallRadius,
                                                          double largeRadius, boolean highlightLimits)
    {

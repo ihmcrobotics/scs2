@@ -16,7 +16,7 @@ public class STPCapsule3DVisulizer
       STPCapsule3DDefinition stpCapsule3D = new STPCapsule3DDefinition(0.3, 0.05);
       stpCapsule3D.setMargins(0.01, 0.05);
 
-      TriangleMesh3DDefinition stpCapsule3Ddata = TriangleMesh3DFactories.STPCapsule(stpCapsule3D);
+      TriangleMesh3DDefinition stpCapsule3Ddata = TriangleMesh3DFactories.stpCapsule3D(stpCapsule3D);
       TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(stpCapsule3Ddata);
 
       MeshView meshView = new MeshView(mesh);
