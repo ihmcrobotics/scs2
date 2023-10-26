@@ -53,21 +53,7 @@ import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
-import us.ihmc.scs2.definition.robot.FixedJointDefinition;
-import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
-import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.LidarSensorDefinition;
-import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
-import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
-import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
-import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
-import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
-import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
-import us.ihmc.scs2.definition.robot.RobotDefinition;
-import us.ihmc.scs2.definition.robot.SensorDefinition;
-import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
-import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
+import us.ihmc.scs2.definition.robot.*;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFAxis;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFBox;
@@ -645,6 +631,8 @@ public class URDFTools
          case fixed -> toFixedJointDefinition(urdfJoint, parserProperties);
          case floating -> toSixDoFJointDefinition(urdfJoint, parserProperties);
          case planar -> toPlanarJointDefinition(urdfJoint, parserProperties);
+         case cross_four_bar -> toCrossFourBarJointDefinition(urdfJoint, parserProperties);
+         case revolute_twins -> toRevoluteTwinsJointDefinition(urdfJoint, parserProperties);
       };
    }
 
@@ -727,6 +715,187 @@ public class URDFTools
          throw new UnsupportedOperationException(
                "Planar joint are supported only with a surface normal equal to: " + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:"
                + surfaceNormal);
+
+      return definition;
+   }
+
+   /**
+    * <i>-- Intended for internal use --</i>
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
+    */
+   public static CrossFourBarJointDefinition toCrossFourBarJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
+   {
+      CrossFourBarJointDefinition definition = new CrossFourBarJointDefinition(urdfJoint.getName());
+
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
+      definition.getAxis().set(parseAxis(urdfJoint.getAxis(), parserProperties));
+      parseLimit(urdfJoint.getLimit(), definition, false, parserProperties);
+      parseDynamics(urdfJoint.getDynamics(), definition, parserProperties);
+
+      if (urdfJoint.getSubJoints() == null || urdfJoint.getSubJoints().size() != 4)
+         throw new IllegalArgumentException("Cross four bar joint requires 4 sub-joints.");
+      if (urdfJoint.getSubLinks() == null || urdfJoint.getSubLinks().size() != 2)
+         throw new IllegalArgumentException("Cross four bar joint requires 2 sub-links.");
+
+      for (URDFJoint subJoint : urdfJoint.getSubJoints())
+      {
+         if (URDFJointType.parse(subJoint.getType()) != URDFJointType.revolute)
+            throw new IllegalArgumentException("Cross four bar joint requires all sub-joints to be revolute.");
+      }
+
+      URDFJoint urdfJoint0 = urdfJoint.getSubJoints().get(0);
+      URDFJoint urdfJoint1 = urdfJoint.getSubJoints().get(1);
+      URDFJoint urdfJoint2 = urdfJoint.getSubJoints().get(2);
+      URDFJoint urdfJoint3 = urdfJoint.getSubJoints().get(3);
+
+      if (!Objects.equals(urdfJoint0.getParent().getLink(), urdfJoint.getParent().getLink()) || !Objects.equals(urdfJoint1.getParent().getLink(),
+                                                                                                                urdfJoint.getParent().getLink()))
+      {
+         throw new IllegalArgumentException(
+               "The 2 first sub-joints of the cross four bar joint must closest to the robot root and share the same parent link as the cross four bar joint.");
+      }
+      if (!Objects.equals(urdfJoint2.getChild().getLink(), urdfJoint.getChild().getLink()) || !Objects.equals(urdfJoint3.getChild().getLink(),
+                                                                                                              urdfJoint.getChild().getLink()))
+      {
+         throw new IllegalArgumentException(
+               "The 2 last sub-joints of the cross four bar joint must farthest from the robot root and share the same child link as the cross four bar joint.");
+      }
+
+      URDFLink urdfLink0 = urdfJoint.getSubLinks().get(0);
+      URDFLink urdfLink1 = urdfJoint.getSubLinks().get(1);
+
+      int actuatedJointIndex = parseInteger(urdfJoint.getActuatedJointIndex(), -1);
+      if (actuatedJointIndex < 0 || actuatedJointIndex > 3)
+         throw new IllegalArgumentException("The actuated joint index must be in [0, 3].");
+
+      URDFJoint urdfJointA, urdfJointB, urdfJointC, urdfJointD;
+      URDFLink urdfLinkDA, urdfLinkBC;
+      urdfJointA = urdfJoint0;
+      urdfJointB = urdfJoint1;
+
+      if (!Objects.equals(urdfJointA.getChild().getLink(), urdfLink0.getName()))
+      {
+         if (!Objects.equals(urdfJointB.getChild().getLink(), urdfLink1.getName()))
+            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+         urdfLinkDA = urdfLink0;
+         urdfLinkBC = urdfLink1;
+      }
+      else
+      {
+         if (!Objects.equals(urdfJointB.getChild().getLink(), urdfLink0.getName()))
+            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+         urdfLinkDA = urdfLink1;
+         urdfLinkBC = urdfLink0;
+      }
+
+      if (Objects.equals(urdfJoint2.getParent().getLink(), urdfLinkDA.getName()))
+      {
+         if (!Objects.equals(urdfJoint3.getParent().getLink(), urdfLinkBC.getName()))
+            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+         urdfJointD = urdfJoint2;
+         urdfJointC = urdfJoint3;
+         if (actuatedJointIndex == 2)
+            actuatedJointIndex = 3;
+         else if (actuatedJointIndex == 3)
+            actuatedJointIndex = 2;
+      }
+      else
+      {
+         if (!Objects.equals(urdfJoint2.getParent().getLink(), urdfLinkBC.getName()))
+            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+         if (!Objects.equals(urdfJoint3.getParent().getLink(), urdfLinkDA.getName()))
+            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+         urdfJointC = urdfJoint2;
+         urdfJointD = urdfJoint3;
+      }
+
+      definition.setJointNameA(urdfJointA.getName());
+      definition.setJointNameB(urdfJointB.getName());
+      definition.setJointNameC(urdfJointC.getName());
+      definition.setJointNameD(urdfJointD.getName());
+      definition.setBodyDA(toRigidBodyDefinition(urdfLinkDA, parserProperties));
+      definition.setBodyBC(toRigidBodyDefinition(urdfLinkBC, parserProperties));
+      definition.setActuatedJointIndex(actuatedJointIndex);
+      definition.setTransformAToPredecessor(parseRigidBodyTransform(urdfJointA.getOrigin(), parserProperties));
+      definition.setTransformBToPredecessor(parseRigidBodyTransform(urdfJointB.getOrigin(), parserProperties));
+      definition.setTransformCToB(parseRigidBodyTransform(urdfJointC.getOrigin(), parserProperties));
+      definition.setTransformDToA(parseRigidBodyTransform(urdfJointD.getOrigin(), parserProperties));
+
+      int loopClosureJointIndex = switch (actuatedJointIndex)
+      {
+         case 0 -> 3;
+         case 1 -> 2;
+         case 2 -> 1;
+         case 3 -> 0;
+         default -> -1;
+      };
+      definition.setLoopClosureJointIndex(loopClosureJointIndex);
+
+      return definition;
+   }
+
+   /**
+    * <i>-- Intended for internal use --</i>
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
+    */
+   public static RevoluteTwinsJointDefinition toRevoluteTwinsJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
+   {
+      RevoluteTwinsJointDefinition definition = new RevoluteTwinsJointDefinition(urdfJoint.getName());
+
+      definition.getTransformToParent().set(parseRigidBodyTransform(urdfJoint.getOrigin(), parserProperties));
+      definition.getAxis().set(parseAxis(urdfJoint.getAxis(), parserProperties));
+      parseLimit(urdfJoint.getLimit(), definition, false, parserProperties);
+      parseDynamics(urdfJoint.getDynamics(), definition, parserProperties);
+
+      if (urdfJoint.getSubJoints() == null || urdfJoint.getSubJoints().size() != 2)
+         throw new IllegalArgumentException("Revolute twins joint requires 2 sub-joints.");
+      if (urdfJoint.getSubLinks() == null || urdfJoint.getSubLinks().size() != 1)
+         throw new IllegalArgumentException("Revolute twins joint requires 1 sub-links.");
+
+      for (URDFJoint subJoint : urdfJoint.getSubJoints())
+      {
+         if (URDFJointType.parse(subJoint.getType()) != URDFJointType.revolute)
+            throw new IllegalArgumentException("Revolute twins joint requires all sub-joints to be revolute.");
+      }
+
+      URDFJoint urdfJointA = urdfJoint.getSubJoints().get(0);
+      URDFJoint urdfJointB = urdfJoint.getSubJoints().get(1);
+
+      if (!Objects.equals(urdfJointA.getParent().getLink(), urdfJoint.getParent().getLink()))
+         throw new IllegalArgumentException("The first sub-joint of the revolute twins joint must share the same parent link as the revolute twins joint.");
+      if (!Objects.equals(urdfJointB.getChild().getLink(), urdfJoint.getChild().getLink()))
+         throw new IllegalArgumentException("The second sub-joint of the revolute twins joint must share the same child link as the revolute twins joint.");
+
+      URDFLink urdfLinkAB = urdfJoint.getSubLinks().get(0);
+
+      if (!Objects.equals(urdfJointA.getChild().getLink(), urdfLinkAB.getName()))
+         throw new IllegalArgumentException("Error when parsing the revolute twins joint.");
+      if (!Objects.equals(urdfJointB.getParent().getLink(), urdfLinkAB.getName()))
+         throw new IllegalArgumentException("Error when parsing the revolute twins joint.");
+
+      int actuatedJointIndex = parseInteger(urdfJoint.getActuatedJointIndex(), -1);
+      if (actuatedJointIndex < 0 || actuatedJointIndex > 1)
+         throw new IllegalArgumentException("The actuated joint index must be in [0, 1].");
+
+      URDFJoint constrainedJoint = actuatedJointIndex == 0 ? urdfJointB : urdfJointA;
+      if (constrainedJoint.getMimic() == null)
+         throw new IllegalArgumentException("The constrained sub-joint of the revolute twins joint must have a mimic.");
+      Objects.requireNonNull(constrainedJoint.getMimic().getMultiplier(),
+                             "The constrained sub-joint of the revolute twins joint must have a mimic multiplier.");
+      Objects.requireNonNull(constrainedJoint.getMimic().getOffset(), "The constrained sub-joint of the revolute twins joint must have a mimic offset.");
+      double constraintRatio = parseDouble(constrainedJoint.getMimic().getMultiplier(), Double.NaN);
+      double constraintOffset = parseDouble(constrainedJoint.getMimic().getOffset(), Double.NaN);
+
+      definition.setJointNameA(urdfJointA.getName());
+      definition.setJointNameB(urdfJointB.getName());
+      definition.setBodyAB(toRigidBodyDefinition(urdfLinkAB, parserProperties));
+      definition.setTransformAToPredecessor(parseRigidBodyTransform(urdfJointA.getOrigin(), parserProperties));
+      definition.setTransformBToA(parseRigidBodyTransform(urdfJointB.getOrigin(), parserProperties));
+      definition.setActuatedJointIndex(actuatedJointIndex);
+      definition.setConstraintRatio(constraintRatio);
+      definition.setConstraintOffset(constraintOffset);
 
       return definition;
    }

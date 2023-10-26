@@ -56,6 +56,12 @@ public class URDFJoint implements URDFItem
     */
    private List<URDFLink> subLinks;
 
+   /**
+    * Indicates which sub-joint is the torque source for complex joints with internal kinematics like a {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint}
+    * or a {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}.
+    */
+   private String actuatedJointIndex;
+
    @XmlAttribute(name = "name")
    public void setName(String name)
    {
@@ -127,6 +133,24 @@ public class URDFJoint implements URDFItem
       this.safetyController = safetyController;
    }
 
+   @XmlElement(name = "sub_joint")
+   public void setSubJoints(List<URDFJoint> subJoints)
+   {
+      this.subJoints = subJoints;
+   }
+
+   @XmlElement(name = "sub_link")
+   public void setSubLinks(List<URDFLink> subLinks)
+   {
+      this.subLinks = subLinks;
+   }
+
+   @XmlElement(name = "actuated_joint_index")
+   public void setActuatedJointIndex(String actuatedJointIndex)
+   {
+      this.actuatedJointIndex = actuatedJointIndex;
+   }
+
    public String getName()
    {
       return name;
@@ -182,6 +206,21 @@ public class URDFJoint implements URDFItem
       return safetyController;
    }
 
+   public List<URDFJoint> getSubJoints()
+   {
+      return subJoints;
+   }
+
+   public List<URDFLink> getSubLinks()
+   {
+      return subLinks;
+   }
+
+   public String getActuatedJointIndex()
+   {
+      return actuatedJointIndex;
+   }
+
    @Override
    public String getContentAsString()
    {
@@ -197,7 +236,9 @@ public class URDFJoint implements URDFItem
             dynamics,
             limit,
             mimic,
-            safetyController);
+            safetyController,
+            subJoints,
+            subLinks);
    }
 
    @Override
@@ -209,6 +250,16 @@ public class URDFJoint implements URDFItem
    @Override
    public List<URDFFilenameHolder> getFilenameHolders()
    {
-      return URDFItem.combineItemFilenameHolders(origin, parent, child, axis, calibration, dynamics, limit, mimic, safetyController);
+      List<URDFFilenameHolder> filenameHolders = URDFItem.combineItemFilenameHolders(origin,
+                                                                                     parent,
+                                                                                     child,
+                                                                                     axis,
+                                                                                     calibration,
+                                                                                     dynamics,
+                                                                                     limit,
+                                                                                     mimic,
+                                                                                     safetyController);
+      filenameHolders.addAll(URDFItem.combineItemListsFilenameHolders(subJoints, subLinks));
+      return filenameHolders;
    }
 }
