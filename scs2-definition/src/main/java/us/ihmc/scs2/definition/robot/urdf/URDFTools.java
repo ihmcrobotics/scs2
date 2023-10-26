@@ -122,7 +122,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
  * <p>
  * {@link RobotDefinition} is a template for creating a robot to be simulated in SCS2.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public class URDFTools
@@ -149,10 +149,9 @@ public class URDFTools
 
    /**
     * Parse a {@link URDFModel} from the given URDF file.
-    * 
+    *
     * @param urdfFile the URDF file to be loaded.
     * @return the model.
-    * @throws JAXBException
     */
    public static URDFModel loadURDFModel(File urdfFile) throws JAXBException
    {
@@ -161,14 +160,13 @@ public class URDFTools
 
    /**
     * Parse a {@link URDFModel} from the given URDF file.
-    * 
+    *
     * @param urdfFile            the URDF file to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are not in the same directory as the {@code urdfFile}'s parent
     *                            directory. Paths can either be relative to the {@code urdfFile}'s
     *                            parent directory or absolute.
     * @return the model.
-    * @throws JAXBException
     */
    public static URDFModel loadURDFModel(File urdfFile, Collection<String> resourceDirectories) throws JAXBException
    {
@@ -177,7 +175,7 @@ public class URDFTools
 
    /**
     * Parse a {@link URDFModel} from the given URDF file.
-    * 
+    *
     * @param urdfFile            the URDF file to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are not in the same directory as the {@code urdfFile}'s parent
@@ -186,7 +184,6 @@ public class URDFTools
     * @param parserProperties    provides additional properties related to how the parsing show be
     *                            done.
     * @return the model.
-    * @throws JAXBException
     */
    public static URDFModel loadURDFModel(File urdfFile, Collection<String> resourceDirectories, URDFParserProperties parserProperties) throws JAXBException
    {
@@ -203,7 +200,7 @@ public class URDFTools
 
    /**
     * Parse a {@link URDFModel} from the given input stream.
-    * 
+    *
     * @param inputStream         the stream to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
@@ -214,7 +211,6 @@ public class URDFTools
     *                            {@link URLClassLoader} that allows to point to a directory among other
     *                            options.
     * @return the model.
-    * @throws JAXBException
     */
    public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
@@ -223,7 +219,7 @@ public class URDFTools
 
    /**
     * Parse a {@link URDFModel} from the given input stream.
-    * 
+    *
     * @param inputStream         the stream to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
@@ -236,13 +232,11 @@ public class URDFTools
     * @param parserProperties    provides additional properties related to how the parsing show be
     *                            done.
     * @return the model.
-    * @throws JAXBException
     */
    public static URDFModel loadURDFModel(InputStream inputStream,
                                          Collection<String> resourceDirectories,
                                          ClassLoader resourceClassLoader,
-                                         URDFParserProperties parserProperties)
-         throws JAXBException
+                                         URDFParserProperties parserProperties) throws JAXBException
    {
       try
       {
@@ -308,7 +302,7 @@ public class URDFTools
     * This method attempt to locate every single file reference in the URDF model using the given
     * {@code resourceDirectories}.
     * </p>
-    * 
+    *
     * @param urdfModel           the model to resolve internal references to files.
     * @param resourceDirectories the paths the resources could be located in.
     * @see SDFTools#tryToConvertToPath(String, Collection, ClassLoader)
@@ -328,7 +322,7 @@ public class URDFTools
     * This method attempt to locate every single file reference in the URDF model using the given
     * {@code resourceDirectories}.
     * </p>
-    * 
+    *
     * @param urdfModel           the model to resolve internal references to files.
     * @param resourceDirectories the paths the resources could be located in.
     * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
@@ -365,7 +359,7 @@ public class URDFTools
     * <p>
     * See {@link URDFParserProperties} for additional properties.
     * </p>
-    * 
+    *
     * @param urdfModel the URDF model to convert.
     * @return the robot definition which can be used to create a robot to be simulated in SCS2.
     */
@@ -376,7 +370,7 @@ public class URDFTools
 
    /**
     * Converts the given URDF model into a {@code RobotDefinition}.
-    * 
+    *
     * @param urdfModel        the URDF model to convert.
     * @param parserProperties additional properties for tweaking the parsing operations such as
     *                         specifying the root joint.
@@ -443,7 +437,7 @@ public class URDFTools
     * Searches the URDF Gazebo references for sensors, for instance IMUs and cameras, to convert into
     * {@link SensorDefinition} and add to the corresponding joints.
     * </p>
-    * 
+    *
     * @param urdfGazebos      the list of parsed Gazebo references from a URDF file.
     * @param jointDefinitions the list of parsed and converted joints from the same URDF file.
     */
@@ -489,7 +483,7 @@ public class URDFTools
     * ({@link JointDefinition#getPredecessor()}), and successors
     * ({@link JointDefinition#getSuccessor()}).
     * </p>
-    * 
+    *
     * @param rigidBodyDefinitions the rigid-bodies to retrieve the parent and children joints for.
     * @param jointDefinitions     the joints to retrieve the predecessors and successors for.
     * @param urdfJoints           the parsed URDF joints used to identify relationship between joints
@@ -554,7 +548,7 @@ public class URDFTools
     * <p>
     * The parent and children joints are not configured at this stage.
     * </p>
-    * 
+    *
     * @param urdfLink the parsed URDF link to convert.
     * @return the rigid-body definition.
     * @see #connectKinematics(List, List, List)
@@ -631,10 +625,10 @@ public class URDFTools
     * <p>
     * The predecessor, successor, and sensors are not configured at this stage.
     * </p>
-    * 
+    *
     * @param urdfJoint the parsed URDF joint to convert.
     * @return the joint definition.
-    * @see #addSensors(List, List)
+    * @see #addSensors(List, List, URDFParserProperties)
     * @see #connectKinematics(List, List, List)
     */
    public static JointDefinition toJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
@@ -643,29 +637,21 @@ public class URDFTools
       if (type == null)
          throw new RuntimeException("Unexpected value for the joint type: " + urdfJoint.getType());
 
-      switch (type)
+      return switch (type)
       {
-         case continuous:
-            return toRevoluteJointDefinition(urdfJoint, true, parserProperties);
-         case revolute:
-            return toRevoluteJointDefinition(urdfJoint, false, parserProperties);
-         case prismatic:
-            return toPrismaticJointDefinition(urdfJoint, parserProperties);
-         case fixed:
-            return toFixedJointDefinition(urdfJoint, parserProperties);
-         case floating:
-            return toSixDoFJointDefinition(urdfJoint, parserProperties);
-         case planar:
-            return toPlanarJointDefinition(urdfJoint, parserProperties);
-         default:
-            throw new RuntimeException("Unexpected value for the joint type: " + urdfJoint.getType());
-      }
+         case continuous -> toRevoluteJointDefinition(urdfJoint, true, parserProperties);
+         case revolute -> toRevoluteJointDefinition(urdfJoint, false, parserProperties);
+         case prismatic -> toPrismaticJointDefinition(urdfJoint, parserProperties);
+         case fixed -> toFixedJointDefinition(urdfJoint, parserProperties);
+         case floating -> toSixDoFJointDefinition(urdfJoint, parserProperties);
+         case planar -> toPlanarJointDefinition(urdfJoint, parserProperties);
+      };
    }
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toJointDefinition(URDFJoint)
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
     */
    public static RevoluteJointDefinition toRevoluteJointDefinition(URDFJoint urdfJoint, boolean ignorePositionLimits, URDFParserProperties parserProperties)
    {
@@ -681,8 +667,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toJointDefinition(URDFJoint)
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
     */
    public static PrismaticJointDefinition toPrismaticJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
@@ -698,8 +684,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toJointDefinition(URDFJoint)
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
     */
    public static FixedJointDefinition toFixedJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
@@ -712,8 +698,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toJointDefinition(URDFJoint)
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
     */
    public static SixDoFJointDefinition toSixDoFJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
@@ -726,8 +712,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toJointDefinition(URDFJoint)
+    *
+    * @see #toJointDefinition(URDFJoint, URDFParserProperties)
     */
    public static PlanarJointDefinition toPlanarJointDefinition(URDFJoint urdfJoint, URDFParserProperties parserProperties)
    {
@@ -738,8 +724,9 @@ public class URDFTools
       Vector3D surfaceNormal = parseAxis(urdfJoint.getAxis(), parserProperties);
 
       if (!surfaceNormal.geometricallyEquals(Axis3D.Y, 1.0e-5))
-         throw new UnsupportedOperationException("Planar joint are supported only with a surface normal equal to: "
-                                                 + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:" + surfaceNormal);
+         throw new UnsupportedOperationException(
+               "Planar joint are supported only with a surface normal equal to: " + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:"
+               + surfaceNormal);
 
       return definition;
    }
@@ -749,7 +736,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF sensor into a {@link SensorDefinition}.
     * </p>
-    * 
+    *
     * @param urdfSensor the parsed URDF sensor to convert.
     * @return the sensor definition.
     */
@@ -804,8 +791,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toSensorDefinition(URDFSensor)
+    *
+    * @see #toSensorDefinition(URDFSensor, URDFParserProperties)
     */
    public static List<CameraSensorDefinition> toCameraSensorDefinition(List<URDFCamera> urdfCameras, URDFParserProperties parserProperties)
    {
@@ -816,8 +803,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toSensorDefinition(URDFSensor)
+    *
+    * @see #toSensorDefinition(URDFSensor, URDFParserProperties)
     */
    public static CameraSensorDefinition toCameraSensorDefinition(URDFCamera urdfCamera, URDFParserProperties parserProperties)
    {
@@ -834,8 +821,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toSensorDefinition(URDFSensor)
+    *
+    * @see #toSensorDefinition(URDFSensor, URDFParserProperties)
     */
    public static LidarSensorDefinition toLidarSensorDefinition(URDFRay urdfRay, URDFParserProperties parserProperties)
    {
@@ -882,8 +869,8 @@ public class URDFTools
 
    /**
     * <i>-- Intended for internal use --</i>
-    * 
-    * @see #toSensorDefinition(URDFSensor)
+    *
+    * @see #toSensorDefinition(URDFSensor, URDFParserProperties)
     */
    public static IMUSensorDefinition toIMUSensorDefinition(URDFIMU urdfIMU, URDFParserProperties parserProperties)
    {
@@ -923,7 +910,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF visual into a {@link VisualDefinition}.
     * </p>
-    * 
+    *
     * @param urdfVisual the parsed URDF visual to convert.
     * @return the visual definition.
     */
@@ -945,7 +932,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF collision into a {@link CollisionShapeDefinition}.
     * </p>
-    * 
+    *
     * @param urdfCollision the parsed URDF collision to convert.
     * @return the collision shape definition.
     */
@@ -966,7 +953,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF geometry into a {@link GeometryDefinition}.
     * </p>
-    * 
+    *
     * @param urdfGeometry the parsed URDF geometry to convert.
     * @return the geometry definition.
     */
@@ -1012,7 +999,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF material into a {@link MaterialDefinition}.
     * </p>
-    * 
+    *
     * @param urdfMaterial the parsed URDF material to convert.
     * @return the material definition.
     */
@@ -1033,7 +1020,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF texture into a {@link TextureDefinition}.
     * </p>
-    * 
+    *
     * @param urdfTexture the parsed URDF texture to convert.
     * @return the texture definition.
     */
@@ -1052,7 +1039,7 @@ public class URDFTools
     * <p>
     * Converts the given URDF color into a {@link ColorDefinition}.
     * </p>
-    * 
+    *
     * @param urdfColor the parsed URDF color to convert.
     * @return the color definition.
     */
@@ -1997,7 +1984,7 @@ public class URDFTools
     * in both
     * {@link URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)} and
     * {@link URDFTools#toRobotDefinition(URDFModel, URDFParserProperties)}.
-    * 
+    *
     * @author Sylvain Bertrand
     */
    public static class URDFParserProperties
@@ -2019,7 +2006,7 @@ public class URDFTools
        * Note that should always be false, it is only to handle malformed XML file that do not properly
        * declare their namespaces.
        * </p>
-       * 
+       *
        * @param ignoreNamespace {@code true} to ignore namespaces. Recommended value {@code false}.
        * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
        */
@@ -2033,7 +2020,7 @@ public class URDFTools
        * <p>
        * Be careful with this as it can result in a corrupted model. Only use to handle poorly generated
        * URDF files.
-       * 
+       *
        * @param nameOfJointToIgnore the name of a joint to be ignored when parsing the URDF file.
        * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
        */
@@ -2047,7 +2034,7 @@ public class URDFTools
        * <p>
        * Be careful with this as it can result in a corrupted model. Only use to handle poorly generated
        * URDF files.
-       * 
+       *
        * @param nameOfLinkToIgnore the name of a link to be ignored when parsing the URDF file.
        * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
        */
@@ -2063,7 +2050,7 @@ public class URDFTools
        * the world. When creating the robot definition, a new rigid-body representing the world and a new
        * floating joint connecting the robot to the world are created.
        * </p>
-       * 
+       *
        * @param rootJointFactory the factory used to create the root joint of the robot. If the URDF
        *                         already declares that joint (uncommon), then set this to {@code null}.
        * @see URDFTools#toRobotDefinition(URDFModel, URDFParserProperties)
@@ -2076,7 +2063,7 @@ public class URDFTools
       /**
        * Specifies whether a default name should be generated for {@code URDFVisual} that do not
        * explicitly declare one.
-       * 
+       *
        * @param autoGenerateVisualName whether to automatically generate a name for visuals when it is
        *                               missing.
        */
@@ -2088,9 +2075,9 @@ public class URDFTools
       /**
        * Specifies whether a default name should be generated for {@code URDFCollision} that do not
        * explicitly declare one.
-       * 
-       * @param autoGenerateVisualName whether to automatically generate a name for collisions when it is
-       *                               missing.
+       *
+       * @param autoGenerateCollisionName whether to automatically generate a name for collisions when it is
+       *                                  missing.
        */
       public void setAutoGenerateCollisionName(boolean autoGenerateCollisionName)
       {
@@ -2099,7 +2086,7 @@ public class URDFTools
 
       /**
        * Specifies whether the sensors should be parsed.
-       * 
+       *
        * @param parseSensors {@code true} [default value] to parse the sensors from the URDF file.
        */
       public void setParseSensors(boolean parseSensors)
@@ -2114,7 +2101,7 @@ public class URDFTools
        * This will remove fixed joints from the robot definition while preserving the physical properties
        * of the robot.
        * </p>
-       * 
+       *
        * @param simplifyKinematics {@code true} [default value] simplifies the robot kinematics,
        *                           {@code false} do nothing.
        */
@@ -2130,7 +2117,7 @@ public class URDFTools
        * This will ensure that all local frames a pointing z-up and x-forward when the robot is in the
        * zero pose.
        * </p>
-       * 
+       *
        * @param transformToZUp {@code true} [default value] transforms the local frame to follow the z-up
        *                       convention.
        */
@@ -2143,7 +2130,7 @@ public class URDFTools
    /**
     * This class provides extra properties for tweaking operations when generating a URDF model. It is
     * used in {@link URDFTools#toURDFModel(RobotDefinition, URDFGeneratorProperties)}.
-    * 
+    *
     * @author Sylvain Bertrand
     */
    public static class URDFGeneratorProperties
@@ -2159,7 +2146,7 @@ public class URDFTools
 
       /**
        * Specifies whether the axis item should always be exported regardless of the joint type.
-       * 
+       *
        * @param alwaysExportJointAxis {@code true} to always export the axis item, {@code false} [default
        *                              value] to only export it for joints requiring it, such as 1-DoF
        *                              joints.
@@ -2171,7 +2158,7 @@ public class URDFTools
 
       /**
        * Specifies whether the dynamics item should always be exported.
-       * 
+       *
        * @param alwaysExportJointDynamics {@code true} to always export the dynamics item, {@code false}
        *                                  [default value] to only export it for joints requiring it, i.e.
        *                                  only when it contains meaningful values.
@@ -2183,7 +2170,7 @@ public class URDFTools
 
       /**
        * Specifies whether the inertial item should always be exported.
-       * 
+       *
        * @param alwaysExportLinkInertial {@code true} to always export the inertial item, {@code false}
        *                                 [default value] to only export it for links requiring it, i.e.
        *                                 only when it contains meaningful values.
@@ -2197,7 +2184,7 @@ public class URDFTools
        * Specifies the number of spaces to use for separating values of a multi-value item, for instance
        * the axis item. This is the default value used unless a specific value (for a given URDF item such
        * as {@code URDFAxis}) is given.
-       * 
+       *
        * @param defaultSpaceCount the number of spaces to use for separating values of a multi-value item.
        *                          Default value is 1.
        */
@@ -2209,7 +2196,7 @@ public class URDFTools
       /**
        * Specifies the number of spaces to use for separating values of a multi-value item, and only apply
        * it to a given URDF item.
-       * 
+       *
        * @param urdfType   the URDF item to which the space count should be applied.
        * @param spaceCount the number of spaces to use for separating values of a multi-value item.
        *                   Default value is 1.
@@ -2224,7 +2211,7 @@ public class URDFTools
 
       /**
        * Specifies a default double formatter to use for generating {@code String} for double values.
-       * 
+       *
        * @param formatter the default formatter to use.
        */
       public void setDefaultDoubleFormatter(DoubleFormatter formatter)
@@ -2234,7 +2221,7 @@ public class URDFTools
 
       /**
        * Specifies a double formatter to use instead of the default one for a given URDF item.
-       * 
+       *
        * @param urdfType  the URDF item to which the formatter should be applied.
        * @param formatter the formatter to use.
        */
@@ -2251,7 +2238,7 @@ public class URDFTools
        * item. This overrides both formatter provided via
        * {@link #setDefaultDoubleFormatter(DoubleFormatter)} and
        * {@link #addDoubleFormatter(Class, DoubleFormatter)}.
-       * 
+       *
        * @param urdfType  the URDF item to which the formatter should be applied.
        * @param fieldName the name of the field for which the formatter is to be applied.
        * @param formatter the formatter to use.
@@ -2349,14 +2336,14 @@ public class URDFTools
    /**
     * Functional interface dedicated to generate {@code String} for double values when generating a
     * URDF model.
-    * 
+    *
     * @author Sylvain Bertrand
     */
    public static interface DoubleFormatter
    {
       /**
        * Generates a representative {@code String} for the given value.
-       * 
+       *
        * @param value the value to generate the {@code String} of.
        * @return the representative {@code String}.
        */
@@ -2364,7 +2351,7 @@ public class URDFTools
 
       /**
        * Convenience method for expanding this formatter to format multiple double values at once.
-       * 
+       *
        * @param spaceCount the number of spaces for separating values.
        * @param values     the values to generate the {@code String} of.
        * @return the representative {@code String}.
