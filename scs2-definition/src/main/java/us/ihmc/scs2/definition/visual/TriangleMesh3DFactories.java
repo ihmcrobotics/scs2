@@ -72,8 +72,6 @@ public class TriangleMesh3DFactories
 
    private static final float ONE_THIRD = 1.0f / 3.0f;
 
-//   private static double smallRadius, largeRadius;
-
    private TriangleMesh3DFactories()
    {
       // Prevent an object being generated.
@@ -3069,7 +3067,6 @@ public class TriangleMesh3DFactories
     */
    public static TriangleMesh3DDefinition stpCapsule3D(double length, double radius, double minimumMargin, double maximumMargin)
    {
-//      updateRadii((float) length, (float) radius, minimumMargin, maximumMargin);
 
       double smallRadius, largeRadius;
       if(minimumMargin == 0.0 && maximumMargin == 0.0)
@@ -3196,6 +3193,50 @@ public class TriangleMesh3DFactories
       return toSTPRamp3DMesh(null,sizeX, sizeY, sizeZ,smallRadius,largeRadius,false);
    }
 
+   public static TriangleMesh3DDefinition stpConvexPolytope3D(STPConvexPolytope3DDefinition description)
+   {
+      ConvexPolytope3DReadOnly convexPolytope = description.getConvexPolytope();
+      TriangleMesh3DDefinition meshDataHolder = stpConvexPolytope3D(convexPolytope,
+                                                          description.getMinimumMargin(),
+                                                          description.getMaximumMargin());
+      if (meshDataHolder != null)
+         meshDataHolder.setName(description.getName());
+      return meshDataHolder;
+   }
+
+   public static TriangleMesh3DDefinition stpConvexPolytope3D(ConvexPolytope3DReadOnly convexPolytope, double minimumMargin, double maximumMargin)
+   {
+      double smallRadius, largeRadius;
+      smallRadius = minimumMargin;
+      largeRadius = computeLargeRadiusFromMargins(minimumMargin,maximumMargin,computeConvexPolytope3DMaximumEdgeLengthSquared(convexPolytope));
+
+      return toSTPConvexPolytope3DMesh(convexPolytope, smallRadius, largeRadius, false);
+
+   }
+
+   /* Method of computeConvexPolytope3DMaximumEdgeLenthSquared is originally method of STPShape3DTools.
+   *  That class could not be imported and not be called.
+   *  So, below equation is added
+   *  When the importing issue is solved, this method should be deleted.
+   *
+   */
+
+   public static double computeConvexPolytope3DMaximumEdgeLengthSquared(ConvexPolytope3DReadOnly convexPolytope3D)
+   {
+      double maximumEdgeLengthSquared = 0.0;
+
+      for (int faceIndex = 0; faceIndex < convexPolytope3D.getNumberOfFaces(); faceIndex++)
+      {
+         Face3DReadOnly face = convexPolytope3D.getFace(faceIndex);
+         Vertex3DReadOnly firstVertex = face.getVertex(0);
+
+         for (int vertexIndex = 1; vertexIndex < face.getNumberOfEdges(); vertexIndex++)
+         {
+            maximumEdgeLengthSquared = Math.max(firstVertex.distanceSquared(face.getVertex(vertexIndex)), maximumEdgeLengthSquared);
+         }
+      }
+      return maximumEdgeLengthSquared;
+   }
    public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose, Tuple3DReadOnly size, double smallRadius,
                                                          double largeRadius, boolean highlightLimits)
    {
