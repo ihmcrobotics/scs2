@@ -17,11 +17,7 @@ public class STPConvexPolytope3DVisualizer
 {
    public static void main(String[] args)
    {
-      STPConvexPolytope3DDefinition stpConvexPolytope3D = new STPConvexPolytope3DDefinition();
-      ConvexPolytope3D polytope = EuclidPolytopeFactories.newIcosahedron(0.3);
-
-      stpConvexPolytope3D.setConvexPolytope(polytope);
-      stpConvexPolytope3D.setMargins(0.01, 0.05);
+      STPConvexPolytope3DDefinition stpConvexPolytope3D = polytope2();
 
       TriangleMesh3DDefinition stpConvexPolytope3DData = TriangleMesh3DFactories.stpConvexPolytope3D(stpConvexPolytope3D);
       TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(stpConvexPolytope3DData);
@@ -30,6 +26,40 @@ public class STPConvexPolytope3DVisualizer
       meshView.setMaterial(new PhongMaterial(Color.AQUAMARINE));
       Simple3DViewer.view3DObjects(meshView);
 
+   }
+
+   private static STPConvexPolytope3DDefinition polytope1()
+   {
+      STPConvexPolytope3DDefinition stpConvexPolytope3D = new STPConvexPolytope3DDefinition();
+      ConvexPolytope3D polytope = EuclidPolytopeFactories.newIcosahedron(0.3);
+
+      stpConvexPolytope3D.setConvexPolytope(polytope);
+      stpConvexPolytope3D.setMargins(0.01, 0.05);
+      return stpConvexPolytope3D;
+   }
+
+
+   private static STPConvexPolytope3DDefinition polytope2()
+   {
+      STPConvexPolytope3DDefinition stpConvexPolytope3D = new STPConvexPolytope3DDefinition();
+      ConvexPolytope3D polytope = new ConvexPolytope3D();
+      polytope.addVertex(new Point3D(0.00, -0.050, 0.0));
+      polytope.addVertex(new Point3D(0.00, +0.050, 0.0));
+      polytope.addVertex(new Point3D(0.17, -0.050, 0.0));
+      polytope.addVertex(new Point3D(0.17, +0.050, 0.0));
+      polytope.addVertex(new Point3D(0.20, -0.025, 0.0));
+      polytope.addVertex(new Point3D(0.20, +0.025, 0.0));
+
+      polytope.addVertex(new Point3D(0.00, -0.050, 0.05));
+      polytope.addVertex(new Point3D(0.00, +0.050, 0.05));
+      polytope.addVertex(new Point3D(0.17, -0.050, 0.05));
+      polytope.addVertex(new Point3D(0.17, +0.050, 0.05));
+      polytope.addVertex(new Point3D(0.20, -0.025, 0.05));
+      polytope.addVertex(new Point3D(0.20, +0.025, 0.05));
+
+      stpConvexPolytope3D.setConvexPolytope(polytope);
+      stpConvexPolytope3D.setMargins(0.01, 0.05);
+      return stpConvexPolytope3D;
    }
 
 
