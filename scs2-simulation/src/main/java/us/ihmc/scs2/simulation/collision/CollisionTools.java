@@ -46,15 +46,15 @@ import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.geometry.shapes.FrameSTPBox3D;
+import us.ihmc.scs2.geometry.shapes.FrameSTPCapsule3D;
+import us.ihmc.scs2.geometry.shapes.FrameSTPCylinder3D;
+import us.ihmc.scs2.geometry.shapes.FrameSTPRamp3D;
+import us.ihmc.scs2.geometry.shapes.STPBox3D;
+import us.ihmc.scs2.geometry.shapes.STPCapsule3D;
+import us.ihmc.scs2.geometry.shapes.STPCylinder3D;
+import us.ihmc.scs2.geometry.shapes.STPRamp3D;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
-import us.ihmc.scs2.simulation.shapes.FrameSTPBox3D;
-import us.ihmc.scs2.simulation.shapes.FrameSTPCapsule3D;
-import us.ihmc.scs2.simulation.shapes.FrameSTPCylinder3D;
-import us.ihmc.scs2.simulation.shapes.FrameSTPRamp3D;
-import us.ihmc.scs2.simulation.shapes.STPBox3D;
-import us.ihmc.scs2.simulation.shapes.STPCapsule3D;
-import us.ihmc.scs2.simulation.shapes.STPCylinder3D;
-import us.ihmc.scs2.simulation.shapes.STPRamp3D;
 
 public class CollisionTools
 {
