@@ -20,22 +20,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
-import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
-import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
-import us.ihmc.scs2.definition.robot.FixedJointDefinition;
-import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
-import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.LoopClosureDefinition;
-import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
-import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
-import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
-import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
-import us.ihmc.scs2.definition.robot.RobotDefinition;
-import us.ihmc.scs2.definition.robot.RobotStateDefinition;
-import us.ihmc.scs2.definition.robot.SensorDefinition;
-import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
-import us.ihmc.scs2.definition.robot.SphericalJointDefinition;
-import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
+import us.ihmc.scs2.definition.robot.*;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
 import us.ihmc.scs2.definition.state.JointState;
 import us.ihmc.scs2.definition.state.JointStateBase;
@@ -47,15 +32,7 @@ import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
 import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimCrossFourBarJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFixedJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPlanarJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRigidBody;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSixDoFJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSphericalJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.*;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -392,6 +369,8 @@ public class Robot implements RobotInterface
             return new SimSphericalJoint((SphericalJointDefinition) definition, predecessor);
          if (definition instanceof CrossFourBarJointDefinition)
             return new SimCrossFourBarJoint((CrossFourBarJointDefinition) definition, predecessor);
+         if (definition instanceof RevoluteTwinsJointDefinition)
+            return new SimRevoluteTwinsJoint((RevoluteTwinsJointDefinition) definition, predecessor);
          throw new UnsupportedOperationException("Unsupported joint definition: " + definition.getClass().getSimpleName());
       }
    }
