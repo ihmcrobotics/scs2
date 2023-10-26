@@ -8,7 +8,7 @@ import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
 import javafx.scene.shape.MeshView;
 import javafx.scene.paint.PhongMaterial;
-import us.ihmc.scs2.simulation.shapes.STPBox3D;
+
 
 public class STPBox3DVisualizer
 {

@@ -11,7 +11,7 @@ import us.ihmc.scs2.definition.geometry.STPConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
-import us.ihmc.scs2.simulation.shapes.STPConvexPolytope3D;
+
 
 public class STPConvexPolytope3DVisualizer
 {
@@ -21,7 +21,7 @@ public class STPConvexPolytope3DVisualizer
       ConvexPolytope3D polytope = EuclidPolytopeFactories.newIcosahedron(0.3);
 
       stpConvexPolytope3D.setConvexPolytope(polytope);
-      stpConvexPolytope3D.setMargins(0.01, 0.025);
+      stpConvexPolytope3D.setMargins(0.01, 0.05);
 
       TriangleMesh3DDefinition stpConvexPolytope3DData = TriangleMesh3DFactories.stpConvexPolytope3D(stpConvexPolytope3D);
       TriangleMesh mesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(stpConvexPolytope3DData);

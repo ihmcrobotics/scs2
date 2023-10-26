@@ -14,11 +14,12 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
+import us.ihmc.scs2.geometry.shapes.STPShape3DTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
-import us.ihmc.scs2.simulation.shapes.STPShape3DTools;
+
 
 public class YoSTPCylinderFX3D extends YoGraphicFX3D
 {

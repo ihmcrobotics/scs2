@@ -41,7 +41,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.geometry.*;
-
+import us.ihmc.scs2.geometry.shapes.*;
 
 /**
  * This class provides factories to create generic meshes, i.e. {@code TriangleMesh3DDefinition}, to
@@ -3068,40 +3068,16 @@ public class TriangleMesh3DFactories
    public static TriangleMesh3DDefinition stpCapsule3D(double length, double radius, double minimumMargin, double maximumMargin)
    {
 
-      double smallRadius, largeRadius;
-      if(minimumMargin == 0.0 && maximumMargin == 0.0)
-      {
-         smallRadius = Double.NaN;
-         largeRadius = Double.NaN;
-      }
-      else
-      {
+      STPCapsule3D stpCapsule = new STPCapsule3D(length,radius);
+      stpCapsule.setMargins(minimumMargin,maximumMargin);
 
-         smallRadius = minimumMargin;
-         largeRadius = radius + computeLargeRadiusFromMargins(minimumMargin, maximumMargin, EuclidCoreTools.square(length));
-      }
+      double smallRadius, largeRadius;
+      smallRadius = stpCapsule.getSmallRadius();
+      largeRadius = stpCapsule.getLargeRadius();
 
       return toSTPCapsule3DMesh(null,radius,length,smallRadius,largeRadius,false);
    }
 
-
-   protected static double computeLargeRadiusFromMargins(double minimumMargin, double maximumMargin, double maximumEdgeLengthSquared)
-   {
-      double safeMaximumMargin = maximumMargin;
-
-      if (EuclidCoreTools.square(maximumMargin - minimumMargin) > 0.25 * maximumEdgeLengthSquared)
-      {
-         safeMaximumMargin = 0.99 * (0.5 * EuclidCoreTools.squareRoot(maximumEdgeLengthSquared) + minimumMargin);
-         LogTools.error("Unachievable margins, modified maximumMargin from: {}, down to: {}.", maximumMargin, safeMaximumMargin);
-      }
-
-      double smallRadius = minimumMargin;
-      double smallRadiusSquared = EuclidCoreTools.square(smallRadius);
-      double maximumMarginSquared = EuclidCoreTools.square(safeMaximumMargin);
-      double largeRadius = smallRadiusSquared - maximumMarginSquared - 0.25 * maximumEdgeLengthSquared;
-      largeRadius /= 2.0 * (smallRadius - safeMaximumMargin);
-      return largeRadius;
-   }
    /*
     * TODO: The following is for drawing STP shapes. Needs some cleanup.
     */
@@ -3136,13 +3112,14 @@ public class TriangleMesh3DFactories
     */
    public static TriangleMesh3DDefinition stpBox3D(double sizeX, double sizeY, double sizeZ, double minimumMargin, double maximumMargin)
    {
+
+      STPBox3D stpBox = new STPBox3D(sizeX,sizeY,sizeZ);
+      stpBox.setMargins(minimumMargin,maximumMargin);
+
       double smallRadius, largeRadius;
 
-         smallRadius = minimumMargin;
-         largeRadius = computeLargeRadiusFromMargins(minimumMargin,maximumMargin,EuclidCoreTools.max(EuclidCoreTools.normSquared(sizeX, sizeY),
-                                                                                                    EuclidCoreTools.normSquared(sizeX, sizeZ),
-                                                                                                    EuclidCoreTools.normSquared(sizeY, sizeZ)));
-
+      smallRadius = stpBox.getSmallRadius();
+      largeRadius = stpBox.getLargeRadius();
 
       return toSTPBox3DMesh(null,sizeX, sizeY, sizeZ,smallRadius,largeRadius,false);
    }
@@ -3159,11 +3136,13 @@ public class TriangleMesh3DFactories
 
    public static TriangleMesh3DDefinition stpCylinder3D(double radius, double length, double minimumMargin, double maximumMargin)
    {
-      double smallRadius, largeRadius;
-      double maximumEdgeLengthSquared = Math.max(length, 2.0 * radius);
+      STPCylinder3D stpCylinder = new STPCylinder3D(radius,length);
+      stpCylinder.setMargins(minimumMargin,maximumMargin);
 
-      smallRadius = minimumMargin;
-      largeRadius = computeLargeRadiusFromMargins(minimumMargin, maximumMargin, maximumEdgeLengthSquared*maximumEdgeLengthSquared);
+      double smallRadius, largeRadius;
+
+      smallRadius = stpCylinder.getSmallRadius();
+      largeRadius = stpCylinder.getLargeRadius();
 
       return toSTPCylinder3DMesh(null,radius, length, smallRadius, largeRadius,false);
    }
@@ -3180,15 +3159,12 @@ public class TriangleMesh3DFactories
 
    public static TriangleMesh3DDefinition stpRamp3D(double sizeX, double sizeY, double sizeZ, double minimumMargin, double maximumMargin)
    {
+      STPRamp3D stpRamp = new STPRamp3D(sizeX,sizeY,sizeZ);
+      stpRamp.setMargins(minimumMargin,maximumMargin);
       double smallRadius, largeRadius;
 
-      smallRadius = minimumMargin;
-      largeRadius = computeLargeRadiusFromMargins(minimumMargin,
-                                                  maximumMargin,
-                                                  EuclidCoreTools.max(EuclidCoreTools.normSquared(sizeX, sizeY),
-                                                                      EuclidCoreTools.normSquared(sizeY, sizeZ),
-                                                                      EuclidCoreTools.normSquared(sizeX, sizeZ) + EuclidCoreTools.square(sizeY)));
-
+      smallRadius = stpRamp.getSmallRadius();
+      largeRadius = stpRamp.getLargeRadius();
 
       return toSTPRamp3DMesh(null,sizeX, sizeY, sizeZ,smallRadius,largeRadius,false);
    }
@@ -3206,37 +3182,17 @@ public class TriangleMesh3DFactories
 
    public static TriangleMesh3DDefinition stpConvexPolytope3D(ConvexPolytope3DReadOnly convexPolytope, double minimumMargin, double maximumMargin)
    {
+      STPConvexPolytope3D stpconvexPolytope = new STPConvexPolytope3D(convexPolytope);
+      stpconvexPolytope.setMargins(minimumMargin,maximumMargin);
+
       double smallRadius, largeRadius;
-      smallRadius = minimumMargin;
-      largeRadius = computeLargeRadiusFromMargins(minimumMargin,maximumMargin,computeConvexPolytope3DMaximumEdgeLengthSquared(convexPolytope));
+      smallRadius = stpconvexPolytope.getSmallRadius();
+      largeRadius = stpconvexPolytope.getLargeRadius();
 
       return toSTPConvexPolytope3DMesh(convexPolytope, smallRadius, largeRadius, false);
 
    }
 
-   /* Method of computeConvexPolytope3DMaximumEdgeLenthSquared is originally method of STPShape3DTools.
-   *  That class could not be imported and not be called.
-   *  So, below equation is added
-   *  When the importing issue is solved, this method should be deleted.
-   *
-   */
-
-   public static double computeConvexPolytope3DMaximumEdgeLengthSquared(ConvexPolytope3DReadOnly convexPolytope3D)
-   {
-      double maximumEdgeLengthSquared = 0.0;
-
-      for (int faceIndex = 0; faceIndex < convexPolytope3D.getNumberOfFaces(); faceIndex++)
-      {
-         Face3DReadOnly face = convexPolytope3D.getFace(faceIndex);
-         Vertex3DReadOnly firstVertex = face.getVertex(0);
-
-         for (int vertexIndex = 1; vertexIndex < face.getNumberOfEdges(); vertexIndex++)
-         {
-            maximumEdgeLengthSquared = Math.max(firstVertex.distanceSquared(face.getVertex(vertexIndex)), maximumEdgeLengthSquared);
-         }
-      }
-      return maximumEdgeLengthSquared;
-   }
    public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose, Tuple3DReadOnly size, double smallRadius,
                                                          double largeRadius, boolean highlightLimits)
    {

@@ -8,7 +8,7 @@ import us.ihmc.scs2.definition.geometry.STPRamp3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
-import us.ihmc.scs2.simulation.shapes.STPRamp3D;
+
 
 public class STPRamp3DVisualizer
 {
