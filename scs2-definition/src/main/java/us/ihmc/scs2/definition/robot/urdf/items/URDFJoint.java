@@ -11,7 +11,7 @@ import javax.xml.bind.annotation.XmlType;
  *
  * @author Sylvain Bertrand
  */
-@XmlType(propOrder = {"name", "type", "origin", "axis", "parent", "child", "calibration", "dynamics", "limit", "mimic", "safetyController"})
+@XmlType(propOrder = {"name", "type", "origin", "axis", "parent", "child", "calibration", "dynamics", "limit", "mimic", "safetyController", "actuatedJointIndex", "subJoints", "subLinks"})
 public class URDFJoint implements URDFItem
 {
    public enum URDFJointType
