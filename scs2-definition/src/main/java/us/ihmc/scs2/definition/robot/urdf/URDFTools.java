@@ -230,6 +230,7 @@ public class URDFTools
          URDFModel urdfModel;
          JAXBContext context = JAXBContext.newInstance(URDFModel.class);
          Unmarshaller um = context.createUnmarshaller();
+         um.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
 
          if (!parserProperties.ignoreNamespace)
          {
@@ -767,24 +768,28 @@ public class URDFTools
 
       int actuatedJointIndex = parseInteger(urdfJoint.getActuatedJointIndex(), -1);
       if (actuatedJointIndex < 0 || actuatedJointIndex > 3)
-         throw new IllegalArgumentException("The actuated joint index must be in [0, 3].");
+         throw new IllegalArgumentException("The actuated joint index must be in [0, 3], was: " + actuatedJointIndex);
 
       URDFJoint urdfJointA, urdfJointB, urdfJointC, urdfJointD;
       URDFLink urdfLinkDA, urdfLinkBC;
       urdfJointA = urdfJoint0;
       urdfJointB = urdfJoint1;
 
-      if (!Objects.equals(urdfJointA.getChild().getLink(), urdfLink0.getName()))
+      if (Objects.equals(urdfJointA.getChild().getLink(), urdfLink0.getName()))
       {
          if (!Objects.equals(urdfJointB.getChild().getLink(), urdfLink1.getName()))
-            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+            throw new IllegalArgumentException(
+                  "Error when parsing the cross-bars, jointA child: " + urdfJointA.getChild().getLink() + ", jointB child: " + urdfJointB.getChild().getLink()
+                  + ", link0: " + urdfLink0.getName() + ", link1: " + urdfLink1.getName());
          urdfLinkDA = urdfLink0;
          urdfLinkBC = urdfLink1;
       }
       else
       {
          if (!Objects.equals(urdfJointB.getChild().getLink(), urdfLink0.getName()))
-            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+            throw new IllegalArgumentException(
+                  "Error when parsing the cross-bars, jointA child: " + urdfJointA.getChild().getLink() + ", jointB child: " + urdfJointB.getChild().getLink()
+                  + ", link0: " + urdfLink0.getName() + ", link1: " + urdfLink1.getName());
          urdfLinkDA = urdfLink1;
          urdfLinkBC = urdfLink0;
       }
@@ -792,7 +797,10 @@ public class URDFTools
       if (Objects.equals(urdfJoint2.getParent().getLink(), urdfLinkDA.getName()))
       {
          if (!Objects.equals(urdfJoint3.getParent().getLink(), urdfLinkBC.getName()))
-            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+            throw new IllegalArgumentException(
+                  "Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: " + urdfJoint3.getParent()
+                                                                                                                                            .getLink()
+                  + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
          urdfJointD = urdfJoint2;
          urdfJointC = urdfJoint3;
          if (actuatedJointIndex == 2)
@@ -803,9 +811,15 @@ public class URDFTools
       else
       {
          if (!Objects.equals(urdfJoint2.getParent().getLink(), urdfLinkBC.getName()))
-            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+            throw new IllegalArgumentException(
+                  "Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: " + urdfJoint3.getParent()
+                                                                                                                                            .getLink()
+                  + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
          if (!Objects.equals(urdfJoint3.getParent().getLink(), urdfLinkDA.getName()))
-            throw new IllegalArgumentException("Error when parsing the cross-bars.");
+            throw new IllegalArgumentException(
+                  "Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: " + urdfJoint3.getParent()
+                                                                                                                                            .getLink()
+                  + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
          urdfJointC = urdfJoint2;
          urdfJointD = urdfJoint3;
       }
@@ -2245,8 +2259,8 @@ public class URDFTools
        * Specifies whether a default name should be generated for {@code URDFCollision} that do not
        * explicitly declare one.
        *
-       * @param autoGenerateCollisionName whether to automatically generate a name for collisions when it is
-       *                                  missing.
+       * @param autoGenerateCollisionName whether to automatically generate a name for collisions when it
+       *                                  is missing.
        */
       public void setAutoGenerateCollisionName(boolean autoGenerateCollisionName)
       {
