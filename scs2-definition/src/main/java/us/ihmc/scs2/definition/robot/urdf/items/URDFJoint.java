@@ -16,7 +16,7 @@ public class URDFJoint implements URDFItem
 {
    public enum URDFJointType
    {
-      continuous, revolute, prismatic, fixed, floating, planar;
+      continuous, revolute, prismatic, fixed, floating, planar, cross_four_bar, revolute_twins;
 
       public static URDFJointType parse(String value)
       {
@@ -29,7 +29,9 @@ public class URDFJoint implements URDFItem
          }
          return null;
       }
-   };
+   }
+
+   ;
 
    private String name;
    private String type;
@@ -42,6 +44,17 @@ public class URDFJoint implements URDFItem
    private URDFLimit limit;
    private URDFMimic mimic;
    private URDFSafetyController safetyController;
+
+   /**
+    * The sub-joints are used to create complex joints with internal kinematics like a {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
+    * {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}
+    */
+   private List<URDFJoint> subJoints;
+   /**
+    * The sub-links are used to create complex joints with internal kinematics like a {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
+    * {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}
+    */
+   private List<URDFLink> subLinks;
 
    @XmlAttribute(name = "name")
    public void setName(String name)
@@ -172,18 +185,19 @@ public class URDFJoint implements URDFItem
    @Override
    public String getContentAsString()
    {
-      return format("[name: %s, type: %s, origin: %s, parent: %s, child: %s, axis: %s, calibration: %s, dynamics: %s, limit: %s, mimic: %s, safetyController: %s]",
-                    name,
-                    type,
-                    origin,
-                    parent,
-                    child,
-                    axis,
-                    calibration,
-                    dynamics,
-                    limit,
-                    mimic,
-                    safetyController);
+      return format(
+            "[name: %s, type: %s, origin: %s, parent: %s, child: %s, axis: %s, calibration: %s, dynamics: %s, limit: %s, mimic: %s, safetyController: %s]",
+            name,
+            type,
+            origin,
+            parent,
+            child,
+            axis,
+            calibration,
+            dynamics,
+            limit,
+            mimic,
+            safetyController);
    }
 
    @Override
