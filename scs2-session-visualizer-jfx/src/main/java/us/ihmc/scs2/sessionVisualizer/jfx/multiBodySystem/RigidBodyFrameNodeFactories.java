@@ -8,8 +8,10 @@ import java.util.function.BiConsumer;
 import javafx.scene.Node;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.mecano.multiBodySystem.interfaces.CrossFourBarJointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.RevoluteTwinsJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteTwinsJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
@@ -49,6 +51,15 @@ public class RigidBodyFrameNodeFactories
                frameNodeAddition.accept(parentJoint.getBodyBC().getName(),
                                         loadRigidBodyGraphic(parentJointDefinition.getBodyBC(),
                                                              parentJoint.getBodyBC(),
+                                                             robotDefinition.getResourceClassLoader()));
+            }
+            else if (body.getParentJoint() instanceof RevoluteTwinsJointReadOnly)
+            {
+               RevoluteTwinsJointReadOnly parentJoint = (RevoluteTwinsJointReadOnly) body.getParentJoint();
+               RevoluteTwinsJointDefinition parentJointDefinition = (RevoluteTwinsJointDefinition) robotDefinition.getJointDefinition(parentJoint.getName());
+               frameNodeAddition.accept(parentJoint.getBodyAB().getName(),
+                                        loadRigidBodyGraphic(parentJointDefinition.getBodyAB(),
+                                                             parentJoint.getBodyAB(),
                                                              robotDefinition.getResourceClassLoader()));
             }
          }
