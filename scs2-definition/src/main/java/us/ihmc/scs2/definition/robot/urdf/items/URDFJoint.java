@@ -11,7 +11,20 @@ import javax.xml.bind.annotation.XmlType;
  *
  * @author Sylvain Bertrand
  */
-@XmlType(propOrder = {"name", "type", "origin", "axis", "parent", "child", "calibration", "dynamics", "limit", "mimic", "safetyController", "actuatedJointIndex", "subJoints", "subLinks"})
+@XmlType(propOrder = {"name",
+                      "type",
+                      "origin",
+                      "axis",
+                      "parent",
+                      "child",
+                      "calibration",
+                      "dynamics",
+                      "limit",
+                      "mimic",
+                      "safetyController",
+                      "actuatedJointIndex",
+                      "subJoints",
+                      "subLinks"})
 public class URDFJoint implements URDFItem
 {
    public enum URDFJointType
@@ -31,8 +44,6 @@ public class URDFJoint implements URDFItem
       }
    }
 
-   ;
-
    private String name;
    private String type;
    private URDFOrigin origin;
@@ -46,19 +57,22 @@ public class URDFJoint implements URDFItem
    private URDFSafetyController safetyController;
 
    /**
-    * The sub-joints are used to create complex joints with internal kinematics like a {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
+    * The sub-joints are used to create complex joints with internal kinematics like a
+    * {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
     * {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}
     */
    private List<URDFJoint> subJoints;
    /**
-    * The sub-links are used to create complex joints with internal kinematics like a {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
+    * The sub-links are used to create complex joints with internal kinematics like a
+    * {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
     * {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}
     */
    private List<URDFLink> subLinks;
 
    /**
-    * Indicates which sub-joint is the torque source for complex joints with internal kinematics like a {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint}
-    * or a {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}.
+    * Indicates which sub-joint is the torque source for complex joints with internal kinematics like a
+    * {@link us.ihmc.mecano.multiBodySystem.CrossFourBarJoint} or a
+    * {@link us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint}.
     */
    private String actuatedJointIndex;
 
@@ -224,21 +238,20 @@ public class URDFJoint implements URDFItem
    @Override
    public String getContentAsString()
    {
-      return format(
-            "[name: %s, type: %s, origin: %s, parent: %s, child: %s, axis: %s, calibration: %s, dynamics: %s, limit: %s, mimic: %s, safetyController: %s]",
-            name,
-            type,
-            origin,
-            parent,
-            child,
-            axis,
-            calibration,
-            dynamics,
-            limit,
-            mimic,
-            safetyController,
-            subJoints,
-            subLinks);
+      return format("[name: %s, type: %s, origin: %s, parent: %s, child: %s, axis: %s, calibration: %s, dynamics: %s, limit: %s, mimic: %s, safetyController: %s]",
+                    name,
+                    type,
+                    origin,
+                    parent,
+                    child,
+                    axis,
+                    calibration,
+                    dynamics,
+                    limit,
+                    mimic,
+                    safetyController,
+                    subJoints,
+                    subLinks);
    }
 
    @Override
