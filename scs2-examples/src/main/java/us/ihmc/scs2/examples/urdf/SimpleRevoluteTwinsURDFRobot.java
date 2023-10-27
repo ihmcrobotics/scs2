@@ -1,10 +1,16 @@
 package us.ihmc.scs2.examples.urdf;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import javax.xml.bind.JAXBException;
+
 import us.ihmc.euclid.referenceFrame.FramePose3D;
 import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.mecano.frames.MovingReferenceFrame;
-import us.ihmc.mecano.multiBodySystem.RevoluteTwinsJoint;
-import us.ihmc.mecano.multiBodySystem.interfaces.CrossFourBarJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RevoluteJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RevoluteTwinsJointReadOnly;
 import us.ihmc.scs2.SimulationConstructionSet2;
@@ -15,13 +21,6 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
-
-import javax.xml.bind.JAXBException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class SimpleRevoluteTwinsURDFRobot
 {
