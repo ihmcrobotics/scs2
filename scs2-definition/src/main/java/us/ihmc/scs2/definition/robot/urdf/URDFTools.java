@@ -230,7 +230,6 @@ public class URDFTools
          URDFModel urdfModel;
          JAXBContext context = JAXBContext.newInstance(URDFModel.class);
          Unmarshaller um = context.createUnmarshaller();
-         um.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
 
          if (!parserProperties.ignoreNamespace)
          {
