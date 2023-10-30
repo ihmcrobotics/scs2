@@ -79,6 +79,7 @@ public class Mcap
       currentPos += headerMagic.getItemTotalLength();
       records = new ArrayList<>();
       Record lastRecord = null;
+
       do
       {
          lastRecord = new Record(_io, currentPos);
@@ -98,7 +99,7 @@ public class Mcap
       return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
    }
 
-   public static class PrefixedStr extends KaitaiStructToStringEnabled
+   public static class PrefixedStr extends KaitaiStruct
    {
       private long lenStr;
       private String str;
@@ -136,7 +137,7 @@ public class Mcap
       }
    }
 
-   public static class Chunk extends KaitaiStructToStringEnabled
+   public static class Chunk extends KaitaiStruct
    {
       private long messageStartTime;
       private long messageEndTime;
@@ -146,9 +147,9 @@ public class Mcap
       private long lenRecords;
       private Object records;
 
-      public Chunk(ByteBuffer buffer, int _length) throws IOException
+      public Chunk(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -233,11 +234,11 @@ public class Mcap
       }
    }
 
-   public static class DataEnd extends KaitaiStructToStringEnabled
+   public static class DataEnd extends KaitaiStruct
    {
       private long dataSectionCrc32;
 
-      public DataEnd(ByteBuffer buffer, int _length) throws IOException
+      public DataEnd(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
          super(buffer, _length);
          _read();
@@ -272,7 +273,7 @@ public class Mcap
       }
    }
 
-   public static class Channel extends KaitaiStructToStringEnabled
+   public static class Channel extends KaitaiStruct
    {
       private int id;
       private int schemaId;
@@ -280,9 +281,9 @@ public class Mcap
       private PrefixedStr messageEncoding;
       private MapStrStr metadata;
 
-      public Channel(ByteBuffer buffer, int _length) throws IOException
+      public Channel(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -342,15 +343,15 @@ public class Mcap
       }
    }
 
-   public static class MessageIndex extends KaitaiStructToStringEnabled
+   public static class MessageIndex extends KaitaiStruct
    {
       private int channelId;
       private long lenRecords;
       private MessageIndexEntries records;
 
-      public MessageIndex(ByteBuffer buffer, int _length) throws IOException
+      public MessageIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -370,7 +371,7 @@ public class Mcap
          setComputedLength(Short.BYTES + Integer.BYTES + records.getItemTotalLength());
       }
 
-      public static class MessageIndexEntry extends KaitaiStructToStringEnabled
+      public static class MessageIndexEntry extends KaitaiStruct
       {
          private long logTime;
          private long offset;
@@ -416,7 +417,7 @@ public class Mcap
          }
       }
 
-      public static class MessageIndexEntries extends KaitaiStructToStringEnabled
+      public static class MessageIndexEntries extends KaitaiStruct
       {
          private List<MessageIndexEntry> entries;
 
@@ -496,7 +497,7 @@ public class Mcap
       }
    }
 
-   public static class Statistics extends KaitaiStructToStringEnabled
+   public static class Statistics extends KaitaiStruct
    {
       private long messageCount;
       private int schemaCount;
@@ -509,15 +510,15 @@ public class Mcap
       private long lenChannelMessageCounts;
       private ChannelMessageCounts channelMessageCounts;
 
-      public Statistics(ByteBuffer buffer, int _length) throws IOException
+      public Statistics(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
-      public Statistics(FileChannel _io, long position, int length) throws IOException
+      public Statistics(FileChannel _io, long _pos, int length) throws IOException
       {
-         super(_io, position, length);
+         super(_io, _pos, length);
          _read();
       }
 
@@ -538,7 +539,7 @@ public class Mcap
          setComputedLength(3 * Long.BYTES + 5 * Integer.BYTES + Short.BYTES + channelMessageCounts.getItemTotalLength());
       }
 
-      public static class ChannelMessageCounts extends KaitaiStructToStringEnabled
+      public static class ChannelMessageCounts extends KaitaiStruct
       {
          private List<ChannelMessageCount> entries;
 
@@ -585,7 +586,7 @@ public class Mcap
          }
       }
 
-      public static class ChannelMessageCount extends KaitaiStructToStringEnabled
+      public static class ChannelMessageCount extends KaitaiStruct
       {
          private int channelId;
          private long messageCount;
@@ -699,7 +700,7 @@ public class Mcap
       }
    }
 
-   public static class AttachmentIndex extends KaitaiStructToStringEnabled
+   public static class AttachmentIndex extends KaitaiStruct
    {
       private long ofsAttachment;
       private long lenAttachment;
@@ -711,9 +712,9 @@ public class Mcap
 
       private Record attachment;
 
-      public AttachmentIndex(ByteBuffer buffer, int _length) throws IOException
+      public AttachmentIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -798,7 +799,7 @@ public class Mcap
       }
    }
 
-   public static class Schema extends KaitaiStructToStringEnabled
+   public static class Schema extends KaitaiStruct
    {
       private int id;
       private PrefixedStr name;
@@ -806,9 +807,9 @@ public class Mcap
       private long lenData;
       private byte[] data;
 
-      public Schema(ByteBuffer buffer, int _length) throws IOException
+      public Schema(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -870,7 +871,7 @@ public class Mcap
       }
    }
 
-   public static class MapStrStr extends KaitaiStructToStringEnabled
+   public static class MapStrStr extends KaitaiStruct
    {
       private long lenEntries;
       private Entries entries;
@@ -890,7 +891,7 @@ public class Mcap
          setComputedLength(Integer.BYTES + entries.getItemTotalLength());
       }
 
-      public static class Entries extends KaitaiStructToStringEnabled
+      public static class Entries extends KaitaiStruct
       {
          private List<TupleStrStr> entries;
 
@@ -957,11 +958,11 @@ public class Mcap
       }
    }
 
-   public static class SummaryOffset extends KaitaiStructToStringEnabled
+   public static class SummaryOffset extends KaitaiStruct
    {
-      public SummaryOffset(ByteBuffer buffer, int _length) throws IOException
+      public SummaryOffset(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1022,7 +1023,7 @@ public class Mcap
       }
    }
 
-   public static class Attachment extends KaitaiStructToStringEnabled
+   public static class Attachment extends KaitaiStruct
    {
       private long logTime;
       private long createTime;
@@ -1032,9 +1033,9 @@ public class Mcap
       private byte[] data;
       private long crc32;
 
-      public Attachment(ByteBuffer buffer, int _length) throws IOException
+      public Attachment(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1137,14 +1138,14 @@ public class Mcap
       }
    }
 
-   public static class Metadata extends KaitaiStructToStringEnabled
+   public static class Metadata extends KaitaiStruct
    {
       private PrefixedStr name;
       private MapStrStr metadata;
 
-      public Metadata(ByteBuffer buffer, int _length) throws IOException
+      public Metadata(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1183,14 +1184,14 @@ public class Mcap
       }
    }
 
-   public static class Header extends KaitaiStructToStringEnabled
+   public static class Header extends KaitaiStruct
    {
       private PrefixedStr profile;
       private PrefixedStr library;
 
-      public Header(ByteBuffer buffer, int _length) throws IOException
+      public Header(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1229,7 +1230,7 @@ public class Mcap
       }
    }
 
-   public static class Message extends KaitaiStructToStringEnabled
+   public static class Message extends KaitaiStruct
    {
       private int channelId;
       private long sequence;
@@ -1247,12 +1248,12 @@ public class Mcap
 
       private Message()
       {
-         super(null, -1, -1);
+         super((FileChannel) null, -1, -1);
       }
 
-      public Message(ByteBuffer buffer, int _length) throws IOException
+      public Message(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1312,7 +1313,7 @@ public class Mcap
       }
    }
 
-   public static class TupleStrStr extends KaitaiStructToStringEnabled
+   public static class TupleStrStr extends KaitaiStruct
    {
       private PrefixedStr key;
       private PrefixedStr value;
@@ -1349,16 +1350,16 @@ public class Mcap
       }
    }
 
-   public static class MetadataIndex extends KaitaiStructToStringEnabled
+   public static class MetadataIndex extends KaitaiStruct
    {
       private long ofsMetadata;
       private long lenMetadata;
       private PrefixedStr name;
       private Record metadata;
 
-      public MetadataIndex(ByteBuffer buffer, int _length) throws IOException
+      public MetadataIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1414,7 +1415,7 @@ public class Mcap
       }
    }
 
-   public static class Magic extends KaitaiStructToStringEnabled
+   public static class Magic extends KaitaiStruct
    {
       public static final int MAGIC_SIZE = 8;
       public static final byte[] MAGIC_BYTES = {-119, 77, 67, 65, 80, 48, 13, 10};
@@ -1458,21 +1459,24 @@ public class Mcap
       }
    }
 
-   public static class Records extends KaitaiStructToStringEnabled
+   public static class Records extends KaitaiStruct
    {
       private List<Record> records;
       private final int totalRecordLength;
 
       public Records(ByteBuffer buffer) throws IOException
       {
-         super(buffer);
-         totalRecordLength = buffer.remaining();
-         _read();
+         this(buffer, buffer.remaining());
       }
 
       public Records(ByteBuffer buffer, int _length) throws IOException
       {
-         super(buffer, _length);
+         this(buffer, buffer.position(), _length);
+      }
+
+      public Records(ByteBuffer buffer, long _pos, int _length) throws IOException
+      {
+         super(buffer, _pos, _length);
          totalRecordLength = _length;
          _read();
       }
@@ -1504,11 +1508,15 @@ public class Mcap
          }
          else
          {
+            long currentPos = buffer.position();
+
             while (remaining > 0)
             {
                Record record = new Record(buffer);
                records.add(record);
+               currentPos += record.getItemTotalLength();
                remaining -= record.getItemTotalLength();
+               buffer.position((int) currentPos);
             }
          }
       }
@@ -1533,7 +1541,7 @@ public class Mcap
       }
    }
 
-   public static class Footer extends KaitaiStructToStringEnabled
+   public static class Footer extends KaitaiStruct
    {
       private long ofsSummarySection;
       private long ofsSummaryOffsetSection;
@@ -1542,9 +1550,9 @@ public class Mcap
       private Records summaryOffsetSection;
       private Records summarySection;
 
-      public Footer(ByteBuffer buffer, int _length) throws IOException
+      public Footer(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1637,16 +1645,22 @@ public class Mcap
       }
    }
 
-   public static class Record extends KaitaiStructToStringEnabled
+   public static class Record extends KaitaiStruct
    {
       public static final int RECORD_HEADER_LENGTH = 9;
       private Opcode op;
-      private long lenBody;
+      private long lengthBody;
+      private long bodyPos;
       private Object body;
 
       public Record(ByteBuffer buffer) throws IOException
       {
-         super(buffer);
+         this(buffer, buffer.position());
+      }
+
+      public Record(ByteBuffer buffer, long _pos) throws IOException
+      {
+         super(buffer, _pos, -1);
          _read();
       }
 
@@ -1663,69 +1677,79 @@ public class Mcap
       {
          _readIntoBuffer();
          op = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
-         lenBody = buffer.getLong();
+         lengthBody = buffer.getLong();
+         if (_io != null)
+            bodyPos = _pos + RECORD_HEADER_LENGTH;
+         else
+            bodyPos = buffer.position();
+         setComputedLength(RECORD_HEADER_LENGTH + (int) lengthBody);
+      }
 
-         if (op != null)
+      public void readBody() throws IOException
+      {
+         if (body != null)
+            return;
+
+         if (op == null)
          {
             if (_io != null)
             {
-               long bodyPos = _pos + RECORD_HEADER_LENGTH;
-               body = switch (op)
-               {
-                  case MESSAGE -> new Message(_io, bodyPos, (int) lenBody);
-                  case METADATA_INDEX -> new MetadataIndex(_io, bodyPos, (int) lenBody);
-                  case CHUNK -> new Chunk(_io, bodyPos, (int) lenBody);
-                  case SCHEMA -> new Schema(_io, bodyPos, (int) lenBody);
-                  case CHUNK_INDEX -> new ChunkIndex(_io, bodyPos, (int) lenBody);
-                  case DATA_END -> new DataEnd(_io, bodyPos, (int) lenBody);
-                  case ATTACHMENT_INDEX -> new AttachmentIndex(_io, bodyPos, (int) lenBody);
-                  case STATISTICS -> new Statistics(_io, bodyPos, (int) lenBody);
-                  case MESSAGE_INDEX -> new MessageIndex(_io, bodyPos, (int) lenBody);
-                  case CHANNEL -> new Channel(_io, bodyPos, (int) lenBody);
-                  case METADATA -> new Metadata(_io, bodyPos, (int) lenBody);
-                  case ATTACHMENT -> new Attachment(_io, bodyPos, (int) lenBody);
-                  case HEADER -> new Header(_io, bodyPos, (int) lenBody);
-                  case FOOTER -> new Footer(_io, bodyPos, (int) lenBody);
-                  case SUMMARY_OFFSET -> new SummaryOffset(_io, bodyPos, (int) lenBody);
-               };
+               ByteBuffer bb = ByteBuffer.allocate((int) lengthBody);
+               _io.read(bb, bodyPos);
+               body = bb.array();
             }
             else
             {
-               body = switch (op)
-               {
-                  case MESSAGE -> new Message(buffer, (int) lenBody);
-                  case METADATA_INDEX -> new MetadataIndex(buffer, (int) lenBody);
-                  case CHUNK -> new Chunk(buffer, (int) lenBody);
-                  case SCHEMA -> new Schema(buffer, (int) lenBody);
-                  case CHUNK_INDEX -> new ChunkIndex(buffer, (int) lenBody);
-                  case DATA_END -> new DataEnd(buffer, (int) lenBody);
-                  case ATTACHMENT_INDEX -> new AttachmentIndex(buffer, (int) lenBody);
-                  case STATISTICS -> new Statistics(buffer, (int) lenBody);
-                  case MESSAGE_INDEX -> new MessageIndex(buffer, (int) lenBody);
-                  case CHANNEL -> new Channel(buffer, (int) lenBody);
-                  case METADATA -> new Metadata(buffer, (int) lenBody);
-                  case ATTACHMENT -> new Attachment(buffer, (int) lenBody);
-                  case HEADER -> new Header(buffer, (int) lenBody);
-                  case FOOTER -> new Footer(buffer, (int) lenBody);
-                  case SUMMARY_OFFSET -> new SummaryOffset(buffer, (int) lenBody);
-               };
+               body = new byte[(int) lengthBody];
+               buffer.get((int) bodyPos, (byte[]) body);
             }
+            return;
          }
-         else if (_io != null)
+
+         if (_io != null)
          {
-            ByteBuffer bb = ByteBuffer.allocate((int) lenBody);
-            _io.read(bb);
-            body = bb.array();
+            body = switch (op)
+            {
+               case MESSAGE -> new Message(_io, bodyPos, (int) lengthBody);
+               case METADATA_INDEX -> new MetadataIndex(_io, bodyPos, (int) lengthBody);
+               case CHUNK -> new Chunk(_io, bodyPos, (int) lengthBody);
+               case SCHEMA -> new Schema(_io, bodyPos, (int) lengthBody);
+               case CHUNK_INDEX -> new ChunkIndex(_io, bodyPos, (int) lengthBody);
+               case DATA_END -> new DataEnd(_io, bodyPos, (int) lengthBody);
+               case ATTACHMENT_INDEX -> new AttachmentIndex(_io, bodyPos, (int) lengthBody);
+               case STATISTICS -> new Statistics(_io, bodyPos, (int) lengthBody);
+               case MESSAGE_INDEX -> new MessageIndex(_io, bodyPos, (int) lengthBody);
+               case CHANNEL -> new Channel(_io, bodyPos, (int) lengthBody);
+               case METADATA -> new Metadata(_io, bodyPos, (int) lengthBody);
+               case ATTACHMENT -> new Attachment(_io, bodyPos, (int) lengthBody);
+               case HEADER -> new Header(_io, bodyPos, (int) lengthBody);
+               case FOOTER -> new Footer(_io, bodyPos, (int) lengthBody);
+               case SUMMARY_OFFSET -> new SummaryOffset(_io, bodyPos, (int) lengthBody);
+            };
          }
          else
          {
-            body = new byte[(int) lenBody];
-            buffer.get((byte[]) body);
+            body = switch (op)
+            {
+               case MESSAGE -> new Message(buffer, bodyPos, (int) lengthBody);
+               case METADATA_INDEX -> new MetadataIndex(buffer, bodyPos, (int) lengthBody);
+               case CHUNK -> new Chunk(buffer, bodyPos, (int) lengthBody);
+               case SCHEMA -> new Schema(buffer, bodyPos, (int) lengthBody);
+               case CHUNK_INDEX -> new ChunkIndex(buffer, bodyPos, (int) lengthBody);
+               case DATA_END -> new DataEnd(buffer, bodyPos, (int) lengthBody);
+               case ATTACHMENT_INDEX -> new AttachmentIndex(buffer, bodyPos, (int) lengthBody);
+               case STATISTICS -> new Statistics(buffer, bodyPos, (int) lengthBody);
+               case MESSAGE_INDEX -> new MessageIndex(buffer, bodyPos, (int) lengthBody);
+               case CHANNEL -> new Channel(buffer, bodyPos, (int) lengthBody);
+               case METADATA -> new Metadata(buffer, bodyPos, (int) lengthBody);
+               case ATTACHMENT -> new Attachment(buffer, bodyPos, (int) lengthBody);
+               case HEADER -> new Header(buffer, bodyPos, (int) lengthBody);
+               case FOOTER -> new Footer(buffer, bodyPos, (int) lengthBody);
+               case SUMMARY_OFFSET -> new SummaryOffset(buffer, bodyPos, (int) lengthBody);
+            };
          }
-         if (body instanceof KaitaiStructToStringEnabled kaitaiBody)
-            setComputedLength(RECORD_HEADER_LENGTH + kaitaiBody.getItemTotalLength());
-         else
-            setComputedLength(RECORD_HEADER_LENGTH + (int) lenBody);
+
+         setComputedLength(RECORD_HEADER_LENGTH + ((KaitaiStruct) body).getItemTotalLength());
       }
 
       public Opcode op()
@@ -1733,14 +1757,27 @@ public class Mcap
          return op;
       }
 
-      public long lenBody()
+      public long lengthBody()
       {
-         return lenBody;
+         return lengthBody;
       }
 
       public Object body()
       {
-         return body;
+         try
+         {
+            readBody();
+            return body;
+         }
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
+      }
+
+      public void unloadBody()
+      {
+         body = null;
       }
 
       @Override
@@ -1754,13 +1791,13 @@ public class Mcap
       {
          String out = getClass().getSimpleName() + ":";
          out += "\n\t-op = " + op;
-         out += "\n\t-lenBody = " + lenBody;
-         out += "\n\t-body = " + (body == null ? "null" : "\n" + ((KaitaiStructToStringEnabled) body).toString(indent + 2));
+         out += "\n\t-lengthBody = " + lengthBody;
+         out += "\n\t-body = " + (body == null ? "null" : "\n" + ((KaitaiStruct) body).toString(indent + 2));
          return indent(out, indent);
       }
    }
 
-   public static class ChunkIndex extends KaitaiStructToStringEnabled
+   public static class ChunkIndex extends KaitaiStruct
    {
       private long messageStartTime;
       private long messageEndTime;
@@ -1773,9 +1810,9 @@ public class Mcap
       private long compressedSize;
       private long uncompressedSize;
 
-      public ChunkIndex(ByteBuffer buffer, int _length) throws IOException
+      public ChunkIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -1802,7 +1839,7 @@ public class Mcap
          setComputedLength(7 * Long.BYTES + Integer.BYTES + messageIndexOffsets.getItemTotalLength() + compression.getItemTotalLength());
       }
 
-      public static class MessageIndexOffset extends KaitaiStructToStringEnabled
+      public static class MessageIndexOffset extends KaitaiStruct
       {
          public MessageIndexOffset(ByteBuffer buffer) throws IOException
          {
@@ -1848,7 +1885,7 @@ public class Mcap
          }
       }
 
-      public static class MessageIndexOffsets extends KaitaiStructToStringEnabled
+      public static class MessageIndexOffsets extends KaitaiStruct
       {
          private List<MessageIndexOffset> entries;
 
@@ -1980,7 +2017,7 @@ public class Mcap
       }
    }
 
-   private abstract static class KaitaiStructToStringEnabled
+   private abstract static class KaitaiStruct
    {
       protected final FileChannel _io;
       protected long _pos;
@@ -1988,21 +2025,26 @@ public class Mcap
 
       protected ByteBuffer buffer;
 
-      public KaitaiStructToStringEnabled(ByteBuffer buffer)
+      public KaitaiStruct(ByteBuffer buffer)
       {
          this(buffer, -1);
       }
 
-      public KaitaiStructToStringEnabled(ByteBuffer buffer, int _length)
+      public KaitaiStruct(ByteBuffer buffer, int _length)
+      {
+         this(buffer, buffer.position(), _length);
+      }
+
+      public KaitaiStruct(ByteBuffer buffer, long _pos, int _length)
       {
          this.buffer = buffer;
          _io = null;
-         _pos = 0;
+         this._pos = _pos;
          this._length = _length;
          buffer.order(ByteOrder.LITTLE_ENDIAN);
       }
 
-      public KaitaiStructToStringEnabled(FileChannel _io, long _pos, int _length)
+      public KaitaiStruct(FileChannel _io, long _pos, int _length)
       {
          this._io = _io;
          this._pos = _pos;
@@ -2026,11 +2068,15 @@ public class Mcap
       protected void _readIntoBuffer() throws IOException
       {
          if (_io == null)
-            return;
-
-         _io.position(_pos);
-         _io.read(buffer);
-         buffer.flip();
+         {
+            buffer.position((int) _pos);
+         }
+         else
+         {
+            _io.position(_pos);
+            _io.read(buffer);
+            buffer.flip();
+         }
       }
 
       public abstract void _read() throws IOException;
