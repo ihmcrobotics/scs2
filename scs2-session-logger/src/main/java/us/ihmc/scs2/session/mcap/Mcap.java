@@ -373,7 +373,14 @@ public class Mcap
 
       public static class MessageIndexEntry extends KaitaiStruct
       {
+         /**
+          * Time at which the message was recorded.
+          */
          private long logTime;
+
+         /**
+          * Offset is relative to the start of the uncompressed chunk data.
+          */
          private long offset;
 
          public MessageIndexEntry(ByteBuffer buffer) throws IOException
