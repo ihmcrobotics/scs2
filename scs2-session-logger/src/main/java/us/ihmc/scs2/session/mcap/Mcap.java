@@ -28,7 +28,7 @@ public class Mcap
    /**
     * Stream object that this KaitaiStruct-based structure was parsed from.
     */
-   protected FileChannel _io;
+   protected FileChannel fileChannel;
 
    public enum Opcode
    {
@@ -61,34 +61,34 @@ public class Mcap
       }
    }
 
-   public Mcap(FileChannel _io) throws IOException
+   public Mcap(FileChannel fileChannel) throws IOException
    {
-      this._io = _io;
+      this.fileChannel = fileChannel;
       _read();
    }
 
-   public FileChannel _io()
+   public FileChannel getFileChannel()
    {
-      return _io;
+      return fileChannel;
    }
 
    private void _read() throws IOException
    {
       long currentPos = 0;
-      headerMagic = new Magic(_io, currentPos);
+      headerMagic = new Magic(fileChannel, currentPos);
       currentPos += headerMagic.getItemTotalLength();
       records = new ArrayList<>();
       Record lastRecord = null;
 
       do
       {
-         lastRecord = new Record(_io, currentPos);
+         lastRecord = new Record(fileChannel, currentPos);
          currentPos += lastRecord.getItemTotalLength();
          records.add(lastRecord);
       }
       while (!(lastRecord.op() == Opcode.FOOTER));
 
-      footerMagic = new Magic(_io, currentPos);
+      footerMagic = new Magic(fileChannel, currentPos);
    }
 
    private static String indent(String stringToIndent, int indent)
@@ -139,13 +139,40 @@ public class Mcap
 
    public static class Chunk extends KaitaiStruct
    {
+      private LZ4FrameDecoder lz4FrameDecoder;
+
+      /**
+       * Earliest message log_time in the chunk. Zero if the chunk has no messages.
+       */
       private long messageStartTime;
+      /**
+       * Latest message log_time in the chunk. Zero if the chunk has no messages.
+       */
       private long messageEndTime;
+      /**
+       * Uncompressed size of the records field.
+       */
       private long uncompressedSize;
+      /**
+       * CRC32 checksum of uncompressed records field. A value of zero indicates that CRC validation should not be performed.
+       */
       private long uncompressedCrc32;
+      /**
+       * compression algorithm. i.e. zstd, lz4, "". An empty string indicates no compression. Refer to well-known compression formats.
+       */
       private PrefixedStr compression;
-      private long lenRecords;
-      private Object records;
+      /**
+       * Offset position of the records in either in the {@code  ByteBuffer} or {@code FileChannel}, depending how this chunk was created.
+       */
+      private long offsetRecords;
+      /**
+       * Length of the records in bytes.
+       */
+      private long lengthRecords;
+      /**
+       * The decompressed records.
+       */
+      private Records records;
 
       public Chunk(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
@@ -153,9 +180,9 @@ public class Mcap
          _read();
       }
 
-      public Chunk(FileChannel _io, long _pos, int _length) throws IOException
+      public Chunk(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -168,17 +195,11 @@ public class Mcap
          uncompressedSize = buffer.getLong();
          uncompressedCrc32 = Integer.toUnsignedLong(buffer.getInt());
          compression = new PrefixedStr(buffer);
-         lenRecords = buffer.getLong();
-         if (compression.str().equals(""))
-         {
-            records = new Records(_io, _pos + buffer.position(), (int) lenRecords);
-         }
-         else
-         {
-            records = new byte[(int) lenRecords];
-            buffer.get((byte[]) records);
-         }
-         setComputedLength(3 * Long.BYTES + Integer.BYTES + compression.getItemTotalLength() + Long.BYTES + (int) lenRecords);
+         lengthRecords = buffer.getLong();
+         offsetRecords = buffer.position();
+         buffer.position((int) (offsetRecords + lengthRecords)); // Skip the records.
+
+         setComputedLength(3 * Long.BYTES + Integer.BYTES + compression.getItemTotalLength() + Long.BYTES + (int) lengthRecords);
       }
 
       public long messageStartTime()
@@ -212,12 +233,36 @@ public class Mcap
 
       public long lenRecords()
       {
-         return lenRecords;
+         return lengthRecords;
       }
 
-      public Object records()
+      public Records records() throws IOException
       {
+         if (records == null)
+         {
+            if (compression.str().equalsIgnoreCase(""))
+            {
+               records = new Records(buffer, offsetRecords, (int) lengthRecords);
+            }
+            else if (compression.str().equalsIgnoreCase("lz4"))
+            {
+               if (lz4FrameDecoder == null)
+                  lz4FrameDecoder = new LZ4FrameDecoder();
+               ByteBuffer decompressedData = ByteBuffer.allocate((int) uncompressedSize);
+               lz4FrameDecoder.decode(buffer, (int) offsetRecords, (int) lengthRecords, decompressedData, 0);
+               records = new Records(decompressedData);
+            }
+            else
+            {
+               throw new UnsupportedOperationException("Unsupported compression algorithm: " + compression.str());
+            }
+         }
          return records;
+      }
+
+      public void unloadRecords()
+      {
+         records = null;
       }
 
       @Override
@@ -227,7 +272,7 @@ public class Mcap
          out += "\n\t-messageStartTime = " + messageStartTime;
          out += "\n\t-messageEndTime = " + messageEndTime;
          out += "\n\t-compression = " + compression;
-         out += "\n\t-compressedSize = " + lenRecords;
+         out += "\n\t-compressedSize = " + lengthRecords;
          out += "\n\t-uncompressedSize = " + uncompressedSize;
          out += "\n\t-uncompressedCrc32 = " + uncompressedCrc32;
          return out;
@@ -244,9 +289,9 @@ public class Mcap
          _read();
       }
 
-      public DataEnd(FileChannel _io, long _pos, int _length) throws IOException
+      public DataEnd(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -287,9 +332,9 @@ public class Mcap
          _read();
       }
 
-      public Channel(FileChannel _io, long _pos, int _length) throws IOException
+      public Channel(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -355,9 +400,9 @@ public class Mcap
          _read();
       }
 
-      public MessageIndex(FileChannel _io, long _pos, int _length) throws IOException
+      public MessageIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -523,9 +568,9 @@ public class Mcap
          _read();
       }
 
-      public Statistics(FileChannel _io, long _pos, int length) throws IOException
+      public Statistics(FileChannel fileChannel, long _pos, int length) throws IOException
       {
-         super(_io, _pos, length);
+         super(fileChannel, _pos, length);
          _read();
       }
 
@@ -725,9 +770,9 @@ public class Mcap
          _read();
       }
 
-      public AttachmentIndex(FileChannel _io, long _pos, int _length) throws IOException
+      public AttachmentIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -750,7 +795,7 @@ public class Mcap
          if (attachment == null)
          {
             // TODO Check if we can use the lenAttachment for verification or something.
-            attachment = new Record(_io, ofsAttachment);
+            attachment = new Record(fileChannel, ofsAttachment);
          }
 
          return attachment;
@@ -820,9 +865,9 @@ public class Mcap
          _read();
       }
 
-      public Schema(FileChannel _io, long _pos, int _length) throws IOException
+      public Schema(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -973,9 +1018,9 @@ public class Mcap
          _read();
       }
 
-      public SummaryOffset(FileChannel _io, long _pos, int _length) throws IOException
+      public SummaryOffset(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -995,7 +1040,7 @@ public class Mcap
       {
          if (group == null)
          {
-            group = new Records(_io, ofsGroup, (int) lenGroup);
+            group = new Records(fileChannel, ofsGroup, (int) lenGroup);
          }
          return group;
       }
@@ -1046,9 +1091,9 @@ public class Mcap
          _read();
       }
 
-      public Attachment(FileChannel _io, long _pos, int _length) throws IOException
+      public Attachment(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1156,9 +1201,9 @@ public class Mcap
          _read();
       }
 
-      public Metadata(FileChannel _io, long _pos, int _length) throws IOException
+      public Metadata(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1202,9 +1247,9 @@ public class Mcap
          _read();
       }
 
-      public Header(FileChannel _io, long _pos, int _length) throws IOException
+      public Header(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1264,9 +1309,9 @@ public class Mcap
          _read();
       }
 
-      public Message(FileChannel _io, long _pos, int _length) throws IOException
+      public Message(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1370,9 +1415,9 @@ public class Mcap
          _read();
       }
 
-      public MetadataIndex(FileChannel _io, long _pos, int _length) throws IOException
+      public MetadataIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1391,7 +1436,7 @@ public class Mcap
          if (metadata == null)
          {
             // TODO Check if we can use the lenMetadata for verification or something.
-            metadata = new Record(_io, ofsMetadata);
+            metadata = new Record(fileChannel, ofsMetadata);
          }
          return metadata;
       }
@@ -1429,9 +1474,9 @@ public class Mcap
 
       private byte[] magic;
 
-      public Magic(FileChannel _io, long _pos) throws IOException
+      public Magic(FileChannel fileChannel, long _pos) throws IOException
       {
-         super(_io, _pos, MAGIC_SIZE);
+         super(fileChannel, _pos, MAGIC_SIZE);
          _read();
       }
 
@@ -1488,9 +1533,9 @@ public class Mcap
          _read();
       }
 
-      public Records(FileChannel _io, long _pos, int _length) throws IOException
+      public Records(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, -1); // Setting the super._length to -1 to avoid creating a buffer.
+         super(fileChannel, _pos, -1); // Setting the super._length to -1 to avoid creating a buffer.
          totalRecordLength = _length;
          _read();
       }
@@ -1502,12 +1547,12 @@ public class Mcap
 
          int remaining = totalRecordLength;
 
-         if (_io != null)
+         if (fileChannel != null)
          {
             long currentPos = _pos;
             while (remaining > 0)
             {
-               Record record = new Record(_io, currentPos);
+               Record record = new Record(fileChannel, currentPos);
                records.add(record);
                currentPos += record.getItemTotalLength();
                remaining -= record.getItemTotalLength();
@@ -1563,9 +1608,9 @@ public class Mcap
          _read();
       }
 
-      public Footer(FileChannel _io, long _pos, int _length) throws IOException
+      public Footer(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1583,8 +1628,8 @@ public class Mcap
       {
          if (summarySection == null && ofsSummarySection != 0)
          {
-            long length = ((ofsSummaryOffsetSection != 0 ? ofsSummaryOffsetSection : computeOffsetFooter(_io)) - ofsSummarySection);
-            summarySection = new Records(_io, ofsSummarySection, (int) length);
+            long length = ((ofsSummaryOffsetSection != 0 ? ofsSummaryOffsetSection : computeOffsetFooter(fileChannel)) - ofsSummarySection);
+            summarySection = new Records(fileChannel, ofsSummarySection, (int) length);
          }
          return summarySection;
       }
@@ -1593,7 +1638,7 @@ public class Mcap
       {
          if (summaryOffsetSection == null && ofsSummaryOffsetSection != 0)
          {
-            summaryOffsetSection = new Records(_io, ofsSummaryOffsetSection, (int) (computeOffsetFooter(_io) - ofsSummaryOffsetSection));
+            summaryOffsetSection = new Records(fileChannel, ofsSummaryOffsetSection, (int) (computeOffsetFooter(fileChannel) - ofsSummaryOffsetSection));
          }
          return summaryOffsetSection;
       }
@@ -1602,7 +1647,7 @@ public class Mcap
       {
          if (ofsSummaryCrc32Input == null)
          {
-            ofsSummaryCrc32Input = (int) ((ofsSummarySection() != 0 ? ofsSummarySection() : computeOffsetFooter(_io)));
+            ofsSummaryCrc32Input = (int) ((ofsSummarySection() != 0 ? ofsSummarySection() : computeOffsetFooter(fileChannel)));
          }
          return ofsSummaryCrc32Input;
       }
@@ -1613,9 +1658,9 @@ public class Mcap
       {
          if (summaryCrc32Input == null)
          {
-            ByteBuffer tmpBuffer = ByteBuffer.allocate((int) (_io.size() - ofsSummaryCrc32Input() - 8 - 4));
-            _io.position(ofsSummaryCrc32Input());
-            _io.read(tmpBuffer);
+            ByteBuffer tmpBuffer = ByteBuffer.allocate((int) (fileChannel.size() - ofsSummaryCrc32Input() - 8 - 4));
+            fileChannel.position(ofsSummaryCrc32Input());
+            fileChannel.read(tmpBuffer);
             summaryCrc32Input = tmpBuffer.array();
          }
          return summaryCrc32Input;
@@ -1671,9 +1716,9 @@ public class Mcap
          _read();
       }
 
-      public Record(FileChannel _io, long _pos) throws IOException
+      public Record(FileChannel fileChannel, long _pos) throws IOException
       {
-         super(_io, _pos, -1);
+         super(fileChannel, _pos, -1);
          // We don't want to create the buffer for the whole record, just for the info in the header.
          createBuffer(RECORD_HEADER_LENGTH);
          _read();
@@ -1685,7 +1730,7 @@ public class Mcap
          _readIntoBuffer();
          op = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
          lengthBody = buffer.getLong();
-         if (_io != null)
+         if (fileChannel != null)
             bodyPos = _pos + RECORD_HEADER_LENGTH;
          else
             bodyPos = buffer.position();
@@ -1699,10 +1744,10 @@ public class Mcap
 
          if (op == null)
          {
-            if (_io != null)
+            if (fileChannel != null)
             {
                ByteBuffer bb = ByteBuffer.allocate((int) lengthBody);
-               _io.read(bb, bodyPos);
+               fileChannel.read(bb, bodyPos);
                body = bb.array();
             }
             else
@@ -1713,25 +1758,25 @@ public class Mcap
             return;
          }
 
-         if (_io != null)
+         if (fileChannel != null)
          {
             body = switch (op)
             {
-               case MESSAGE -> new Message(_io, bodyPos, (int) lengthBody);
-               case METADATA_INDEX -> new MetadataIndex(_io, bodyPos, (int) lengthBody);
-               case CHUNK -> new Chunk(_io, bodyPos, (int) lengthBody);
-               case SCHEMA -> new Schema(_io, bodyPos, (int) lengthBody);
-               case CHUNK_INDEX -> new ChunkIndex(_io, bodyPos, (int) lengthBody);
-               case DATA_END -> new DataEnd(_io, bodyPos, (int) lengthBody);
-               case ATTACHMENT_INDEX -> new AttachmentIndex(_io, bodyPos, (int) lengthBody);
-               case STATISTICS -> new Statistics(_io, bodyPos, (int) lengthBody);
-               case MESSAGE_INDEX -> new MessageIndex(_io, bodyPos, (int) lengthBody);
-               case CHANNEL -> new Channel(_io, bodyPos, (int) lengthBody);
-               case METADATA -> new Metadata(_io, bodyPos, (int) lengthBody);
-               case ATTACHMENT -> new Attachment(_io, bodyPos, (int) lengthBody);
-               case HEADER -> new Header(_io, bodyPos, (int) lengthBody);
-               case FOOTER -> new Footer(_io, bodyPos, (int) lengthBody);
-               case SUMMARY_OFFSET -> new SummaryOffset(_io, bodyPos, (int) lengthBody);
+               case MESSAGE -> new Message(fileChannel, bodyPos, (int) lengthBody);
+               case METADATA_INDEX -> new MetadataIndex(fileChannel, bodyPos, (int) lengthBody);
+               case CHUNK -> new Chunk(fileChannel, bodyPos, (int) lengthBody);
+               case SCHEMA -> new Schema(fileChannel, bodyPos, (int) lengthBody);
+               case CHUNK_INDEX -> new ChunkIndex(fileChannel, bodyPos, (int) lengthBody);
+               case DATA_END -> new DataEnd(fileChannel, bodyPos, (int) lengthBody);
+               case ATTACHMENT_INDEX -> new AttachmentIndex(fileChannel, bodyPos, (int) lengthBody);
+               case STATISTICS -> new Statistics(fileChannel, bodyPos, (int) lengthBody);
+               case MESSAGE_INDEX -> new MessageIndex(fileChannel, bodyPos, (int) lengthBody);
+               case CHANNEL -> new Channel(fileChannel, bodyPos, (int) lengthBody);
+               case METADATA -> new Metadata(fileChannel, bodyPos, (int) lengthBody);
+               case ATTACHMENT -> new Attachment(fileChannel, bodyPos, (int) lengthBody);
+               case HEADER -> new Header(fileChannel, bodyPos, (int) lengthBody);
+               case FOOTER -> new Footer(fileChannel, bodyPos, (int) lengthBody);
+               case SUMMARY_OFFSET -> new SummaryOffset(fileChannel, bodyPos, (int) lengthBody);
             };
          }
          else
@@ -1806,15 +1851,47 @@ public class Mcap
 
    public static class ChunkIndex extends KaitaiStruct
    {
+      /**
+       * Earliest message log_time in the chunk. Zero if the chunk has no messages.
+       */
       private long messageStartTime;
+      /**
+       * Latest message log_time in the chunk. Zero if the chunk has no messages.
+       */
       private long messageEndTime;
+      /**
+       * Offset to the chunk record from the start of the file.
+       */
       private long ofsChunk;
+      /**
+       * Byte length of the chunk record, including opcode and length prefix.
+       */
       private long lenChunk;
+      /**
+       * Total length in bytes of the message index records after the chunk.
+       */
       private long lenMessageIndexOffsets;
+      /**
+       * Mapping from channel ID to the offset of the message index record for that channel after the chunk, from the start of the file. An empty map indicates
+       * no message indexing is available.
+       */
       private MessageIndexOffsets messageIndexOffsets;
+      /**
+       * Total length in bytes of the message index records after the chunk.
+       */
       private long messageIndexLength;
+      /**
+       * The compression used within the chunk. Refer to well-known compression formats. This field should match the the value in the corresponding Chunk
+       * record.
+       */
       private PrefixedStr compression;
+      /**
+       * The size of the chunk records field.
+       */
       private long compressedSize;
+      /**
+       * The uncompressed size of the chunk records field. This field should match the value in the corresponding Chunk record.
+       */
       private long uncompressedSize;
 
       public ChunkIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
@@ -1823,9 +1900,9 @@ public class Mcap
          _read();
       }
 
-      public ChunkIndex(FileChannel _io, long _pos, int _length) throws IOException
+      public ChunkIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(_io, _pos, _length);
+         super(fileChannel, _pos, _length);
          _read();
       }
 
@@ -1848,6 +1925,15 @@ public class Mcap
 
       public static class MessageIndexOffset extends KaitaiStruct
       {
+         /**
+          * Channel ID.
+          */
+         private int channelId;
+         /**
+          * Offset of the message index record for that channel after the chunk, from the start of the file.
+          */
+         private long offset;
+
          public MessageIndexOffset(ByteBuffer buffer) throws IOException
          {
             super(buffer);
@@ -1862,9 +1948,6 @@ public class Mcap
             offset = buffer.getLong();
             setComputedLength(Short.BYTES + Long.BYTES);
          }
-
-         private int channelId;
-         private long offset;
 
          public int channelId()
          {
@@ -1945,9 +2028,16 @@ public class Mcap
          if (chunk == null)
          {
             // TODO Check if we can use the lenChunk for verification or something.
-            chunk = new Record(_io, ofsChunk);
+            chunk = new Record(fileChannel, ofsChunk);
          }
          return chunk;
+      }
+
+      public void unloadChunk()
+      {
+         if (chunk != null)
+            chunk.unloadBody();
+         chunk = null;
       }
 
       public long messageStartTime()
@@ -2026,7 +2116,7 @@ public class Mcap
 
    private abstract static class KaitaiStruct
    {
-      protected final FileChannel _io;
+      protected final FileChannel fileChannel;
       protected long _pos;
       protected int _length;
 
@@ -2045,15 +2135,15 @@ public class Mcap
       public KaitaiStruct(ByteBuffer buffer, long _pos, int _length)
       {
          this.buffer = buffer;
-         _io = null;
+         fileChannel = null;
          this._pos = _pos;
          this._length = _length;
          buffer.order(ByteOrder.LITTLE_ENDIAN);
       }
 
-      public KaitaiStruct(FileChannel _io, long _pos, int _length)
+      public KaitaiStruct(FileChannel fileChannel, long _pos, int _length)
       {
-         this._io = _io;
+         this.fileChannel = fileChannel;
          this._pos = _pos;
          this._length = _length;
          createBuffer(_length);
@@ -2074,14 +2164,14 @@ public class Mcap
 
       protected void _readIntoBuffer() throws IOException
       {
-         if (_io == null)
+         if (fileChannel == null)
          {
             buffer.position((int) _pos);
          }
          else
          {
-            _io.position(_pos);
-            _io.read(buffer);
+            fileChannel.position(_pos);
+            fileChannel.read(buffer);
             buffer.flip();
          }
       }
@@ -2103,6 +2193,13 @@ public class Mcap
          return _length;
       }
 
+      public long getPosition()
+      {
+         if (_pos == -1)
+            throw new RuntimeException("Cannot get position of an item with unknown position.");
+         return _pos;
+      }
+
       @Override
       public abstract String toString();
 
@@ -2118,14 +2215,14 @@ public class Mcap
    {
       if (footer == null)
       {
-         footer = new Record(_io, computeOffsetFooter(_io));
+         footer = new Record(fileChannel, computeOffsetFooter(fileChannel));
       }
       return footer;
    }
 
-   public static int computeOffsetFooter(FileChannel _io) throws IOException
+   public static int computeOffsetFooter(FileChannel fileChannel) throws IOException
    {
-      return (int) (((((_io.size() - 1) - 8) - 20) - 8));
+      return (int) (((((fileChannel.size() - 1) - 8) - 20) - 8));
    }
 
    private Magic headerMagic;
