@@ -43,14 +43,35 @@ public class MCAPLogSession extends Session
    @Override
    protected void initializeSession()
    {
-      mcapLogFileReader.initialize();
+      try
+      {
+         mcapLogFileReader.initialize();
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
    }
 
    @Override
    protected double doSpecificRunTick()
    {
-      if (mcapLogFileReader.loadNextMessageBatch())
+      if (mcapLogFileReader.incrementTimestamp())
+      {
          setSessionMode(SessionMode.PAUSE);
+      }
+      else
+      {
+         try
+         {
+            mcapLogFileReader.readMessagesAtCurrentTimestamp();
+         }
+         catch (IOException e)
+         {
+            setSessionMode(SessionMode.PAUSE);
+            throw new RuntimeException(e);
+         }
+      }
       return mcapLogFileReader.getCurrentTimeInLog();
    }
 
