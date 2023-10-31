@@ -43,7 +43,7 @@ import net.jpountz.xxhash.XXHashFactory;
  * Originally based on kafka's KafkaLZ4BlockInputStream.
  *
  * @see <a href="https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md">LZ4 Framing Format
- *      Spec 1.5.1</a>
+ *       Spec 1.5.1</a>
  */
 public class LZ4FrameDecoder
 {
@@ -86,7 +86,7 @@ public class LZ4FrameDecoder
     * @see LZ4Factory#fastestInstance()
     * @see XXHashFactory#fastestInstance()
     */
-   public LZ4FrameDecoder() throws IOException
+   public LZ4FrameDecoder()
    {
       this(LZ4Factory.fastestInstance().safeDecompressor(), XXHashFactory.fastestInstance().hash32());
    }
@@ -98,7 +98,7 @@ public class LZ4FrameDecoder
     * @param checksum     the hash function to use
     * @throws IOException if an I/O error occurs
     */
-   public LZ4FrameDecoder(LZ4SafeDecompressor decompressor, XXHash32 checksum) throws IOException
+   public LZ4FrameDecoder(LZ4SafeDecompressor decompressor, XXHash32 checksum)
    {
       this.decompressor = decompressor;
       this.checksum = checksum;
@@ -106,7 +106,7 @@ public class LZ4FrameDecoder
 
    /**
     * Try and load in the next valid frame info. This will skip over skippable frames.
-    * 
+    *
     * @return True if a frame was loaded. False if there are no more frames in the stream.
     */
    private boolean nextFrameInfo(ByteBuffer in)
@@ -143,7 +143,7 @@ public class LZ4FrameDecoder
 
    /**
     * Reads the frame descriptor from the underlying {@link InputStream}.
-    * 
+    *
     * @param in
     */
    private void readHeader(ByteBuffer in)
@@ -266,55 +266,77 @@ public class LZ4FrameDecoder
 
    public byte[] decode(byte[] in, byte[] out)
    {
-      ByteBuffer result = decode(ByteBuffer.wrap(in), out == null ? null : ByteBuffer.wrap(out));
+      return decode(in, 0, in.length, out, 0);
+   }
+
+   public byte[] decode(byte[] in, int inOffset, int inLength, byte[] out, int outOffset)
+   {
+      ByteBuffer result = decode(ByteBuffer.wrap(in, inOffset, inLength), out == null ? null : ByteBuffer.wrap(out, outOffset, out.length - outOffset));
       return result == null ? null : result.array();
    }
 
    public ByteBuffer decode(ByteBuffer in, ByteBuffer out)
    {
+      return decode(in, 0, in.remaining(), out, 0);
+   }
+
+   public ByteBuffer decode(ByteBuffer in, int inOffset, int inLength, ByteBuffer out, int outOffset)
+   {
+      int limitPrev = in.limit();
+      in.position(inOffset);
+      in.limit(inOffset + inLength);
       in.order(ByteOrder.LITTLE_ENDIAN);
+      if (out != null)
+         out.position(outOffset);
 
       ByteBuffer whenOutIsNull = null;
 
-      while (in.hasRemaining())
+      try
       {
-         if (!firstFrameHeaderRead || frameInfo.isFinished())
+         while (in.hasRemaining())
          {
-            if (!nextFrameInfo(in))
-               throw new IllegalStateException("Could not find the Frame Descriptor!");
+            if (!firstFrameHeaderRead || frameInfo.isFinished())
+            {
+               if (!nextFrameInfo(in))
+                  throw new IllegalStateException("Could not find the Frame Descriptor!");
+            }
+            ByteBuffer blockOut = readBlock(in, out);
+
+            if (blockOut == null)
+               break; // Reached the end
+
+            if (out == null)
+            {
+               if (whenOutIsNull == null)
+               {
+                  // Need to make a copy of the data as it will be reused for the next blocks.
+                  whenOutIsNull = ByteBuffer.allocate(blockOut.remaining());
+                  // whenOutIsNull.put(blockOut); <= apparently this does not perform a deep copy.
+                  whenOutIsNull.put(0, blockOut, 0, blockOut.limit());
+               }
+               else
+               {
+                  ByteBuffer extended = ByteBuffer.allocate(whenOutIsNull.remaining() + blockOut.remaining());
+                  extended.put(whenOutIsNull);
+                  extended.put(blockOut);
+                  whenOutIsNull = extended;
+               }
+            }
          }
-         ByteBuffer blockOut = readBlock(in, out);
-
-         if (blockOut == null)
-            break; // Reached the end
-
-         if (out == null)
+         if (out != null)
          {
-            if (whenOutIsNull == null)
-            {
-               // Need to make a copy of the data as it will be reused for the next blocks.
-               whenOutIsNull = ByteBuffer.allocate(blockOut.remaining());
-               // whenOutIsNull.put(blockOut); <= apparently this does not perform a deep copy.
-               whenOutIsNull.put(0, blockOut, 0, blockOut.limit());
-            }
-            else
-            {
-               ByteBuffer extended = ByteBuffer.allocate(whenOutIsNull.remaining() + blockOut.remaining());
-               extended.put(whenOutIsNull);
-               extended.put(blockOut);
-               whenOutIsNull = extended;
-            }
+            out.flip();
+            return out;
+         }
+         else
+         {
+            whenOutIsNull.flip();
+            return whenOutIsNull;
          }
       }
-      if (out != null)
+      finally
       {
-         out.flip();
-         return out;
-      }
-      else
-      {
-         whenOutIsNull.flip();
-         return whenOutIsNull;
+         in.limit(limitPrev);
       }
    }
 
