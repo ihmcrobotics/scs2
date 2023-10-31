@@ -12,11 +12,11 @@ import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
-import us.ihmc.mecano.multiBodySystem.RigidBody;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.iterators.JointIterable;
 import us.ihmc.mecano.multiBodySystem.iterators.RigidBodyIterable;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
+import us.ihmc.mecano.yoVariables.multiBodySystem.YoRigidBody;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionTools;
@@ -24,7 +24,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
-public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
+public class SimRigidBody extends YoRigidBody implements SimRigidBodyBasics
 {
    private final YoRegistry registry;
    private final List<Collidable> collidables = new ArrayList<>();
@@ -52,7 +52,7 @@ public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
 
    public SimRigidBody(String bodyName, SimJointBasics parentJoint, Matrix3DReadOnly momentOfInertia, double mass, RigidBodyTransformReadOnly inertiaPose)
    {
-      super(bodyName, parentJoint, momentOfInertia, mass, inertiaPose);
+      super(bodyName, parentJoint, momentOfInertia, mass, inertiaPose, parentJoint.getRegistry());
       this.registry = parentJoint.getRegistry();
    }
 
@@ -65,7 +65,7 @@ public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
 
    public SimRigidBody(RigidBodyDefinition definition, SimJointBasics parentJoint)
    {
-      super(definition.getName(), parentJoint, definition.getMomentOfInertia(), definition.getMass(), definition.getInertiaPose());
+      super(definition.getName(), parentJoint, definition.getMomentOfInertia(), definition.getMass(), definition.getInertiaPose(), parentJoint.getRegistry());
       this.registry = parentJoint.getRegistry();
       collidables.addAll(CollisionTools.toCollidableRigidBody(definition, this));
    }
