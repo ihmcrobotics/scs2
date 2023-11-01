@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -28,6 +29,14 @@ public class MCAPLogSession extends Session
 
    private final YoRegistry mcapRegistry = new YoRegistry("MCAP");
 
+   /**
+    * This is used to jump to a specific position in the log when the user drags the slider.
+    * <p>
+    * It is thread-safe.
+    * </p>
+    */
+   private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
+
    public MCAPLogSession(File mcapFile, MCAPDebugPrinter printer) throws IOException
    {
       mcapLogFileReader = new MCAPLogFileReader(mcapFile, printer, mcapRegistry);
@@ -38,6 +47,11 @@ public class MCAPLogSession extends Session
       mcapLogFileReader.printStatistics();
 
       rootRegistry.addChild(mcapRegistry);
+   }
+
+   public void submitLogPositionRequest(int logPosition)
+   {
+      logPositionRequest.set(logPosition);
    }
 
    @Override
@@ -75,6 +89,48 @@ public class MCAPLogSession extends Session
       return mcapLogFileReader.getCurrentTimeInLog();
    }
 
+   private boolean firstLogPositionRequest = true;
+
+   @Override
+   public void pauseTick()
+   {
+      if (firstPauseTick)
+         firstLogPositionRequest = true;
+
+      int logPosition = logPositionRequest.getAndSet(-1);
+
+      if (logPosition == -1)
+      {
+         super.pauseTick();
+      }
+      else
+      {// Handles when the user is scrubbing through the log using the log slider.
+         processBufferRequests(false);
+
+         mcapLogFileReader.setCurrentTimestamp(mcapLogFileReader.getChunkManager().getTimestampAtIndex(logPosition));
+         try
+         {
+            mcapLogFileReader.readMessagesAtCurrentTimestamp();
+         }
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
+
+         if (robotStateUpdater != null)
+            robotStateUpdater.run();
+
+         if (firstLogPositionRequest)
+         { // We increment only once when starting to scrub through the data to not write on the last data point.
+            sharedBuffer.incrementBufferIndex(true);
+            firstLogPositionRequest = false;
+         }
+         sharedBuffer.writeBuffer();
+         sharedBuffer.prepareLinkedBuffersForPull();
+         publishBufferProperties(sharedBuffer.getProperties());
+      }
+   }
+
    @Override
    public String getSessionName()
    {
@@ -103,6 +159,16 @@ public class MCAPLogSession extends Session
    public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
       return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
+   }
+
+   public MCAPLogFileReader getMCAPLogFileReader()
+   {
+      return mcapLogFileReader;
+   }
+
+   public long getRelativeTimestampAtIndex(int index)
+   {
+      return mcapLogFileReader.getRelativeTimestampAtIndex(index);
    }
 
    public File getMCAPFile()

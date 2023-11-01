@@ -22,6 +22,29 @@ public class MCAPChunkManager
    {
    }
 
+   public long getTimestampAtIndex(int index)
+   {
+      return allMessageTimestamps.get(index);
+   }
+
+   public long getRelativeTimestampAtIndex(int index)
+   {
+      return allMessageTimestamps.get(index) - firstMessageTimestamp();
+   }
+
+   public int getIndexFromTimestamp(long timestamp)
+   {
+      int index = allMessageTimestamps.binarySearch(timestamp);
+      if (index < 0)
+         index = -(index + 1);
+      return index;
+   }
+
+   public int getNumberOfEntries()
+   {
+      return allMessageTimestamps.size();
+   }
+
    public void loadFromMCAP(Mcap mcap)
    {
       for (Mcap.Record record : mcap.records())
