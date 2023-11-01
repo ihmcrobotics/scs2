@@ -116,7 +116,6 @@ public class LogSessionManagerController implements SessionControlsController
 
       topics = toolkit.getTopics();
       messager = toolkit.getMessager();
-
       backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
 
       logPositionSlider.setValueFactory(param -> new TimeStringBinding(param.valueProperty(), position ->
@@ -537,7 +536,7 @@ public class LogSessionManagerController implements SessionControlsController
       setIsLoading(false);
    }
 
-   private static class TimeStringBinding extends StringBinding
+   public static class TimeStringBinding extends StringBinding
    {
       private ObservableLongValue observableNanoTime;
 

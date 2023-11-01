@@ -76,6 +76,26 @@ public class MCAPLogFileReader
       return finalTimestamp;
    }
 
+   public long getTimestampAtIndex(int index)
+   {
+      return chunkManager.getTimestampAtIndex(index);
+   }
+
+   public long getRelativeTimestampAtIndex(int index)
+   {
+      return chunkManager.getRelativeTimestampAtIndex(index);
+   }
+
+   public int getCurrentIndex()
+   {
+      return chunkManager.getIndexFromTimestamp(currentTimestamp.getValue());
+   }
+
+   public int getNumberOfEntries()
+   {
+      return chunkManager.getNumberOfEntries();
+   }
+
    public void loadSchemas() throws IOException
    {
       for (Mcap.Record record : mcap.records())
@@ -147,6 +167,19 @@ public class MCAPLogFileReader
       readMessagesAtCurrentTimestamp();
    }
 
+   public void setCurrentTimestamp(long timestamp)
+   {
+      currentTimestamp.set(timestamp);
+      try
+      {
+         chunkManager.loadChunk(timestamp);
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
+   }
+
    public boolean incrementTimestamp()
    {
       long nextTimestamp = chunkManager.nextMessageTimestamp(currentTimestamp.getValue());
@@ -159,6 +192,9 @@ public class MCAPLogFileReader
    public void readMessagesAtCurrentTimestamp() throws IOException
    {
       List<Mcap.Message> messages = chunkManager.loadMessages(currentTimestamp.getValue());
+      currentChunkStartTimestamp.set(chunkManager.getActiveChunkStartTimestamp());
+      currentChunkEndTimestamp.set(chunkManager.getActiveChunkEndTimestamp());
+
       for (Mcap.Message message : messages)
       {
          YoROS2Message yoROS2Message = yoMessageMap.get(message.channelId());
@@ -233,6 +269,11 @@ public class MCAPLogFileReader
       PrintWriter pw = new PrintWriter(debugFile);
       pw.write(channel.toString());
       pw.close();
+   }
+
+   public MCAPChunkManager getChunkManager()
+   {
+      return chunkManager;
    }
 
    public File getMcapFile()

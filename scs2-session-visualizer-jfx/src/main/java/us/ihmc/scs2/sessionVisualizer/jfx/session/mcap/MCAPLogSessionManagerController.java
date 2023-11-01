@@ -1,9 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-
+import com.jfoenix.controls.JFXTrimSlider;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -11,7 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -19,14 +16,24 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.session.mcap.MCAPChunkManager;
 import us.ihmc.scs2.session.mcap.MCAPDebugPrinter;
+import us.ihmc.scs2.session.mcap.MCAPLogFileReader;
 import us.ihmc.scs2.session.mcap.MCAPLogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController.TimeStringBinding;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class MCAPLogSessionManagerController implements SessionControlsController
 {
@@ -39,7 +46,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    @FXML
    private Label sessionNameLabel, dateLabel, logPathLabel;
    @FXML
-   private TextArea debugTextArea;
+   private JFXTrimSlider logPositionSlider;
 
    private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
 
@@ -57,6 +64,14 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       messager = toolkit.getMessager();
       backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
 
+      logPositionSlider.setValueFactory(param -> new TimeStringBinding(param.valueProperty(), position ->
+      {
+         if (activeSessionProperty.get() == null)
+            return 0;
+         MCAPLogFileReader mcapLogFileReader = activeSessionProperty.get().getMCAPLogFileReader();
+         return mcapLogFileReader.getRelativeTimestampAtIndex(position.intValue());
+      }));
+
       ChangeListener<? super MCAPLogSession> activeSessionListener = (o, oldValue, newValue) ->
       {
          if (newValue == null)
@@ -65,19 +80,73 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
             dateLabel.setText("N/D");
             logPathLabel.setText("N/D");
             endSessionButton.setDisable(true);
+            logPositionSlider.setDisable(true);
          }
          else
          {
             messager.submitMessage(topics.getStartNewSessionRequest(), newValue);
             File logFile = newValue.getMCAPFile();
+            MCAPLogFileReader mcapLogFileReader = newValue.getMCAPLogFileReader();
 
             sessionNameLabel.setText(newValue.getSessionName());
             dateLabel.setText(getDate(logFile.getName()));
             logPathLabel.setText(logFile.getAbsolutePath());
             endSessionButton.setDisable(false);
+            logPositionSlider.setDisable(false);
+            logPositionSlider.setValue(0.0);
+            logPositionSlider.setMin(0.0);
+            logPositionSlider.setMax(mcapLogFileReader.getNumberOfEntries() - 1);
             JavaFXMissingTools.runLater(getClass(), () -> stage.sizeToScene());
          }
       };
+
+      AtomicBoolean logPositionUpdate = new AtomicBoolean(true);
+
+      logPositionSlider.valueProperty().addListener((o, oldValue, newValue) ->
+                                                    {
+                                                       MCAPLogSession logSession = activeSessionProperty.get();
+                                                       if (logSession == null || logPositionUpdate.get())
+                                                          return;
+
+                                                       logSession.submitLogPositionRequest(newValue.intValue());
+                                                    });
+
+      AtomicBoolean sliderFeedbackEnabled = new AtomicBoolean(true);
+
+      logPositionSlider.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> sliderFeedbackEnabled.set(false));
+      logPositionSlider.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> sliderFeedbackEnabled.set(false));
+      logPositionSlider.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> sliderFeedbackEnabled.set(true));
+
+      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+      {
+         MCAPLogSession logSession = activeSessionProperty.get();
+
+         if (sliderFeedbackEnabled.get())
+         {
+            int currentLogPosition = logSession.getMCAPLogFileReader().getCurrentIndex();
+
+            JavaFXMissingTools.runLater(getClass(), () ->
+            {
+               if (logSession == null || logSession.getMCAPLogFileReader() == null)
+                  return;
+
+               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
+               {
+                  logPositionUpdate.set(true);
+                  logPositionSlider.setValue(currentLogPosition);
+                  logPositionUpdate.set(false);
+               }
+            });
+         }
+      };
+
+      activeSessionProperty.addListener((o, oldValue, newValue) ->
+                                        {
+                                           if (oldValue != null)
+                                              oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                           if (newValue != null)
+                                              newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                        });
 
       openSessionButton.setOnAction(e -> openLogFile());
 
@@ -90,7 +159,13 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          if (logSession != null)
             logSession.shutdownSession();
          activeSessionProperty.set(null);
-         debugTextArea.clear();
+      });
+
+      messager.addFXTopicListener(topics.getDisableUserControls(), m ->
+      {
+         openSessionButton.setDisable(m);
+         endSessionButton.setDisable(m);
+         logPositionSlider.setDisable(m);
       });
 
       stage.setScene(new Scene(mainPane));
@@ -121,7 +196,6 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          MCAPLogSession newSession;
          try
          {
-            debugTextArea.clear();
             LogTools.info("Creating log session.");
             File debugFile = new File("debugMCAP.txt");
             debugFile.delete();
