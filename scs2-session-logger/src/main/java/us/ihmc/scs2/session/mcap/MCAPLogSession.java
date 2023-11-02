@@ -39,12 +39,13 @@ public class MCAPLogSession extends Session
 
    public MCAPLogSession(File mcapFile, MCAPDebugPrinter printer) throws IOException
    {
-      mcapLogFileReader = new MCAPLogFileReader(mcapFile, printer, mcapRegistry);
+      mcapLogFileReader = new MCAPLogFileReader(mcapFile, printer, getInertialFrame(), mcapRegistry);
       // FIXME Do we need this guy?
       robotStateUpdater = null;
       mcapLogFileReader.loadSchemas();
       mcapLogFileReader.loadChannels();
       mcapLogFileReader.printStatistics();
+      yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());
 
       rootRegistry.addChild(mcapRegistry);
    }

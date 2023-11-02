@@ -13,7 +13,9 @@ import java.util.List;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 import us.ihmc.commons.nio.FileTools;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
@@ -47,12 +49,13 @@ public class MCAPLogFileReader
    private final MCAPChunkManager chunkManager = new MCAPChunkManager();
    private final TIntObjectHashMap<ROS2MessageSchema> schemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoROS2Message> yoMessageMap = new TIntObjectHashMap<>();
+   private final MCAPFrameTransformManager frameTransformManager;
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
    private final YoLong currentChunkEndTimestamp = new YoLong("MCAPCurrentChunkEndTimestamp", propertiesRegistry);
    private final YoLong currentTimestamp = new YoLong("MCAPCurrentTimestamp", propertiesRegistry);
    private final long initialTimestamp, finalTimestamp;
 
-   public MCAPLogFileReader(File mcapFile, MCAPDebugPrinter printer, YoRegistry mcapRegistry) throws IOException
+   public MCAPLogFileReader(File mcapFile, MCAPDebugPrinter printer, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
    {
       this.mcapFile = mcapFile;
       this.printer = printer;
@@ -64,6 +67,8 @@ public class MCAPLogFileReader
       chunkManager.loadFromMCAP(mcap);
       initialTimestamp = chunkManager.firstMessageTimestamp();
       finalTimestamp = chunkManager.lastMessageTimestamp();
+      frameTransformManager = new MCAPFrameTransformManager(inertialFrame);
+      mcapRegistry.addChild(frameTransformManager.getRegistry());
    }
 
    public long getInitialTimestamp()
@@ -98,11 +103,16 @@ public class MCAPLogFileReader
 
    public void loadSchemas() throws IOException
    {
+      frameTransformManager.initialize(mcap);
+
+      // TODO Skip creation of YoROS2Message for the frame transform stuff.
       for (Mcap.Record record : mcap.records())
       {
          if (record.op() != Mcap.Opcode.SCHEMA)
             continue;
          Mcap.Schema schema = (Mcap.Schema) record.body();
+         if (schema.id() == frameTransformManager.getFrameTransformSchema().getId())
+            continue;
          try
          {
             schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
@@ -112,6 +122,10 @@ public class MCAPLogFileReader
             File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
             LogTools.info("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
             throw e;
+         }
+         finally
+         {
+            record.unloadBody();
          }
       }
    }
@@ -123,6 +137,8 @@ public class MCAPLogFileReader
          if (record.op() != Mcap.Opcode.CHANNEL)
             continue;
          Mcap.Channel channel = (Mcap.Channel) record.body();
+         if (channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
+            continue;
          ROS2MessageSchema schema = schemas.get(channel.schemaId());
          if (schema == null)
          {
@@ -180,6 +196,11 @@ public class MCAPLogFileReader
       }
    }
 
+   public YoGraphicDefinition getYoGraphic()
+   {
+      return frameTransformManager.getYoGraphic();
+   }
+
    public boolean incrementTimestamp()
    {
       long nextTimestamp = chunkManager.nextMessageTimestamp(currentTimestamp.getValue());
@@ -197,12 +218,15 @@ public class MCAPLogFileReader
 
       for (Mcap.Message message : messages)
       {
-         YoROS2Message yoROS2Message = yoMessageMap.get(message.channelId());
-         if (yoROS2Message == null)
-            throw new IllegalStateException("No YoROS2Message found for channel ID " + message.channelId());
-
          try
          {
+            boolean wasAFrameTransform = frameTransformManager.readMessage(message);
+            if (wasAFrameTransform)
+               continue;
+
+            YoROS2Message yoROS2Message = yoMessageMap.get(message.channelId());
+            if (yoROS2Message == null)
+               throw new IllegalStateException("No YoROS2Message found for channel ID " + message.channelId());
             yoROS2Message.readMessage(message);
          }
          catch (Exception e)
@@ -210,6 +234,8 @@ public class MCAPLogFileReader
             e.printStackTrace();
          }
       }
+      // Update the Tf transforms wrt to world.
+      frameTransformManager.update();
    }
 
    public void printStatistics() throws IOException
