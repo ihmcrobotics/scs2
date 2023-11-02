@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -285,7 +286,7 @@ public class Mcap
 
       public DataEnd(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _length);
+         super(buffer, _pos, _length);
          _read();
       }
 
@@ -918,7 +919,7 @@ public class Mcap
          out += "\n\t-name = " + name;
          out += "\n\t-encoding = " + encoding;
          out += "\n\t-lenData = " + lenData;
-         out += "\n\t-data = " + data;
+         out += "\n\t-data = " + Arrays.toString(data);
          return out;
       }
    }
@@ -1288,6 +1289,8 @@ public class Mcap
       private long sequence;
       private long logTime;
       private long publishTime;
+      private int offsetData;
+      private int lengthData;
       private byte[] data;
 
       public static Message createSpoofMessageForTesting(int channelId, byte[] data)
@@ -1323,8 +1326,8 @@ public class Mcap
          sequence = Integer.toUnsignedLong(buffer.getInt());
          logTime = buffer.getLong();
          publishTime = buffer.getLong();
-         data = new byte[_length - (Short.BYTES + Integer.BYTES + 2 * Long.BYTES)];
-         buffer.get(data);
+         offsetData = buffer.position();
+         lengthData = _length - (Short.BYTES + Integer.BYTES + 2 * Long.BYTES);
       }
 
       public int channelId()
@@ -1347,8 +1350,45 @@ public class Mcap
          return publishTime;
       }
 
+      /**
+       * Returns the offset of the data portion of this message in the buffer returned by {@link #messageBuffer()}.
+       *
+       * @return the offset of the data portion of this message.
+       */
+      public int offsetData()
+      {
+         return offsetData;
+      }
+
+      /**
+       * Returns the length of the data portion of this message.
+       *
+       * @return the length of the data portion of this message.
+       */
+      public int lengthData()
+      {
+         return lengthData;
+      }
+
+      /**
+       * Returns the buffer containing this message, the data AND the header. Use {@link #offsetData()} and {@link #lengthData()} to get the data portion.
+       *
+       * @return the buffer containing this message.
+       */
+      public ByteBuffer messageBuffer()
+      {
+         return buffer;
+      }
+
       public byte[] data()
       {
+         if (data == null)
+         {
+            data = new byte[lengthData];
+            buffer.limit(offsetData + lengthData);
+            buffer.position(offsetData);
+            buffer.get(data);
+         }
          return data;
       }
 
@@ -1506,7 +1546,7 @@ public class Mcap
       public String toString(int indent)
       {
          String out = getClass().getSimpleName() + ":";
-         out += "\n\t-magic = " + magic;
+         out += "\n\t-magic = " + Arrays.toString(magic);
          return indent(out, indent);
       }
    }
@@ -2250,6 +2290,7 @@ public class Mcap
     */
    public static class KaitaiStructError extends RuntimeException
    {
+      @Serial
       private static final long serialVersionUID = 3448466497836212719L;
 
       public KaitaiStructError(String msg)
@@ -2264,6 +2305,7 @@ public class Mcap
     */
    public static class ValidationFailedError extends KaitaiStructError
    {
+      @Serial
       private static final long serialVersionUID = 4069741066320518907L;
 
       public ValidationFailedError(String msg, ByteBuffer buffer)
@@ -2291,6 +2333,7 @@ public class Mcap
     */
    public static class ValidationNotEqualError extends ValidationFailedError
    {
+      @Serial
       private static final long serialVersionUID = -6127683772774212751L;
 
       public ValidationNotEqualError(byte[] expected, byte[] actual, ByteBuffer io)
