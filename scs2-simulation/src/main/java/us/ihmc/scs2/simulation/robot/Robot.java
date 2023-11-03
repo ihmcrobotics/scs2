@@ -8,10 +8,8 @@ import java.util.stream.Collectors;
 
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.log.LogTools;
-import us.ihmc.mecano.frames.MovingReferenceFrame;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
@@ -20,8 +18,24 @@ import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointReadOnly;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
-import us.ihmc.scs2.definition.robot.*;
+import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
+import us.ihmc.scs2.definition.robot.FixedJointDefinition;
+import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
+import us.ihmc.scs2.definition.robot.JointDefinition;
+import us.ihmc.scs2.definition.robot.LoopClosureDefinition;
+import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
+import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteTwinsJointDefinition;
+import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
+import us.ihmc.scs2.definition.robot.SensorDefinition;
+import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.SphericalJointDefinition;
+import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.state.JointState;
 import us.ihmc.scs2.definition.state.JointStateBase;
 import us.ihmc.scs2.definition.state.OneDoFJointState;
@@ -32,7 +46,16 @@ import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
 import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.*;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimCrossFourBarJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFixedJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPlanarJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteTwinsJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRigidBody;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSixDoFJoint;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSphericalJoint;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -52,7 +75,7 @@ public class Robot implements RobotInterface
    protected final String name;
    protected final SimRigidBody rootBody;
    protected final ReferenceFrame inertialFrame;
-   protected final ReferenceFrame robotRootFrame;
+   protected final RobotRootFrame robotRootFrame;
 
    protected final List<SimJointBasics> allJoints;
    protected final List<SimRigidBodyBasics> allRigidBodies;
@@ -98,9 +121,9 @@ public class Robot implements RobotInterface
    {
       this.robotDefinition = robotDefinition;
       this.inertialFrame = inertialFrame;
-      robotRootFrame = createRobotRootFrame(robotDefinition, inertialFrame);
 
       name = robotDefinition.getName();
+      robotRootFrame = new RobotRootFrame(this); // TODO Passing the robot itself might not be the best idea
 
       registry = new YoRegistry(name);
 
@@ -123,11 +146,6 @@ public class Robot implements RobotInterface
          createSoftConstraintControllerDefinitions(robotDefinition).forEach(controllerManager::addController);
          robotDefinition.getControllerDefinitions().forEach(controllerManager::addController);
       }
-   }
-
-   public static ReferenceFrame createRobotRootFrame(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
-   {
-      return MovingReferenceFrame.constructFrameFixedInParent(robotDefinition.getName() + "RootFrame", inertialFrame, new RigidBodyTransform());
    }
 
    public static SimRigidBody createRobot(RigidBodyDefinition rootBodyDefinition,
@@ -210,6 +228,11 @@ public class Robot implements RobotInterface
       }
 
       return controllerDefinitions;
+   }
+
+   public ReferenceFrame getRobotRootFrame()
+   {
+      return robotRootFrame;
    }
 
    @Override
@@ -320,6 +343,12 @@ public class Robot implements RobotInterface
 
       definition.setJointStateEntries(jointStateEntries);
       return definition;
+   }
+
+   public void destroy()
+   {
+      registry.destroy();
+      robotRootFrame.remove();
    }
 
    private static JointStateBase extractJointState(JointReadOnly joint)

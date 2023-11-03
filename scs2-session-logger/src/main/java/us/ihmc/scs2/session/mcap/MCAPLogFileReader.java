@@ -306,4 +306,9 @@ public class MCAPLogFileReader
    {
       return mcapFile;
    }
+
+   public MCAPFrameTransformManager getFrameTransformManager()
+   {
+      return frameTransformManager;
+   }
 }

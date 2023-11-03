@@ -19,14 +19,8 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
-import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.session.SessionDataExportRequest;
-import us.ihmc.scs2.session.SessionDataFilterParameters;
-import us.ihmc.scs2.session.SessionMessagerAPI;
+import us.ihmc.scs2.session.*;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
-import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.session.SessionState;
-import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -115,6 +109,9 @@ public class SessionVisualizerTopics
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
+
+   private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeRequest;
+   private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeState;
 
    private Topic<Integer> yoBufferCurrentIndexRequest;
    private Topic<Integer> yoBufferIncrementCurrentIndexRequest, yoBufferDecrementCurrentIndexRequest;
@@ -205,6 +202,9 @@ public class SessionVisualizerTopics
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
+
+      sessionRobotDefinitionListChangeRequest = SessionMessagerAPI.SessionRobotDefinitionListChangeRequest;
+      sessionRobotDefinitionListChangeState = SessionMessagerAPI.SessionRobotDefinitionListChangeState;
 
       yoBufferCurrentIndexRequest = YoSharedBufferMessagerAPI.CurrentIndexRequest;
       yoBufferIncrementCurrentIndexRequest = YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest;
@@ -549,6 +549,16 @@ public class SessionVisualizerTopics
    public Topic<OpenSessionControlsRequest> getOpenSessionControlsRequest()
    {
       return openSessionControlsRequest;
+   }
+
+   public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeRequest()
+   {
+      return sessionRobotDefinitionListChangeRequest;
+   }
+
+   public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeState()
+   {
+      return sessionRobotDefinitionListChangeState;
    }
 
    public Topic<Integer> getYoBufferCurrentIndexRequest()

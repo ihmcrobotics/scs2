@@ -225,6 +225,18 @@ public class SDFTools
             {
                return fullname;
             }
+
+            fullname = resourceDirectory + File.separator + authority + uri.getPath();
+            // Path relative to class root
+            if (resourceClassLoader.getResource(fullname) != null)
+            {
+               return fullname;
+            }
+            // Absolute path
+            if (new File(fullname).exists())
+            {
+               return fullname;
+            }
          }
 
          // Let's look in the parent directories of the resources if we can find a match to authority
