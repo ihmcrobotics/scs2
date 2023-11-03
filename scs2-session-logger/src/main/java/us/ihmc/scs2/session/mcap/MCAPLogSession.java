@@ -8,12 +8,22 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import javax.xml.bind.JAXBException;
+
+import org.apache.commons.io.FilenameUtils;
+
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
+import us.ihmc.scs2.definition.robot.sdf.SDFTools;
+import us.ihmc.scs2.definition.robot.sdf.items.SDFRoot;
+import us.ihmc.scs2.definition.robot.urdf.URDFTools;
+import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -24,7 +34,7 @@ public class MCAPLogSession extends Session
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
-   private final Runnable robotStateUpdater;
+   private MCAPFrameTransformBasedRobotStateUpdater robotStateUpdater;
    private final MCAPLogFileReader mcapLogFileReader;
 
    private final YoRegistry mcapRegistry = new YoRegistry("MCAP");
@@ -61,6 +71,9 @@ public class MCAPLogSession extends Session
       try
       {
          mcapLogFileReader.initialize();
+
+         if (robotStateUpdater != null)
+            robotStateUpdater.updateRobotState();
       }
       catch (IOException e)
       {
@@ -87,6 +100,10 @@ public class MCAPLogSession extends Session
             throw new RuntimeException(e);
          }
       }
+
+      if (robotStateUpdater != null)
+         robotStateUpdater.updateRobotState();
+
       return mcapLogFileReader.getCurrentTimeInLog();
    }
 
@@ -97,6 +114,8 @@ public class MCAPLogSession extends Session
    {
       if (firstPauseTick)
          firstLogPositionRequest = true;
+
+      processRobotDefinitionRequests();
 
       int logPosition = logPositionRequest.getAndSet(-1);
 
@@ -119,7 +138,7 @@ public class MCAPLogSession extends Session
          }
 
          if (robotStateUpdater != null)
-            robotStateUpdater.run();
+            robotStateUpdater.updateRobotState();
 
          if (firstLogPositionRequest)
          { // We increment only once when starting to scrub through the data to not write on the last data point.
@@ -130,6 +149,115 @@ public class MCAPLogSession extends Session
          sharedBuffer.prepareLinkedBuffersForPull();
          publishBufferProperties(sharedBuffer.getProperties());
       }
+   }
+
+   private void processRobotDefinitionRequests()
+   {
+      SessionRobotDefinitionListChange request = pendingRobotDefinitionListChange.poll();
+
+      if (request == null)
+         return;
+
+      RobotDefinition removedRobot = null;
+      RobotDefinition addedRobot = null;
+
+      if (request.getRemovedRobotDefinition() != null)
+      {
+         RobotDefinition robotDefinitionToRemove = request.getRemovedRobotDefinition();
+         Robot robotToRemove = robots.stream().filter(robot -> robot.getRobotDefinition() == robotDefinitionToRemove).findFirst().orElse(null);
+         if (robotToRemove != null)
+         {
+            robots.remove(robotToRemove);
+            robotDefinitions.remove(robotDefinitionToRemove);
+            robotStateUpdater = null;
+            robotToRemove.destroy();
+            removedRobot = robotDefinitionToRemove;
+         }
+      }
+
+      if (request.getNewRobotModelFile() != null)
+      {
+         RobotDefinition robotDefinitionToAdd = loadRobotDefinition(request.getNewRobotModelFile());
+         if (robotDefinitionToAdd != null)
+         {
+            robotDefinitionToAdd.sanitizeNames();
+
+            if (robotDefinitionToAdd.getName() == null)
+               robotDefinitionToAdd.setName(FilenameUtils.getBaseName(request.getNewRobotModelFile().getName()));
+
+            Robot robotToAdd = new Robot(robotDefinitionToAdd, getInertialFrame());
+            robots.add(robotToAdd);
+            robotDefinitions.add(robotDefinitionToAdd);
+            rootRegistry.addChild(robotToAdd.getRegistry());
+            robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+            addedRobot = robotDefinitionToAdd;
+         }
+      }
+      else if (request.getAddedRobotDefinition() != null)
+      {
+         RobotDefinition robotDefinitionToAdd = request.getAddedRobotDefinition();
+         Robot robotToAdd = new Robot(robotDefinitionToAdd, getInertialFrame());
+         robots.add(robotToAdd);
+         robotDefinitions.add(robotDefinitionToAdd);
+         rootRegistry.addChild(robotToAdd.getRegistry());
+         robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+         addedRobot = robotDefinitionToAdd;
+      }
+
+      if (addedRobot != null && removedRobot != null)
+      {
+         reportRobotDefinitionListChange(SessionRobotDefinitionListChange.replace(addedRobot, removedRobot));
+      }
+      else if (addedRobot != null)
+      {
+         reportRobotDefinitionListChange(SessionRobotDefinitionListChange.add(addedRobot));
+      }
+      else if (removedRobot != null)
+      {
+         reportRobotDefinitionListChange(SessionRobotDefinitionListChange.remove(removedRobot));
+      }
+   }
+
+   private static RobotDefinition loadRobotDefinition(File robotDefinitionFile)
+   {
+      if (FilenameUtils.isExtension(robotDefinitionFile.getName(), "urdf"))
+      {
+         try
+         {
+            URDFModel urdfModel = URDFTools.loadURDFModel(robotDefinitionFile, Collections.singletonList(robotDefinitionFile.getParent()));
+            return URDFTools.toRobotDefinition(urdfModel);
+         }
+         catch (JAXBException e)
+         {
+            LogTools.error("Failed to load URDF model from file: " + robotDefinitionFile.getAbsolutePath() + ".\n" + e.getMessage());
+            return null;
+         }
+      }
+      else if (FilenameUtils.isExtension(robotDefinitionFile.getName(), "sdf"))
+      {
+         try
+         {
+            SDFRoot sdfRoot = SDFTools.loadSDFRoot(robotDefinitionFile, Collections.singletonList(robotDefinitionFile.getParent()));
+            return SDFTools.toFloatingRobotDefinition(sdfRoot.getModels().get(0));
+         }
+         catch (JAXBException e)
+         {
+            LogTools.error("Failed to load SDF model from file: " + robotDefinitionFile.getAbsolutePath() + ".\n" + e.getMessage());
+            return null;
+         }
+      }
+      else
+      {
+         LogTools.error("Unknown robot definition file extension: " + robotDefinitionFile.getName());
+         return null;
+      }
+   }
+
+   @Override
+   public void submitRobotDefinitionListChange(SessionRobotDefinitionListChange change)
+   {
+      setSessionMode(SessionMode.PAUSE);
+      super.submitRobotDefinitionListChange(change);
    }
 
    @Override

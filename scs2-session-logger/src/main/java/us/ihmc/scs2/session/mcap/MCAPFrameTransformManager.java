@@ -1,8 +1,21 @@
 package us.ihmc.scs2.session.mcap;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
+
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
@@ -15,9 +28,6 @@ import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePose3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameQuaternion;
 import us.ihmc.yoVariables.registry.YoRegistry;
-
-import java.io.IOException;
-import java.util.*;
 
 public class MCAPFrameTransformManager
 {
@@ -39,7 +49,8 @@ public class MCAPFrameTransformManager
    private final ReferenceFrame inertialFrame;
    private ROS2MessageSchema foxgloveFrameTransformSchema;
    private final List<YoFoxGloveFrameTransform> transformList = new ArrayList<>();
-   private final Map<String, YoFoxGloveFrameTransform> nameToTransformMap = new LinkedHashMap<>();
+   private final Map<String, YoFoxGloveFrameTransform> rawNameToTransformMap = new LinkedHashMap<>();
+   private final Map<String, YoFoxGloveFrameTransform> sanitizedNameToTransformMap = new LinkedHashMap<>();
    private final TIntHashSet channelIds = new TIntHashSet();
    /**
     * Sometimes, tfs are defined with a parent that doesn't exist, they are not yet attached to world.
@@ -168,16 +179,20 @@ public class MCAPFrameTransformManager
       {
          BasicTransformInfo basicTransformInfo = ordered.poll();
          YoFoxGloveFrameTransform transform = new YoFoxGloveFrameTransform(basicTransformInfo,
-                                                                           nameToTransformMap.get(basicTransformInfo.parentFrameName()),
+                                                                           rawNameToTransformMap.get(basicTransformInfo.parentFrameName()),
                                                                            inertialFrame,
                                                                            registry);
-         yoGraphicGroupDefinition.addChild(YoGraphicDefinitionFactory.newYoGraphicCoordinateSystem3D(transform.name,
+         yoGraphicGroupDefinition.addChild(YoGraphicDefinitionFactory.newYoGraphicCoordinateSystem3D(transform.rawName,
                                                                                                      transform.poseToRoot,
                                                                                                      0.2,
                                                                                                      ColorDefinitions.SeaGreen()));
-         nameToTransformMap.put(basicTransformInfo.childFrameName(), transform);
+         rawNameToTransformMap.put(basicTransformInfo.childFrameName(), transform);
       }
-      transformList.addAll(nameToTransformMap.values());
+      transformList.addAll(rawNameToTransformMap.values());
+      for (YoFoxGloveFrameTransform transform : transformList)
+      {
+         sanitizedNameToTransformMap.put(transform.sanitizedName, transform);
+      }
       yoGraphicGroupDefinition.setVisible(false);
    }
 
@@ -287,7 +302,7 @@ public class MCAPFrameTransformManager
          cdr.finalize(false);
       }
 
-      YoFoxGloveFrameTransform transform = nameToTransformMap.get(childFrameName);
+      YoFoxGloveFrameTransform transform = rawNameToTransformMap.get(childFrameName);
       if (transform != null)
       {
          if (!Objects.equals(parentFrameName, transform.parentFrameName))
@@ -318,6 +333,11 @@ public class MCAPFrameTransformManager
    public ROS2MessageSchema getFrameTransformSchema()
    {
       return foxgloveFrameTransformSchema;
+   }
+
+   public YoFoxGloveFrameTransform getTransformFromSanitizedName(String name)
+   {
+      return sanitizedNameToTransformMap.get(name);
    }
 
    private static BasicTransformInfo extractFromMessage(ROS2MessageSchema flatSchema, String topic, Mcap.Message message)
@@ -370,7 +390,8 @@ public class MCAPFrameTransformManager
    public static class YoFoxGloveFrameTransform
    {
       private final String parentFrameName;
-      private final String name;
+      private final String rawName;
+      private final String sanitizedName;
       private YoFoxGloveFrameTransform parent;
       private final List<YoFoxGloveFrameTransform> children;
       private final YoPose3D poseToParent;
@@ -381,9 +402,10 @@ public class MCAPFrameTransformManager
       private YoFoxGloveFrameTransform(BasicTransformInfo info, YoFoxGloveFrameTransform parent, ReferenceFrame inertialFrame, YoRegistry registry)
       {
          parentFrameName = info.parentFrameName();
-         name = info.childFrameName();
+         rawName = info.childFrameName();
+         sanitizedName = sanitizeName(rawName);
          children = new ArrayList<>();
-         String namePrefix = sanitizeName(info.childFrameName());
+         String namePrefix = sanitizedName;
          String worldNamePrefix = sanitizeName(namePrefix + "_world");
          poseToParent = new YoPose3D(namePrefix, registry);
          if (parent == null)
@@ -417,8 +439,8 @@ public class MCAPFrameTransformManager
          this.parent = parent;
          if (parent != null)
          {
-            if (!parent.name.equals(parentFrameName))
-               throw new IllegalArgumentException("Unexpected parent frame name: " + parent.name + " expected: " + parentFrameName);
+            if (!parent.rawName.equals(parentFrameName))
+               throw new IllegalArgumentException("Unexpected parent frame name: " + parent.rawName + " expected: " + parentFrameName);
             parent.addChild(this);
          }
       }
@@ -450,14 +472,24 @@ public class MCAPFrameTransformManager
          isPoseToRootDirty = false;
       }
 
-      public String getName()
+      public String getRawName()
       {
-         return name;
+         return rawName;
+      }
+
+      public String getSanitizedName()
+      {
+         return sanitizedName;
       }
 
       public YoFoxGloveFrameTransform getParent()
       {
          return parent;
+      }
+
+      public RigidBodyTransformReadOnly getTransformToParent()
+      {
+         return poseToParent;
       }
    }
 }
