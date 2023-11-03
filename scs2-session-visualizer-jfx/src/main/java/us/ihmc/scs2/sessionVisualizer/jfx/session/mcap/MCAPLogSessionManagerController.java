@@ -1,9 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
 import com.jfoenix.controls.JFXTrimSlider;
+
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -16,7 +24,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
-import us.ihmc.scs2.session.mcap.MCAPChunkManager;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.session.mcap.MCAPDebugPrinter;
 import us.ihmc.scs2.session.mcap.MCAPLogFileReader;
 import us.ihmc.scs2.session.mcap.MCAPLogSession;
@@ -29,15 +37,10 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerControlle
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-
 public class MCAPLogSessionManagerController implements SessionControlsController
 {
    private static final String LOG_FILE_KEY = "MCAPLogFilePath";
+   private static final String ROBOT_MODEL_FILE_KEY = "MCAPRobotModelFilePath";
 
    @FXML
    private AnchorPane mainPane;
@@ -154,12 +157,12 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       activeSessionListener.changed(null, null, null);
 
       endSessionButton.setOnAction(e ->
-      {
-         MCAPLogSession logSession = activeSessionProperty.get();
-         if (logSession != null)
-            logSession.shutdownSession();
-         activeSessionProperty.set(null);
-      });
+                                   {
+                                      MCAPLogSession logSession = activeSessionProperty.get();
+                                      if (logSession != null)
+                                         logSession.shutdownSession();
+                                      activeSessionProperty.set(null);
+                                   });
 
       messager.addFXTopicListener(topics.getDisableUserControls(), m ->
       {
@@ -192,33 +195,33 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       unloadSession();
 
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         MCAPLogSession newSession;
-         try
-         {
-            LogTools.info("Creating log session.");
-            File debugFile = new File("debugMCAP.txt");
-            debugFile.delete();
-            PrintWriter printWriter = new PrintWriter(debugFile);
-            newSession = new MCAPLogSession(result, new MCAPDebugPrinter()
-            {
-               @Override
-               public void print(String string)
-               {
-                  //                  JavaFXMissingTools.runLater(getClass(), () -> debugTextArea.appendText(string));
-                  printWriter.write(string);
-               }
-            });
-            printWriter.close();
-            LogTools.info("Created log session.");
-            JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
-            SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
-         }
-         catch (IOException ex)
-         {
-            ex.printStackTrace();
-         }
-      });
+                                                    {
+                                                       MCAPLogSession newSession;
+                                                       try
+                                                       {
+                                                          LogTools.info("Creating log session.");
+                                                          File debugFile = new File("debugMCAP.txt");
+                                                          debugFile.delete();
+                                                          PrintWriter printWriter = new PrintWriter(debugFile);
+                                                          newSession = new MCAPLogSession(result, new MCAPDebugPrinter()
+                                                          {
+                                                             @Override
+                                                             public void print(String string)
+                                                             {
+                                                                //                  JavaFXMissingTools.runLater(getClass(), () -> debugTextArea.appendText(string));
+                                                                printWriter.write(string);
+                                                             }
+                                                          });
+                                                          printWriter.close();
+                                                          LogTools.info("Created log session.");
+                                                          JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
+                                                          SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
+                                                       }
+                                                       catch (IOException ex)
+                                                       {
+                                                          ex.printStackTrace();
+                                                       }
+                                                    });
    }
 
    @Override
@@ -258,5 +261,34 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       String second = filename.substring(13, 15);
 
       return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+   }
+
+   @FXML
+   public void requestLoadRobotModelFile(ActionEvent actionEvent)
+   {
+      File result = SessionVisualizerIOTools.showOpenDialog(stage,
+                                                            "Choose robot model file",
+                                                            new ExtensionFilter("Robot model file", "*.urdf", "*.sdf"),
+                                                            ROBOT_MODEL_FILE_KEY);
+      if (result == null)
+         return;
+
+      backgroundExecutorManager.executeInBackground(() -> submitRobotDefinitionRequest(result));
+   }
+
+   private void submitRobotDefinitionRequest(File result)
+   {
+      MCAPLogSession logSession = activeSessionProperty.get();
+      if (logSession == null)
+         return;
+
+      boolean hasARobot = !logSession.getRobotDefinitions().isEmpty();
+      SessionRobotDefinitionListChange request;
+      if (hasARobot)
+         request = SessionRobotDefinitionListChange.replace(result, logSession.getRobotDefinitions().get(0));
+      else
+         request = SessionRobotDefinitionListChange.add(result);
+
+      messager.submitMessage(topics.getSessionRobotDefinitionListChangeRequest(), request);
    }
 }

@@ -486,12 +486,12 @@ public class SessionVisualizerIOTools
 
    }
 
-   private static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)
+   public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)
    {
       return showOpenDialog(owner, title, extensionFilter, "filePath");
    }
 
-   private static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
+   public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
       FileChooser fileChooser = fileChooser(title, extensionFilter);
       File result = fileChooser.showOpenDialog(owner);

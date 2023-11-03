@@ -34,8 +34,8 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 public class RobotDefinition
 {
    public static final JointCreator DEFAULT_JOINT_BUILDER = (predecessor, definition) -> definition.toJoint(predecessor);
-   public static final RootBodyCreator DEFAUL_ROOT_BODY_BUILDER = (rootFrame, definition) -> definition.toRootBody(rootFrame);
-   public static final RigidBodyCreator DEFAUL_RIGID_BODY_BUILDER = (parentJoint, definition) -> definition.toRigidBody(parentJoint);
+   public static final RootBodyCreator DEFAULT_ROOT_BODY_BUILDER = (rootFrame, definition) -> definition.toRootBody(rootFrame);
+   public static final RigidBodyCreator DEFAULT_RIGID_BODY_BUILDER = (parentJoint, definition) -> definition.toRigidBody(parentJoint);
 
    private String name;
    private RigidBodyDefinition rootBodyDefinition;
@@ -123,7 +123,7 @@ public class RobotDefinition
    /**
     * Simplifies this robot kinematics by removing any fixed joint, i.e. joints with 0 degree of
     * freedom.
-    * 
+    *
     * @see #simplifyKinematics(JointDefinition, Predicate)
     */
    public void simplifyKinematics()
@@ -134,7 +134,7 @@ public class RobotDefinition
    /**
     * Simplifies this robot kinematics by removing any fixed joint, i.e. joints with 0 degree of
     * freedom.
-    * 
+    *
     * @param simplifyKinematicsFilter filter that allows to preserve some fixed joints during this
     *                                 operation. A fixed joint is preserved only if the filter is
     *                                 defined and returns {@code false} when queried.
@@ -149,13 +149,29 @@ public class RobotDefinition
    /**
     * Transforms all the robot local frames such that they are pointing z-up and x-forward when the
     * robot is in the zero configuration.
-    * 
+    *
     * @see #transformAllFramesToZUp(JointDefinition)
     */
    public void transformAllFramesToZUp()
    {
       for (int i = 0; i < rootBodyDefinition.getChildrenJoints().size(); i++)
          transformAllFramesToZUp(rootBodyDefinition.getChildrenJoints().get(i));
+   }
+
+   public void sanitizeNames()
+   {
+      forEachJointDefinition(jointDefinition ->
+                             {
+                                String sanitizedName = jointDefinition.getName();
+                                sanitizedName = sanitizedName.replace('.', '_');
+                                jointDefinition.setName(sanitizedName);
+                             });
+      forEachRigidBodyDefinition(rigidBodyDefinition ->
+                                 {
+                                    String sanitizedName = rigidBodyDefinition.getName();
+                                    sanitizedName = sanitizedName.replace('.', '_');
+                                    rigidBodyDefinition.setName(sanitizedName);
+                                 });
    }
 
    @XmlTransient
@@ -268,7 +284,7 @@ public class RobotDefinition
 
    public RigidBodyBasics newInstance(ReferenceFrame rootFrame)
    {
-      return newInstance(rootFrame, DEFAUL_ROOT_BODY_BUILDER, DEFAULT_JOINT_BUILDER, DEFAUL_RIGID_BODY_BUILDER);
+      return newInstance(rootFrame, DEFAULT_ROOT_BODY_BUILDER, DEFAULT_JOINT_BUILDER, DEFAULT_RIGID_BODY_BUILDER);
    }
 
    public RigidBodyBasics newInstance(ReferenceFrame rootFrame, RootBodyCreator rootBodyCreator, JointCreator jointCreator, RigidBodyCreator rigidBodyCreator)
@@ -496,7 +512,7 @@ public class RobotDefinition
     * <li>transform the moment of inertia for all rigid-body such that their inertia pose is only a
     * translation.
     * </ul>
-    * 
+    *
     * @param jointDefinition starting point for the recursion.
     */
    public static void transformAllFramesToZUp(JointDefinition jointDefinition)
@@ -558,7 +574,7 @@ public class RobotDefinition
     * of each sensor so they remain at the same physical location on the robot.
     * </ul>
     * </p>
-    * 
+    *
     * @param joint  the first joint from which to simplify the kinematics.
     * @param filter a fixed joint is only removed if: the filter is {@code null} or
     *               {@code filter.test(joint)} is {@code true}. If a filter is provided, any fixed
@@ -568,7 +584,7 @@ public class RobotDefinition
    {
       // The children list may shrink or grow depending the simplyKinematics(joint.child)
       // Also, if a child is a fixed-joint, the successor of this joint will be replaced with a new one, so can't save the successor as a local variable.
-      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size();)
+      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size(); )
       {
          List<JointDefinition> children = joint.getSuccessor().getChildrenJoints();
          JointDefinition child = children.get(i);
@@ -594,35 +610,35 @@ public class RobotDefinition
          parentJoint.getSuccessor().addChildJoints(oldParentRigidBody.getChildrenJoints());
 
          joint.getKinematicPointDefinitions().removeIf(kp ->
-         {
-            kp.applyTransform(transformToParentJoint);
-            parentJoint.addKinematicPointDefinition(kp);
-            return true;
-         });
+                                                       {
+                                                          kp.applyTransform(transformToParentJoint);
+                                                          parentJoint.addKinematicPointDefinition(kp);
+                                                          return true;
+                                                       });
          joint.getExternalWrenchPointDefinitions().removeIf(efp ->
-         {
-            efp.applyTransform(transformToParentJoint);
-            parentJoint.addExternalWrenchPointDefinition(efp);
-            return true;
-         });
+                                                            {
+                                                               efp.applyTransform(transformToParentJoint);
+                                                               parentJoint.addExternalWrenchPointDefinition(efp);
+                                                               return true;
+                                                            });
          joint.getGroundContactPointDefinitions().removeIf(gcp ->
-         {
-            gcp.applyTransform(transformToParentJoint);
-            parentJoint.addGroundContactPointDefinition(gcp);
-            return true;
-         });
+                                                           {
+                                                              gcp.applyTransform(transformToParentJoint);
+                                                              parentJoint.addGroundContactPointDefinition(gcp);
+                                                              return true;
+                                                           });
          joint.getSensorDefinitions().removeIf(sensor ->
-         {
-            sensor.applyTransform(transformToParentJoint);
-            parentJoint.addSensorDefinition(sensor);
-            return true;
-         });
+                                               {
+                                                  sensor.applyTransform(transformToParentJoint);
+                                                  parentJoint.addSensorDefinition(sensor);
+                                                  return true;
+                                               });
          joint.getSuccessor().getChildrenJoints().removeIf(child ->
-         {
-            child.getTransformToParent().preMultiply(transformToParentJoint);
-            parentJoint.getSuccessor().addChildJoint(child);
-            return true;
-         });
+                                                           {
+                                                              child.getTransformToParent().preMultiply(transformToParentJoint);
+                                                              parentJoint.getSuccessor().addChildJoint(child);
+                                                              return true;
+                                                           });
          parentJoint.getSuccessor().removeChildJoint(joint);
       }
    }
@@ -637,7 +653,7 @@ public class RobotDefinition
     * Note the following property:
     * {@code merge("bodyAB", bodyA, bodyB) == merge("bodyAB", bodyB, bodyA)}.
     * </p>
-    * 
+    *
     * @param name       the name of the merged rigid-body.
     * @param rigidBodyA the first rigid-body to merge.
     * @param rigidBodyB the second rigid-body to merge.

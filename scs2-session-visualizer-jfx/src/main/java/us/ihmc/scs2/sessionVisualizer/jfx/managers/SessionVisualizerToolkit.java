@@ -93,20 +93,28 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, messager, topics, yoRobotFXManager);
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
+                                        {
+                                           sessionRobotDefinitions.clear();
+                                           sessionTerrainObjectDefinitions.clear();
+
+                                           if (newValue == null)
+                                              return;
+
+                                           List<RobotDefinition> newRobotDefinitions = newValue.getRobotDefinitions();
+                                           if (newRobotDefinitions != null && !newRobotDefinitions.isEmpty())
+                                              sessionRobotDefinitions.setAll(newRobotDefinitions);
+
+                                           List<TerrainObjectDefinition> newTerrainObjectDefinitions = newValue.getTerrainObjectDefinitions();
+                                           if (newTerrainObjectDefinitions != null && !newTerrainObjectDefinitions.isEmpty())
+                                              sessionTerrainObjectDefinitions.setAll(newTerrainObjectDefinitions);
+                                        });
+
+      messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), change ->
       {
-         sessionRobotDefinitions.clear();
-         sessionTerrainObjectDefinitions.clear();
-
-         if (newValue == null)
-            return;
-
-         List<RobotDefinition> newRobotDefinitions = newValue.getRobotDefinitions();
-         if (newRobotDefinitions != null && !newRobotDefinitions.isEmpty())
-            sessionRobotDefinitions.setAll(newRobotDefinitions);
-
-         List<TerrainObjectDefinition> newTerrainObjectDefinitions = newValue.getTerrainObjectDefinitions();
-         if (newTerrainObjectDefinitions != null && !newTerrainObjectDefinitions.isEmpty())
-            sessionTerrainObjectDefinitions.setAll(newTerrainObjectDefinitions);
+         if (change.getRemovedRobotDefinition() != null)
+            sessionRobotDefinitions.remove(change.getRemovedRobotDefinition());
+         if (change.getAddedRobotDefinition() != null)
+            sessionRobotDefinitions.add(change.getAddedRobotDefinition());
       });
    }
 
@@ -124,43 +132,43 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       session.setupWithMessager(messager);
 
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         try
-         {
-            yoManager.startSession(session);
-            yoRobotFXManager.startSession(session);
-            environmentManager.startSession(session);
-            referenceFrameManager.startSession(session);
-            chartDataManager.startSession(session);
-            chartRenderManager.startSession(session);
-            yoCompositeSearchManager.startSession(session);
-            keyFrameManager.startSession(session);
-            secondaryWindowManager.startSession(session);
+                                                    {
+                                                       try
+                                                       {
+                                                          yoManager.startSession(session);
+                                                          yoRobotFXManager.startSession(session);
+                                                          environmentManager.startSession(session);
+                                                          referenceFrameManager.startSession(session);
+                                                          chartDataManager.startSession(session);
+                                                          chartRenderManager.startSession(session);
+                                                          yoCompositeSearchManager.startSession(session);
+                                                          keyFrameManager.startSession(session);
+                                                          secondaryWindowManager.startSession(session);
 
-            while (!yoRobotFXManager.isSessionLoaded())
-            {
-               try
-               {
-                  Thread.sleep(100);
-               }
-               catch (InterruptedException e)
-               {
-                  e.printStackTrace();
-                  return;
-               }
-            }
+                                                          while (!yoRobotFXManager.isSessionLoaded())
+                                                          {
+                                                             try
+                                                             {
+                                                                Thread.sleep(100);
+                                                             }
+                                                             catch (InterruptedException e)
+                                                             {
+                                                                e.printStackTrace();
+                                                                return;
+                                                             }
+                                                          }
 
-            yoGraphicFXManager.startSession(session); // In case some graphics rely on the robot frames
-            cameraSensorsManager.startSession(session);
-            messager.submitMessage(topics.getSessionCurrentState(), SessionState.ACTIVE);
-         }
-         finally
-         {
-            if (sessionLoadedCallback != null)
-               sessionLoadedCallback.run();
-            sessionChangeListeners.forEach(listener -> listener.sessionChanged(oldSession, session));
-         }
-      });
+                                                          yoGraphicFXManager.startSession(session); // In case some graphics rely on the robot frames
+                                                          cameraSensorsManager.startSession(session);
+                                                          messager.submitMessage(topics.getSessionCurrentState(), SessionState.ACTIVE);
+                                                       }
+                                                       finally
+                                                       {
+                                                          if (sessionLoadedCallback != null)
+                                                             sessionLoadedCallback.run();
+                                                          sessionChangeListeners.forEach(listener -> listener.sessionChanged(oldSession, session));
+                                                       }
+                                                    });
 
       mainWindow.setTitle(session.getSessionName());
    }

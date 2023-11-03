@@ -1,12 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.beans.property.ObjectProperty;
@@ -27,6 +23,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.scs2.simulation.robot.RobotRootFrame;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.variable.YoDouble;
 
@@ -186,11 +183,26 @@ public class ReferenceFrameManager implements Manager
       if (sessionFrames == null || sessionFrames.isEmpty())
          return;
 
+      if (sessionFrames.stream().anyMatch(sessionFrame ->
+                                          {
+                                             boolean isRobotFrame = sessionFrame instanceof RobotRootFrame;
+                                             // If it's a robot frame and that the root has not been registered yet, we postpone.
+                                             return isRobotFrame && getReferenceFrameFromFullname(sessionFrame.getNameId()) == null;
+                                          }))
+      {
+         // The robot is probably being created at this moment, let's postpone the registration.
+         backgroundExecutorManager.scheduleTaskInBackground(() -> registerNewSessionFramesNow(sessionFrames), 100, TimeUnit.MILLISECONDS);
+         return;
+      }
+
       // Keep a reference of the new frames to ensure they're not GCed before we register them.
       List<ReferenceFrame> frames = new ArrayList<>();
+      LinkedList<ReferenceFrame> framesToRegister = new LinkedList<>(sessionFrames);
 
-      for (ReferenceFrame sessionFrame : sessionFrames)
+      while (!framesToRegister.isEmpty())
       {
+         // Remove only once it's been processed.
+         ReferenceFrame sessionFrame = framesToRegister.peek();
          ReferenceFrame frame;
 
          try
@@ -199,8 +211,11 @@ public class ReferenceFrameManager implements Manager
          }
          catch (Exception e)
          {
-            LogTools.error("Experienced problem setting up frame: {}.", sessionFrame.getNameId());
-            e.printStackTrace();
+            if (!isARobotFrame(sessionFrame))
+            { // If it's a robot frame, we're just going to postpone.
+               LogTools.error("Experienced problem setting up frame: {}.", sessionFrame.getNameId());
+               e.printStackTrace();
+            }
             frame = null;
          }
 
@@ -209,9 +224,23 @@ public class ReferenceFrameManager implements Manager
             fullnameToReferenceFrameMap.put(frame.getNameId(), frame);
             frames.add(frame);
          }
+         else if (isARobotFrame(sessionFrame))
+         {
+            // The robot is probably being created at this moment, let's postpone the registration.
+            backgroundExecutorManager.scheduleTaskInBackground(() -> registerNewSessionFramesNow(framesToRegister), 500, TimeUnit.MILLISECONDS);
+         }
+
+         framesToRegister.poll();
       }
 
       computeUniqueNameMaps(ReferenceFrameTools.getAllFramesInTree(worldFrame));
+   }
+
+   private static boolean isARobotFrame(ReferenceFrame frame)
+   {
+      if (frame instanceof RobotRootFrame)
+         return true;
+      return frame.getParent() == null ? false : isARobotFrame(frame.getParent());
    }
 
    private ReferenceFrame duplicateReferenceFrame(ReferenceFrame sessionFrame)
@@ -226,6 +255,13 @@ public class ReferenceFrameManager implements Manager
       String frameName = sessionFrame.getName();
       ReferenceFrame sessionParentFrame = sessionFrame.getParent();
       ReferenceFrame parentFrame = getReferenceFrameFromFullname(sessionParentFrame.getNameId());
+
+      if (parentFrame == null)
+      {
+         if (!isARobotFrame(sessionFrame)) // If it's a robot frame, we're just going to postpone.
+            LogTools.warn("Parent frame not found: {}.", sessionParentFrame.getNameId());
+         return null;
+      }
 
       ReferenceFrame frame;
 
@@ -259,10 +295,10 @@ public class ReferenceFrameManager implements Manager
          }
 
          addUpdateTask(() ->
-         {
-            if (haveVariableChanged.getAndSet(false))
-               frame.update();
-         });
+                       {
+                          if (haveVariableChanged.getAndSet(false))
+                             frame.update();
+                       });
       }
       else if (sessionFrame instanceof YoFixedMovingReferenceFrameUsingYawPitchRoll)
       {
@@ -280,10 +316,10 @@ public class ReferenceFrameManager implements Manager
          }
 
          addUpdateTask(() ->
-         {
-            if (haveVariableChanged.getAndSet(false))
-               frame.update();
-         });
+                       {
+                          if (haveVariableChanged.getAndSet(false))
+                             frame.update();
+                       });
       }
       else
       {
@@ -318,21 +354,22 @@ public class ReferenceFrameManager implements Manager
       Map<ReferenceFrame, String> newReferenceFrameToUniqueShortNameMap = new LinkedHashMap<>();
 
       newMap.entrySet().forEach(e ->
-      {
-         ReferenceFrame frame = e.getKey();
-         String uniqueName = e.getValue();
-         newUniqueNameToReferenceFrameMap.put(uniqueName, frame);
-         newReferenceFrameToUniqueNameMap.put(frame, uniqueName);
+                                {
+                                   ReferenceFrame frame = e.getKey();
+                                   String uniqueName = e.getValue();
+                                   newUniqueNameToReferenceFrameMap.put(uniqueName, frame);
+                                   newReferenceFrameToUniqueNameMap.put(frame, uniqueName);
 
-         int firstSeparatorIndex = uniqueName.indexOf(".");
-         int lastSeparatorIndex = uniqueName.lastIndexOf(".");
-         String uniqueShortName = uniqueName;
-         if (firstSeparatorIndex != lastSeparatorIndex)
-            uniqueShortName = uniqueName.substring(0, firstSeparatorIndex) + "..." + uniqueName.substring(lastSeparatorIndex + 1, uniqueName.length());
+                                   int firstSeparatorIndex = uniqueName.indexOf(".");
+                                   int lastSeparatorIndex = uniqueName.lastIndexOf(".");
+                                   String uniqueShortName = uniqueName;
+                                   if (firstSeparatorIndex != lastSeparatorIndex)
+                                      uniqueShortName = uniqueName.substring(0, firstSeparatorIndex) + "..." + uniqueName.substring(lastSeparatorIndex + 1,
+                                                                                                                                    uniqueName.length());
 
-         newUniqueShortNameToReferenceFrameMap.put(uniqueShortName, frame);
-         newReferenceFrameToUniqueShortNameMap.put(frame, uniqueShortName);
-      });
+                                   newUniqueShortNameToReferenceFrameMap.put(uniqueShortName, frame);
+                                   newReferenceFrameToUniqueShortNameMap.put(frame, uniqueShortName);
+                                });
 
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
