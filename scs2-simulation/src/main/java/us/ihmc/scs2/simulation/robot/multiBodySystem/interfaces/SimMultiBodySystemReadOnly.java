@@ -239,12 +239,13 @@ public interface SimMultiBodySystemReadOnly extends MultiBodySystemReadOnly
     * @param cloneRootFrame the root frame to which the clone system is attached.
     * @return the clone.
     */
-   public static SimMultiBodySystemReadOnly clone(MultiBodySystemReadOnly original, ReferenceFrame cloneRootFrame, YoRegistry cloneRegistry)
+   public static SimMultiBodySystemReadOnly clone(MultiBodySystemReadOnly original, ReferenceFrame cloneRootFrame, YoRegistry cloneRegistry, YoRegistry cloneSecondaryRegistry)
    {
       SimRigidBodyReadOnly cloneRootBody = (SimRigidBodyReadOnly) MultiBodySystemFactories.cloneMultiBodySystem(original.getRootBody(),
                                                                                                                 cloneRootFrame,
                                                                                                                 "",
-                                                                                                                new SimRigidBodyBuilder(cloneRegistry),
+                                                                                                                new SimRigidBodyBuilder(cloneRegistry,
+                                                                                                                                        cloneSecondaryRegistry),
                                                                                                                 new SimJointBuilder());
       Set<String> namesOfJointsToConsider = SubtreeStreams.fromChildren(SimJointReadOnly.class, original.getRootBody())
                                                           .map(JointReadOnly::getName)

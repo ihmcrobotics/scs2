@@ -19,7 +19,15 @@ public interface SimJointReadOnly extends JointReadOnly
 {
    boolean isPinned();
 
-   YoRegistry getRegistry();
+   default YoRegistry getRegistry()
+   {
+      return getPredecessor().getRegistry();
+   }
+
+   default YoRegistry getSecondaryRegistry()
+   {
+      return getPredecessor().getSecondaryRegistry();
+   }
 
    @Override
    SimRigidBodyReadOnly getPredecessor();
