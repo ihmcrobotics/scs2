@@ -1,16 +1,5 @@
 package us.ihmc.scs2.session.mcap;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-
 import gnu.trove.map.hash.TIntObjectHashMap;
 import us.ihmc.commons.nio.FileTools;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -22,6 +11,11 @@ import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoLong;
+
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.util.List;
 
 public class MCAPLogFileReader
 {
@@ -43,7 +37,6 @@ public class MCAPLogFileReader
    private final File mcapFile;
    private final FileInputStream mcapFileInputStream;
    private final FileChannel mcapFileChannel;
-   private final MCAPDebugPrinter printer;
    private final YoRegistry mcapRegistry;
    private final Mcap mcap;
    private final MCAPChunkManager chunkManager = new MCAPChunkManager();
@@ -55,10 +48,9 @@ public class MCAPLogFileReader
    private final YoLong currentTimestamp = new YoLong("MCAPCurrentTimestamp", propertiesRegistry);
    private final long initialTimestamp, finalTimestamp;
 
-   public MCAPLogFileReader(File mcapFile, MCAPDebugPrinter printer, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
+   public MCAPLogFileReader(File mcapFile, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
    {
       this.mcapFile = mcapFile;
-      this.printer = printer;
       this.mcapRegistry = mcapRegistry;
       mcapRegistry.addChild(propertiesRegistry);
       mcapFileInputStream = new FileInputStream(mcapFile);
@@ -103,7 +95,17 @@ public class MCAPLogFileReader
 
    public void loadSchemas() throws IOException
    {
-      frameTransformManager.initialize(mcap);
+      try
+      {
+         frameTransformManager.initialize(mcap);
+      }
+      catch (Exception e)
+      {
+         Mcap.Schema schema = frameTransformManager.getMCAPSchema();
+         File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
+         LogTools.error("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
+         throw e;
+      }
 
       // TODO Skip creation of YoROS2Message for the frame transform stuff.
       for (Mcap.Record record : mcap.records())
@@ -127,7 +129,7 @@ public class MCAPLogFileReader
          catch (Exception e)
          {
             File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
-            LogTools.info("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
+            LogTools.error("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
             throw e;
          }
          finally
@@ -245,33 +247,7 @@ public class MCAPLogFileReader
       frameTransformManager.update();
    }
 
-   public void printStatistics() throws IOException
-   {
-      //      mcap.records().stream().filter(r -> r.op() != Opcode.MESSAGE_INDEX && r.op() != Opcode.CHUNK_INDEX).forEach(r -> printer.println(r.toString()));
-      //      for (Mcap.Record record : mcap.records())
-      //      {
-      //         if (record.body() instanceof Mcap.Schema schema)
-      //            exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, null);
-      //         if (record.body() instanceof Mcap.Channel channel)
-      //            exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, yoMessageMap.get(channel.id()).getSchema(), null);
-      //      }
-      Mcap.Magic headerMagic = mcap.headerMagic();
-      byte[] magic = headerMagic.magic();
-      byte[] restOfMagic = Arrays.copyOfRange(magic, 1, magic.length);
-      printer.print("headerMagic = " + String.format("%02X", magic[0]) + " " + new String(restOfMagic, "UTF-8"));
-      List<Mcap.Record> records = mcap.records();
-      printer.println("Number of records: " + records.size());
-      Mcap.Record footer = mcap.footer();
-      if (footer != null)
-      {
-         Mcap.Footer footerBody = (Mcap.Footer) footer.body();
-         long summaryCrc32 = footerBody.summaryCrc32();
-         printer.println("Footer: summaryCrc32 = " + summaryCrc32);
-         printer.println("");
-      }
-   }
-
-   public File exportSchemaToFile(Path path, Mcap.Schema schema, Exception e) throws IOException, FileNotFoundException
+   public File exportSchemaToFile(Path path, Mcap.Schema schema, Exception e) throws IOException
    {
       String filename;
       if (e != null)
