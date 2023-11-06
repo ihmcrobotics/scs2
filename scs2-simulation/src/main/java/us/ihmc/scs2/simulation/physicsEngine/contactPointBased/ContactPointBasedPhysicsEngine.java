@@ -177,6 +177,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       ContactPointBasedRobot cpbRobot = new ContactPointBasedRobot(robot, physicsEngineRegistry);
       rootRegistry.addChild(cpbRobot.getRegistry());
+      physicsEngineRegistry.addChild(cpbRobot.getSecondaryRegistry());
       robotList.add(cpbRobot);
    }
 
