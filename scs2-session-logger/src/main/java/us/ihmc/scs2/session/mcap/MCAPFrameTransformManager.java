@@ -410,8 +410,8 @@ public class MCAPFrameTransformManager
          poseToParent = new YoPose3D(namePrefix, registry);
          if (parent == null)
          {
-            YoPoint3D yoPosition = poseToParent.getPosition();
-            YoQuaternion yoOrientation = poseToParent.getOrientation();
+            YoPoint3D yoPosition = (YoPoint3D) poseToParent.getPosition();
+            YoQuaternion yoOrientation = (YoQuaternion) poseToParent.getOrientation();
             poseToRoot = new YoFramePose3D(new YoFramePoint3D(yoPosition.getYoX(), yoPosition.getYoY(), yoPosition.getYoZ(), inertialFrame),
                                            new YoFrameQuaternion(yoOrientation.getYoQx(),
                                                                  yoOrientation.getYoQy(),
