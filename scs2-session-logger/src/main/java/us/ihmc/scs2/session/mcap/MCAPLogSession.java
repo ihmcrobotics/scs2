@@ -222,8 +222,11 @@ public class MCAPLogSession extends Session
       {
          try
          {
+            URDFTools.URDFParserProperties urdfParserProperties = new URDFTools.URDFParserProperties();
+            urdfParserProperties.setSimplifyKinematics(false);
+            urdfParserProperties.setTransformToZUp(false);
             URDFModel urdfModel = URDFTools.loadURDFModel(robotDefinitionFile, Collections.singletonList(robotDefinitionFile.getParent()));
-            RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel);
+            RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, urdfParserProperties);
 
             robotDefinition.sanitizeNames();
 
