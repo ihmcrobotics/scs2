@@ -607,7 +607,7 @@ public class SingleContactImpulseCalculatorTest
 
    static SimRigidBodyBasics nextSingleFloatingRigidBody(Random random, String name)
    {
-      SimRigidBody rootBody = new SimRigidBody(name + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(name + "RootBody", worldFrame, null, null);
       SimSixDoFJoint floatingJoint = SimMultiBodySystemRandomTools.nextSixDoFJoint(random, name + "RootJoint", rootBody);
       SimRigidBody floatingBody = SimMultiBodySystemRandomTools.nextRigidBody(random, name + "Body", floatingJoint);
       floatingJoint.setSuccessor(floatingBody);
@@ -626,7 +626,7 @@ public class SingleContactImpulseCalculatorTest
 
    static SimRigidBodyBasics nextFloatingSphereBody(Random random, String name)
    {
-      SimRigidBody rootBody = new SimRigidBody(name + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(name + "RootBody", worldFrame, null, null);
       SimSixDoFJoint floatingJoint = SimMultiBodySystemRandomTools.nextSixDoFJoint(random, name + "RootJoint", rootBody);
 
       double radius = EuclidCoreRandomTools.nextDouble(random, 0.001, 1.0);
