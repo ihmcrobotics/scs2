@@ -74,7 +74,14 @@ public class MCAPFrameTransformManager
          Mcap.Schema schema = (Mcap.Schema) record.body();
          if (schema.name().str().equalsIgnoreCase("foxglove::FrameTransform"))
          {
-            foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(schema);
+            if (schema.encoding().str().equalsIgnoreCase("ros2msg"))
+            {
+               foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(schema);
+            }
+            else
+            {
+               throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding().str());
+            }
             break;
          }
       }

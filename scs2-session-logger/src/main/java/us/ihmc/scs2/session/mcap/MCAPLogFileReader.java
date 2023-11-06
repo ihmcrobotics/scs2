@@ -115,7 +115,14 @@ public class MCAPLogFileReader
             continue;
          try
          {
-            schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
+            if (schema.encoding().str().equalsIgnoreCase("ros2msg"))
+            {
+               schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
+            }
+            else
+            {
+               throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding().str());
+            }
          }
          catch (Exception e)
          {
