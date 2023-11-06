@@ -132,7 +132,7 @@ public class SimMultiBodySystemFactories
                                    double mass,
                                    RigidBodyTransformReadOnly inertiaPose)
       {
-         return new SimRigidBody(bodyName, (SimJointBasics) parentJoint, momentOfInertia, mass, inertiaPose);
+         return new SimRigidBody(bodyName, (SimJointBasics) parentJoint, momentOfInertia, mass, inertiaPose, registry);
       }
    }
 }
