@@ -34,7 +34,7 @@ public class MCAPLogSession extends Session
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
-   private MCAPFrameTransformBasedRobotStateUpdater robotStateUpdater;
+   private MCAPFrameTransformBasedRobotStateUpdater robotStateUpdater = null;
    private final MCAPLogFileReader mcapLogFileReader;
 
    private final YoRegistry mcapRegistry = new YoRegistry("MCAP");
@@ -47,15 +47,25 @@ public class MCAPLogSession extends Session
     */
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
-   public MCAPLogSession(File mcapFile, MCAPDebugPrinter printer) throws IOException
+   public MCAPLogSession(File mcapFile, File robotModelFile) throws IOException
    {
-      mcapLogFileReader = new MCAPLogFileReader(mcapFile, printer, getInertialFrame(), mcapRegistry);
-      // FIXME Do we need this guy?
-      robotStateUpdater = null;
+      mcapLogFileReader = new MCAPLogFileReader(mcapFile, getInertialFrame(), mcapRegistry);
       mcapLogFileReader.loadSchemas();
       mcapLogFileReader.loadChannels();
-      mcapLogFileReader.printStatistics();
       yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());
+
+      RobotDefinition robotDefinition = null;
+      if (robotModelFile != null)
+         robotDefinition = loadRobotDefinition(robotModelFile);
+
+      if (robotDefinition != null)
+      {
+         Robot robotToAdd = new Robot(robotDefinition, getInertialFrame());
+         robots.add(robotToAdd);
+         robotDefinitions.add(robotDefinition);
+         rootRegistry.addChild(robotToAdd.getRegistry());
+         robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+      }
 
       rootRegistry.addChild(mcapRegistry);
    }
@@ -175,27 +185,15 @@ public class MCAPLogSession extends Session
          }
       }
 
+      RobotDefinition robotDefinitionToAdd = null;
+
       if (request.getNewRobotModelFile() != null)
-      {
-         RobotDefinition robotDefinitionToAdd = loadRobotDefinition(request.getNewRobotModelFile());
-         if (robotDefinitionToAdd != null)
-         {
-            robotDefinitionToAdd.sanitizeNames();
-
-            if (robotDefinitionToAdd.getName() == null)
-               robotDefinitionToAdd.setName(FilenameUtils.getBaseName(request.getNewRobotModelFile().getName()));
-
-            Robot robotToAdd = new Robot(robotDefinitionToAdd, getInertialFrame());
-            robots.add(robotToAdd);
-            robotDefinitions.add(robotDefinitionToAdd);
-            rootRegistry.addChild(robotToAdd.getRegistry());
-            robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
-            addedRobot = robotDefinitionToAdd;
-         }
-      }
+         robotDefinitionToAdd = loadRobotDefinition(request.getNewRobotModelFile());
       else if (request.getAddedRobotDefinition() != null)
+         robotDefinitionToAdd = request.getAddedRobotDefinition();
+
+      if (robotDefinitionToAdd != null)
       {
-         RobotDefinition robotDefinitionToAdd = request.getAddedRobotDefinition();
          Robot robotToAdd = new Robot(robotDefinitionToAdd, getInertialFrame());
          robots.add(robotToAdd);
          robotDefinitions.add(robotDefinitionToAdd);
@@ -225,7 +223,14 @@ public class MCAPLogSession extends Session
          try
          {
             URDFModel urdfModel = URDFTools.loadURDFModel(robotDefinitionFile, Collections.singletonList(robotDefinitionFile.getParent()));
-            return URDFTools.toRobotDefinition(urdfModel);
+            RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel);
+
+            robotDefinition.sanitizeNames();
+
+            if (robotDefinition.getName() == null)
+               robotDefinition.setName(FilenameUtils.getBaseName(robotDefinitionFile.getName()));
+
+            return robotDefinition;
          }
          catch (JAXBException e)
          {

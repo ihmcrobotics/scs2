@@ -1,13 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-
+import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTrimSlider;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -23,9 +17,9 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.log.LogTools;
+import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
-import us.ihmc.scs2.session.mcap.MCAPDebugPrinter;
 import us.ihmc.scs2.session.mcap.MCAPLogFileReader;
 import us.ihmc.scs2.session.mcap.MCAPLogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -36,6 +30,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController.TimeStringBinding;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class MCAPLogSessionManagerController implements SessionControlsController
 {
@@ -50,6 +49,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private Label sessionNameLabel, dateLabel, logPathLabel;
    @FXML
    private JFXTrimSlider logPositionSlider;
+   @FXML
+   private JFXTextField currentModelFilePathTextField;
 
    private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
 
@@ -57,6 +58,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private BackgroundExecutorManager backgroundExecutorManager;
+
+   private File defaultRobotModelFile = null;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -196,23 +199,10 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
 
       backgroundExecutorManager.executeInBackground(() ->
                                                     {
-                                                       MCAPLogSession newSession;
                                                        try
                                                        {
                                                           LogTools.info("Creating log session.");
-                                                          File debugFile = new File("debugMCAP.txt");
-                                                          debugFile.delete();
-                                                          PrintWriter printWriter = new PrintWriter(debugFile);
-                                                          newSession = new MCAPLogSession(result, new MCAPDebugPrinter()
-                                                          {
-                                                             @Override
-                                                             public void print(String string)
-                                                             {
-                                                                //                  JavaFXMissingTools.runLater(getClass(), () -> debugTextArea.appendText(string));
-                                                                printWriter.write(string);
-                                                             }
-                                                          });
-                                                          printWriter.close();
+                                                          MCAPLogSession newSession = new MCAPLogSession(result, defaultRobotModelFile);
                                                           LogTools.info("Created log session.");
                                                           JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
                                                           SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
@@ -280,7 +270,11 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    {
       MCAPLogSession logSession = activeSessionProperty.get();
       if (logSession == null)
+      { // Save the file for the next session.
+         defaultRobotModelFile = result;
+         currentModelFilePathTextField.setText(result.getAbsolutePath());
          return;
+      }
 
       boolean hasARobot = !logSession.getRobotDefinitions().isEmpty();
       SessionRobotDefinitionListChange request;
@@ -290,5 +284,25 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          request = SessionRobotDefinitionListChange.add(result);
 
       messager.submitMessage(topics.getSessionRobotDefinitionListChangeRequest(), request);
+      currentModelFilePathTextField.setText("Loading...");
+      TopicListener<SessionRobotDefinitionListChange> listener = new TopicListener<SessionRobotDefinitionListChange>()
+      {
+         @Override
+         public void receivedMessageForTopic(SessionRobotDefinitionListChange m)
+         {
+            if (m.getAddedRobotDefinition() != null)
+            {
+               currentModelFilePathTextField.setText(result.getAbsolutePath());
+               defaultRobotModelFile = result;
+            }
+            else
+            {
+               currentModelFilePathTextField.setText("Failed to load.");
+               defaultRobotModelFile = null;
+            }
+            messager.removeFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), this);
+         }
+      };
+      messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), listener);
    }
 }
