@@ -47,6 +47,7 @@ public class Robot implements RobotInterface
    };
 
    protected final YoRegistry registry;
+   protected final YoRegistry secondaryRegistry;
 
    protected final RobotDefinition robotDefinition;
    protected final String name;
@@ -103,8 +104,9 @@ public class Robot implements RobotInterface
       name = robotDefinition.getName();
 
       registry = new YoRegistry(name);
+      secondaryRegistry = new YoRegistry(name + "InertialParameters");
 
-      rootBody = createRobot(robotDefinition.getRootBodyDefinition(), robotRootFrame, DEFAULT_JOINT_BUILDER, DEFAULT_BODY_BUILDER, registry);
+      rootBody = createRobot(robotDefinition.getRootBodyDefinition(), robotRootFrame, DEFAULT_JOINT_BUILDER, DEFAULT_BODY_BUILDER, registry, secondaryRegistry);
       allJoints = SubtreeStreams.fromChildren(SimJointBasics.class, rootBody).collect(Collectors.toList());
       allRigidBodies = new ArrayList<>(rootBody.subtreeList());
       nameToJointMap = allJoints.stream().collect(Collectors.toMap(SimJointBasics::getName, Function.identity()));
@@ -134,10 +136,11 @@ public class Robot implements RobotInterface
                                           ReferenceFrame inertialFrame,
                                           JointBuilderFromDefinition jointBuilder,
                                           RigidBodyBuilderFromDefinition bodyBuilder,
-                                          YoRegistry registry)
+                                          YoRegistry registry,
+                                          YoRegistry secondaryRegistry)
    {
-      SimRigidBody rootBody = bodyBuilder.rootFromDefinition(rootBodyDefinition, inertialFrame, registry);
-      createJointsRecursive(rootBody, rootBodyDefinition, jointBuilder, bodyBuilder, registry);
+      SimRigidBody rootBody = bodyBuilder.rootFromDefinition(rootBodyDefinition, inertialFrame, registry, secondaryRegistry);
+      createJointsRecursive(rootBody, rootBodyDefinition, jointBuilder, bodyBuilder);
       RobotDefinition.closeLoops(rootBody, rootBodyDefinition);
       return rootBody;
    }
@@ -145,8 +148,7 @@ public class Robot implements RobotInterface
    public static void createJointsRecursive(SimRigidBody rigidBody,
                                             RigidBodyDefinition rigidBodyDefinition,
                                             JointBuilderFromDefinition jointBuilder,
-                                            RigidBodyBuilderFromDefinition bodyBuilder,
-                                            YoRegistry registry)
+                                            RigidBodyBuilderFromDefinition bodyBuilder)
    {
       for (JointDefinition childJointDefinition : rigidBodyDefinition.getChildrenJoints())
       {
@@ -172,7 +174,7 @@ public class Robot implements RobotInterface
                LogTools.warn("Unsupported sensor: " + sensorDefinition);
          }
 
-         createJointsRecursive(childSuccessor, childJointDefinition.getSuccessor(), jointBuilder, bodyBuilder, registry);
+         createJointsRecursive(childSuccessor, childJointDefinition.getSuccessor(), jointBuilder, bodyBuilder);
       }
    }
 
@@ -307,6 +309,11 @@ public class Robot implements RobotInterface
       return registry;
    }
 
+   public YoRegistry getSecondaryRegistry()
+   {
+      return secondaryRegistry;
+   }
+
    public RobotStateDefinition getCurrentRobotStateDefinition()
    {
       RobotStateDefinition definition = new RobotStateDefinition();
@@ -377,9 +384,9 @@ public class Robot implements RobotInterface
 
    public static interface RigidBodyBuilderFromDefinition
    {
-      default SimRigidBody rootFromDefinition(RigidBodyDefinition rootBodyDefinition, ReferenceFrame inertialFrame, YoRegistry registry)
+      default SimRigidBody rootFromDefinition(RigidBodyDefinition rootBodyDefinition, ReferenceFrame inertialFrame, YoRegistry registry, YoRegistry secondaryRegistry)
       {
-         return new SimRigidBody(rootBodyDefinition, inertialFrame, registry);
+         return new SimRigidBody(rootBodyDefinition, inertialFrame, registry, secondaryRegistry);
       }
 
       default SimRigidBody fromDefinition(RigidBodyDefinition rigidBodyDefinition, SimJointBasics parentJoint)

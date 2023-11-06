@@ -41,6 +41,7 @@ public class DoNothingPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       rootRegistry.addChild(robot.getRegistry());
+      physicsEngineRegistry.addChild(robot.getSecondaryRegistry());
       robotList.add(robot);
    }
 

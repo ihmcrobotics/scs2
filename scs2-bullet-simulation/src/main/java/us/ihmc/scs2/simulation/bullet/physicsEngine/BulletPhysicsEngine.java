@@ -194,6 +194,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
       BulletRobot bulletRobot = new BulletRobot(robot, physicsEngineRegistry, bulletMultiBodyRobot);
       rootRegistry.addChild(bulletRobot.getRegistry());
+      physicsEngineRegistry.addChild(bulletRobot.getSecondaryRegistry());
       robotList.add(bulletRobot);
    }
 

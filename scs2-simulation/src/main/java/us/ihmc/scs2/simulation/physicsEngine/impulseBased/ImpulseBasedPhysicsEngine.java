@@ -124,6 +124,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       ImpulseBasedRobot ibRobot = new ImpulseBasedRobot(robot, physicsEngineRegistry);
       robotMap.put(ibRobot.getRootBody(), ibRobot);
       rootRegistry.addChild(ibRobot.getRegistry());
+      physicsEngineRegistry.addChild(ibRobot.getSecondaryRegistry());
       robotList.add(ibRobot);
    }
 

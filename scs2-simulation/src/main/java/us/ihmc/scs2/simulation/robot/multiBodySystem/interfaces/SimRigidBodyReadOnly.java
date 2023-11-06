@@ -16,6 +16,8 @@ public interface SimRigidBodyReadOnly extends RigidBodyReadOnly, CollidableHolde
 {
    YoRegistry getRegistry();
 
+   YoRegistry getSecondaryRegistry();
+
    @Override
    SimJointReadOnly getParentJoint();
 
