@@ -24,42 +24,19 @@ public class MCAPFrameTransformBasedRobotStateUpdater
 
       for (JointBasics joint : robot.getAllJoints())
       {
-         if (joint instanceof OneDoFJointBasics)
+         MCAPFrameTransformManager.YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(joint.getSuccessor().getName());
+         MCAPFrameTransformManager.YoFoxGloveFrameTransform parentJointTransform = frameTransformManager.getTransformFromSanitizedName(joint.getPredecessor()
+                                                                                                                                            .getName());
+
+         if (joint instanceof OneDoFJointBasics oneDoFJoint)
          {
-            OneDoFJointBasics oneDoFJoint = (OneDoFJointBasics) joint;
-            jointStateUpdaters.add(createOneDoFJointUpdater(oneDoFJoint));
+            jointStateUpdaters.add(new OneDoFJointStateUpdater(oneDoFJoint, transform, parentJointTransform));
          }
-         else if (joint instanceof SixDoFJointBasics)
+         else if (joint instanceof SixDoFJointBasics sixDoFJoint)
          {
-            SixDoFJointBasics sixDoFJoint = (SixDoFJointBasics) joint;
-            jointStateUpdaters.add(createSixDoFJointUpdater(sixDoFJoint));
+            jointStateUpdaters.add(new SixDoFJointStateUpdater(sixDoFJoint, transform));
          }
       }
-   }
-
-   private Runnable createOneDoFJointUpdater(OneDoFJointBasics oneDoFJoint)
-   {
-      RigidBodyTransform jointConfiguration = new RigidBodyTransform();
-      RigidBodyTransformReadOnly beforeJointTransform = oneDoFJoint.getFrameBeforeJoint().getTransformToParent();
-      MCAPFrameTransformManager.YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(oneDoFJoint.getSuccessor().getName());
-      return () ->
-      {
-         RigidBodyTransformReadOnly transformToParentJoint = transform.getTransformToParent();
-
-         jointConfiguration.setAndInvert(beforeJointTransform);
-         jointConfiguration.multiply(transformToParentJoint);
-         oneDoFJoint.setJointConfiguration(jointConfiguration);
-      };
-   }
-
-   private Runnable createSixDoFJointUpdater(SixDoFJointBasics sixDoFJoint)
-   {
-      MCAPFrameTransformManager.YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(sixDoFJoint.getSuccessor().getName());
-      return () ->
-      {
-         RigidBodyTransformReadOnly transformToParentJoint = transform.getTransformToParent();
-         sixDoFJoint.setJointConfiguration(transformToParentJoint);
-      };
    }
 
    public void updateRobotState()
@@ -67,6 +44,56 @@ public class MCAPFrameTransformBasedRobotStateUpdater
       for (Runnable jointStateUpdater : jointStateUpdaters)
       {
          jointStateUpdater.run();
+      }
+   }
+
+   public static class SixDoFJointStateUpdater implements Runnable
+   {
+      private final SixDoFJointBasics joint;
+      private final MCAPFrameTransformManager.YoFoxGloveFrameTransform transform;
+
+      public SixDoFJointStateUpdater(SixDoFJointBasics joint, MCAPFrameTransformManager.YoFoxGloveFrameTransform transform)
+      {
+         this.joint = joint;
+         this.transform = transform;
+      }
+
+      @Override
+      public void run()
+      {
+         RigidBodyTransformReadOnly transformToParentJoint = transform.getTransformToParent();
+         joint.setJointConfiguration(transformToParentJoint);
+      }
+   }
+
+   public static class OneDoFJointStateUpdater implements Runnable
+   {
+      private final OneDoFJointBasics joint;
+      private final MCAPFrameTransformManager.YoFoxGloveFrameTransform transform;
+      private final MCAPFrameTransformManager.YoFoxGloveFrameTransform parentJointTransform;
+      private final RigidBodyTransform jointConfiguration = new RigidBodyTransform();
+
+      public OneDoFJointStateUpdater(OneDoFJointBasics joint,
+                                     MCAPFrameTransformManager.YoFoxGloveFrameTransform transform,
+                                     MCAPFrameTransformManager.YoFoxGloveFrameTransform parentJointTransform)
+      {
+         this.joint = joint;
+         this.transform = transform;
+         this.parentJointTransform = parentJointTransform;
+      }
+
+      @Override
+      public void run()
+      {
+         RigidBodyTransformReadOnly beforeJointTransform = joint.getFrameBeforeJoint().getTransformToParent();
+         RigidBodyTransformReadOnly transformParentJointToRoot = parentJointTransform.getTransformToRoot();
+         RigidBodyTransformReadOnly transformToRoot = transform.getTransformToRoot();
+
+         jointConfiguration.setIdentity();
+         jointConfiguration.setAndInvert(beforeJointTransform);
+         jointConfiguration.multiplyInvertOther(transformParentJointToRoot);
+         jointConfiguration.multiply(transformToRoot);
+         joint.setJointConfiguration(jointConfiguration);
       }
    }
 }

@@ -15,6 +15,7 @@ import java.util.Set;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
@@ -58,6 +59,7 @@ public class MCAPFrameTransformManager
    private final Set<String> unattachedRootNames = new LinkedHashSet<>();
 
    private final YoGraphicGroupDefinition yoGraphicGroupDefinition = new YoGraphicGroupDefinition("FoxgloveFrameTransforms");
+   private Mcap.Schema mcapSchema;
 
    public MCAPFrameTransformManager(ReferenceFrame inertialFrame)
    {
@@ -71,16 +73,16 @@ public class MCAPFrameTransformManager
          if (record.op() != Mcap.Opcode.SCHEMA)
             continue;
 
-         Mcap.Schema schema = (Mcap.Schema) record.body();
-         if (schema.name().str().equalsIgnoreCase("foxglove::FrameTransform"))
+         mcapSchema = (Mcap.Schema) record.body();
+         if (mcapSchema.name().str().equalsIgnoreCase("foxglove::FrameTransform"))
          {
-            if (schema.encoding().str().equalsIgnoreCase("ros2msg"))
+            if (mcapSchema.encoding().str().equalsIgnoreCase("ros2msg"))
             {
-               foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(schema);
+               foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(mcapSchema);
             }
             else
             {
-               throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding().str());
+               throw new UnsupportedOperationException("Unsupported encoding: " + mcapSchema.encoding().str());
             }
             break;
          }
@@ -337,6 +339,11 @@ public class MCAPFrameTransformManager
       return registry;
    }
 
+   public Mcap.Schema getMCAPSchema()
+   {
+      return mcapSchema;
+   }
+
    public ROS2MessageSchema getFrameTransformSchema()
    {
       return foxgloveFrameTransformSchema;
@@ -497,6 +504,11 @@ public class MCAPFrameTransformManager
       public RigidBodyTransformReadOnly getTransformToParent()
       {
          return poseToParent;
+      }
+
+      public RigidBodyTransformReadOnly getTransformToRoot()
+      {
+         return poseToRoot;
       }
    }
 }
