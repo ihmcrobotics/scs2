@@ -12,11 +12,11 @@ import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
-import us.ihmc.mecano.multiBodySystem.RigidBody;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.iterators.JointIterable;
 import us.ihmc.mecano.multiBodySystem.iterators.RigidBodyIterable;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
+import us.ihmc.mecano.yoVariables.multiBodySystem.YoRigidBody;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionTools;
@@ -24,20 +24,22 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
-public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
+public class SimRigidBody extends YoRigidBody implements SimRigidBodyBasics
 {
    private final YoRegistry registry;
+   private final YoRegistry secondaryRegistry;
    private final List<Collidable> collidables = new ArrayList<>();
 
-   public SimRigidBody(String bodyName, ReferenceFrame parentStationaryFrame, YoRegistry registry)
+   public SimRigidBody(String bodyName, ReferenceFrame parentStationaryFrame, YoRegistry registry, YoRegistry secondaryRegistry)
    {
-      this(bodyName, new RigidBodyTransform(), parentStationaryFrame, registry);
+      this(bodyName, new RigidBodyTransform(), parentStationaryFrame, registry, secondaryRegistry);
    }
 
-   public SimRigidBody(String bodyName, RigidBodyTransformReadOnly transformToParent, ReferenceFrame parentStationaryFrame, YoRegistry registry)
+   public SimRigidBody(String bodyName, RigidBodyTransformReadOnly transformToParent, ReferenceFrame parentStationaryFrame, YoRegistry registry, YoRegistry secondaryRegistry)
    {
       super(bodyName, transformToParent, parentStationaryFrame);
       this.registry = registry;
+      this.secondaryRegistry = secondaryRegistry;
    }
 
    public SimRigidBody(String bodyName, SimJointBasics parentJoint, double Ixx, double Iyy, double Izz, double mass, Tuple3DReadOnly centerOfMassOffset)
@@ -52,21 +54,24 @@ public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
 
    public SimRigidBody(String bodyName, SimJointBasics parentJoint, Matrix3DReadOnly momentOfInertia, double mass, RigidBodyTransformReadOnly inertiaPose)
    {
-      super(bodyName, parentJoint, momentOfInertia, mass, inertiaPose);
+      super(bodyName, parentJoint, momentOfInertia, mass, inertiaPose, parentJoint.getSecondaryRegistry());
       this.registry = parentJoint.getRegistry();
+      this.secondaryRegistry = parentJoint.getSecondaryRegistry();
    }
 
-   public SimRigidBody(RigidBodyDefinition definition, ReferenceFrame parentStationaryFrame, YoRegistry registry)
+   public SimRigidBody(RigidBodyDefinition definition, ReferenceFrame parentStationaryFrame, YoRegistry registry, YoRegistry secondaryRegistry)
    {
-      super(definition.getName(), parentStationaryFrame);
+      super(definition.getName(), new RigidBodyTransform(), parentStationaryFrame);
       this.registry = registry;
+      this.secondaryRegistry = secondaryRegistry;
       collidables.addAll(CollisionTools.toCollidableRigidBody(definition, this));
    }
 
    public SimRigidBody(RigidBodyDefinition definition, SimJointBasics parentJoint)
    {
-      super(definition.getName(), parentJoint, definition.getMomentOfInertia(), definition.getMass(), definition.getInertiaPose());
+      super(definition.getName(), parentJoint, definition.getMomentOfInertia(), definition.getMass(), definition.getInertiaPose(), parentJoint.getSecondaryRegistry());
       this.registry = parentJoint.getRegistry();
+      this.secondaryRegistry = parentJoint.getSecondaryRegistry();
       collidables.addAll(CollisionTools.toCollidableRigidBody(definition, this));
    }
 
@@ -74,6 +79,12 @@ public class SimRigidBody extends RigidBody implements SimRigidBodyBasics
    public YoRegistry getRegistry()
    {
       return registry;
+   }
+
+   @Override
+   public YoRegistry getSecondaryRegistry()
+   {
+      return secondaryRegistry;
    }
 
    @Override

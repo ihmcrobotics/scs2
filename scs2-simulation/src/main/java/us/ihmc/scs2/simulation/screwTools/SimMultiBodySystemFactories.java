@@ -114,15 +114,18 @@ public class SimMultiBodySystemFactories
    {
       private final YoRegistry registry;
 
-      public SimRigidBodyBuilder(YoRegistry registry)
+      private final YoRegistry secondaryRegistry;
+
+      public SimRigidBodyBuilder(YoRegistry registry, YoRegistry secondaryRegistry)
       {
          this.registry = registry;
+         this.secondaryRegistry = secondaryRegistry;
       }
 
       @Override
       public RigidBodyBasics buildRoot(String bodyName, RigidBodyTransformReadOnly transformToParent, ReferenceFrame parentStationaryFrame)
       {
-         return new SimRigidBody(bodyName, transformToParent, parentStationaryFrame, registry);
+         return new SimRigidBody(bodyName, transformToParent, parentStationaryFrame, registry, secondaryRegistry);
       }
 
       @Override

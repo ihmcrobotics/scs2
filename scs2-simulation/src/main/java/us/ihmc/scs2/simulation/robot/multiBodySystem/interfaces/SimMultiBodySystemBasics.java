@@ -261,12 +261,13 @@ public interface SimMultiBodySystemBasics extends MultiBodySystemBasics, SimMult
     * @param cloneRootFrame the root frame to which the clone system is attached.
     * @return the clone.
     */
-   public static SimMultiBodySystemBasics clone(MultiBodySystemReadOnly original, ReferenceFrame cloneRootFrame, YoRegistry cloneRegistry)
+   public static SimMultiBodySystemBasics clone(MultiBodySystemReadOnly original, ReferenceFrame cloneRootFrame, YoRegistry cloneRegistry, YoRegistry cloneSecondaryRegistry)
    {
       SimRigidBodyBasics cloneRootBody = (SimRigidBodyBasics) MultiBodySystemFactories.cloneMultiBodySystem(original.getRootBody(),
                                                                                                             cloneRootFrame,
                                                                                                             "",
-                                                                                                            new SimRigidBodyBuilder(cloneRegistry),
+                                                                                                            new SimRigidBodyBuilder(cloneRegistry,
+                                                                                                                                    cloneSecondaryRegistry),
                                                                                                             new SimJointBuilder());
       Set<String> namesOfJointsToConsider = SubtreeStreams.fromChildren(SimJointBasics.class, original.getRootBody())
                                                           .map(JointReadOnly::getName)

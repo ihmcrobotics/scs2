@@ -287,7 +287,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimPrismaticJoint> nextPrismaticJointChain(Random random, String prefix, Vector3DReadOnly[] jointAxes)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null, null);
       return nextPrismaticJointChain(random, prefix, rootBody, jointAxes);
    }
 
@@ -422,7 +422,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimRevoluteJoint> nextRevoluteJointChain(Random random, String prefix, Vector3DReadOnly[] jointAxes)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null, null);
       return nextRevoluteJointChain(random, prefix, rootBody, jointAxes);
    }
 
@@ -557,7 +557,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimOneDoFJointBasics> nextOneDoFJointChain(Random random, String prefix, Vector3DReadOnly[] jointAxes)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null, null);
       return nextOneDoFJointChain(random, prefix, rootBody, jointAxes);
    }
 
@@ -677,7 +677,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimJointBasics> nextJointChain(Random random, String prefix, int numberOfJoints)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null, null);
       return nextJointChain(random, prefix, rootBody, numberOfJoints);
    }
 
@@ -775,7 +775,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimPrismaticJoint> nextPrismaticJointTree(Random random, String prefix, int numberOfJoints)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(prefix + "RootBody", worldFrame, null, null);
       return nextPrismaticJointTree(random, prefix, rootBody, numberOfJoints);
    }
 
@@ -869,7 +869,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimRevoluteJoint> nextRevoluteJointTree(Random random, String prefix, int numberOfJoints)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody("RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody("RootBody", worldFrame, null, null);
       return nextRevoluteJointTree(random, prefix, rootBody, numberOfJoints);
    }
 
@@ -963,7 +963,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimOneDoFJointBasics> nextOneDoFJointTree(Random random, String prefix, int numberOfJoints)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody("RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody("RootBody", worldFrame, null, null);
       return nextOneDoFJointTree(random, prefix, rootBody, numberOfJoints);
    }
 
@@ -1063,7 +1063,7 @@ public class SimMultiBodySystemRandomTools
    public static List<SimJointBasics> nextJointTree(Random random, String prefix, int numberOfJoints)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody("RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody("RootBody", worldFrame, null, null);
       return nextJointTree(random, prefix, rootBody, numberOfJoints);
    }
 
@@ -1396,7 +1396,7 @@ public class SimMultiBodySystemRandomTools
        */
       public RandomFloatingRevoluteJointChain(Random random, Vector3D[] jointAxes)
       {
-         elevator = new SimRigidBody("elevator", ReferenceFrame.getWorldFrame(), null);
+         elevator = new SimRigidBody("elevator", ReferenceFrame.getWorldFrame(), null, null);
 
          rootJoint = new SimSixDoFJoint("rootJoint", elevator, null);
          SimRigidBody rootBody = nextRigidBody(random, "rootBody", rootJoint);
