@@ -139,8 +139,8 @@ public class Robot implements RobotInterface
                                           YoRegistry registry,
                                           YoRegistry secondaryRegistry)
    {
-      SimRigidBody rootBody = bodyBuilder.rootFromDefinition(rootBodyDefinition, inertialFrame, registry);
-      createJointsRecursive(rootBody, rootBodyDefinition, jointBuilder, bodyBuilder, registry, secondaryRegistry);
+      SimRigidBody rootBody = bodyBuilder.rootFromDefinition(rootBodyDefinition, inertialFrame, registry, secondaryRegistry);
+      createJointsRecursive(rootBody, rootBodyDefinition, jointBuilder, bodyBuilder);
       RobotDefinition.closeLoops(rootBody, rootBodyDefinition);
       return rootBody;
    }
@@ -148,9 +148,7 @@ public class Robot implements RobotInterface
    public static void createJointsRecursive(SimRigidBody rigidBody,
                                             RigidBodyDefinition rigidBodyDefinition,
                                             JointBuilderFromDefinition jointBuilder,
-                                            RigidBodyBuilderFromDefinition bodyBuilder,
-                                            YoRegistry registry,
-                                            YoRegistry secondaryRegistry)
+                                            RigidBodyBuilderFromDefinition bodyBuilder)
    {
       for (JointDefinition childJointDefinition : rigidBodyDefinition.getChildrenJoints())
       {
@@ -159,7 +157,7 @@ public class Robot implements RobotInterface
          if (childJointDefinition.isLoopClosure())
             continue;
 
-         SimRigidBody childSuccessor = bodyBuilder.fromDefinition(childJointDefinition.getSuccessor(), childJoint, secondaryRegistry);
+         SimRigidBody childSuccessor = bodyBuilder.fromDefinition(childJointDefinition.getSuccessor(), childJoint);
 
          childJointDefinition.getKinematicPointDefinitions().forEach(childJoint.getAuxiliaryData()::addKinematicPoint);
          childJointDefinition.getExternalWrenchPointDefinitions().forEach(childJoint.getAuxiliaryData()::addExternalWrenchPoint);
@@ -176,7 +174,7 @@ public class Robot implements RobotInterface
                LogTools.warn("Unsupported sensor: " + sensorDefinition);
          }
 
-         createJointsRecursive(childSuccessor, childJointDefinition.getSuccessor(), jointBuilder, bodyBuilder, registry, secondaryRegistry);
+         createJointsRecursive(childSuccessor, childJointDefinition.getSuccessor(), jointBuilder, bodyBuilder);
       }
    }
 
@@ -386,14 +384,14 @@ public class Robot implements RobotInterface
 
    public static interface RigidBodyBuilderFromDefinition
    {
-      default SimRigidBody rootFromDefinition(RigidBodyDefinition rootBodyDefinition, ReferenceFrame inertialFrame, YoRegistry registry)
+      default SimRigidBody rootFromDefinition(RigidBodyDefinition rootBodyDefinition, ReferenceFrame inertialFrame, YoRegistry registry, YoRegistry secondaryRegistry)
       {
-         return new SimRigidBody(rootBodyDefinition, inertialFrame, registry);
+         return new SimRigidBody(rootBodyDefinition, inertialFrame, registry, secondaryRegistry);
       }
 
-      default SimRigidBody fromDefinition(RigidBodyDefinition rigidBodyDefinition, SimJointBasics parentJoint, YoRegistry registry)
+      default SimRigidBody fromDefinition(RigidBodyDefinition rigidBodyDefinition, SimJointBasics parentJoint)
       {
-         return new SimRigidBody(rigidBodyDefinition, parentJoint, registry);
+         return new SimRigidBody(rigidBodyDefinition, parentJoint);
       }
    }
 }
