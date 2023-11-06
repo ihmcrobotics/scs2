@@ -236,7 +236,7 @@ public class MultiRobotCollisionGroupTest
    private static RigidBodyBasics nextRobot(Random random, String robotName)
    {
       ReferenceFrame worldFrame = ReferenceFrame.getWorldFrame();
-      SimRigidBody rootBody = new SimRigidBody(robotName + "RootBody", worldFrame, null);
+      SimRigidBody rootBody = new SimRigidBody(robotName + "RootBody", worldFrame, null, null);
       SimMultiBodySystemRandomTools.nextJointChain(random, robotName, rootBody, 5);
       return rootBody;
    }

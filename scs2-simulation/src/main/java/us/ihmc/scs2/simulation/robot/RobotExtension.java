@@ -146,6 +146,11 @@ public abstract class RobotExtension implements RobotInterface
       return robot.getRegistry();
    }
 
+   public YoRegistry getSecondaryRegistry()
+   {
+      return robot.getSecondaryRegistry();
+   }
+
    protected static class RobotState
    {
       private final List<JointReadOnly> joints = new ArrayList<>();
