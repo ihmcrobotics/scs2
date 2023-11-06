@@ -47,12 +47,12 @@ public class SimRigidBody extends YoRigidBody implements SimRigidBodyBasics
 
    public SimRigidBody(String bodyName, SimJointBasics parentJoint, Matrix3DReadOnly momentOfInertia, double mass, Tuple3DReadOnly centerOfMassOffset)
    {
-      this(bodyName, parentJoint, momentOfInertia, mass, new RigidBodyTransform(new Quaternion(), centerOfMassOffset));
+      this(bodyName, parentJoint, momentOfInertia, mass, new RigidBodyTransform(new Quaternion(), centerOfMassOffset), null);
    }
 
-   public SimRigidBody(String bodyName, SimJointBasics parentJoint, Matrix3DReadOnly momentOfInertia, double mass, RigidBodyTransformReadOnly inertiaPose)
+   public SimRigidBody(String bodyName, SimJointBasics parentJoint, Matrix3DReadOnly momentOfInertia, double mass, RigidBodyTransformReadOnly inertiaPose, YoRegistry registry)
    {
-      super(bodyName, parentJoint, momentOfInertia, mass, inertiaPose, parentJoint.getRegistry());
+      super(bodyName, parentJoint, momentOfInertia, mass, inertiaPose, registry);
       this.registry = parentJoint.getRegistry();
    }
 
@@ -63,9 +63,9 @@ public class SimRigidBody extends YoRigidBody implements SimRigidBodyBasics
       collidables.addAll(CollisionTools.toCollidableRigidBody(definition, this));
    }
 
-   public SimRigidBody(RigidBodyDefinition definition, SimJointBasics parentJoint)
+   public SimRigidBody(RigidBodyDefinition definition, SimJointBasics parentJoint, YoRegistry registry)
    {
-      super(definition.getName(), parentJoint, definition.getMomentOfInertia(), definition.getMass(), definition.getInertiaPose(), parentJoint.getRegistry());
+      super(definition.getName(), parentJoint, definition.getMomentOfInertia(), definition.getMass(), definition.getInertiaPose(), registry);
       this.registry = parentJoint.getRegistry();
       collidables.addAll(CollisionTools.toCollidableRigidBody(definition, this));
    }
