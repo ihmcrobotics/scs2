@@ -1,20 +1,16 @@
 package us.ihmc.scs2.session.mcap;
 
+import com.github.luben.zstd.ZstdDecompressCtx;
+import gnu.trove.map.hash.TLongObjectHashMap;
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
+
 import java.io.IOException;
 import java.io.Serial;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import com.github.luben.zstd.ZstdDecompressCtx;
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import java.util.*;
 
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary
@@ -62,7 +58,7 @@ public class Mcap
          return id;
       }
 
-      private static final Map<Long, Opcode> byId = new HashMap<>(15);
+      private static final TLongObjectHashMap<Opcode> byId = new TLongObjectHashMap<>(15);
 
       static
       {
@@ -144,15 +140,18 @@ public class Mcap
        */
       private long uncompressedSize;
       /**
-       * CRC32 checksum of uncompressed records field. A value of zero indicates that CRC validation should not be performed.
+       * CRC32 checksum of uncompressed records field. A value of zero indicates that CRC validation
+       * should not be performed.
        */
       private long uncompressedCrc32;
       /**
-       * compression algorithm. i.e. zstd, lz4, "". An empty string indicates no compression. Refer to well-known compression formats.
+       * compression algorithm. i.e. zstd, lz4, "". An empty string indicates no compression. Refer to
+       * well-known compression formats.
        */
       private String compression;
       /**
-       * Offset position of the records in either in the {@code  ByteBuffer} or {@code FileChannel}, depending how this chunk was created.
+       * Offset position of the records in either in the {@code  ByteBuffer} or {@code FileChannel},
+       * depending on how this chunk was created.
        */
       private long offsetRecords;
       /**
@@ -929,7 +928,7 @@ public class Mcap
    public static class MapStrStr extends KaitaiStruct
    {
       private long lenEntries;
-      private Entries entries;
+      private List<TupleStrStr> entries;
 
       public MapStrStr(ByteBuffer buffer) throws IOException
       {
@@ -942,53 +941,19 @@ public class Mcap
       {
          _readIntoBuffer();
          lenEntries = Integer.toUnsignedLong(buffer.getInt());
-         entries = new Entries(buffer, (int) lenEntries);
-         setComputedLength(Integer.BYTES + entries.getItemTotalLength());
-      }
 
-      public static class Entries extends KaitaiStruct
-      {
-         private List<TupleStrStr> entries;
+         int remaining = (int) lenEntries;
+         int actualLength = Integer.BYTES;
+         entries = new ArrayList<>();
 
-         public Entries(ByteBuffer buffer, int _length) throws IOException
+         while (remaining > 0)
          {
-            super(buffer, _length);
-            _read();
+            TupleStrStr entry = new TupleStrStr(buffer);
+            entries.add(entry);
+            remaining -= entry.getItemTotalLength();
+            actualLength += entry.getItemTotalLength();
          }
-
-         @Override
-         public void _read() throws IOException
-         {
-            _readIntoBuffer();
-
-            int remaining = _length;
-            entries = new ArrayList<>();
-
-            while (remaining > 0)
-            {
-               TupleStrStr entry = new TupleStrStr(buffer);
-               entries.add(entry);
-               remaining -= entry.getItemTotalLength();
-            }
-         }
-
-         public List<TupleStrStr> entries()
-         {
-            return entries;
-         }
-
-         @Override
-         public String toString()
-         {
-            if (entries == null)
-               return "null";
-            return EuclidCoreIOTools.getCollectionString(", ", entries, e -> "(%s)".formatted(Objects.toString(e)));
-         }
-
-         public String toKeysString()
-         {
-            return EuclidCoreIOTools.getCollectionString(", ", entries, e -> e.key());
-         }
+         setComputedLength(actualLength);
       }
 
       public long lenEntries()
@@ -996,7 +961,7 @@ public class Mcap
          return lenEntries;
       }
 
-      public Entries entries()
+      public List<TupleStrStr> entries()
       {
          return entries;
       }
@@ -1004,12 +969,14 @@ public class Mcap
       @Override
       public String toString()
       {
-         return Objects.toString(entries);
+         if (entries == null)
+            return "null";
+         return EuclidCoreIOTools.getCollectionString(", ", entries, e -> "(%s)".formatted(Objects.toString(e)));
       }
 
       public String toKeysString()
       {
-         return entries.toKeysString();
+         return EuclidCoreIOTools.getCollectionString(", ", entries, e -> e.key());
       }
    }
 
@@ -1114,7 +1081,7 @@ public class Mcap
          buffer.get(data);
          crc32InputEnd = buffer.position();
          crc32 = Integer.toUnsignedLong(buffer.getInt());
-         setComputedLength(3 * Long.BYTES + name.length() + mediaType.length() + (int) lenData + Integer.BYTES);
+         setComputedLength(3 * Long.BYTES + 3 * Integer.BYTES + name.length() + mediaType.length() + (int) lenData);
       }
 
       private int crc32InputEnd;
@@ -1353,7 +1320,8 @@ public class Mcap
       }
 
       /**
-       * Returns the offset of the data portion of this message in the buffer returned by {@link #messageBuffer()}.
+       * Returns the offset of the data portion of this message in the buffer returned by
+       * {@link #messageBuffer()}.
        *
        * @return the offset of the data portion of this message.
        */
@@ -1373,7 +1341,8 @@ public class Mcap
       }
 
       /**
-       * Returns the buffer containing this message, the data AND the header. Use {@link #offsetData()} and {@link #lengthData()} to get the data portion.
+       * Returns the buffer containing this message, the data AND the header. Use {@link #offsetData()}
+       * and {@link #lengthData()} to get the data portion.
        *
        * @return the buffer containing this message.
        */
@@ -1914,8 +1883,8 @@ public class Mcap
        */
       private long lenMessageIndexOffsets;
       /**
-       * Mapping from channel ID to the offset of the message index record for that channel after the chunk, from the start of the file. An empty map indicates
-       * no message indexing is available.
+       * Mapping from channel ID to the offset of the message index record for that channel after the
+       * chunk, from the start of the file. An empty map indicates no message indexing is available.
        */
       private MessageIndexOffsets messageIndexOffsets;
       /**
@@ -1923,8 +1892,8 @@ public class Mcap
        */
       private long messageIndexLength;
       /**
-       * The compression used within the chunk. Refer to well-known compression formats. This field should match the the value in the corresponding Chunk
-       * record.
+       * The compression used within the chunk. Refer to well-known compression formats. This field should
+       * match the the value in the corresponding Chunk record.
        */
       private String compression;
       /**
@@ -1932,7 +1901,8 @@ public class Mcap
        */
       private long compressedSize;
       /**
-       * The uncompressed size of the chunk records field. This field should match the value in the corresponding Chunk record.
+       * The uncompressed size of the chunk records field. This field should match the value in the
+       * corresponding Chunk record.
        */
       private long uncompressedSize;
 

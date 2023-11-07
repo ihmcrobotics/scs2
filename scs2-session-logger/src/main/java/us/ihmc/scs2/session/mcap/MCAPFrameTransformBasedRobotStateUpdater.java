@@ -12,16 +12,10 @@ import us.ihmc.scs2.simulation.robot.Robot;
 
 public class MCAPFrameTransformBasedRobotStateUpdater
 {
-
-   private final MCAPFrameTransformManager frameTransformManager;
-
    private final List<Runnable> jointStateUpdaters = new ArrayList<>();
 
    public MCAPFrameTransformBasedRobotStateUpdater(Robot robot, MCAPFrameTransformManager frameTransformManager)
    {
-
-      this.frameTransformManager = frameTransformManager;
-
       for (JointBasics joint : robot.getAllJoints())
       {
          MCAPFrameTransformManager.YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(joint.getSuccessor().getName());
