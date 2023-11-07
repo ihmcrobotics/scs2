@@ -131,6 +131,7 @@ public class MCAPChunkManager
    {
       if (timestamp <= getActiveChunkStartTimestamp() || timestamp >= getActiveChunkEndTimestamp())
          loadChunk(timestamp);
+
       // TODO Naive approach, improve later
       if (numberOfLoadedChunks <= 0)
          return Collections.emptyList();
@@ -163,7 +164,12 @@ public class MCAPChunkManager
 
    public boolean loadChunk(long timestamp) throws IOException
    {
-      int index = searchMCAPChunkIndex(timestamp);
+      int index;
+      if (timestamp == getActiveChunkEndTimestamp()) // When reading, this will be the most common case, no need to trigger a binary search.
+         index = numberOfLoadedChunks == 1 ? loadedChunkA.index : loadedChunkB.index;
+      else
+         index = searchMCAPChunkIndex(timestamp);
+
       if (index < 0)
       {
          numberOfLoadedChunks = 0;
@@ -317,7 +323,7 @@ public class MCAPChunkManager
 
          if (timestamp > midVal.messageStartTime())
          {
-            if (timestamp < midVal.messageEndTime())
+            if (timestamp <= midVal.messageEndTime())
                return mid;
             else
                low = mid + 1;
