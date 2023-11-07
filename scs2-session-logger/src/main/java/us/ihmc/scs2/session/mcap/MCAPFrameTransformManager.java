@@ -15,7 +15,6 @@ import java.util.Set;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
