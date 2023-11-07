@@ -1361,10 +1361,11 @@ public class Mcap
       public void _read() throws IOException
       {
          _readIntoBuffer();
-         magic = buffer.array();
-         if (!(Arrays.equals(magic(), MAGIC_BYTES)))
+         magic = new byte[MAGIC_SIZE];
+         buffer.get(magic);
+         if (!(Arrays.equals(magic, MAGIC_BYTES)))
          {
-            throw new ValidationNotEqualError(MAGIC_BYTES, magic(), buffer);
+            throw new ValidationNotEqualError(MAGIC_BYTES, magic, buffer);
          }
       }
 
@@ -1992,6 +1993,11 @@ public class Mcap
          }
          else
          {
+            /*
+             * TODO Unclear if it is better to switch to a direct buffer or not.
+             *  While it is faster to read from a direct buffer,
+             *  it is slower to create/destroy it which can be a problem if we are reading a lot of small records.
+             */
             buffer = ByteBuffer.allocate(_length);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
          }
