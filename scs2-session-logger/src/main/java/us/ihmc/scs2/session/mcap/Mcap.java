@@ -34,8 +34,21 @@ public class Mcap
 
    public enum Opcode
    {
-      HEADER(1), FOOTER(2), SCHEMA(3), CHANNEL(4), MESSAGE(5), CHUNK(6), MESSAGE_INDEX(7), CHUNK_INDEX(8), ATTACHMENT(9), ATTACHMENT_INDEX(10), STATISTICS(11), METADATA(
-         12), METADATA_INDEX(13), SUMMARY_OFFSET(14), DATA_END(15);
+      HEADER(1),
+      FOOTER(2),
+      SCHEMA(3),
+      CHANNEL(4),
+      MESSAGE(5),
+      CHUNK(6),
+      MESSAGE_INDEX(7),
+      CHUNK_INDEX(8),
+      ATTACHMENT(9),
+      ATTACHMENT_INDEX(10),
+      STATISTICS(11),
+      METADATA(12),
+      METADATA_INDEX(13),
+      SUMMARY_OFFSET(14),
+      DATA_END(15);
 
       private final long id;
 
@@ -101,42 +114,16 @@ public class Mcap
       return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
    }
 
-   public static class PrefixedStr extends KaitaiStruct
+   private static String parseString(ByteBuffer buffer)
    {
-      private long lenStr;
-      private String str;
+      return parseString(buffer, Integer.toUnsignedLong(buffer.getInt()));
+   }
 
-      public PrefixedStr(ByteBuffer buffer) throws IOException
-      {
-         super(buffer);
-         _read();
-      }
-
-      @Override
-      public void _read() throws IOException
-      {
-         _readIntoBuffer();
-         lenStr = Integer.toUnsignedLong(buffer.getInt());
-         str = new String(buffer.array(), buffer.position(), (int) lenStr, StandardCharsets.UTF_8);
-         buffer.position(buffer.position() + (int) lenStr); // Make sure we advance the buffer position to skip the string.
-         setComputedLength((int) lenStr + Integer.BYTES);
-      }
-
-      public long lenStr()
-      {
-         return lenStr;
-      }
-
-      public String str()
-      {
-         return str;
-      }
-
-      @Override
-      public String toString()
-      {
-         return str;
-      }
+   private static String parseString(ByteBuffer buffer, long length)
+   {
+      byte[] bytes = new byte[(int) length];
+      buffer.get(bytes);
+      return new String(bytes, StandardCharsets.UTF_8);
    }
 
    public static class Chunk extends KaitaiStruct
@@ -163,7 +150,7 @@ public class Mcap
       /**
        * compression algorithm. i.e. zstd, lz4, "". An empty string indicates no compression. Refer to well-known compression formats.
        */
-      private PrefixedStr compression;
+      private String compression;
       /**
        * Offset position of the records in either in the {@code  ByteBuffer} or {@code FileChannel}, depending how this chunk was created.
        */
@@ -197,12 +184,12 @@ public class Mcap
          messageEndTime = buffer.getLong();
          uncompressedSize = buffer.getLong();
          uncompressedCrc32 = Integer.toUnsignedLong(buffer.getInt());
-         compression = new PrefixedStr(buffer);
+         compression = parseString(buffer);
          lengthRecords = buffer.getLong();
          offsetRecords = buffer.position();
          buffer.position((int) (offsetRecords + lengthRecords)); // Skip the records.
 
-         setComputedLength(3 * Long.BYTES + Integer.BYTES + compression.getItemTotalLength() + Long.BYTES + (int) lengthRecords);
+         setComputedLength(3 * Long.BYTES + 2 * Integer.BYTES + compression.length() + Long.BYTES + (int) lengthRecords);
       }
 
       public long messageStartTime()
@@ -229,7 +216,7 @@ public class Mcap
          return uncompressedCrc32;
       }
 
-      public PrefixedStr compression()
+      public String compression()
       {
          return compression;
       }
@@ -243,11 +230,11 @@ public class Mcap
       {
          if (records == null)
          {
-            if (compression.str().equalsIgnoreCase(""))
+            if (compression.equalsIgnoreCase(""))
             {
                records = new Records(buffer, offsetRecords, (int) lengthRecords);
             }
-            else if (compression.str().equalsIgnoreCase("lz4"))
+            else if (compression.equalsIgnoreCase("lz4"))
             {
                if (lz4FrameDecoder == null)
                   lz4FrameDecoder = new LZ4FrameDecoder();
@@ -270,7 +257,7 @@ public class Mcap
             }
             else
             {
-               throw new UnsupportedOperationException("Unsupported compression algorithm: " + compression.str());
+               throw new UnsupportedOperationException("Unsupported compression algorithm: " + compression);
             }
          }
          return records;
@@ -338,8 +325,8 @@ public class Mcap
    {
       private int id;
       private int schemaId;
-      private PrefixedStr topic;
-      private PrefixedStr messageEncoding;
+      private String topic;
+      private String messageEncoding;
       private MapStrStr metadata;
 
       public Channel(ByteBuffer buffer, long _pos, int _length) throws IOException
@@ -360,10 +347,10 @@ public class Mcap
          _readIntoBuffer();
          id = Short.toUnsignedInt(buffer.getShort());
          schemaId = Short.toUnsignedInt(buffer.getShort());
-         topic = new PrefixedStr(buffer);
-         messageEncoding = new PrefixedStr(buffer);
+         topic = parseString(buffer);
+         messageEncoding = parseString(buffer);
          metadata = new MapStrStr(buffer);
-         setComputedLength(2 * Short.BYTES + topic.getItemTotalLength() + messageEncoding.getItemTotalLength() + metadata.getItemTotalLength());
+         setComputedLength(2 * Short.BYTES + 2 * Integer.BYTES + topic.length() + messageEncoding.length() + metadata.getItemTotalLength());
       }
 
       public int id()
@@ -376,12 +363,12 @@ public class Mcap
          return schemaId;
       }
 
-      public PrefixedStr topic()
+      public String topic()
       {
          return topic;
       }
 
-      public PrefixedStr messageEncoding()
+      public String messageEncoding()
       {
          return messageEncoding;
       }
@@ -775,8 +762,8 @@ public class Mcap
       private long logTime;
       private long createTime;
       private long dataSize;
-      private PrefixedStr name;
-      private PrefixedStr mediaType;
+      private String name;
+      private String mediaType;
 
       private Record attachment;
 
@@ -801,9 +788,9 @@ public class Mcap
          logTime = buffer.getLong();
          createTime = buffer.getLong();
          dataSize = buffer.getLong();
-         name = new PrefixedStr(buffer);
-         mediaType = new PrefixedStr(buffer);
-         setComputedLength(5 * Long.BYTES + name.getItemTotalLength() + mediaType.getItemTotalLength());
+         name = parseString(buffer);
+         mediaType = parseString(buffer);
+         setComputedLength(5 * Long.BYTES + 2 * Integer.BYTES + name.length() + mediaType.length());
       }
 
       public Record attachment() throws IOException
@@ -842,12 +829,12 @@ public class Mcap
          return dataSize;
       }
 
-      public PrefixedStr name()
+      public String name()
       {
          return name;
       }
 
-      public PrefixedStr mediaType()
+      public String mediaType()
       {
          return mediaType;
       }
@@ -870,8 +857,8 @@ public class Mcap
    public static class Schema extends KaitaiStruct
    {
       private int id;
-      private PrefixedStr name;
-      private PrefixedStr encoding;
+      private String name;
+      private String encoding;
       private long lenData;
       private byte[] data;
 
@@ -892,13 +879,13 @@ public class Mcap
       {
          _readIntoBuffer();
          id = Short.toUnsignedInt(buffer.getShort());
-         name = new PrefixedStr(buffer);
-         encoding = new PrefixedStr(buffer);
+         name = parseString(buffer);
+         encoding = parseString(buffer);
          lenData = Integer.toUnsignedLong(buffer.getInt());
          // TODO See if we can skip creating an array.
          data = new byte[(int) lenData];
          buffer.get(data);
-         setComputedLength(Short.BYTES + Integer.BYTES + name.getItemTotalLength() + encoding.getItemTotalLength() + (int) lenData);
+         setComputedLength(Short.BYTES + 3 * Integer.BYTES + name.length() + encoding.length() + (int) lenData);
       }
 
       public int id()
@@ -906,12 +893,12 @@ public class Mcap
          return id;
       }
 
-      public PrefixedStr name()
+      public String name()
       {
          return name;
       }
 
-      public PrefixedStr encoding()
+      public String encoding()
       {
          return encoding;
       }
@@ -1000,7 +987,7 @@ public class Mcap
 
          public String toKeysString()
          {
-            return EuclidCoreIOTools.getCollectionString(", ", entries, e -> e.key().str());
+            return EuclidCoreIOTools.getCollectionString(", ", entries, e -> e.key());
          }
       }
 
@@ -1095,8 +1082,8 @@ public class Mcap
    {
       private long logTime;
       private long createTime;
-      private PrefixedStr name;
-      private PrefixedStr mediaType;
+      private String name;
+      private String mediaType;
       private long lenData;
       private byte[] data;
       private long crc32;
@@ -1119,15 +1106,15 @@ public class Mcap
          _readIntoBuffer();
          logTime = buffer.getLong();
          createTime = buffer.getLong();
-         name = new PrefixedStr(buffer);
-         mediaType = new PrefixedStr(buffer);
+         name = parseString(buffer);
+         mediaType = parseString(buffer);
          lenData = buffer.getLong();
          // TODO See if we can skip creating an array.
          data = new byte[(int) lenData()];
          buffer.get(data);
          crc32InputEnd = buffer.position();
          crc32 = Integer.toUnsignedLong(buffer.getInt());
-         setComputedLength(3 * Long.BYTES + name.getItemTotalLength() + mediaType.getItemTotalLength() + (int) lenData + Integer.BYTES);
+         setComputedLength(3 * Long.BYTES + name.length() + mediaType.length() + (int) lenData + Integer.BYTES);
       }
 
       private int crc32InputEnd;
@@ -1162,12 +1149,12 @@ public class Mcap
          return createTime;
       }
 
-      public PrefixedStr name()
+      public String name()
       {
          return name;
       }
 
-      public PrefixedStr mediaType()
+      public String mediaType()
       {
          return mediaType;
       }
@@ -1208,7 +1195,7 @@ public class Mcap
 
    public static class Metadata extends KaitaiStruct
    {
-      private PrefixedStr name;
+      private String name;
       private MapStrStr metadata;
 
       public Metadata(ByteBuffer buffer, long _pos, int _length) throws IOException
@@ -1227,12 +1214,12 @@ public class Mcap
       public void _read() throws IOException
       {
          _readIntoBuffer();
-         name = new PrefixedStr(buffer);
+         name = parseString(buffer);
          metadata = new MapStrStr(buffer);
-         setComputedLength(name.getItemTotalLength() + metadata.getItemTotalLength());
+         setComputedLength(Integer.BYTES + name.length() + metadata.getItemTotalLength());
       }
 
-      public PrefixedStr name()
+      public String name()
       {
          return name;
       }
@@ -1254,8 +1241,8 @@ public class Mcap
 
    public static class Header extends KaitaiStruct
    {
-      private PrefixedStr profile;
-      private PrefixedStr library;
+      private String profile;
+      private String library;
 
       public Header(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
@@ -1273,17 +1260,17 @@ public class Mcap
       public void _read() throws IOException
       {
          _readIntoBuffer();
-         profile = new PrefixedStr(buffer);
-         library = new PrefixedStr(buffer);
-         setComputedLength(profile.getItemTotalLength() + library.getItemTotalLength());
+         profile = parseString(buffer);
+         library = parseString(buffer);
+         setComputedLength(2 * Integer.BYTES + profile.length() + library.length());
       }
 
-      public PrefixedStr profile()
+      public String profile()
       {
          return profile;
       }
 
-      public PrefixedStr library()
+      public String library()
       {
          return library;
       }
@@ -1422,8 +1409,8 @@ public class Mcap
 
    public static class TupleStrStr extends KaitaiStruct
    {
-      private PrefixedStr key;
-      private PrefixedStr value;
+      private String key;
+      private String value;
 
       public TupleStrStr(ByteBuffer buffer) throws IOException
       {
@@ -1435,17 +1422,17 @@ public class Mcap
       public void _read() throws IOException
       {
          _readIntoBuffer();
-         key = new PrefixedStr(buffer);
-         value = new PrefixedStr(buffer);
-         _length = key.getItemTotalLength() + value.getItemTotalLength();
+         key = parseString(buffer);
+         value = parseString(buffer);
+         _length = 2 * Integer.BYTES + key.length() + value.length();
       }
 
-      public PrefixedStr key()
+      public String key()
       {
          return key;
       }
 
-      public PrefixedStr value()
+      public String value()
       {
          return value;
       }
@@ -1453,7 +1440,7 @@ public class Mcap
       @Override
       public String toString()
       {
-         return (key.str() + ": " + value.str()).replace("\n", "");
+         return (key + ": " + value).replace("\n", "");
       }
    }
 
@@ -1461,7 +1448,7 @@ public class Mcap
    {
       private long ofsMetadata;
       private long lenMetadata;
-      private PrefixedStr name;
+      private String name;
       private Record metadata;
 
       public MetadataIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
@@ -1482,8 +1469,8 @@ public class Mcap
          _readIntoBuffer();
          ofsMetadata = buffer.getLong();
          lenMetadata = buffer.getLong();
-         name = new PrefixedStr(buffer);
-         setComputedLength(2 * Long.BYTES + name.getItemTotalLength());
+         name = parseString(buffer);
+         setComputedLength(2 * Long.BYTES + Integer.BYTES + name.length());
       }
 
       public Record metadata() throws IOException
@@ -1506,7 +1493,7 @@ public class Mcap
          return lenMetadata;
       }
 
-      public PrefixedStr name()
+      public String name()
       {
          return name;
       }
@@ -1939,7 +1926,7 @@ public class Mcap
        * The compression used within the chunk. Refer to well-known compression formats. This field should match the the value in the corresponding Chunk
        * record.
        */
-      private PrefixedStr compression;
+      private String compression;
       /**
        * The size of the chunk records field.
        */
@@ -1972,10 +1959,10 @@ public class Mcap
          lenMessageIndexOffsets = Integer.toUnsignedLong(buffer.getInt());
          messageIndexOffsets = new MessageIndexOffsets(buffer, (int) lenMessageIndexOffsets);
          messageIndexLength = buffer.getLong();
-         compression = new PrefixedStr(buffer);
+         compression = parseString(buffer);
          compressedSize = buffer.getLong();
          uncompressedSize = buffer.getLong();
-         setComputedLength(7 * Long.BYTES + Integer.BYTES + messageIndexOffsets.getItemTotalLength() + compression.getItemTotalLength());
+         setComputedLength(7 * Long.BYTES + 2 * Integer.BYTES + messageIndexOffsets.getItemTotalLength() + compression.length());
       }
 
       public static class MessageIndexOffset extends KaitaiStruct
@@ -2130,7 +2117,7 @@ public class Mcap
          return messageIndexLength;
       }
 
-      public PrefixedStr compression()
+      public String compression()
       {
          return compression;
       }
