@@ -10,8 +10,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary
@@ -432,7 +433,7 @@ public class Mcap
          setComputedLength(Short.BYTES + entriesLength);
       }
 
-      public static class MessageIndexEntry
+      public static class MessageIndexEntry implements Sizeable
       {
          /**
           * Time at which the message was recorded.
@@ -448,6 +449,12 @@ public class Mcap
          {
             logTime = buffer.getLong();
             offset = buffer.getLong();
+         }
+
+         @Override
+         public int getItemTotalLength()
+         {
+            return 2 * Long.BYTES;
          }
 
          public long logTime()
@@ -545,7 +552,7 @@ public class Mcap
          setComputedLength(3 * Long.BYTES + 5 * Integer.BYTES + Short.BYTES + channelMessageCountsLength);
       }
 
-      public static class ChannelMessageCount
+      public static class ChannelMessageCount implements Sizeable
       {
          private int channelId;
          private long messageCount;
@@ -554,6 +561,12 @@ public class Mcap
          {
             channelId = Short.toUnsignedInt(buffer.getShort());
             messageCount = buffer.getLong();
+         }
+
+         @Override
+         public int getItemTotalLength()
+         {
+            return Short.BYTES + Long.BYTES;
          }
 
          public int channelId()
@@ -1231,7 +1244,7 @@ public class Mcap
       }
    }
 
-   public static class TupleStrStr
+   public static class TupleStrStr implements Sizeable
    {
       private String key;
       private String value;
@@ -1240,6 +1253,12 @@ public class Mcap
       {
          key = parseString(buffer);
          value = parseString(buffer);
+      }
+
+      @Override
+      public int getItemTotalLength()
+      {
+         return key.length() + value.length() + 2 * Integer.BYTES;
       }
 
       public String key()
@@ -1972,7 +1991,7 @@ public class Mcap
       }
    }
 
-   private abstract static class KaitaiStruct
+   private abstract static class KaitaiStruct implements Sizeable
    {
       protected final FileChannel fileChannel;
       protected long _pos;
@@ -2067,42 +2086,125 @@ public class Mcap
       }
    }
 
+   public interface Sizeable
+   {
+      int getItemTotalLength();
+   }
+
    public static int computeOffsetFooter(FileChannel fileChannel) throws IOException
    {
       return (int) (((((fileChannel.size() - 1) - 8) - 20) - 8));
    }
 
-   private static String parseString(ByteBuffer buffer)
+   /**
+    * Parses a string from the buffer. The length of the string is read from the buffer as a prefixed 32-bit unsigned integer.
+    *
+    * @param buffer the buffer to read from.
+    * @return the string read from the buffer.
+    */
+   public static String parseString(ByteBuffer buffer)
    {
       return parseString(buffer, Integer.toUnsignedLong(buffer.getInt()));
    }
 
-   private static String parseString(ByteBuffer buffer, long length)
+   /**
+    * Parses a string from the buffer. The length of the string is given as a parameter.
+    *
+    * @param buffer the buffer to read from.
+    * @param length the length in bytes of the string to read.
+    * @return the string read from the buffer.
+    */
+   public static String parseString(ByteBuffer buffer, long length)
    {
       byte[] bytes = new byte[(int) length];
       buffer.get(bytes);
       return new String(bytes, StandardCharsets.UTF_8);
    }
 
-   private static <T> List<T> parseList(ByteBuffer buffer, Function<ByteBuffer, T> elementParser)
+   /**
+    * Parses a list from the buffer. The length of the list is read from the buffer as a prefixed 32-bit unsigned integer.
+    *
+    * @param buffer        the buffer to read from.
+    * @param elementParser the function to use to parse each element of the list.
+    * @param <T>           the type of the elements in the list.
+    * @return the list read from the buffer.
+    */
+   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser) throws IOException
    {
-      return parseList(buffer, elementParser, (int) Integer.toUnsignedLong(buffer.getInt()));
+      return parseList(buffer, elementParser, Integer.toUnsignedLong(buffer.getInt()));
    }
 
-   private static <T> List parseList(ByteBuffer buffer, Function<ByteBuffer, T> elementParser, int listByteSize)
+   /**
+    * Parses a list from the buffer. The length of the list is given as a parameter.
+    *
+    * @param buffer        the buffer to read from.
+    * @param elementParser the function to use to parse each element of the list.
+    * @param length        the length in bytes of the list to read.
+    * @param <T>           the type of the elements in the list.
+    * @return the list read from the buffer.
+    */
+   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long length) throws IOException
    {
-      int limit = buffer.position() + listByteSize;
+      return parseList(buffer, elementParser, buffer.position(), length);
+   }
+
+   /**
+    * Parses a list from the buffer. The length of the list is given as a parameter.
+    *
+    * @param buffer        the buffer to read from.
+    * @param elementParser the function to use to parse each element of the list.
+    * @param offset        the offset in the buffer to start reading from.
+    * @param length        the length in bytes of the list to read.
+    * @param <T>           the type of the elements in the list.
+    * @return the list read from the buffer.
+    */
+   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long offset, long length) throws IOException
+   {
+      buffer.position((int) offset);
+      int position = buffer.position();
+      long limit = position + length;
       List<T> list = new ArrayList<>();
 
-      while (buffer.position() < limit)
+      while (position < limit)
       {
-         list.add(elementParser.apply(buffer));
+         buffer.position(position);
+         T parsed = elementParser.parse(buffer);
+         list.add(parsed);
+         position += parsed.getItemTotalLength();
       }
 
       return list;
    }
 
-   private static String indent(String stringToIndent, int indent)
+   public interface ByteBufferReader<T extends Sizeable>
+   {
+      T parse(ByteBuffer buffer) throws IOException;
+   }
+
+   public static <T extends Sizeable> List<T> parseList(FileChannel fileChannel, FileChannelReader<T> elementParser, long offset, long length) throws IOException
+   {
+      long position = offset;
+      long limit = position + length;
+      List<T> list = new ArrayList<>();
+
+      while (position < limit)
+      {
+         T parsed = elementParser.parse(fileChannel, position);
+         list.add(parsed);
+         position += parsed.getItemTotalLength();
+      }
+
+      return list;
+   }
+
+   public interface FileChannelReader<T extends Sizeable>
+   {
+      T parse(FileChannel fileChannel, long position) throws IOException;
+   }
+
+
+
+      private static String indent(String stringToIndent, int indent)
    {
       if (indent <= 0)
          return stringToIndent;
