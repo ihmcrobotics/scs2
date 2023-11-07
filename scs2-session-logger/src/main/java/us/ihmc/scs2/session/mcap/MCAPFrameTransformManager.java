@@ -74,15 +74,15 @@ public class MCAPFrameTransformManager
             continue;
 
          mcapSchema = (Mcap.Schema) record.body();
-         if (mcapSchema.name().str().equalsIgnoreCase("foxglove::FrameTransform"))
+         if (mcapSchema.name().equalsIgnoreCase("foxglove::FrameTransform"))
          {
-            if (mcapSchema.encoding().str().equalsIgnoreCase("ros2msg"))
+            if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
             {
                foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(mcapSchema);
             }
             else
             {
-               throw new UnsupportedOperationException("Unsupported encoding: " + mcapSchema.encoding().str());
+               throw new UnsupportedOperationException("Unsupported encoding: " + mcapSchema.encoding());
             }
             break;
          }
@@ -117,7 +117,7 @@ public class MCAPFrameTransformManager
             Mcap.Channel channel = (Mcap.Channel) record.body();
             if (channel.schemaId() == foxgloveFrameTransformSchema.getId())
             {
-               channelIdToTopicMap.put(channel.id(), channel.topic().str());
+               channelIdToTopicMap.put(channel.id(), channel.topic());
             }
             record.unloadBody();
          }
