@@ -1,19 +1,19 @@
 package us.ihmc.scs2.session.mcap;
 
-import com.github.luben.zstd.ZstdDecompressCtx;
-import gnu.trove.map.hash.TLongObjectHashMap;
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
-
 import java.io.IOException;
 import java.io.Serial;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import com.github.luben.zstd.ZstdDecompressCtx;
+
+import gnu.trove.map.hash.TLongObjectHashMap;
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary

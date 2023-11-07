@@ -138,6 +138,7 @@ public class ROS2MessageSchema
             subField.type = flatField.type;
             subField.name = flatField.name + "[" + i + "]";
             subField.isArray = false;
+            subField.isVector = false;
             subField.maxLength = -1;
             flatFields.add(subField);
          }
@@ -187,7 +188,14 @@ public class ROS2MessageSchema
       private ROS2Field parent;
       private String type;
       private String name;
+      /**
+       * An array is a fixed-length array, versus a vector, which is a variable-length array.
+       */
       private boolean isArray;
+      /**
+       * A vector is a variable-length array, versus an array, which is a fixed-length array.
+       */
+      private boolean isVector;
       private int maxLength;
       /**
        * This is {@code  true} whenever this field is for an array or a sub-schema.
@@ -205,9 +213,19 @@ public class ROS2MessageSchema
 
          if (lBracketIndex < rBracketIndex)
          {
-            field.isArray = true;
-            field.isComplexType = true;
             String maxLengthStr = field.type.substring(lBracketIndex + 1, rBracketIndex);
+            if (maxLengthStr.startsWith("<="))
+            {
+               field.isArray = false;
+               field.isVector = true;
+               maxLengthStr = maxLengthStr.substring(2);
+            }
+            else
+            {
+               field.isArray = true;
+               field.isVector = false;
+            }
+            field.isComplexType = true;
             try
             {
                field.maxLength = Integer.parseInt(maxLengthStr);
@@ -223,6 +241,7 @@ public class ROS2MessageSchema
          else
          {
             field.isArray = false;
+            field.isVector = false;
             field.maxLength = -1;
          }
          return field;
@@ -235,6 +254,7 @@ public class ROS2MessageSchema
          clone.type = type;
          clone.name = name;
          clone.isArray = isArray;
+         clone.isVector = isVector;
          clone.maxLength = maxLength;
          clone.isComplexType = isComplexType;
          return clone;
@@ -275,6 +295,16 @@ public class ROS2MessageSchema
          this.isArray = isArray;
       }
 
+      public boolean isVector()
+      {
+         return isVector;
+      }
+
+      public void setVector(boolean vector)
+      {
+         isVector = vector;
+      }
+
       public int getMaxLength()
       {
          return maxLength;
@@ -311,7 +341,8 @@ public class ROS2MessageSchema
          out += "\n\t-type=" + type;
          out += "\n\t-name=" + name;
          out += "\n\t-isArray=" + isArray;
-         if (isArray)
+         out += "\n\t-isVector=" + isVector;
+         if (isArray || isVector)
             out += "\n\t-maxLength=" + maxLength;
          return indent(out, indent);
       }
