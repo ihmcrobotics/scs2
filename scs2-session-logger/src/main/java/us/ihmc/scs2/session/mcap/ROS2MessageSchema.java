@@ -15,7 +15,7 @@ public class ROS2MessageSchema
 
    public static ROS2MessageSchema loadSchema(Mcap.Schema mcapSchema)
    {
-      return loadSchema(mcapSchema.name().str(), mcapSchema.id(), mcapSchema.data());
+      return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
    }
 
    public static ROS2MessageSchema loadSchema(String name, int id, byte[] data)

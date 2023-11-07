@@ -103,7 +103,7 @@ public class MCAPLogFileReader
       {
          Mcap.Schema schema = frameTransformManager.getMCAPSchema();
          File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
-         LogTools.error("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
+         LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
          throw e;
       }
 
@@ -117,19 +117,19 @@ public class MCAPLogFileReader
             continue;
          try
          {
-            if (schema.encoding().str().equalsIgnoreCase("ros2msg"))
+            if (schema.encoding().equalsIgnoreCase("ros2msg"))
             {
                schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
             }
             else
             {
-               throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding().str());
+               throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding());
             }
          }
          catch (Exception e)
          {
             File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
-            LogTools.error("Failed to load schema: " + schema.name().str() + ", saved to: " + debugFile.getAbsolutePath());
+            LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
             throw e;
          }
          finally
@@ -156,11 +156,11 @@ public class MCAPLogFileReader
          }
          try
          {
-            if (!"cdr".equalsIgnoreCase(channel.messageEncoding().str()))
+            if (!"cdr".equalsIgnoreCase(channel.messageEncoding()))
             {
                throw new UnsupportedOperationException("Only CDR encoding is supported for now.");
             }
-            String topic = channel.topic().str();
+            String topic = channel.topic();
             topic = topic.replace("/", YoTools.NAMESPACE_SEPERATOR_STRING);
             if (topic.startsWith(YoTools.NAMESPACE_SEPERATOR_STRING))
             {
@@ -251,9 +251,9 @@ public class MCAPLogFileReader
    {
       String filename;
       if (e != null)
-         filename = "schema-%s-%s.txt".formatted(schema.name().str().replace(':', '-'), e.getClass().getSimpleName());
+         filename = "schema-%s-%s.txt".formatted(schema.name().replace(':', '-'), e.getClass().getSimpleName());
       else
-         filename = "schema-%s.txt".formatted(schema.name().str().replace(':', '-'));
+         filename = "schema-%s.txt".formatted(schema.name().replace(':', '-'));
       File debugFile = path.resolve(filename).toFile();
       if (debugFile.exists())
          debugFile.delete();
