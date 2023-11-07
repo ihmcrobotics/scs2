@@ -11,6 +11,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary
@@ -72,6 +73,12 @@ public class Mcap
       }
    }
 
+   private Magic headerMagic;
+   private ArrayList<Record> records;
+   private Magic footerMagic;
+
+   private Record footer;
+
    public Mcap(FileChannel fileChannel) throws IOException
    {
       this.fileChannel = fileChannel;
@@ -102,24 +109,28 @@ public class Mcap
       footerMagic = new Magic(fileChannel, currentPos);
    }
 
-   private static String indent(String stringToIndent, int indent)
+   public Magic headerMagic()
    {
-      if (indent <= 0)
-         return stringToIndent;
-      String indentStr = "\t".repeat(indent);
-      return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
+      return headerMagic;
    }
 
-   private static String parseString(ByteBuffer buffer)
+   public ArrayList<Record> records()
    {
-      return parseString(buffer, Integer.toUnsignedLong(buffer.getInt()));
+      return records;
    }
 
-   private static String parseString(ByteBuffer buffer, long length)
+   public Magic footerMagic()
    {
-      byte[] bytes = new byte[(int) length];
-      buffer.get(bytes);
-      return new String(bytes, StandardCharsets.UTF_8);
+      return footerMagic;
+   }
+
+   public Record footer() throws IOException
+   {
+      if (footer == null)
+      {
+         footer = new Record(fileChannel, computeOffsetFooter(fileChannel));
+      }
+      return footer;
    }
 
    public static class Chunk extends KaitaiStruct
@@ -326,7 +337,7 @@ public class Mcap
       private int schemaId;
       private String topic;
       private String messageEncoding;
-      private MapStrStr metadata;
+      private List<TupleStrStr> metadata;
 
       public Channel(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
@@ -348,8 +359,11 @@ public class Mcap
          schemaId = Short.toUnsignedInt(buffer.getShort());
          topic = parseString(buffer);
          messageEncoding = parseString(buffer);
-         metadata = new MapStrStr(buffer);
-         setComputedLength(2 * Short.BYTES + 2 * Integer.BYTES + topic.length() + messageEncoding.length() + metadata.getItemTotalLength());
+         int start = buffer.position();
+         metadata = parseList(buffer, TupleStrStr::new);
+         int end = buffer.position();
+         int metadataLength = end - start;
+         setComputedLength(2 * Short.BYTES + 2 * Integer.BYTES + topic.length() + messageEncoding.length() + metadataLength);
       }
 
       public int id()
@@ -372,7 +386,7 @@ public class Mcap
          return messageEncoding;
       }
 
-      public MapStrStr metadata()
+      public List<TupleStrStr> metadata()
       {
          return metadata;
       }
@@ -393,8 +407,7 @@ public class Mcap
    public static class MessageIndex extends KaitaiStruct
    {
       private int channelId;
-      private long lenRecords;
-      private MessageIndexEntries records;
+      private List<MessageIndexEntry> messageIndexEntries;
 
       public MessageIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
@@ -413,12 +426,13 @@ public class Mcap
       {
          _readIntoBuffer();
          channelId = Short.toUnsignedInt(buffer.getShort());
-         lenRecords = Integer.toUnsignedLong(buffer.getInt());
-         records = new MessageIndexEntries(buffer, (int) lenRecords);
-         setComputedLength(Short.BYTES + Integer.BYTES + records.getItemTotalLength());
+         int start = buffer.position();
+         messageIndexEntries = parseList(buffer, MessageIndexEntry::new);
+         int entriesLength = buffer.position() - start;
+         setComputedLength(Short.BYTES + entriesLength);
       }
 
-      public static class MessageIndexEntry extends KaitaiStruct
+      public static class MessageIndexEntry
       {
          /**
           * Time at which the message was recorded.
@@ -430,19 +444,10 @@ public class Mcap
           */
          private long offset;
 
-         public MessageIndexEntry(ByteBuffer buffer) throws IOException
+         public MessageIndexEntry(ByteBuffer buffer)
          {
-            super(buffer);
-            _read();
-         }
-
-         @Override
-         public void _read() throws IOException
-         {
-            _readIntoBuffer();
             logTime = buffer.getLong();
             offset = buffer.getLong();
-            setComputedLength(2 * Long.BYTES);
          }
 
          public long logTime()
@@ -461,7 +466,6 @@ public class Mcap
             return toString(0);
          }
 
-         @Override
          public String toString(int indent)
          {
             String out = getClass().getSimpleName() + ":";
@@ -471,67 +475,14 @@ public class Mcap
          }
       }
 
-      public static class MessageIndexEntries extends KaitaiStruct
-      {
-         private List<MessageIndexEntry> entries;
-
-         public MessageIndexEntries(ByteBuffer buffer, int _length) throws IOException
-         {
-            super(buffer, _length);
-            _read();
-         }
-
-         @Override
-         public void _read() throws IOException
-         {
-            _readIntoBuffer();
-            int remaining = _length;
-            entries = new ArrayList<>();
-            int computedLength = 0;
-
-            while (remaining > 0)
-            {
-               MessageIndexEntry entry = new MessageIndexEntry(buffer);
-               entries.add(entry);
-               remaining -= entry.getItemTotalLength();
-               computedLength += entry.getItemTotalLength();
-            }
-            setComputedLength(computedLength);
-         }
-
-         public List<MessageIndexEntry> entries()
-         {
-            return entries;
-         }
-
-         @Override
-         public String toString()
-         {
-            return toString(0);
-         }
-
-         @Override
-         public String toString(int indent)
-         {
-            String out = getClass().getSimpleName();
-            out += "\n\t-entries = " + (entries == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", entries, e -> e.toString(indent + 1)));
-            return indent(out, indent);
-         }
-      }
-
       public int channelId()
       {
          return channelId;
       }
 
-      public long lenRecords()
+      public List<MessageIndexEntry> records()
       {
-         return lenRecords;
-      }
-
-      public MessageIndexEntries records()
-      {
-         return records;
+         return messageIndexEntries;
       }
 
       @Override
@@ -545,8 +496,9 @@ public class Mcap
       {
          String out = getClass().getSimpleName() + ":";
          out += "\n\t-channelId = " + channelId;
-         out += "\n\t-lenRecords = " + lenRecords;
-         out += "\n\t-records = " + (records == null ? "null" : "\n" + records.toString(indent + 1));
+         out += "\n\t-messageIndexEntries = " + (messageIndexEntries == null ?
+               "null" :
+               "\n" + EuclidCoreIOTools.getCollectionString("\n", messageIndexEntries, e -> e.toString(indent + 1)));
          return indent(out, indent);
       }
    }
@@ -561,8 +513,7 @@ public class Mcap
       private long chunkCount;
       private long messageStartTime;
       private long messageEndTime;
-      private long lenChannelMessageCounts;
-      private ChannelMessageCounts channelMessageCounts;
+      private List<ChannelMessageCount> channelMessageCounts;
 
       public Statistics(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
@@ -588,76 +539,21 @@ public class Mcap
          chunkCount = Integer.toUnsignedLong(buffer.getInt());
          messageStartTime = buffer.getLong();
          messageEndTime = buffer.getLong();
-         lenChannelMessageCounts = Integer.toUnsignedLong(buffer.getInt());
-         channelMessageCounts = new ChannelMessageCounts(buffer, (int) lenChannelMessageCounts);
-         setComputedLength(3 * Long.BYTES + 5 * Integer.BYTES + Short.BYTES + channelMessageCounts.getItemTotalLength());
+         int start = buffer.position();
+         channelMessageCounts = parseList(buffer, ChannelMessageCount::new);
+         int channelMessageCountsLength = buffer.position() - start;
+         setComputedLength(3 * Long.BYTES + 5 * Integer.BYTES + Short.BYTES + channelMessageCountsLength);
       }
 
-      public static class ChannelMessageCounts extends KaitaiStruct
-      {
-         private List<ChannelMessageCount> entries;
-
-         public ChannelMessageCounts(ByteBuffer buffer, int _length) throws IOException
-         {
-            super(buffer, _length);
-            _read();
-         }
-
-         @Override
-         public void _read() throws IOException
-         {
-            _readIntoBuffer();
-
-            int remaining = _length;
-
-            entries = new ArrayList<>();
-
-            while (remaining > 0)
-            {
-               ChannelMessageCount entry = new ChannelMessageCount(buffer);
-               entries.add(entry);
-               remaining -= entry.getItemTotalLength();
-            }
-         }
-
-         public List<ChannelMessageCount> entries()
-         {
-            return entries;
-         }
-
-         @Override
-         public String toString()
-         {
-            return toString(0);
-         }
-
-         @Override
-         public String toString(int indent)
-         {
-            String out = getClass().getSimpleName() + ":";
-            //            out += "\n\t-entries = " + (entries == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", entries, e -> e.toString(indent + 1)));
-            return indent(out, indent);
-         }
-      }
-
-      public static class ChannelMessageCount extends KaitaiStruct
+      public static class ChannelMessageCount
       {
          private int channelId;
          private long messageCount;
 
-         public ChannelMessageCount(ByteBuffer buffer) throws IOException
+         public ChannelMessageCount(ByteBuffer buffer)
          {
-            super(buffer);
-            _read();
-         }
-
-         @Override
-         public void _read() throws IOException
-         {
-            _readIntoBuffer();
             channelId = Short.toUnsignedInt(buffer.getShort());
             messageCount = buffer.getLong();
-            setComputedLength(Short.BYTES + Long.BYTES);
          }
 
          public int channelId()
@@ -676,7 +572,6 @@ public class Mcap
             return toString(0);
          }
 
-         @Override
          public String toString(int indent)
          {
             String out = getClass().getSimpleName() + ":";
@@ -726,12 +621,7 @@ public class Mcap
          return messageEndTime;
       }
 
-      public long lenChannelMessageCounts()
-      {
-         return lenChannelMessageCounts;
-      }
-
-      public ChannelMessageCounts channelMessageCounts()
+      public List<ChannelMessageCount> channelMessageCounts()
       {
          return channelMessageCounts;
       }
@@ -748,16 +638,15 @@ public class Mcap
          out += "\n\t-chunkCount = " + chunkCount;
          out += "\n\t-messageStartTime = " + messageStartTime;
          out += "\n\t-messageEndTime = " + messageEndTime;
-         out += "\n\t-lenChannelMessageCounts = " + lenChannelMessageCounts;
-         out += "\n\t-channelMessageCounts = \n" + channelMessageCounts.toString(1);
+         out += "\n\t-channelMessageCounts = \n" + EuclidCoreIOTools.getCollectionString("\n", channelMessageCounts, e -> e.toString(1));
          return out;
       }
    }
 
    public static class AttachmentIndex extends KaitaiStruct
    {
-      private long ofsAttachment;
-      private long lenAttachment;
+      private long offsetAttachment;
+      private long lengthAttachment;
       private long logTime;
       private long createTime;
       private long dataSize;
@@ -782,8 +671,8 @@ public class Mcap
       public void _read() throws IOException
       {
          _readIntoBuffer();
-         ofsAttachment = buffer.getLong();
-         lenAttachment = buffer.getLong();
+         offsetAttachment = buffer.getLong();
+         lengthAttachment = buffer.getLong();
          logTime = buffer.getLong();
          createTime = buffer.getLong();
          dataSize = buffer.getLong();
@@ -797,20 +686,20 @@ public class Mcap
          if (attachment == null)
          {
             // TODO Check if we can use the lenAttachment for verification or something.
-            attachment = new Record(fileChannel, ofsAttachment);
+            attachment = new Record(fileChannel, offsetAttachment);
          }
 
          return attachment;
       }
 
-      public long ofsAttachment()
+      public long offsetAttachment()
       {
-         return ofsAttachment;
+         return offsetAttachment;
       }
 
-      public long lenAttachment()
+      public long lengthAttachment()
       {
-         return lenAttachment;
+         return lengthAttachment;
       }
 
       public long logTime()
@@ -842,8 +731,8 @@ public class Mcap
       public String toString()
       {
          String out = getClass().getSimpleName() + ":";
-         out += "\n\t-ofsAttachment = " + ofsAttachment;
-         out += "\n\t-lenAttachment = " + lenAttachment;
+         out += "\n\t-ofsAttachment = " + offsetAttachment;
+         out += "\n\t-lenAttachment = " + lengthAttachment;
          out += "\n\t-logTime = " + logTime;
          out += "\n\t-createTime = " + createTime;
          out += "\n\t-dataSize = " + dataSize;
@@ -858,7 +747,8 @@ public class Mcap
       private int id;
       private String name;
       private String encoding;
-      private long lenData;
+      private long lengthData;
+      private long offsetData;
       private byte[] data;
 
       public Schema(ByteBuffer buffer, long _pos, int _length) throws IOException
@@ -880,11 +770,11 @@ public class Mcap
          id = Short.toUnsignedInt(buffer.getShort());
          name = parseString(buffer);
          encoding = parseString(buffer);
-         lenData = Integer.toUnsignedLong(buffer.getInt());
-         // TODO See if we can skip creating an array.
-         data = new byte[(int) lenData];
-         buffer.get(data);
-         setComputedLength(Short.BYTES + 3 * Integer.BYTES + name.length() + encoding.length() + (int) lenData);
+         lengthData = Integer.toUnsignedLong(buffer.getInt());
+         offsetData = buffer.position();
+         buffer.position((int) (offsetData + lengthData)); // Skip the data
+
+         setComputedLength(Short.BYTES + 3 * Integer.BYTES + name.length() + encoding.length() + (int) lengthData);
       }
 
       public int id()
@@ -902,14 +792,20 @@ public class Mcap
          return encoding;
       }
 
-      public long lenData()
-      {
-         return lenData;
-      }
-
       public byte[] data()
       {
+         if (data == null)
+         {
+            data = new byte[(int) lengthData];
+            buffer.position((int) offsetData);
+            buffer.get(data);
+         }
          return data;
+      }
+
+      public void unloadData()
+      {
+         data = null;
       }
 
       @Override
@@ -919,69 +815,21 @@ public class Mcap
          out += "\n\t-id = " + id;
          out += "\n\t-name = " + name;
          out += "\n\t-encoding = " + encoding;
-         out += "\n\t-lenData = " + lenData;
-         out += "\n\t-data = " + Arrays.toString(data);
+         out += "\n\t-lengthData = " + lengthData;
+         out += "\n\t-data = " + Arrays.toString(data());
+         unloadData();
          return out;
-      }
-   }
-
-   public static class MapStrStr extends KaitaiStruct
-   {
-      private long lenEntries;
-      private List<TupleStrStr> entries;
-
-      public MapStrStr(ByteBuffer buffer) throws IOException
-      {
-         super(buffer);
-         _read();
-      }
-
-      @Override
-      public void _read() throws IOException
-      {
-         _readIntoBuffer();
-         lenEntries = Integer.toUnsignedLong(buffer.getInt());
-
-         int remaining = (int) lenEntries;
-         int actualLength = Integer.BYTES;
-         entries = new ArrayList<>();
-
-         while (remaining > 0)
-         {
-            TupleStrStr entry = new TupleStrStr(buffer);
-            entries.add(entry);
-            remaining -= entry.getItemTotalLength();
-            actualLength += entry.getItemTotalLength();
-         }
-         setComputedLength(actualLength);
-      }
-
-      public long lenEntries()
-      {
-         return lenEntries;
-      }
-
-      public List<TupleStrStr> entries()
-      {
-         return entries;
-      }
-
-      @Override
-      public String toString()
-      {
-         if (entries == null)
-            return "null";
-         return EuclidCoreIOTools.getCollectionString(", ", entries, e -> "(%s)".formatted(Objects.toString(e)));
-      }
-
-      public String toKeysString()
-      {
-         return EuclidCoreIOTools.getCollectionString(", ", entries, e -> e.key());
       }
    }
 
    public static class SummaryOffset extends KaitaiStruct
    {
+      private Opcode groupOpcode;
+      private long offsetGroup;
+      private long lengthGroup;
+
+      private Records group;
+
       public SummaryOffset(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
          super(buffer, _pos, _length);
@@ -999,39 +847,33 @@ public class Mcap
       {
          _readIntoBuffer();
          groupOpcode = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
-         ofsGroup = buffer.getLong();
-         lenGroup = buffer.getLong();
+         offsetGroup = buffer.getLong();
+         lengthGroup = buffer.getLong();
          setComputedLength(Byte.BYTES + 2 * Long.BYTES);
       }
-
-      private Records group;
 
       public Records group() throws IOException
       {
          if (group == null)
          {
-            group = new Records(fileChannel, ofsGroup, (int) lenGroup);
+            group = new Records(fileChannel, offsetGroup, (int) lengthGroup);
          }
          return group;
       }
-
-      private Opcode groupOpcode;
-      private long ofsGroup;
-      private long lenGroup;
 
       public Opcode groupOpcode()
       {
          return groupOpcode;
       }
 
-      public long ofsGroup()
+      public long offsetGroup()
       {
-         return ofsGroup;
+         return offsetGroup;
       }
 
-      public long lenGroup()
+      public long lengthGroup()
       {
-         return lenGroup;
+         return lengthGroup;
       }
 
       @Override
@@ -1039,8 +881,8 @@ public class Mcap
       {
          String out = getClass().getSimpleName() + ": ";
          out += "\n\t-groupOpcode = " + groupOpcode;
-         out += "\n\t-ofsGroup = " + ofsGroup;
-         out += "\n\t-lenGroup = " + lenGroup;
+         out += "\n\t-offsetGroup = " + offsetGroup;
+         out += "\n\t-lengthGroup = " + lengthGroup;
          return out;
       }
    }
@@ -1051,7 +893,8 @@ public class Mcap
       private long createTime;
       private String name;
       private String mediaType;
-      private long lenData;
+      private long lengthData;
+      private long offsetData;
       private byte[] data;
       private long crc32;
 
@@ -1075,13 +918,12 @@ public class Mcap
          createTime = buffer.getLong();
          name = parseString(buffer);
          mediaType = parseString(buffer);
-         lenData = buffer.getLong();
-         // TODO See if we can skip creating an array.
-         data = new byte[(int) lenData()];
-         buffer.get(data);
+         lengthData = buffer.getLong();
+         offsetData = buffer.position();
+         buffer.position((int) (offsetData + lengthData));
          crc32InputEnd = buffer.position();
          crc32 = Integer.toUnsignedLong(buffer.getInt());
-         setComputedLength(3 * Long.BYTES + 3 * Integer.BYTES + name.length() + mediaType.length() + (int) lenData);
+         setComputedLength(3 * Long.BYTES + 3 * Integer.BYTES + name.length() + mediaType.length() + (int) lengthData);
       }
 
       private int crc32InputEnd;
@@ -1128,12 +970,23 @@ public class Mcap
 
       public long lenData()
       {
-         return lenData;
+         return lengthData;
       }
 
       public byte[] data()
       {
+         if (data == null)
+         {
+            data = new byte[(int) lengthData];
+            buffer.position((int) offsetData);
+            buffer.get(data);
+         }
          return data;
+      }
+
+      public void unloadData()
+      {
+         data = null;
       }
 
       /**
@@ -1153,7 +1006,7 @@ public class Mcap
          out += "\n\t-createTime = " + createTime;
          out += "\n\t-name = " + name;
          out += "\n\t-mediaType = " + mediaType;
-         out += "\n\t-lenData = " + lenData;
+         out += "\n\t-lengthData = " + lengthData;
          //         out += "\n\t-data = " + data;
          out += "\n\t-crc32 = " + crc32;
          return out;
@@ -1163,7 +1016,7 @@ public class Mcap
    public static class Metadata extends KaitaiStruct
    {
       private String name;
-      private MapStrStr metadata;
+      private List<TupleStrStr> metadata;
 
       public Metadata(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
@@ -1182,8 +1035,10 @@ public class Mcap
       {
          _readIntoBuffer();
          name = parseString(buffer);
-         metadata = new MapStrStr(buffer);
-         setComputedLength(Integer.BYTES + name.length() + metadata.getItemTotalLength());
+         int start = buffer.position();
+         metadata = parseList(buffer, TupleStrStr::new);
+         int metadataLength = buffer.position() - start;
+         setComputedLength(Integer.BYTES + name.length() + metadataLength);
       }
 
       public String name()
@@ -1191,7 +1046,7 @@ public class Mcap
          return name;
       }
 
-      public MapStrStr metadata()
+      public List<TupleStrStr> metadata()
       {
          return metadata;
       }
@@ -1201,7 +1056,7 @@ public class Mcap
       {
          String out = getClass().getSimpleName() + ": ";
          out += "\n\t-name = " + name;
-         out += "\n\t-metadata = " + metadata.toKeysString();
+         out += "\n\t-metadata = " + EuclidCoreIOTools.getCollectionString(", ", metadata, e -> e.key());
          return out;
       }
    }
@@ -1376,24 +1231,15 @@ public class Mcap
       }
    }
 
-   public static class TupleStrStr extends KaitaiStruct
+   public static class TupleStrStr
    {
       private String key;
       private String value;
 
-      public TupleStrStr(ByteBuffer buffer) throws IOException
+      public TupleStrStr(ByteBuffer buffer)
       {
-         super(buffer);
-         _read();
-      }
-
-      @Override
-      public void _read() throws IOException
-      {
-         _readIntoBuffer();
          key = parseString(buffer);
          value = parseString(buffer);
-         _length = 2 * Integer.BYTES + key.length() + value.length();
       }
 
       public String key()
@@ -1415,8 +1261,8 @@ public class Mcap
 
    public static class MetadataIndex extends KaitaiStruct
    {
-      private long ofsMetadata;
-      private long lenMetadata;
+      private long offsetMetadata;
+      private long lengthMetadata;
       private String name;
       private Record metadata;
 
@@ -1436,8 +1282,8 @@ public class Mcap
       public void _read() throws IOException
       {
          _readIntoBuffer();
-         ofsMetadata = buffer.getLong();
-         lenMetadata = buffer.getLong();
+         offsetMetadata = buffer.getLong();
+         lengthMetadata = buffer.getLong();
          name = parseString(buffer);
          setComputedLength(2 * Long.BYTES + Integer.BYTES + name.length());
       }
@@ -1447,19 +1293,19 @@ public class Mcap
          if (metadata == null)
          {
             // TODO Check if we can use the lenMetadata for verification or something.
-            metadata = new Record(fileChannel, ofsMetadata);
+            metadata = new Record(fileChannel, offsetMetadata);
          }
          return metadata;
       }
 
-      public long ofsMetadata()
+      public long offsetMetadata()
       {
-         return ofsMetadata;
+         return offsetMetadata;
       }
 
-      public long lenMetadata()
+      public long lengthMetadata()
       {
-         return lenMetadata;
+         return lengthMetadata;
       }
 
       public String name()
@@ -1471,8 +1317,8 @@ public class Mcap
       public String toString()
       {
          String out = getClass().getSimpleName() + ": ";
-         out += "\n\t-ofsMetadata = " + ofsMetadata;
-         out += "\n\t-lenMetadata = " + lenMetadata;
+         out += "\n\t-offsetMetadata = " + offsetMetadata;
+         out += "\n\t-lengthMetadata = " + lengthMetadata;
          out += "\n\t-name = " + name;
          return out;
       }
@@ -2221,39 +2067,47 @@ public class Mcap
       }
    }
 
-   private Record footer;
-
-   public Record footer() throws IOException
-   {
-      if (footer == null)
-      {
-         footer = new Record(fileChannel, computeOffsetFooter(fileChannel));
-      }
-      return footer;
-   }
-
    public static int computeOffsetFooter(FileChannel fileChannel) throws IOException
    {
       return (int) (((((fileChannel.size() - 1) - 8) - 20) - 8));
    }
 
-   private Magic headerMagic;
-   private ArrayList<Record> records;
-   private Magic footerMagic;
-
-   public Magic headerMagic()
+   private static String parseString(ByteBuffer buffer)
    {
-      return headerMagic;
+      return parseString(buffer, Integer.toUnsignedLong(buffer.getInt()));
    }
 
-   public ArrayList<Record> records()
+   private static String parseString(ByteBuffer buffer, long length)
    {
-      return records;
+      byte[] bytes = new byte[(int) length];
+      buffer.get(bytes);
+      return new String(bytes, StandardCharsets.UTF_8);
    }
 
-   public Magic footerMagic()
+   private static <T> List<T> parseList(ByteBuffer buffer, Function<ByteBuffer, T> elementParser)
    {
-      return footerMagic;
+      return parseList(buffer, elementParser, (int) Integer.toUnsignedLong(buffer.getInt()));
+   }
+
+   private static <T> List parseList(ByteBuffer buffer, Function<ByteBuffer, T> elementParser, int listByteSize)
+   {
+      int limit = buffer.position() + listByteSize;
+      List<T> list = new ArrayList<>();
+
+      while (buffer.position() < limit)
+      {
+         list.add(elementParser.apply(buffer));
+      }
+
+      return list;
+   }
+
+   private static String indent(String stringToIndent, int indent)
+   {
+      if (indent <= 0)
+         return stringToIndent;
+      String indentStr = "\t".repeat(indent);
+      return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
    }
 
    /**

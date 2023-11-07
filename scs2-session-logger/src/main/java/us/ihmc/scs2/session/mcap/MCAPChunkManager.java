@@ -54,7 +54,7 @@ public class MCAPChunkManager
          else if (record.op() == Mcap.Opcode.MESSAGE_INDEX)
          {
             Mcap.MessageIndex messageIndex = (Mcap.MessageIndex) record.body();
-            for (Mcap.MessageIndex.MessageIndexEntry mcapEntry : messageIndex.records().entries())
+            for (Mcap.MessageIndex.MessageIndexEntry mcapEntry : messageIndex.records())
             {
                long timestamp = mcapEntry.logTime();
                if (allMessageTimestamps.isEmpty() || timestamp > allMessageTimestamps.get(allMessageTimestamps.size() - 1))

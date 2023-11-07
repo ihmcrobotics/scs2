@@ -15,7 +15,9 @@ public class ROS2MessageSchema
 
    public static ROS2MessageSchema loadSchema(Mcap.Schema mcapSchema)
    {
-      return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
+      ROS2MessageSchema schema = loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
+      mcapSchema.unloadData();
+      return schema;
    }
 
    public static ROS2MessageSchema loadSchema(String name, int id, byte[] data)
@@ -40,10 +42,7 @@ public class ROS2MessageSchema
          int firstNewLineCharacter = schemaString.indexOf("\n");
          String firstLine = schemaString.substring(0, firstNewLineCharacter);
          subSchema.name = firstLine.replace("MSG: fastdds/", "").trim();
-         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1)
-                                        .lines()
-                                        .map(ROS2Field::fromLine)
-                                        .collect(Collectors.toList());
+         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1).lines().map(ROS2Field::fromLine).collect(Collectors.toList());
          schema.subSchemaMap.put(subSchema.name, subSchema);
       }
       schema.isSchemaFlat = schema.subSchemaMap.isEmpty();
