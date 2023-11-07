@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1387,11 +1388,8 @@ public class Mcap
       }
    }
 
-   public static class Records extends KaitaiStruct
+   public static class Records extends ArrayList<Record>
    {
-      private List<Record> records;
-      private final int totalRecordLength;
-
       public Records(ByteBuffer buffer) throws IOException
       {
          this(buffer, buffer.remaining());
@@ -1404,54 +1402,12 @@ public class Mcap
 
       public Records(ByteBuffer buffer, long _pos, int _length) throws IOException
       {
-         super(buffer, _pos, _length);
-         totalRecordLength = _length;
-         _read();
+         parseList(buffer, Record::new, _pos, _length, this);
       }
 
       public Records(FileChannel fileChannel, long _pos, int _length) throws IOException
       {
-         super(fileChannel, _pos, -1); // Setting the super._length to -1 to avoid creating a buffer.
-         totalRecordLength = _length;
-         _read();
-      }
-
-      @Override
-      public void _read() throws IOException
-      {
-         records = new ArrayList<>();
-
-         int remaining = totalRecordLength;
-
-         if (fileChannel != null)
-         {
-            long currentPos = _pos;
-            while (remaining > 0)
-            {
-               Record record = new Record(fileChannel, currentPos);
-               records.add(record);
-               currentPos += record.getItemTotalLength();
-               remaining -= record.getItemTotalLength();
-            }
-         }
-         else
-         {
-            long currentPos = buffer.position();
-
-            while (remaining > 0)
-            {
-               Record record = new Record(buffer);
-               records.add(record);
-               currentPos += record.getItemTotalLength();
-               remaining -= record.getItemTotalLength();
-               buffer.position((int) currentPos);
-            }
-         }
-      }
-
-      public List<Record> records()
-      {
-         return records;
+         parseList(fileChannel, Record::new, _pos, _length, this);
       }
 
       @Override
@@ -1460,11 +1416,13 @@ public class Mcap
          return toString(0);
       }
 
-      @Override
       public String toString(int indent)
       {
-         String out = getClass().getSimpleName() + ":";
-         out += "\n\t-records = " + (records == null ? "null" : "\n" + EuclidCoreIOTools.getCollectionString("\n", records, r -> r.toString(indent + 1)));
+         if (isEmpty())
+            return indent(getClass().getSimpleName() + ": []", indent);
+
+         String out = getClass().getSimpleName() + "[\n";
+         out += EuclidCoreIOTools.getCollectionString("\n", this, r -> r.toString(indent + 1));
          return indent(out, indent);
       }
    }
@@ -2160,20 +2118,27 @@ public class Mcap
     */
    public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long offset, long length) throws IOException
    {
+      return parseList(buffer, elementParser, offset, length, null);
+   }
+
+   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long offset, long length, List<T> listToPack)
+         throws IOException
+   {
       buffer.position((int) offset);
       int position = buffer.position();
       long limit = position + length;
-      List<T> list = new ArrayList<>();
+      if (listToPack == null)
+         listToPack = new ArrayList<>();
 
       while (position < limit)
       {
          buffer.position(position);
          T parsed = elementParser.parse(buffer);
-         list.add(parsed);
+         listToPack.add(parsed);
          position += parsed.getItemTotalLength();
       }
 
-      return list;
+      return listToPack;
    }
 
    public interface ByteBufferReader<T extends Sizeable>
@@ -2181,20 +2146,31 @@ public class Mcap
       T parse(ByteBuffer buffer) throws IOException;
    }
 
-   public static <T extends Sizeable> List<T> parseList(FileChannel fileChannel, FileChannelReader<T> elementParser, long offset, long length) throws IOException
+   public static <T extends Sizeable> List<T> parseList(FileChannel fileChannel, FileChannelReader<T> elementParser, long offset, long length)
+         throws IOException
+   {
+      return parseList(fileChannel, elementParser, offset, length, null);
+   }
+
+   public static <T extends Sizeable> List<T> parseList(FileChannel fileChannel,
+                                                        FileChannelReader<T> elementParser,
+                                                        long offset,
+                                                        long length,
+                                                        List<T> listToPack) throws IOException
    {
       long position = offset;
       long limit = position + length;
-      List<T> list = new ArrayList<>();
+      if (listToPack == null)
+         listToPack = new ArrayList<>();
 
       while (position < limit)
       {
          T parsed = elementParser.parse(fileChannel, position);
-         list.add(parsed);
+         listToPack.add(parsed);
          position += parsed.getItemTotalLength();
       }
 
-      return list;
+      return listToPack;
    }
 
    public interface FileChannelReader<T extends Sizeable>
@@ -2202,9 +2178,7 @@ public class Mcap
       T parse(FileChannel fileChannel, long position) throws IOException;
    }
 
-
-
-      private static String indent(String stringToIndent, int indent)
+   private static String indent(String stringToIndent, int indent)
    {
       if (indent <= 0)
          return stringToIndent;

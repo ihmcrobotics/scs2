@@ -121,7 +121,7 @@ public class MCAPFrameTransformManager
          if (record.op() == Mcap.Opcode.CHUNK)
          {
             Mcap.Chunk chunk = (Mcap.Chunk) record.body();
-            for (Mcap.Record chunkRecord : chunk.records().records())
+            for (Mcap.Record chunkRecord : chunk.records())
             {
                if (chunkRecord.op() == Mcap.Opcode.MESSAGE)
                {

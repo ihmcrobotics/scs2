@@ -350,7 +350,7 @@ public class MCAPChunkManager
       {
          this.chunk = chunk;
 
-         for (Mcap.Record record : chunk.records().records())
+         for (Mcap.Record record : chunk.records())
          {
             if (record.op() != Mcap.Opcode.MESSAGE)
                continue;
