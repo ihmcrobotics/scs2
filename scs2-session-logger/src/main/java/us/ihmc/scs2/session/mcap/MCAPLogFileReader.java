@@ -107,7 +107,6 @@ public class MCAPLogFileReader
          throw e;
       }
 
-      // TODO Skip creation of YoROS2Message for the frame transform stuff.
       for (Mcap.Record record : mcap.records())
       {
          if (record.op() != Mcap.Opcode.SCHEMA)
