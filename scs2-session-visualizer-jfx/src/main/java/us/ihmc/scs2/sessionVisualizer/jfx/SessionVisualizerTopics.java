@@ -57,6 +57,7 @@ public class SessionVisualizerTopics
    private Topic<List<String>> yoCompositeSelected;
    private Topic<Boolean> yoCompositeRefreshAll;
    private Topic<Boolean> showSCS2YoVariables;
+   private Topic<YoNameDisplay> yoVariableNameDisplay;
 
    private Topic<File> yoGraphicLoadRequest;
    private Topic<File> yoGraphicSaveRequest;
@@ -152,6 +153,7 @@ public class SessionVisualizerTopics
       yoCompositeSelected = SessionVisualizerMessagerAPI.YoSearch.YoCompositePatternSelected;
       yoCompositeRefreshAll = SessionVisualizerMessagerAPI.YoSearch.YoCompositeRefreshAll;
       showSCS2YoVariables = SessionVisualizerMessagerAPI.YoSearch.ShowSCS2YoVariables;
+      yoVariableNameDisplay = SessionVisualizerMessagerAPI.YoSearch.YoVariableNameDisplay;
 
       yoGraphicLoadRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicLoadRequest;
       yoGraphicSaveRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicSaveRequest;
@@ -339,6 +341,11 @@ public class SessionVisualizerTopics
    public Topic<Boolean> getShowSCS2YoVariables()
    {
       return showSCS2YoVariables;
+   }
+
+   public Topic<YoNameDisplay> getYoVariableNameDisplay()
+   {
+      return yoVariableNameDisplay;
    }
 
    public Topic<File> getYoGraphicLoadRequest()

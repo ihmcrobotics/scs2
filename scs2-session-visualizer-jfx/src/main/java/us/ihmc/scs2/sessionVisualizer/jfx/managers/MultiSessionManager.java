@@ -27,10 +27,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController;
-import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry.YoEntryTabPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
@@ -66,37 +63,40 @@ public class MultiSessionManager
       this.mainWindowController = mainWindowController;
 
       activeSession.addListener((o, oldValue, newValue) ->
-      {
-         JavaFXMissingTools.runAndWait(getClass(), () ->
-         {
-            if (toolkit.hasActiveSession())
-            {
-               Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to save the default configuration?", ButtonType.YES, ButtonType.NO);
-               Stage owner;
-               if (activeController.get() != null)
-                  owner = activeController.get().getStage();
-               else
-                  owner = toolkit.getMainWindow();
-               alert.initOwner(owner);
-               JavaFXMissingTools.centerDialogInOwner(alert);
+                                {
+                                   JavaFXMissingTools.runAndWait(getClass(), () ->
+                                   {
+                                      if (toolkit.hasActiveSession())
+                                      {
+                                         Alert alert = new Alert(AlertType.CONFIRMATION,
+                                                                 "Do you want to save the default configuration?",
+                                                                 ButtonType.YES,
+                                                                 ButtonType.NO);
+                                         Stage owner;
+                                         if (activeController.get() != null)
+                                            owner = activeController.get().getStage();
+                                         else
+                                            owner = toolkit.getMainWindow();
+                                         alert.initOwner(owner);
+                                         JavaFXMissingTools.centerDialogInOwner(alert);
 
-               SessionVisualizerIOTools.addSCSIconToDialog(alert);
-               Optional<ButtonType> result = alert.showAndWait();
-               stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
-               if (oldValue != null)
-                  oldValue.shutdownSession();
-            }
-         });
+                                         SessionVisualizerIOTools.addSCSIconToDialog(alert);
+                                         Optional<ButtonType> result = alert.showAndWait();
+                                         stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
+                                         if (oldValue != null)
+                                            oldValue.shutdownSession();
+                                      }
+                                   });
 
-         if (newValue != null)
-         {
-            startSession(newValue, () ->
-            {
-               if (activeController.get() != null)
-                  activeController.get().notifySessionLoaded();
-            });
-         }
-      });
+                                   if (newValue != null)
+                                   {
+                                      startSession(newValue, () ->
+                                      {
+                                         if (activeController.get() != null)
+                                            activeController.get().notifySessionLoaded();
+                                      });
+                                   }
+                                });
 
       SessionVisualizerTopics topics = toolkit.getTopics();
       JavaFXMessager messager = toolkit.getMessager();
@@ -325,6 +325,8 @@ public class MultiSessionManager
       mainWindowController.leftSidePaneOpenProperty().set(configuration.getShowYoSearchPanel());
       messager.submitMessage(topics.getShowOverheadPlotter(), configuration.getShowOverheadPlotter());
       messager.submitMessage(topics.getShowAdvancedControls(), configuration.getShowAdvancedControls());
+      messager.submitMessage(topics.getYoVariableNameDisplay(),
+                             configuration.getShowYoVariableUniqueNames() ? YoNameDisplay.UNIQUE_NAME : YoNameDisplay.SHORT_NAME);
       if (configuration.hasYoSliderboardConfiguration())
          messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile(), synchronizeHint);
 
@@ -401,6 +403,7 @@ public class MultiSessionManager
       configuration.setShowYoSearchPanel(mainWindowController.leftSidePaneOpenProperty().get());
       configuration.setShowOverheadPlotter(mainWindowController.showOverheadPlotterProperty().getValue());
       configuration.setShowAdvancedControls(mainWindowController.showAdvancedControlsProperty().get());
+      configuration.setShowYoVariableUniqueNames(mainWindowController.yoNameDisplayProperty().getValue() == YoNameDisplay.UNIQUE_NAME);
 
       configuration.writeConfiguration();
    }
