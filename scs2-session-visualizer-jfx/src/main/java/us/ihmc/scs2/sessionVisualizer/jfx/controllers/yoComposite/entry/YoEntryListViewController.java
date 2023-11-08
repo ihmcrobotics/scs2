@@ -1,32 +1,19 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.removeMenuItemFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoEntry.YoEntryDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.YoCompositeListCell;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -38,12 +25,18 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.removeMenuItemFactory;
+
 public class YoEntryListViewController
 {
    @FXML
    private ListView<YoComposite> yoEntryListView;
 
-   private final BooleanProperty showUniqueNamesProperty = new SimpleBooleanProperty(this, "showUniqueNames", false);
    private final StringProperty nameProperty = new SimpleStringProperty(this, "name", null);
    private YoManager yoManager;
    private YoCompositeSearchManager yoCompositeSearchManager;
@@ -56,10 +49,11 @@ public class YoEntryListViewController
       messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
+      Property<YoNameDisplay> yoVariableNameDisplay = messager.createPropertyInput(topics.getYoVariableNameDisplay(), YoNameDisplay.SHORT_NAME);
 
       yoManager = toolkit.getYoManager();
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
-      yoEntryListView.setCellFactory(param -> new YoCompositeListCell(toolkit.getYoManager(), showUniqueNamesProperty, numberPrecision, param));
+      yoEntryListView.setCellFactory(param -> new YoCompositeListCell(toolkit.getYoManager(), yoVariableNameDisplay, numberPrecision, param));
       yoEntryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
       MenuTools.setupContextMenu(yoEntryListView, removeMenuItemFactory(true));
 
@@ -74,10 +68,12 @@ public class YoEntryListViewController
       yoCompositeSelected = messager.createInput(yoCompositeSelectedTopic);
 
       yoEntryListView.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue != null)
-            messager.submitMessage(yoCompositeSelectedTopic, Arrays.asList(newValue.getPattern().getType(), newValue.getFullname()));
-      });
+                                                                             {
+                                                                                if (newValue != null)
+                                                                                   messager.submitMessage(yoCompositeSelectedTopic,
+                                                                                                          Arrays.asList(newValue.getPattern().getType(),
+                                                                                                                        newValue.getFullname()));
+                                                                             });
    }
 
    public void setInput(YoEntryListDefinition input)
