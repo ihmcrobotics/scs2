@@ -1,4 +1,4 @@
-const double double_var = 6.9;
+const double double_const = 6.9;
 
 struct struct_1 {
     short signed_short_var;
