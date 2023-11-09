@@ -6,12 +6,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TitledPane;
+import javafx.scene.control.*;
 import javafx.util.converter.DoubleStringConverter;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartDoubleBounds;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
@@ -60,36 +55,38 @@ public class YoChartVariableOptionController implements VisualizerController
       actualRangeMinLabel.setText(YoChartOptionController.UNDEFINED);
       actualRangeMaxLabel.setText(YoChartOptionController.UNDEFINED);
       minFormatter.valueProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (manualRangeMinTextField.isDisabled())
-            return;
-         if (newValue > manualYBoundsProperty.get().getUpper())
-         {
-            minFormatter.setValue(oldValue);
-            return;
-         }
+                                               {
+                                                  if (manualRangeMinTextField.isDisabled())
+                                                     return;
+                                                  if (newValue > manualYBoundsProperty.get().getUpper())
+                                                  {
+                                                     minFormatter.setValue(oldValue);
+                                                     return;
+                                                  }
 
-         manualYBoundsProperty.set(new ChartDoubleBounds(newValue.doubleValue(), manualYBoundsProperty.get().getUpper()));
-      });
+                                                  manualYBoundsProperty.set(new ChartDoubleBounds(newValue.doubleValue(),
+                                                                                                  manualYBoundsProperty.get().getUpper()));
+                                               });
       maxFormatter.valueProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (manualRangeMinTextField.isDisabled())
-            return;
-         if (newValue < manualYBoundsProperty.get().getLower())
-         {
-            maxFormatter.setValue(oldValue);
-            return;
-         }
+                                               {
+                                                  if (manualRangeMinTextField.isDisabled())
+                                                     return;
+                                                  if (newValue < manualYBoundsProperty.get().getLower())
+                                                  {
+                                                     maxFormatter.setValue(oldValue);
+                                                     return;
+                                                  }
 
-         manualYBoundsProperty.set(new ChartDoubleBounds(manualYBoundsProperty.get().getLower(), newValue.doubleValue()));
-      });
+                                                  manualYBoundsProperty.set(new ChartDoubleBounds(manualYBoundsProperty.get().getLower(),
+                                                                                                  newValue.doubleValue()));
+                                               });
    }
 
    public void setInput(YoNumberSeries series, Property<ChartScalingMode> masterScalingModeProperty)
    {
       this.series = series;
       this.masterScalingModeProperty = masterScalingModeProperty;
-      mainPane.setText(series.getYoVariable().getName());
+      mainPane.textProperty().bind(series.seriesNameProperty());
 
       manualYBoundsProperty.set(series.getCustomYBounds());
 
@@ -110,23 +107,23 @@ public class YoChartVariableOptionController implements VisualizerController
       series.yBoundsProperty().addListener(actualYBoundsUpdater);
 
       actualYBoundsProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == null)
-         {
-            actualRangeMinLabel.setText(YoChartOptionController.UNDEFINED);
-            actualRangeMaxLabel.setText(YoChartOptionController.UNDEFINED);
-         }
-         else
-         {
-            if (manualYBoundsProperty.get() == null)
-            {
-               minFormatter.setValue(newValue.getLower());
-               maxFormatter.setValue(newValue.getUpper());
-            }
-            actualRangeMinLabel.setText(Double.toString(newValue.getLower()));
-            actualRangeMaxLabel.setText(Double.toString(newValue.getUpper()));
-         }
-      });
+                                        {
+                                           if (newValue == null)
+                                           {
+                                              actualRangeMinLabel.setText(YoChartOptionController.UNDEFINED);
+                                              actualRangeMaxLabel.setText(YoChartOptionController.UNDEFINED);
+                                           }
+                                           else
+                                           {
+                                              if (manualYBoundsProperty.get() == null)
+                                              {
+                                                 minFormatter.setValue(newValue.getLower());
+                                                 maxFormatter.setValue(newValue.getUpper());
+                                              }
+                                              actualRangeMinLabel.setText(Double.toString(newValue.getLower()));
+                                              actualRangeMaxLabel.setText(Double.toString(newValue.getUpper()));
+                                           }
+                                        });
 
       if (series.yBoundsProperty().getValue() != null)
          actualYBoundsProperty.set(new ChartDoubleBounds(series.yBoundsProperty().getValue()));
