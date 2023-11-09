@@ -25,7 +25,7 @@ public class OMGIDLSchema
 
    public static OMGIDLSchema loadSchema(Mcap.Schema mcapSchema) throws IOException
    {
-      return loadSchema(mcapSchema.name().str(), mcapSchema.id(), mcapSchema.data());
+      return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
    }
 
    public static OMGIDLSchema loadSchema(String name, int id, byte[] data) throws IOException
