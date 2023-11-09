@@ -1,31 +1,14 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
 import javafx.beans.Observable;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableSet;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -39,11 +22,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -64,8 +43,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.TableSizeQuickAccess;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartChange;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -75,6 +52,17 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class YoChartGroupPanelController implements VisualizerController
 {
@@ -94,9 +82,9 @@ public class YoChartGroupPanelController implements VisualizerController
    @FXML
    private Button dropDownMenuButton;
 
-   private TopicListener<Pair<Window, File>> loadChartGroupConfigurationListener = m -> loadChartGroupConfiguration(m.getKey(), m.getValue());
-   private TopicListener<Pair<Window, File>> saveChartGroupConfigurationListener = m -> saveChartGroupConfiguration(m.getKey(), m.getValue());
-   private TopicListener<Pair<Window, String>> userDefinedChartGroupNameListener = m ->
+   private final TopicListener<Pair<Window, File>> loadChartGroupConfigurationListener = m -> loadChartGroupConfiguration(m.getKey(), m.getValue());
+   private final TopicListener<Pair<Window, File>> saveChartGroupConfigurationListener = m -> saveChartGroupConfiguration(m.getKey(), m.getValue());
+   private final TopicListener<Pair<Window, String>> userDefinedChartGroupNameListener = m ->
    {
       if (m.getKey() == toolkit.getWindow())
          setUserDefinedChartGroupName(m.getValue());
@@ -124,18 +112,18 @@ public class YoChartGroupPanelController implements VisualizerController
       messager.addFXTopicListener(topics.getDisableUserControls(), m -> mainPane.setDisable(m));
 
       toolkit.getWindow().iconifiedProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue != isRunning.get())
-            return;
-         if (newValue)
-            stop();
-         else
-            start();
-      });
+                                                          {
+                                                             if (newValue != isRunning.get())
+                                                                return;
+                                                             if (newValue)
+                                                                stop();
+                                                             else
+                                                                start();
+                                                          });
 
       chartGroupName.bind(automatedChartGroupName);
 
-      userDefinedChartGroupName.addListener(new ChangeListener<String>()
+      userDefinedChartGroupName.addListener(new ChangeListener<>()
       {
          private Observable currentBind = automatedChartGroupName;
 
@@ -151,7 +139,7 @@ public class YoChartGroupPanelController implements VisualizerController
                   chartGroupName.bind(userDefinedChartGroupName);
                }
             }
-            else if (newValue == null)
+            else
             {
                if (currentBind != automatedChartGroupName)
                {
@@ -163,11 +151,14 @@ public class YoChartGroupPanelController implements VisualizerController
          }
       });
 
-      ObservableSet<String> allVariableNames = FXCollections.observableSet(new HashSet<>());
+      BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
+      ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
 
-      allVariableNames.addListener((SetChangeListener<String>) change ->
+      plottedVariableList.addListener((ListChangeListener<? super YoVariable>) change ->
       {
-         if (change.getSet().isEmpty())
+         ObservableList<? extends YoVariable> changeList = change.getList();
+
+         if (changeList.isEmpty())
          {
             // No YoVariable left, resetting the user group
             automatedChartGroupName.set(null);
@@ -175,43 +166,45 @@ public class YoChartGroupPanelController implements VisualizerController
          }
          else
          {
-            automatedChartGroupName.set(StringTools.commonSubString(change.getSet()));
+            automatedChartGroupName.set(StringTools.commonSubString(changeList.stream().map(YoVariable::getName).collect(Collectors.toList())));
          }
+
+         List<? extends YoVariable> distinctVariables = changeList.stream().distinct().toList();
+         long distinctNameCount = distinctVariables.stream().map(YoVariable::getName).distinct().count();
+         useUniqueNames.set(distinctNameCount < distinctVariables.size());
       });
 
       SetChangeListener<YoVariable> plottedVariableChangeListener = change ->
       {
          if (change.wasAdded())
-            allVariableNames.add(change.getElementAdded().getName());
+            plottedVariableList.add(change.getElementAdded());
          if (change.wasRemoved())
-            allVariableNames.remove(change.getElementRemoved().getName());
+            plottedVariableList.remove(change.getElementRemoved());
       };
 
-      chartTable2D.addListener(new ChartChangeListener()
-      {
-         @Override
-         public void onChange(ChartChange c)
-         {
-            YoChartPanelController chart = c.getChart();
+      chartTable2D.addListener(c ->
+                               {
+                                  YoChartPanelController chart = c.getChart();
 
-            switch (c.type())
-            {
-               case ADD:
-                  gridPane.add(chart.getMainPane(), c.toCol(), c.toRow());
-                  chart.getPlottedVariables().addListener(plottedVariableChangeListener);
-                  break;
-               case REMOVE:
-                  gridPane.getChildren().remove(chart.getMainPane());
-                  chart.getPlottedVariables().removeListener(plottedVariableChangeListener);
-                  break;
-               case MOVE:
-                  GridPane.setConstraints(chart.getMainPane(), c.toCol(), c.toRow());
-                  break;
-               default:
-                  throw new IllegalStateException("Unexpected change type: " + c.type());
-            }
-         }
-      });
+                                  switch (c.type())
+                                  {
+                                     case ADD:
+                                        gridPane.add(chart.getMainPane(), c.toCol(), c.toRow());
+                                        chart.getPlottedVariables().addListener(plottedVariableChangeListener);
+                                        chart.useUniqueNamesProperty().bind(useUniqueNames);
+                                        break;
+                                     case REMOVE:
+                                        gridPane.getChildren().remove(chart.getMainPane());
+                                        chart.getPlottedVariables().removeListener(plottedVariableChangeListener);
+                                        chart.useUniqueNamesProperty().unbind();
+                                        break;
+                                     case MOVE:
+                                        GridPane.setConstraints(chart.getMainPane(), c.toCol(), c.toRow());
+                                        break;
+                                     default:
+                                        throw new IllegalStateException("Unexpected change type: " + c.type());
+                                  }
+                               });
    }
 
    public void setChartGroupConfiguration(YoChartGroupConfigurationDefinition definition)
@@ -236,14 +229,17 @@ public class YoChartGroupPanelController implements VisualizerController
    public void scheduleMessagerCleanup()
    {
       toolkit.getBackgroundExecutorManager().executeInBackground(() ->
-      {
-         if (!isMessagerSetup)
-            return;
-         isMessagerSetup = false;
-         messager.removeFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
-         messager.removeFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
-         messager.removeTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
-      });
+                                                                 {
+                                                                    if (!isMessagerSetup)
+                                                                       return;
+                                                                    isMessagerSetup = false;
+                                                                    messager.removeFXTopicListener(topics.getYoChartGroupLoadConfiguration(),
+                                                                                                   loadChartGroupConfigurationListener);
+                                                                    messager.removeFXTopicListener(topics.getYoChartGroupSaveConfiguration(),
+                                                                                                   saveChartGroupConfigurationListener);
+                                                                    messager.removeTopicListener(topics.getYoChartGroupName(),
+                                                                                                 userDefinedChartGroupNameListener);
+                                                                 });
    }
 
    private void handleCloseChart(ActionEvent event, YoChartPanelController chartToClose)
@@ -341,21 +337,22 @@ public class YoChartGroupPanelController implements VisualizerController
       AnchorPane.setLeftAnchor(backgroundPane, -5.0);
       AnchorPane.setRightAnchor(backgroundPane, -5.0);
       rootNode.setOnMouseClicked(e ->
-      {
-         chartTable2D.resize(new ChartTable2DSize(tableSizeQuickAccess.selectedRowsProperty().get(), tableSizeQuickAccess.selectedColumnsProperty().get()));
-         popup.hide();
-      });
+                                 {
+                                    chartTable2D.resize(new ChartTable2DSize(tableSizeQuickAccess.selectedRowsProperty().get(),
+                                                                             tableSizeQuickAccess.selectedColumnsProperty().get()));
+                                    popup.hide();
+                                 });
       tableSizeQuickAccess.getClearAllButton().setOnMouseClicked(e ->
-      {
-         chartTable2D.clear();
-         popup.hide();
-      });
+                                                                 {
+                                                                    chartTable2D.clear();
+                                                                    popup.hide();
+                                                                 });
       tableSizeQuickAccess.getClearEmptyButton().setOnMouseClicked(e ->
-      {
-         chartTable2D.removeEmptyCharts();
-         chartTable2D.removeNullRowsAndColumns();
-         popup.hide();
-      });
+                                                                   {
+                                                                      chartTable2D.removeEmptyCharts();
+                                                                      chartTable2D.removeNullRowsAndColumns();
+                                                                      popup.hide();
+                                                                   });
       popup.getContent().add(rootNode);
       dropDownMenuButton.setDisable(true);
       popup.setOnHiding(e -> dropDownMenuButton.setDisable(false));
@@ -448,10 +445,10 @@ public class YoChartGroupPanelController implements VisualizerController
                   CustomMenuItem menuItem = new CustomMenuItem(label);
 
                   label.setOnMouseEntered(e ->
-                  {
-                     chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
-                     controllersInConfiguration(layout).forEach(c -> c.setSelectionHighlight(true));
-                  });
+                                          {
+                                             chartTable2D.forEachChart(c -> c.setSelectionHighlight(false));
+                                             controllersInConfiguration(layout).forEach(c -> c.setSelectionHighlight(true));
+                                          });
 
                   menuItem.setOnAction(e -> applyLayout(layout));
                   contextMenu.getItems().add(menuItem);
@@ -556,7 +553,6 @@ public class YoChartGroupPanelController implements VisualizerController
                     .map(config -> config.shift(selectedId.getRow(), selectedId.getColumn()))
                     .filter(this::doesConfigurationFit)
                     .collect(Collectors.toList());
-
    }
 
    private boolean acceptDragEventForDrop(DragEvent event, YoChartPanelController controller)

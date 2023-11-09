@@ -1,13 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.beans.property.Property;
 import javafx.beans.value.ChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.NumberSeries;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartTools;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class YoNumberSeries extends NumberSeries
 {
