@@ -647,7 +647,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       FastAxisBase xAxis = dynamicLineChart.getXAxis();
       double xLocal = xAxis.screenToLocal(screenX, screenY).getX();
       int index = (int) Math.round(xAxis.getValueForDisplay(xLocal));
-      return MathTools.clamp(index, 0, lastBufferProperties.getSize());
+      return MathTools.clamp(index, 0, lastBufferProperties.getSize() - 1);
    }
 
    private void handleScroll(ScrollEvent event)
