@@ -188,7 +188,6 @@ public class SchemaCreatorListener implements IDLListener
       }
       this.currentMemberType = prefixScope + "::" + ctx.ID(0).getText();
       this.currentMemberMaxLength = -1;
-
    }
 
    @Override
@@ -368,8 +367,9 @@ public class SchemaCreatorListener implements IDLListener
    @Override
    public void exitConst_decl(IDLParser.Const_declContext ctx)
    {
-      //TODO: (AM) Add const support
-//      this.currentSchema.getFields().add();
+      // constants have the type "const base_type"
+      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField("const " + ctx.const_type().getText(), ctx.identifier().getText(), -1);
+      this.currentSchema.getFields().add(newField);
    }
 
    @Override
@@ -616,7 +616,6 @@ public class SchemaCreatorListener implements IDLListener
       {
          this.currentMemberType = ctx.getText();
       }
-
    }
 
    @Override
@@ -1100,6 +1099,11 @@ public class SchemaCreatorListener implements IDLListener
       //Create field here for each member
       OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField(this.currentMemberType, this.currentMemberName, this.currentMemberMaxLength);
       this.currentSchema.getFields().add(newField);
+
+      // reset Member stats after we are done visiting the member
+      this.currentMemberMaxLength = -1;
+      this.currentMemberType = "";
+      this.currentMemberName = "";
    }
 
    @Override
