@@ -178,6 +178,11 @@
 	-glyph-name: REFRESH;
 }
 
+.create-icon-view {
+	-fx-fill: -default-pale-blue;
+	-glyph-name: FIBER_NEW;
+}
+
 .load-icon-view {
 	-fx-fill: -default-pale-blue;
 	-glyph-name: FOLDER_OPEN_ALT;

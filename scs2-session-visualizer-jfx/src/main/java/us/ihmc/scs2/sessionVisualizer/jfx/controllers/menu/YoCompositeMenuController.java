@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
-import java.io.File;
-
 import javafx.fxml.FXML;
 import javafx.stage.Stage;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -10,6 +8,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+
+import java.io.File;
 
 public class YoCompositeMenuController implements VisualizerController
 {
@@ -25,6 +25,11 @@ public class YoCompositeMenuController implements VisualizerController
       owner = toolkit.getWindow();
    }
 
+   @FXML
+   public void createYoComposite()
+   {
+
+   }
    @FXML
    public void openYoCompositePatternEditor()
    {
@@ -52,4 +57,5 @@ public class YoCompositeMenuController implements VisualizerController
    {
       messager.submitMessage(topics.getYoCompositeRefreshAll(), true);
    }
+
 }
