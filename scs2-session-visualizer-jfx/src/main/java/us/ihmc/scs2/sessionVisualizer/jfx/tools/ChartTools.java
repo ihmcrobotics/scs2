@@ -1,20 +1,15 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import us.ihmc.scs2.definition.yoChart.ChartDoubleBoundsDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupModelDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartIdentifierDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartDoubleBounds;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartGroupModel;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
-import us.ihmc.yoVariables.variable.YoBoolean;
-import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoEnum;
-import us.ihmc.yoVariables.variable.YoInteger;
-import us.ihmc.yoVariables.variable.YoLong;
-import us.ihmc.yoVariables.variable.YoVariable;
+import us.ihmc.yoVariables.variable.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ChartTools
 {
@@ -26,7 +21,7 @@ public class ChartTools
    public static ChartGroupModel toChartIdentifierList(YoChartGroupModelDefinition definition)
    {
       return new ChartGroupModel(definition.getName(),
-                                     definition.getChartIdentifiers().stream().map(ChartTools::toChartIdentifier).collect(Collectors.toList()));
+                                 definition.getChartIdentifiers().stream().map(ChartTools::toChartIdentifier).collect(Collectors.toList()));
    }
 
    public static ChartDoubleBounds toChartDoubleBounds(ChartDoubleBoundsDefinition definition)
@@ -72,17 +67,17 @@ public class ChartTools
 
    public static String defaultYoVariableValueFormatter(YoVariable yoVariable, int precision)
    {
-      if (yoVariable instanceof YoDouble)
-         return NumberFormatTools.doubleToString(yoVariable.getValueAsDouble(), precision);
-      else if (yoVariable instanceof YoBoolean)
-         return Boolean.toString(((YoBoolean) yoVariable).getValue());
-      if (yoVariable instanceof YoInteger)
-         return Integer.toString(((YoInteger) yoVariable).getValue());
-      if (yoVariable instanceof YoLong)
-         return Long.toString(((YoLong) yoVariable).getValue());
-      if (yoVariable instanceof YoEnum<?>)
-         return ((YoEnum<?>) yoVariable).getStringValue();
-   
+      if (yoVariable instanceof YoDouble yoDouble)
+         return NumberFormatTools.doubleToString(yoDouble.getValue(), precision);
+      else if (yoVariable instanceof YoBoolean yoBoolean)
+         return Boolean.toString(yoBoolean.getValue());
+      if (yoVariable instanceof YoInteger yoInteger)
+         return Integer.toString(yoInteger.getValue());
+      if (yoVariable instanceof YoLong yoLong)
+         return Long.toString(yoLong.getValue());
+      if (yoVariable instanceof YoEnum<?> yoEnum)
+         return yoEnum.getStringValue();
+
       throw new UnsupportedOperationException("Unsupported YoVariable type: " + yoVariable.getClass().getSimpleName());
    }
 }
