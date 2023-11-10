@@ -1,9 +1,9 @@
 package us.ihmc.scs2.symbolic.parser;
 
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.symbolic.parser.parser.EquationOperation;
 import us.ihmc.scs2.symbolic.parser.parser.EquationParser;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Equation
@@ -18,12 +18,17 @@ public class Equation
    /**
     * List of operations representing this equation.
     */
-   private final List<EquationOperation<?>> operations = new ArrayList<>();
+   private final List<EquationOperation<?>> operations;
 
    /**
     * The result of this equation.
     */
    private EquationInput result;
+
+   public static Equation fromDefinition(YoEquationDefinition definition, EquationParser parser)
+   {
+      return new Equation(definition.getName(), definition.getDescription(), definition.getEquation(), parser.parse(definition.getEquation()));
+   }
 
    /**
     * Creates a new {@code YoEquation} from the given equation string.
@@ -31,30 +36,9 @@ public class Equation
     * @param equationString the equation string to parse.
     * @return the parsed equation.
     */
-   public static Equation parse(String equationString)
+   public static Equation parse(String equationString, EquationParser parser)
    {
-      return new EquationParser().parse(equationString);
-   }
-
-   /**
-    * Creates a new {@code YoEquation} from the given equation string.
-    *
-    * @param equationString the equation string to parse.
-    */
-   public Equation(String equationString)
-   {
-      this(null, null, equationString);
-   }
-
-   /**
-    * Creates a new {@code YoEquation} from the given equation string.
-    *
-    * @param name           the name of this equation.
-    * @param equationString the equation string to parse.
-    */
-   public Equation(String name, String equationString)
-   {
-      this(name, null, equationString);
+      return new Equation(null, null, equationString, parser.parse(equationString));
    }
 
    /**
@@ -63,18 +47,15 @@ public class Equation
     * @param name           the name of this equation.
     * @param description    the description of this equation.
     * @param equationString the equation string to parse.
+    * @param operations     the list, in order, of operations representing this equation.
     */
-   public Equation(String name, String description, String equationString)
+   private Equation(String name, String description, String equationString, List<EquationOperation<?>> operations)
    {
       this.name = name;
       this.description = description;
       this.equationString = equationString;
-   }
-
-   public void addOperation(EquationOperation<?> operation)
-   {
-      operations.add(operation);
-      result = operation.getResult();
+      this.operations = operations;
+      result = operations.get(operations.size() - 1).getResult();
    }
 
    /**
@@ -107,5 +88,15 @@ public class Equation
    public String getEquationString()
    {
       return equationString;
+   }
+
+   public YoEquationDefinition toYoEquationDefinition()
+   {
+      YoEquationDefinition definition = new YoEquationDefinition();
+      definition.setName(name);
+      definition.setDescription(description);
+      definition.setEquation(equationString);
+      // TODO Figure out what to do with the aliases, maybe we don't even need them here.
+      return definition;
    }
 }

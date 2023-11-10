@@ -12,6 +12,15 @@ public interface EquationInput
 
    Type getType();
 
+   static ScalarVariable newVariable(Type type)
+   {
+      return switch (type)
+      {
+         case INTEGER -> new IntegerVariable(0);
+         case DOUBLE -> new DoubleVariable(0.0);
+      };
+   }
+
    interface ScalarConstant extends EquationInput
    {
       DoubleSupplier toDoubleSupplier();

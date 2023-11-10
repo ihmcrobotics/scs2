@@ -3,7 +3,7 @@ package us.ihmc.scs2.symbolic.parser.parser;
 import us.ihmc.scs2.symbolic.parser.EquationInput;
 import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
 import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.ScalarVariable;
+import us.ihmc.scs2.symbolic.parser.EquationInput.ScalarConstant;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 import java.util.List;
@@ -68,7 +68,7 @@ public abstract class EquationOperationFactory
 
          if (doubleOperator != null)
          {
-            if (A instanceof ScalarVariable scalarA)
+            if (A instanceof ScalarConstant scalarA)
             {
                DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
                return new EquationOperation<>(operationName + "-s",
@@ -114,7 +114,7 @@ public abstract class EquationOperationFactory
 
          if (doubleOperator != null)
          {
-            if (A instanceof ScalarVariable scalarA && B instanceof ScalarVariable scalarB)
+            if (A instanceof ScalarConstant scalarA && B instanceof ScalarConstant scalarB)
             {
                DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
                DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
@@ -156,7 +156,7 @@ public abstract class EquationOperationFactory
             return new EquationOperation<>("copy-ii", intA, result -> result.setValue(intB.getAsInt()));
          }
 
-         if (A instanceof DoubleVariable doubleA && B instanceof ScalarVariable scalarB)
+         if (A instanceof DoubleVariable doubleA && B instanceof ScalarConstant scalarB)
          {
             DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
             return new EquationOperation<>("copy-ds", doubleA, result -> result.setValue(asDoubleB.getAsDouble()));
