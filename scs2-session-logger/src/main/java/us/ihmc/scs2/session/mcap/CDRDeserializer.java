@@ -18,16 +18,26 @@ public class CDRDeserializer
    public enum Type
    {
       BOOL(1, -1),
+      FLOAT(Float.BYTES, 4),
       FLOAT32(Float.BYTES, 4),
+      DOUBLE(Double.BYTES, 8),
       FLOAT64(Double.BYTES, 8),
+      CHAR(Byte.BYTES, -1),
+      OCTET(Byte.BYTES, -1),
       BYTE(Byte.BYTES, -1),
       INT8(Byte.BYTES, -1),
       UINT8(Byte.BYTES, -1),
+      SHORT(Short.BYTES, 2),
       INT16(Short.BYTES, 2),
+      UNSIGNEDSHORT(Short.BYTES, 2),
       UINT16(Short.BYTES, 2),
+      LONG(Integer.BYTES, 4),
       INT32(Integer.BYTES, 4),
+      UNSIGNEDLONG(Integer.BYTES, 4),
       UINT32(Integer.BYTES, 4),
+      LONGLONG(Long.BYTES, 8),
       INT64(Long.BYTES, 8),
+      UNSIGNEDLONGLONG(Long.BYTES, 8),
       UINT64(Long.BYTES, 8),
       STRING(-1, -1),
       ARRAY(-1, -1),
@@ -369,16 +379,16 @@ public class CDRDeserializer
       return switch (type)
       {
          case BOOL -> String.valueOf(read_bool());
-         case FLOAT32 -> String.valueOf(read_float32());
-         case FLOAT64 -> String.valueOf(read_float64());
-         case BYTE, INT8 -> String.valueOf(read_int8());
+         case FLOAT, FLOAT32 -> String.valueOf(read_float32());
+         case DOUBLE, FLOAT64 -> String.valueOf(read_float64());
+         case CHAR, OCTET, BYTE, INT8 -> String.valueOf(read_int8());
          case UINT8 -> String.valueOf(read_uint8());
-         case INT16 -> String.valueOf(read_int16());
-         case UINT16 -> String.valueOf(read_uint16());
-         case INT32 -> String.valueOf(read_int32());
-         case UINT32 -> String.valueOf(read_uint32());
-         case INT64 -> String.valueOf(read_int64());
-         case UINT64 -> String.valueOf(read_uint64());
+         case SHORT, INT16 -> String.valueOf(read_int16());
+         case UNSIGNEDSHORT, UINT16 -> String.valueOf(read_uint16());
+         case LONG, INT32 -> String.valueOf(read_int32());
+         case UNSIGNEDLONG, UINT32 -> String.valueOf(read_uint32());
+         case LONGLONG, INT64 -> String.valueOf(read_int64());
+         case UNSIGNEDLONGLONG, UINT64 -> String.valueOf(read_uint64());
          case STRING -> read_string();
          case ARRAY ->
          {
