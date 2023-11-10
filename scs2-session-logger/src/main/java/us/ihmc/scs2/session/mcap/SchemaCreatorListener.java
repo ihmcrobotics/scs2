@@ -182,12 +182,12 @@ public class SchemaCreatorListener implements IDLListener
    public void exitScoped_name(IDLParser.Scoped_nameContext ctx)
    {
       // TODO: (AM) Handle scoped type names properly, currently forcing global scope resolution
-      //      String prefixScope = "";
-      //      if (this.previousSchema.getName() != null)
-      //      {
-      //         prefixScope = this.previousSchema.getName().toString();
-      //      }
-      //      this.currentMemberType = prefixScope + "::" + ctx.ID(0).getText();
+//      String prefixScope = "";
+//      if (this.previousSchema.getName() != null)
+//      {
+//      prefixScope = this.previousSchema.getName().toString();
+//      }
+//      this.currentMemberType = prefixScope + "::" + ctx.ID(0).getText();
       this.currentMemberType = ctx.ID(0).getText();
       this.currentMemberMaxLength = -1;
       this.currentMemberIsComplexType = true;
@@ -616,10 +616,7 @@ public class SchemaCreatorListener implements IDLListener
    public void exitTemplate_type_spec(IDLParser.Template_type_specContext ctx)
    {
       //TODO: (AM) does this always get overridden by other type specs?
-      if (this.currentMemberType != null && !this.currentMemberType.equals("sequence"))
-      {
-         this.currentMemberType = ctx.getText();
-      }
+      this.currentMemberType = ctx.getText();
    }
 
    @Override
@@ -1065,7 +1062,6 @@ public class SchemaCreatorListener implements IDLListener
 
       this.currentSchema.getSubSchemaMap().put(structName, newCurrentSchema);
 
-      System.out.println(String.format("structName= %s, current schema name= %s", structName, this.currentSchema.getName()));
       if (structName.equals(this.currentSchema.getName()))
       {
          this.currentSchema.getFields().add(new OMGIDLSchema.OMGIDLField(ctx.KW_STRUCT().getText(), structName, -1, true));
@@ -1082,7 +1078,6 @@ public class SchemaCreatorListener implements IDLListener
    {
       // The walker does a recursive dfs traversal, so it will only visit every node once
 
-      //this.schema.getFields().add(field);
       this.currentSchema = previousSchema;
       this.previousSchema = null;
    }
@@ -1240,7 +1235,7 @@ public class SchemaCreatorListener implements IDLListener
          this.currentMemberMaxLength = 255;
          System.out.println("Unbounded sequences are not supported, limiting max length to 255");
       }
-      this.currentMemberType = ctx.KW_SEQUENCE().getText();
+      //this.currentMemberType = ctx.KW_SEQUENCE().getText();
       this.currentMemberIsComplexType = true;
    }
 

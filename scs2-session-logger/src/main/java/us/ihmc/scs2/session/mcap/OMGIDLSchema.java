@@ -133,7 +133,7 @@ public class OMGIDLSchema implements MCAPSchema
          return Collections.singletonList(flatField);
       }
       List<OMGIDLField> flatFields = new ArrayList<>();
-      flatFields.add(flatField);
+//      flatFields.add(flatField);
 
       if (flatField.isArray())
       {
@@ -176,7 +176,8 @@ public class OMGIDLSchema implements MCAPSchema
          }
          else
          {
-            // entering a struct instantiation
+            // entering a struct type instantiation
+            flatFields.add(flatField);
             subSchema = subSchemaMap.get(flatField.getType());
             if (subSchema != null)
             {
@@ -250,12 +251,12 @@ public class OMGIDLSchema implements MCAPSchema
       {
          this.type = type;
          this.name = name;
-         this.isArray = (maxLength > -1 && !type.equals("sequence"));
+         this.isArray = (maxLength > -1 && !type.contains("sequence"));
          this.maxLength = maxLength;
          //TODO: (AM) don't assume that all scoped types are complex
-         this.isComplexType = (isArray || type.contains("::") || type.equals("sequence") || type.equals("struct"));
+         //this.isComplexType = (isArray || type.contains("::") || type.equals("sequence") || type.equals("struct"));
          this.isComplexType = isComplexType;
-         this.isVector = type.equals("sequence");
+         this.isVector = type.contains("sequence");
          this.parent = null;
       }
 
