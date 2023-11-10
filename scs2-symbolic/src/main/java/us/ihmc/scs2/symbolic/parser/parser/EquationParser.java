@@ -1,70 +1,36 @@
 package us.ihmc.scs2.symbolic.parser.parser;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.scs2.symbolic.parser.Equation;
 import us.ihmc.scs2.symbolic.parser.EquationInput;
 import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
 import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
 import us.ihmc.scs2.symbolic.parser.parser.EquationToken.Type;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 public class EquationParser
 {
-   private final HashMap<String, EquationInput> variables = new HashMap<>();
+   private final EquationAliasManager aliasManager = new EquationAliasManager();
 
    private final EquationOperationLibrary operationLibrary = new EquationOperationLibrary();
 
    public EquationParser()
    {
-      alias("pi", Math.PI);
-      alias("e", Math.E);
+   }
+
+   public EquationAliasManager getAliasManager()
+   {
+      return aliasManager;
+   }
+
+   public EquationOperationLibrary getOperationLibrary()
+   {
+      return operationLibrary;
    }
 
    // TODO Need to add a way to add constants like immutable.
-
-   /**
-    * Registers a new variable. If one already has the same name, it is written over.
-    *
-    * @param name         the name of the variable.
-    * @param initialValue the initial value.
-    * @return this for chaining.
-    */
-   public EquationParser alias(String name, double initialValue)
-   {
-      if (isReserved(name))
-         throw new RuntimeException("Reserved word or contains a reserved character. '" + name + "'");
-
-      DoubleVariable old = (DoubleVariable) variables.get(name);
-      if (old == null)
-         variables.put(name, new DoubleVariable(initialValue));
-      else
-         old.setValue(initialValue);
-      return this;
-   }
-
-   /**
-    * Registers a new variable. If one already has the same name, it is written over.
-    *
-    * @param name         the name of the variable.
-    * @param initialValue the initial value.
-    * @return this for chaining.
-    */
-   public EquationParser alias(String name, int initialValue)
-   {
-      if (isReserved(name))
-         throw new RuntimeException("Reserved word or contains a reserved character. '" + name + "'");
-
-      IntegerVariable old = (IntegerVariable) variables.get(name);
-      if (old == null)
-         variables.put(name, new IntegerVariable(initialValue));
-      else
-         old.setValue(initialValue);
-      return this;
-   }
 
    /**
     * Parses the string representing an equation and compiles it into a {@code YoEquation} which can be executed later on.
@@ -72,7 +38,7 @@ public class EquationParser
     * @param stringEquation the equation to parse.
     * @return the parsed equation.
     */
-   public Equation parse(String stringEquation)
+   public List<EquationOperation<?>> parse(String stringEquation)
    {
       return parse(stringEquation, true);
    }
@@ -84,7 +50,7 @@ public class EquationParser
     * @param assignment     if true, then the equation is assumed to be an assignment to an output variable.
     * @return the parsed equation.
     */
-   public Equation parse(String stringEquation, boolean assignment)
+   public List<EquationOperation<?>> parse(String stringEquation, boolean assignment)
    {
       List<EquationToken> tokens = tokenizeEquation(stringEquation);
 
@@ -97,16 +63,16 @@ public class EquationParser
 
       if (t0.getType() != Type.VARIABLE && t0.getType() != Type.WORD)
       {
-         Equation equation = compileTokens(stringEquation, tokens);
+         List<EquationOperation<?>> operations = compileTokens(tokens);
          // If there's no output, then this is acceptable; otherwise, it's assumed to be a bug.
          EquationInput variable = tokens.get(0).getVariable();
          if (variable != null && assignment)
             throw new IllegalArgumentException("No assignment to an output variable could be found. Found " + t0);
-         return equation;
+         return operations;
       }
       else
       {
-         return parseAssignment(stringEquation, tokens);
+         return parseAssignment(tokens);
       }
    }
 
@@ -118,11 +84,10 @@ public class EquationParser
     * assignment operator.
     * </p>
     *
-    * @param stringEquation the equation to parse.
-    * @param tokens         the tokens representing the whole equation.
+    * @param tokens the tokens representing the whole equation.
     * @return the parsed equation.
     */
-   private Equation parseAssignment(String stringEquation, List<EquationToken> tokens)
+   private List<EquationOperation<?>> parseAssignment(List<EquationToken> tokens)
    {
       EquationToken t0 = tokens.get(0);
       EquationToken t1 = tokens.get(1);
@@ -132,25 +97,29 @@ public class EquationParser
 
       // Parse the right side of the equation
       List<EquationToken> tokensRight = tokens.subList(2, tokens.size());
-      Equation equation = compileTokens(stringEquation, tokensRight);
+      List<EquationOperation<?>> operations = compileTokens(tokensRight);
 
       if (tokensRight.get(tokensRight.size() - 1).getType() != Type.VARIABLE)
          throw new EquationParseError("Something went wrong with parsing the block, the last token should be a variable");
 
       // copy the results into the output
       EquationInput variableRight = tokensRight.get(0).getVariable();
-      equation.addOperation(operationLibrary.create(EquationSymbol.ASSIGN, t0.getVariable(), variableRight));
-      return equation;
+      EquationInput variableLeft;
+      if (t0.getType() == Type.WORD) // The type is not known, so infer it from the right side
+         variableLeft = EquationInput.newVariable(variableRight.getType());
+      else
+         variableLeft = t0.getVariable();
+      operations.add(operationLibrary.create(EquationSymbol.ASSIGN, variableLeft, variableRight));
+      return operations;
    }
 
    /**
     * Compiles the right side of an equation.
     *
-    * @param stringEquation the equation to parse.
-    * @param tokens         the tokens representing the whole equation.
-    * @return the parsed equation.
+    * @param tokens the tokens representing the whole equation.
+    * @return the list of operations to execute to compute the result of the equation.
     */
-   private Equation compileTokens(String stringEquation, List<EquationToken> tokens)
+   private List<EquationOperation<?>> compileTokens(List<EquationToken> tokens)
    {
       for (EquationToken t : tokens)
       {
@@ -158,49 +127,16 @@ public class EquationParser
             throw new EquationParseError("Unknown variable on right side. " + t.getWord());
       }
 
-      Equation equation = new Equation(stringEquation);
-
-      handleParentheses(tokens, equation);
+      List<EquationOperation<?>> operations = new ArrayList<>();
+      handleParentheses(tokens, operations);
 
       if (tokens.size() > 1)
-         parseBlockNoParentheses(tokens, equation);
+         parseBlockNoParentheses(tokens, operations);
 
       // see if it needs to be parsed more
       if (tokens.size() != 1)
          throw new RuntimeException("BUG");
-      return equation;
-   }
-
-   /**
-    * Infer the type of and create a new output variable using the results from the right side of the
-    * equation.
-    * If the type is already known, return that.
-    */
-   private EquationInput createVariableInferred(EquationToken t0, EquationInput variableRight)
-   {
-      EquationInput result;
-
-      if (t0.getType() == Type.WORD)
-      { // The type is not known, so infer it from the right side
-         switch (variableRight.getType())
-         {
-            case INTEGER:
-               alias(t0.getWord(), 0);
-               break;
-            case DOUBLE:
-               alias(t0.getWord(), 1.0);
-               break;
-            default:
-               throw new EquationParseError("Type not supported for assignment: " + variableRight.getType());
-         }
-
-         result = variables.get(t0.getWord());
-      }
-      else
-      {
-         result = t0.getVariable();
-      }
-      return result;
+      return operations;
    }
 
    /**
@@ -208,9 +144,9 @@ public class EquationParser
     * This handles nested parentheses.
     *
     * @param unprocessedTokenStack the list of tokens to process
-    * @param equationToPack        the list of operations to add the new operations to.
+    * @param operationsToPack      the list of operations to add the new operations to.
     */
-   protected void handleParentheses(List<EquationToken> unprocessedTokenStack, Equation equationToPack)
+   protected void handleParentheses(List<EquationToken> unprocessedTokenStack, List<EquationOperation<?>> operationsToPack)
    {
       // have a list to handle embedded parentheses, e.g. (((((a)))))
       List<Integer> leftIndices = new ArrayList<>();
@@ -250,15 +186,15 @@ public class EquationParser
          // if it is a function before "()" then the "()" indicates it is an input to a function
          if (beforeLeft != null && beforeLeft.getType() == Type.FUNCTION)
          {
-            List<EquationToken> inputs = parseParameterCommaBlock(sublist, equationToPack);
+            List<EquationToken> inputs = parseParameterCommaBlock(sublist, operationsToPack);
             if (inputs.isEmpty())
                throw new EquationParseError("Empty function input parameters");
-            parseFunction(beforeLeft, inputs, unprocessedTokenStack, equationToPack);
+            parseFunction(beforeLeft, inputs, unprocessedTokenStack, operationsToPack);
          }
          else
          {
             // if null then it was empty inside
-            EquationToken output = parseBlockNoParentheses(sublist, equationToPack);
+            EquationToken output = parseBlockNoParentheses(sublist, operationsToPack);
             if (sublist.size() != 1 && sublist.get(0) != output)
                throw new EquationParseError("Something went wrong with parsing the block");
          }
@@ -275,7 +211,7 @@ public class EquationParser
     *
     * @return List of output tokens between the commas
     */
-   protected List<EquationToken> parseParameterCommaBlock(List<EquationToken> tokens, Equation sequence)
+   protected List<EquationToken> parseParameterCommaBlock(List<EquationToken> tokens, List<EquationOperation<?>> operationsToPack)
    {
       // Find the start/end indices for each argument
       List<Integer> limitIndices = new ArrayList<>();
@@ -298,7 +234,7 @@ public class EquationParser
          if (start == end)
             throw new EquationParseError("No empty function inputs allowed!");
 
-         output.add(parseBlockNoParentheses(tokens.subList(start, end), sequence));
+         output.add(parseBlockNoParentheses(tokens.subList(start, end), operationsToPack));
       }
 
       // Clear the tokens to mark them as processed
@@ -310,7 +246,7 @@ public class EquationParser
     * Parses a code block with no parentheses and no commas. After it is done there should be a single
     * token left, which is returned.
     */
-   protected EquationToken parseBlockNoParentheses(List<EquationToken> tokens, Equation sequence)
+   protected EquationToken parseBlockNoParentheses(List<EquationToken> tokens, List<EquationOperation<?>> operationsToPack)
    {
       if (tokens.isEmpty())
          throw new EquationParseError("Empty block");
@@ -339,7 +275,7 @@ public class EquationParser
 
             EquationOperation<?> operation = operationLibrary.create(curr.symbol, prev.getVariable(), next.getVariable());
 
-            sequence.addOperation(operation);
+            operationsToPack.add(operation);
 
             // replace the symbols with their output
             EquationToken outputToken = EquationToken.newVariableToken(operation.getResult());
@@ -363,14 +299,17 @@ public class EquationParser
     * Adds a new operation to the list from the operation and two variables. The inputs are removed
     * from the token list and replaced by their output.
     *
-    * @param functionToken token with the function name
-    * @param inputTokens   list of tokens to use for creating the function inputs
-    * @param tokens        list of tokens to replace the given name token with the actual function
-    *                      output.
-    * @param sequence      list of operations to add the new operation to
+    * @param functionToken    token with the function name
+    * @param inputTokens      list of tokens to use for creating the function inputs
+    * @param tokens           list of tokens to replace the given name token with the actual function
+    *                         output.
+    * @param operationsToPack list of operations to add the new operation to
     * @return the token which replaces the function name
     */
-   protected EquationToken parseFunction(EquationToken functionToken, List<EquationToken> inputTokens, List<EquationToken> tokens, Equation sequence)
+   protected EquationToken parseFunction(EquationToken functionToken,
+                                         List<EquationToken> inputTokens,
+                                         List<EquationToken> tokens,
+                                         List<EquationOperation<?>> operationsToPack)
    {
       EquationOperation<?> operation;
       if (inputTokens.size() == 1)
@@ -385,22 +324,12 @@ public class EquationParser
          operation = operationLibrary.create(functionToken.getFunctionName(), functionInputVariables);
       }
 
-      sequence.addOperation(operation);
+      operationsToPack.add(operation);
 
       // replace the symbols with the function's output
       EquationToken t = EquationToken.newVariableToken(operation.getResult());
       tokens.set(tokens.indexOf(functionToken), t);
       return t;
-   }
-
-   /**
-    * Looks up a variable given its name. If none is found then return null.
-    */
-   @SuppressWarnings("unchecked")
-   public <T extends EquationInput> T lookupVariable(String token)
-   {
-      EquationInput result = variables.get(token);
-      return (T) result;
    }
 
    /**
@@ -557,7 +486,7 @@ public class EquationParser
 
          if (token.getType() == Type.WORD)
          {
-            EquationInput v = lookupVariable(token.word);
+            EquationInput v = aliasManager.getAlias(token.word);
             if (v != null)
                tokens.set(i, EquationToken.newVariableToken(v));
             else if (operationLibrary.isFunctionName(token.word))
