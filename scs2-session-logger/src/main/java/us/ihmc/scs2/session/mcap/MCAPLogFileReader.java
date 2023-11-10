@@ -1,7 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
-import org.apache.logging.log4j.Level;
 import us.ihmc.commons.nio.FileTools;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
@@ -181,13 +180,14 @@ public class MCAPLogFileReader
             }
             else if (schema instanceof OMGIDLSchema)
             {
-               yoMessageMap.put(channel.id(), YoOMGIDLMessage.newMessage((OMGIDLSchema)schema, channel.id(), channelRegistry));
+               yoMessageMap.put(channel.id(), YoOMGIDLMessage.newMessage((OMGIDLSchema) schema, channel.id(), channelRegistry));
             }
          }
          catch (Exception e)
          {
             exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, schema, e);
-            throw e;
+            e.printStackTrace();
+//            throw e;
          }
       }
    }
@@ -251,13 +251,9 @@ public class MCAPLogFileReader
 
             if (yoMCAPMessage == null)
             {
-               //throw new IllegalStateException("No YoMCAP message found for channel ID " + message.channelId());
-               LogTools.log(Level.ERROR, "No YoMCAP message found for channel ID " + message.channelId());
+               throw new IllegalStateException("No YoMCAP message found for channel ID " + message.channelId());
             }
-            else
-            {
-               yoMCAPMessage.readMessage(message);
-            }
+            yoMCAPMessage.readMessage(message);
          }
          catch (Exception e)
          {

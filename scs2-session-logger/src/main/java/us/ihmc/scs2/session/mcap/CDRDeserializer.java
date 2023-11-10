@@ -18,6 +18,7 @@ public class CDRDeserializer
    public enum Type
    {
       BOOL(1, -1),
+      BOOLEAN(1, -1),
       FLOAT(Float.BYTES, 4),
       FLOAT32(Float.BYTES, 4),
       DOUBLE(Double.BYTES, 8),
@@ -354,7 +355,7 @@ public class CDRDeserializer
    {
       return switch (type)
       {
-         case BOOL -> read_bool() ? 1.0 : 0.0;
+         case BOOL, BOOLEAN -> read_bool() ? 1.0 : 0.0;
          case FLOAT, FLOAT32 -> read_float32();
          case DOUBLE, FLOAT64 -> read_float64();
          case CHAR, OCTET, BYTE, INT8 -> read_int8();
@@ -378,7 +379,7 @@ public class CDRDeserializer
    {
       return switch (type)
       {
-         case BOOL -> String.valueOf(read_bool());
+         case BOOL, BOOLEAN -> String.valueOf(read_bool());
          case FLOAT, FLOAT32 -> String.valueOf(read_float32());
          case DOUBLE, FLOAT64 -> String.valueOf(read_float64());
          case CHAR, OCTET, BYTE, INT8 -> String.valueOf(read_int8());

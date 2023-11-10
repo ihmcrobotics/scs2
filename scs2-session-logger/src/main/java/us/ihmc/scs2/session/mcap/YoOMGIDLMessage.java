@@ -24,7 +24,17 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                                                    (name, registry) -> new YoBoolean(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_bool()),
                                                    yoBoolean -> yoBoolean.set(false)));
+      allConversions.add(new YoConversionToolbox<>("boolean",
+                                                   YoBoolean.class,
+                                                   (name, registry) -> new YoBoolean(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_bool()),
+                                                   yoBoolean -> yoBoolean.set(false)));
       allConversions.add(new YoConversionToolbox<>("float64",
+                                                   YoDouble.class,
+                                                   (name, registry) -> new YoDouble(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_float64()),
+                                                   yoDouble -> yoDouble.set(Double.NaN)));
+      allConversions.add(new YoConversionToolbox<>("double",
                                                    YoDouble.class,
                                                    (name, registry) -> new YoDouble(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_float64()),
@@ -34,7 +44,22 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                                                    (name, registry) -> new YoDouble(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_float32()),
                                                    yoDouble -> yoDouble.set(Double.NaN)));
+      allConversions.add(new YoConversionToolbox<>("float",
+                                                   YoDouble.class,
+                                                   (name, registry) -> new YoDouble(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_float32()),
+                                                   yoDouble -> yoDouble.set(Double.NaN)));
       allConversions.add(new YoConversionToolbox<>("byte",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_byte()),
+                                                   yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("char",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_byte()),
+                                                   yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("octet",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_byte()),
@@ -54,7 +79,17 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                                                    (name, registry) -> new YoInteger(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_int16()),
                                                    yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("short",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_int16()),
+                                                   yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("uint16",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_uint16()),
+                                                   yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("unsignedshort",
                                                    YoInteger.class,
                                                    (name, registry) -> new YoInteger(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_uint16()),
@@ -64,7 +99,17 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                                                    (name, registry) -> new YoInteger(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_int32()),
                                                    yoInteger -> yoInteger.set(0)));
+      allConversions.add(new YoConversionToolbox<>("long",
+                                                   YoInteger.class,
+                                                   (name, registry) -> new YoInteger(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_int32()),
+                                                   yoInteger -> yoInteger.set(0)));
       allConversions.add(new YoConversionToolbox<>("uint32",
+                                                   YoLong.class,
+                                                   (name, registry) -> new YoLong(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_uint32()),
+                                                   yoLong -> yoLong.set(0)));
+      allConversions.add(new YoConversionToolbox<>("unsignedlong",
                                                    YoLong.class,
                                                    (name, registry) -> new YoLong(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_uint32()),
@@ -74,8 +119,18 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                                                    (name, registry) -> new YoLong(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_int64()),
                                                    yoLong -> yoLong.set(0)));
+      allConversions.add(new YoConversionToolbox<>("longlong",
+                                                   YoLong.class,
+                                                   (name, registry) -> new YoLong(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_int64()),
+                                                   yoLong -> yoLong.set(0)));
       // TODO uint64 deserializer: Risk of overflow
       allConversions.add(new YoConversionToolbox<>("uint64",
+                                                   YoLong.class,
+                                                   (name, registry) -> new YoLong(name, registry),
+                                                   (variable, cdr) -> variable.set(cdr.read_uint64()),
+                                                   yoLong -> yoLong.set(0)));
+      allConversions.add(new YoConversionToolbox<>("unsignedlonglong",
                                                    YoLong.class,
                                                    (name, registry) -> new YoLong(name, registry),
                                                    (variable, cdr) -> variable.set(cdr.read_uint64()),
@@ -123,11 +178,6 @@ public class YoOMGIDLMessage implements YoMCAPMessage
 
       for (OMGIDLField field : schema.getFields())
       {
-         //TODO: (AM) I am ashamed of this, don't let the parser create a field for struct definitions
-         if (field.getType().equalsIgnoreCase("struct"))
-         {
-            continue;
-         }
          String fieldName = field.getName();
 
          if (field.isVector() && field.isArray())
@@ -137,17 +187,44 @@ public class YoOMGIDLMessage implements YoMCAPMessage
 
          Consumer<CDRDeserializer> deserializer = null;
          if (!isArrayOrVector)
+         {
             deserializer = createYoVariable(field, messageRegistry);
+         }
          else
-            deserializer = createYoVariableArray(field, messageRegistry);
+         {
+            // We need to check if it's an array/vector of other structs
+            // TODO: (AM) nested sequences not supported yet
+
+            //TODO: (AM) replace the regex split with something like field.getBaseType()
+            if (field.getType().contains("sequence") && subSchemaMap.containsKey((field.getType().split("[<,>]")[1])))
+            {
+               // TODO: (AM) array/vector of structs, handle recursively
+               throw new IllegalStateException("Can't handle sequences of type %s yet".formatted(field.getType().split("[<,>]")[1]));
+            }
+            else
+            {
+               // array/vector of primitives
+               deserializer = createYoVariableArray(field, messageRegistry);
+            }
+         }
 
          if (deserializer != null)
          {
             deserializers.add(deserializer);
             continue;
          }
+         if (deserializer == null && !field.isComplexType())
+            throw new IllegalStateException("Could not deserialize non-complex field of type: %s".formatted(field.getType()));
 
-         OMGIDLSchema subSchema = subSchemaMap.get(field.getType());
+         OMGIDLSchema subSchema = null;
+         if (field.getType().equals("struct"))
+         {
+            subSchema = subSchemaMap.get(field.getName());
+         }
+         else
+         {
+            subSchema = subSchemaMap.get(field.getType());
+         }
 
          if (subSchema == null)
             throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
@@ -161,9 +238,11 @@ public class YoOMGIDLMessage implements YoMCAPMessage
          }
          else
          {
+            // TODO: (AM) finalSubSchema exists because the schema object being passed to a lambda function needs to be "effectively final"
+            OMGIDLSchema finalSubSchema = subSchema;
             BiFunction<String, YoRegistry, YoOMGIDLMessage> elementBuilder = (name, yoRegistry) ->
             {
-               YoOMGIDLMessage newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
+               YoOMGIDLMessage newElement = newMessage(finalSubSchema, -1, new YoRegistry(name), subSchemaMap);
                messageRegistry.addChild(newElement.getRegistry());
                return newElement;
             };
@@ -263,14 +342,19 @@ public class YoOMGIDLMessage implements YoMCAPMessage
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();
-      String fieldType = field.getType();
+      //TODO: (AM) we manually get the primitive type from the sequence type string, find a better way to get a field's base type
+      String fieldBaseType = field.getType();
+      if (fieldBaseType.contains("sequence"))
+      {
+         fieldBaseType = fieldBaseType.split("[<,>]")[1];
+      }
 
       if (field.isVector() == field.isArray())
          throw new IllegalArgumentException("Field is neither a vector nor an array: " + field + ", registry: " + registry);
 
       boolean isFixedSize = field.isArray();
 
-      YoConversionToolbox conversion = conversionMap.get(fieldType);
+      YoConversionToolbox conversion = conversionMap.get(fieldBaseType);
       if (conversion != null)
          return createFieldArray(conversion.yoType,
                                  conversion.yoBuilder,
