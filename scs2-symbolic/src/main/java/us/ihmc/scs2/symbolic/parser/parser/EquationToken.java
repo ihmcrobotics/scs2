@@ -1,6 +1,6 @@
 package us.ihmc.scs2.symbolic.parser.parser;
 
-import us.ihmc.scs2.symbolic.parser.EquationVariable;
+import us.ihmc.scs2.symbolic.parser.EquationInput;
 
 /**
  * The token class contains a reference to parsed data (e.g. function, variable, or symbol) and
@@ -13,11 +13,17 @@ class EquationToken
     */
    public enum Type
    {
-      /** The token has been identified as referring to a function. */
+      /**
+       * The token has been identified as referring to a function.
+       */
       FUNCTION,
-      /** The token has been resolved as a variable, can either be a constant or a variable. */
+      /**
+       * The token has been resolved as a variable, can either be a constant or a variable.
+       */
       VARIABLE,
-      /** The token has been resolved as a symbol (*, /, +, -, etc.) */
+      /**
+       * The token has been resolved as a symbol (*, /, +, -, etc.)
+       */
       SYMBOL,
       /**
        * A word is a {@code String} that has not been resolved yet and can be the name of a variable or a
@@ -27,7 +33,7 @@ class EquationToken
    }
 
    public final String functionName;
-   public final EquationVariable variable;
+   public final EquationInput variable;
    public final EquationSymbol symbol;
    public final String word;
 
@@ -36,7 +42,7 @@ class EquationToken
       return new EquationToken(functionName, null, null, null);
    }
 
-   public static EquationToken newVariableToken(EquationVariable variable)
+   public static EquationToken newVariableToken(EquationInput variable)
    {
       return new EquationToken(null, variable, null, null);
    }
@@ -51,7 +57,7 @@ class EquationToken
       return new EquationToken(null, null, null, word);
    }
 
-   private EquationToken(String functionName, EquationVariable variable, EquationSymbol symbol, String word)
+   private EquationToken(String functionName, EquationInput variable, EquationSymbol symbol, String word)
    {
       this.functionName = functionName;
       this.variable = variable;
@@ -71,7 +77,7 @@ class EquationToken
          return Type.SYMBOL;
    }
 
-   public EquationVariable getVariable()
+   public EquationInput getVariable()
    {
       return variable;
    }
