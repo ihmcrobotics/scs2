@@ -1,4 +1,4 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
 public class EquationParseError extends RuntimeException
 {

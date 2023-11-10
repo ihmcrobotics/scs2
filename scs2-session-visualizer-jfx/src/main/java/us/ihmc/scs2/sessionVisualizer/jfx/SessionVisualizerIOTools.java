@@ -1,5 +1,25 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Region;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+import org.apache.commons.lang3.SystemUtils;
+import us.ihmc.commons.nio.FileTools;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.session.SessionIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,27 +33,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.prefs.Preferences;
-
-import org.apache.commons.lang3.SystemUtils;
-
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Region;
-import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.Stage;
-import javafx.stage.Window;
-import us.ihmc.commons.nio.FileTools;
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.SessionIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 
 public class SessionVisualizerIOTools
 {
@@ -117,6 +116,7 @@ public class SessionVisualizerIOTools
    public static final String DEFAULT_YO_COMPOSITE_PATTERNS_FILE = "DefaultYoCompositePatterns" + yoCompositeConfigurationFileExtension;
    public static final URL YO_COMPOSITE_PATTERN_EDITOR_PANE_URL = getFXMLResource(YO_COMPOSITE_PATTERN, "YoCompositePatternEditorPane");
    public static final URL YO_COMPOSITE_PATTERN_PROPERTY_WINDOW_URL = getFXMLResource(YO_COMPOSITE_PATTERN, "YoCompositePatternPropertyWindow");
+   public static final URL YO_COMPOSITE_CREATOR_WINDOW_URL = getFXMLResource(YO_COMPOSITE, "YoCompositeCreatorWindow");
    public static final URL YO_COMPOSITE_SEARCH_PANEL_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoCompositeSearchPane");
    public static final URL YO_SEARCH_TAB_PANE_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoSearchTabPane");
    public static final URL YO_ENTRY_LIST_VIEW_URL = getFXMLResource(YO_COMPOSITE_ENTRY, "YoEntryListView");
@@ -483,7 +483,6 @@ public class SessionVisualizerIOTools
       setDefaultFilePath(result);
 
       return result;
-
    }
 
    public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)

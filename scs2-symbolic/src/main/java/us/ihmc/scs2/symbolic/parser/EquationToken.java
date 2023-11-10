@@ -1,6 +1,6 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.parser.EquationInput;
+import us.ihmc.scs2.symbolic.EquationInput;
 
 /**
  * The token class contains a reference to parsed data (e.g. function, variable, or symbol) and

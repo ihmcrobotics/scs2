@@ -1,6 +1,6 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.parser.EquationInput;
+import us.ihmc.scs2.symbolic.EquationInput;
 
 import java.util.function.Consumer;
 

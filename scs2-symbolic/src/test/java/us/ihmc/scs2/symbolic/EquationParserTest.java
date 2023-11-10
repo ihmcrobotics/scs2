@@ -1,10 +1,10 @@
-package us.ihmc.scs2.symbolic.parser;
+package us.ihmc.scs2.symbolic;
 
 import org.junit.jupiter.api.Test;
-import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
-import us.ihmc.scs2.symbolic.parser.parser.EquationParseError;
-import us.ihmc.scs2.symbolic.parser.parser.EquationParser;
+import us.ihmc.scs2.symbolic.EquationInput.DoubleVariable;
+import us.ihmc.scs2.symbolic.EquationInput.IntegerVariable;
+import us.ihmc.scs2.symbolic.parser.EquationParseError;
+import us.ihmc.scs2.symbolic.parser.EquationParser;
 
 import java.util.StringTokenizer;
 
