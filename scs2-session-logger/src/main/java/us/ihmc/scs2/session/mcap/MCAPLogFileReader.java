@@ -40,8 +40,8 @@ public class MCAPLogFileReader
    private final YoRegistry mcapRegistry;
    private final Mcap mcap;
    private final MCAPChunkManager chunkManager = new MCAPChunkManager();
-   private final TIntObjectHashMap<ROS2MessageSchema> schemas = new TIntObjectHashMap<>();
-   private final TIntObjectHashMap<YoROS2Message> yoMessageMap = new TIntObjectHashMap<>();
+   private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
+   private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
    private final MCAPFrameTransformManager frameTransformManager;
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
    private final YoLong currentChunkEndTimestamp = new YoLong("MCAPCurrentChunkEndTimestamp", propertiesRegistry);
@@ -120,6 +120,10 @@ public class MCAPLogFileReader
             {
                schemas.put(schema.id(), ROS2MessageSchema.loadSchema(schema));
             }
+            else if (schema.encoding().equalsIgnoreCase("omgidl"))
+            {
+               schemas.put(schema.id(), OMGIDLSchema.loadSchema(schema));
+            }
             else
             {
                throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding());
@@ -147,7 +151,9 @@ public class MCAPLogFileReader
          Mcap.Channel channel = (Mcap.Channel) record.body();
          if (channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
-         ROS2MessageSchema schema = schemas.get(channel.schemaId());
+
+         MCAPSchema schema = schemas.get(channel.schemaId());
+
          if (schema == null)
          {
             LogTools.error("Failed to find schema for channel: " + channel.id());
@@ -167,7 +173,15 @@ public class MCAPLogFileReader
             }
             YoNamespace namespace = new YoNamespace(topic).prepend(mcapRegistry.getNamespace());
             YoRegistry channelRegistry = SharedMemoryTools.ensurePathExists(mcapRegistry, namespace);
-            yoMessageMap.put(channel.id(), YoROS2Message.newMessage(schema, channel.id(), channelRegistry));
+
+            if (schema instanceof ROS2MessageSchema)
+            {
+               yoMessageMap.put(channel.id(), YoROS2Message.newMessage((ROS2MessageSchema) schema, channel.id(), channelRegistry));
+            }
+            else if (schema instanceof OMGIDLSchema)
+            {
+               yoMessageMap.put(channel.id(), YoOMGIDLMessage.newMessage((OMGIDLSchema)schema, channel.id(), channelRegistry));
+            }
          }
          catch (Exception e)
          {
@@ -232,10 +246,13 @@ public class MCAPLogFileReader
             if (wasAFrameTransform)
                continue;
 
-            YoROS2Message yoROS2Message = yoMessageMap.get(message.channelId());
-            if (yoROS2Message == null)
+            YoMCAPMessage yoMCAPMessage = yoMessageMap.get(message.channelId());
+
+            if (yoMCAPMessage == null)
+            {
                throw new IllegalStateException("No YoROS2Message found for channel ID " + message.channelId());
-            yoROS2Message.readMessage(message);
+            }
+            yoMCAPMessage.readMessage(message);
          }
          catch (Exception e)
          {
@@ -263,7 +280,7 @@ public class MCAPLogFileReader
       return debugFile;
    }
 
-   private static void exportChannelToFile(Path path, Mcap.Channel channel, ROS2MessageSchema schema, Exception e) throws IOException
+   private static void exportChannelToFile(Path path, Mcap.Channel channel, MCAPSchema schema, Exception e) throws IOException
    {
       File debugFile;
       if (e != null)

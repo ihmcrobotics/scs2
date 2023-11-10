@@ -5,7 +5,7 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ROS2MessageSchema
+public class ROS2MessageSchema implements MCAPSchema
 {
    private int id;
    private String name;
@@ -180,7 +180,7 @@ public class ROS2MessageSchema
       return indent(out, indent);
    }
 
-   public static class ROS2Field
+   public static class ROS2Field implements MCAPField
    {
       /**
        * The parent is used when flattening the schema.

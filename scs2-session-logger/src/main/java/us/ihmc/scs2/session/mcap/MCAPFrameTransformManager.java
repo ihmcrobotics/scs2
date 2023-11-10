@@ -9,6 +9,7 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPField;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.euclid.YoPose3D;
 import us.ihmc.yoVariables.euclid.YoQuaternion;
@@ -22,6 +23,7 @@ import java.util.*;
 
 public class MCAPFrameTransformManager
 {
+   private static final String FOXGLOVE_PREFIX = "foxglove::FrameTransform.";
    private static final String WORLD_FRAME_NAME = "world";
    private static final String FRAME_FIELD_TYPE = "string";
    private static final String PARENT_FRAME_FIELD_NAME = "parent_frame_id";
@@ -38,7 +40,7 @@ public class MCAPFrameTransformManager
 
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
    private final ReferenceFrame inertialFrame;
-   private ROS2MessageSchema foxgloveFrameTransformSchema;
+   private MCAPSchema foxgloveFrameTransformSchema;
    private final List<YoFoxGloveFrameTransform> transformList = new ArrayList<>();
    private final Map<String, YoFoxGloveFrameTransform> rawNameToTransformMap = new LinkedHashMap<>();
    private final Map<String, YoFoxGloveFrameTransform> sanitizedNameToTransformMap = new LinkedHashMap<>();
@@ -69,6 +71,10 @@ public class MCAPFrameTransformManager
             if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
             {
                foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(mcapSchema);
+            }
+            else if (mcapSchema.encoding().equalsIgnoreCase("omgidl"))
+            {
+               foxgloveFrameTransformSchema = OMGIDLSchema.loadSchema(mcapSchema);
             }
             else
             {
@@ -226,7 +232,7 @@ public class MCAPFrameTransformManager
       String childFrameName;
       try
       {
-         List<ROS2MessageSchema.ROS2Field> fields = foxgloveFrameTransformSchema.getFields();
+         List<? extends MCAPField> fields = foxgloveFrameTransformSchema.getFields();
          rw = 1.0;
          rz = 0.0;
          ry = 0.0;
@@ -239,15 +245,15 @@ public class MCAPFrameTransformManager
 
          for (int i = 0; i < fields.size(); i++)
          {
-            ROS2MessageSchema.ROS2Field field = fields.get(i);
+            MCAPField field = fields.get(i);
             if (field.isComplexType())
             {
                if (field.getName().equalsIgnoreCase(ROTATION_FIELD_NAME))
                {
-                  ROS2MessageSchema.ROS2Field xField = fields.get(i + 1);
-                  ROS2MessageSchema.ROS2Field yField = fields.get(i + 2);
-                  ROS2MessageSchema.ROS2Field zField = fields.get(i + 3);
-                  ROS2MessageSchema.ROS2Field wField = fields.get(i + 4);
+                  MCAPField xField = fields.get(i + 1);
+                  MCAPField yField = fields.get(i + 2);
+                  MCAPField zField = fields.get(i + 3);
+                  MCAPField wField = fields.get(i + 4);
                   if (!xField.getName().equalsIgnoreCase(ROTATION_X_FIELD_NAME))
                      throw new RuntimeException("Unexpected field name: " + xField.getName());
                   if (!yField.getName().equalsIgnoreCase(ROTATION_Y_FIELD_NAME))
@@ -264,9 +270,9 @@ public class MCAPFrameTransformManager
                }
                else if (field.getName().equalsIgnoreCase(TRANSLATION_FIELD_NAME))
                {
-                  ROS2MessageSchema.ROS2Field xField = fields.get(i + 1);
-                  ROS2MessageSchema.ROS2Field yField = fields.get(i + 2);
-                  ROS2MessageSchema.ROS2Field zField = fields.get(i + 3);
+                  MCAPField xField = fields.get(i + 1);
+                  MCAPField yField = fields.get(i + 2);
+                  MCAPField zField = fields.get(i + 3);
                   if (!xField.getName().equalsIgnoreCase(TRANSLATION_X_FIELD_NAME))
                      throw new RuntimeException("Unexpected field name: " + xField.getName());
                   if (!yField.getName().equalsIgnoreCase(TRANSLATION_Y_FIELD_NAME))
@@ -334,7 +340,7 @@ public class MCAPFrameTransformManager
       return mcapSchema;
    }
 
-   public ROS2MessageSchema getFrameTransformSchema()
+   public MCAPSchema getFrameTransformSchema()
    {
       return foxgloveFrameTransformSchema;
    }
@@ -344,7 +350,7 @@ public class MCAPFrameTransformManager
       return sanitizedNameToTransformMap.get(name);
    }
 
-   private static BasicTransformInfo extractFromMessage(ROS2MessageSchema flatSchema, String topic, Mcap.Message message)
+   private static BasicTransformInfo extractFromMessage(MCAPSchema flatSchema, String topic, Mcap.Message message)
    {
       if (!flatSchema.isSchemaFlat())
          throw new IllegalArgumentException("The schema is not flat.");
@@ -355,7 +361,7 @@ public class MCAPFrameTransformManager
       String parentFrameName = null;
       String childFrameName = null;
 
-      for (ROS2MessageSchema.ROS2Field field : flatSchema.getFields())
+      for (MCAPField field : flatSchema.getFields())
       {
          if (field.isComplexType())
             continue;

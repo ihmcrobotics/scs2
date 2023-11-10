@@ -160,7 +160,7 @@ public class PrintListener implements IDLListener
    @Override
    public void exitScoped_name(IDLParser.Scoped_nameContext ctx)
    {
-
+//      System.out.println(ctx.getText());
    }
 
    @Override
