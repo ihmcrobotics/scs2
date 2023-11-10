@@ -355,16 +355,16 @@ public class CDRDeserializer
       return switch (type)
       {
          case BOOL -> read_bool() ? 1.0 : 0.0;
-         case FLOAT32 -> read_float32();
-         case FLOAT64 -> read_float64();
-         case BYTE, INT8 -> read_int8();
+         case FLOAT, FLOAT32 -> read_float32();
+         case DOUBLE, FLOAT64 -> read_float64();
+         case CHAR, OCTET, BYTE, INT8 -> read_int8();
          case UINT8 -> read_uint8();
-         case INT16 -> read_int16();
-         case UINT16 -> read_uint16();
-         case INT32 -> read_int32();
-         case UINT32 -> read_uint32();
-         case INT64 -> read_int64();
-         case UINT64 -> read_uint64();
+         case SHORT, INT16 -> read_int16();
+         case UNSIGNEDSHORT, UINT16 -> read_uint16();
+         case LONG, INT32 -> read_int32();
+         case UNSIGNEDLONG, UINT32 -> read_uint32();
+         case LONGLONG, INT64 -> read_int64();
+         case UNSIGNEDLONGLONG, UINT64 -> read_uint64();
          default -> throw new IllegalArgumentException("Unexpected type: " + type);
       };
    }
