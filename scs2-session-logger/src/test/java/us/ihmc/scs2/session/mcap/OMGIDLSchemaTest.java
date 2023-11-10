@@ -36,15 +36,15 @@ public class OMGIDLSchemaTest
    @Test
    public void testLoadSchemaFromFile() throws Exception
    {
-      String schemaName = "simple-idl-with-structs";
+      String schemaName = "simple_idl_with_structs";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
 
       // Anything with structures in it is not flat
       assertFalse(schema.isSchemaFlat());
-      assertEquals(3, schema.getFields().size());
-      assertEquals("struct_1", schema.getFields().get(1).getName());
-      assertEquals("struct_2", schema.getFields().get(2).getName());
+      assertEquals(2, schema.getFields().size());
+      assertEquals("double_const", schema.getFields().get(0).getName());
+      assertEquals("simple_idl_with_structs", schema.getFields().get(1).getName());
 
       // Check const field
       assertEquals("double_const", schema.getFields().get(0).getName());
@@ -56,7 +56,7 @@ public class OMGIDLSchemaTest
 
       // Check that sub-schemas for structures exist
       assertTrue(schema.getSubSchemaMap().containsKey("struct_1"));
-      assertTrue(schema.getSubSchemaMap().containsKey("struct_2"));
+      assertTrue(schema.getSubSchemaMap().containsKey("simple_idl_with_structs"));
 
       // Check fields in the subschemas
       //TODO: (AM) Check isVector for everything
@@ -70,6 +70,7 @@ public class OMGIDLSchemaTest
       assertEquals("short", expectedSubSchema.getFields().get(0).getType());
       assertFalse(expectedSubSchema.getFields().get(0).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(0).isArray());
+      assertFalse(expectedSubSchema.getFields().get(0).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(0).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(0).getParent());
 
@@ -78,6 +79,7 @@ public class OMGIDLSchemaTest
       assertEquals("unsignedshort", expectedSubSchema.getFields().get(1).getType());
       assertFalse(expectedSubSchema.getFields().get(1).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(1).isArray());
+      assertFalse(expectedSubSchema.getFields().get(1).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(1).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(1).getParent());
 
@@ -86,6 +88,7 @@ public class OMGIDLSchemaTest
       assertEquals("octet", expectedSubSchema.getFields().get(2).getType());
       assertFalse(expectedSubSchema.getFields().get(2).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(2).isArray());
+      assertFalse(expectedSubSchema.getFields().get(2).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(2).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(2).getParent());
 
@@ -94,6 +97,7 @@ public class OMGIDLSchemaTest
       assertEquals("char", expectedSubSchema.getFields().get(3).getType());
       assertFalse(expectedSubSchema.getFields().get(3).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(3).isArray());
+      assertFalse(expectedSubSchema.getFields().get(3).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(3).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(3).getParent());
 
@@ -103,12 +107,13 @@ public class OMGIDLSchemaTest
       // TODO: (AM) treat string like a complex type?
       assertFalse(expectedSubSchema.getFields().get(4).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(4).isArray());
+      assertFalse(expectedSubSchema.getFields().get(4).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(4).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(4).getParent());
 
-      // sequence<double, 2> sequence_var;
+      // sequence<double, 27> sequence_var;
       assertEquals("sequence_var", expectedSubSchema.getFields().get(5).getName());
-      assertEquals("sequence", expectedSubSchema.getFields().get(5).getType());
+      assertEquals("sequence<double,27>", expectedSubSchema.getFields().get(5).getType());
       assertTrue(expectedSubSchema.getFields().get(5).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(5).isArray());
       assertTrue(expectedSubSchema.getFields().get(5).isVector());
@@ -116,7 +121,7 @@ public class OMGIDLSchemaTest
       assertNull(expectedSubSchema.getFields().get(5).getParent());
 
       // Check the second sub-schema
-      expectedSubSchema = schema.getSubSchemaMap().get("struct_2");
+      expectedSubSchema = schema.getSubSchemaMap().get("simple_idl_with_structs");
       assertTrue(expectedSubSchema.isSchemaFlat());
       assertEquals(5, expectedSubSchema.getFields().size());
       assertEquals(2, expectedSubSchema.getId());
@@ -126,6 +131,7 @@ public class OMGIDLSchemaTest
       assertEquals("float", expectedSubSchema.getFields().get(0).getType());
       assertFalse(expectedSubSchema.getFields().get(0).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(0).isArray());
+      assertFalse(expectedSubSchema.getFields().get(0).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(0).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(0).getParent());
 
@@ -134,6 +140,7 @@ public class OMGIDLSchemaTest
       assertEquals("boolean", expectedSubSchema.getFields().get(1).getType());
       assertFalse(expectedSubSchema.getFields().get(1).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(1).isArray());
+      assertFalse(expectedSubSchema.getFields().get(1).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(1).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(1).getParent());
 
@@ -142,14 +149,16 @@ public class OMGIDLSchemaTest
       assertEquals("long", expectedSubSchema.getFields().get(2).getType());
       assertTrue(expectedSubSchema.getFields().get(2).isComplexType());
       assertTrue(expectedSubSchema.getFields().get(2).isArray());
+      assertFalse(expectedSubSchema.getFields().get(2).isVector());
       assertEquals(13, expectedSubSchema.getFields().get(2).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(2).getParent());
 
       // struct_1 strut_1_var;
       assertEquals("struct_1_var", expectedSubSchema.getFields().get(3).getName());
-      assertEquals("simple-idl-with-structs::struct_1", expectedSubSchema.getFields().get(3).getType());
+      assertEquals("struct_1", expectedSubSchema.getFields().get(3).getType());
       assertTrue(expectedSubSchema.getFields().get(3).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(3).isArray());
+      assertFalse(expectedSubSchema.getFields().get(3).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(3).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(3).getParent());
 
@@ -158,36 +167,17 @@ public class OMGIDLSchemaTest
       assertEquals("longdouble", expectedSubSchema.getFields().get(4).getType());
       assertFalse(expectedSubSchema.getFields().get(4).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(4).isArray());
+      assertFalse(expectedSubSchema.getFields().get(4).isVector());
       assertEquals(-1, expectedSubSchema.getFields().get(4).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(4).getParent());
    }
 
    @Disabled
    @Test
-   public void testScopedNameWithoutModule() throws Exception
-   {
-      //      String schemaName = "foxglove-frame-transform";
-      //      InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
-      //      OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
-      //
-      //      System.out.println(schema.getFields().get(3).getName());
-
-      String schemaName = "foxglove-frame-transform";
-      CharStream bytesAsChar = CharStreams.fromStream(getClass().getResourceAsStream(schemaName + ".idl"));
-      IDLLexer lexer = new IDLLexer(bytesAsChar);
-      CommonTokenStream tokens = new CommonTokenStream(lexer);
-      IDLParser parser = new IDLParser(tokens);
-      parser.setBuildParseTree(true);
-      ParseTree tree = parser.specification();
-
-      PrintListener printListener = new PrintListener();
-      ParseTreeWalker.DEFAULT.walk(printListener, tree);
-   }
-
-   @Test
    public void testFlattenSchema() throws Exception
    {
-      String schemaName = "foxglove::FrameTransform";
+      //TODO: (AM) implement test
+      String schemaName = "vision_msgs::LandmarkInfoArray";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
       OMGIDLSchema flatSchema = schema.flattenSchema();
