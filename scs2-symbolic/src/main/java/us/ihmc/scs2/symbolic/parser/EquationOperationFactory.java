@@ -1,9 +1,7 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.parser.EquationInput;
-import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.ScalarConstant;
+import us.ihmc.scs2.symbolic.EquationInput;
+import us.ihmc.scs2.symbolic.EquationInput.*;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 import java.util.List;
@@ -61,7 +59,7 @@ public abstract class EquationOperationFactory
             if (A instanceof IntSupplier intA)
             {
                return new EquationOperation<>(operationName + "-i",
-                                              new IntegerVariable(0),
+                                              new SimpleIntegerVariable(0),
                                               result -> result.setValue(integerOperator.applyAsInt(intA.getAsInt())));
             }
          }
@@ -72,7 +70,7 @@ public abstract class EquationOperationFactory
             {
                DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
                return new EquationOperation<>(operationName + "-s",
-                                              new DoubleVariable(0),
+                                              new SimpleDoubleVariable(0),
                                               result -> result.setValue(doubleOperator.applyAsDouble(asDoubleA.getAsDouble())));
             }
          }
@@ -107,7 +105,7 @@ public abstract class EquationOperationFactory
             if (A instanceof IntSupplier intA && B instanceof IntSupplier intB)
             {
                return new EquationOperation<>(operationName + "-ii",
-                                              new IntegerVariable(0),
+                                              new SimpleIntegerVariable(0),
                                               result -> result.setValue(integerOperator.applyAsInt(intA.getAsInt(), intB.getAsInt())));
             }
          }
@@ -119,7 +117,7 @@ public abstract class EquationOperationFactory
                DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
                DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
                return new EquationOperation<>(operationName + "-ss",
-                                              new DoubleVariable(0),
+                                              new SimpleDoubleVariable(0),
                                               result -> result.setValue(doubleOperator.applyAsDouble(asDoubleA.getAsDouble(), asDoubleB.getAsDouble())));
             }
          }
