@@ -1,13 +1,15 @@
 package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.parser.parser.EquationParser;
 import us.ihmc.scs2.symbolic.parser.parser.EquationOperation;
+import us.ihmc.scs2.symbolic.parser.parser.EquationParser;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Equation
 {
+   private final String name;
+   private final String description;
    /**
     * The original equation string.
     */
@@ -21,7 +23,7 @@ public class Equation
    /**
     * The result of this equation.
     */
-   private EquationVariable result;
+   private EquationInput result;
 
    /**
     * Creates a new {@code YoEquation} from the given equation string.
@@ -41,6 +43,31 @@ public class Equation
     */
    public Equation(String equationString)
    {
+      this(null, null, equationString);
+   }
+
+   /**
+    * Creates a new {@code YoEquation} from the given equation string.
+    *
+    * @param name           the name of this equation.
+    * @param equationString the equation string to parse.
+    */
+   public Equation(String name, String equationString)
+   {
+      this(name, null, equationString);
+   }
+
+   /**
+    * Creates a new {@code YoEquation} from the given equation string.
+    *
+    * @param name           the name of this equation.
+    * @param description    the description of this equation.
+    * @param equationString the equation string to parse.
+    */
+   public Equation(String name, String description, String equationString)
+   {
+      this.name = name;
+      this.description = description;
       this.equationString = equationString;
    }
 
@@ -53,7 +80,7 @@ public class Equation
    /**
     * Executes the sequence of operations
     */
-   public EquationVariable compute()
+   public EquationInput compute()
    {
       for (int i = 0; i < operations.size(); i++)
       {
@@ -67,7 +94,7 @@ public class Equation
     *
     * @return the result variable.
     */
-   public EquationVariable getResult()
+   public EquationInput getResult()
    {
       return result;
    }

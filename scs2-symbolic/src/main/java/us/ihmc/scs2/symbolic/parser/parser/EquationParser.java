@@ -2,9 +2,9 @@ package us.ihmc.scs2.symbolic.parser.parser;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.scs2.symbolic.parser.Equation;
-import us.ihmc.scs2.symbolic.parser.EquationVariable;
-import us.ihmc.scs2.symbolic.parser.EquationVariable.EquationVariableDouble;
-import us.ihmc.scs2.symbolic.parser.EquationVariable.EquationVariableInteger;
+import us.ihmc.scs2.symbolic.parser.EquationInput;
+import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
+import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
 import us.ihmc.scs2.symbolic.parser.parser.EquationToken.Type;
 
 import java.util.ArrayList;
@@ -14,9 +14,9 @@ import java.util.Objects;
 
 public class EquationParser
 {
-   private final HashMap<String, EquationVariable> variables = new HashMap<>();
+   private final HashMap<String, EquationInput> variables = new HashMap<>();
 
-   private final EquationFunctionLibrary functions = new EquationFunctionLibrary();
+   private final EquationOperationLibrary operationLibrary = new EquationOperationLibrary();
 
    public EquationParser()
    {
@@ -38,11 +38,11 @@ public class EquationParser
       if (isReserved(name))
          throw new RuntimeException("Reserved word or contains a reserved character. '" + name + "'");
 
-      EquationVariableDouble old = (EquationVariableDouble) variables.get(name);
+      DoubleVariable old = (DoubleVariable) variables.get(name);
       if (old == null)
-         variables.put(name, new EquationVariableDouble(initialValue));
+         variables.put(name, new DoubleVariable(initialValue));
       else
-         old.value = initialValue;
+         old.setValue(initialValue);
       return this;
    }
 
@@ -58,11 +58,11 @@ public class EquationParser
       if (isReserved(name))
          throw new RuntimeException("Reserved word or contains a reserved character. '" + name + "'");
 
-      EquationVariableInteger old = (EquationVariableInteger) variables.get(name);
+      IntegerVariable old = (IntegerVariable) variables.get(name);
       if (old == null)
-         variables.put(name, new EquationVariableInteger(initialValue));
+         variables.put(name, new IntegerVariable(initialValue));
       else
-         old.value = initialValue;
+         old.setValue(initialValue);
       return this;
    }
 
@@ -99,7 +99,7 @@ public class EquationParser
       {
          Equation equation = compileTokens(stringEquation, tokens);
          // If there's no output, then this is acceptable; otherwise, it's assumed to be a bug.
-         EquationVariable variable = tokens.get(0).getVariable();
+         EquationInput variable = tokens.get(0).getVariable();
          if (variable != null && assignment)
             throw new IllegalArgumentException("No assignment to an output variable could be found. Found " + t0);
          return equation;
@@ -138,8 +138,8 @@ public class EquationParser
          throw new EquationParseError("Something went wrong with parsing the block, the last token should be a variable");
 
       // copy the results into the output
-      EquationVariable variableRight = tokensRight.get(0).getVariable();
-      equation.addOperation(EquationOperation.copy(variableRight, createVariableInferred(t0, variableRight)));
+      EquationInput variableRight = tokensRight.get(0).getVariable();
+      equation.addOperation(operationLibrary.create(EquationSymbol.ASSIGN, t0.getVariable(), variableRight));
       return equation;
    }
 
@@ -176,9 +176,9 @@ public class EquationParser
     * equation.
     * If the type is already known, return that.
     */
-   private EquationVariable createVariableInferred(EquationToken t0, EquationVariable variableRight)
+   private EquationInput createVariableInferred(EquationToken t0, EquationInput variableRight)
    {
-      EquationVariable result;
+      EquationInput result;
 
       if (t0.getType() == Type.WORD)
       { // The type is not known, so infer it from the right side
@@ -337,7 +337,7 @@ public class EquationParser
                                                                                                            Objects.toString(curr),
                                                                                                            Objects.toString(next)));
 
-            EquationOperation<?> operation = functions.create(curr.symbol, prev.getVariable(), next.getVariable());
+            EquationOperation<?> operation = operationLibrary.create(curr.symbol, prev.getVariable(), next.getVariable());
 
             sequence.addOperation(operation);
 
@@ -374,15 +374,15 @@ public class EquationParser
    {
       EquationOperation<?> operation;
       if (inputTokens.size() == 1)
-         operation = functions.create(functionToken.getFunctionName(), inputTokens.get(0).getVariable());
+         operation = operationLibrary.create(functionToken.getFunctionName(), inputTokens.get(0).getVariable());
       else
       {
-         List<EquationVariable> functionInputVariables = new ArrayList<>();
+         List<EquationInput> functionInputVariables = new ArrayList<>();
          for (int i = 0; i < inputTokens.size(); i++)
          {
             functionInputVariables.add(inputTokens.get(i).getVariable());
          }
-         operation = functions.create(functionToken.getFunctionName(), functionInputVariables);
+         operation = operationLibrary.create(functionToken.getFunctionName(), functionInputVariables);
       }
 
       sequence.addOperation(operation);
@@ -397,9 +397,9 @@ public class EquationParser
     * Looks up a variable given its name. If none is found then return null.
     */
    @SuppressWarnings("unchecked")
-   public <T extends EquationVariable> T lookupVariable(String token)
+   public <T extends EquationInput> T lookupVariable(String token)
    {
-      EquationVariable result = variables.get(token);
+      EquationInput result = variables.get(token);
       return (T) result;
    }
 
@@ -515,9 +515,9 @@ public class EquationParser
             }
 
             if (type == NumberType.INTEGER)
-               tokens.add(EquationToken.newVariableToken(new EquationVariableInteger(Integer.parseInt(equation.substring(start, i + 1)))));
+               tokens.add(EquationToken.newVariableToken(new IntegerVariable(Integer.parseInt(equation.substring(start, i + 1)))));
             else
-               tokens.add(EquationToken.newVariableToken(new EquationVariableDouble(Double.parseDouble(equation.substring(start, i + 1)))));
+               tokens.add(EquationToken.newVariableToken(new DoubleVariable(Double.parseDouble(equation.substring(start, i + 1)))));
             continue;
          }
 
@@ -557,10 +557,10 @@ public class EquationParser
 
          if (token.getType() == Type.WORD)
          {
-            EquationVariable v = lookupVariable(token.word);
+            EquationInput v = lookupVariable(token.word);
             if (v != null)
                tokens.set(i, EquationToken.newVariableToken(v));
-            else if (functions.isFunctionName(token.word))
+            else if (operationLibrary.isFunctionName(token.word))
                tokens.set(i, EquationToken.newFunctionToken(token.word));
          }
       }
@@ -595,7 +595,7 @@ public class EquationParser
     */
    private boolean isReserved(String name)
    {
-      if (functions.isFunctionName(name))
+      if (operationLibrary.isFunctionName(name))
          return true;
 
       for (int i = 0; i < name.length(); i++)
