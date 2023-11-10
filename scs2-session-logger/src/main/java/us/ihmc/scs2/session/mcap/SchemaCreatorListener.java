@@ -616,7 +616,7 @@ public class SchemaCreatorListener implements IDLListener
    public void exitTemplate_type_spec(IDLParser.Template_type_specContext ctx)
    {
       //TODO: (AM) does this always get overridden by other type specs?
-      if (!this.currentMemberType.equals("sequence"))
+      if (this.currentMemberType != null && !this.currentMemberType.equals("sequence"))
       {
          this.currentMemberType = ctx.getText();
       }
@@ -1279,6 +1279,7 @@ public class SchemaCreatorListener implements IDLListener
    {
       //TODO: (AM) treat unbounded strings properly, right now they are treated like a base type of -1 size
       //this.currentMemberMaxLength = Integer.parseInt(ctx.positive_int_const().getText());
+      this.currentMemberType = "string";
       this.currentMemberMaxLength = -1;
       this.currentMemberIsComplexType = false;
    }

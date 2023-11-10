@@ -123,6 +123,11 @@ public class YoOMGIDLMessage implements YoMCAPMessage
 
       for (OMGIDLField field : schema.getFields())
       {
+         //TODO: (AM) I am ashamed of this, don't let the parser create a field for struct definitions
+         if (field.getType().equalsIgnoreCase("struct"))
+         {
+            continue;
+         }
          String fieldName = field.getName();
 
          if (field.isVector() && field.isArray())
