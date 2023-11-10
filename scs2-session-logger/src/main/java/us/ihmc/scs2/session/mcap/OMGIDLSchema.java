@@ -5,7 +5,6 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.apache.commons.lang3.NotImplementedException;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLLexer;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLListener;
@@ -15,7 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
-public class OMGIDLSchema
+public class OMGIDLSchema implements MCAPSchema
 {
    private int id;
    private String name;
@@ -73,7 +72,6 @@ public class OMGIDLSchema
 
    private OMGIDLSchema()
    {
-
    }
 
    public int getId()
@@ -109,12 +107,98 @@ public class OMGIDLSchema
     */
    public OMGIDLSchema flattenSchema()
    {
-      throw new NotImplementedException();
+      OMGIDLSchema flatSchema = new OMGIDLSchema();
+      flatSchema.id = this.id;
+      flatSchema.name = this.name;
+      flatSchema.isSchemaFlat = true;
+      flatSchema.fields = new ArrayList<>();
+
+      for (OMGIDLField field : this.getFields())
+      {
+         flatSchema.fields.addAll(this.flattenField(field));
+      }
+
+      return flatSchema;
    }
 
    private List<OMGIDLField> flattenField(OMGIDLField field)
    {
-      throw new NotImplementedException();
+      //TODO: (AM) Check correctness and refactor, super ugly code follows
+
+      OMGIDLField flatField = field.clone();
+
+      //TODO: (AM) check that isComplexType is set properly for every non-flat field
+      if (!field.isComplexType)
+      {
+         return Collections.singletonList(flatField);
+      }
+      List<OMGIDLField> flatFields = new ArrayList<>();
+      flatFields.add(flatField);
+
+      if (flatField.isArray())
+      {
+         for (int i = 0; i < flatField.getMaxLength(); i++)
+         {
+            OMGIDLField subField = new OMGIDLField();
+            subField.parent = flatField;
+            subField.type = flatField.type;
+            subField.name = flatField.name + "[" + i + "]";
+            subField.isArray = false;
+            subField.isVector = false;
+            subField.maxLength = -1;
+            flatFields.add(subField);
+         }
+      }
+      else
+      {
+         OMGIDLSchema subSchema = subSchemaMap.get(flatField.getName());
+         if (subSchema != null)
+         {
+            // we are entering a struct definition
+            for (OMGIDLField subField : subSchema.getFields())
+            {
+               if (subSchemaMap.containsKey(subField.getType()))
+               {
+                  // if this field is a struct of another type, then flatten recursively
+                  flatFields.addAll(this.flattenField(subField));
+               }
+               else
+               {
+                  // if this field is a base type, then add it to flatfields
+                  subField.parent = flatField;
+                  //subField.name = flatField.getName() + "." + subField.getName();
+                  flatFields.add(subField);
+               }
+               //               subField.parent = flatField;
+               //               subField.name = flatField.getName() + "." + subField.getName();
+               //               flatFields.add(subField);
+            }
+         }
+         else
+         {
+            // entering a struct instantiation
+            subSchema = subSchemaMap.get(flatField.getType());
+            if (subSchema != null)
+            {
+               for (OMGIDLField subField : subSchema.getFields())
+               {
+                  if (subSchemaMap.containsKey(subField.getType()))
+                  {
+                     // if this field is a struct of another type, then flatten recursively
+                     flatFields.addAll(this.flattenField(subField));
+                  }
+                  else
+                  {
+                     // if this field is a base type, then add it to flatfields
+                     subField.parent = flatField;
+                     subField.name = flatField.getName() + "." + subField.getName();
+                     flatFields.add(subField);
+                  }
+               }
+            }
+         }
+      }
+      return flatFields;
    }
 
    @Override
@@ -138,7 +222,7 @@ public class OMGIDLSchema
       return indent(out, indent);
    }
 
-   public static class OMGIDLField
+   public static class OMGIDLField implements MCAPField
    {
       /**
        * The parent is used when flattening the schema.
@@ -152,23 +236,26 @@ public class OMGIDLSchema
        */
       private int maxLength;
       /**
-       * This is {@code  true} whenever this field is for an array sequence, or struct.
+       * This is {@code  true} whenever this field is for an array, sequence, or struct.
        */
       private boolean isComplexType;
+      private boolean isVector;
 
       private OMGIDLField()
       {
 
       }
 
-      protected OMGIDLField(String type, String name, int maxLength)
+      protected OMGIDLField(String type, String name, int maxLength, boolean isComplexType)
       {
          this.type = type;
          this.name = name;
-         this.isArray = maxLength > -1;
+         this.isArray = (maxLength > -1 && !type.equals("sequence"));
          this.maxLength = maxLength;
          //TODO: (AM) don't assume that all scoped types are complex
-         this.isComplexType = (isArray || type.contains("::") || type.equals("sequence"));
+         this.isComplexType = (isArray || type.contains("::") || type.equals("sequence") || type.equals("struct"));
+         this.isComplexType = isComplexType;
+         this.isVector = type.equals("sequence");
          this.parent = null;
       }
 
@@ -241,6 +328,12 @@ public class OMGIDLSchema
       public boolean isComplexType()
       {
          return isComplexType;
+      }
+
+      @Override
+      public boolean isVector()
+      {
+         return this.isVector;
       }
 
       @Override

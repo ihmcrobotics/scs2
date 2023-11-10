@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.mcap.ROS2MessageSchema.ROS2Field;
+import us.ihmc.scs2.session.mcap.OMGIDLSchema.OMGIDLField;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 
@@ -12,7 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class YoROS2Message implements YoMCAPMessage
+public class YoOMGIDLMessage implements YoMCAPMessage
 {
    private static final Map<String, YoConversionToolbox<?>> conversionMap;
 
@@ -85,7 +85,7 @@ public class YoROS2Message implements YoMCAPMessage
       conversionMap = allConversions.stream().collect(Collectors.toMap(conversion -> conversion.primitiveType, conversion -> conversion));
    }
 
-   private final ROS2MessageSchema schema;
+   private final OMGIDLSchema schema;
    private final int channelId;
    private final YoRegistry registry;
    private final Consumer<CDRDeserializer> deserializer;
@@ -95,33 +95,33 @@ public class YoROS2Message implements YoMCAPMessage
     */
    private final CDRDeserializer cdr = new CDRDeserializer();
 
-   public YoROS2Message newMessage(int channelId, MCAPSchema schema)
+   public YoOMGIDLMessage newMessage(int channelId, MCAPSchema schema)
    {
-      return newMessage(channelId, (ROS2MessageSchema) schema);
+      return newMessage(channelId, (OMGIDLSchema) schema);
    }
 
-   public static YoROS2Message newMessage(int channelId, ROS2MessageSchema schema)
+   public static YoOMGIDLMessage newMessage(int channelId, OMGIDLSchema schema)
    {
       return newMessage(schema.getName(), channelId, schema);
    }
 
-   public static YoROS2Message newMessage(String name, int channelId, ROS2MessageSchema schema)
+   public static YoOMGIDLMessage newMessage(String name, int channelId, OMGIDLSchema schema)
    {
       return newMessage(schema, channelId, new YoRegistry(name));
    }
 
-   public static YoROS2Message newMessage(ROS2MessageSchema schema, int channelId, YoRegistry registry)
+   public static YoOMGIDLMessage newMessage(OMGIDLSchema schema, int channelId, YoRegistry registry)
    {
       return newMessage(schema, channelId, registry, schema.getSubSchemaMap());
    }
 
-   public static YoROS2Message newMessage(ROS2MessageSchema schema, int channelId, YoRegistry messageRegistry, Map<String, ROS2MessageSchema> subSchemaMap)
+   public static YoOMGIDLMessage newMessage(OMGIDLSchema schema, int channelId, YoRegistry messageRegistry, Map<String, OMGIDLSchema> subSchemaMap)
    {
       Objects.requireNonNull(schema, "Schema cannot be null. name = " + messageRegistry.getName());
 
       List<Consumer<CDRDeserializer>> deserializers = new ArrayList<>();
 
-      for (ROS2Field field : schema.getFields())
+      for (OMGIDLField field : schema.getFields())
       {
          String fieldName = field.getName();
 
@@ -142,7 +142,7 @@ public class YoROS2Message implements YoMCAPMessage
             continue;
          }
 
-         ROS2MessageSchema subSchema = subSchemaMap.get(field.getType());
+         OMGIDLSchema subSchema = subSchemaMap.get(field.getType());
 
          if (subSchema == null)
             throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
@@ -151,21 +151,21 @@ public class YoROS2Message implements YoMCAPMessage
          {
             YoRegistry fieldRegistry = new YoRegistry(fieldName);
             messageRegistry.addChild(fieldRegistry);
-            YoROS2Message subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
+            YoOMGIDLMessage subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
             deserializers.add(subMessage.deserializer);
          }
          else
          {
-            BiFunction<String, YoRegistry, YoROS2Message> elementBuilder = (name, yoRegistry) ->
+            BiFunction<String, YoRegistry, YoOMGIDLMessage> elementBuilder = (name, yoRegistry) ->
             {
-               YoROS2Message newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
+               YoOMGIDLMessage newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
                messageRegistry.addChild(newElement.getRegistry());
                return newElement;
             };
-            createFieldArray(YoROS2Message.class,
+            createFieldArray(YoOMGIDLMessage.class,
                              elementBuilder,
-                             YoROS2Message::deserialize,
-                             YoROS2Message::clearData,
+                             YoOMGIDLMessage::deserialize,
+                             YoOMGIDLMessage::clearData,
                              fieldName,
                              field.isArray(),
                              field.getMaxLength(),
@@ -173,14 +173,14 @@ public class YoROS2Message implements YoMCAPMessage
          }
       }
 
-      return new YoROS2Message(schema, channelId, messageRegistry, cdr ->
+      return new YoOMGIDLMessage(schema, channelId, messageRegistry, cdr ->
       {
          for (Consumer<CDRDeserializer> deserializer : deserializers)
             deserializer.accept(cdr);
       });
    }
 
-   private YoROS2Message(ROS2MessageSchema schema, int channelId, YoRegistry registry, Consumer<CDRDeserializer> deserializer)
+   private YoOMGIDLMessage(OMGIDLSchema schema, int channelId, YoRegistry registry, Consumer<CDRDeserializer> deserializer)
    {
       this.schema = schema;
       this.channelId = channelId;
@@ -226,7 +226,7 @@ public class YoROS2Message implements YoMCAPMessage
       return channelId;
    }
 
-   public ROS2MessageSchema getSchema()
+   public OMGIDLSchema getSchema()
    {
       return schema;
    }
@@ -237,7 +237,7 @@ public class YoROS2Message implements YoMCAPMessage
    }
 
    @SuppressWarnings({"rawtypes", "unchecked"})
-   private static Consumer<CDRDeserializer> createYoVariable(ROS2Field field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariable(OMGIDLField field, YoRegistry registry)
    {
       String fieldName = field.getName();
       String fieldType = field.getType();
@@ -254,7 +254,7 @@ public class YoROS2Message implements YoMCAPMessage
     * @return the parsing function.
     */
    @SuppressWarnings({"unchecked", "rawtypes"})
-   private static Consumer<CDRDeserializer> createYoVariableArray(ROS2Field field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariableArray(OMGIDLField field, YoRegistry registry)
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();

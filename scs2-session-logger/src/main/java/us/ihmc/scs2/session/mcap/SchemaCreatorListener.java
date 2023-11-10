@@ -21,6 +21,7 @@ public class SchemaCreatorListener implements IDLListener
    int currentMemberMaxLength = -1;
    String currentMemberType = null;
    String currentMemberName = null;
+   boolean currentMemberIsComplexType = false;
 
    public SchemaCreatorListener(OMGIDLSchema schema)
    {
@@ -181,13 +182,15 @@ public class SchemaCreatorListener implements IDLListener
    public void exitScoped_name(IDLParser.Scoped_nameContext ctx)
    {
       // TODO: (AM) Handle scoped type names properly, currently forcing global scope resolution
-      String prefixScope = "";
-      if (this.previousSchema.getName() != null)
-      {
-         prefixScope = this.previousSchema.getName().toString();
-      }
-      this.currentMemberType = prefixScope + "::" + ctx.ID(0).getText();
+      //      String prefixScope = "";
+      //      if (this.previousSchema.getName() != null)
+      //      {
+      //         prefixScope = this.previousSchema.getName().toString();
+      //      }
+      //      this.currentMemberType = prefixScope + "::" + ctx.ID(0).getText();
+      this.currentMemberType = ctx.ID(0).getText();
       this.currentMemberMaxLength = -1;
+      this.currentMemberIsComplexType = true;
    }
 
    @Override
@@ -368,7 +371,7 @@ public class SchemaCreatorListener implements IDLListener
    public void exitConst_decl(IDLParser.Const_declContext ctx)
    {
       // constants have the type "const base_type"
-      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField("const " + ctx.const_type().getText(), ctx.identifier().getText(), -1);
+      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField("const " + ctx.const_type().getText(), ctx.identifier().getText(), -1, false);
       this.currentSchema.getFields().add(newField);
    }
 
@@ -600,6 +603,7 @@ public class SchemaCreatorListener implements IDLListener
       //TODO: (AM) does this always get overridden by the array size?
       this.currentMemberMaxLength = -1;
       this.currentMemberType = ctx.getText();
+      this.currentMemberIsComplexType = false;
    }
 
    @Override
@@ -1052,10 +1056,21 @@ public class SchemaCreatorListener implements IDLListener
    @Override
    public void enterStruct_type(IDLParser.Struct_typeContext ctx)
    {
+      String structName = ctx.identifier().getText();
+      if (ctx.scoped_name() != null)
+         structName += (ctx.DOUBLE_COLON().getText() + ctx.scoped_name().getText());
 
       // Add a subschema whenever we enter a new struct
-      OMGIDLSchema newCurrentSchema = new OMGIDLSchema(ctx.identifier().getText(), this.idCount);
-      this.currentSchema.getSubSchemaMap().put(ctx.identifier().getText(), newCurrentSchema);
+      OMGIDLSchema newCurrentSchema = new OMGIDLSchema(structName, this.idCount);
+
+      this.currentSchema.getSubSchemaMap().put(structName, newCurrentSchema);
+
+      System.out.println(String.format("structName= %s, current schema name= %s", structName, this.currentSchema.getName()));
+      if (structName.equals(this.currentSchema.getName()))
+      {
+         this.currentSchema.getFields().add(new OMGIDLSchema.OMGIDLField(ctx.KW_STRUCT().getText(), structName, -1, true));
+      }
+
       this.idCount += 1;
 
       this.previousSchema = this.currentSchema;
@@ -1097,13 +1112,17 @@ public class SchemaCreatorListener implements IDLListener
       assert this.currentMemberName != null : String.format("Got a null member name for %s", ctx.declarators().getText());
 
       //Create field here for each member
-      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField(this.currentMemberType, this.currentMemberName, this.currentMemberMaxLength);
+      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField(this.currentMemberType,
+                                                                       this.currentMemberName,
+                                                                       this.currentMemberMaxLength,
+                                                                       this.currentMemberIsComplexType);
       this.currentSchema.getFields().add(newField);
 
       // reset Member stats after we are done visiting the member
       this.currentMemberMaxLength = -1;
       this.currentMemberType = "";
       this.currentMemberName = "";
+      this.currentMemberIsComplexType = false;
    }
 
    @Override
@@ -1222,6 +1241,7 @@ public class SchemaCreatorListener implements IDLListener
          System.out.println("Unbounded sequences are not supported, limiting max length to 255");
       }
       this.currentMemberType = ctx.KW_SEQUENCE().getText();
+      this.currentMemberIsComplexType = true;
    }
 
    @Override
@@ -1260,6 +1280,7 @@ public class SchemaCreatorListener implements IDLListener
       //TODO: (AM) treat unbounded strings properly, right now they are treated like a base type of -1 size
       //this.currentMemberMaxLength = Integer.parseInt(ctx.positive_int_const().getText());
       this.currentMemberMaxLength = -1;
+      this.currentMemberIsComplexType = false;
    }
 
    @Override
@@ -1295,6 +1316,7 @@ public class SchemaCreatorListener implements IDLListener
    public void exitFixed_array_size(IDLParser.Fixed_array_sizeContext ctx)
    {
       this.currentMemberMaxLength = Integer.parseInt(ctx.positive_int_const().getText());
+      this.currentMemberIsComplexType = true;
    }
 
    @Override
