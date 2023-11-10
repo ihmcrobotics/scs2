@@ -5889,7 +5889,7 @@ public class IDLParser extends Parser {
 			return getRuleContext(Member_listContext.class,0);
 		}
 		public TerminalNode RIGHT_BRACE() { return getToken(IDLParser.RIGHT_BRACE, 0); }
-		public TerminalNode COLON() { return getToken(IDLParser.COLON, 0); }
+		public TerminalNode DOUBLE_COLON() { return getToken(IDLParser.DOUBLE_COLON, 0); }
 		public Scoped_nameContext scoped_name() {
 			return getRuleContext(Scoped_nameContext.class,0);
 		}
@@ -5921,10 +5921,10 @@ public class IDLParser extends Parser {
 			setState(911);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if (_la==COLON) {
+			if (_la==DOUBLE_COLON) {
 				{
 				setState(909);
-				match(COLON);
+				match(DOUBLE_COLON);
 				setState(910);
 				scoped_name();
 				}
@@ -11283,7 +11283,7 @@ public class IDLParser extends Parser {
 		"\u038a\u0001\u0000\u0000\u0000\u0388\u0386\u0001\u0000\u0000\u0000\u0388"+
 		"\u0389\u0001\u0000\u0000\u0000\u0389\u00a7\u0001\u0000\u0000\u0000\u038a"+
 		"\u0388\u0001\u0000\u0000\u0000\u038b\u038c\u00051\u0000\u0000\u038c\u038f"+
-		"\u0003\u0140\u00a0\u0000\u038d\u038e\u0005\f\u0000\u0000\u038e\u0390\u0003"+
+		"\u0003\u0140\u00a0\u0000\u038d\u038e\u0005 \u0000\u0000\u038e\u0390\u0003"+
 		"\u0018\f\u0000\u038f\u038d\u0001\u0000\u0000\u0000\u038f\u0390\u0001\u0000"+
 		"\u0000\u0000\u0390\u0391\u0001\u0000\u0000\u0000\u0391\u0392\u0005\u000e"+
 		"\u0000\u0000\u0392\u0393\u0003\u00aaU\u0000\u0393\u0394\u0005\u000f\u0000"+

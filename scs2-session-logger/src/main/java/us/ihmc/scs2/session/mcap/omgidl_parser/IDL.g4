@@ -467,7 +467,7 @@ bit_values
    ;
 
 struct_type
-   : KW_STRUCT identifier (COLON scoped_name)? LEFT_BRACE member_list RIGHT_BRACE
+   : KW_STRUCT identifier (DOUBLE_COLON scoped_name)? LEFT_BRACE member_list RIGHT_BRACE
    ;
 
 member_list
