@@ -21,7 +21,7 @@ public class OMGIDLSchemaTest
    @Disabled
    public void testOMGIDLParser() throws Exception
    {
-      String schemaName = "simple-idl-with-structs.idl";
+      String schemaName = "simple-idl-one-struct.idl";
       CharStream bytesAsChar = CharStreams.fromStream(getClass().getResourceAsStream(schemaName));
       IDLLexer lexer = new IDLLexer(bytesAsChar);
       CommonTokenStream tokens = new CommonTokenStream(lexer);
