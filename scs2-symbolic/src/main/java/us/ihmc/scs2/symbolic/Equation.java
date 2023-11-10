@@ -1,8 +1,8 @@
-package us.ihmc.scs2.symbolic.parser;
+package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
-import us.ihmc.scs2.symbolic.parser.parser.EquationOperation;
-import us.ihmc.scs2.symbolic.parser.parser.EquationParser;
+import us.ihmc.scs2.symbolic.parser.EquationOperation;
+import us.ihmc.scs2.symbolic.parser.EquationParser;
 
 import java.util.List;
 

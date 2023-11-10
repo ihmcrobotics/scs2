@@ -1,9 +1,9 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.parser.EquationInput;
-import us.ihmc.scs2.symbolic.parser.parser.EquationOperationFactory.AssignmentOperationFactory;
-import us.ihmc.scs2.symbolic.parser.parser.EquationOperationFactory.BinaryOperationFactory;
-import us.ihmc.scs2.symbolic.parser.parser.EquationOperationFactory.UnaryOperationFactory;
+import us.ihmc.scs2.symbolic.EquationInput;
+import us.ihmc.scs2.symbolic.parser.EquationOperationFactory.AssignmentOperationFactory;
+import us.ihmc.scs2.symbolic.parser.EquationOperationFactory.BinaryOperationFactory;
+import us.ihmc.scs2.symbolic.parser.EquationOperationFactory.UnaryOperationFactory;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -1,10 +1,10 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.scs2.symbolic.parser.EquationInput;
-import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
-import us.ihmc.scs2.symbolic.parser.parser.EquationToken.Type;
+import us.ihmc.scs2.symbolic.EquationInput;
+import us.ihmc.scs2.symbolic.EquationInput.SimpleDoubleVariable;
+import us.ihmc.scs2.symbolic.EquationInput.SimpleIntegerVariable;
+import us.ihmc.scs2.symbolic.parser.EquationToken.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -444,9 +444,9 @@ public class EquationParser
             }
 
             if (type == NumberType.INTEGER)
-               tokens.add(EquationToken.newVariableToken(new IntegerVariable(Integer.parseInt(equation.substring(start, i + 1)))));
+               tokens.add(EquationToken.newVariableToken(new SimpleIntegerVariable(Integer.parseInt(equation.substring(start, i + 1)))));
             else
-               tokens.add(EquationToken.newVariableToken(new DoubleVariable(Double.parseDouble(equation.substring(start, i + 1)))));
+               tokens.add(EquationToken.newVariableToken(new SimpleDoubleVariable(Double.parseDouble(equation.substring(start, i + 1)))));
             continue;
          }
 

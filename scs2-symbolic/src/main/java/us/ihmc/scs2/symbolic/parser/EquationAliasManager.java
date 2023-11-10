@@ -1,10 +1,7 @@
-package us.ihmc.scs2.symbolic.parser.parser;
+package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.parser.EquationInput;
-import us.ihmc.scs2.symbolic.parser.EquationInput.DoubleVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerConstant;
-import us.ihmc.scs2.symbolic.parser.EquationInput.IntegerVariable;
-import us.ihmc.scs2.symbolic.parser.EquationInput.Type;
+import us.ihmc.scs2.symbolic.EquationInput;
+import us.ihmc.scs2.symbolic.EquationInput.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +9,7 @@ import java.util.Map;
 public class EquationAliasManager
 {
    private final Map<String, EquationAlias> aliases = new HashMap<>();
+   private final YoLibrary yoLibrary = new YoLibrary();
 
    public EquationAliasManager()
    {
@@ -34,35 +32,27 @@ public class EquationAliasManager
 
    public void addConstant(String name, double value)
    {
-      addAlias(name, new EquationInput.DoubleConstant(value));
+      addAlias(name, new SimpleDoubleConstant(value));
    }
 
    public void addConstant(String name, int value)
    {
-      addAlias(name, new IntegerConstant(value));
+      addAlias(name, new SimpleIntegerConstant(value));
    }
 
    public EquationInput addVariable(String name, Type type)
    {
-      switch (type)
-      {
-         case INTEGER:
-            return addVariable(name, 0);
-         case DOUBLE:
-            return addVariable(name, 0.0);
-         default:
-            throw new UnsupportedOperationException("Unexpected type: " + type);
-      }
+      return addAlias(name, EquationInput.newVariable(type));
    }
 
    public EquationInput addVariable(String name, double value)
    {
-      return addAlias(name, new DoubleVariable(value));
+      return addAlias(name, new SimpleDoubleVariable(value));
    }
 
    public EquationInput addVariable(String name, int value)
    {
-      return addAlias(name, new IntegerVariable(value));
+      return addAlias(name, new SimpleIntegerVariable(value));
    }
 
    public EquationInput addAlias(String name, EquationInput input)
@@ -72,6 +62,11 @@ public class EquationAliasManager
       EquationAlias alias = new EquationAlias(name, input);
       aliases.put(name, alias);
       return alias.input;
+   }
+
+   public EquationInput addYoVariable(String variableName, Type type)
+   {
+      return addAlias(variableName, EquationInput.newYoVariable(variableName, yoLibrary, type));
    }
 
    public record EquationAlias(String name, EquationInput input)

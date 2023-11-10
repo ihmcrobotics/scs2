@@ -16,6 +16,7 @@ import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.symbolic.YoEquationManager;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -143,6 +144,9 @@ public abstract class Session
     * SCS2.
     */
    protected final YoRegistry sessionRegistry = new YoRegistry(SESSION_INTERNAL_REGISTRY_NAME);
+
+   protected final YoEquationManager equationManager = new YoEquationManager(rootRegistry);
+
    /**
     * Variable holding the current time (in seconds) for this session. It represents notably:
     * <ul>
@@ -163,23 +167,23 @@ public abstract class Session
     */
    protected final YoRegistry runRegistry = new YoRegistry("runStatistics");
    /**
-    * Timer used to measured the time elapsed between 2 calls of {@link #runTick()}.
+    * Timer used to measure the time elapsed between 2 calls of {@link #runTick()}.
     */
    private final YoTimer runActualDT = new YoTimer("runActualDT", TimeUnit.MILLISECONDS, runRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #runTick()}.
+    * Timer used to measure the total time spent in each call of {@link #runTick()}.
     */
    private final YoTimer runTimer = new YoTimer("runTimer", TimeUnit.MILLISECONDS, runRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #initializeRunTick()}.
+    * Timer used to measure the total time spent in each call of {@link #initializeRunTick()}.
     */
    private final YoTimer runInitializeTimer = new YoTimer("runInitializeTimer", TimeUnit.MILLISECONDS, runRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #doSpecificRunTick()}.
+    * Timer used to measure the total time spent in each call of {@link #doSpecificRunTick()}.
     */
    private final YoTimer runSpecificTimer = new YoTimer("runSpecificTimer", TimeUnit.MILLISECONDS, runRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #finalizeRunTick(boolean)}.
+    * Timer used to measure the total time spent in each call of {@link #finalizeRunTick(boolean)}.
     */
    private final YoTimer runFinalizeTimer = new YoTimer("runFinalizeTimer", TimeUnit.MILLISECONDS, runRegistry);
    /**
@@ -197,11 +201,11 @@ public abstract class Session
     */
    protected final YoRegistry playbackRegistry = new YoRegistry("playbackStatistics");
    /**
-    * Timer used to measured the time elapsed between 2 calls of {@link #playbackTick()}.
+    * Timer used to measure the time elapsed between 2 calls of {@link #playbackTick()}.
     */
    private final YoTimer playbackActualDT = new YoTimer("playbackActualDT", TimeUnit.MILLISECONDS, playbackRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #playbackTick()}.
+    * Timer used to measure the total time spent in each call of {@link #playbackTick()}.
     */
    private final YoTimer playbackTimer = new YoTimer("playbackTimer", TimeUnit.MILLISECONDS, playbackRegistry);
 
@@ -210,11 +214,11 @@ public abstract class Session
     */
    protected final YoRegistry pauseRegistry = new YoRegistry("pauseStatistics");
    /**
-    * Timer used to measured the time elapsed between 2 calls of {@link #pauseTick()}.
+    * Timer used to measure the time elapsed between 2 calls of {@link #pauseTick()}.
     */
    private final YoTimer pauseActualDT = new YoTimer("pauseActualDT", TimeUnit.MILLISECONDS, pauseRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #pauseTick()}.
+    * Timer used to measure the total time spent in each call of {@link #pauseTick()}.
     */
    private final YoTimer pauseTimer = new YoTimer("pauseTimer", TimeUnit.MILLISECONDS, pauseRegistry);
 
@@ -712,7 +716,7 @@ public abstract class Session
     * </p>
     *
     * @param bufferSize the initial size of the buffer. Default value
-    *                   {@value #DEFAULT_INITIAL_BUFFER_SIZE}.
+    *                   {@link #DEFAULT_INITIAL_BUFFER_SIZE}.
     * @return {@code true} if the request is going through, {@code false} if it is being ignored.
     */
    public boolean initializeBufferSize(int bufferSize)
@@ -733,8 +737,8 @@ public abstract class Session
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
     *
-    * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
-    *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
+    * @param bufferRecordTickPeriod the period in ticks that data should be stored in the
+    *                               buffer. Default value {@link #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     * @return {@code true} if the request is going through, {@code false} if it is being ignored.
     */
    public boolean initializeBufferRecordTickPeriod(int bufferRecordTickPeriod)
@@ -754,7 +758,7 @@ public abstract class Session
     *
     * @param runAtRealTimeRate {@code true} to cap the running mode at real-time rate, {@code false} to
     *                          let the running mode run as fast as possible. Default value
-    *                          {@value #DEFAULT_RUN_AT_REALTIME_RATE}.
+    *                          {@link #DEFAULT_RUN_AT_REALTIME_RATE}.
     */
    public void submitRunAtRealTimeRate(boolean runAtRealTimeRate)
    {
@@ -773,7 +777,7 @@ public abstract class Session
     * </p>
     *
     * @param realTimeRate the real-time factor for playing back data in the buffer. Default value
-    *                     {@value #DEFAULT_PLAYBACK_REALTIME_RATE}.
+    *                     {@link #DEFAULT_PLAYBACK_REALTIME_RATE}.
     */
    public void submitPlaybackRealTimeRate(double realTimeRate)
    {
@@ -792,7 +796,7 @@ public abstract class Session
     * </p>
     *
     * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
-    *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
+    *                               buffer. Default value {@link #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     */
    public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
@@ -812,7 +816,7 @@ public abstract class Session
     *
     * @param publishPeriod period in nanoseconds at which the buffer data is publish while in
     *                      {@link SessionMode#RUNNING} mode. Default value
-    *                      {@value #DEFAULT_BUFFER_PUBLISH_PERIOD}.
+    *                      {@link #DEFAULT_BUFFER_PUBLISH_PERIOD}.
     */
    public void setDesiredBufferPublishPeriod(long publishPeriod)
    {
@@ -869,7 +873,7 @@ public abstract class Session
     * otherwise.
     * </p>
     *
-    * @param bufferSizeRequest
+    * @param bufferSizeRequest the new size of the buffer.
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
    public void submitBufferSizeRequest(Integer bufferSizeRequest)
@@ -1060,7 +1064,7 @@ public abstract class Session
     * otherwise.
     * </p>
     *
-    * @param bufferSizeRequest
+    * @param bufferSizeRequest the new size of the buffer.
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
    public void submitBufferSizeRequestAndWait(Integer bufferSizeRequest)
@@ -1449,17 +1453,12 @@ public abstract class Session
     */
    private long computeThreadPeriod(SessionMode mode)
    {
-      switch (mode)
+      return switch (mode)
       {
-         case RUNNING:
-            return computeRunTaskPeriod();
-         case PAUSE:
-            return computePauseTaskPeriod();
-         case PLAYBACK:
-            return computePlaybackTaskPeriod();
-         default:
-            throw new UnsupportedOperationException("Unhandled session mode: " + mode);
-      }
+         case RUNNING -> computeRunTaskPeriod();
+         case PAUSE -> computePauseTaskPeriod();
+         case PLAYBACK -> computePlaybackTaskPeriod();
+      };
    }
 
    /**
