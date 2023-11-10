@@ -2,7 +2,7 @@ package us.ihmc.scs2.symbolic.parser.parser;
 
 import java.util.Arrays;
 
-enum EquationSymbol
+public enum EquationSymbol
 {
    PLUS('+'),
    MINUS('-'),
@@ -88,8 +88,8 @@ enum EquationSymbol
          case PERIOD -> false;
          case ASSIGN -> Arrays.asList(PLUS, MINUS, PAREN_LEFT).contains(secondSymbol);
          case PAREN_LEFT -> Arrays.asList(PLUS, MINUS, PAREN_LEFT).contains(secondSymbol);
-         case PAREN_RIGHT -> Arrays.asList(PLUS, MINUS, TIMES, DIVIDE, POWER, PAREN_RIGHT, GREATER_THAN, LESS_THAN, GREATER_THAN_EQ, LESS_THAN_EQ)
-                                   .contains(secondSymbol);
+         case PAREN_RIGHT ->
+               Arrays.asList(PLUS, MINUS, TIMES, DIVIDE, POWER, PAREN_RIGHT, GREATER_THAN, LESS_THAN, GREATER_THAN_EQ, LESS_THAN_EQ).contains(secondSymbol);
          case BRACKET_LEFT -> false;
          case BRACKET_RIGHT -> false;
          case GREATER_THAN -> Arrays.asList(PLUS, MINUS, PAREN_LEFT).contains(secondSymbol);
