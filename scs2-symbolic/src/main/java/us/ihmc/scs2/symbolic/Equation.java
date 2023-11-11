@@ -2,7 +2,6 @@ package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.symbolic.parser.EquationOperation;
-import us.ihmc.scs2.symbolic.parser.EquationParser;
 
 import java.util.List;
 
@@ -18,28 +17,12 @@ public class Equation
    /**
     * List of operations representing this equation.
     */
-   private final List<EquationOperation<?>> operations;
+   private final List<? extends EquationOperation<?>> operations;
 
    /**
     * The result of this equation.
     */
    private EquationInput result;
-
-   public static Equation fromDefinition(YoEquationDefinition definition, EquationParser parser)
-   {
-      return new Equation(definition.getName(), definition.getDescription(), definition.getEquation(), parser.parse(definition.getEquation()));
-   }
-
-   /**
-    * Creates a new {@code YoEquation} from the given equation string.
-    *
-    * @param equationString the equation string to parse.
-    * @return the parsed equation.
-    */
-   public static Equation parse(String equationString, EquationParser parser)
-   {
-      return new Equation(null, null, equationString, parser.parse(equationString));
-   }
 
    /**
     * Creates a new {@code YoEquation} from the given equation string.
@@ -49,7 +32,7 @@ public class Equation
     * @param equationString the equation string to parse.
     * @param operations     the list, in order, of operations representing this equation.
     */
-   private Equation(String name, String description, String equationString, List<EquationOperation<?>> operations)
+   Equation(String name, String description, String equationString, List<? extends EquationOperation<?>> operations)
    {
       this.name = name;
       this.description = description;

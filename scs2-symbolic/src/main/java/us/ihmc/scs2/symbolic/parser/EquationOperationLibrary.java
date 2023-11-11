@@ -1,13 +1,10 @@
 package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.scs2.symbolic.EquationInput;
 import us.ihmc.scs2.symbolic.parser.EquationOperationFactory.AssignmentOperationFactory;
 import us.ihmc.scs2.symbolic.parser.EquationOperationFactory.BinaryOperationFactory;
 import us.ihmc.scs2.symbolic.parser.EquationOperationFactory.UnaryOperationFactory;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class EquationOperationLibrary
@@ -28,50 +25,20 @@ public class EquationOperationLibrary
       return functionFactoryMap.containsKey(s);
    }
 
-   /**
-    * Create a new instance of single input functions
-    *
-    * @param name  function name
-    * @param input Input variable
-    * @return Resulting operation
-    */
-   public EquationOperation<?> create(String name, EquationInput input)
+   public EquationOperationFactory get(String name)
    {
-      EquationOperationFactory equationOperationFactory = functionFactoryMap.get(name);
-      if (equationOperationFactory == null)
+      EquationOperationFactory factory = functionFactoryMap.get(name);
+      if (factory == null)
          return null;
-      return equationOperationFactory.create(Collections.singletonList(input));
+      return factory.duplicate();
    }
 
-   /**
-    * Create a new instance of single input functions
-    *
-    * @param name function name
-    * @param vars Input variables
-    * @return Resulting operation
-    */
-   public EquationOperation<?> create(String name, List<EquationInput> vars)
+   public EquationOperationFactory get(EquationSymbol op)
    {
-      EquationOperationFactory equationOperationFactory = functionFactoryMap.get(name);
-      if (equationOperationFactory == null)
+      EquationOperationFactory factory = operatorFactoryMap.get(op);
+      if (factory == null)
          return null;
-      return equationOperationFactory.create(vars);
-   }
-
-   /**
-    * Create a new instance of a two input function from an operator character
-    *
-    * @param op    Which operation
-    * @param left  Input variable on left
-    * @param right Input variable on right
-    * @return Resulting operation
-    */
-   public EquationOperation<?> create(EquationSymbol op, EquationInput left, EquationInput right)
-   {
-      EquationOperationFactory operatorFactory = operatorFactoryMap.get(op);
-      if (operatorFactory == null)
-         return null;
-      return operatorFactory.create(List.of(left, right));
+      return factory.duplicate();
    }
 
    /**
