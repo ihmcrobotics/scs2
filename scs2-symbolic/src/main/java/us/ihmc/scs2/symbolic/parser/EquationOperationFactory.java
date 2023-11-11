@@ -5,6 +5,7 @@ import us.ihmc.scs2.symbolic.EquationInput.*;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.*;
 
 /**
@@ -14,9 +15,32 @@ public abstract class EquationOperationFactory
 {
    protected final String operationName;
 
+   private Supplier<List<EquationInput>> inputsSupplier;
+   private EquationOperation<?> operation;
+
    public EquationOperationFactory(String operationName)
    {
       this.operationName = operationName;
+   }
+
+   public void setInputs(Supplier<List<EquationInput>> inputsSupplier)
+   {
+      this.inputsSupplier = inputsSupplier;
+   }
+
+   public abstract EquationOperationFactory duplicate();
+
+   public EquationOperation<?> build()
+   {
+      operation = buildImpl(Objects.requireNonNull(inputsSupplier.get(), "Inputs supplier returned null"));
+      return operation;
+   }
+
+   public EquationOperation<?> getOperation()
+   {
+      if (operation == null)
+         throw new IllegalStateException("Operation has not been built yet.");
+      return operation;
    }
 
    /**
@@ -25,7 +49,7 @@ public abstract class EquationOperationFactory
     * @param inputs the inputs to the function
     * @return the resulting operation
     */
-   public abstract EquationOperation<?> create(List<EquationInput> inputs);
+   protected abstract EquationOperation<?> buildImpl(List<EquationInput> inputs);
 
    static void checkNumberOfInputs(List<EquationInput> inputs, int expected)
    {
@@ -46,7 +70,13 @@ public abstract class EquationOperationFactory
       }
 
       @Override
-      public EquationOperation<?> create(List<EquationInput> inputs)
+      public EquationOperationFactory duplicate()
+      {
+         return new UnaryOperationFactory(operationName, integerOperator, doubleOperator);
+      }
+
+      @Override
+      protected EquationOperation<?> buildImpl(List<EquationInput> inputs)
       {
          EquationOperationFactory.checkNumberOfInputs(inputs, 1);
          return create(inputs.get(0));
@@ -92,7 +122,13 @@ public abstract class EquationOperationFactory
       }
 
       @Override
-      public EquationOperation<?> create(List<EquationInput> inputs)
+      public EquationOperationFactory duplicate()
+      {
+         return new BinaryOperationFactory(operationName, integerOperator, doubleOperator);
+      }
+
+      @Override
+      protected EquationOperation<?> buildImpl(List<EquationInput> inputs)
       {
          EquationOperationFactory.checkNumberOfInputs(inputs, 2);
          return create(inputs.get(0), inputs.get(1));
@@ -134,7 +170,13 @@ public abstract class EquationOperationFactory
       }
 
       @Override
-      public EquationOperation<?> create(List<EquationInput> inputs)
+      public EquationOperationFactory duplicate()
+      {
+         return new AssignmentOperationFactory();
+      }
+
+      @Override
+      protected EquationOperation<?> buildImpl(List<EquationInput> inputs)
       {
          EquationOperationFactory.checkNumberOfInputs(inputs, 2);
          return create(inputs.get(0), inputs.get(1));
