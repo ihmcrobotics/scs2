@@ -34,62 +34,62 @@ public class EquationParserTest
       equationBuilder.getAliasManager().addConstant("a", 0.2);
       equationBuilder.getAliasManager().addConstant("b", 10.0);
       equationBuilder.getAliasManager().addVariable("x", Type.DOUBLE);
-      Equation compile = equationBuilder.build();
-      compile.compute();
-      assertEquals(10.4, ((DoubleVariable) compile.getResult()).getAsDouble());
+      Equation equation = new Equation(null, null, equationBuilder);
+      equation.compute();
+      assertEquals(10.4, ((DoubleVariable) equation.getResult()).getAsDouble());
 
       parser.getAliasManager().addConstant("a", 0.2);
       parser.getAliasManager().addConstant("b", 10.0);
       parser.getAliasManager().addVariable("x", Type.DOUBLE);
 
-      compile = parser.parse("x = -2.0*a+b").build();
-      compile.compute();
-      assertEquals(9.6, ((DoubleVariable) compile.getResult()).getAsDouble());
+      equation = Equation.parse("x = -2.0*a+b", parser);
+      equation.compute();
+      assertEquals(9.6, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      compile = parser.parse("x = 2.0e-04*a+b").build();
-      compile.compute();
-      assertEquals(10.00004, ((DoubleVariable) compile.getResult()).getAsDouble());
+      equation = Equation.parse("x = 2.0e-04*a+b");
+      equation.compute();
+      assertEquals(10.00004, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      compile = parser.parse("x = 1-2.0e-04*a+b").build();
-      compile.compute();
-      assertEquals(10.99996, ((DoubleVariable) compile.getResult()).getAsDouble());
+      equation = Equation.parse("x = 1-2.0e-04*a+b", parser);
+      equation.compute();
+      assertEquals(10.99996, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      compile = parser.parse("x = 1-2.0e-04*a+b/2").build();
-      compile.compute();
-      assertEquals(5.99996, ((DoubleVariable) compile.getResult()).getAsDouble());
+      equation = Equation.parse("x = 1-2.0e-04*a+b/2", parser);
+      equation.compute();
+      assertEquals(5.99996, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      compile = parser.parse("x = 0.5 * (2.0 *a + 2*b)").build();
-      compile.compute();
-      assertEquals(10.2, ((DoubleVariable) compile.getResult()).getAsDouble());
+      equation = Equation.parse("x = 0.5 * (2.0 *a + 2*b)", parser);
+      equation.compute();
+      assertEquals(10.2, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      compile = parser.parse("x = atan2(a, b)").build();
-      compile.compute();
-      assertEquals(0.019997333973150535, ((DoubleVariable) compile.getResult()).getAsDouble());
+      equation = Equation.parse("x = atan2(a, b)", parser);
+      equation.compute();
+      assertEquals(0.019997333973150535, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      assertThrows(EquationParseError.class, () -> parser.parse("x = 0.5 ** (2.0 *a + 2*b)").build());
-      assertThrows(EquationParseError.class, () -> parser.parse("x = 0.5 // (2.0 *a + 2*b)").build());
-      assertThrows(EquationParseError.class, () -> parser.parse("x = 0.5.0 * (2.0 *a + 2*b)").build());
-      assertThrows(EquationParseError.class, () -> parser.parse("x = 0.5 * (2.0 *a + 2*b").build());
+      assertThrows(EquationParseError.class, () -> Equation.parse("x = 0.5 ** (2.0 *a + 2*b)"));
+      assertThrows(EquationParseError.class, () -> Equation.parse("x = 0.5 // (2.0 *a + 2*b)"));
+      assertThrows(EquationParseError.class, () -> Equation.parse("x = 0.5.0 * (2.0 *a + 2*b)"));
+      assertThrows(EquationParseError.class, () -> Equation.parse("x = 0.5 * (2.0 *a + 2*b"));
 
       EquationParser parser2 = new EquationParser();
       parser2.getAliasManager().addConstant("a", 0.2);
       parser2.getAliasManager().addConstant("b", 10.0);
       parser2.getAliasManager().addVariable("x", Type.INTEGER);
-      compile = parser2.parse("x = 1 - 2 * 2 + 4").build();
-      compile.compute();
-      assertEquals(1, ((IntegerVariable) compile.getResult()).getAsInt());
+      equation = Equation.parse("x = 1 - 2 * 2 + 4", parser2);
+      equation.compute();
+      assertEquals(1, ((IntegerVariable) equation.getResult()).getAsInt());
 
-      compile = parser2.parse("x = 4 / 4 * 4").build();
-      compile.compute();
-      assertEquals(4, ((IntegerVariable) compile.getResult()).getAsInt());
+      equation = Equation.parse("x = 4 / 4 * 4", parser2);
+      equation.compute();
+      assertEquals(4, ((IntegerVariable) equation.getResult()).getAsInt());
 
-      compile = parser2.parse("x = 4 / 4 * 4 / 4").build();
-      compile.compute();
-      assertEquals(1, ((IntegerVariable) compile.getResult()).getAsInt());
+      equation = Equation.parse("x = 4 / 4 * 4 / 4", parser2);
+      equation.compute();
+      assertEquals(1, ((IntegerVariable) equation.getResult()).getAsInt());
 
-      compile = parser2.parse("x = 4 * 4 / 4 - 2 + 3 - 3 + 2").build();
-      compile.compute();
-      assertEquals(4, ((IntegerVariable) compile.getResult()).getAsInt());
+      equation = Equation.parse("x = 4 * 4 / 4 - 2 + 3 - 3 + 2", parser2);
+      equation.compute();
+      assertEquals(4, ((IntegerVariable) equation.getResult()).getAsInt());
    }
 
    public static void main(String[] args)

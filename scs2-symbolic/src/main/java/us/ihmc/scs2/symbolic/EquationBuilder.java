@@ -11,9 +11,7 @@ import java.util.List;
 
 public class EquationBuilder
 {
-   public String name;
-   public String description;
-   public String equationString;
+   private final String equationString;
 
    private final EquationAliasManager aliasManager;
    private final List<EquationOperationFactory> operationFactories = new ArrayList<>();
@@ -22,16 +20,6 @@ public class EquationBuilder
    {
       this.equationString = equationString;
       this.aliasManager = aliasManager;
-   }
-
-   public void setName(String name)
-   {
-      this.name = name;
-   }
-
-   public void setDescription(String description)
-   {
-      this.description = description;
    }
 
    public void addOperationFactory(EquationOperationFactory operationFactory, EquationToken... tokens)
@@ -57,12 +45,21 @@ public class EquationBuilder
       return duplicate;
    }
 
-   public Equation build()
+   public boolean isReady()
+   {
+      return aliasManager.getMissingInputs().isEmpty();
+   }
+
+   public List<? extends EquationOperation<?>> build()
    {
       if (aliasManager.getMissingInputs().size() > 0)
          throw new EquationBuilderException("Missing inputs: " + aliasManager.getMissingInputs());
-      List<? extends EquationOperation<?>> operations = operationFactories.stream().map(EquationOperationFactory::build).toList();
-      return new Equation(name, description, equationString, operations);
+      return operationFactories.stream().map(EquationOperationFactory::build).toList();
+   }
+
+   public String getEquationString()
+   {
+      return equationString;
    }
 
    public static class EquationBuilderException extends RuntimeException
