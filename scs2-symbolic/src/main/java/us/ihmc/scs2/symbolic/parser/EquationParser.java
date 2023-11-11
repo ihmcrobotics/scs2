@@ -1,6 +1,7 @@
 package us.ihmc.scs2.symbolic.parser;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.scs2.symbolic.EquationBuilder;
 import us.ihmc.scs2.symbolic.EquationInput;
 import us.ihmc.scs2.symbolic.EquationInput.SimpleDoubleVariable;
 import us.ihmc.scs2.symbolic.EquationInput.SimpleIntegerVariable;
@@ -8,12 +9,10 @@ import us.ihmc.scs2.symbolic.parser.EquationToken.Type;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class EquationParser
 {
    private final EquationAliasManager aliasManager = new EquationAliasManager();
-
    private final EquationOperationLibrary operationLibrary = new EquationOperationLibrary();
 
    public EquationParser()
@@ -38,7 +37,7 @@ public class EquationParser
     * @param stringEquation the equation to parse.
     * @return the parsed equation.
     */
-   public List<EquationOperation<?>> parse(String stringEquation)
+   public EquationBuilder parse(String stringEquation)
    {
       return parse(stringEquation, true);
    }
@@ -50,7 +49,7 @@ public class EquationParser
     * @param assignment     if true, then the equation is assumed to be an assignment to an output variable.
     * @return the parsed equation.
     */
-   public List<EquationOperation<?>> parse(String stringEquation, boolean assignment)
+   public EquationBuilder parse(String stringEquation, boolean assignment)
    {
       List<EquationToken> tokens = tokenizeEquation(stringEquation);
 
@@ -60,20 +59,21 @@ public class EquationParser
       EquationToken t0 = tokens.get(0);
 
       insertFunctionsAndVariables(tokens);
+      EquationBuilder equationBuilder = new EquationBuilder(stringEquation, aliasManager.duplicate());
 
       if (t0.getType() != Type.VARIABLE && t0.getType() != Type.WORD)
       {
-         List<EquationOperation<?>> operations = compileTokens(tokens);
+         compileTokens(tokens, equationBuilder);
          // If there's no output, then this is acceptable; otherwise, it's assumed to be a bug.
          EquationInput variable = tokens.get(0).getVariable();
          if (variable != null && assignment)
             throw new IllegalArgumentException("No assignment to an output variable could be found. Found " + t0);
-         return operations;
       }
       else
       {
-         return parseAssignment(tokens);
+         parseAssignment(tokens, equationBuilder);
       }
+      return equationBuilder;
    }
 
    /**
@@ -84,10 +84,11 @@ public class EquationParser
     * assignment operator.
     * </p>
     *
-    * @param tokens the tokens representing the whole equation.
+    * @param tokens                the tokens representing the whole equation.
+    * @param equationBuilderToPack
     * @return the parsed equation.
     */
-   private List<EquationOperation<?>> parseAssignment(List<EquationToken> tokens)
+   private void parseAssignment(List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
    {
       EquationToken t0 = tokens.get(0);
       EquationToken t1 = tokens.get(1);
@@ -97,20 +98,14 @@ public class EquationParser
 
       // Parse the right side of the equation
       List<EquationToken> tokensRight = tokens.subList(2, tokens.size());
-      List<EquationOperation<?>> operations = compileTokens(tokensRight);
+      compileTokens(tokensRight, equationBuilderToPack);
 
-      if (tokensRight.get(tokensRight.size() - 1).getType() != Type.VARIABLE)
-         throw new EquationParseError("Something went wrong with parsing the block, the last token should be a variable");
+      EquationToken lastToken = tokensRight.get(tokensRight.size() - 1);
+      if (lastToken.getType() != Type.OPERATION)
+         throw new EquationParseError("Something went wrong with parsing the block, the last token should be an operation");
 
-      // copy the results into the output
-      EquationInput variableRight = tokensRight.get(0).getVariable();
-      EquationInput variableLeft;
-      if (t0.getType() == Type.WORD) // The type is not known, so infer it from the right side
-         variableLeft = EquationInput.newVariable(variableRight.getType());
-      else
-         variableLeft = t0.getVariable();
-      operations.add(operationLibrary.create(EquationSymbol.ASSIGN, variableLeft, variableRight));
-      return operations;
+      EquationOperationFactory factory = operationLibrary.get(EquationSymbol.ASSIGN);
+      equationBuilderToPack.addOperationFactory(factory, t0, tokensRight.get(0));
    }
 
    /**
@@ -119,24 +114,16 @@ public class EquationParser
     * @param tokens the tokens representing the whole equation.
     * @return the list of operations to execute to compute the result of the equation.
     */
-   private List<EquationOperation<?>> compileTokens(List<EquationToken> tokens)
+   private void compileTokens(List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
    {
-      for (EquationToken t : tokens)
-      {
-         if (t.getType() == Type.WORD)
-            throw new EquationParseError("Unknown variable on right side. " + t.getWord());
-      }
-
-      List<EquationOperation<?>> operations = new ArrayList<>();
-      handleParentheses(tokens, operations);
+      handleParentheses(tokens, equationBuilderToPack);
 
       if (tokens.size() > 1)
-         parseBlockNoParentheses(tokens, operations);
+         parseBlockNoParentheses(tokens, equationBuilderToPack);
 
       // see if it needs to be parsed more
       if (tokens.size() != 1)
          throw new RuntimeException("BUG");
-      return operations;
    }
 
    /**
@@ -144,9 +131,9 @@ public class EquationParser
     * This handles nested parentheses.
     *
     * @param unprocessedTokenStack the list of tokens to process
-    * @param operationsToPack      the list of operations to add the new operations to.
+    * @param equationBuilderToPack the list of operations to add the new operations to.
     */
-   protected void handleParentheses(List<EquationToken> unprocessedTokenStack, List<EquationOperation<?>> operationsToPack)
+   protected void handleParentheses(List<EquationToken> unprocessedTokenStack, EquationBuilder equationBuilderToPack)
    {
       // have a list to handle embedded parentheses, e.g. (((((a)))))
       List<Integer> leftIndices = new ArrayList<>();
@@ -173,7 +160,7 @@ public class EquationParser
 
          int leftIndex = leftIndices.remove(leftIndices.size() - 1);
 
-         // remember the element before so the new one can be inserted afterwards
+         // remember the element before so the new one can be inserted afterward.
          EquationToken beforeLeft = unprocessedTokenStack.get(leftIndex - 1);
 
          // Sublist with parentheses
@@ -186,15 +173,15 @@ public class EquationParser
          // if it is a function before "()" then the "()" indicates it is an input to a function
          if (beforeLeft != null && beforeLeft.getType() == Type.FUNCTION)
          {
-            List<EquationToken> inputs = parseParameterCommaBlock(sublist, operationsToPack);
+            List<EquationToken> inputs = parseParameterCommaBlock(sublist, equationBuilderToPack);
             if (inputs.isEmpty())
                throw new EquationParseError("Empty function input parameters");
-            parseFunction(beforeLeft, inputs, unprocessedTokenStack, operationsToPack);
+            parseFunction(beforeLeft, inputs, unprocessedTokenStack, equationBuilderToPack);
          }
          else
          {
             // if null then it was empty inside
-            EquationToken output = parseBlockNoParentheses(sublist, operationsToPack);
+            EquationToken output = parseBlockNoParentheses(sublist, equationBuilderToPack);
             if (sublist.size() != 1 && sublist.get(0) != output)
                throw new EquationParseError("Something went wrong with parsing the block");
          }
@@ -211,7 +198,7 @@ public class EquationParser
     *
     * @return List of output tokens between the commas
     */
-   protected List<EquationToken> parseParameterCommaBlock(List<EquationToken> tokens, List<EquationOperation<?>> operationsToPack)
+   protected List<EquationToken> parseParameterCommaBlock(List<EquationToken> tokens, EquationBuilder operationFactoriesToPack)
    {
       // Find the start/end indices for each argument
       List<Integer> limitIndices = new ArrayList<>();
@@ -234,7 +221,7 @@ public class EquationParser
          if (start == end)
             throw new EquationParseError("No empty function inputs allowed!");
 
-         output.add(parseBlockNoParentheses(tokens.subList(start, end), operationsToPack));
+         output.add(parseBlockNoParentheses(tokens.subList(start, end), operationFactoriesToPack));
       }
 
       // Clear the tokens to mark them as processed
@@ -246,7 +233,7 @@ public class EquationParser
     * Parses a code block with no parentheses and no commas. After it is done there should be a single
     * token left, which is returned.
     */
-   protected EquationToken parseBlockNoParentheses(List<EquationToken> tokens, List<EquationOperation<?>> operationsToPack)
+   private EquationToken parseBlockNoParentheses(List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
    {
       if (tokens.isEmpty())
          throw new EquationParseError("Empty block");
@@ -268,17 +255,11 @@ public class EquationParser
             EquationToken prev = tokenIndex > 0 ? tokens.get(tokenIndex - 1) : null;
             EquationToken next = tokenIndex + 1 < tokens.size() ? tokens.get(tokenIndex + 1) : null;
 
-            if (prev == null || prev.getType() != Type.VARIABLE || next == null || next.getType() != Type.VARIABLE)
-               throw new EquationParseError("Unexpected setup: prev (%s), curr (%s), next (%s).".formatted(Objects.toString(prev),
-                                                                                                           Objects.toString(curr),
-                                                                                                           Objects.toString(next)));
-
-            EquationOperation<?> operation = operationLibrary.create(curr.symbol, prev.getVariable(), next.getVariable());
-
-            operationsToPack.add(operation);
+            EquationOperationFactory factory = operationLibrary.get(curr.symbol);
+            equationBuilderToPack.addOperationFactory(factory, prev, next);
 
             // replace the symbols with their output
-            EquationToken outputToken = EquationToken.newVariableToken(operation.getResult());
+            EquationToken outputToken = EquationToken.newOperationToken(factory);
             tokens.remove(tokenIndex + 1);
             tokens.set(tokenIndex, outputToken);
             tokens.remove(tokenIndex - 1);
@@ -299,35 +280,23 @@ public class EquationParser
     * Adds a new operation to the list from the operation and two variables. The inputs are removed
     * from the token list and replaced by their output.
     *
-    * @param functionToken    token with the function name
-    * @param inputTokens      list of tokens to use for creating the function inputs
-    * @param tokens           list of tokens to replace the given name token with the actual function
-    *                         output.
-    * @param operationsToPack list of operations to add the new operation to
+    * @param functionToken            token with the function name
+    * @param inputTokens              list of tokens to use for creating the function inputs
+    * @param tokens                   list of tokens to replace the given name token with the actual function
+    *                                 output.
+    * @param operationFactoriesToPack list of operations to add the new operation to
     * @return the token which replaces the function name
     */
    protected EquationToken parseFunction(EquationToken functionToken,
                                          List<EquationToken> inputTokens,
                                          List<EquationToken> tokens,
-                                         List<EquationOperation<?>> operationsToPack)
+                                         EquationBuilder operationFactoriesToPack)
    {
-      EquationOperation<?> operation;
-      if (inputTokens.size() == 1)
-         operation = operationLibrary.create(functionToken.getFunctionName(), inputTokens.get(0).getVariable());
-      else
-      {
-         List<EquationInput> functionInputVariables = new ArrayList<>();
-         for (int i = 0; i < inputTokens.size(); i++)
-         {
-            functionInputVariables.add(inputTokens.get(i).getVariable());
-         }
-         operation = operationLibrary.create(functionToken.getFunctionName(), functionInputVariables);
-      }
-
-      operationsToPack.add(operation);
+      EquationOperationFactory operationFactory = operationLibrary.get(functionToken.getFunctionName());
+      operationFactoriesToPack.addOperationFactory(operationFactory, inputTokens);
 
       // replace the symbols with the function's output
-      EquationToken t = EquationToken.newVariableToken(operation.getResult());
+      EquationToken t = EquationToken.newOperationToken(operationFactory);
       tokens.set(tokens.indexOf(functionToken), t);
       return t;
    }
@@ -486,10 +455,7 @@ public class EquationParser
 
          if (token.getType() == Type.WORD)
          {
-            EquationInput v = aliasManager.getAlias(token.word);
-            if (v != null)
-               tokens.set(i, EquationToken.newVariableToken(v));
-            else if (operationLibrary.isFunctionName(token.word))
+            if (operationLibrary.isFunctionName(token.word))
                tokens.set(i, EquationToken.newFunctionToken(token.word));
          }
       }
