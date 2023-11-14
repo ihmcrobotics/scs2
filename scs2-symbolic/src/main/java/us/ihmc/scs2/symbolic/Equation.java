@@ -97,6 +97,12 @@ public class Equation
             operations.get(i).calculate();
          }
       }
+      else
+      {
+         throw new RuntimeException(
+               "Failed to build the equation: " + builder.getEquationString() + ", missing inputs: " + builder.getAliasManager().getMissingInputs());
+      }
+
       return result;
    }
 
