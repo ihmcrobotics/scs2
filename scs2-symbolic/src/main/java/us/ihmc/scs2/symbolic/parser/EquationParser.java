@@ -5,6 +5,7 @@ import us.ihmc.scs2.symbolic.EquationBuilder;
 import us.ihmc.scs2.symbolic.EquationInput;
 import us.ihmc.scs2.symbolic.EquationInput.SimpleDoubleVariable;
 import us.ihmc.scs2.symbolic.EquationInput.SimpleIntegerVariable;
+import us.ihmc.scs2.symbolic.parser.EquationParseError.ProblemType;
 import us.ihmc.scs2.symbolic.parser.EquationToken.Type;
 
 import java.util.ArrayList;
@@ -34,36 +35,36 @@ public class EquationParser
    /**
     * Parses the string representing an equation and compiles it into a {@code YoEquation} which can be executed later on.
     *
-    * @param stringEquation the equation to parse.
+    * @param equationString the equation to parse.
     * @return the parsed equation.
     */
-   public EquationBuilder parse(String stringEquation)
+   public EquationBuilder parse(String equationString)
    {
-      return parse(stringEquation, true);
+      return parse(equationString, true);
    }
 
    /**
     * Parses the string representing an equation and compiles it into a {@code YoEquation} which can be executed later on.
     *
-    * @param stringEquation the equation to parse.
+    * @param equationString the equation to parse.
     * @param assignment     if true, then the equation is assumed to be an assignment to an output variable.
     * @return the parsed equation.
     */
-   public EquationBuilder parse(String stringEquation, boolean assignment)
+   public EquationBuilder parse(String equationString, boolean assignment)
    {
-      List<EquationToken> tokens = tokenizeEquation(stringEquation);
+      List<EquationToken> tokens = tokenizeEquation(equationString);
 
       if (tokens.size() < 3)
-         throw new EquationParseError("Too few tokens");
+         throw new EquationParseError("Too few tokens", ProblemType.TOO_FEW_TOKENS, equationString);
 
       EquationToken t0 = tokens.get(0);
 
       insertFunctionsAndVariables(tokens);
-      EquationBuilder equationBuilder = new EquationBuilder(stringEquation, aliasManager.duplicate());
+      EquationBuilder equationBuilder = new EquationBuilder(equationString, aliasManager.duplicate());
 
       if (t0.getType() != Type.VARIABLE && t0.getType() != Type.WORD)
       {
-         compileTokens(tokens, equationBuilder);
+         compileTokens(equationString, tokens, equationBuilder);
          // If there's no output, then this is acceptable; otherwise, it's assumed to be a bug.
          EquationInput variable = tokens.get(0).getVariable();
          if (variable != null && assignment)
@@ -71,7 +72,7 @@ public class EquationParser
       }
       else
       {
-         parseAssignment(tokens, equationBuilder);
+         parseAssignment(equationString, tokens, equationBuilder);
       }
       return equationBuilder;
    }
@@ -84,42 +85,75 @@ public class EquationParser
     * assignment operator.
     * </p>
     *
+    * @param equationString        the initial equation string.
     * @param tokens                the tokens representing the whole equation.
-    * @param equationBuilderToPack
-    * @return the parsed equation.
+    * @param equationBuilderToPack the operation factories are added to this equation builder.
     */
-   private void parseAssignment(List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
+   private void parseAssignment(String equationString, List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
    {
       EquationToken t0 = tokens.get(0);
       EquationToken t1 = tokens.get(1);
 
       if (t1.getType() != Type.SYMBOL || t1.getSymbol() != EquationSymbol.ASSIGN)
-         throw new EquationParseError("Expected assignment operator next");
+         throw new EquationParseError("Expected assignment operator next", ProblemType.UNEXPECTED_TOKEN_TYPE, equationString, t1);
 
       // Parse the right side of the equation
       List<EquationToken> tokensRight = tokens.subList(2, tokens.size());
-      compileTokens(tokensRight, equationBuilderToPack);
 
-      EquationToken lastToken = tokensRight.get(tokensRight.size() - 1);
-      if (lastToken.getType() != Type.OPERATION)
-         throw new EquationParseError("Something went wrong with parsing the block, the last token should be an operation");
+      EquationToken tokenRight;
+      if (tokensRight.size() > 1)
+      {
+         compileTokens(equationString, tokensRight, equationBuilderToPack);
+
+         EquationToken lastToken = tokensRight.get(tokensRight.size() - 1);
+         if (lastToken.getType() != Type.OPERATION)
+            throw new EquationParseError("Something went wrong with parsing the block, the last token should be an operation",
+                                         ProblemType.UNEXPECTED_TOKEN_TYPE,
+                                         equationString,
+                                         tokensRight.get(tokens.size() - 1));
+         if (tokensRight.size() != 1)
+            throw new EquationParseError("Something went wrong with parsing the block, there should be a single token left",
+                                         ProblemType.UNEXPECTED_TOKEN_TYPE,
+                                         equationString,
+                                         tokensRight.get(tokens.size() - 1));
+         tokenRight = lastToken;
+      }
+      else
+      { // A single token, let's check that it is a variable or a number.
+         tokenRight = tokensRight.get(0);
+
+         if (tokenRight.getType() == Type.OPERATION)
+         {
+            throw new EquationParseError("Something went wrong with tokenizing the equation, the last token should not be an operation",
+                                         ProblemType.UNEXPECTED_TOKEN_TYPE,
+                                         equationString,
+                                         tokensRight.get(tokens.size() - 1));
+         }
+         else if (tokenRight.getType() == Type.SYMBOL)
+         {
+            throw new EquationParseError("Something went wrong with tokenizing the equation, the last token should not be a symbol",
+                                         ProblemType.INVALID_SYMBOL_USE,
+                                         equationString,
+                                         tokensRight.get(tokens.size() - 1));
+         }
+      }
 
       EquationOperationFactory factory = operationLibrary.get(EquationSymbol.ASSIGN);
-      equationBuilderToPack.addOperationFactory(factory, t0, tokensRight.get(0));
+      equationBuilderToPack.addOperationFactory(factory, t0, tokenRight);
    }
 
    /**
     * Compiles the right side of an equation.
     *
-    * @param tokens the tokens representing the whole equation.
-    * @return the list of operations to execute to compute the result of the equation.
+    * @param tokens                the tokens representing the whole equation.
+    * @param equationBuilderToPack the operation factories are added to this equation builder.
     */
-   private void compileTokens(List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
+   private void compileTokens(String equationString, List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
    {
-      handleParentheses(tokens, equationBuilderToPack);
+      handleParentheses(equationString, tokens, equationBuilderToPack);
 
       if (tokens.size() > 1)
-         parseBlockNoParentheses(tokens, equationBuilderToPack);
+         parseBlockNoParentheses(equationString, tokens, equationBuilderToPack);
 
       // see if it needs to be parsed more
       if (tokens.size() != 1)
@@ -131,9 +165,9 @@ public class EquationParser
     * This handles nested parentheses.
     *
     * @param unprocessedTokenStack the list of tokens to process
-    * @param equationBuilderToPack the list of operations to add the new operations to.
+    * @param equationBuilderToPack the operation factories are added to this equation builder.
     */
-   protected void handleParentheses(List<EquationToken> unprocessedTokenStack, EquationBuilder equationBuilderToPack)
+   protected void handleParentheses(String equationString, List<EquationToken> unprocessedTokenStack, EquationBuilder equationBuilderToPack)
    {
       // have a list to handle embedded parentheses, e.g. (((((a)))))
       List<Integer> leftIndices = new ArrayList<>();
@@ -156,7 +190,7 @@ public class EquationParser
             continue;
 
          if (leftIndices.isEmpty())
-            throw new EquationParseError(") found with no matching (");
+            throw new EquationParseError(") found with no matching (", ProblemType.PARENTHESES_MISMATCH, equationString, t);
 
          int leftIndex = leftIndices.remove(leftIndices.size() - 1);
 
@@ -173,22 +207,35 @@ public class EquationParser
          // if it is a function before "()" then the "()" indicates it is an input to a function
          if (beforeLeft != null && beforeLeft.getType() == Type.FUNCTION)
          {
-            List<EquationToken> inputs = parseParameterCommaBlock(sublist, equationBuilderToPack);
+            List<EquationToken> inputs;
+            try
+            {
+               inputs = parseParameterCommaBlock(equationString, sublist, equationBuilderToPack);
+            }
+            catch (EquationParseError e)
+            {
+               e.setProblemToken(beforeLeft);
+               throw e;
+            }
+
             if (inputs.isEmpty())
-               throw new EquationParseError("Empty function input parameters");
+               throw new EquationParseError("Empty function input parameters", ProblemType.FUNCTION_MISSING_INPUTS, equationString, beforeLeft);
             parseFunction(beforeLeft, inputs, unprocessedTokenStack, equationBuilderToPack);
          }
          else
          {
             // if null then it was empty inside
-            EquationToken output = parseBlockNoParentheses(sublist, equationBuilderToPack);
+            EquationToken output = parseBlockNoParentheses(equationString, sublist, equationBuilderToPack);
             if (sublist.size() != 1 && sublist.get(0) != output)
-               throw new EquationParseError("Something went wrong with parsing the block");
+               throw new EquationParseError("Something went wrong with parsing the block", ProblemType.OTHER, equationString, sublist.get(0));
          }
       }
 
       if (!leftIndices.isEmpty())
-         throw new EquationParseError("Dangling ( parentheses");
+         throw new EquationParseError("Dangling ( parentheses",
+                                      ProblemType.PARENTHESES_MISMATCH,
+                                      equationString,
+                                      unprocessedTokenStack.get(leftIndices.get(0)));
    }
 
    /**
@@ -198,7 +245,7 @@ public class EquationParser
     *
     * @return List of output tokens between the commas
     */
-   protected List<EquationToken> parseParameterCommaBlock(List<EquationToken> tokens, EquationBuilder operationFactoriesToPack)
+   protected List<EquationToken> parseParameterCommaBlock(String equationString, List<EquationToken> tokens, EquationBuilder operationFactoriesToPack)
    {
       // Find the start/end indices for each argument
       List<Integer> limitIndices = new ArrayList<>();
@@ -219,9 +266,9 @@ public class EquationParser
          int end = limitIndices.get(i + 1);
 
          if (start == end)
-            throw new EquationParseError("No empty function inputs allowed!");
+            throw new EquationParseError("No empty function inputs allowed!", ProblemType.FUNCTION_MISSING_INPUTS, equationString, null);
 
-         output.add(parseBlockNoParentheses(tokens.subList(start, end), operationFactoriesToPack));
+         output.add(parseBlockNoParentheses(equationString, tokens.subList(start, end), operationFactoriesToPack));
       }
 
       // Clear the tokens to mark them as processed
@@ -233,10 +280,10 @@ public class EquationParser
     * Parses a code block with no parentheses and no commas. After it is done there should be a single
     * token left, which is returned.
     */
-   private EquationToken parseBlockNoParentheses(List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
+   private EquationToken parseBlockNoParentheses(String equationString, List<EquationToken> tokens, EquationBuilder equationBuilderToPack)
    {
       if (tokens.isEmpty())
-         throw new EquationParseError("Empty block");
+         throw new EquationParseError("Empty block", ProblemType.TOO_FEW_TOKENS, equationString);
 
       // process operators depending on their priority
       EquationSymbol[] orderedOperations = {EquationSymbol.POWER, EquationSymbol.DIVIDE, EquationSymbol.TIMES, EquationSymbol.MINUS, EquationSymbol.PLUS};
@@ -255,11 +302,18 @@ public class EquationParser
             EquationToken prev = tokenIndex > 0 ? tokens.get(tokenIndex - 1) : null;
             EquationToken next = tokenIndex + 1 < tokens.size() ? tokens.get(tokenIndex + 1) : null;
 
+            if (prev == null || next == null)
+               throw new EquationParseError("Invalid use of symbol: " + curr.symbol.symbolString, ProblemType.INVALID_SYMBOL_USE, equationString, curr);
+
             EquationOperationFactory factory = operationLibrary.get(curr.symbol);
             equationBuilderToPack.addOperationFactory(factory, prev, next);
 
+            // TODO need to test the token length
             // replace the symbols with their output
-            EquationToken outputToken = EquationToken.newOperationToken(factory);
+            EquationToken outputToken = EquationToken.newOperationToken(factory,
+                                                                        prev.equationStringStartIndex,
+                                                                        prev.equationStringTokenLength + curr.equationStringTokenLength
+                                                                        + next.equationStringTokenLength);
             tokens.remove(tokenIndex + 1);
             tokens.set(tokenIndex, outputToken);
             tokens.remove(tokenIndex - 1);
@@ -295,8 +349,13 @@ public class EquationParser
       EquationOperationFactory operationFactory = operationLibrary.get(functionToken.getFunctionName());
       operationFactoriesToPack.addOperationFactory(operationFactory, inputTokens);
 
+      // TODO need to test the token length
       // replace the symbols with the function's output
-      EquationToken t = EquationToken.newOperationToken(operationFactory);
+      EquationToken t = EquationToken.newOperationToken(operationFactory,
+                                                        functionToken.equationStringStartIndex,
+                                                        functionToken.equationStringTokenLength + inputTokens.stream()
+                                                                                                             .mapToInt(EquationToken::getEquationStringTokenLength)
+                                                                                                             .sum());
       tokens.set(tokens.indexOf(functionToken), t);
       return t;
    }
@@ -328,41 +387,47 @@ public class EquationParser
    /**
     * Parses the text string to extract tokens.
     */
-   private static List<EquationToken> tokenizeEquation(String equation)
+   private static List<EquationToken> tokenizeEquation(String equationString)
    {
-      equation += " ";
+      equationString += " ";
 
       List<EquationToken> tokens = new ArrayList<>();
 
-      for (int i = 0; i < equation.length(); i++)
+      for (int i = 0; i < equationString.length(); i++)
       {
-         char c = equation.charAt(i);
+         char c = equationString.charAt(i);
 
          if (Character.isWhitespace(c))
             continue;
 
-         EquationSymbol next = EquationSymbol.lookupSymbolAtStart(equation.substring(i));
+         EquationSymbol next = EquationSymbol.lookupSymbolAtStart(equationString.substring(i));
 
          if (next != null)
          {
             if (!EquationSymbol.isSymbolSupported(next))
-               throw new EquationParseError("Symbol (%s) is not yet supported.".formatted(next.symbolString));
+               throw new EquationParseError("Symbol (%s) is not yet supported.".formatted(next.symbolString),
+                                            ProblemType.UNSUPPORTED_SYMBOL,
+                                            equationString,
+                                            i);
 
             EquationToken last = tokens.isEmpty() ? null : tokens.get(tokens.size() - 1);
 
             if (last != null && last.getType() == Type.SYMBOL && !EquationSymbol.isSymbolDuoValid(last.symbol, next))
-               throw new EquationParseError("Invalid sequence of symbols: (%s) followed by (%s).".formatted(last.symbol.symbolString, next.symbolString));
+               throw new EquationParseError("Invalid sequence of symbols: (%s) followed by (%s).".formatted(last.symbol.symbolString, next.symbolString),
+                                            ProblemType.INVALID_SYMBOL_USE,
+                                            equationString,
+                                            i);
 
             boolean isSymbol = true;
             if (next == EquationSymbol.MINUS || next == EquationSymbol.PLUS)
             {
-               if (i + 1 < equation.length() && Character.isDigit(equation.charAt(i + 1)) && (last == null || isOperatorLR(last.symbol)))
+               if (i + 1 < equationString.length() && Character.isDigit(equationString.charAt(i + 1)) && (last == null || isOperatorLR(last.symbol)))
                   isSymbol = false;
             }
 
             if (isSymbol)
             {
-               tokens.add(EquationToken.newSymbolToken(next));
+               tokens.add(EquationToken.newSymbolToken(next, i, next.symbolString.length()));
                i += next.symbolString.length() - 1;
                continue;
             }
@@ -373,9 +438,9 @@ public class EquationParser
             int start = i;
             NumberType type = NumberType.INTEGER;
 
-            while (i + 1 < equation.length())
+            while (i + 1 < equationString.length())
             {
-               c = equation.charAt(i + 1);
+               c = equationString.charAt(i + 1);
 
                if (Character.isWhitespace(c))
                   break;
@@ -387,9 +452,9 @@ public class EquationParser
                else if (c == '.')
                {
                   if (type == NumberType.FLOAT)
-                     throw new EquationParseError("Can't have 2 decimal points.");
+                     throw new EquationParseError("Can't have 2 decimal points.", ProblemType.INVALID_NUMBER_FORMAT, equationString, i);
                   if (type == NumberType.FLOAT_EXP)
-                     throw new EquationParseError("Float exponent must be an integer.");
+                     throw new EquationParseError("Float exponent must be an integer.", ProblemType.INVALID_NUMBER_FORMAT, equationString, i);
 
                   type = NumberType.FLOAT;
                   i++;
@@ -397,13 +462,13 @@ public class EquationParser
                else if (Character.toLowerCase(c) == 'e')
                {
                   if (type == NumberType.FLOAT_EXP)
-                     throw new EquationParseError("Can't have 2 exponent.");
+                     throw new EquationParseError("Can't have 2 exponent.", ProblemType.INVALID_NUMBER_FORMAT, equationString, i);
 
                   type = NumberType.FLOAT_EXP;
                   i++;
 
                   // +/- Symbol typically follows exponent symbol
-                  if (equation.charAt(i + 1) == '-' || equation.charAt(i + 1) == '+')
+                  if (equationString.charAt(i + 1) == '-' || equationString.charAt(i + 1) == '+')
                      i++;
                }
                else
@@ -413,9 +478,15 @@ public class EquationParser
             }
 
             if (type == NumberType.INTEGER)
-               tokens.add(EquationToken.newVariableToken(new SimpleIntegerVariable(Integer.parseInt(equation.substring(start, i + 1)))));
+            {
+               SimpleIntegerVariable variable = new SimpleIntegerVariable(Integer.parseInt(equationString.substring(start, i + 1)));
+               tokens.add(EquationToken.newVariableToken(variable, start, i + 1 - start));
+            }
             else
-               tokens.add(EquationToken.newVariableToken(new SimpleDoubleVariable(Double.parseDouble(equation.substring(start, i + 1)))));
+            {
+               SimpleDoubleVariable variable = new SimpleDoubleVariable(Double.parseDouble(equationString.substring(start, i + 1)));
+               tokens.add(EquationToken.newVariableToken(variable, start, i + 1 - start));
+            }
             continue;
          }
 
@@ -423,9 +494,9 @@ public class EquationParser
          {
             int start = i;
 
-            while (i + 1 < equation.length())
+            while (i + 1 < equationString.length())
             {
-               c = equation.charAt(i + 1);
+               c = equationString.charAt(i + 1);
 
                if (isLetter(c))
                   i++;
@@ -433,11 +504,14 @@ public class EquationParser
                   break;
             }
 
-            tokens.add(EquationToken.newWordToken(equation.substring(start, i + 1)));
+            tokens.add(EquationToken.newWordToken(equationString.substring(start, i + 1), start, i + 1 - start));
             continue;
          }
 
-         throw new EquationParseError("Unexpected char (%c) at position (%d) in equation: %s".formatted(c, i, equation));
+         throw new EquationParseError("Unexpected char (%c) at position (%d) in equation: %s".formatted(c, i, equationString),
+                                      ProblemType.OTHER,
+                                      equationString,
+                                      i);
       }
 
       return tokens;
@@ -456,7 +530,7 @@ public class EquationParser
          if (token.getType() == Type.WORD)
          {
             if (operationLibrary.isFunctionName(token.word))
-               tokens.set(i, EquationToken.newFunctionToken(token.word));
+               tokens.set(i, EquationToken.newFunctionToken(token.word, token.equationStringStartIndex, token.equationStringTokenLength));
          }
       }
    }

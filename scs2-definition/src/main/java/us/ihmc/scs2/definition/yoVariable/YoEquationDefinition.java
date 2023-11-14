@@ -4,6 +4,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class YoEquationDefinition
 {
@@ -15,6 +16,15 @@ public class YoEquationDefinition
 
    public YoEquationDefinition()
    {
+   }
+
+   public void set(YoEquationDefinition other)
+   {
+      name = other.name;
+      description = other.description;
+      equation = other.equation;
+      aliases.clear();
+      aliases.addAll(other.aliases);
    }
 
    @XmlAttribute
@@ -61,6 +71,37 @@ public class YoEquationDefinition
       return aliases;
    }
 
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+      {
+         return true;
+      }
+      else if (object instanceof YoEquationDefinition other)
+      {
+         if (!Objects.equals(name, other.name))
+            return false;
+         if (!Objects.equals(description, other.description))
+            return false;
+         if (!Objects.equals(equation, other.equation))
+            return false;
+         if (!Objects.equals(aliases, other.aliases))
+            return false;
+         return true;
+      }
+      else
+      {
+         return false;
+      }
+   }
+
+   @Override
+   public String toString()
+   {
+      return "name: " + name + ", description: " + description + ", equation: " + equation + ", aliases: " + aliases;
+   }
+
    public static class EquationAliasDefinition
    {
       /**
@@ -68,23 +109,33 @@ public class YoEquationDefinition
        */
       private String name;
       /**
-       * The name of the {@code YoVariable} to link to the equation.
+       * The value (double or integer) or the name of the {@code YoVariable} to link to the equation.
        * <p>
        * It can be either the fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) or
        * the simple name (without namespace, e.g. {@code "myVariable"}). In case of name duplicates
        * between {@code YoVariable}s, prefer using the fullname to guarantee which variable is linked.
        * </p>
        */
-      private String variableName;
+      private String value;
+
+      public EquationAliasDefinition()
+      {
+      }
+
+      public EquationAliasDefinition(String name, String value)
+      {
+         this.name = name;
+         this.value = value;
+      }
 
       public void setName(String name)
       {
          this.name = name;
       }
 
-      public void setVariableName(String variableName)
+      public void setValue(String value)
       {
-         this.variableName = variableName;
+         this.value = value;
       }
 
       public String getName()
@@ -92,9 +143,36 @@ public class YoEquationDefinition
          return name;
       }
 
-      public String getVariableName()
+      public String getValue()
       {
-         return variableName;
+         return value;
+      }
+
+      @Override
+      public boolean equals(Object object)
+      {
+         if (object == this)
+         {
+            return true;
+         }
+         else if (object instanceof EquationAliasDefinition other)
+         {
+            if (!Objects.equals(name, other.name))
+               return false;
+            if (!Objects.equals(value, other.value))
+               return false;
+            return true;
+         }
+         else
+         {
+            return false;
+         }
+      }
+
+      @Override
+      public String toString()
+      {
+         return "name: " + name + ", value: " + value;
       }
    }
 }

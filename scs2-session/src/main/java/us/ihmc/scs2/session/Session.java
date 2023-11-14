@@ -10,6 +10,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
@@ -17,6 +18,7 @@ import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.symbolic.YoEquationManager;
+import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -110,9 +112,10 @@ public abstract class Session
     */
    public static final String ROOT_REGISTRY_NAME = "root";
    /**
-    * Name of the registry that will contains variables related to the internal state of SCS2.
+    * Name of the registry that will contain variables related to the internal state of SCS2.
     */
    public static final String SESSION_INTERNAL_REGISTRY_NAME = Session.class.getSimpleName() + "InternalRegistry";
+   public static final String USER_REGISTRY_NAME = "userRegistry";
    /**
     * Namespace of the root registry for any session.
     */
@@ -121,6 +124,7 @@ public abstract class Session
     * Namespace of the registry that will contains variables related to the internal state of SCS2.
     */
    public static final YoNamespace SESSION_INTERNAL_NAMESPACE = ROOT_NAMESPACE.append(SESSION_INTERNAL_REGISTRY_NAME);
+   public static final YoNamespace USER_REGISTRY_NAMESPACE = ROOT_NAMESPACE.append(USER_REGISTRY_NAME);
    /**
     * Name suffix for any {@link ReferenceFrame} that only serve internal purpose as for instance
     * helping with the physics engine's calculation.
@@ -145,6 +149,9 @@ public abstract class Session
     */
    protected final YoRegistry sessionRegistry = new YoRegistry(SESSION_INTERNAL_REGISTRY_NAME);
 
+   protected final YoRegistry userRegistry = new YoRegistry(USER_REGISTRY_NAME);
+
+   // TODO Not sure if that's the right place for this.
    protected final YoEquationManager equationManager = new YoEquationManager(rootRegistry);
 
    /**
@@ -300,6 +307,7 @@ public abstract class Session
     */
    private final List<Consumer<SessionRobotDefinitionListChange>> robotDefinitionListChangeListeners = new ArrayList<>();
    protected final SessionUserField<SessionRobotDefinitionListChange> pendingRobotDefinitionListChange = new SessionUserField<>();
+   protected final SessionUserField<YoEquationListChange> pendingEquationListChange = new SessionUserField<>();
 
    // Fields for external requests on buffer.
    private final SessionUserField<CropBufferRequest> pendingCropBufferRequest = new SessionUserField<>();
@@ -342,6 +350,7 @@ public abstract class Session
       sessionRegistry.addChild(runRegistry);
       sessionRegistry.addChild(playbackRegistry);
       sessionRegistry.addChild(pauseRegistry);
+      rootRegistry.addChild(userRegistry);
 
       setSessionModeTask(SessionMode.RUNNING, this::runTick);
       setSessionModeTask(SessionMode.PLAYBACK, this::playbackTick);
@@ -702,6 +711,11 @@ public abstract class Session
       {
          listener.accept(change);
       }
+   }
+
+   public void submitEquationListChange(YoEquationListChange change)
+   {
+      pendingEquationListChange.submit(change);
    }
 
    /**
@@ -1665,6 +1679,9 @@ public abstract class Session
     */
    protected void finalizeRunTick(boolean forceWriteBuffer)
    {
+      if (pendingEquationListChange.hasPendingRequest())
+         equationManager.setEquationListChange(pendingEquationListChange.poll());
+
       boolean writeBuffer = nextRunBufferRecordTickCounter <= 0;
 
       if (!writeBuffer && forceWriteBuffer)
@@ -1675,6 +1692,8 @@ public abstract class Session
 
       if (writeBuffer)
       {
+         // TODO Not sure if that's the best place to update the equation manager.
+         equationManager.update();
          sharedBuffer.writeBuffer();
 
          long currentTimestamp = System.nanoTime();
@@ -1799,6 +1818,9 @@ public abstract class Session
     */
    protected void finalizePlaybackTick()
    {
+      if (pendingEquationListChange.hasPendingRequest())
+         equationManager.setEquationListChange(pendingEquationListChange.poll());
+
       long currentTimestamp = System.nanoTime();
 
       if (currentTimestamp - lastPublishedBufferTimestamp > desiredBufferPublishPeriod.get())
@@ -1889,6 +1911,9 @@ public abstract class Session
     */
    protected void finalizePauseTick(boolean shouldReadBuffer)
    {
+      if (pendingEquationListChange.hasPendingRequest())
+         equationManager.setEquationListChange(pendingEquationListChange.poll());
+
       if (shouldReadBuffer)
          sharedBuffer.readBuffer();
 
@@ -2179,6 +2204,11 @@ public abstract class Session
       return Collections.emptyList();
    }
 
+   public List<YoEquationDefinition> getYoEquationDefinitions()
+   {
+      return equationManager.getEquationDefinitions();
+   }
+
    /*
     * FIXME This implementation doesn't look right. This is a workaround for the fact that Robot
     * doesn't live in this project. It seems that Robot, LogSession, RemoteSession,
@@ -2271,6 +2301,7 @@ public abstract class Session
       private final Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
 
       private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
+      private final TopicListener<YoEquationListChange> equationListChangeRequestListener = Session.this::submitEquationListChange;
 
       private SessionTopicListenerManager(Messager messager)
       {
@@ -2308,6 +2339,9 @@ public abstract class Session
                                               });
 
          messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
+
+         equationManager.addChangeListener(change -> messager.submitMessage(SessionMessagerAPI.SessionYoEquationListChangeState, change));
+         messager.addTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
       }
 
       private void detachFromMessager()
@@ -2335,6 +2369,7 @@ public abstract class Session
          messager.removeTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
 
          messager.removeTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
       }
 
       private Consumer<YoBufferPropertiesReadOnly> createBufferPropertiesListener()
@@ -2629,6 +2664,11 @@ public abstract class Session
          catch (InterruptedException e)
          {
          }
+      }
+
+      public boolean hasPendingRequest()
+      {
+         return !blockingRequests.isEmpty() || nonBlockingRequest.get() != null;
       }
 
       public T poll()
