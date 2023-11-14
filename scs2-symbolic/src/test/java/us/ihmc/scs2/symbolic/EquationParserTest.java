@@ -46,7 +46,7 @@ public class EquationParserTest
       equation.compute();
       assertEquals(9.6, ((DoubleVariable) equation.getResult()).getAsDouble());
 
-      equation = Equation.parse("x = 2.0e-04*a+b");
+      equation = Equation.parse("x = 2.0e-04*a+b", parser);
       equation.compute();
       assertEquals(10.00004, ((DoubleVariable) equation.getResult()).getAsDouble());
 
