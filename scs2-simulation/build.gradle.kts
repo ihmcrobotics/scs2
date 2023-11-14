@@ -17,7 +17,7 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.21.0")
    api("us.ihmc:ihmc-messager:0.2.0")
-   api("us.ihmc:mecano-yovariables:17-0.14.0")
+   api("us.ihmc:mecano-yovariables:17-0.15.0")
 }
 
 testDependencies {
