@@ -449,6 +449,11 @@ public class SecondaryWindowManager implements Manager
          return new NewWindowRequest(COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE, requestSource);
       }
 
+      public static NewWindowRequest compositeCreatorWindow(Window requestSource)
+      {
+         return new NewWindowRequest(COMPOSITE_CREATOR_WINDOW_TYPE, requestSource);
+      }
+
       public static NewWindowRequest chartWindow(Window requestSource)
       {
          return new NewWindowRequest(SECONDARY_CHART_WINDOW_TYPE, requestSource);

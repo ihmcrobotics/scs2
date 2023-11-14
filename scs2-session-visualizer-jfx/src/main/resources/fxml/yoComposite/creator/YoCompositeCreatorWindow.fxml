@@ -1,37 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXListView?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.layout.*?>
-<VBox fx:id="mainPane" spacing="10.0" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeCreatorWindowController">
-    <children>
-        <ScrollPane fitToHeight="true" fitToWidth="true">
-            <content>
-                <AnchorPane>
-                    <children>
-                        <JFXListView fx:id="yoCompositeListView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                     AnchorPane.topAnchor="0.0"/>
-                    </children>
-                </AnchorPane>
-            </content>
-        </ScrollPane>
-        <HBox alignment="CENTER_LEFT" maxHeight="-Infinity" minHeight="-Infinity" styleClass="graphic-editor-hbox">
-            <children>
-                <JFXButton fx:id="newYoCompositeButton" contentDisplay="TEXT_ONLY" defaultButton="true" graphicTextGap="0.0" maxHeight="-Infinity"
-                           maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#newYoComposite"
-                           styleClass="save-changes-button" text="New"/>
-                <JFXButton fx:id="deleteYoCompositeButton" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxHeight="-Infinity" maxWidth="-Infinity"
-                           minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#deleteYoComposite" styleClass="revert-changes-button"
-                           text="Delete"/>
-            </children>
-        </HBox>
-    </children>
-    <padding>
-        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-    </padding>
-</VBox>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:id="mainPane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeCreatorWindowController">
+   <children>
+      <SplitPane dividerPositions="0.5" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <items>
+            <VBox spacing="10.0">
+               <children>
+                  <Label text="User YoVariables" />
+                  <JFXListView fx:id="yoCompositeListView" VBox.vgrow="ALWAYS" />
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </VBox>
+            <VBox spacing="10.0">
+                <children>
+                    <HBox alignment="CENTER_LEFT" maxHeight="-Infinity" minHeight="-Infinity" styleClass="graphic-editor-hbox">
+                        <children>
+                        <Label text="Equations" />
+                        <Separator HBox.hgrow="ALWAYS" />
+                        <JFXButton contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" onAction="#newEquation" styleClass="chart-close-button">
+                           <graphic>
+                              <FontAwesomeIconView size="20" styleClass="add-icon-view" />
+                           </graphic>
+                        </JFXButton>
+                        </children>
+                    </HBox>
+                        <JFXListView fx:id="yoEquationListView" VBox.vgrow="ALWAYS" />
+                </children>
+                <padding>
+                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                </padding>
+            </VBox>
+         </items>
+      </SplitPane>
+   </children>
+</AnchorPane>

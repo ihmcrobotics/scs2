@@ -1,10 +1,15 @@
 package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.symbolic.parser.EquationAliasManager;
 import us.ihmc.scs2.symbolic.parser.EquationOperation;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class Equation
 {
@@ -23,34 +28,49 @@ public class Equation
     */
    private EquationInput result;
 
+   public static Equation fromDefinition(YoEquationDefinition equationDefinition)
+   {
+      return fromDefinition(equationDefinition, null);
+   }
+
+   public static Equation fromDefinition(YoEquationDefinition equationDefinition, EquationParser parser)
+   {
+      return parse(equationDefinition.getName(),
+                   equationDefinition.getDescription(),
+                   equationDefinition.getEquation(),
+                   equationDefinition.getAliases().stream().collect(Collectors.toMap(EquationAliasDefinition::getName, EquationAliasDefinition::getValue)),
+                   parser);
+   }
+
    public static Equation parse(String equationString)
    {
-      return parse(null, null, equationString);
+      return parse(null, null, equationString, null, null);
    }
 
    public static Equation parse(String equationString, EquationParser parser)
    {
-      return parse(null, null, equationString, parser);
+      return parse(null, null, equationString, null, parser);
    }
 
-   public static Equation parse(String name, String equationString)
+   public static Equation parse(String name, String description, String equationString, Map<String, String> aliasMap, EquationParser parser)
    {
-      return parse(name, null, equationString);
-   }
+      if (parser == null)
+         parser = new EquationParser();
 
-   public static Equation parse(String name, String equationString, EquationParser parser)
-   {
-      return parse(name, null, equationString, parser);
-   }
+      EquationBuilder equationBuilder = parser.parse(equationString);
 
-   public static Equation parse(String name, String description, String equationString)
-   {
-      return parse(name, description, equationString, new EquationParser());
-   }
+      if (aliasMap != null)
+      {
+         EquationAliasManager equationAliasManager = equationBuilder.getAliasManager();
+         for (Entry<String, String> entry : aliasMap.entrySet())
+         {
+            String aliasName = entry.getKey();
+            String aliasValue = entry.getValue();
+            equationAliasManager.addVariable(aliasName, aliasValue);
+         }
+      }
 
-   public static Equation parse(String name, String description, String equationString, EquationParser parser)
-   {
-      return new Equation(name, description, parser.parse(equationString));
+      return new Equation(name, description, equationBuilder);
    }
 
    /**
@@ -116,6 +136,11 @@ public class Equation
       return result;
    }
 
+   public EquationBuilder getBuilder()
+   {
+      return builder;
+   }
+
    /**
     * Returns the original string that was parsed to create this equation.
     *
@@ -131,8 +156,8 @@ public class Equation
       YoEquationDefinition definition = new YoEquationDefinition();
       definition.setName(name);
       definition.setDescription(description);
-      definition.setEquation(getEquationString());
-      // TODO Figure out what to do with the aliases, maybe we don't even need them here.
+      definition.setEquation(builder.getEquationString());
+      definition.setAliases(builder.getAliasManager().toUserAliasDefinitions());
       return definition;
    }
 }
