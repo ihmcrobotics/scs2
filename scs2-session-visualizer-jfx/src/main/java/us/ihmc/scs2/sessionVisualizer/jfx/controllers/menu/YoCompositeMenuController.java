@@ -28,7 +28,7 @@ public class YoCompositeMenuController implements VisualizerController
    @FXML
    public void createYoComposite()
    {
-
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.compositeCreatorWindow(owner));
    }
    @FXML
    public void openYoCompositePatternEditor()

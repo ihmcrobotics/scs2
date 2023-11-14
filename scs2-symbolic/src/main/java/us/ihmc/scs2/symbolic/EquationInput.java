@@ -1,8 +1,10 @@
 package us.ihmc.scs2.symbolic;
 
-import us.ihmc.scs2.symbolic.parser.YoLibrary;
 import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoVariable;
 
+import java.util.Objects;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 
@@ -15,10 +17,7 @@ public interface EquationInput
 
    Type getType();
 
-   default boolean isUndefined()
-   {
-      return false;
-   }
+   String valueAsString();
 
    static ScalarVariable newVariable(Type type)
    {
@@ -29,13 +28,26 @@ public interface EquationInput
       };
    }
 
-   static YoScalarVariableHolder newYoVariable(String variableName, YoLibrary library, Type type)
+   static YoScalarVariableHolder<?> newYoVariable(YoVariable yoVariable)
    {
-      return switch (type)
-      {
-         case INTEGER -> new YoIntegerVariable(variableName, library);
-         case DOUBLE -> new YoDoubleVariable(variableName, library);
-      };
+      Objects.requireNonNull(yoVariable, "YoVariable cannot be null.");
+      if (yoVariable instanceof YoDouble)
+         return new YoDoubleVariable((YoDouble) yoVariable);
+      else if (yoVariable instanceof YoInteger)
+         return new YoIntegerVariable((YoInteger) yoVariable);
+      else
+         throw new IllegalArgumentException("Unsupported YoVariable type: " + yoVariable.getClass().getSimpleName());
+   }
+
+   static YoScalarConstantHolder<?> newYoConstant(YoVariable yoVariable)
+   {
+      Objects.requireNonNull(yoVariable, "YoVariable cannot be null.");
+      if (yoVariable instanceof YoDouble)
+         return new YoDoubleConstant((YoDouble) yoVariable);
+      else if (yoVariable instanceof YoInteger)
+         return new YoIntegerConstant((YoInteger) yoVariable);
+      else
+         throw new IllegalArgumentException("Unsupported YoVariable type: " + yoVariable.getClass().getSimpleName());
    }
 
    interface ScalarConstant extends EquationInput
@@ -78,7 +90,7 @@ public interface EquationInput
       @Override
       default DoubleSupplier toDoubleSupplier()
       {
-         return () -> getAsInt();
+         return this::getAsInt;
       }
    }
 
@@ -101,6 +113,12 @@ public interface EquationInput
       {
          return value;
       }
+
+      @Override
+      public String valueAsString()
+      {
+         return Double.toString(value);
+      }
    }
 
    class SimpleDoubleVariable implements DoubleVariable
@@ -122,6 +140,12 @@ public interface EquationInput
       {
          return value;
       }
+
+      @Override
+      public String valueAsString()
+      {
+         return Double.toString(value);
+      }
    }
 
    class SimpleIntegerConstant implements IntegerConstant
@@ -137,6 +161,12 @@ public interface EquationInput
       public int getAsInt()
       {
          return value;
+      }
+
+      @Override
+      public String valueAsString()
+      {
+         return Integer.toString(value);
       }
    }
 
@@ -159,100 +189,123 @@ public interface EquationInput
       {
          return value;
       }
+
+      @Override
+      public String valueAsString()
+      {
+         return Integer.toString(value);
+      }
    }
 
-   abstract class YoScalarVariableHolder implements ScalarVariable
+   abstract class YoScalarConstantHolder<V extends YoVariable> implements ScalarConstant
    {
-      protected final String variableName;
-      protected final YoLibrary library;
+      protected final V yoVariable;
 
-      public YoScalarVariableHolder(String variableName, YoLibrary library)
+      public YoScalarConstantHolder(V yoVariable)
       {
-         this.variableName = variableName;
-         this.library = library;
+         this.yoVariable = Objects.requireNonNull(yoVariable, "YoVariable cannot be null.");
       }
-
-      public abstract boolean searchYoVariable();
-
-      @Override
-      public abstract boolean isUndefined();
    }
 
-   class YoDoubleVariable extends YoScalarVariableHolder implements DoubleVariable
+   class YoDoubleConstant extends YoScalarConstantHolder<YoDouble> implements DoubleConstant
    {
-      private YoDouble yoDouble;
-
-      public YoDoubleVariable(String variableName, YoLibrary library)
+      public YoDoubleConstant(YoDouble yoDouble)
       {
-         super(variableName, library);
-      }
-
-      @Override
-      public boolean searchYoVariable()
-      {
-         if (yoDouble == null)
-            yoDouble = library.searchYoDouble(variableName);
-         return yoDouble != null;
-      }
-
-      @Override
-      public void setValue(double value)
-      {
-         searchYoVariable(); // TODO Need to throttle the search.
-         if (yoDouble != null)
-            yoDouble.set(value);
+         super(yoDouble);
       }
 
       @Override
       public double getAsDouble()
       {
-         searchYoVariable(); // TODO Need to throttle the search.
-         return yoDouble == null ? Double.NaN : yoDouble.getValue();
+         return yoVariable.getValue();
       }
 
       @Override
-      public boolean isUndefined()
+      public String valueAsString()
       {
-         return yoDouble == null;
+         return yoVariable.getFullNameString();
       }
    }
 
-   class YoIntegerVariable extends YoScalarVariableHolder implements IntegerVariable
+   class YoIntegerConstant extends YoScalarConstantHolder<YoInteger> implements IntegerConstant
    {
-      private YoDouble yoInteger;
-
-      public YoIntegerVariable(String variableName, YoLibrary library)
+      public YoIntegerConstant(YoInteger yoInteger)
       {
-         super(variableName, library);
-      }
-
-      @Override
-      public boolean searchYoVariable()
-      {
-         if (yoInteger == null)
-            yoInteger = library.searchYoDouble(variableName);
-         return yoInteger != null;
-      }
-
-      @Override
-      public void setValue(int value)
-      {
-         searchYoVariable(); // TODO Need to throttle the search.
-         if (yoInteger != null)
-            yoInteger.set(value);
+         super(yoInteger);
       }
 
       @Override
       public int getAsInt()
       {
-         searchYoVariable(); // TODO Need to throttle the search.
-         return yoInteger == null ? 0 : (int) yoInteger.getValue();
+         return yoVariable.getValue();
       }
 
       @Override
-      public boolean isUndefined()
+      public String valueAsString()
       {
-         return yoInteger == null;
+         return yoVariable.getFullNameString();
+      }
+   }
+
+   abstract class YoScalarVariableHolder<V extends YoVariable> implements ScalarVariable
+   {
+      protected final V yoVariable;
+
+      public YoScalarVariableHolder(V yoVariable)
+      {
+         this.yoVariable = Objects.requireNonNull(yoVariable, "YoVariable cannot be null.");
+      }
+   }
+
+   class YoDoubleVariable extends YoScalarVariableHolder<YoDouble> implements DoubleVariable
+   {
+      public YoDoubleVariable(YoDouble yoDouble)
+      {
+         super(yoDouble);
+      }
+
+      @Override
+      public void setValue(double value)
+      {
+         yoVariable.set(value);
+      }
+
+      @Override
+      public double getAsDouble()
+      {
+         return yoVariable.getValue();
+      }
+
+      @Override
+      public String valueAsString()
+      {
+         return yoVariable.getFullNameString();
+      }
+   }
+
+   class YoIntegerVariable extends YoScalarVariableHolder<YoInteger> implements IntegerVariable
+   {
+      public YoIntegerVariable(YoInteger yoInteger)
+      {
+         super(yoInteger);
+      }
+
+      @Override
+      public void setValue(int value)
+      {
+         yoVariable.set(value);
+      }
+
+      @Override
+      public int getAsInt()
+      {
+         return yoVariable.getValue();
+      }
+
+      @Override
+      public String valueAsString()
+      {
+         return yoVariable.getFullNameString();
       }
    }
 }

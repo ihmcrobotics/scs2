@@ -42,38 +42,55 @@ public class EquationToken
    public final EquationOperationFactory operationFactory;
    public final String word;
 
-   public static EquationToken newFunctionToken(String functionName)
+   /**
+    * Allows to locate the start position of the token in the equation string.
+    */
+   public final int equationStringStartIndex;
+   /**
+    * Allows to identify the length of the token in the equation string.
+    */
+   public final int equationStringTokenLength;
+
+   public static EquationToken newFunctionToken(String functionName, int equationStringStartIndex, int equationStringTokenLength)
    {
-      return new EquationToken(functionName, null, null, null, null);
+      return new EquationToken(functionName, null, null, null, null, equationStringStartIndex, equationStringTokenLength);
    }
 
-   public static EquationToken newVariableToken(EquationInput variable)
+   public static EquationToken newVariableToken(EquationInput variable, int equationStringStartIndex, int equationStringTokenLength)
    {
-      return new EquationToken(null, variable, null, null, null);
+      return new EquationToken(null, variable, null, null, null, equationStringStartIndex, equationStringTokenLength);
    }
 
-   public static EquationToken newSymbolToken(EquationSymbol symbol)
+   public static EquationToken newSymbolToken(EquationSymbol symbol, int equationStringStartIndex, int equationStringTokenLength)
    {
-      return new EquationToken(null, null, symbol, null, null);
+      return new EquationToken(null, null, symbol, null, null, equationStringStartIndex, equationStringTokenLength);
    }
 
-   public static EquationToken newOperationToken(EquationOperationFactory operationFactory)
+   public static EquationToken newOperationToken(EquationOperationFactory operationFactory, int equationStringStartIndex, int equationStringTokenLength)
    {
-      return new EquationToken(null, null, null, operationFactory, null);
+      return new EquationToken(null, null, null, operationFactory, null, equationStringStartIndex, equationStringTokenLength);
    }
 
-   public static EquationToken newWordToken(String word)
+   public static EquationToken newWordToken(String word, int equationStringStartIndex, int equationStringTokenLength)
    {
-      return new EquationToken(null, null, null, null, word);
+      return new EquationToken(null, null, null, null, word, equationStringStartIndex, equationStringTokenLength);
    }
 
-   private EquationToken(String functionName, EquationInput variable, EquationSymbol symbol, EquationOperationFactory operationFactory, String word)
+   private EquationToken(String functionName,
+                         EquationInput variable,
+                         EquationSymbol symbol,
+                         EquationOperationFactory operationFactory,
+                         String word,
+                         int equationStringStartIndex,
+                         int equationStringTokenLength)
    {
       this.functionName = functionName;
       this.variable = variable;
       this.symbol = symbol;
       this.operationFactory = operationFactory;
       this.word = word;
+      this.equationStringStartIndex = equationStringStartIndex;
+      this.equationStringTokenLength = equationStringTokenLength;
    }
 
    public Type getType()
@@ -113,6 +130,16 @@ public class EquationToken
    public String getWord()
    {
       return word;
+   }
+
+   public int getEquationStringStartIndex()
+   {
+      return equationStringStartIndex;
+   }
+
+   public int getEquationStringTokenLength()
+   {
+      return equationStringTokenLength;
    }
 
    @Override

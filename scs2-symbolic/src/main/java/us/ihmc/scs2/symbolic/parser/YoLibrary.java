@@ -23,6 +23,13 @@ public class YoLibrary
       yoRegistries.add(yoRegistry);
    }
 
+   public YoLibrary duplicate()
+   {
+      YoLibrary duplicate = new YoLibrary();
+      duplicate.yoRegistries.addAll(yoRegistries);
+      return duplicate;
+   }
+
    public YoDouble searchYoDouble(String name)
    {
       return searchYoVariable(YoDouble.class, name);
@@ -31,6 +38,11 @@ public class YoLibrary
    public YoInteger searchYoInteger(String name)
    {
       return searchYoVariable(YoInteger.class, name);
+   }
+
+   public YoVariable searchYoVariable(String name)
+   {
+      return searchYoVariable(YoVariable.class, name);
    }
 
    @SuppressWarnings("unchecked")
