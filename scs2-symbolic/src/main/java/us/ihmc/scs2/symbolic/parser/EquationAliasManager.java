@@ -1,10 +1,11 @@
 package us.ihmc.scs2.symbolic.parser;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.symbolic.EquationInput;
 import us.ihmc.scs2.symbolic.EquationInput.*;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -19,7 +20,7 @@ public class EquationAliasManager
     * User-defined aliases.
     */
    private final Map<String, EquationAlias> userAliases = new LinkedHashMap<>();
-   private YoLibrary yoLibrary = new YoLibrary();
+   private YoEquationInputHandler yoInputHandler = new YoEquationInputHandler();
    private final Set<String> missingInputs = new LinkedHashSet<>();
 
    public EquationAliasManager()
@@ -30,7 +31,32 @@ public class EquationAliasManager
 
    public void addRegistry(YoRegistry registry)
    {
-      yoLibrary.addRegistry(registry);
+      yoInputHandler.addRegistry(registry);
+   }
+
+   public void setYoSharedBuffer(YoSharedBuffer yoSharedBuffer)
+   {
+      yoInputHandler.setYoSharedBuffer(yoSharedBuffer);
+   }
+
+   public boolean hasBuffer()
+   {
+      return yoInputHandler.hasBuffer();
+   }
+
+   public YoBufferPropertiesReadOnly getBufferProperties()
+   {
+      return yoInputHandler.getBufferProperties();
+   }
+
+   public void setHistoryUpdate(boolean enable)
+   {
+      yoInputHandler.setHistoryUpdate(enable);
+   }
+
+   public void setHistoryIndex(int historyIndex)
+   {
+      yoInputHandler.setHistoryIndex(historyIndex);
    }
 
    public EquationAliasManager duplicate()
@@ -38,7 +64,7 @@ public class EquationAliasManager
       EquationAliasManager duplicate = new EquationAliasManager();
       duplicate.userAliases.putAll(userAliases);
       duplicate.missingInputs.addAll(missingInputs);
-      duplicate.yoLibrary = yoLibrary.duplicate();
+      duplicate.yoInputHandler = yoInputHandler.duplicate();
       return duplicate;
    }
 
@@ -135,10 +161,7 @@ public class EquationAliasManager
          // ignore, just means it's not an integer
       }
 
-      YoVariable yoConstant = yoLibrary.searchYoVariable(value);
-      if (yoConstant == null)
-         return null;
-      return addAlias(value, EquationInput.newYoVariable(yoConstant));
+      return addAlias(value, yoInputHandler.searchYoEquationInput(value));
    }
 
    public EquationAlias addVariable(String name, Type type)
@@ -183,10 +206,7 @@ public class EquationAliasManager
          // ignore, just means it's not an integer
       }
 
-      YoVariable yoVariable = yoLibrary.searchYoVariable(value);
-      if (yoVariable == null)
-         return null;
-      return addAlias(name, EquationInput.newYoVariable(yoVariable));
+      return addAlias(name, yoInputHandler.searchYoEquationInput(value));
    }
 
    public boolean addAliases(List<EquationAliasDefinition> aliasDefinitions)
@@ -218,6 +238,8 @@ public class EquationAliasManager
 
    public EquationAlias addAlias(String name, EquationInput input)
    {
+      if (input == null)
+         return null;
       if (userAliases.containsKey(name))
          throw new IllegalArgumentException("Alias already exists: " + name);
       EquationAlias alias = new EquationAlias(name, input);

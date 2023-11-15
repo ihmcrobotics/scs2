@@ -1,6 +1,7 @@
 package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
+import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -9,7 +10,6 @@ import java.util.function.Consumer;
 
 public class YoEquationManager
 {
-   private final YoRegistry rootRegistry;
    private final EquationParser equationParser = new EquationParser();
 
    private final Map<String, Equation> equations = new LinkedHashMap<>();
@@ -18,8 +18,12 @@ public class YoEquationManager
 
    public YoEquationManager(YoRegistry rootRegistry)
    {
-      this.rootRegistry = rootRegistry;
       equationParser.getAliasManager().addRegistry(rootRegistry);
+   }
+
+   public YoEquationManager(YoSharedBuffer yoSharedBuffer)
+   {
+      equationParser.getAliasManager().setYoSharedBuffer(yoSharedBuffer);
    }
 
    public void addChangeListener(Consumer<YoEquationListChange> changeListener)
@@ -56,7 +60,9 @@ public class YoEquationManager
       Objects.requireNonNull(equationDefinition.getName());
       if (equations.containsKey(equationDefinition.getName()))
          throw new IllegalArgumentException("Duplicate equation name: " + equationDefinition.getName());
-      equations.put(equationDefinition.getName(), Equation.fromDefinition(equationDefinition, equationParser));
+      Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
+      newEquation.updateHistory();
+      equations.put(equationDefinition.getName(), newEquation);
       changeListeners.forEach(listener -> listener.accept(YoEquationListChange.add(equationDefinition)));
    }
 
@@ -69,9 +75,11 @@ public class YoEquationManager
 
    public Equation replaceEquation(YoEquationDefinition equationDefinition)
    {
-      Equation removedEquation = equations.put(equationDefinition.getName(), Equation.fromDefinition(equationDefinition, equationParser));
+      Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
+      Equation removedEquation = equations.put(equationDefinition.getName(), newEquation);
       if (removedEquation == null)
          throw new IllegalArgumentException("Unknown equation name: " + equationDefinition.getName());
+      newEquation.updateHistory();
       changeListeners.forEach(listener -> listener.accept(YoEquationListChange.replace(equationDefinition, removedEquation.toYoEquationDefinition())));
       return removedEquation;
    }
@@ -89,6 +97,7 @@ public class YoEquationManager
          if (equation == null || !equation.toYoEquationDefinition().equals(equationDefinition))
          {
             Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
+            newEquation.updateHistory();
             equations.put(equationDefinition.getName(), newEquation);
          }
       }

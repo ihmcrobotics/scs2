@@ -19,7 +19,6 @@ import us.ihmc.log.LogTools;
 import us.ihmc.messager.Messager;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.StringSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
@@ -48,13 +47,14 @@ public class YoEquationCreatorController
    @FXML
    private ListView<YoEquationAliasController> aliasListView;
    @FXML
-   private ImageView equationValidImageView;
+   private ImageView equationNameValidImageView, equationValidImageView, equationAliasesValidImageView;
 
    private ObservableMap<String, YoEquationAliasController> aliasNameToControllerMap = FXCollections.observableHashMap();
    private YoEquationDefinition definition;
    private final BooleanProperty equationValidityProperty = new SimpleBooleanProperty(this, "equationValidity", false);
    private final BooleanProperty equationNameValidityProperty = new SimpleBooleanProperty(this, "equationNameValidity", false);
-   private final ObservableBooleanValue validityProperty = Bindings.and(equationValidityProperty, equationNameValidityProperty);
+   private final BooleanProperty equationAliasesValidityProperty = new SimpleBooleanProperty(this, "equationAliasesValidity", false);
+   private ObservableBooleanValue validityProperty;
    private SessionVisualizerToolkit toolkit;
    private Consumer<YoEquationDefinition> updateListener;
 
@@ -80,12 +80,28 @@ public class YoEquationCreatorController
       {
          aliasNameToControllerMap.clear();
          aliasNameToControllerMap.putAll(aliasListView.getItems().stream().collect(Collectors.toMap(a -> a.aliasNameLabel.getText(), a -> a)));
-      }));
 
-      YoGraphicFXControllerTools.bindBooleanToImageView(validityProperty,
-                                                        equationValidImageView,
-                                                        SessionVisualizerIOTools.VALID_ICON_IMAGE,
-                                                        SessionVisualizerIOTools.INVALID_ICON_IMAGE);
+         equationAliasesValidityProperty.unbind();
+         if (c.getList().isEmpty())
+         {
+            equationAliasesValidityProperty.set(true);
+         }
+         else
+         {
+            ObservableBooleanValue aliasInputValidity = aliasListView.getItems().get(0).aliasValueSearchField.getValidityProperty();
+            for (int i = 1; i < c.getList().size(); i++)
+               aliasInputValidity = Bindings.and(aliasInputValidity, aliasListView.getItems().get(i).aliasValueSearchField.getValidityProperty());
+            equationAliasesValidityProperty.bind(aliasInputValidity);
+         }
+      }));
+      validityProperty = Bindings.createBooleanBinding(() -> equationValidityProperty.get() && equationNameValidityProperty.get()
+                                                             && equationAliasesValidityProperty.get(),
+                                                       equationValidityProperty,
+                                                       equationNameValidityProperty,
+                                                       equationAliasesValidityProperty);
+      YoGraphicFXControllerTools.bindValidityImageView(equationNameValidityProperty, equationNameValidImageView);
+      YoGraphicFXControllerTools.bindValidityImageView(equationValidityProperty, equationValidImageView);
+      YoGraphicFXControllerTools.bindValidityImageView(equationAliasesValidityProperty, equationAliasesValidImageView);
    }
 
    private void updateEquation()
@@ -100,7 +116,6 @@ public class YoEquationCreatorController
       {
          LogTools.error("Unable to parse equation: {}", e.getMessage());
          e.printStackTrace();
-         aliasListView.getItems().clear();
          equationValidityProperty.set(false);
          return;
       }
@@ -124,9 +139,6 @@ public class YoEquationCreatorController
             aliasValue = aliasController.aliasValueSearchField.getSupplier().getValue();
 
          newAliases.add(new Pair<>(aliasName, aliasValue));
-
-         if (aliasController == null || !aliasController.aliasValueSearchField.getValidityProperty().get())
-            equationValidityProperty.set(false);
       }
 
       newAliases.sort((p1, p2) -> p1.getKey().compareTo(p2.getKey()));
@@ -149,39 +161,12 @@ public class YoEquationCreatorController
                                                                                     definitionAliases.removeIf(a -> a.getName().equals(aliasName));
                                                                                     definitionAliases.add(new EquationAliasDefinition(aliasName,
                                                                                                                                       newValue.getValue()));
-                                                                                    updateEquationValidity();
                                                                                     updateListener.accept(definition);
                                                                                  }
                                                                               });
          aliasListView.getItems().add(aliasController);
       }
       updateListener.accept(definition);
-   }
-
-   private void updateEquationValidity()
-   {
-      Equation equation;
-      try
-      {
-         equation = Equation.parse(definition.getEquation());
-      }
-      catch (Exception e)
-      {
-         equationValidityProperty.set(false);
-         return;
-      }
-
-      for (String aliasName : equation.getBuilder().getAliasManager().getMissingInputs())
-      {
-         YoEquationAliasController aliasController = aliasNameToControllerMap.get(aliasName);
-
-         if (aliasController == null || !aliasController.aliasValueSearchField.getValidityProperty().get())
-         {
-            equationValidityProperty.set(false);
-            return;
-         }
-      }
-      equationValidityProperty.set(true);
    }
 
    public Pane getMainPane()
@@ -254,11 +239,17 @@ public class YoEquationCreatorController
       public YoEquationAliasController(String aliasName, String aliasValue, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry)
       {
          aliasNameLabel = new Label(aliasName);
-         JFXTextField textField = new JFXTextField(aliasValue == null ? "" : aliasValue);
+         JFXTextField textField = new JFXTextField();
          mainPane.getChildren().addAll(aliasNameLabel, textField);
 
          aliasValueSearchField = new StringSearchField(textField, searchManager, linkedRootRegistry);
+         textField.setText(aliasValue == null ? "" : aliasValue);
          aliasValueSearchField.setupAutoCompletion();
+         aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->
+                                                              {
+                                                                 if (newValue == null)
+                                                                    LogTools.info("Alias {} is not valid.", aliasName);
+                                                              });
       }
 
       public Pane getMainPane()

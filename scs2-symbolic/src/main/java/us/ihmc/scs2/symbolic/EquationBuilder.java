@@ -52,7 +52,7 @@ public class EquationBuilder
 
    public List<? extends EquationOperation<?>> build()
    {
-      if (aliasManager.getMissingInputs().size() > 0)
+      if (!aliasManager.getMissingInputs().isEmpty())
          throw new EquationBuilderException("Missing inputs: " + aliasManager.getMissingInputs());
       return operationFactories.stream().map(EquationOperationFactory::build).toList();
    }
