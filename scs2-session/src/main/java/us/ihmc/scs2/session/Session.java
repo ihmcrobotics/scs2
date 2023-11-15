@@ -151,9 +151,6 @@ public abstract class Session
 
    protected final YoRegistry userRegistry = new YoRegistry(USER_REGISTRY_NAME);
 
-   // TODO Not sure if that's the right place for this.
-   protected final YoEquationManager equationManager = new YoEquationManager(rootRegistry);
-
    /**
     * Variable holding the current time (in seconds) for this session. It represents notably:
     * <ul>
@@ -234,6 +231,9 @@ public abstract class Session
     * {@link YoVariable} registered as a descendant of the {@link #rootRegistry}.
     */
    protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, DEFAULT_INITIAL_BUFFER_SIZE);
+
+   // TODO Not sure if that's the right place for this.
+   protected final YoEquationManager equationManager = new YoEquationManager(sharedBuffer);
    /**
     * The current mode this session is running, see {@link SessionMode}.
     */

@@ -2,6 +2,8 @@ package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.symbolic.parser.EquationAliasManager;
 import us.ihmc.scs2.symbolic.parser.EquationOperation;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
@@ -110,20 +112,49 @@ public class Equation
       if (!isBuilt())
          build();
 
-      if (isBuilt())
-      {
-         for (int i = 0; i < operations.size(); i++)
-         {
-            operations.get(i).calculate();
-         }
-      }
-      else
+      if (!isBuilt())
       {
          throw new RuntimeException(
                "Failed to build the equation: " + builder.getEquationString() + ", missing inputs: " + builder.getAliasManager().getMissingInputs());
       }
 
+      for (int i = 0; i < operations.size(); i++)
+      {
+         operations.get(i).calculate();
+      }
+
       return result;
+   }
+
+   /**
+    * Updates the history of the variables used in this equation by evaluating every single data point in the active part of the buffer.
+    */
+   public void updateHistory()
+   {
+      if (!builder.getAliasManager().hasBuffer())
+         return;
+
+      if (!isBuilt())
+         build();
+
+      if (!isBuilt())
+      {
+         throw new RuntimeException(
+               "Failed to build the equation: " + builder.getEquationString() + ", missing inputs: " + builder.getAliasManager().getMissingInputs());
+      }
+
+      builder.getAliasManager().setHistoryUpdate(true);
+      YoBufferPropertiesReadOnly bufferProperties = builder.getAliasManager().getBufferProperties();
+
+      int historyIndex = bufferProperties.getInPoint();
+
+      for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
+      {
+         builder.getAliasManager().setHistoryIndex(i);
+         historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
+         compute();
+      }
+      builder.getAliasManager().setHistoryUpdate(false);
    }
 
    /**
