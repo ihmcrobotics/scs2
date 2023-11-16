@@ -3,7 +3,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator;
 import com.jfoenix.controls.JFXTextField;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -30,6 +32,7 @@ import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 import us.ihmc.scs2.symbolic.parser.EquationAliasManager.EquationAlias;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -50,27 +53,61 @@ public class YoEquationCreatorController
    private ImageView equationNameValidImageView, equationValidImageView, equationAliasesValidImageView;
 
    private ObservableMap<String, YoEquationAliasController> aliasNameToControllerMap = FXCollections.observableHashMap();
-   private YoEquationDefinition definition;
+   private Property<YoEquationDefinition> definitionToEdit = new SimpleObjectProperty<>(this, "definitionToEdit", null);
    private final BooleanProperty equationValidityProperty = new SimpleBooleanProperty(this, "equationValidity", false);
    private final BooleanProperty equationNameValidityProperty = new SimpleBooleanProperty(this, "equationNameValidity", false);
    private final BooleanProperty equationAliasesValidityProperty = new SimpleBooleanProperty(this, "equationAliasesValidity", false);
    private ObservableBooleanValue validityProperty;
    private SessionVisualizerToolkit toolkit;
-   private Consumer<YoEquationDefinition> updateListener;
+   private Runnable updateListener;
 
-   public void initialize(SessionVisualizerToolkit toolkit, Predicate<String> nameValidator, YoEquationDefinition definition)
+   public void initialize(SessionVisualizerToolkit toolkit, Predicate<String> nameValidator)
    {
       this.toolkit = toolkit;
-      this.definition = definition;
+      definitionToEdit.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null && oldValue != null)
+                                      { // Disable this controller when there is no definition to edit.
+                                         equationNameTextField.setText("");
+                                         equationTextArea.setText("");
+                                         aliasListView.getItems().clear();
+                                         mainPane.setDisable(true);
+                                      }
+                                      else if (newValue != null && oldValue == null)
+                                      { // Enable this controller when there is a definition to edit.
+                                         equationNameTextField.setText(newValue.getName());
+                                         equationTextArea.setText(newValue.getEquation());
+                                         aliasListView.getItems().clear();
+                                         aliasListView.getItems()
+                                                      .addAll(newValue.getAliases()
+                                                                      .stream()
+                                                                      .map(a -> new YoEquationAliasController(a.getName(),
+                                                                                                              a.getValue(),
+                                                                                                              toolkit.getYoCompositeSearchManager(),
+                                                                                                              toolkit.getYoManager().getLinkedRootRegistry()))
+                                                                      .collect(Collectors.toList()));
+                                         updateEquation();
+                                         mainPane.setDisable(false);
+                                      }
+                                   });
+
       equationNameTextField.textProperty().addListener((o, oldValue, newValue) ->
                                                        {
+                                                          if (definitionToEdit.getValue() == null)
+                                                             return;
+
+                                                          YoEquationDefinition definition = definitionToEdit.getValue();
                                                           definition.setName(newValue);
                                                           equationNameValidityProperty.set(!newValue.isBlank() && nameValidator.test(newValue));
-                                                          updateListener.accept(definition);
+                                                          updateListener.run();
                                                        });
 
       equationTextArea.textProperty().addListener((o, oldValue, newValue) ->
                                                   {
+                                                     if (definitionToEdit.getValue() == null)
+                                                        return;
+
+                                                     YoEquationDefinition definition = definitionToEdit.getValue();
                                                      definition.setEquation(newValue);
                                                      updateEquation();
                                                   });
@@ -106,6 +143,10 @@ public class YoEquationCreatorController
 
    private void updateEquation()
    {
+      if (definitionToEdit.getValue() == null)
+         return;
+
+      YoEquationDefinition definition = definitionToEdit.getValue();
       Equation equation;
       try
       {
@@ -115,7 +156,6 @@ public class YoEquationCreatorController
       catch (Exception e)
       {
          LogTools.error("Unable to parse equation: {}", e.getMessage());
-         e.printStackTrace();
          equationValidityProperty.set(false);
          return;
       }
@@ -141,11 +181,10 @@ public class YoEquationCreatorController
          newAliases.add(new Pair<>(aliasName, aliasValue));
       }
 
-      newAliases.sort((p1, p2) -> p1.getKey().compareTo(p2.getKey()));
+      newAliases.sort(Comparator.comparing(Pair::getKey));
 
       YoCompositeSearchManager yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
       LinkedYoRegistry linkedRootRegistry = toolkit.getYoManager().getLinkedRootRegistry();
-      List<EquationAliasDefinition> definitionAliases = definition.getAliases();
 
       aliasListView.getItems().clear();
 
@@ -156,12 +195,13 @@ public class YoEquationCreatorController
          YoEquationAliasController aliasController = new YoEquationAliasController(aliasName, aliasValue, yoCompositeSearchManager, linkedRootRegistry);
          aliasController.aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->
                                                                               {
+                                                                                 List<EquationAliasDefinition> definitionAliases = definition.getAliases();
                                                                                  if (newValue != null)
                                                                                  {
                                                                                     definitionAliases.removeIf(a -> a.getName().equals(aliasName));
                                                                                     definitionAliases.add(new EquationAliasDefinition(aliasName,
                                                                                                                                       newValue.getValue()));
-                                                                                    updateListener.accept(definition);
+                                                                                    updateListener.run();
                                                                                  }
                                                                               });
          aliasListView.getItems().add(aliasController);
