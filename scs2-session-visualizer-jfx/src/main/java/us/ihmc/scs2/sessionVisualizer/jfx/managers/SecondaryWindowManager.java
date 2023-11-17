@@ -22,7 +22,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.YoRegistryStatisticsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeCreatorWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeAndEquationEditorWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -42,7 +42,7 @@ public class SecondaryWindowManager implements Manager
    private final Property<YoCompositePatternPropertyWindowController> yoCompositePatternEditor = new SimpleObjectProperty<>(this,
                                                                                                                             "yoCompositePatternEditor",
                                                                                                                             null);
-   private final Property<YoCompositeCreatorWindowController> yoCompositeCreator = new SimpleObjectProperty<>(this, "yoCompositeCreator", null);
+   private final Property<YoCompositeAndEquationEditorWindowController> yoCompositeCreator = new SimpleObjectProperty<>(this, "yoCompositeCreator", null);
    private final Property<YoGraphicPropertyWindowController> yoGraphicEditor = new SimpleObjectProperty<>(this, "yoGraphicEditor", null);
    private final Property<YoRegistryStatisticsPaneController> yoRegistryStatistics = new SimpleObjectProperty<>(this, "yoRegistryStatistics", null);
    private final List<Stage> secondaryWindows = new ArrayList<>();
@@ -180,9 +180,9 @@ public class SecondaryWindowManager implements Manager
 
       try
       {
-         FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_COMPOSITE_CREATOR_WINDOW_URL);
+         FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_COMPOSITE_AND_EQUATION_EDITOR_WINDOW_URL);
          fxmlLoader.load();
-         YoCompositeCreatorWindowController controller = fxmlLoader.getController();
+         YoCompositeAndEquationEditorWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          yoCompositeCreator.setValue(controller);
          initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());

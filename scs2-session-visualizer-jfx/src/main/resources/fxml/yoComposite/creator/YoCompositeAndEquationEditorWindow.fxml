@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="mainPane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeCreatorWindowController">
+<AnchorPane fx:id="mainPane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeAndEquationEditorWindowController">
    <children>
       <SplitPane dividerPositions="0.33" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <items>
@@ -21,14 +21,14 @@
                      <children>
                         <Label maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" text="User YoVariables" />
                         <Separator HBox.hgrow="ALWAYS" />
-                        <JFXButton contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#newYoVariable" styleClass="chart-close-button">
+                        <JFXButton contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#newYoComposite" styleClass="chart-close-button">
                            <graphic>
                               <FontAwesomeIconView size="20" styleClass="add-icon-view" />
                            </graphic>
                         </JFXButton>
                      </children>
                   </HBox>
-                  <JFXListView fx:id="yoCompositeListView" prefHeight="200.0" prefWidth="250.0" VBox.vgrow="ALWAYS" />
+                  <JFXListView fx:id="yoCompositeListView" prefHeight="250.0" prefWidth="300.0" VBox.vgrow="ALWAYS" />
                   <HBox alignment="CENTER_LEFT" maxHeight="-Infinity" minHeight="-Infinity" spacing="10.0" styleClass="graphic-editor-hbox">
                      <children>
                         <Label maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" text="Equations" />
@@ -40,13 +40,13 @@
                         </JFXButton>
                      </children>
                   </HBox>
-                  <JFXListView fx:id="yoEquationListView" prefHeight="200.0" prefWidth="250.0" VBox.vgrow="ALWAYS" />
+                  <JFXListView fx:id="yoEquationEditorListView" prefHeight="250.0" prefWidth="300.0" VBox.vgrow="ALWAYS" />
                </children>
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
             </VBox>
-            <VBox spacing="10.0">
+            <VBox fx:id="equationEditorContainer" spacing="10.0">
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
@@ -57,7 +57,6 @@
                         <Separator maxHeight="-Infinity" minHeight="-Infinity" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
-                  <fx:include source="YoEquationCreatorPane.fxml" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
          </items>

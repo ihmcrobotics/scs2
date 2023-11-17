@@ -10,6 +10,8 @@ import java.util.function.Consumer;
 
 public class YoEquationManager
 {
+   private static final boolean SILENCE_PARSING_ERRORS = true;
+
    private final EquationParser equationParser = new EquationParser();
 
    private final Map<String, Equation> equations = new LinkedHashMap<>();
@@ -61,7 +63,7 @@ public class YoEquationManager
       if (equations.containsKey(equationDefinition.getName()))
          throw new IllegalArgumentException("Duplicate equation name: " + equationDefinition.getName());
       Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
-      newEquation.updateHistory();
+      updateEquationHistory(newEquation);
       equations.put(equationDefinition.getName(), newEquation);
       changeListeners.forEach(listener -> listener.accept(YoEquationListChange.add(equationDefinition)));
    }
@@ -79,7 +81,7 @@ public class YoEquationManager
       Equation removedEquation = equations.put(equationDefinition.getName(), newEquation);
       if (removedEquation == null)
          throw new IllegalArgumentException("Unknown equation name: " + equationDefinition.getName());
-      newEquation.updateHistory();
+      updateEquationHistory(newEquation);
       changeListeners.forEach(listener -> listener.accept(YoEquationListChange.replace(equationDefinition, removedEquation.toYoEquationDefinition())));
       return removedEquation;
    }
@@ -97,7 +99,7 @@ public class YoEquationManager
          if (equation == null || !equation.toYoEquationDefinition().equals(equationDefinition))
          {
             Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
-            newEquation.updateHistory();
+            updateEquationHistory(newEquation);
             equations.put(equationDefinition.getName(), newEquation);
          }
       }
@@ -110,13 +112,39 @@ public class YoEquationManager
    {
       for (Equation equation : equations.values())
       {
+         equationCompute(equation);
+      }
+   }
+
+   private static void equationCompute(Equation equation)
+   {
+      try
+      {
          equation.compute();
+      }
+      catch (Exception e)
+      {
+         if (!SILENCE_PARSING_ERRORS)
+            throw e;
       }
    }
 
    public List<YoEquationDefinition> getEquationDefinitions()
    {
       return equations.values().stream().map(Equation::toYoEquationDefinition).toList();
+   }
+
+   private static void updateEquationHistory(Equation equation)
+   {
+      try
+      {
+         equation.updateHistory();
+      }
+      catch (Exception e)
+      {
+         if (!SILENCE_PARSING_ERRORS)
+            throw e;
+      }
    }
 
    public static class YoEquationListChange
