@@ -117,8 +117,9 @@ public class SessionVisualizerIOTools
    public static final String DEFAULT_YO_COMPOSITE_PATTERNS_FILE = "DefaultYoCompositePatterns" + yoCompositeConfigurationFileExtension;
    public static final URL YO_COMPOSITE_PATTERN_EDITOR_PANE_URL = getFXMLResource(YO_COMPOSITE_PATTERN, "YoCompositePatternEditorPane");
    public static final URL YO_COMPOSITE_PATTERN_PROPERTY_WINDOW_URL = getFXMLResource(YO_COMPOSITE_PATTERN, "YoCompositePatternPropertyWindow");
-   public static final URL YO_COMPOSITE_CREATOR_WINDOW_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoCompositeCreatorWindow");
-   public static final URL YO_EQUATION_CREATOR_PANE_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoEquationCreatorPane");
+   public static final URL YO_COMPOSITE_AND_EQUATION_EDITOR_WINDOW_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoCompositeAndEquationEditorWindow");
+   public static final URL YO_EQUATION_EDITOR_PANE_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoEquationEditorPane");
+   public static final URL YO_COMPOSITE_CREATOR_DIALOG_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoCompositeCreatorDialog");
    public static final URL YO_COMPOSITE_SEARCH_PANEL_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoCompositeSearchPane");
    public static final URL YO_SEARCH_TAB_PANE_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoSearchTabPane");
    public static final URL YO_ENTRY_LIST_VIEW_URL = getFXMLResource(YO_COMPOSITE_ENTRY, "YoEntryListView");
