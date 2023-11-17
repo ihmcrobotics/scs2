@@ -154,7 +154,7 @@ public class EquationToken
          case VARIABLE:
             return variable.toString();
          case OPERATION:
-            return "Operation:" + operationFactory.operationName;
+            return "Operation:" + operationFactory.name;
          case WORD:
             return "Word:" + word;
       }

@@ -5,7 +5,6 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,13 +12,15 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.session.Session;
@@ -44,7 +45,7 @@ import java.util.function.Function;
 public class YoCompositeAndEquationEditorWindowController
 {
    private static final String NEW_COMPOSITE_NAME = "NewVariable";
-   public static final String NEW_EQUATION_NAME = "My YoEquation";
+   public static final String NEW_EQUATION_NAME = "NewEquation";
 
    @FXML
    private Pane mainPane;
@@ -94,6 +95,10 @@ public class YoCompositeAndEquationEditorWindowController
                                                                                             while (equationEditorContainer.getChildren().size() > 1)
                                                                                                equationEditorContainer.getChildren().remove(1);
                                                                                          }
+                                                                                         else if (equationEditorContainer.getChildren().size() == 1)
+                                                                                         {
+                                                                                            equationEditorContainer.getChildren().add(newValue.getMainPane());
+                                                                                         }
                                                                                          else
                                                                                          {
                                                                                             equationEditorContainer.getChildren()
@@ -103,7 +108,9 @@ public class YoCompositeAndEquationEditorWindowController
 
       messager.addFXTopicListener(topics.getSessionYoEquationListChangeState(), m ->
       {
-         yoEquationEditorListView.getSelectionModel().clearSelection();
+         if (yoEquationEditorListView.getSelectionModel().getSelectedIndex() >= m.getEquations().size())
+            yoEquationEditorListView.getSelectionModel().clearSelection();
+
          for (int i = 0; i < m.getEquations().size(); i++)
          {
             YoEquationDefinition equationDefinition = m.getEquations().get(i);
@@ -115,15 +122,6 @@ public class YoCompositeAndEquationEditorWindowController
       });
 
       MenuTools.setupContextMenu(yoEquationEditorListView, ListViewTools.removeMenuItemFactory(false));
-
-      yoEquationEditorListView.getItems().addListener(new ListChangeListener<YoEquationEditorPaneController>()
-      {
-         @Override
-         public void onChanged(Change<? extends YoEquationEditorPaneController> c)
-         {
-            LogTools.info("YoEquationEditorListView changed: %s", c);
-         }
-      });
 
       window = new Stage(StageStyle.UTILITY);
       window.addEventHandler(KeyEvent.KEY_PRESSED, e ->
@@ -152,7 +150,7 @@ public class YoCompositeAndEquationEditorWindowController
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.YO_COMPOSITE_CREATOR_DIALOG_URL);
          loader.load();
          YoCompositeCreatorDialogController yoCompositeCreatorDialogController = loader.getController();
-         YoComposite yoComposite = yoCompositeCreatorDialogController.showAndWait(userRegistry);
+         YoComposite yoComposite = yoCompositeCreatorDialogController.showAndWait(window, userRegistry);
          if (yoComposite != null)
          {
             refreshYoCompositeListView();
@@ -179,8 +177,9 @@ public class YoCompositeAndEquationEditorWindowController
       newEquation.setEquation("a = b + c");
       int index = 0;
       while (!isEquationNameUnique(newEquation))
-         newEquation.setName(NEW_COMPOSITE_NAME + "[%d]".formatted(index++));
+         newEquation.setName(NEW_EQUATION_NAME + "(%d)".formatted(index++));
       newEquation(newEquation);
+      yoEquationEditorListView.getSelectionModel().selectLast();
    }
 
    public void newEquation(YoEquationDefinition equation)
@@ -259,13 +258,32 @@ public class YoCompositeAndEquationEditorWindowController
    {
    }
 
+   @FXML
+   public void openHelpDialog()
+   {
+      try
+      {
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.YO_EQUATION_EDITOR_HELP_PANE_URL);
+         loader.load();
+         YoEquationEditorHelpPaneController controller = loader.getController();
+         controller.show(window);
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
+   }
+
    private static class YoEquationListCell extends ListCell<YoEquationEditorPaneController>
    {
+      private final Font equationFont = Font.font(Font.getDefault().getFamily(), FontPosture.ITALIC, 12);
+
       @Override
       protected void updateItem(YoEquationEditorPaneController item, boolean empty)
       {
          super.updateItem(item, empty);
-         setGraphic(new Label("Blop"));
+         textProperty().unbind();
+
          if (empty || item == null)
          {
             setGraphic(null);
@@ -273,8 +291,17 @@ public class YoCompositeAndEquationEditorWindowController
          }
          else
          {
-            setText(item.getDefinition().getName());
-            textProperty().bind(item.getEquationNameTextField().textProperty());
+            HBox graphic = new HBox(10);
+            Label equationNameLabel = new Label();
+            equationNameLabel.textProperty().bind(item.getEquationNameTextField().textProperty());
+            graphic.getChildren().add(equationNameLabel);
+
+            Label equationLabel = new Label();
+            equationLabel.setFont(equationFont);
+            equationLabel.textProperty().bind(item.getEquationTextArea().textProperty());
+            graphic.getChildren().add(equationLabel);
+
+            setGraphic(graphic);
          }
       }
    }

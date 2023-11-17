@@ -7,12 +7,14 @@ import java.util.function.Consumer;
 public final class EquationOperation<V extends EquationInput>
 {
    private final String name;
+   private final String description;
    private final V result;
    private final Consumer<V> calculation;
 
-   protected EquationOperation(String name, V result, Consumer<V> calculation)
+   protected EquationOperation(String name, String description, V result, Consumer<V> calculation)
    {
       this.name = name;
+      this.description = description;
       this.result = result;
       this.calculation = calculation;
    }
@@ -30,5 +32,10 @@ public final class EquationOperation<V extends EquationInput>
    public String getName()
    {
       return name;
+   }
+
+   public String getDescription()
+   {
+      return description;
    }
 }

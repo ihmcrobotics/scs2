@@ -13,14 +13,16 @@ import java.util.function.*;
  */
 public abstract class EquationOperationFactory
 {
-   protected final String operationName;
+   protected final String name;
+   protected final String description;
 
    private Supplier<List<EquationInput>> inputsSupplier;
    private EquationOperation<?> operation;
 
-   public EquationOperationFactory(String operationName)
+   public EquationOperationFactory(String name, String description)
    {
-      this.operationName = operationName;
+      this.name = name;
+      this.description = description;
    }
 
    public void setInputs(Supplier<List<EquationInput>> inputsSupplier)
@@ -43,6 +45,16 @@ public abstract class EquationOperationFactory
       return operation;
    }
 
+   public String getName()
+   {
+      return name;
+   }
+
+   public String getDescription()
+   {
+      return description;
+   }
+
    /**
     * Create a new instance of a function.
     *
@@ -62,9 +74,9 @@ public abstract class EquationOperationFactory
       private final IntUnaryOperator integerOperator;
       private final DoubleUnaryOperator doubleOperator;
 
-      public UnaryOperationFactory(String operationName, IntUnaryOperator integerOperator, DoubleUnaryOperator doubleOperator)
+      public UnaryOperationFactory(String name, String description, IntUnaryOperator integerOperator, DoubleUnaryOperator doubleOperator)
       {
-         super(operationName);
+         super(name, description);
          this.doubleOperator = doubleOperator;
          this.integerOperator = integerOperator;
       }
@@ -72,7 +84,7 @@ public abstract class EquationOperationFactory
       @Override
       public EquationOperationFactory duplicate()
       {
-         return new UnaryOperationFactory(operationName, integerOperator, doubleOperator);
+         return new UnaryOperationFactory(name, description, integerOperator, doubleOperator);
       }
 
       @Override
@@ -88,7 +100,8 @@ public abstract class EquationOperationFactory
          {
             if (A instanceof IntSupplier intA)
             {
-               return new EquationOperation<>(operationName + "-i",
+               return new EquationOperation<>(name + "-i",
+                                              description,
                                               new SimpleIntegerVariable(0),
                                               result -> result.setValue(integerOperator.applyAsInt(intA.getAsInt())));
             }
@@ -99,7 +112,8 @@ public abstract class EquationOperationFactory
             if (A instanceof ScalarConstant scalarA)
             {
                DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
-               return new EquationOperation<>(operationName + "-s",
+               return new EquationOperation<>(name + "-s",
+                                              description,
                                               new SimpleDoubleVariable(0),
                                               result -> result.setValue(doubleOperator.applyAsDouble(asDoubleA.getAsDouble())));
             }
@@ -114,9 +128,9 @@ public abstract class EquationOperationFactory
       private final IntBinaryOperator integerOperator;
       private final DoubleBinaryOperator doubleOperator;
 
-      public BinaryOperationFactory(String operationName, IntBinaryOperator integerOperator, DoubleBinaryOperator doubleOperator)
+      public BinaryOperationFactory(String name, String description, IntBinaryOperator integerOperator, DoubleBinaryOperator doubleOperator)
       {
-         super(operationName);
+         super(name, description);
          this.doubleOperator = doubleOperator;
          this.integerOperator = integerOperator;
       }
@@ -124,7 +138,7 @@ public abstract class EquationOperationFactory
       @Override
       public EquationOperationFactory duplicate()
       {
-         return new BinaryOperationFactory(operationName, integerOperator, doubleOperator);
+         return new BinaryOperationFactory(name, description, integerOperator, doubleOperator);
       }
 
       @Override
@@ -140,7 +154,8 @@ public abstract class EquationOperationFactory
          {
             if (A instanceof IntSupplier intA && B instanceof IntSupplier intB)
             {
-               return new EquationOperation<>(operationName + "-ii",
+               return new EquationOperation<>(name + "-ii",
+                                              description,
                                               new SimpleIntegerVariable(0),
                                               result -> result.setValue(integerOperator.applyAsInt(intA.getAsInt(), intB.getAsInt())));
             }
@@ -152,7 +167,8 @@ public abstract class EquationOperationFactory
             {
                DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
                DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
-               return new EquationOperation<>(operationName + "-ss",
+               return new EquationOperation<>(name + "-ss",
+                                              description,
                                               new SimpleDoubleVariable(0),
                                               result -> result.setValue(doubleOperator.applyAsDouble(asDoubleA.getAsDouble(), asDoubleB.getAsDouble())));
             }
@@ -166,7 +182,7 @@ public abstract class EquationOperationFactory
    {
       public AssignmentOperationFactory()
       {
-         super("assign");
+         super("assign", "Assigns the value of the right hand side to the left hand side.");
       }
 
       @Override
@@ -179,27 +195,18 @@ public abstract class EquationOperationFactory
       protected EquationOperation<?> buildImpl(List<EquationInput> inputs)
       {
          EquationOperationFactory.checkNumberOfInputs(inputs, 2);
-         return create(inputs.get(0), inputs.get(1));
-      }
+         EquationInput A = inputs.get(0);
+         EquationInput B = inputs.get(1);
 
-      /**
-       * Instantiate the assignment operation: "A = B".
-       *
-       * @param A the variable to be assigned.
-       * @param B the variable to read from.
-       * @return the resulting operation.
-       */
-      public EquationOperation<?> create(EquationInput A, EquationInput B)
-      {
          if (A instanceof IntegerVariable intA && B instanceof IntSupplier intB)
          {
-            return new EquationOperation<>("copy-ii", intA, result -> result.setValue(intB.getAsInt()));
+            return new EquationOperation<>(name + "-ii", description, intA, result -> result.setValue(intB.getAsInt()));
          }
 
          if (A instanceof DoubleVariable doubleA && B instanceof ScalarConstant scalarB)
          {
             DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
-            return new EquationOperation<>("copy-ds", doubleA, result -> result.setValue(asDoubleB.getAsDouble()));
+            return new EquationOperation<>(name + "-ds", description, doubleA, result -> result.setValue(asDoubleB.getAsDouble()));
          }
 
          throw new RuntimeException("Unsupported types for assignment: A = " + A.getClass().getSimpleName() + ", B = " + B.getClass().getSimpleName());

@@ -1,40 +1,40 @@
 .root {
-	-default-pale-green: #89e0c0;
-	-default-pale-red: #edafb7;
-	-default-pale-blue: #8996e0;
-	-default-pale-cyan: #89e0dd;
-	-default-pale-dark-blue: #3d69c9;
-	-default-pale-pink: #dd8bd8;
-	-default-pale-purple: #b2aeeb;
-	-default-grey: #CCCCCC;
+    -default-pale-green: #89e0c0;
+    -default-pale-red: #edafb7;
+    -default-pale-blue: #8996e0;
+    -default-pale-cyan: #89e0dd;
+    -default-pale-dark-blue: #3d69c9;
+    -default-pale-pink: #dd8bd8;
+    -default-pale-purple: #b2aeeb;
+    -default-grey: #CCCCCC;
 
-	-default-small-icon-size: 20.0;
-	-default-medium-icon-size: 25.0;
+    -default-small-icon-size: 20.0;
+    -default-medium-icon-size: 25.0;
 
-	-default-small-spacing: 3.0;
-	-default-medium-spacing: 5.0;
-	-default-large-spacing: 10.0;
+    -default-small-spacing: 3.0;
+    -default-medium-spacing: 5.0;
+    -default-large-spacing: 10.0;
 
     /* Chart Color Palette */
-    CHART_COLOR_1: rgb(160, 0.0, 0.0);/* #f3622d; */
-    CHART_COLOR_2: rgb(0.0, 0.0, 255);/* #fba71b; */
-    CHART_COLOR_3: rgb(0.0, 128, 0.0);/* #57b757; */
-    CHART_COLOR_4: rgb(0.0, 0.0, 0.0);/* #41a9c9; */
-    CHART_COLOR_5: rgb(128, 128, 128);/* #4258c9; */
-    CHART_COLOR_6: rgb(128, 0.0, 128);/* #9a42c8; */
-    CHART_COLOR_7: rgb(0.0, 128, 128);/* #c84164; */
-    CHART_COLOR_8: rgb(96, 96, 0.0);/* #888888; */
+    CHART_COLOR_1: rgb(160, 0.0, 0.0); /* #f3622d; */
+    CHART_COLOR_2: rgb(0.0, 0.0, 255); /* #fba71b; */
+    CHART_COLOR_3: rgb(0.0, 128, 0.0); /* #57b757; */
+    CHART_COLOR_4: rgb(0.0, 0.0, 0.0); /* #41a9c9; */
+    CHART_COLOR_5: rgb(128, 128, 128); /* #4258c9; */
+    CHART_COLOR_6: rgb(128, 0.0, 128); /* #9a42c8; */
+    CHART_COLOR_7: rgb(0.0, 128, 128); /* #c84164; */
+    CHART_COLOR_8: rgb(96, 96, 0.0); /* #888888; */
     CHART_COLOR_9: rgb(255, 80, 80);
     CHART_COLOR_10: rgb(80, 255, 2255);
 }
 
 /* Buttons */
 .button:hover {
-	-fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
 }
 
 .button:disabled {
-	-fx-opacity: 0.3;
+    -fx-opacity: 0.3;
 }
 
 /*******************************************************************************
@@ -44,178 +44,178 @@
  ******************************************************************************/
 
 .snapshot-icon-view {
-	-fx-fill: black;
-	-glyph-name: CAMERA;
+    -fx-fill: black;
+    -glyph-name: CAMERA;
 }
 
 .video-icon-view {
-	-fx-fill: black;
-	-glyph-name: VIDEO_CAMERA;
+    -fx-fill: black;
+    -glyph-name: VIDEO_CAMERA;
 }
 
 .run-icon-view {
-	-glyph-name: GEARS;
+    -glyph-name: GEARS;
 }
 
 .playback-icon-view {
-	-glyph-name: PLAY_CIRCLE;
+    -glyph-name: PLAY_CIRCLE;
 }
 
 .pause-icon-view {
-	-glyph-name: PAUSE_CIRCLE;
+    -glyph-name: PAUSE_CIRCLE;
 }
 
 .set-inpoint-icon-view {
-	-fx-fill: -default-pale-green;
-	-glyph-name: STEP_BACKWARD;
+    -fx-fill: -default-pale-green;
+    -glyph-name: STEP_BACKWARD;
 }
 
 .set-outpoint-icon-view {
-	-fx-fill: -default-pale-red;
-	-glyph-name: STEP_FORWARD;
+    -fx-fill: -default-pale-red;
+    -glyph-name: STEP_FORWARD;
 }
 
 .goto-inpoint-icon-view {
-	-fx-fill: black;
-	-glyph-name: ANGLE_DOUBLE_LEFT;
+    -fx-fill: black;
+    -glyph-name: ANGLE_DOUBLE_LEFT;
 }
 
 .goto-outpoint-icon-view {
-	-fx-fill: black;
-	-glyph-name: ANGLE_DOUBLE_RIGHT;
+    -fx-fill: black;
+    -glyph-name: ANGLE_DOUBLE_RIGHT;
 }
 
 .step-backward-icon-view {
-	-fx-fill: black;
-	-glyph-name: ANGLE_LEFT;
+    -fx-fill: black;
+    -glyph-name: ANGLE_LEFT;
 }
 
 .step-forward-icon-view {
-	-fx-fill: black;
-	-glyph-name: ANGLE_RIGHT;
+    -fx-fill: black;
+    -glyph-name: ANGLE_RIGHT;
 }
 
 .previous-keyframe-icon-view {
-	-glyph-name: ARROW_CIRCLE_ALT_LEFT;
+    -glyph-name: ARROW_CIRCLE_ALT_LEFT;
 }
 
 .next-keyframe-icon-view {
-	-glyph-name: ARROW_CIRCLE_ALT_RIGHT;
+    -glyph-name: ARROW_CIRCLE_ALT_RIGHT;
 }
 
 .set-keyframe-icon-view {
-	-glyph-name: KEY;
+    -glyph-name: KEY;
 }
 
 .zoom-in-icon-view {
-	-glyph-name: SEARCH_PLUS;
+    -glyph-name: SEARCH_PLUS;
 }
 
 .zoom-out-icon-view {
-	-glyph-name: SEARCH_MINUS;
+    -glyph-name: SEARCH_MINUS;
 }
 
 .show-simple-controls-icon-view {
-	-glyph-name: MINUS_CIRCLE;
+    -glyph-name: MINUS_CIRCLE;
 }
 
 .show-advanced-controls-icon-view {
-	-glyph-name: PLUS_CIRCLE;
+    -glyph-name: PLUS_CIRCLE;
 }
 
 .crop-data-buffer-icon-view {
-	-fx-fill: black;
-	-glyph-name: CROP;
+    -fx-fill: black;
+    -glyph-name: CROP;
 }
 
 .flush-data-buffer-icon-view {
-	-fx-fill: black;
-	-glyph-name: ERASER;
+    -fx-fill: black;
+    -glyph-name: ERASER;
 }
 
 .resize-data-buffer-icon-view {
-	-fx-fill: black;
-	-glyph-name: TACHOMETER;
+    -fx-fill: black;
+    -glyph-name: TACHOMETER;
 }
 
 .buffer-record-tick-period-icon-view {
-	-fx-fill: black;
-	-glyph-name: FILTER;
+    -fx-fill: black;
+    -glyph-name: FILTER;
 }
 
 .double-precision-icon-view {
-	-fx-fill: black;
-	-glyph-name: NUMERIC;
+    -fx-fill: black;
+    -glyph-name: NUMERIC;
 }
 
 .close-icon-view {
-	-fx-fill: -default-pale-red;
-	-glyph-name: SIGN_IN;
+    -fx-fill: -default-pale-red;
+    -glyph-name: SIGN_IN;
 }
 
 .playback-realtime-rate-icon-view {
-	-fx-fill: black;
-	-glyph-name: TACHOMETER;
+    -fx-fill: black;
+    -glyph-name: TACHOMETER;
 }
 
 .start-remote-session-icon-view {
-	-fx-fill: black;
-	-glyph-name: WIFI;
+    -fx-fill: black;
+    -glyph-name: WIFI;
 }
 
 .start-log-session-icon-view {
-	-fx-fill: black;
-	-glyph-name: SERVER;
+    -fx-fill: black;
+    -glyph-name: SERVER;
 }
 
 .new-chart-window-icon-view {
-	-fx-fill: black;
-	-glyph-name: SHARE_SQUARE_ALT;
+    -fx-fill: black;
+    -glyph-name: SHARE_SQUARE_ALT;
 }
 
 .refresh-composite-icon-view {
-	-fx-fill: -default-pale-pink;
-	-glyph-name: REFRESH;
+    -fx-fill: -default-pale-pink;
+    -glyph-name: REFRESH;
 }
 
 .create-icon-view {
-	-fx-fill: -default-pale-blue;
-	-glyph-name: FIBER_NEW;
+    -fx-fill: -default-pale-blue;
+    -glyph-name: FIBER_NEW;
 }
 
 .load-icon-view {
-	-fx-fill: -default-pale-blue;
-	-glyph-name: FOLDER_OPEN_ALT;
+    -fx-fill: -default-pale-blue;
+    -glyph-name: FOLDER_OPEN_ALT;
 }
 
 .load-default-icon-view {
-	-fx-fill: -default-pale-cyan;
-	-glyph-name: FOLDER_OPEN_ALT;
+    -fx-fill: -default-pale-cyan;
+    -glyph-name: FOLDER_OPEN_ALT;
 }
 
 .save-icon-view {
-	-fx-fill: -default-pale-blue;
-	-glyph-name: FLOPPY_ALT;
+    -fx-fill: -default-pale-blue;
+    -glyph-name: FLOPPY_ALT;
 }
 
 .save-default-icon-view {
-	-fx-fill: -default-pale-cyan;
-	-glyph-name: FLOPPY_ALT;
+    -fx-fill: -default-pale-cyan;
+    -glyph-name: FLOPPY_ALT;
 }
 
 .properties-icon-view {
-	-fx-fill: black;
-	-glyph-name: EDIT;
+    -fx-fill: black;
+    -glyph-name: EDIT;
 }
 
 .export-data-icon-view {
-	-fx-fill: -default-pale-blue;
-	-glyph-name: UPLOAD;
+    -fx-fill: -default-pale-blue;
+    -glyph-name: UPLOAD;
 }
 
 .import-data-icon-view {
-	-fx-fill: -default-pale-blue;
-	-glyph-name: DOWNLOAD;
+    -fx-fill: -default-pale-blue;
+    -glyph-name: DOWNLOAD;
 }
 
 /*******************************************************************************
@@ -225,64 +225,66 @@
  ******************************************************************************/
 
 .chart-group-grid-pane {
-	-fx-hgap: 2.0;
-	-fx-vgap: 2.0;
+    -fx-hgap: 2.0;
+    -fx-vgap: 2.0;
 }
 
 .chart-group-button {
-	-fx-content-display: GRAPHIC_ONLY;
-	-fx-graphic-text-gap: 0.0;
-	-fx-padding: 1.0 1.0 1.0 1.0;
+    -fx-content-display: GRAPHIC_ONLY;
+    -fx-graphic-text-gap: 0.0;
+    -fx-padding: 1.0 1.0 1.0 1.0;
 }
 
 .chart-group-button-icon-view {
-	-fx-fill: -default-pale-dark-blue;
-	-glyph-name: CARET_SQUARE_ALT_DOWN;
-	-glyph-size: -default-small-icon-size;
+    -fx-fill: -default-pale-dark-blue;
+    -glyph-name: CARET_SQUARE_ALT_DOWN;
+    -glyph-size: -default-small-icon-size;
 }
 
 .chart {
     -fx-padding: 0.0px;
     -fx-border-color: darkgrey;
     -fx-background-color: -fx-background;
-    -fx-effect: dropshadow( three-pass-box , derive(-fx-background, -15.0%) , 2.5, 0.0 , 1.5 , 1.5 );
+    -fx-effect: dropshadow(three-pass-box, derive(-fx-background, -15.0%), 2.5, 0.0, 1.5, 1.5);
 }
+
 .chart-plot-background {
     -fx-background-color: -fx-background;
 }
+
 .chart-content {
     -fx-padding: 0.0px;
 }
 
 .chart-origin-marker {
-	-fx-stroke: darkgrey;
-	-fx-stroke-dash-array: 10.0 8.0 10.0 8.0;
+    -fx-stroke: darkgrey;
+    -fx-stroke-dash-array: 10.0 8.0 10.0 8.0;
     -marker-type: HORIZONTAL;
 }
 
 .chart-user-marker {
-	-fx-stroke-dash-array: 10.0 8.0 10.0 8.0;
+    -fx-stroke-dash-array: 10.0 8.0 10.0 8.0;
     -marker-type: HORIZONTAL;
 }
 
 .chart-inpoint-marker {
-	-fx-stroke: -default-pale-green;
+    -fx-stroke: -default-pale-green;
     -marker-type: VERTICAL;
 }
 
 .chart-outpoint-marker {
-	-fx-stroke: -default-pale-red;
+    -fx-stroke: -default-pale-red;
     -marker-type: VERTICAL;
 }
 
 .chart-current-index-marker {
-	-fx-stroke: black;
+    -fx-stroke: black;
     -marker-type: VERTICAL;
 }
 
 .chart-keyframe-marker {
-	-fx-stroke: darkorange;
-	-fx-stroke-dash-array: 10.0 10.0 10.0 10.0;
+    -fx-stroke: darkorange;
+    -fx-stroke-dash-array: 10.0 10.0 10.0 10.0;
     -marker-type: VERTICAL;
 }
 
@@ -291,29 +293,58 @@
     -fx-stroke-width: 1.0px;
 }
 
-.default-color0.chart-series-line { -fx-stroke: CHART_COLOR_1; }
-.default-color1.chart-series-line { -fx-stroke: CHART_COLOR_2; }
-.default-color2.chart-series-line { -fx-stroke: CHART_COLOR_3; }
-.default-color3.chart-series-line { -fx-stroke: CHART_COLOR_4; }
-.default-color4.chart-series-line { -fx-stroke: CHART_COLOR_5; }
-.default-color5.chart-series-line { -fx-stroke: CHART_COLOR_6; }
-.default-color6.chart-series-line { -fx-stroke: CHART_COLOR_7; }
-.default-color7.chart-series-line { -fx-stroke: CHART_COLOR_8; }
-.default-color8.chart-series-line { -fx-stroke: CHART_COLOR_9; }
-.default-color9.chart-series-line { -fx-stroke: CHART_COLOR_10; }
+.default-color0.chart-series-line {
+    -fx-stroke: CHART_COLOR_1;
+}
+
+.default-color1.chart-series-line {
+    -fx-stroke: CHART_COLOR_2;
+}
+
+.default-color2.chart-series-line {
+    -fx-stroke: CHART_COLOR_3;
+}
+
+.default-color3.chart-series-line {
+    -fx-stroke: CHART_COLOR_4;
+}
+
+.default-color4.chart-series-line {
+    -fx-stroke: CHART_COLOR_5;
+}
+
+.default-color5.chart-series-line {
+    -fx-stroke: CHART_COLOR_6;
+}
+
+.default-color6.chart-series-line {
+    -fx-stroke: CHART_COLOR_7;
+}
+
+.default-color7.chart-series-line {
+    -fx-stroke: CHART_COLOR_8;
+}
+
+.default-color8.chart-series-line {
+    -fx-stroke: CHART_COLOR_9;
+}
+
+.default-color9.chart-series-line {
+    -fx-stroke: CHART_COLOR_10;
+}
 
 .chart-legend {
-	-fx-hgap: 8.0;
-	-fx-vgap: 3.0;
-	-fx-alignment:CENTER_LEFT;
-	-fx-padding: 2.0 -2.0 4.0 2.0;
-	-fx-opaque-insets: 0.0 0.0 0.0 0.0;
-	-fx-background-color:transparent;
+    -fx-hgap: 8.0;
+    -fx-vgap: 3.0;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 2.0 -2.0 4.0 2.0;
+    -fx-opaque-insets: 0.0 0.0 0.0 0.0;
+    -fx-background-color: transparent;
 }
 
 .chart-legend-item {
-	-fx-spacing: 3.0;
-	-fx-padding: -3.0 0.0 -3.0 0.0;
+    -fx-spacing: 3.0;
+    -fx-padding: -3.0 0.0 -3.0 0.0;
 }
 
 .chart-legend-item-name {
@@ -323,35 +354,35 @@
 }
 
 .chart-close-button {
-	-fx-content-display: GRAPHIC_ONLY;
-	-fx-graphic-text-gap: 0.0;
-	-fx-padding: 0 0 0 0;
+    -fx-content-display: GRAPHIC_ONLY;
+    -fx-graphic-text-gap: 0.0;
+    -fx-padding: 0 0 0 0;
 }
 
 .chart-close-button-icon-view {
-	-fx-fill: -default-pale-red;
-	-glyph-name: TIMES_CIRCLE_ALT;
-	-glyph-size: -default-small-icon-size;
+    -fx-fill: -default-pale-red;
+    -glyph-name: TIMES_CIRCLE_ALT;
+    -glyph-size: -default-small-icon-size;
 }
 
 .chart-move-icon-view {
-	-fx-fill: -default-pale-cyan;
-	-glyph-name: ARROWS;
-	-glyph-size: -default-small-icon-size;
+    -fx-fill: -default-pale-cyan;
+    -glyph-name: ARROWS;
+    -glyph-size: -default-small-icon-size;
 }
 
 .chart-option-button {
-	-fx-padding: 0 0 0 0;
+    -fx-padding: 0 0 0 0;
 }
 
 .chart-option-button-icon-view {
-	-fx-fill: -default-pale-purple;
-	-glyph-name: BAR_CHART;
-	-glyph-size: -default-small-icon-size;
+    -fx-fill: -default-pale-purple;
+    -glyph-name: BAR_CHART;
+    -glyph-size: -default-small-icon-size;
 }
 
 .chart-table-view-clear-button {
-	-fx-background-color:#edafb7;
+    -fx-background-color: #edafb7;
 }
 
 /*******************************************************************************
@@ -361,8 +392,8 @@
  ******************************************************************************/
 
 .set-indices-to-in-out-button {
-	-fx-background-color: -default-pale-cyan;
-	-jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-cyan;
+    -jfx-button-type: RAISED;
 }
 
 /*******************************************************************************
@@ -372,18 +403,18 @@
  ******************************************************************************/
 
 .export-data-select-all-button {
-	-fx-background-color: -default-pale-green;
-	-jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-green;
+    -jfx-button-type: RAISED;
 }
 
 .export-data-unselect-all-button {
-	-fx-background-color: -default-pale-red;
-	-jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-red;
+    -jfx-button-type: RAISED;
 }
 
 .export-data-save-filter {
-	-fx-background-color: -default-pale-purple;
-	-jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-purple;
+    -jfx-button-type: RAISED;
 }
 
 /*******************************************************************************
@@ -393,38 +424,38 @@
  ******************************************************************************/
 
 .advanced-controls-button {
-	-jfx-button-type: RAISED;
-	-fx-opacity: 0.95;
-	-fx-content-display: GRAPHIC_ONLY;
-	-fx-graphic-text-gap: 0.0;
-	-fx-alignment: CENTER;
+    -jfx-button-type: RAISED;
+    -fx-opacity: 0.95;
+    -fx-content-display: GRAPHIC_ONLY;
+    -fx-graphic-text-gap: 0.0;
+    -fx-alignment: CENTER;
 }
 
 .advanced-controls-icon-view {
-	-glyph-size: -default-medium-icon-size;
+    -glyph-size: -default-medium-icon-size;
 }
 
 .buffer-index-slider {
 }
 
 .simple-controls-button {
-	-jfx-button-type: RAISED;
-	-fx-opacity: 0.7;
-	-fx-content-display: GRAPHIC_ONLY;
-	-fx-graphic-text-gap: 0.0;
+    -jfx-button-type: RAISED;
+    -fx-opacity: 0.7;
+    -fx-content-display: GRAPHIC_ONLY;
+    -fx-graphic-text-gap: 0.0;
 }
 
 .simple-controls-icon-view {
-	-fx-opacity: 0.8;
-	-glyph-size: 30.0;
+    -fx-opacity: 0.8;
+    -glyph-size: 30.0;
 }
 
 .session-controls-active-mode {
-	-fx-fill: #c9601a;
+    -fx-fill: #c9601a;
 }
 
 .session-controls-inactive-mode {
-	-fx-fill: black;
+    -fx-fill: black;
 }
 
 /*******************************************************************************
@@ -434,7 +465,7 @@
  ******************************************************************************/
 
 .menu-item-icon-view {
-	-glyph-size: -default-small-icon-size;
+    -glyph-size: -default-small-icon-size;
 }
 
 /*******************************************************************************
@@ -444,13 +475,13 @@
  ******************************************************************************/
 
 .log-crop-grid-pane {
-	-fx-hgap: 5.0;
-	-fx-vgap: 5.0;
+    -fx-hgap: 5.0;
+    -fx-vgap: 5.0;
 }
 
 .log-trim-controls-button {
-	-jfx-button-type: RAISED;
-	-fx-background-color: #bbd3fa;
+    -jfx-button-type: RAISED;
+    -fx-background-color: #bbd3fa;
 }
 
 /*******************************************************************************
@@ -460,8 +491,8 @@
  ******************************************************************************/
 
 .open-robot-model-file-button {
-	-jfx-button-type: RAISED;
-	-fx-background-color: -default-pale-purple;
+    -jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-purple;
 }
 
 /*******************************************************************************
@@ -471,17 +502,17 @@
  ******************************************************************************/
 
 .remote-session-icon-view {
-	-glyph-size: -default-small-icon-size;
+    -glyph-size: -default-small-icon-size;
 }
 
 .infomation-grid-pane {
-	-fx-hgap: hgap;
+    -fx-hgap: hgap;
 }
 
 .information-label {
-	-fx-font-weight: bold;
-	-fx-font-size: 12.0;
-	-fx-opacity: 0.7;
+    -fx-font-weight: bold;
+    -fx-font-size: 12.0;
+    -fx-opacity: 0.7;
 }
 
 .jfx-tree-table-view .tree-table-cell {
@@ -489,51 +520,56 @@
 }
 
 .start-session-button {
-	-fx-background-color: -default-pale-green;
-	-jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-green;
+    -jfx-button-type: RAISED;
 }
 
 .end-session-button {
-	-fx-background-color: -default-pale-red;
-	-jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-red;
+    -jfx-button-type: RAISED;
 }
 
 .restart-log-button {
-	-fx-font-weight: bold;
-	-fx-font-size: 12.0;
-	-fx-background-color: -default-grey;
-	-jfx-button-type: RAISED;
-	-fx-opacity: 0.6;
+    -fx-font-weight: bold;
+    -fx-font-size: 12.0;
+    -fx-background-color: -default-grey;
+    -jfx-button-type: RAISED;
+    -fx-opacity: 0.6;
 }
 
 /*******************************************************************************
  *                                                                             *
- * Composite pattern editor                                                    *
+ * Composite editors                                                           *
  *                                                                             *
  ******************************************************************************/
 
 .composite-editor-icon-view {
-	-glyph-size: -default-small-icon-size;
+    -glyph-size: -default-small-icon-size;
 }
 
 .add-icon-view {
-	-fx-fill: -default-pale-green;
-	-glyph-name: PLUS;
+    -fx-fill: -default-pale-green;
+    -glyph-name: PLUS;
 }
 
 .remove-icon-view {
-	-fx-fill: -default-pale-red;
-	-glyph-name: MINUS;
+    -fx-fill: -default-pale-red;
+    -glyph-name: MINUS;
 }
 
 .save-changes-button {
-	-jfx-button-type: RAISED;
-	-fx-background-color: -default-pale-green;
+    -jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-green;
 }
 
 .revert-changes-button {
-	-jfx-button-type: RAISED;
-	-fx-background-color: -default-pale-red;
+    -jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-red;
+}
+
+.help-icon-view {
+    -fx-fill: -default-pale-cyan;
+    -glyph-name: QUESTION;
 }
 
 /*******************************************************************************
@@ -543,38 +579,38 @@
  ******************************************************************************/
 
 .graphic-editor-button {
-	-jfx-button-type: RAISED;
+    -jfx-button-type: RAISED;
 }
 
 .graphic-editor-icon-view {
-	-glyph-size: -default-small-icon-size;
+    -glyph-size: -default-small-icon-size;
 }
 
 .graphic-editor-gridpane {
-	-fx-hgap: -default-large-spacing;
-	-fx-vgap: -default-medium-spacing;
+    -fx-hgap: -default-large-spacing;
+    -fx-vgap: -default-medium-spacing;
 }
 
 .graphic-editor-hbox {
-	-fx-spacing: -default-large-spacing;
+    -fx-spacing: -default-large-spacing;
 }
 
 .graphic-editor-vbox {
-	-fx-spacing: -default-large-spacing;
+    -fx-spacing: -default-large-spacing;
 }
 
 .graphic-editor-main-pane {
-	-fx-padding: 10.0 10.0 10.0 10.0;
+    -fx-padding: 10.0 10.0 10.0 10.0;
 }
 
 .graphic-editor-new-button {
-	-jfx-button-type: RAISED;
-	-fx-background-color: -default-pale-green;
+    -jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-green;
 }
 
 .graphic-editor-cancel-button {
-	-jfx-button-type: RAISED;
-	-fx-background-color: -default-pale-red;
+    -jfx-button-type: RAISED;
+    -fx-background-color: -default-pale-red;
 }
 
 .graphic-item-type-combo-box .list-cell {
@@ -583,13 +619,13 @@
 }
 
 .graphic-editor-preview-button {
-	-fx-alignment: BOTTOM_CENTER;
-	-fx-pref-width: 130px;
-	-fx-pref-height: 130px;
-} 
+    -fx-alignment: BOTTOM_CENTER;
+    -fx-pref-width: 130px;
+    -fx-pref-height: 130px;
+}
 
 .graphic-editor-preview-icon {
-} 
+}
 
 /*******************************************************************************
  *                                                                             *
@@ -606,30 +642,30 @@
  * Sliderboard                                                                 *
  *                                                                             *
  ******************************************************************************/
- 
+
 .sliderboard-grid-pane {
-	-fx-hgap: 2.0;
-	-fx-vgap: 2.0;
+    -fx-hgap: 2.0;
+    -fx-vgap: 2.0;
 }
 
 .sliderboard-grid-cell {
-	-fx-padding: 5.0;
+    -fx-padding: 5.0;
     -fx-border-color: darkgrey;
     -fx-background-color: -fx-background;
-    -fx-effect: dropshadow( three-pass-box , derive(-fx-background, -15.0%) , 2.5, 0.0 , 1.5 , 1.5 );
+    -fx-effect: dropshadow(three-pass-box, derive(-fx-background, -15.0%), 2.5, 0.0, 1.5, 1.5);
 }
 
 .sliderboard-button {
-	-jfx-size: 6;
-	-fx-content-display: TOP;
-	-fx-graphic-text-gap: 0;
-    -fx-effect: dropshadow( three-pass-box , derive(-fx-background, -50.0%) , 2.5, 0.0 , 1.5 , 1.5 );
+    -jfx-size: 6;
+    -fx-content-display: TOP;
+    -fx-graphic-text-gap: 0;
+    -fx-effect: dropshadow(three-pass-box, derive(-fx-background, -50.0%), 2.5, 0.0, 1.5, 1.5);
     -jfx-toggle-color: -default-pale-red;
     -jfx-untoggle-color: -default-grey;
 }
 
 .sliderboard-button:selected {
-    -fx-effect: dropshadow( three-pass-box , derive(-fx-background, -50.0%) , -2.5, 0.0 , -1.5 , -1.5 );
+    -fx-effect: dropshadow(three-pass-box, derive(-fx-background, -50.0%), -2.5, 0.0, -1.5, -1.5);
     -jfx-toggle-color: -default-pale-red;
     -jfx-untoggle-color: -default-grey;
 }
