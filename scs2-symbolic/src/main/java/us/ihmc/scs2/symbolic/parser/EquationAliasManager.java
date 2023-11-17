@@ -1,6 +1,7 @@
 package us.ihmc.scs2.symbolic.parser;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.symbolic.EquationInput;
@@ -152,7 +153,7 @@ public class EquationAliasManager
    {
       try
       {
-         return addConstant(value, Double.parseDouble(value));
+         return addConstant(name, Double.parseDouble(value));
       }
       catch (NumberFormatException e)
       {
@@ -161,14 +162,14 @@ public class EquationAliasManager
 
       try
       {
-         return addConstant(value, Integer.parseInt(value));
+         return addConstant(name, Integer.parseInt(value));
       }
       catch (NumberFormatException e)
       {
          // ignore, just means it's not an integer
       }
 
-      return addAlias(value, yoInputHandler.searchYoEquationInput(value));
+      return addAlias(name, yoInputHandler.searchYoEquationInput(value));
    }
 
    public EquationAlias addVariable(String name, Type type)
@@ -216,6 +217,24 @@ public class EquationAliasManager
       return addAlias(name, yoInputHandler.searchYoEquationInput(value));
    }
 
+   public EquationAlias addVariable(String name, EquationInputDefinition inputDefinition)
+   {
+      if (inputDefinition == null)
+         return null;
+
+      if (inputDefinition.getValue() != null)
+      {
+         if (inputDefinition.isConstant())
+            return addConstant(name, inputDefinition.getValue());
+         else
+            return addVariable(name, inputDefinition.getValue());
+      }
+      else
+      {
+         return addAlias(name, yoInputHandler.searchYoEquationInput(inputDefinition.getYoVariableValue()));
+      }
+   }
+
    public boolean addAliases(List<EquationAliasDefinition> aliasDefinitions)
    {
       boolean success = true;
@@ -236,7 +255,7 @@ public class EquationAliasManager
 
       for (EquationAlias alias : userAliases.values())
       {
-         String aliasValue = alias.input == null ? null : alias.input.valueAsString();
+         EquationInputDefinition aliasValue = alias.input == null ? null : alias.input.toInputDefinition();
          aliasDefinitions.add(new EquationAliasDefinition(alias.name, aliasValue));
       }
 

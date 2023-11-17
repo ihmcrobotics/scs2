@@ -233,7 +233,7 @@ public abstract class Session
    protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, DEFAULT_INITIAL_BUFFER_SIZE);
 
    // TODO Not sure if that's the right place for this.
-   protected final YoEquationManager equationManager = new YoEquationManager(sharedBuffer);
+   protected final YoEquationManager equationManager = new YoEquationManager(sharedBuffer, userRegistry);
    /**
     * The current mode this session is running, see {@link SessionMode}.
     */
