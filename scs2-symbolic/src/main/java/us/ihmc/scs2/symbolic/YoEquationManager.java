@@ -1,7 +1,11 @@
 package us.ihmc.scs2.symbolic;
 
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -17,14 +21,17 @@ public class YoEquationManager
    private final Map<String, Equation> equations = new LinkedHashMap<>();
 
    private final List<Consumer<YoEquationListChange>> changeListeners = new ArrayList<>();
+   private final YoRegistry userRegistry;
 
-   public YoEquationManager(YoRegistry rootRegistry)
+   public YoEquationManager(YoRegistry rootRegistry, YoRegistry userRegistry)
    {
+      this.userRegistry = userRegistry;
       equationParser.getAliasManager().addRegistry(rootRegistry);
    }
 
-   public YoEquationManager(YoSharedBuffer yoSharedBuffer)
+   public YoEquationManager(YoSharedBuffer yoSharedBuffer, YoRegistry userRegistry)
    {
+      this.userRegistry = userRegistry;
       equationParser.getAliasManager().setYoSharedBuffer(yoSharedBuffer);
    }
 
@@ -43,13 +50,10 @@ public class YoEquationManager
       switch (change.getChangeType())
       {
          case ADD:
-            addEquation(change.getAddedEquation());
+            addEquation(change.getAddedEquations());
             break;
          case REMOVE:
-            removeEquation(change.getRemovedEquation().getName());
-            break;
-         case REPLACE:
-            replaceEquation(change.getAddedEquation());
+            removeEquations(change.getRemovedEquations());
             break;
          case SET_ALL:
             setAllEquations(change.getEquations());
@@ -59,31 +63,52 @@ public class YoEquationManager
 
    public void addEquation(YoEquationDefinition equationDefinition)
    {
-      Objects.requireNonNull(equationDefinition.getName());
-      if (equations.containsKey(equationDefinition.getName()))
-         throw new IllegalArgumentException("Duplicate equation name: " + equationDefinition.getName());
-      Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
-      updateEquationHistory(newEquation);
-      equations.put(equationDefinition.getName(), newEquation);
-      changeListeners.forEach(listener -> listener.accept(YoEquationListChange.add(equationDefinition)));
+      addEquation(List.of(equationDefinition));
    }
 
-   public Equation removeEquation(String equationName)
+   public void addEquation(List<YoEquationDefinition> equationDefinitions)
    {
-      Equation removedEquation = equations.remove(equationName);
-      changeListeners.forEach(listener -> listener.accept(YoEquationListChange.remove(removedEquation.toYoEquationDefinition())));
-      return removedEquation;
+      for (YoEquationDefinition equationDefinition : equationDefinitions)
+      {
+         Objects.requireNonNull(equationDefinition.getName());
+         if (equations.containsKey(equationDefinition.getName()))
+         {
+            LogTools.warn("Duplicate equation name: {}; skipping.", equationDefinition.getName());
+            continue;
+         }
+         ensureUserAliasesExist(equationDefinition);
+         Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
+         updateEquationHistory(newEquation);
+         equations.put(equationDefinition.getName(), newEquation);
+      }
+
+      changeListeners.forEach(listener -> listener.accept(new YoEquationListChange(YoEquationListChange.ChangeType.ADD,
+                                                                                   equationDefinitions,
+                                                                                   null,
+                                                                                   getEquationDefinitions())));
    }
 
-   public Equation replaceEquation(YoEquationDefinition equationDefinition)
+   public Equation removeEquation(YoEquationDefinition equationDefinition)
    {
-      Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
-      Equation removedEquation = equations.put(equationDefinition.getName(), newEquation);
-      if (removedEquation == null)
-         throw new IllegalArgumentException("Unknown equation name: " + equationDefinition.getName());
-      updateEquationHistory(newEquation);
-      changeListeners.forEach(listener -> listener.accept(YoEquationListChange.replace(equationDefinition, removedEquation.toYoEquationDefinition())));
-      return removedEquation;
+      return removeEquations(List.of(equationDefinition)).get(0);
+   }
+
+   public List<Equation> removeEquations(List<YoEquationDefinition> equationDefinitions)
+   {
+      List<Equation> removedEquations = new ArrayList<>();
+
+      Equation removedEquation = null;
+      for (YoEquationDefinition equationDefinition : equationDefinitions)
+      {
+         removedEquation = equations.remove(equationDefinition.getName());
+         if (removedEquation != null)
+            removedEquations.add(removedEquation);
+      }
+      changeListeners.forEach(listener -> listener.accept(new YoEquationListChange(YoEquationListChange.ChangeType.REMOVE,
+                                                                                   null,
+                                                                                   equationDefinitions,
+                                                                                   getEquationDefinitions())));
+      return removedEquations;
    }
 
    public void setAllEquations(List<YoEquationDefinition> equationDefinitions)
@@ -98,6 +123,7 @@ public class YoEquationManager
 
          if (equation == null || !equation.toYoEquationDefinition().equals(equationDefinition))
          {
+            ensureUserAliasesExist(equationDefinition);
             Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
             updateEquationHistory(newEquation);
             equations.put(equationDefinition.getName(), newEquation);
@@ -106,6 +132,26 @@ public class YoEquationManager
 
       equations.entrySet().removeIf(entry -> !newEquationNames.contains(entry.getKey()));
       changeListeners.forEach(listener -> listener.accept(YoEquationListChange.newList(equationDefinitions)));
+   }
+
+   private void ensureUserAliasesExist(YoEquationDefinition equationDefinition)
+   {
+      ensureUserAliasesExist(equationDefinition, userRegistry);
+   }
+
+   public static void ensureUserAliasesExist(YoEquationDefinition equationDefinition, YoRegistry userRegistry)
+   {
+      if (equationDefinition.getAliases() == null || equationDefinition.getAliases().isEmpty())
+         return;
+
+      for (EquationAliasDefinition alias : equationDefinition.getAliases())
+      {
+         YoVariableDefinition yoVariableValue = alias.getValue().getYoVariableValue();
+         if (yoVariableValue == null)
+            continue;
+         if (yoVariableValue.getNamespace().startsWith(userRegistry.getNamespace().toString()))
+            SharedMemoryTools.ensureYoVariableExists(userRegistry, yoVariableValue);
+      }
    }
 
    public void update()
@@ -150,27 +196,32 @@ public class YoEquationManager
    public static class YoEquationListChange
    {
       public enum ChangeType
-      {ADD, REMOVE, REPLACE, SET_ALL}
+      {ADD, REMOVE, SET_ALL}
 
       private final ChangeType changeType;
-      private final YoEquationDefinition addedEquation;
-      private final YoEquationDefinition removedEquation;
+      private final List<YoEquationDefinition> addedEquations;
+      private final List<YoEquationDefinition> removedEquations;
 
       private final List<YoEquationDefinition> equations;
 
       public static YoEquationListChange add(YoEquationDefinition addEquation)
       {
-         return new YoEquationListChange(ChangeType.ADD, addEquation, null, null);
+         return add(List.of(addEquation));
+      }
+
+      public static YoEquationListChange add(List<YoEquationDefinition> addEquations)
+      {
+         return new YoEquationListChange(ChangeType.ADD, addEquations, null, null);
       }
 
       public static YoEquationListChange remove(YoEquationDefinition removeEquation)
       {
-         return new YoEquationListChange(ChangeType.REMOVE, null, removeEquation, null);
+         return remove(List.of(removeEquation));
       }
 
-      public static YoEquationListChange replace(YoEquationDefinition addEquation, YoEquationDefinition removeEquation)
+      public static YoEquationListChange remove(List<YoEquationDefinition> removeEquations)
       {
-         return new YoEquationListChange(ChangeType.REPLACE, addEquation, removeEquation, null);
+         return new YoEquationListChange(ChangeType.REMOVE, null, removeEquations, null);
       }
 
       public static YoEquationListChange newList(List<YoEquationDefinition> equations)
@@ -179,13 +230,13 @@ public class YoEquationManager
       }
 
       private YoEquationListChange(ChangeType changeType,
-                                   YoEquationDefinition addedEquation,
-                                   YoEquationDefinition removedEquation,
+                                   List<YoEquationDefinition> addedEquations,
+                                   List<YoEquationDefinition> removedEquations,
                                    List<YoEquationDefinition> equations)
       {
          this.changeType = changeType;
-         this.addedEquation = addedEquation;
-         this.removedEquation = removedEquation;
+         this.addedEquations = addedEquations;
+         this.removedEquations = removedEquations;
          this.equations = equations;
       }
 
@@ -194,14 +245,14 @@ public class YoEquationManager
          return changeType;
       }
 
-      public YoEquationDefinition getAddedEquation()
+      public List<YoEquationDefinition> getAddedEquations()
       {
-         return addedEquation;
+         return addedEquations;
       }
 
-      public YoEquationDefinition getRemovedEquation()
+      public List<YoEquationDefinition> getRemovedEquations()
       {
-         return removedEquation;
+         return removedEquations;
       }
 
       public List<YoEquationDefinition> getEquations()

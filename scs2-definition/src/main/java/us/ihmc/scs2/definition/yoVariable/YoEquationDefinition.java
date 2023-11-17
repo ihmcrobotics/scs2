@@ -109,20 +109,15 @@ public class YoEquationDefinition
        */
       private String name;
       /**
-       * The value (double or integer) or the name of the {@code YoVariable} to link to the equation.
-       * <p>
-       * It can be either the fullname (including namespace, e.g. {@code "root.Controller.myVariable"}) or
-       * the simple name (without namespace, e.g. {@code "myVariable"}). In case of name duplicates
-       * between {@code YoVariable}s, prefer using the fullname to guarantee which variable is linked.
-       * </p>
+       * The value, can either be a double value, an integer value, or a {@code YoVariable}.
        */
-      private String value;
+      private EquationInputDefinition value;
 
       public EquationAliasDefinition()
       {
       }
 
-      public EquationAliasDefinition(String name, String value)
+      public EquationAliasDefinition(String name, EquationInputDefinition value)
       {
          this.name = name;
          this.value = value;
@@ -133,7 +128,7 @@ public class YoEquationDefinition
          this.name = name;
       }
 
-      public void setValue(String value)
+      public void setValue(EquationInputDefinition value)
       {
          this.value = value;
       }
@@ -143,7 +138,7 @@ public class YoEquationDefinition
          return name;
       }
 
-      public String getValue()
+      public EquationInputDefinition getValue()
       {
          return value;
       }
@@ -173,6 +168,102 @@ public class YoEquationDefinition
       public String toString()
       {
          return "name: " + name + ", value: " + value;
+      }
+   }
+
+   public static class EquationInputDefinition
+   {
+      private String value;
+      private YoVariableDefinition yoVariableValue;
+      private boolean isConstant;
+
+      public EquationInputDefinition()
+      {
+      }
+
+      public EquationInputDefinition(String value)
+      {
+         this(value, false);
+      }
+
+      public EquationInputDefinition(String value, boolean isConstant)
+      {
+         this.value = value;
+         this.isConstant = isConstant;
+      }
+
+      public EquationInputDefinition(YoVariableDefinition yoVariableValue)
+      {
+         this.yoVariableValue = yoVariableValue;
+      }
+
+      public void setValue(String value)
+      {
+         this.value = value;
+      }
+
+      public void setYoVariableValue(YoVariableDefinition yoVariableValue)
+      {
+         this.yoVariableValue = yoVariableValue;
+      }
+
+      public void setConstant(boolean constant)
+      {
+         isConstant = constant;
+      }
+
+      public String getValue()
+      {
+         return value;
+      }
+
+      public YoVariableDefinition getYoVariableValue()
+      {
+         return yoVariableValue;
+      }
+
+      public String computeSimpleStringValue()
+      {
+         if (value != null)
+            return value;
+         else if (yoVariableValue != null)
+            return yoVariableValue.getFullname();
+         else
+            return null;
+      }
+
+      public boolean isConstant()
+      {
+         return isConstant;
+      }
+
+      @Override
+      public boolean equals(Object object)
+      {
+         if (object == this)
+         {
+            return true;
+         }
+         else if (object instanceof EquationInputDefinition other)
+         {
+            if (!Objects.equals(value, other.value))
+               return false;
+            if (!Objects.equals(yoVariableValue, other.yoVariableValue))
+               return false;
+            if (isConstant != other.isConstant)
+               return false;
+            return true;
+         }
+         else
+         {
+            return false;
+         }
+      }
+
+      @Override
+      public String toString()
+      {
+         return "value: " + value + ", yoVariableValue: " + yoVariableValue;
       }
    }
 }

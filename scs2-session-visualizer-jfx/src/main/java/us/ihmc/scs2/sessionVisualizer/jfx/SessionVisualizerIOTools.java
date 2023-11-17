@@ -62,6 +62,7 @@ public class SessionVisualizerIOTools
    public static final String yoEntryConfigurationFileExtension = ".scs2.yoEntry";
    public static final String yoSliderboardConfigurationFileExtension = ".scs2.yoSliderboard";
    public static final String yoVariableGroupConfigurationFileExtension = ".scs2.yoVariableGroup";
+   public static final String yoEquationFileExtension = ".scs2.yoEquation";
    public static final String videoFileExtension = ".mp4";
    public static final ExtensionFilter scs2InfoFilter = new ExtensionFilter("SCS2 Info File", "*" + SessionIOTools.infoFileExtension);
    public static final ExtensionFilter scs2ConfigurationFilter = new ExtensionFilter("SCS2 Config File", "*" + scsConfigurationFileExtension);
@@ -75,6 +76,7 @@ public class SessionVisualizerIOTools
                                                                                               "*" + yoSliderboardConfigurationFileExtension);
    public static final ExtensionFilter yoVariableGroupConfigurationFilter = new ExtensionFilter("SCS2 YoVariable Group File",
                                                                                                 "*" + yoVariableGroupConfigurationFileExtension);
+   public static final ExtensionFilter yoEquationFilter = new ExtensionFilter("SCS2 YoEquation File", "*" + yoEquationFileExtension);
 
    public static final ExtensionFilter videoExtensionFilter = new ExtensionFilter("MP4", "*" + videoFileExtension);
 
@@ -400,6 +402,16 @@ public class SessionVisualizerIOTools
    public static File yoVariableGroupConfigurationSaveFileDialog(Window owner)
    {
       return showSaveDialog(owner, "Save YoVariable Group", yoVariableGroupConfigurationFilter);
+   }
+
+   public static File yoEquationOpenFileDialog(Window owner)
+   {
+      return showOpenDialog(owner, "Load YoEquation", yoEquationFilter);
+   }
+
+   public static File yoEquationSaveFileDialog(Window owner)
+   {
+      return showSaveDialog(owner, "Save YoEquation", yoEquationFilter);
    }
 
    public static File videoExportSaveFileDialog(Window owner)

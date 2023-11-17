@@ -1,5 +1,7 @@
 package us.ihmc.scs2.symbolic;
 
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
+
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 
@@ -13,6 +15,8 @@ public interface EquationInput
    Type getType();
 
    String valueAsString();
+
+   EquationInputDefinition toInputDefinition();
 
    static ScalarVariable newVariable(Type type)
    {
@@ -92,6 +96,12 @@ public interface EquationInput
       {
          return Double.toString(value);
       }
+
+      @Override
+      public EquationInputDefinition toInputDefinition()
+      {
+         return new EquationInputDefinition(Double.toString(value), true);
+      }
    }
 
    class SimpleDoubleVariable implements DoubleVariable
@@ -103,6 +113,7 @@ public interface EquationInput
          this.value = value;
       }
 
+      @Override
       public void setValue(double value)
       {
          this.value = value;
@@ -118,6 +129,12 @@ public interface EquationInput
       public String valueAsString()
       {
          return Double.toString(value);
+      }
+
+      @Override
+      public EquationInputDefinition toInputDefinition()
+      {
+         return new EquationInputDefinition(Double.toString(value), false);
       }
    }
 
@@ -140,6 +157,12 @@ public interface EquationInput
       public String valueAsString()
       {
          return Integer.toString(value);
+      }
+
+      @Override
+      public EquationInputDefinition toInputDefinition()
+      {
+         return new EquationInputDefinition(Integer.toString(value), true);
       }
    }
 
@@ -167,6 +190,12 @@ public interface EquationInput
       public String valueAsString()
       {
          return Integer.toString(value);
+      }
+
+      @Override
+      public EquationInputDefinition toInputDefinition()
+      {
+         return new EquationInputDefinition(Integer.toString(value), false);
       }
    }
 }

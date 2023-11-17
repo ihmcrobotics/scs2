@@ -1,13 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.zip.ZipEntry;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
@@ -23,7 +15,9 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
@@ -37,6 +31,14 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPLogSessionManagerCont
 import us.ihmc.scs2.sessionVisualizer.jfx.session.remote.RemoteSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
+
+import java.io.*;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.zip.ZipEntry;
 
 public class MultiSessionManager
 {
@@ -103,9 +105,9 @@ public class MultiSessionManager
       messager.addTopicListener(topics.getStartNewSessionRequest(), m -> activeSession.set(m));
       messager.addFXTopicListener(topics.getOpenSessionControlsRequest(), m -> openSessionControls(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
-      messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m));
+      messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m, toolkit.getSession()));
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(), m -> loadSessionDefaultConfiguration(toolkit.getSession()));
-      messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration());
+      messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration(toolkit.getSession()));
    }
 
    public void startSession(Session session, Runnable sessionLoadedCallback)
@@ -136,7 +138,7 @@ public class MultiSessionManager
          return;
 
       if (saveConfiguration)
-         saveSessionDefaultConfiguration();
+         saveSessionDefaultConfiguration(toolkit.getSession());
       toolkit.stopSession(shutdownSession);
       mainWindowController.stopSession();
       inactiveControllerMap.values().forEach(SessionControlsController::unloadSession);
@@ -330,6 +332,20 @@ public class MultiSessionManager
       if (configuration.hasYoSliderboardConfiguration())
          messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile(), synchronizeHint);
 
+      if (configuration.hasYoEquationConfiguration())
+      {
+         try (InputStream inputStream = new FileInputStream(configuration.getYoEquationConfigurationFile()))
+         {
+            YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
+            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null)
+               messager.submitMessage(topics.getSessionYoEquationListChangeRequest(), YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
+      }
+
       if (LOAD_SESSION_TIME)
       {
          long end = System.nanoTime();
@@ -369,16 +385,16 @@ public class MultiSessionManager
       return destFile;
    }
 
-   public void saveSessionDefaultConfiguration()
+   public void saveSessionDefaultConfiguration(Session session)
    {
       SCSGuiConfiguration configuration = SCSGuiConfiguration.defaultSaver(robotName, sessionName);
       // TODO Some things like sliderboard aren't exported systematically, so we don't want to delete these files unless we change the save.
       // Cleanup files with old extensions.
       //      SessionIOTools.emptyDirectory(configuration.getMainConfigurationFile().getParentFile());
-      saveSessionConfiguration(configuration);
+      saveSessionConfiguration(configuration, session);
    }
 
-   private void saveSessionConfiguration(SCSGuiConfiguration configuration)
+   private void saveSessionConfiguration(SCSGuiConfiguration configuration, Session session)
    {
       // Can't use the messager as the JavaFX is going down which prevents to save properly.
       toolkit.getYoGraphicFXManager().saveYoGraphicToFile(configuration.getYoGraphicsConfigurationFile());
@@ -386,6 +402,7 @@ public class MultiSessionManager
       mainWindowController.getSidePaneController().getYoEntryTabPaneController().exportAllTabs(configuration.getYoEntryConfigurationFile());
       mainWindowController.getYoChartGroupPanelController()
                           .saveChartGroupConfiguration(toolkit.getMainWindow(), configuration.getMainYoChartGroupConfigurationFile());
+
       toolkit.getWindowManager().saveSessionConfiguration(configuration);
       configuration.setMainStage(toolkit.getMainWindow());
 
@@ -405,15 +422,24 @@ public class MultiSessionManager
       configuration.setShowAdvancedControls(mainWindowController.showAdvancedControlsProperty().get());
       configuration.setShowYoVariableUniqueNames(mainWindowController.yoNameDisplayProperty().getValue() == YoNameDisplay.UNIQUE_NAME);
 
+      try (OutputStream outputStream = new FileOutputStream(configuration.getYoEquationConfigurationFile()))
+      {
+         DefinitionIOTools.saveYoEquationListDefinition(outputStream, session.getYoEquationDefinitions());
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+
       configuration.writeConfiguration();
    }
 
-   public void saveSessionConfiguration(File destinationFile)
+   public void saveSessionConfiguration(File destinationFile, Session session)
    {
       try
       {
          File intermediate = SessionIOTools.getTemporaryDirectory("configuration");
-         saveSessionConfiguration(SCSGuiConfiguration.saverToDirectory(robotName, sessionName, intermediate));
+         saveSessionConfiguration(SCSGuiConfiguration.saverToDirectory(robotName, sessionName, intermediate), session);
          SessionIOTools.zipFile(intermediate, destinationFile);
       }
       catch (IOException e)

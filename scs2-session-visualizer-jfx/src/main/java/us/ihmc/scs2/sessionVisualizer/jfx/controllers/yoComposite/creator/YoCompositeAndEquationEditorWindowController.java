@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator;
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -22,7 +23,9 @@ import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -34,9 +37,14 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
+import us.ihmc.scs2.symbolic.YoEquationManager;
 import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoVariable;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +52,6 @@ import java.util.function.Function;
 
 public class YoCompositeAndEquationEditorWindowController
 {
-   private static final String NEW_COMPOSITE_NAME = "NewVariable";
    public static final String NEW_EQUATION_NAME = "NewEquation";
 
    @FXML
@@ -79,11 +86,21 @@ public class YoCompositeAndEquationEditorWindowController
 
       Function<ListView<YoComposite>, MenuItem> newYoVariable = listView ->
       {
-         MenuItem menuItem = new MenuItem("New YoVariable");
+         FontAwesomeIconView addAfterIcon = new FontAwesomeIconView();
+         addAfterIcon.getStyleClass().add("add-icon-view");
+         MenuItem menuItem = new MenuItem("New YoComposite", addAfterIcon);
          menuItem.setOnAction(e -> newYoComposite());
          return menuItem;
       };
-      MenuTools.setupContextMenu(yoCompositeListView, newYoVariable);
+      Function<ListView<YoComposite>, MenuItem> deleteYoVariable = listView ->
+      {
+         FontAwesomeIconView removeIcon = new FontAwesomeIconView();
+         removeIcon.getStyleClass().add("remove-icon-view");
+         MenuItem menuItem = new MenuItem("Delete YoComposite", removeIcon);
+         menuItem.setOnAction(e -> deleteYoComposite(listView.getSelectionModel().getSelectedItem()));
+         return menuItem;
+      };
+      MenuTools.setupContextMenu(yoCompositeListView, newYoVariable, deleteYoVariable);
 
       yoEquationEditorListView.setCellFactory(param -> new YoEquationListCell());
       toolkit.getSession().getYoEquationDefinitions().forEach(this::newEquation);
@@ -140,6 +157,7 @@ public class YoCompositeAndEquationEditorWindowController
       window.setTitle("YoGraphic properties");
       window.setScene(new Scene(mainPane));
       window.initOwner(toolkit.getMainWindow());
+      refreshYoCompositeListView();
    }
 
    @FXML
@@ -159,6 +177,16 @@ public class YoCompositeAndEquationEditorWindowController
       catch (IOException e)
       {
          throw new RuntimeException(e);
+      }
+   }
+
+   public void deleteYoComposite(YoComposite selectedComposite)
+   {
+      if (selectedComposite == null)
+         return;
+      for (YoVariable yoVariable : selectedComposite.getYoComponents())
+      {
+         yoVariable.destroy();
       }
    }
 
@@ -271,6 +299,50 @@ public class YoCompositeAndEquationEditorWindowController
       catch (IOException e)
       {
          throw new RuntimeException(e);
+      }
+   }
+
+   @FXML
+   public void exportYoEquations()
+   {
+      File file = SessionVisualizerIOTools.yoEquationSaveFileDialog(window);
+
+      if (file == null)
+         return;
+
+      try (FileOutputStream outputStream = new FileOutputStream(file))
+      {
+         DefinitionIOTools.saveYoEquationListDefinition(outputStream, collectEquationDefinitions());
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+   @FXML
+   public void importYoEquations()
+   {
+      File file = SessionVisualizerIOTools.yoEquationOpenFileDialog(window);
+
+      if (file == null)
+         return;
+
+      try (FileInputStream inputStream = new FileInputStream(file))
+      {
+         YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
+         if (yoEquationListDefinition == null)
+            return;
+         for (YoEquationDefinition yoEquationDefinition : yoEquationListDefinition.getYoEquations())
+         {
+            YoEquationManager.ensureUserAliasesExist(yoEquationDefinition, userRegistry);
+            newEquation(yoEquationDefinition);
+            refreshYoCompositeListView();
+         }
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
       }
    }
 
