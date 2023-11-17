@@ -2,6 +2,7 @@ package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.symbolic.parser.EquationAliasManager;
@@ -11,7 +12,6 @@ import us.ihmc.scs2.symbolic.parser.EquationParser;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 public class Equation
 {
@@ -37,11 +37,24 @@ public class Equation
 
    public static Equation fromDefinition(YoEquationDefinition equationDefinition, EquationParser parser)
    {
-      return parse(equationDefinition.getName(),
-                   equationDefinition.getDescription(),
-                   equationDefinition.getEquation(),
-                   equationDefinition.getAliases().stream().collect(Collectors.toMap(EquationAliasDefinition::getName, EquationAliasDefinition::getValue)),
-                   parser);
+      if (parser == null)
+         parser = new EquationParser();
+
+      EquationBuilder equationBuilder = parser.parse(equationDefinition.getEquation());
+
+      List<EquationAliasDefinition> aliases = equationDefinition.getAliases();
+      if (aliases != null)
+      {
+         EquationAliasManager equationAliasManager = equationBuilder.getAliasManager();
+         for (EquationAliasDefinition alias : aliases)
+         {
+            String aliasName = alias.getName();
+            EquationInputDefinition aliasValue = alias.getValue();
+            equationAliasManager.addVariable(aliasName, aliasValue);
+         }
+      }
+
+      return new Equation(equationDefinition.getName(), equationDefinition.getDescription(), equationBuilder);
    }
 
    public static Equation parse(String equationString)

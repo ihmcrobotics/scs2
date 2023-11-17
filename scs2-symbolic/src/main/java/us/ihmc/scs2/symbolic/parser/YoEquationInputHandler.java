@@ -1,10 +1,13 @@
 package us.ihmc.scs2.symbolic.parser;
 
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 import us.ihmc.scs2.sharedMemory.YoDoubleBuffer;
 import us.ihmc.scs2.sharedMemory.YoIntegerBuffer;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.YoVariableBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.symbolic.EquationInput;
 import us.ihmc.scs2.symbolic.EquationInput.DoubleVariable;
 import us.ihmc.scs2.symbolic.EquationInput.IntegerVariable;
@@ -24,7 +27,7 @@ public class YoEquationInputHandler
    private final List<YoRegistry> yoRegistries = new ArrayList<>();
    private YoSharedBuffer yoSharedBuffer;
 
-   private final List<YoScalarVariableBufferHolder> allBufferHolders = new ArrayList<>();
+   private final List<YoScalarVariableBufferHolder<?>> allBufferHolders = new ArrayList<>();
 
    public YoEquationInputHandler()
    {
@@ -89,6 +92,14 @@ public class YoEquationInputHandler
       return null;
    }
 
+   public EquationInput searchYoEquationInput(YoVariableDefinition definition)
+   {
+      if (definition == null)
+         return null;
+      // TODO Should check the type
+      return searchYoEquationInput("%s%s%s".formatted(definition.getNamespace(), YoTools.NAMESPACE_SEPERATOR_STRING, definition.getName()));
+   }
+
    public EquationInput searchYoEquationInput(String name)
    {
       YoVariable yoVariable = searchYoVariable(name);
@@ -145,6 +156,12 @@ public class YoEquationInputHandler
       public String valueAsString()
       {
          return yoVariable.getFullNameString();
+      }
+
+      @Override
+      public EquationInputDefinition toInputDefinition()
+      {
+         return new EquationInputDefinition(SharedMemoryIOTools.toYoVariableDefinition(yoVariable));
       }
    }
 
@@ -209,6 +226,12 @@ public class YoEquationInputHandler
       public String valueAsString()
       {
          return yoBuffer.getYoVariable().getFullNameString();
+      }
+
+      @Override
+      public EquationInputDefinition toInputDefinition()
+      {
+         return new EquationInputDefinition(SharedMemoryIOTools.toYoVariableDefinition(yoBuffer.getYoVariable()));
       }
 
       void setHistoryUpdate(boolean enable)

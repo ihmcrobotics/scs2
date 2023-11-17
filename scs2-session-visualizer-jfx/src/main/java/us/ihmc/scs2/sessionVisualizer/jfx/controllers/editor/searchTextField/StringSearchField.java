@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
@@ -26,6 +25,9 @@ import java.util.stream.Collectors;
 public class StringSearchField extends PropertySearchField<StringProperty>
 {
    private final YoCompositeSearchManager searchManager;
+   private final BooleanProperty isNumberProperty = new SimpleBooleanProperty(this, "isNumber", false);
+   private final BooleanProperty isYoCompositeProperty = new SimpleBooleanProperty(this, "isYoComposite", false);
+   private final Property<YoComposite> yoCompositeProperty = new SimpleObjectProperty<>(this, "yoComposite", null);
 
    public StringSearchField(TextField textField, YoCompositeSearchManager searchManager)
    {
@@ -36,6 +38,26 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    {
       super(textField, validImageView);
       this.searchManager = searchManager;
+
+      supplierProperty().addListener((o, oldValue, newValue) ->
+                                     {
+                                        if (newValue == null)
+                                        {
+                                           isNumberProperty.set(false);
+                                           isYoCompositeProperty.set(false);
+                                        }
+                                        else
+                                        {
+                                           isNumberProperty.set(CompositePropertyTools.isParsableAsNumber(newValue.get()));
+                                           YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
+
+                                           YoComposite yoComposite = yoVariableCollection.getYoCompositeFromUniqueName(newValue.get());
+                                           if (yoComposite == null)
+                                              yoComposite = yoVariableCollection.getYoCompositeFromFullname(newValue.get());
+                                           yoCompositeProperty.setValue(yoComposite);
+                                           isYoCompositeProperty.set(yoCompositeProperty.getValue() != null);
+                                        }
+                                     });
    }
 
    @Override
@@ -96,5 +118,35 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    protected List<YoComposite> retrieveYoCompositesFromDragboard(Dragboard dragboard)
    {
       return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, searchManager.getYoVariableCollection());
+   }
+
+   public BooleanProperty isNumberProperty()
+   {
+      return isNumberProperty;
+   }
+
+   public boolean isNumber()
+   {
+      return isNumberProperty.get();
+   }
+
+   public BooleanProperty isYoCompositeProperty()
+   {
+      return isYoCompositeProperty;
+   }
+
+   public boolean isYoComposite()
+   {
+      return isYoCompositeProperty.get();
+   }
+
+   public Property<YoComposite> yoCompositeProperty()
+   {
+      return yoCompositeProperty;
+   }
+
+   public YoComposite getYoComposite()
+   {
+      return yoCompositeProperty.getValue();
    }
 }

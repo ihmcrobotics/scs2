@@ -10,6 +10,15 @@ public class YoEquationListDefinition
 {
    private List<YoEquationDefinition> yoEquations = new ArrayList<>();
 
+   public YoEquationListDefinition()
+   {
+   }
+
+   public YoEquationListDefinition(List<YoEquationDefinition> yoEquations)
+   {
+      this.yoEquations = yoEquations;
+   }
+
    @XmlElement
    public void setYoEquations(List<YoEquationDefinition> yoEquations)
    {
