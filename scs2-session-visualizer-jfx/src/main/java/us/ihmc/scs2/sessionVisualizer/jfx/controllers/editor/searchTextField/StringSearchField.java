@@ -12,7 +12,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
-import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,19 +25,17 @@ import java.util.stream.Collectors;
  */
 public class StringSearchField extends PropertySearchField<StringProperty>
 {
-   private final YoCompositeCollection yoVariableCollection;
-   private final LinkedYoRegistry linkedRootRegistry;
+   private final YoCompositeSearchManager searchManager;
 
-   public StringSearchField(TextField textField, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry)
+   public StringSearchField(TextField textField, YoCompositeSearchManager searchManager)
    {
-      this(textField, searchManager, linkedRootRegistry, null);
+      this(textField, searchManager, null);
    }
 
-   public StringSearchField(TextField textField, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry, ImageView validImageView)
+   public StringSearchField(TextField textField, YoCompositeSearchManager searchManager, ImageView validImageView)
    {
       super(textField, validImageView);
-      this.linkedRootRegistry = linkedRootRegistry;
-      yoVariableCollection = searchManager.getYoVariableCollection();
+      this.searchManager = searchManager;
    }
 
    @Override
@@ -47,6 +44,7 @@ public class StringSearchField extends PropertySearchField<StringProperty>
       if (text == null || text.isEmpty())
          return false;
 
+      YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
       YoComposite yoComposite = yoVariableCollection.getYoCompositeFromUniqueName(text);
       if (yoComposite == null)
          yoComposite = yoVariableCollection.getYoCompositeFromFullname(text);
@@ -56,6 +54,7 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    @Override
    protected String simplifyText(String text)
    {
+      YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
       YoComposite yoComposite = yoVariableCollection.getYoCompositeFromFullname(text);
       return yoComposite == null ? null : yoComposite.getUniqueName();
    }
@@ -63,7 +62,6 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    @Override
    protected Callback<ISuggestionRequest, Collection<String>> createSuggestions()
    {
-      Collection<String> uniqueNameCollection = yoVariableCollection.uniqueNameCollection();
 
       return request ->
       {
@@ -71,6 +69,9 @@ public class StringSearchField extends PropertySearchField<StringProperty>
 
          if (CompositePropertyTools.isParsableAsNumber(userText))
             return null;
+
+         YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
+         Collection<String> uniqueNameCollection = yoVariableCollection.uniqueNameCollection();
 
          if (userText.isEmpty())
             return uniqueNameCollection;
@@ -83,6 +84,7 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    @Override
    protected StringProperty toSupplier(String text)
    {
+      YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
       YoComposite yoComposite = yoVariableCollection.getYoCompositeFromUniqueName(text);
       if (yoComposite == null)
          return new SimpleStringProperty(text);
@@ -93,6 +95,6 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    @Override
    protected List<YoComposite> retrieveYoCompositesFromDragboard(Dragboard dragboard)
    {
-      return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, yoVariableCollection);
+      return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, searchManager.getYoVariableCollection());
    }
 }

@@ -170,7 +170,7 @@ public class YoEquationEditorPaneController
       {
          String aliasName = alias.getKey();
          String aliasValue = alias.getValue();
-         YoEquationAliasController aliasController = new YoEquationAliasController(aliasName, aliasValue, yoCompositeSearchManager, linkedRootRegistry);
+         YoEquationAliasController aliasController = new YoEquationAliasController(aliasName, aliasValue, yoCompositeSearchManager);
          aliasController.aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->
                                                                               {
                                                                                  List<EquationAliasDefinition> definitionAliases = definition.getAliases();
@@ -195,6 +195,11 @@ public class YoEquationEditorPaneController
    public TextField getEquationNameTextField()
    {
       return equationNameTextField;
+   }
+
+   public TextArea getEquationTextArea()
+   {
+      return equationTextArea;
    }
 
    public Property<YoEquationDefinition> definitionProperty()
@@ -241,13 +246,13 @@ public class YoEquationEditorPaneController
       private final StringSearchField aliasValueSearchField;
       private final HBox mainPane = new HBox(5);
 
-      public YoEquationAliasController(String aliasName, String aliasValue, YoCompositeSearchManager searchManager, LinkedYoRegistry linkedRootRegistry)
+      public YoEquationAliasController(String aliasName, String aliasValue, YoCompositeSearchManager searchManager)
       {
          aliasNameLabel = new Label(aliasName);
          JFXTextField textField = new JFXTextField();
          mainPane.getChildren().addAll(aliasNameLabel, textField);
 
-         aliasValueSearchField = new StringSearchField(textField, searchManager, linkedRootRegistry);
+         aliasValueSearchField = new StringSearchField(textField, searchManager);
          textField.setText(aliasValue == null ? "" : aliasValue);
          aliasValueSearchField.setupAutoCompletion();
          aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->

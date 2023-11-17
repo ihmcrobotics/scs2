@@ -15,7 +15,16 @@ public class EquationAliasManager
    /**
     * Default aliases that are always available.
     */
-   private final Map<String, EquationAlias> defaultAliases = new LinkedHashMap<>();
+   public static final Map<String, EquationAlias> defaultAliases;
+
+   static
+   {
+      LinkedHashMap<String, EquationAlias> aliases = new LinkedHashMap<>();
+      aliases.put("pi", new EquationAlias("pi", new SimpleDoubleConstant(Math.PI)));
+      aliases.put("e", new EquationAlias("e", new SimpleDoubleConstant(Math.E)));
+      defaultAliases = Collections.unmodifiableMap(aliases);
+   }
+
    /**
     * User-defined aliases.
     */
@@ -25,8 +34,6 @@ public class EquationAliasManager
 
    public EquationAliasManager()
    {
-      defaultAliases.put("pi", new EquationAlias("pi", new SimpleDoubleConstant(Math.PI)));
-      defaultAliases.put("e", new EquationAlias("e", new SimpleDoubleConstant(Math.E)));
    }
 
    public void addRegistry(YoRegistry registry)
