@@ -1,17 +1,12 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.controlsfx.control.textfield.AutoCompletionBinding.ISuggestionRequest;
-
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
 import javafx.util.Callback;
+import org.controlsfx.control.textfield.AutoCompletionBinding.ISuggestionRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
@@ -21,9 +16,13 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.yoVariables.variable.YoInteger;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class IntegerSearchField extends PropertySearchField<IntegerProperty>
 {
-   private final YoCompositeCollection yoIntegerCollection;
+   private final YoCompositeSearchManager searchManager;
    private final LinkedYoRegistry linkedRootRegistry;
    private final boolean isInputOptional;
 
@@ -44,10 +43,9 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
                              ImageView validImageView)
    {
       super(textField, validImageView);
+      this.searchManager = searchManager;
       this.linkedRootRegistry = linkedRootRegistry;
       this.isInputOptional = isInputOptional;
-
-      yoIntegerCollection = searchManager.getYoIntegerCollection();
    }
 
    @Override
@@ -56,6 +54,7 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
       if (text == null || text.isEmpty())
          return isInputOptional;
 
+      YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
       YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromUniqueName(text);
       if (yoComposite == null)
          yoComposite = yoIntegerCollection.getYoCompositeFromFullname(text); // TODO Happens when loading file, needs to update TextField to use unique name.
@@ -65,6 +64,7 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
    @Override
    protected String simplifyText(String text)
    {
+      YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
       YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromFullname(text);
       return yoComposite == null ? null : yoComposite.getUniqueName();
    }
@@ -72,13 +72,14 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
    @Override
    protected Callback<ISuggestionRequest, Collection<String>> createSuggestions()
    {
-      Collection<String> uniqueNameCollection = yoIntegerCollection.uniqueNameCollection();
-
       return request ->
       {
          String userText = request.getUserText();
          if (CompositePropertyTools.isParsableAsInteger(userText))
             return null;
+
+         YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
+         Collection<String> uniqueNameCollection = yoIntegerCollection.uniqueNameCollection();
 
          if (userText.isEmpty())
             return uniqueNameCollection;
@@ -94,6 +95,7 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
       if (isInputOptional && text == null)
          return null;
 
+      YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
       YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromUniqueName(text);
       if (yoComposite == null)
       {
@@ -110,6 +112,7 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
    @Override
    protected List<YoComposite> retrieveYoCompositesFromDragboard(Dragboard dragboard)
    {
+      YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
       return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, yoIntegerCollection);
    }
 }

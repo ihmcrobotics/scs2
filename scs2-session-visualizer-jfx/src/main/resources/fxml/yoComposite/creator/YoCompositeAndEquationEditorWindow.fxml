@@ -6,15 +6,14 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane fx:id="mainPane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeAndEquationEditorWindowController">
    <children>
-      <SplitPane dividerPositions="0.33" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <items>
+      <HBox spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
             <VBox spacing="10.0">
                <children>
                   <HBox alignment="CENTER" maxHeight="-Infinity" minHeight="-Infinity" spacing="10.0">
@@ -46,7 +45,8 @@
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
             </VBox>
-            <VBox fx:id="equationEditorContainer" spacing="10.0">
+            <Separator orientation="VERTICAL" />
+            <VBox fx:id="equationEditorContainer" prefWidth="400.0" spacing="10.0">
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
@@ -55,11 +55,16 @@
                      <children>
                         <Label text="Equation editor" />
                         <Separator maxHeight="-Infinity" minHeight="-Infinity" HBox.hgrow="ALWAYS" />
+                        <JFXButton contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#openHelpDialog" styleClass="chart-close-button">
+                           <graphic>
+                              <FontAwesomeIconView size="20" styleClass="help-icon-view" />
+                           </graphic>
+                        </JFXButton>
                      </children>
                   </HBox>
                </children>
             </VBox>
-         </items>
-      </SplitPane>
+         </children>
+      </HBox>
    </children>
 </AnchorPane>
