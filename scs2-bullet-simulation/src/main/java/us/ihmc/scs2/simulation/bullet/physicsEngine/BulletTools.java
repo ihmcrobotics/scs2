@@ -191,8 +191,8 @@ public class BulletTools
       {
          Capsule3DDefinition capsuleGeometryDefinition = (Capsule3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          if (capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusY()
-               || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
-               || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
+          || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
+          || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
             LogTools.warn("Bullet capsule does not fully represent the intended capsule!");
          btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ(capsuleGeometryDefinition.getRadiusX(), capsuleGeometryDefinition.getLength());
          btCollisionShape = capsuleShape;
