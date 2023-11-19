@@ -214,7 +214,7 @@ public class BulletTools
       {
          Ellipsoid3DDefinition ellipsoidGeometryDefinition = (Ellipsoid3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btSphereShape ellipsoidShape = new btSphereShape(1.0f);
-         // Scale to sphere to be an ellipsoid
+         // Scale the sphere to be an ellipsoid
          btVector3 scaling = new btVector3(ellipsoidGeometryDefinition.getRadiusX(),
                                            ellipsoidGeometryDefinition.getRadiusY(),
                                            ellipsoidGeometryDefinition.getRadiusZ());
