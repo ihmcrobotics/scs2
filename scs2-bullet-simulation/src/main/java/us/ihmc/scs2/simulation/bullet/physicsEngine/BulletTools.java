@@ -27,13 +27,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
 
 public class BulletTools
 {
@@ -215,6 +209,17 @@ public class BulletTools
             }
          }
          btCollisionShape = convexHullShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Ellipsoid3DDefinition)
+      {
+         Ellipsoid3DDefinition ellipsoidGeometryDefinition = (Ellipsoid3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+         btSphereShape ellipsoidShape = new btSphereShape(1.0f);
+         // Scale to sphere to be an ellipsoid
+         btVector3 scaling = new btVector3(ellipsoidGeometryDefinition.getRadiusX(),
+                                           ellipsoidGeometryDefinition.getRadiusY(),
+                                           ellipsoidGeometryDefinition.getRadiusZ());
+         ellipsoidShape.setLocalScaling(scaling);
+         btCollisionShape = ellipsoidShape;
       }
       else
       {
