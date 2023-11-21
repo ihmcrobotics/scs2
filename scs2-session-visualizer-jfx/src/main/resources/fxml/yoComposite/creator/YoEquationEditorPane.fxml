@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXListView?>
 <?import com.jfoenix.controls.JFXTextField?>
+<?import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIconView?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
@@ -10,10 +12,11 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <VBox fx:id="mainPane" spacing="10.0" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoEquationEditorPaneController">
     <children>
-        <HBox alignment="CENTER_LEFT" spacing="5.0">
+        <HBox alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
             <children>
                 <Label text="Equation name:" />
                 <JFXTextField fx:id="equationNameTextField" />
@@ -27,7 +30,7 @@
                 <Insets />
             </VBox.margin>
         </HBox>
-        <HBox alignment="CENTER" spacing="5.0">
+        <HBox alignment="CENTER" spacing="5.0" VBox.vgrow="NEVER">
             <children>
                 <Separator HBox.hgrow="ALWAYS" />
                 <Label text="Equation" />
@@ -39,9 +42,17 @@
             </ImageView>
             </children>
         </HBox>
-        <TextArea fx:id="equationTextArea" prefWidth="200.0" />
-        <HBox alignment="CENTER" spacing="5.0">
+        <TextArea fx:id="equationTextArea" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+        <HBox alignment="CENTER" spacing="5.0" VBox.vgrow="NEVER">
             <children>
+            <JFXButton buttonType="RAISED" contentDisplay="GRAPHIC_ONLY" graphicTextGap="0.0" onAction="#removeUnusedAliases">
+               <graphic>
+                  <MaterialDesignIconView glyphName="BROOM" size="24" styleClass="alias-cleanup-icon-view" />
+               </graphic>
+               <font>
+                  <Font size="1.0" />
+               </font>
+            </JFXButton>
                 <Separator HBox.hgrow="ALWAYS" />
                 <Label text="Aliases" />
                 <Separator HBox.hgrow="ALWAYS" />
@@ -52,7 +63,7 @@
             </ImageView>
             </children>
         </HBox>
-        <JFXListView fx:id="aliasListView" />
+        <JFXListView fx:id="aliasListView" VBox.vgrow="ALWAYS" />
     </children>
     <padding>
         <Insets bottom="5.0" left="5.0" right="5.0" top="10.0" />

@@ -572,6 +572,11 @@
     -glyph-name: QUESTION;
 }
 
+.alias-cleanup-icon-view {
+    -fx-fill: rgb(138, 62, 189);
+    -glyph-name: BROOM;
+}
+
 /*******************************************************************************
  *                                                                             *
  * YoGraphic editor                                                            *
