@@ -18,7 +18,7 @@ public class OMGIDLSchema implements MCAPSchema
 {
    private int id;
    private String name;
-   private List<OMGIDLField> fields;
+   private List<OMGIDLSchemaField> fields;
    private boolean isSchemaFlat;
    private Map<String, OMGIDLSchema> subSchemaMap;
 
@@ -89,7 +89,7 @@ public class OMGIDLSchema implements MCAPSchema
       return isSchemaFlat;
    }
 
-   public List<OMGIDLField> getFields()
+   public List<OMGIDLSchemaField> getFields()
    {
       return fields;
    }
@@ -113,7 +113,7 @@ public class OMGIDLSchema implements MCAPSchema
       flatSchema.isSchemaFlat = true;
       flatSchema.fields = new ArrayList<>();
 
-      for (OMGIDLField field : this.getFields())
+      for (OMGIDLSchemaField field : this.getFields())
       {
          flatSchema.fields.addAll(this.flattenField(field));
       }
@@ -121,25 +121,25 @@ public class OMGIDLSchema implements MCAPSchema
       return flatSchema;
    }
 
-   private List<OMGIDLField> flattenField(OMGIDLField field)
+   private List<OMGIDLSchemaField> flattenField(OMGIDLSchemaField field)
    {
       //TODO: (AM) Check correctness and refactor, super ugly code follows
 
-      OMGIDLField flatField = field.clone();
+      OMGIDLSchemaField flatField = field.clone();
 
       //TODO: (AM) check that isComplexType is set properly for every non-flat field
       if (!field.isComplexType)
       {
          return Collections.singletonList(flatField);
       }
-      List<OMGIDLField> flatFields = new ArrayList<>();
+      List<OMGIDLSchemaField> flatFields = new ArrayList<>();
 //      flatFields.add(flatField);
 
       if (flatField.isArray())
       {
          for (int i = 0; i < flatField.getMaxLength(); i++)
          {
-            OMGIDLField subField = new OMGIDLField();
+            OMGIDLSchemaField subField = new OMGIDLSchemaField();
             subField.parent = flatField;
             subField.type = flatField.type;
             subField.name = flatField.name + "[" + i + "]";
@@ -155,7 +155,7 @@ public class OMGIDLSchema implements MCAPSchema
          if (subSchema != null)
          {
             // we are entering a struct definition
-            for (OMGIDLField subField : subSchema.getFields())
+            for (OMGIDLSchemaField subField : subSchema.getFields())
             {
                if (subSchemaMap.containsKey(subField.getType()))
                {
@@ -181,7 +181,7 @@ public class OMGIDLSchema implements MCAPSchema
             subSchema = subSchemaMap.get(flatField.getType());
             if (subSchema != null)
             {
-               for (OMGIDLField subField : subSchema.getFields())
+               for (OMGIDLSchemaField subField : subSchema.getFields())
                {
                   if (subSchemaMap.containsKey(subField.getType()))
                   {
@@ -191,9 +191,10 @@ public class OMGIDLSchema implements MCAPSchema
                   else
                   {
                      // if this field is a base type, then add it to flatfields
-                     subField.parent = flatField;
-                     subField.name = flatField.getName() + "." + subField.getName();
-                     flatFields.add(subField);
+                     OMGIDLSchemaField subSubField = subField.clone();
+                     subSubField.parent = flatField;
+                     subSubField.name = flatField.getName() + "." + subField.getName();
+                     flatFields.add(subSubField);
                   }
                }
             }
@@ -223,12 +224,12 @@ public class OMGIDLSchema implements MCAPSchema
       return indent(out, indent);
    }
 
-   public static class OMGIDLField implements MCAPField
+   public static class OMGIDLSchemaField implements MCAPSchemaField
    {
       /**
        * The parent is used when flattening the schema.
        */
-      private OMGIDLField parent;
+      private OMGIDLSchemaField parent;
       private String type;
       private String name;
       private boolean isArray;
@@ -242,12 +243,12 @@ public class OMGIDLSchema implements MCAPSchema
       private boolean isComplexType;
       private boolean isVector;
 
-      private OMGIDLField()
+      private OMGIDLSchemaField()
       {
 
       }
 
-      protected OMGIDLField(String type, String name, int maxLength, boolean isComplexType)
+      protected OMGIDLSchemaField(String type, String name, int maxLength, boolean isComplexType)
       {
          this.type = type;
          this.name = name;
@@ -260,19 +261,20 @@ public class OMGIDLSchema implements MCAPSchema
          this.parent = null;
       }
 
-      public OMGIDLField clone()
+      public OMGIDLSchemaField clone()
       {
-         OMGIDLField clone = new OMGIDLField();
+         OMGIDLSchemaField clone = new OMGIDLSchemaField();
          clone.parent = parent;
          clone.type = type;
          clone.name = name;
          clone.isArray = isArray;
          clone.maxLength = maxLength;
          clone.isComplexType = isComplexType;
+         clone.isVector = isVector;
          return clone;
       }
 
-      public OMGIDLField getParent()
+      public OMGIDLSchemaField getParent()
       {
          return parent;
       }

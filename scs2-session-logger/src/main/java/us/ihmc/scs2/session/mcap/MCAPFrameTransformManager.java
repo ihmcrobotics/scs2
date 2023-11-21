@@ -9,7 +9,7 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
-import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPField;
+import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.euclid.YoPose3D;
 import us.ihmc.yoVariables.euclid.YoQuaternion;
@@ -232,7 +232,7 @@ public class MCAPFrameTransformManager
       String childFrameName;
       try
       {
-         List<? extends MCAPField> fields = foxgloveFrameTransformSchema.getFields();
+         List<? extends MCAPSchemaField> fields = foxgloveFrameTransformSchema.getFields();
          rw = 1.0;
          rz = 0.0;
          ry = 0.0;
@@ -245,15 +245,15 @@ public class MCAPFrameTransformManager
 
          for (int i = 0; i < fields.size(); i++)
          {
-            MCAPField field = fields.get(i);
+            MCAPSchemaField field = fields.get(i);
             if (field.isComplexType())
             {
                if (field.getName().equalsIgnoreCase(ROTATION_FIELD_NAME))
                {
-                  MCAPField xField = fields.get(i + 1);
-                  MCAPField yField = fields.get(i + 2);
-                  MCAPField zField = fields.get(i + 3);
-                  MCAPField wField = fields.get(i + 4);
+                  MCAPSchemaField xField = fields.get(i + 1);
+                  MCAPSchemaField yField = fields.get(i + 2);
+                  MCAPSchemaField zField = fields.get(i + 3);
+                  MCAPSchemaField wField = fields.get(i + 4);
                   if (!xField.getName().equalsIgnoreCase(ROTATION_X_FIELD_NAME))
                      throw new RuntimeException("Unexpected field name: " + xField.getName());
                   if (!yField.getName().equalsIgnoreCase(ROTATION_Y_FIELD_NAME))
@@ -270,9 +270,9 @@ public class MCAPFrameTransformManager
                }
                else if (field.getName().equalsIgnoreCase(TRANSLATION_FIELD_NAME))
                {
-                  MCAPField xField = fields.get(i + 1);
-                  MCAPField yField = fields.get(i + 2);
-                  MCAPField zField = fields.get(i + 3);
+                  MCAPSchemaField xField = fields.get(i + 1);
+                  MCAPSchemaField yField = fields.get(i + 2);
+                  MCAPSchemaField zField = fields.get(i + 3);
                   if (!xField.getName().equalsIgnoreCase(TRANSLATION_X_FIELD_NAME))
                      throw new RuntimeException("Unexpected field name: " + xField.getName());
                   if (!yField.getName().equalsIgnoreCase(TRANSLATION_Y_FIELD_NAME))
@@ -361,7 +361,7 @@ public class MCAPFrameTransformManager
       String parentFrameName = null;
       String childFrameName = null;
 
-      for (MCAPField field : flatSchema.getFields())
+      for (MCAPSchemaField field : flatSchema.getFields())
       {
          if (field.isComplexType())
             continue;
