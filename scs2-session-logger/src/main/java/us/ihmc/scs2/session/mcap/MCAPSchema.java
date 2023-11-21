@@ -9,18 +9,18 @@ public interface MCAPSchema
 
    String getName();
 
-   List<? extends MCAPField> getFields();
+   List<? extends MCAPSchemaField> getFields();
 
    <T extends MCAPSchema> T flattenSchema();
 
    boolean isSchemaFlat();
 
-   interface MCAPField
+   interface MCAPSchemaField
    {
       //TODO: (AM) complete interface implementation
       String getName();
       String getType();
-      <T extends MCAPField> T getParent();
+      <T extends MCAPSchemaField> T getParent();
       boolean isArray();
       boolean isComplexType();
       boolean isVector();

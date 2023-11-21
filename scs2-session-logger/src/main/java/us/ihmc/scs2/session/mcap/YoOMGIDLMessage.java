@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.mcap.OMGIDLSchema.OMGIDLField;
+import us.ihmc.scs2.session.mcap.OMGIDLSchema.OMGIDLSchemaField;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 
@@ -176,7 +176,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
 
       List<Consumer<CDRDeserializer>> deserializers = new ArrayList<>();
 
-      for (OMGIDLField field : schema.getFields())
+      for (OMGIDLSchemaField field : schema.getFields())
       {
          String fieldName = field.getName();
 
@@ -321,7 +321,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
    }
 
    @SuppressWarnings({"rawtypes", "unchecked"})
-   private static Consumer<CDRDeserializer> createYoVariable(OMGIDLField field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariable(OMGIDLSchemaField field, YoRegistry registry)
    {
       String fieldName = field.getName();
       String fieldType = field.getType();
@@ -331,14 +331,14 @@ public class YoOMGIDLMessage implements YoMCAPMessage
    }
 
    /**
-    * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an array or a vector.
+    * Creates an array of {@code YoVariable}s which can be used to parse an OMGIDL field that is either an array or a vector.
     *
     * @param field    the ROS2 field to instantiate into a {@code YoVariable} array.
     * @param registry the registry in which the {@code YoVariable}s are to be added.
     * @return the parsing function.
     */
    @SuppressWarnings({"unchecked", "rawtypes"})
-   private static Consumer<CDRDeserializer> createYoVariableArray(OMGIDLField field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariableArray(OMGIDLSchemaField field, YoRegistry registry)
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();
@@ -368,7 +368,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
    }
 
    /**
-    * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an array or a vector.
+    * Creates an array of {@code YoVariable}s which can be used to parse an OMGIDL field that is either an array or a vector.
     *
     * @param variableType        the type of the {@code YoVariable} to be created.
     * @param elementBuilder      the function used to create a new {@code YoVariable}.

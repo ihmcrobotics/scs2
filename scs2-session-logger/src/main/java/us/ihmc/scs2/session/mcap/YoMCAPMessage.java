@@ -1,6 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
-import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPField;
+import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.util.function.Consumer;
@@ -15,12 +15,12 @@ public interface YoMCAPMessage
 
    <T extends YoMCAPMessage> T newMessage(int channelId, MCAPSchema schema);
 
-   static Consumer<CDRDeserializer> createYoVariable(MCAPField field, YoRegistry registry)
+   static Consumer<CDRDeserializer> createYoVariable(MCAPSchemaField field, YoRegistry registry)
    {
       return null;
    }
 
-   static Consumer<CDRDeserializer> createYoVariableArray(MCAPField field, YoRegistry registry)
+   static Consumer<CDRDeserializer> createYoVariableArray(MCAPSchemaField field, YoRegistry registry)
    {
       return null;
    }
