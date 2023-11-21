@@ -371,7 +371,7 @@ public class SchemaCreatorListener implements IDLListener
    public void exitConst_decl(IDLParser.Const_declContext ctx)
    {
       // constants have the type "const base_type"
-      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField("const " + ctx.const_type().getText(), ctx.identifier().getText(), -1, false);
+      OMGIDLSchema.OMGIDLSchemaField newField = new OMGIDLSchema.OMGIDLSchemaField("const " + ctx.const_type().getText(), ctx.identifier().getText(), -1, false);
       this.currentSchema.getFields().add(newField);
    }
 
@@ -1064,7 +1064,7 @@ public class SchemaCreatorListener implements IDLListener
 
       if (structName.equals(this.currentSchema.getName()))
       {
-         this.currentSchema.getFields().add(new OMGIDLSchema.OMGIDLField(ctx.KW_STRUCT().getText(), structName, -1, true));
+         this.currentSchema.getFields().add(new OMGIDLSchema.OMGIDLSchemaField(ctx.KW_STRUCT().getText(), structName, -1, true));
       }
 
       this.idCount += 1;
@@ -1107,10 +1107,10 @@ public class SchemaCreatorListener implements IDLListener
       assert this.currentMemberName != null : String.format("Got a null member name for %s", ctx.declarators().getText());
 
       //Create field here for each member
-      OMGIDLSchema.OMGIDLField newField = new OMGIDLSchema.OMGIDLField(this.currentMemberType,
-                                                                       this.currentMemberName,
-                                                                       this.currentMemberMaxLength,
-                                                                       this.currentMemberIsComplexType);
+      OMGIDLSchema.OMGIDLSchemaField newField = new OMGIDLSchema.OMGIDLSchemaField(this.currentMemberType,
+                                                                                   this.currentMemberName,
+                                                                                   this.currentMemberMaxLength,
+                                                                                   this.currentMemberIsComplexType);
       this.currentSchema.getFields().add(newField);
 
       // reset Member stats after we are done visiting the member

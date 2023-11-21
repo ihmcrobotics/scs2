@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.mcap.ROS2MessageSchema.ROS2Field;
+import us.ihmc.scs2.session.mcap.ROS2MessageSchema.ROS2SchemaField;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 
@@ -121,7 +121,7 @@ public class YoROS2Message implements YoMCAPMessage
 
       List<Consumer<CDRDeserializer>> deserializers = new ArrayList<>();
 
-      for (ROS2Field field : schema.getFields())
+      for (ROS2SchemaField field : schema.getFields())
       {
          String fieldName = field.getName();
 
@@ -237,7 +237,7 @@ public class YoROS2Message implements YoMCAPMessage
    }
 
    @SuppressWarnings({"rawtypes", "unchecked"})
-   private static Consumer<CDRDeserializer> createYoVariable(ROS2Field field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariable(ROS2SchemaField field, YoRegistry registry)
    {
       String fieldName = field.getName();
       String fieldType = field.getType();
@@ -254,7 +254,7 @@ public class YoROS2Message implements YoMCAPMessage
     * @return the parsing function.
     */
    @SuppressWarnings({"unchecked", "rawtypes"})
-   private static Consumer<CDRDeserializer> createYoVariableArray(ROS2Field field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariableArray(ROS2SchemaField field, YoRegistry registry)
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();

@@ -9,7 +9,7 @@ public class ROS2MessageSchema implements MCAPSchema
 {
    private int id;
    private String name;
-   private List<ROS2Field> fields;
+   private List<ROS2SchemaField> fields;
    private boolean isSchemaFlat;
    private Map<String, ROS2MessageSchema> subSchemaMap;
 
@@ -30,7 +30,7 @@ public class ROS2MessageSchema implements MCAPSchema
       schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
       String[] schemasStrings = schemasBundledString.split("\n(=+)\n");
 
-      schema.fields = schemasStrings[0].lines().map(ROS2Field::fromLine).collect(Collectors.toList());
+      schema.fields = schemasStrings[0].lines().map(ROS2SchemaField::fromLine).collect(Collectors.toList());
 
       schema.subSchemaMap = new LinkedHashMap<>();
       for (int i = 1; i < schemasStrings.length; i++)
@@ -42,13 +42,13 @@ public class ROS2MessageSchema implements MCAPSchema
          int firstNewLineCharacter = schemaString.indexOf("\n");
          String firstLine = schemaString.substring(0, firstNewLineCharacter);
          subSchema.name = firstLine.replace("MSG: fastdds/", "").trim();
-         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1).lines().map(ROS2Field::fromLine).collect(Collectors.toList());
+         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1).lines().map(ROS2SchemaField::fromLine).collect(Collectors.toList());
          schema.subSchemaMap.put(subSchema.name, subSchema);
       }
       schema.isSchemaFlat = schema.subSchemaMap.isEmpty();
 
       // Update the fields to indicate whether they are complex types or not.
-      for (ROS2Field field : schema.fields)
+      for (ROS2SchemaField field : schema.fields)
       {
          if (schema.subSchemaMap.containsKey(field.getType()))
          {
@@ -57,7 +57,7 @@ public class ROS2MessageSchema implements MCAPSchema
 
          for (ROS2MessageSchema subSchema : schema.subSchemaMap.values())
          {
-            for (ROS2Field subField : subSchema.fields)
+            for (ROS2SchemaField subField : subSchema.fields)
             {
                if (schema.subSchemaMap.containsKey(subField.getType()))
                {
@@ -85,7 +85,7 @@ public class ROS2MessageSchema implements MCAPSchema
       return isSchemaFlat;
    }
 
-   public List<ROS2Field> getFields()
+   public List<ROS2SchemaField> getFields()
    {
       return fields;
    }
@@ -109,7 +109,7 @@ public class ROS2MessageSchema implements MCAPSchema
       flatSchema.isSchemaFlat = true;
       flatSchema.fields = new ArrayList<>();
 
-      for (ROS2Field field : fields)
+      for (ROS2SchemaField field : fields)
       {
          flatSchema.fields.addAll(flattenField(field));
       }
@@ -117,23 +117,23 @@ public class ROS2MessageSchema implements MCAPSchema
       return flatSchema;
    }
 
-   private List<ROS2Field> flattenField(ROS2Field field)
+   private List<ROS2SchemaField> flattenField(ROS2SchemaField field)
    {
-      ROS2Field flatField = field.clone();
+      ROS2SchemaField flatField = field.clone();
 
       if (!field.isComplexType)
       {
          return Collections.singletonList(flatField);
       }
 
-      List<ROS2Field> flatFields = new ArrayList<>();
+      List<ROS2SchemaField> flatFields = new ArrayList<>();
       flatFields.add(flatField);
 
       if (flatField.isArray())
       {
          for (int i = 0; i < flatField.maxLength; i++)
          {
-            ROS2Field subField = new ROS2Field();
+            ROS2SchemaField subField = new ROS2SchemaField();
             subField.parent = flatField;
             subField.type = flatField.type;
             subField.name = flatField.name + "[" + i + "]";
@@ -148,7 +148,7 @@ public class ROS2MessageSchema implements MCAPSchema
          ROS2MessageSchema subSchema = subSchemaMap.get(flatField.getType());
          if (subSchema != null)
          {
-            for (ROS2Field subField : subSchema.fields)
+            for (ROS2SchemaField subField : subSchema.fields)
             {
                subField.parent = flatField;
                subField.name = flatField.name + "." + subField.name;
@@ -180,12 +180,12 @@ public class ROS2MessageSchema implements MCAPSchema
       return indent(out, indent);
    }
 
-   public static class ROS2Field implements MCAPField
+   public static class ROS2SchemaField implements MCAPSchemaField
    {
       /**
        * The parent is used when flattening the schema.
        */
-      private ROS2Field parent;
+      private ROS2SchemaField parent;
       private String type;
       private String name;
       /**
@@ -202,9 +202,9 @@ public class ROS2MessageSchema implements MCAPSchema
        */
       private boolean isComplexType;
 
-      public static ROS2Field fromLine(String line)
+      public static ROS2SchemaField fromLine(String line)
       {
-         ROS2Field field = new ROS2Field();
+         ROS2SchemaField field = new ROS2SchemaField();
          field.type = line.substring(0, line.indexOf(' ')).trim();
          field.name = line.substring(line.indexOf(' ') + 1).trim();
 
@@ -247,9 +247,9 @@ public class ROS2MessageSchema implements MCAPSchema
          return field;
       }
 
-      public ROS2Field clone()
+      public ROS2SchemaField clone()
       {
-         ROS2Field clone = new ROS2Field();
+         ROS2SchemaField clone = new ROS2SchemaField();
          clone.parent = parent;
          clone.type = type;
          clone.name = name;
@@ -260,7 +260,7 @@ public class ROS2MessageSchema implements MCAPSchema
          return clone;
       }
 
-      public ROS2Field getParent()
+      public ROS2SchemaField getParent()
       {
          return parent;
       }
@@ -375,7 +375,7 @@ public class ROS2MessageSchema implements MCAPSchema
    private static String mcapROS2MessageToString(CDRDeserializer cdr, ROS2MessageSchema schema, int indent)
    {
       StringBuilder out = new StringBuilder(schema.getName() + ":");
-      for (ROS2Field field : schema.fields)
+      for (ROS2SchemaField field : schema.fields)
       {
          String fieldToString = mcapROS2MessageFieldToString(cdr, field, schema, indent + 1);
          if (fieldToString != null)
@@ -384,7 +384,7 @@ public class ROS2MessageSchema implements MCAPSchema
       return out.toString();
    }
 
-   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, ROS2Field field, ROS2MessageSchema schema, int indent)
+   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, ROS2SchemaField field, ROS2MessageSchema schema, int indent)
    {
       if (schema == null && field.isComplexType())
       { // Dealing with a flat schema, skip this field.
