@@ -49,7 +49,7 @@ public class YoEquationEditorPaneController
    private ImageView equationNameValidImageView, equationValidImageView, equationAliasesValidImageView;
 
    private final ObservableMap<String, YoEquationAliasController> aliasNameToControllerMap = FXCollections.observableHashMap();
-   private Property<YoEquationDefinition> definitionToEdit = new SimpleObjectProperty<>(this, "definitionToEdit", null);
+   private final Property<YoEquationDefinition> definitionToEdit = new SimpleObjectProperty<>(this, "definitionToEdit", null);
    private final BooleanProperty equationValidityProperty = new SimpleBooleanProperty(this, "equationValidity", false);
    private final BooleanProperty equationNameValidityProperty = new SimpleBooleanProperty(this, "equationNameValidity", false);
    private final BooleanProperty equationAliasesValidityProperty = new SimpleBooleanProperty(this, "equationAliasesValidity", false);
@@ -70,14 +70,14 @@ public class YoEquationEditorPaneController
                                       try
                                       {
                                          equationNameTextField.setText(newValue.getName());
+                                         equationNameValidityProperty.set(!newValue.getName().isBlank() && nameValidator.test(newValue));
                                          equationTextArea.setText(newValue.getEquation());
 
                                          List<EquationAliasDefinition> aliases = newValue.getAliases();
-                                         aliasNameToControllerMap.clear();
-                                         setAliases(aliases.stream().map(a -> new Pair<>(a.getName(), a.getValue())).collect(Collectors.toList()));
+                                         setAliases(aliases.stream().map(a -> new Pair<>(a.getName(), a.getValue())).collect(Collectors.toList()), true);
 
                                          // FIXME Kinda hackish: when loading the equation from file, we don't want to update the equation in case there's a missing yoVariable, but making a new equation we do.
-                                         updateEquation(aliases.isEmpty());
+                                         updateEquation(aliases.isEmpty(), false);
                                       }
                                       finally
                                       {
@@ -87,7 +87,10 @@ public class YoEquationEditorPaneController
 
       equationNameTextField.textProperty().addListener((o, oldValue, newValue) ->
                                                        {
-                                                          if (definitionToEdit.getValue() == null || isUpdatingDefinition.isTrue())
+                                                          if (definitionToEdit.getValue() == null)
+                                                             return;
+
+                                                          if (isUpdatingDefinition.isTrue())
                                                              return;
 
                                                           YoEquationDefinition definition = definitionToEdit.getValue();
@@ -103,7 +106,7 @@ public class YoEquationEditorPaneController
 
                                                      YoEquationDefinition definition = definitionToEdit.getValue();
                                                      definition.setEquation(newValue);
-                                                     updateEquation(true);
+                                                     updateEquation(true, false);
                                                   });
 
       aliasListView.setCellFactory(param -> new YoEquationAliasListCell());
@@ -135,7 +138,7 @@ public class YoEquationEditorPaneController
       YoGraphicFXControllerTools.bindValidityImageView(equationAliasesValidityProperty, equationAliasesValidImageView);
    }
 
-   private void updateEquation(boolean updateAliases)
+   private void updateEquation(boolean updateAliases, boolean removeUnusedAliases)
    {
       if (definitionToEdit.getValue() == null)
          return;
@@ -156,58 +159,100 @@ public class YoEquationEditorPaneController
       }
 
       if (updateAliases)
-      {
-         List<Pair<String, EquationInputDefinition>> newAliases = new ArrayList<>();
-
-         for (EquationAlias alias : equation.getBuilder().getAliasManager().getUserAliases().values())
-         {
-            String aliasName = alias.name();
-            EquationInputDefinition aliasValue = alias.input().toInputDefinition();
-            newAliases.add(new Pair<>(aliasName, aliasValue));
-         }
-
-         for (String aliasName : equation.getBuilder().getAliasManager().getMissingInputs())
-         {
-            YoEquationAliasController aliasController = aliasNameToControllerMap.get(aliasName);
-            EquationInputDefinition aliasValue = aliasController == null ? null : aliasController.getAliasValue();
-            newAliases.add(new Pair<>(aliasName, aliasValue));
-         }
-
-         newAliases.sort(Comparator.comparing(Pair::getKey));
-
-         setAliases(newAliases);
-      }
+         updateAliases(equation, removeUnusedAliases);
       updateListener.run();
    }
 
-   private void setAliases(List<Pair<String, EquationInputDefinition>> newAliases)
+   private void updateAliases(Equation equation, boolean removeUnusedAliases)
+   {
+      List<Pair<String, EquationInputDefinition>> newAliases = new ArrayList<>();
+
+      for (EquationAlias alias : equation.getBuilder().getAliasManager().getUserAliases().values())
+      {
+         String aliasName = alias.name();
+         EquationInputDefinition aliasValue = alias.input().toInputDefinition();
+         newAliases.add(new Pair<>(aliasName, aliasValue));
+      }
+
+      for (String aliasName : equation.getBuilder().getAliasManager().getMissingInputs())
+      {
+         YoEquationAliasController aliasController = aliasNameToControllerMap.get(aliasName);
+         EquationInputDefinition aliasValue = aliasController == null ? null : aliasController.getAliasValue();
+         newAliases.add(new Pair<>(aliasName, aliasValue));
+      }
+
+      newAliases.sort(Comparator.comparing(Pair::getKey));
+
+      setAliases(newAliases, removeUnusedAliases);
+   }
+
+   private void setAliases(List<Pair<String, EquationInputDefinition>> newAliases, boolean removeOldAliases)
+   {
+      if (removeOldAliases)
+      {
+         aliasListView.getItems().clear();
+
+         for (Pair<String, EquationInputDefinition> alias : newAliases)
+         {
+            String aliasName = alias.getKey();
+            EquationInputDefinition aliasValue = alias.getValue();
+            aliasListView.getItems().add(newAliasController(aliasName, aliasValue));
+         }
+      }
+      else
+      {
+         List<YoEquationAliasController> newAliasControllers = new ArrayList<>(aliasListView.getItems());
+
+         for (Pair<String, EquationInputDefinition> alias : newAliases)
+         {
+            String aliasName = alias.getKey();
+            EquationInputDefinition aliasValue = alias.getValue();
+            YoEquationAliasController aliasController = aliasNameToControllerMap.get(aliasName);
+
+            if (aliasController == null)
+               newAliasControllers.add(newAliasController(aliasName, aliasValue));
+            else
+               aliasController.setAliasValue(aliasValue);
+         }
+
+         newAliasControllers.sort(Comparator.comparing(a -> a.aliasNameLabel.getText()));
+         aliasListView.getItems().setAll(newAliasControllers);
+      }
+   }
+
+   private YoEquationAliasController newAliasController(String aliasName, EquationInputDefinition aliasValue)
    {
       YoCompositeSearchManager yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
+      YoEquationAliasController aliasController = new YoEquationAliasController(aliasName, aliasValue, yoCompositeSearchManager);
+      aliasController.aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->
+                                                                           {
+                                                                              if (newValue != null)
+                                                                                 updateAliasValue(aliasController);
+                                                                           });
+      return aliasController;
+   }
 
-      aliasListView.getItems().clear();
+   private void updateAliasValue(YoEquationAliasController aliasController)
+   {
+      if (definitionToEdit.getValue() == null)
+         return;
 
-      for (Pair<String, EquationInputDefinition> alias : newAliases)
-      {
-         String aliasName = alias.getKey();
-         EquationInputDefinition aliasValue = alias.getValue();
-         YoEquationAliasController aliasController = new YoEquationAliasController(aliasName, aliasValue, yoCompositeSearchManager);
-         aliasController.aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->
-                                                                              {
-                                                                                 if (definitionToEdit.getValue() == null)
-                                                                                    return;
+      String aliasName = aliasController.getAliasName();
+      List<EquationAliasDefinition> definitionAliases = definitionToEdit.getValue().getAliases();
+      EquationAliasDefinition newAlias = new EquationAliasDefinition(aliasName, aliasController.getAliasValue());
+      EquationAliasDefinition old = definitionAliases.stream().filter(a -> a.getName().equals(aliasName)).findFirst().orElse(null);
 
-                                                                                 List<EquationAliasDefinition> definitionAliases = definitionToEdit.getValue()
-                                                                                                                                                   .getAliases();
-                                                                                 if (newValue != null)
-                                                                                 {
-                                                                                    definitionAliases.removeIf(a -> a.getName().equals(aliasName));
-                                                                                    definitionAliases.add(new EquationAliasDefinition(aliasName,
-                                                                                                                                      aliasController.getAliasValue()));
-                                                                                    updateListener.run();
-                                                                                 }
-                                                                              });
-         aliasListView.getItems().add(aliasController);
-      }
+      if (old != null)
+         definitionAliases.set(definitionAliases.indexOf(old), newAlias);
+      else
+         definitionAliases.add(newAlias);
+      updateListener.run();
+   }
+
+   @FXML
+   public void removeUnusedAliases()
+   {
+      updateEquation(true, true);
    }
 
    public Pane getMainPane()
@@ -271,15 +316,13 @@ public class YoEquationEditorPaneController
 
       public YoEquationAliasController(String aliasName, EquationInputDefinition aliasValue, YoCompositeSearchManager searchManager)
       {
-         aliasNameLabel = new Label(aliasName);
+         aliasNameLabel = new Label();
+         setAliasName(aliasName);
          JFXTextField textField = new JFXTextField();
          mainPane.getChildren().addAll(aliasNameLabel, textField);
 
          aliasValueSearchField = new StringSearchField(textField, searchManager);
-         if (aliasValue == null)
-            textField.setText("");
-         else
-            textField.setText(aliasValue.computeSimpleStringValue());
+         setAliasValue(aliasValue);
          aliasValueSearchField.setupAutoCompletion();
          aliasValueSearchField.supplierProperty().addListener((o, oldValue, newValue) ->
                                                               {
@@ -288,9 +331,27 @@ public class YoEquationEditorPaneController
                                                               });
       }
 
+      public void setAliasName(String aliasName)
+      {
+         aliasNameLabel.setText(aliasName);
+      }
+
+      private void setAliasValue(EquationInputDefinition aliasValue)
+      {
+         if (aliasValue == null)
+            aliasValueSearchField.getTextField().setText("");
+         else
+            aliasValueSearchField.getTextField().setText(aliasValue.computeSimpleStringValue());
+      }
+
       public Pane getMainPane()
       {
          return mainPane;
+      }
+
+      public String getAliasName()
+      {
+         return aliasNameLabel.getText();
       }
 
       public EquationInputDefinition getAliasValue()
