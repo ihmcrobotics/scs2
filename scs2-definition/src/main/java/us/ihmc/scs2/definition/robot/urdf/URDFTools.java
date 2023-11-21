@@ -1713,6 +1713,8 @@ public class URDFTools
          return toURDFJoint(sixDoFJointDefinition, properties);
       if (jointDefinition instanceof PlanarJointDefinition planarJointDefinition)
          return toURDFJoint(planarJointDefinition, properties);
+      if (jointDefinition instanceof CrossFourBarJointDefinition crossFourBarJointDefinition)
+         return toURDFJoint(crossFourBarJointDefinition, properties);
       throw new UnsupportedOperationException("Unsupported joint type: " + jointDefinition);
    }
 
@@ -1797,6 +1799,54 @@ public class URDFTools
       urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
       urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
       urdfJoint.setAxis(toURDFAxis(Axis3D.Y, properties)); // TODO need to upgrade PlanarJointDefinition to allow different axis
+      return urdfJoint;
+   }
+
+   public static URDFJoint toURDFJoint(CrossFourBarJointDefinition jointDefinition, URDFGeneratorProperties properties)
+   {
+      if (jointDefinition == null)
+         return null;
+
+      URDFJoint urdfJoint = new URDFJoint();
+      urdfJoint.setType(URDFJointType.cross_four_bar);
+      urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis(), properties));
+      urdfJoint.setLimit(toURDFLimit(jointDefinition, properties));
+      urdfJoint.setDynamics(toURDFDynamics(jointDefinition, properties));
+
+      urdfJoint.setActuatedJointIndex(Integer.toString(jointDefinition.getActuatedJointIndex()));
+
+      URDFLink urdfLinkDA = toURDFLink(jointDefinition.getBodyDA(), properties);
+      URDFLink urdfLinkBC = toURDFLink(jointDefinition.getBodyBC(), properties);
+
+      URDFJoint urdfJointA = new URDFJoint();
+      URDFJoint urdfJointB = new URDFJoint();
+      URDFJoint urdfJointC = new URDFJoint();
+      URDFJoint urdfJointD = new URDFJoint();
+
+      urdfJointA.setName(jointDefinition.getJointNameA());
+      urdfJointB.setName(jointDefinition.getJointNameB());
+      urdfJointC.setName(jointDefinition.getJointNameC());
+      urdfJointD.setName(jointDefinition.getJointNameD());
+
+      urdfJointA.setOrigin(toURDFOrigin(jointDefinition.getTransformAToPredecessor(), properties));
+      urdfJointB.setOrigin(toURDFOrigin(jointDefinition.getTransformBToPredecessor(), properties));
+      urdfJointC.setOrigin(toURDFOrigin(jointDefinition.getTransformCToB(), properties));
+      urdfJointD.setOrigin(toURDFOrigin(jointDefinition.getTransformDToA(), properties));
+
+      urdfJoint.setSubJoints(new ArrayList<>());
+      urdfJoint.getSubJoints().add(urdfJointA);
+      urdfJoint.getSubJoints().add(urdfJointB);
+      urdfJoint.getSubJoints().add(urdfJointC);
+      urdfJoint.getSubJoints().add(urdfJointD);
+
+      urdfJoint.setSubLinks(new ArrayList<>());
+      urdfJoint.getSubLinks().add(urdfLinkDA);
+      urdfJoint.getSubLinks().add(urdfLinkBC);
+
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
       return urdfJoint;
    }
 
