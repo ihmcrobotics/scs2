@@ -349,7 +349,9 @@ public class OMGIDLSchema implements MCAPSchema
          out += "\n\t-type=" + type;
          out += "\n\t-name=" + name;
          out += "\n\t-isArray=" + isArray;
-         if (isArray)
+         out += "\n\t-isVector=" + isVector;
+         out += "\n\t-isComplexType" + isComplexType;
+         if (isArray || isVector)
             out += "\n\t-maxLength=" + maxLength;
          return indent(out, indent);
       }
@@ -368,75 +370,4 @@ public class OMGIDLSchema implements MCAPSchema
       return "\t".repeat(indent);
    }
 
-   public static String mcapROS2MessageToString(Mcap.Message message, OMGIDLSchema schema)
-   {
-      CDRDeserializer cdr = new CDRDeserializer();
-      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
-
-      String output = mcapROS2MessageToString(cdr, schema, 0);
-
-      cdr.finalize(true);
-      return output;
-   }
-
-   private static String mcapROS2MessageToString(CDRDeserializer cdr, OMGIDLSchema schema, int indent)
-   {
-      StringBuilder out = new StringBuilder(schema.getName() + ":");
-      for (OMGIDLField field : schema.fields)
-      {
-         String fieldToString = mcapROS2MessageFieldToString(cdr, field, schema, indent + 1);
-         if (fieldToString != null)
-            out.append(fieldToString);
-      }
-      return out.toString();
-   }
-
-   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, OMGIDLField field, OMGIDLSchema schema, int indent)
-   {
-      if (schema == null && field.isComplexType())
-      { // Dealing with a flat schema, skip this field.
-         return null;
-      }
-
-      StringBuilder out = new StringBuilder("\n" + indentString(indent) + field.getName() + ": ");
-
-      if (field.isArray())
-      {
-         out.append("[");
-         for (int i = 0; i < field.maxLength; i++)
-         {
-            out.append("\n").append(indentString(indent + 1)).append(i).append(": ");
-            out.append(mcapROS2MessageFieldToString(cdr, field, schema, indent + 2));
-         }
-         out.append("\n").append(indentString(indent)).append("]");
-      }
-      else
-      {
-         String fieldValue = null;
-         try
-         {
-            fieldValue = cdr.readTypeAsString(CDRDeserializer.Type.parseType(field.getType()), field.getMaxLength());
-         }
-         catch (IllegalArgumentException e)
-         {
-            // Ignore
-         }
-
-         if (fieldValue == null)
-         {
-            OMGIDLSchema subSchema = schema.getSubSchemaMap() == null ? null : schema.getSubSchemaMap().get(field.getType());
-            if (subSchema != null)
-            {
-               fieldValue = "\n" + indentString(indent + 1) + mcapROS2MessageToString(cdr, subSchema, indent + 1);
-            }
-            else if (!schema.isSchemaFlat())
-            {
-               fieldValue = "Unknown type: " + field.getType();
-            }
-         }
-         out.append(fieldValue);
-      }
-
-      return out.toString();
-   }
 }

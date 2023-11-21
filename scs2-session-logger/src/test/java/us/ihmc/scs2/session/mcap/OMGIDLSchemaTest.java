@@ -177,7 +177,7 @@ public class OMGIDLSchemaTest
    public void testFlattenSchema() throws Exception
    {
       //TODO: (AM) implement test
-      String schemaName = "vision_msgs::LandmarkInfoArray";
+      String schemaName = "";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
       OMGIDLSchema flatSchema = schema.flattenSchema();
