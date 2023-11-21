@@ -15,7 +15,7 @@
    <children>
       <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <HBox spacing="5.0">
+            <HBox spacing="5.0" VBox.vgrow="ALWAYS">
                <children>
                   <VBox spacing="10.0">
                      <children>
@@ -54,7 +54,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </padding>
                      <children>
-                        <HBox alignment="CENTER" spacing="10.0">
+                        <HBox alignment="CENTER" spacing="10.0" VBox.vgrow="NEVER">
                            <children>
                               <Label text="Equation editor" />
                               <Separator maxHeight="-Infinity" minHeight="-Infinity" HBox.hgrow="ALWAYS" />
@@ -69,7 +69,7 @@
                   </VBox>
                </children>
             </HBox>
-            <HBox styleClass="graphic-editor-hbox">
+            <HBox styleClass="graphic-editor-hbox" VBox.vgrow="NEVER">
                <children>
                   <JFXButton fx:id="exportButton" minWidth="-Infinity" onAction="#exportYoEquations" styleClass="graphic-editor-button" text="Export...">
                      <graphic>
@@ -96,4 +96,7 @@
          </children>
       </VBox>
    </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
 </AnchorPane>

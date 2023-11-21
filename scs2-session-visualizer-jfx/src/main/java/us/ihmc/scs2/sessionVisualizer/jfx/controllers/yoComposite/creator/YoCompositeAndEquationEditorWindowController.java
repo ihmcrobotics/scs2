@@ -15,6 +15,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
@@ -108,19 +109,9 @@ public class YoCompositeAndEquationEditorWindowController
       yoEquationEditorListView.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
                                                                                       {
                                                                                          if (newValue == null)
-                                                                                         {
-                                                                                            while (equationEditorContainer.getChildren().size() > 1)
-                                                                                               equationEditorContainer.getChildren().remove(1);
-                                                                                         }
-                                                                                         else if (equationEditorContainer.getChildren().size() == 1)
-                                                                                         {
-                                                                                            equationEditorContainer.getChildren().add(newValue.getMainPane());
-                                                                                         }
+                                                                                            hideEquationEditorPane();
                                                                                          else
-                                                                                         {
-                                                                                            equationEditorContainer.getChildren()
-                                                                                                                   .set(1, newValue.getMainPane());
-                                                                                         }
+                                                                                            showEquationEditorPane(newValue);
                                                                                       });
 
       messager.addFXTopicListener(topics.getSessionYoEquationListChangeState(), m ->
@@ -158,6 +149,21 @@ public class YoCompositeAndEquationEditorWindowController
       window.setScene(new Scene(mainPane));
       window.initOwner(toolkit.getMainWindow());
       refreshYoCompositeListView();
+   }
+
+   private void showEquationEditorPane(YoEquationEditorPaneController controller)
+   {
+      if (equationEditorContainer.getChildren().size() == 1)
+         equationEditorContainer.getChildren().add(controller.getMainPane());
+      else
+         equationEditorContainer.getChildren().set(1, controller.getMainPane());
+      VBox.setVgrow(controller.getMainPane(), Priority.ALWAYS);
+   }
+
+   private void hideEquationEditorPane()
+   {
+      while (equationEditorContainer.getChildren().size() > 1)
+         equationEditorContainer.getChildren().remove(1);
    }
 
    @FXML
@@ -219,6 +225,7 @@ public class YoCompositeAndEquationEditorWindowController
          loader.load();
          yoEquationEditorPaneController = loader.getController();
          yoEquationEditorPaneController.initialize(toolkit, this::isEquationNameUnique);
+         yoEquationEditorListView.getItems().add(yoEquationEditorPaneController);
          yoEquationEditorPaneController.setUpdateListener(() ->
                                                           {
                                                              if (areAllEquationsValid())
@@ -226,7 +233,6 @@ public class YoCompositeAndEquationEditorWindowController
                                                                                        YoEquationListChange.newList(collectEquationDefinitions()));
                                                           });
          yoEquationEditorPaneController.definitionProperty().setValue(equation);
-         yoEquationEditorListView.getItems().add(yoEquationEditorPaneController);
       }
       catch (IOException e)
       {
