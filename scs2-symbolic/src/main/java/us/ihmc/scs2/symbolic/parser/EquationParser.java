@@ -14,7 +14,7 @@ import java.util.List;
 public class EquationParser
 {
    private final EquationAliasManager aliasManager = new EquationAliasManager();
-   private final EquationOperationLibrary operationLibrary = new EquationOperationLibrary();
+   private final EquationOperationFactoryLibrary operationLibrary = new EquationOperationFactoryLibrary();
 
    public EquationParser()
    {
@@ -25,7 +25,7 @@ public class EquationParser
       return aliasManager;
    }
 
-   public EquationOperationLibrary getOperationLibrary()
+   public EquationOperationFactoryLibrary getOperationLibrary()
    {
       return operationLibrary;
    }
