@@ -1808,9 +1808,11 @@ public class URDFTools
          return null;
 
       URDFJoint urdfJoint = new URDFJoint();
-      urdfJoint.setType(URDFJointType.cross_four_bar);
       urdfJoint.setName(jointDefinition.getName());
+      urdfJoint.setType(URDFJointType.cross_four_bar);
       urdfJoint.setOrigin(toURDFOrigin(jointDefinition.getTransformToParent(), properties));
+      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
       urdfJoint.setAxis(toURDFAxis(jointDefinition.getAxis(), properties));
       urdfJoint.setLimit(toURDFLimit(jointDefinition, properties));
       urdfJoint.setDynamics(toURDFDynamics(jointDefinition, properties));
@@ -1830,6 +1832,26 @@ public class URDFTools
       urdfJointC.setName(jointDefinition.getJointNameC());
       urdfJointD.setName(jointDefinition.getJointNameD());
 
+      urdfJointA.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJointB.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
+      urdfJointC.setParent(toURDFLinkReference(jointDefinition.getBodyBC(), properties));
+      urdfJointD.setParent(toURDFLinkReference(jointDefinition.getBodyDA(), properties));
+
+      urdfJointA.setChild(toURDFLinkReference(jointDefinition.getBodyDA(), properties));
+      urdfJointB.setChild(toURDFLinkReference(jointDefinition.getBodyBC(), properties));
+      urdfJointC.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+      urdfJointD.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
+
+      urdfJointA.setLimit(toURDFLimit(jointDefinition, properties));
+      urdfJointB.setLimit(toURDFLimit(jointDefinition, properties));
+      urdfJointC.setLimit(toURDFLimit(jointDefinition, properties));
+      urdfJointD.setLimit(toURDFLimit(jointDefinition, properties));
+
+      urdfJointA.setType(URDFJointType.revolute);
+      urdfJointB.setType(URDFJointType.revolute);
+      urdfJointC.setType(URDFJointType.revolute);
+      urdfJointD.setType(URDFJointType.revolute);
+
       urdfJointA.setOrigin(toURDFOrigin(jointDefinition.getTransformAToPredecessor(), properties));
       urdfJointB.setOrigin(toURDFOrigin(jointDefinition.getTransformBToPredecessor(), properties));
       urdfJointC.setOrigin(toURDFOrigin(jointDefinition.getTransformCToB(), properties));
@@ -1845,8 +1867,6 @@ public class URDFTools
       urdfJoint.getSubLinks().add(urdfLinkDA);
       urdfJoint.getSubLinks().add(urdfLinkBC);
 
-      urdfJoint.setParent(toURDFLinkReference(jointDefinition.getPredecessor(), properties));
-      urdfJoint.setChild(toURDFLinkReference(jointDefinition.getSuccessor(), properties));
       return urdfJoint;
    }
 
