@@ -12,6 +12,7 @@ import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
 import us.ihmc.scs2.session.mcap.omgidl_parser.PrintListener;
 
 import java.io.InputStream;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -177,9 +178,27 @@ public class OMGIDLSchemaTest
    public void testFlattenSchema() throws Exception
    {
       //TODO: (AM) implement test
-      String schemaName = "";
+      String schemaName = "NavigationAppHealth";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
       OMGIDLSchema flatSchema = schema.flattenSchema();
+      //      System.out.println(schema.toString());
+      System.out.println(flatSchema.toString());
+   }
+
+   @Disabled
+   @Test
+   public void testFlattenArray() throws Exception
+   {
+      String schemaName = "NavigationAppHealth";
+      InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
+      OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
+      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("");
+      OMGIDLSchema.OMGIDLSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(3);
+      List<OMGIDLSchema.OMGIDLSchemaField> flatFields = schema.flattenField(field);
+      System.out.println(flatFields);
+
+//      OMGIDLSchema flatSchema = schema.flattenSchema();
+//      System.out.println(flatSchema);
    }
 }
