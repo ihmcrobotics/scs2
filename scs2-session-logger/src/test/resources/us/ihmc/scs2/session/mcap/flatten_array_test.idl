@@ -1,0 +1,13 @@
+struct b {
+    string name;
+};
+
+struct a {
+    short num1;
+    double num2;
+    b mode;
+};
+
+struct flatten_array_test {
+    sequence<a, 3> seq;
+};
