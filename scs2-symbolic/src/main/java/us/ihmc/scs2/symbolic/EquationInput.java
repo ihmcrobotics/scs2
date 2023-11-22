@@ -2,78 +2,242 @@ package us.ihmc.scs2.symbolic;
 
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
 
-import java.util.function.DoubleSupplier;
-import java.util.function.IntSupplier;
-
 public interface EquationInput
 {
-   enum Type
+   enum InputType
    {
-      INTEGER, DOUBLE;
+      INTEGER, DOUBLE
    }
 
-   Type getType();
+   /**
+    * Main purpose is to reset the previous value of a variable.
+    */
+   default void reset()
+   {
+   }
+
+   void setTime(double time);
+
+   /**
+    * Main purpose is to update the previous value of a variable.
+    * <p>
+    * It is assumed this method is called to save the current value of a variable before it is updated.
+    * </p>
+    */
+   default void updatePreviousValue()
+   {
+   }
+
+   InputType getType();
 
    String valueAsString();
 
    EquationInputDefinition toInputDefinition();
 
-   static ScalarVariable newVariable(Type type)
+   static ScalarVariable newVariable(InputType type)
    {
       return switch (type)
       {
-         case INTEGER -> new SimpleIntegerVariable(0);
-         case DOUBLE -> new SimpleDoubleVariable(0.0);
+         case INTEGER -> new SimpleIntegerVariable();
+         case DOUBLE -> new SimpleDoubleVariable();
       };
    }
 
-   interface ScalarConstant extends EquationInput
+   static ScalarInput parseConstant(InputType type, String valueAsString)
    {
-      DoubleSupplier toDoubleSupplier();
+      return switch (type)
+      {
+         case INTEGER -> new SimpleIntegerConstant(Integer.parseInt(valueAsString));
+         case DOUBLE -> new SimpleDoubleConstant(Double.parseDouble(valueAsString));
+      };
    }
 
-   interface ScalarVariable extends ScalarConstant
+   interface ScalarInput extends EquationInput
+   {
+      /**
+       * @return the value of this input as a {@code double}.
+       */
+      double getValueAsDouble();
+
+      double getValueDot();
+   }
+
+   interface ScalarVariable extends ScalarInput
    {
    }
 
-   interface DoubleConstant extends ScalarConstant, DoubleSupplier
+   interface DoubleInput extends ScalarInput
    {
       @Override
-      default Type getType()
+      default InputType getType()
       {
-         return Type.DOUBLE;
+         return InputType.DOUBLE;
+      }
+
+      double getTime();
+
+      double getValue();
+
+      @Override
+      default double getValueAsDouble()
+      {
+         return getValue();
+      }
+
+      double getPreviousTime();
+
+      double getPreviousValue();
+
+      @Override
+      default double getValueDot()
+      {
+         if (Double.isNaN(getPreviousTime()) || getTime() == getPreviousTime())
+            return 0.0;
+         else
+            return (getValue() - getPreviousValue()) / (getTime() - getPreviousTime());
       }
 
       @Override
-      default DoubleSupplier toDoubleSupplier()
+      default String valueAsString()
       {
-         return this;
+         return Double.toString(getValue());
       }
    }
 
-   interface DoubleVariable extends ScalarVariable, DoubleConstant
-   {
-      void setValue(double value);
-   }
-
-   interface IntegerConstant extends ScalarConstant, IntSupplier
+   interface DoubleConstant extends DoubleInput
    {
       @Override
-      default Type getType()
+      default void setTime(double time)
       {
-         return Type.INTEGER;
       }
 
       @Override
-      default DoubleSupplier toDoubleSupplier()
+      default double getTime()
       {
-         return this::getAsInt;
+         return Double.NaN;
+      }
+
+      @Override
+      double getValue();
+
+      @Override
+      default double getPreviousTime()
+      {
+         return Double.NaN;
+      }
+
+      @Override
+      default double getPreviousValue()
+      {
+         return getValue();
+      }
+
+      @Override
+      default double getValueDot()
+      {
+         return 0.0;
+      }
+
+      @Override
+      default String valueAsString()
+      {
+         return Double.toString(getValue());
       }
    }
 
-   interface IntegerVariable extends ScalarVariable, IntegerConstant
+   interface DoubleVariable extends ScalarVariable, DoubleInput
    {
-      void setValue(int value);
+      void setValue(double time, double value);
+   }
+
+   interface IntegerInput extends ScalarInput
+   {
+      @Override
+      default InputType getType()
+      {
+         return InputType.INTEGER;
+      }
+
+      double getTime();
+
+      int getValue();
+
+      @Override
+      default double getValueAsDouble()
+      {
+         return getValue();
+      }
+
+      double getPreviousTime();
+
+      int getPreviousValue();
+
+      @Override
+      default double getValueDot()
+      {
+         if (Double.isNaN(getPreviousTime()))
+            return 0.0;
+         else
+            return (getValue() - getPreviousValue()) / (getTime() - getPreviousTime());
+      }
+
+      @Override
+      default String valueAsString()
+      {
+         return Integer.toString(getValue());
+      }
+   }
+
+   interface IntegerConstant extends IntegerInput
+   {
+      @Override
+      default void setTime(double time)
+      {
+      }
+
+      @Override
+      default double getTime()
+      {
+         return Double.NaN;
+      }
+
+      @Override
+      int getValue();
+
+      @Override
+      default double getValueAsDouble()
+      {
+         return getValue();
+      }
+
+      @Override
+      default double getPreviousTime()
+      {
+         return Double.NaN;
+      }
+
+      @Override
+      default int getPreviousValue()
+      {
+         return getValue();
+      }
+
+      @Override
+      default double getValueDot()
+      {
+         return 0.0;
+      }
+
+      @Override
+      default String valueAsString()
+      {
+         return Integer.toString(getValue());
+      }
+   }
+
+   interface IntegerVariable extends ScalarVariable, IntegerInput
+   {
+      void setValue(double time, int value);
    }
 
    class SimpleDoubleConstant implements DoubleConstant
@@ -86,15 +250,9 @@ public interface EquationInput
       }
 
       @Override
-      public double getAsDouble()
+      public double getValue()
       {
          return value;
-      }
-
-      @Override
-      public String valueAsString()
-      {
-         return Double.toString(value);
       }
 
       @Override
@@ -106,29 +264,67 @@ public interface EquationInput
 
    class SimpleDoubleVariable implements DoubleVariable
    {
-      private double value;
+      private double value = Double.NaN;
+      private double time = Double.NaN;
+      private double previousValue = Double.NaN;
+      private double previousTime = Double.NaN;
 
-      public SimpleDoubleVariable(double value)
+      public SimpleDoubleVariable()
       {
+      }
+
+      @Override
+      public void reset()
+      {
+         previousTime = Double.NaN;
+         previousValue = Double.NaN;
+      }
+
+      @Override
+      public void updatePreviousValue()
+      {
+         previousTime = this.time;
+         previousValue = value;
+      }
+
+      @Override
+      public void setTime(double time)
+      {
+         this.time = time;
+      }
+
+      @Override
+      public void setValue(double time, double value)
+      {
+         this.time = time;
          this.value = value;
       }
 
       @Override
-      public void setValue(double value)
+      public double getTime()
       {
-         this.value = value;
+         return time;
       }
 
       @Override
-      public double getAsDouble()
+      public double getValue()
       {
          return value;
       }
 
       @Override
-      public String valueAsString()
+      public double getPreviousTime()
       {
-         return Double.toString(value);
+         return previousTime;
+      }
+
+      @Override
+      public double getPreviousValue()
+      {
+         if (Double.isNaN(previousValue))
+            return value;
+         else
+            return previousValue;
       }
 
       @Override
@@ -148,15 +344,9 @@ public interface EquationInput
       }
 
       @Override
-      public int getAsInt()
+      public int getValue()
       {
          return value;
-      }
-
-      @Override
-      public String valueAsString()
-      {
-         return Integer.toString(value);
       }
 
       @Override
@@ -168,28 +358,67 @@ public interface EquationInput
 
    class SimpleIntegerVariable implements IntegerVariable
    {
-      private int value;
+      private double time = Double.NaN;
+      private int value = Integer.MIN_VALUE;
+      private double previousTime = Double.NaN;
+      private int previousValue = Integer.MIN_VALUE;
 
-      public SimpleIntegerVariable(int value)
+      public SimpleIntegerVariable()
       {
-         this.value = value;
       }
 
-      public void setValue(int value)
+      @Override
+      public void reset()
       {
+         previousTime = Double.NaN;
+         previousValue = Integer.MIN_VALUE;
+      }
+
+      @Override
+      public void updatePreviousValue()
+      {
+         previousTime = this.time;
+         previousValue = value;
+      }
+
+      @Override
+      public void setTime(double time)
+      {
+         this.time = time;
+      }
+
+      @Override
+      public void setValue(double time, int value)
+      {
+         this.time = time;
          this.value = value;
       }
 
       @Override
-      public int getAsInt()
+      public double getTime()
+      {
+         return time;
+      }
+
+      @Override
+      public int getValue()
       {
          return value;
       }
 
       @Override
-      public String valueAsString()
+      public double getPreviousTime()
       {
-         return Integer.toString(value);
+         return previousTime;
+      }
+
+      @Override
+      public int getPreviousValue()
+      {
+         if (previousValue == Integer.MIN_VALUE)
+            return value;
+         else
+            return previousValue;
       }
 
       @Override

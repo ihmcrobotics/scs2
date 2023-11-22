@@ -1,5 +1,6 @@
 package us.ihmc.scs2.symbolic.parser;
 
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.scs2.symbolic.EquationInput;
 import us.ihmc.scs2.symbolic.EquationInput.*;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
@@ -71,20 +72,26 @@ public abstract class EquationOperationFactory
 
    public static class UnaryOperationFactory extends EquationOperationFactory
    {
-      private final IntUnaryOperator integerOperator;
-      private final DoubleUnaryOperator doubleOperator;
+      private final IntUnaryOperator integerValueOperator;
+      private final DoubleUnaryOperator doubleValueOperator;
+      private final ToDoubleFunction<ScalarInput> derivativeOperator;
 
-      public UnaryOperationFactory(String name, String description, IntUnaryOperator integerOperator, DoubleUnaryOperator doubleOperator)
+      public UnaryOperationFactory(String name,
+                                   String description,
+                                   IntUnaryOperator integerValueOperator,
+                                   DoubleUnaryOperator doubleValueOperator,
+                                   ToDoubleFunction<ScalarInput> derivativeOperator)
       {
          super(name, description);
-         this.doubleOperator = doubleOperator;
-         this.integerOperator = integerOperator;
+         this.doubleValueOperator = doubleValueOperator;
+         this.integerValueOperator = integerValueOperator;
+         this.derivativeOperator = derivativeOperator;
       }
 
       @Override
       public EquationOperationFactory duplicate()
       {
-         return new UnaryOperationFactory(name, description, integerOperator, doubleOperator);
+         return new UnaryOperationFactory(name, description, integerValueOperator, doubleValueOperator, derivativeOperator);
       }
 
       @Override
@@ -96,26 +103,29 @@ public abstract class EquationOperationFactory
 
       public EquationOperation<?> create(EquationInput A)
       {
-         if (integerOperator != null)
+         if (integerValueOperator != null)
          {
-            if (A instanceof IntSupplier intA)
+            if (A instanceof IntegerInput intA)
             {
                return new EquationOperation<>(name + "-i",
                                               description,
-                                              new SimpleIntegerVariable(0),
-                                              result -> result.setValue(integerOperator.applyAsInt(intA.getAsInt())));
+                                              new SimpleIntegerVariable(),
+                                              List.of(A),
+                                              (time, result) -> result.setValue(time, integerValueOperator.applyAsInt(intA.getValue())),
+                                              (time, value, resultToPack) -> resultToPack.setValue(time, derivativeOperator.applyAsDouble(intA)));
             }
          }
 
-         if (doubleOperator != null)
+         if (doubleValueOperator != null)
          {
-            if (A instanceof ScalarConstant scalarA)
+            if (A instanceof ScalarInput scalarA)
             {
-               DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
                return new EquationOperation<>(name + "-s",
                                               description,
-                                              new SimpleDoubleVariable(0),
-                                              result -> result.setValue(doubleOperator.applyAsDouble(asDoubleA.getAsDouble())));
+                                              new SimpleDoubleVariable(),
+                                              List.of(A),
+                                              (time, result) -> result.setValue(time, doubleValueOperator.applyAsDouble(scalarA.getValueAsDouble())),
+                                              (time, value, resultToPack) -> resultToPack.setValue(time, derivativeOperator.applyAsDouble(scalarA)));
             }
          }
 
@@ -127,18 +137,24 @@ public abstract class EquationOperationFactory
    {
       private final IntBinaryOperator integerOperator;
       private final DoubleBinaryOperator doubleOperator;
+      private final ToDoubleBiFunction<ScalarInput, ScalarInput> derivativeOperator;
 
-      public BinaryOperationFactory(String name, String description, IntBinaryOperator integerOperator, DoubleBinaryOperator doubleOperator)
+      public BinaryOperationFactory(String name,
+                                    String description,
+                                    IntBinaryOperator integerOperator,
+                                    DoubleBinaryOperator doubleOperator,
+                                    ToDoubleBiFunction<ScalarInput, ScalarInput> derivativeOperator)
       {
          super(name, description);
          this.doubleOperator = doubleOperator;
          this.integerOperator = integerOperator;
+         this.derivativeOperator = derivativeOperator;
       }
 
       @Override
       public EquationOperationFactory duplicate()
       {
-         return new BinaryOperationFactory(name, description, integerOperator, doubleOperator);
+         return new BinaryOperationFactory(name, description, integerOperator, doubleOperator, derivativeOperator);
       }
 
       @Override
@@ -152,25 +168,29 @@ public abstract class EquationOperationFactory
       {
          if (integerOperator != null)
          {
-            if (A instanceof IntSupplier intA && B instanceof IntSupplier intB)
+            if (A instanceof IntegerInput intA && B instanceof IntegerInput intB)
             {
                return new EquationOperation<>(name + "-ii",
                                               description,
-                                              new SimpleIntegerVariable(0),
-                                              result -> result.setValue(integerOperator.applyAsInt(intA.getAsInt(), intB.getAsInt())));
+                                              new SimpleIntegerVariable(),
+                                              List.of(A, B),
+                                              (time, value) -> value.setValue(time, integerOperator.applyAsInt(intA.getValue(), intB.getValue())),
+                                              (time, value, derivative) -> derivative.setValue(time, derivativeOperator.applyAsDouble(intA, intB)));
             }
          }
 
          if (doubleOperator != null)
          {
-            if (A instanceof ScalarConstant scalarA && B instanceof ScalarConstant scalarB)
+            if (A instanceof ScalarInput scalarA && B instanceof ScalarInput scalarB)
             {
-               DoubleSupplier asDoubleA = scalarA.toDoubleSupplier();
-               DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
                return new EquationOperation<>(name + "-ss",
                                               description,
-                                              new SimpleDoubleVariable(0),
-                                              result -> result.setValue(doubleOperator.applyAsDouble(asDoubleA.getAsDouble(), asDoubleB.getAsDouble())));
+                                              new SimpleDoubleVariable(),
+                                              List.of(A, B),
+                                              (time, result) -> result.setValue(time,
+                                                                                doubleOperator.applyAsDouble(scalarA.getValueAsDouble(),
+                                                                                                             scalarB.getValueAsDouble())),
+                                              ((time, value, resultToPack) -> resultToPack.setValue(time, derivativeOperator.applyAsDouble(scalarA, scalarB))));
             }
          }
 
@@ -200,13 +220,83 @@ public abstract class EquationOperationFactory
 
          if (A instanceof IntegerVariable intA && B instanceof IntSupplier intB)
          {
-            return new EquationOperation<>(name + "-ii", description, intA, result -> result.setValue(intB.getAsInt()));
+            return new EquationOperation<>(name + "-ii", description, intA, List.of(B), (time, result) -> intA.setValue(time, intB.getAsInt()), null); // FIXME
          }
 
-         if (A instanceof DoubleVariable doubleA && B instanceof ScalarConstant scalarB)
+         if (A instanceof DoubleVariable doubleA && B instanceof ScalarInput scalarB)
          {
-            DoubleSupplier asDoubleB = scalarB.toDoubleSupplier();
-            return new EquationOperation<>(name + "-ds", description, doubleA, result -> result.setValue(asDoubleB.getAsDouble()));
+            return new EquationOperation<>(name + "-ds",
+                                           description,
+                                           doubleA,
+                                           List.of(B),
+                                           (time, resultToPack) -> doubleA.setValue(time, scalarB.getValueAsDouble()),
+                                           null); // No derivative
+         }
+
+         throw new RuntimeException("Unsupported types for assignment: A = " + A.getClass().getSimpleName() + ", B = " + B.getClass().getSimpleName());
+      }
+   }
+
+   public static class DifferentiateOperationFactory extends EquationOperationFactory
+   {
+      public DifferentiateOperationFactory()
+      {
+         super("diff", "Differentiates the input with respect to time.");
+      }
+
+      @Override
+      public EquationOperationFactory duplicate()
+      {
+         return new DifferentiateOperationFactory();
+      }
+
+      @Override
+      protected EquationOperation<?> buildImpl(List<EquationInput> inputs)
+      {
+         EquationOperationFactory.checkNumberOfInputs(inputs, 1);
+         EquationInput A = inputs.get(0);
+
+         if (A instanceof ScalarInput scalarA)
+         {
+            return new EquationOperation<>(name + "-s", description, new SimpleDoubleVariable(), List.of(A), (time, result) ->
+            {
+               result.setValue(time, scalarA.getValueDot());
+            }, null); // No derivative
+         }
+
+         throw new RuntimeException("Unsupported types for assignment: A = " + A.getClass().getSimpleName());
+      }
+   }
+
+   public static class LowPassFilterOperationFactory extends EquationOperationFactory
+   {
+      public LowPassFilterOperationFactory()
+      {
+         super("lpf", "Low pass filter. First parameter is the input, second parameter is the filter gain [0, 1].");
+      }
+
+      @Override
+      public EquationOperationFactory duplicate()
+      {
+         return new LowPassFilterOperationFactory();
+      }
+
+      @Override
+      protected EquationOperation<?> buildImpl(List<EquationInput> inputs)
+      {
+         EquationOperationFactory.checkNumberOfInputs(inputs, 2);
+         EquationInput A = inputs.get(0);
+         EquationInput B = inputs.get(1);
+
+         if (A instanceof ScalarInput scalarA && B instanceof ScalarInput scalarB)
+         {
+            return new EquationOperation<>(name + "-ss", description, new SimpleDoubleVariable(), List.of(A, B), (time, result) ->
+            {
+               if (Double.isNaN(result.getValueAsDouble()))
+                  result.setValue(time, scalarA.getValueAsDouble());
+               else
+                  result.setValue(time, EuclidCoreTools.interpolate(scalarA.getValueAsDouble(), result.getValueAsDouble(), scalarB.getValueAsDouble()));
+            }, null); // No derivative
          }
 
          throw new RuntimeException("Unsupported types for assignment: A = " + A.getClass().getSimpleName() + ", B = " + B.getClass().getSimpleName());
