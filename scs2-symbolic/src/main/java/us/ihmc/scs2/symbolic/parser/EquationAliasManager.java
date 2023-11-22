@@ -5,7 +5,10 @@ import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefi
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.symbolic.EquationInput;
-import us.ihmc.scs2.symbolic.EquationInput.*;
+import us.ihmc.scs2.symbolic.EquationInput.InputType;
+import us.ihmc.scs2.symbolic.EquationInput.SimpleDoubleConstant;
+import us.ihmc.scs2.symbolic.EquationInput.SimpleIntegerConstant;
+import us.ihmc.scs2.symbolic.parser.EquationToken.TokenType;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.util.*;
@@ -57,6 +60,11 @@ public class EquationAliasManager
       return yoInputHandler.getBufferProperties();
    }
 
+   public YoSharedBuffer getYoSharedBuffer()
+   {
+      return yoInputHandler.getYoSharedBuffer();
+   }
+
    public void setHistoryUpdate(boolean enable)
    {
       yoInputHandler.setHistoryUpdate(enable);
@@ -85,7 +93,7 @@ public class EquationAliasManager
    {
       for (EquationToken token : tokens)
       {
-         if (token.getType() == EquationToken.Type.WORD)
+         if (token.getType() == TokenType.WORD)
          {
             EquationAlias alias = userAliases.get(token.getWord());
             if (alias == null)
@@ -101,11 +109,11 @@ public class EquationAliasManager
 
          for (EquationToken token : tokens)
          {
-            if (token.getType() == EquationToken.Type.OPERATION)
-               inputs.add(token.getOperationFactory().getOperation().getResult());
-            else if (token.getType() == EquationToken.Type.WORD)
+            if (token.getType() == TokenType.OPERATION)
+               inputs.add(token.getOperationFactory().getOperation().getValue());
+            else if (token.getType() == TokenType.WORD)
                inputs.add(getAlias(token.getWord()).input);
-            else if (token.getType() == EquationToken.Type.VARIABLE)
+            else if (token.getType() == TokenType.VARIABLE)
                inputs.add(token.getVariable());
             else
                throw new IllegalArgumentException("Unexpected token: " + token);
@@ -142,14 +150,19 @@ public class EquationAliasManager
       return addAlias(name, new SimpleIntegerConstant(value));
    }
 
+   public EquationAlias addAlias(String name, InputType type)
+   {
+      return addAlias(name, EquationInput.newVariable(type));
+   }
+
    /**
-    * Adds a new constant which can either be a simple value like a double or integer, or a {@code YoVariable}.
+    * Adds a new variable which can either be a simple value like a double or integer, or a {@code YoVariable}.
     *
     * @param name  the name of the alias which can be used in the equation.
-    * @param value the value of the constant, can either be a double value, an integer value, or the name of a {@code YoVariable}.
+    * @param value the value of the variable, can either be a double value, an integer value, or the name of a {@code YoVariable}.
     * @return the alias that was added or {@code null} if the value is neither a double, an integer, nor the name of a {@code YoVariable}.
     */
-   public EquationAlias addConstant(String name, String value)
+   public EquationAlias addAlias(String name, String value)
    {
       try
       {
@@ -172,81 +185,19 @@ public class EquationAliasManager
       return addAlias(name, yoInputHandler.searchYoEquationInput(value));
    }
 
-   public EquationAlias addVariable(String name, Type type)
-   {
-      return addAlias(name, EquationInput.newVariable(type));
-   }
-
-   public EquationAlias addVariable(String name, double value)
-   {
-      return addAlias(name, new SimpleDoubleVariable(value));
-   }
-
-   public EquationAlias addVariable(String name, int value)
-   {
-      return addAlias(name, new SimpleIntegerVariable(value));
-   }
-
-   /**
-    * Adds a new variable which can either be a simple value like a double or integer, or a {@code YoVariable}.
-    *
-    * @param name  the name of the alias which can be used in the equation.
-    * @param value the value of the variable, can either be a double value, an integer value, or the name of a {@code YoVariable}.
-    * @return the alias that was added or {@code null} if the value is neither a double, an integer, nor the name of a {@code YoVariable}.
-    */
-   public EquationAlias addVariable(String name, String value)
-   {
-      try
-      {
-         return addVariable(name, Double.parseDouble(value));
-      }
-      catch (NumberFormatException e)
-      {
-         // ignore, just means it's not a double
-      }
-
-      try
-      {
-         return addVariable(name, Integer.parseInt(value));
-      }
-      catch (NumberFormatException e)
-      {
-         // ignore, just means it's not an integer
-      }
-
-      return addAlias(name, yoInputHandler.searchYoEquationInput(value));
-   }
-
-   public EquationAlias addVariable(String name, EquationInputDefinition inputDefinition)
+   public EquationAlias addAlias(String name, EquationInputDefinition inputDefinition)
    {
       if (inputDefinition == null)
          return null;
 
       if (inputDefinition.getValue() != null)
       {
-         if (inputDefinition.isConstant())
-            return addConstant(name, inputDefinition.getValue());
-         else
-            return addVariable(name, inputDefinition.getValue());
+         return addAlias(name, inputDefinition.getValue());
       }
       else
       {
          return addAlias(name, yoInputHandler.searchYoEquationInput(inputDefinition.getYoVariableValue()));
       }
-   }
-
-   public boolean addAliases(List<EquationAliasDefinition> aliasDefinitions)
-   {
-      boolean success = true;
-
-      for (EquationAliasDefinition aliasDefinition : aliasDefinitions)
-      {
-         EquationAlias alias = addVariable(aliasDefinition.getName(), aliasDefinition.getValue());
-         if (alias == null)
-            success = false;
-      }
-
-      return success;
    }
 
    public List<EquationAliasDefinition> toUserAliasDefinitions()

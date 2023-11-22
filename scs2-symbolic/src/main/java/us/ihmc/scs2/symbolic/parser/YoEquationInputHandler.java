@@ -1,5 +1,6 @@
 package us.ihmc.scs2.symbolic.parser;
 
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 import us.ihmc.scs2.sharedMemory.YoDoubleBuffer;
@@ -53,6 +54,11 @@ public class YoEquationInputHandler
    public YoBufferPropertiesReadOnly getBufferProperties()
    {
       return yoSharedBuffer.getProperties();
+   }
+
+   public YoSharedBuffer getYoSharedBuffer()
+   {
+      return yoSharedBuffer;
    }
 
    public void setHistoryUpdate(boolean enable)
@@ -167,46 +173,140 @@ public class YoEquationInputHandler
 
    private static class YoDoubleVariable extends YoScalarVariableHolder<YoDouble> implements DoubleVariable
    {
+      private double time = Double.NaN;
+      private double previousTime = Double.NaN;
+      private double previousValue = Double.NaN;
+
       public YoDoubleVariable(YoDouble yoDouble)
       {
          super(yoDouble);
       }
 
       @Override
-      public void setValue(double value)
+      public void reset()
       {
+         previousTime = Double.NaN;
+         previousValue = Double.NaN;
+      }
+
+      @Override
+      public void updatePreviousValue()
+      {
+         if (yoVariable.getValue() != previousValue)
+         { // TODO This is to handle data being updated at different rates, probably not ideal.
+            previousTime = this.time;
+            previousValue = yoVariable.getValue();
+         }
+      }
+
+      @Override
+      public void setTime(double time)
+      {
+         this.time = time;
+      }
+
+      @Override
+      public void setValue(double time, double value)
+      {
+         this.time = time;
          yoVariable.set(value);
       }
 
       @Override
-      public double getAsDouble()
+      public double getTime()
+      {
+         return time;
+      }
+
+      @Override
+      public double getValue()
       {
          return yoVariable.getValue();
+      }
+
+      @Override
+      public double getPreviousTime()
+      {
+         return previousTime;
+      }
+
+      @Override
+      public double getPreviousValue()
+      {
+         return previousValue;
       }
    }
 
    private static class YoIntegerVariable extends YoScalarVariableHolder<YoInteger> implements IntegerVariable
    {
+      private double time = Double.NaN;
+      private double previousTime = Double.NaN;
+      private int previousValue = Integer.MIN_VALUE;
+
       public YoIntegerVariable(YoInteger yoInteger)
       {
          super(yoInteger);
       }
 
       @Override
-      public void setValue(int value)
+      public void reset()
       {
+         previousTime = Double.NaN;
+         previousValue = Integer.MIN_VALUE;
+      }
+
+      @Override
+      public void updatePreviousValue()
+      {
+         if (yoVariable.getValue() != previousValue)
+         { // TODO This is to handle data being updated at different rates, probably not ideal.
+            previousTime = this.time;
+            previousValue = yoVariable.getValue();
+         }
+      }
+
+      @Override
+      public void setTime(double time)
+      {
+         this.time = time;
+      }
+
+      @Override
+      public void setValue(double time, int value)
+      {
+         this.time = time;
          yoVariable.set(value);
       }
 
       @Override
-      public int getAsInt()
+      public double getTime()
+      {
+         return time;
+      }
+
+      @Override
+      public int getValue()
       {
          return yoVariable.getValue();
+      }
+
+      @Override
+      public double getPreviousTime()
+      {
+         return previousTime;
+      }
+
+      @Override
+      public int getPreviousValue()
+      {
+         return previousValue;
       }
    }
 
    private abstract static class YoScalarVariableBufferHolder<V extends YoVariable> implements ScalarVariable
    {
+      protected double time = Double.NaN;
+      protected double previousTime = Double.NaN;
       protected final YoVariableBuffer<V> yoBuffer;
       /**
        * When enabled, this variable will read directly from the buffer at the desired index instead of the current value of the YoVariable.
@@ -220,6 +320,22 @@ public class YoEquationInputHandler
       public YoScalarVariableBufferHolder(YoVariableBuffer<V> yoBuffer)
       {
          this.yoBuffer = Objects.requireNonNull(yoBuffer, "YoBuffer cannot be null.");
+      }
+
+      @Override
+      public void setTime(double time)
+      {
+         this.time = time;
+      }
+
+      public double getTime()
+      {
+         return time;
+      }
+
+      public double getPreviousTime()
+      {
+         return previousTime;
       }
 
       @Override
@@ -247,14 +363,49 @@ public class YoEquationInputHandler
 
    private static class YoDoubleVariableBufferHolder extends YoScalarVariableBufferHolder<YoDouble> implements DoubleVariable
    {
+      private double value = Double.NaN;
+      private double previousValue = Double.NaN;
+      private double valueDot = 0.0;
+
       public YoDoubleVariableBufferHolder(YoDoubleBuffer yoBuffer)
       {
          super(yoBuffer);
       }
 
       @Override
-      public void setValue(double value)
+      public void reset()
       {
+         previousTime = Double.NaN;
+         previousValue = Double.NaN;
+         valueDot = 0.0;
+      }
+
+      @Override
+      public void updatePreviousValue()
+      {
+         double currentValue = getValue();
+
+         if (currentValue != previousValue)
+         { // TODO This is to handle data being updated at different rates, probably not ideal.
+            LogTools.info("previousTime = " + previousTime + ", time = " + time + ", currentValue = " + currentValue + ", previousValue = " + previousValue);
+            valueDot = (currentValue - previousValue) / (this.time - previousTime);
+
+            previousTime = this.time;
+            previousValue = currentValue;
+         }
+      }
+
+      @Override
+      public double getValueDot()
+      {
+         return valueDot;
+      }
+
+      @Override
+      public void setValue(double time, double value)
+      {
+         this.time = time;
+         this.value = value;
          if (historyUpdateEnabled)
             ((double[]) yoBuffer.getBuffer())[historyIndex] = value;
          else
@@ -262,25 +413,58 @@ public class YoEquationInputHandler
       }
 
       @Override
-      public double getAsDouble()
+      public double getValue()
       {
          if (historyUpdateEnabled)
-            return ((double[]) yoBuffer.getBuffer())[historyIndex];
+            value = ((double[]) yoBuffer.getBuffer())[historyIndex];
          else
-            return yoBuffer.getYoVariable().getValue();
+            value = yoBuffer.getYoVariable().getValue();
+         return value;
+      }
+
+      @Override
+      public double getPreviousValue()
+      {
+         return previousValue;
       }
    }
 
    private static class YoIntegerVariableBufferHolder extends YoScalarVariableBufferHolder<YoInteger> implements IntegerVariable
    {
+      private int previousValue = Integer.MIN_VALUE;
+
       public YoIntegerVariableBufferHolder(YoIntegerBuffer yoBuffer)
       {
          super(yoBuffer);
       }
 
       @Override
-      public void setValue(int value)
+      public void reset()
       {
+         previousTime = Double.NaN;
+         previousValue = Integer.MIN_VALUE;
+      }
+
+      @Override
+      public void updatePreviousValue()
+      {
+         int currentValue;
+         if (historyUpdateEnabled)
+            currentValue = ((int[]) yoBuffer.getBuffer())[historyIndex];
+         else
+            currentValue = yoBuffer.getYoVariable().getValue();
+
+         if (currentValue != previousValue)
+         { // TODO This is to handle data being updated at different rates, probably not ideal.
+            previousTime = this.time;
+            previousValue = currentValue;
+         }
+      }
+
+      @Override
+      public void setValue(double time, int value)
+      {
+         this.time = time;
          if (historyUpdateEnabled)
             ((int[]) yoBuffer.getBuffer())[historyIndex] = value;
          else
@@ -288,12 +472,18 @@ public class YoEquationInputHandler
       }
 
       @Override
-      public int getAsInt()
+      public int getValue()
       {
          if (historyUpdateEnabled)
             return ((int[]) yoBuffer.getBuffer())[historyIndex];
          else
             return yoBuffer.getYoVariable().getValue();
+      }
+
+      @Override
+      public int getPreviousValue()
+      {
+         return previousValue;
       }
    }
 }
