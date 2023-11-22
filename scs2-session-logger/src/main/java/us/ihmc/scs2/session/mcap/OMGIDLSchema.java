@@ -121,9 +121,16 @@ public class OMGIDLSchema implements MCAPSchema
       return flatSchema;
    }
 
-   private List<OMGIDLSchemaField> flattenField(OMGIDLSchemaField field)
+   public List<OMGIDLSchemaField> flattenField(OMGIDLSchemaField field)
+   {
+      return flattenField(field, subSchemaMap);
+   }
+
+   public List<OMGIDLSchemaField> flattenField(OMGIDLSchemaField field, Map<String, OMGIDLSchema> subSchemaMap)
    {
       //TODO: (AM) Check correctness and refactor, super ugly code follows
+      //       Note that this will not flatten vectors or arrays of types.
+      //       As such, nested arrays and sequences are not supported for now
 
       OMGIDLSchemaField flatField = field.clone();
 
@@ -133,21 +140,49 @@ public class OMGIDLSchema implements MCAPSchema
          return Collections.singletonList(flatField);
       }
       List<OMGIDLSchemaField> flatFields = new ArrayList<>();
-//      flatFields.add(flatField);
+      //      flatFields.add(flatField);
 
-      if (flatField.isArray())
+      List<OMGIDLSchemaField> flatElementFields = new ArrayList<>();
+      if (flatField.isArray() || flatField.isVector())
       {
+         String baseType = flatField.getType();
+         if (flatField.isVector())
+            baseType = baseType.split("[<,>]")[1];
+
+         if (subSchemaMap.containsKey(baseType))
+         {
+            // Array/vector of structs, recursively flatten
+            OMGIDLSchema subSchema = subSchemaMap.get(baseType);
+            for (OMGIDLSchemaField subField : subSchema.getFields())
+            {
+               subField.parent = flatField;
+               subField.name = flatField.name + "." + subField.name;
+               flatElementFields.addAll(this.flattenField(subField, subSchemaMap).stream().filter(f -> !f.isComplexType()).toList());
+            }
+         }
+         else
+         {
+            //Array/vector of primitive types;
+            OMGIDLSchemaField elementField = new OMGIDLSchemaField();
+            elementField.parent = flatField;
+            elementField.type = baseType;
+            elementField.name = flatField.name;
+            elementField.isArray = false;
+            elementField.isVector = false;
+            elementField.isComplexType = false;
+            elementField.maxLength = -1;
+            flatElementFields.add(elementField);
+         }
+         // Add all the elements to flatFields
          for (int i = 0; i < flatField.getMaxLength(); i++)
          {
-            OMGIDLSchemaField subField = new OMGIDLSchemaField();
-            subField.parent = flatField;
-            subField.type = flatField.type;
-            subField.name = flatField.name + "[" + i + "]";
-            subField.isArray = false;
-            subField.isVector = false;
-            subField.maxLength = -1;
-            flatFields.add(subField);
-         }
+            for (OMGIDLSchemaField flatElementField : flatElementFields)
+            {
+               OMGIDLSchemaField subField = flatElementField.clone();
+               subField.name = subField.name + "[" + i + "]";
+               flatFields.add(subField);
+            }
+        }
       }
       else
       {
@@ -157,21 +192,20 @@ public class OMGIDLSchema implements MCAPSchema
             // we are entering a struct definition
             for (OMGIDLSchemaField subField : subSchema.getFields())
             {
-               if (subSchemaMap.containsKey(subField.getType()))
+               OMGIDLSchemaField childSubField = subField.clone();
+               childSubField.parent = flatField;
+               if (subSchemaMap.containsKey(childSubField.getType()) || childSubField.isArray() || childSubField.isVector())
                {
                   // if this field is a struct of another type, then flatten recursively
-                  flatFields.addAll(this.flattenField(subField));
+                  childSubField.parent = flatField;
+                  flatFields.addAll(this.flattenField(childSubField));
                }
                else
                {
-                  // if this field is a base type, then add it to flatfields
+                  // if this field is a simple element of a primitive type, then add it to flatFields
                   subField.parent = flatField;
-                  //subField.name = flatField.getName() + "." + subField.getName();
                   flatFields.add(subField);
                }
-               //               subField.parent = flatField;
-               //               subField.name = flatField.getName() + "." + subField.getName();
-               //               flatFields.add(subField);
             }
          }
          else
@@ -183,18 +217,21 @@ public class OMGIDLSchema implements MCAPSchema
             {
                for (OMGIDLSchemaField subField : subSchema.getFields())
                {
-                  if (subSchemaMap.containsKey(subField.getType()))
+                  OMGIDLSchemaField childSubField = subField.clone();
+                  childSubField.parent = flatField;
+                  childSubField.name = flatField.name + "." + subField.name;
+                  if (subSchemaMap.containsKey(childSubField.getType()))
                   {
                      // if this field is a struct of another type, then flatten recursively
-                     flatFields.addAll(this.flattenField(subField));
+                     flatFields.addAll(this.flattenField(childSubField));
                   }
                   else
                   {
                      // if this field is a base type, then add it to flatfields
-                     OMGIDLSchemaField subSubField = subField.clone();
-                     subSubField.parent = flatField;
-                     subSubField.name = flatField.getName() + "." + subField.getName();
-                     flatFields.add(subSubField);
+                     OMGIDLSchemaField flatSubField = subField.clone();
+                     flatSubField.parent = flatField;
+                     flatSubField.name = flatField.getName() + "." + subField.getName();
+                     flatFields.add(flatSubField);
                   }
                }
             }
@@ -214,12 +251,12 @@ public class OMGIDLSchema implements MCAPSchema
       String out = getClass().getSimpleName() + ":";
       out += "\n\t-name=" + name;
       if (fields != null)
-         out += "\n\t-fields=\n" + EuclidCoreIOTools.getCollectionString("\n", fields, f -> f.toString(indent + 2));
+         out += "\n\t-fields=\n" + EuclidCoreIOTools.getCollectionString("\n", fields, f -> f.toString(indent + 1));
       if (subSchemaMap != null)
-         out += "\n\t-subSchemaMap=\n" + indentString(indent + 2) + EuclidCoreIOTools.getCollectionString("\n" + indentString(indent + 2),
+         out += "\n\t-subSchemaMap=\n" + indentString(indent + 1) + EuclidCoreIOTools.getCollectionString("\n" + indentString(indent + 1),
                                                                                                           subSchemaMap.entrySet(),
                                                                                                           e -> e.getKey() + "->\n" + e.getValue()
-                                                                                                                                      .toString(indent + 3)
+                                                                                                                                      .toString(indent + 2)
                                                                                                                                       .replace("^(\t*)", ""));
       return indent(out, indent);
    }
@@ -352,9 +389,10 @@ public class OMGIDLSchema implements MCAPSchema
          out += "\n\t-name=" + name;
          out += "\n\t-isArray=" + isArray;
          out += "\n\t-isVector=" + isVector;
-         out += "\n\t-isComplexType" + isComplexType;
+         out += "\n\t-isComplexType=" + isComplexType;
          if (isArray || isVector)
             out += "\n\t-maxLength=" + maxLength;
+         out += "\n";
          return indent(out, indent);
       }
    }
@@ -371,5 +409,4 @@ public class OMGIDLSchema implements MCAPSchema
    {
       return "\t".repeat(indent);
    }
-
 }
