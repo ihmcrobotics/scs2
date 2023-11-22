@@ -3,11 +3,13 @@ package us.ihmc.scs2.symbolic;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
+import us.ihmc.scs2.sharedMemory.YoDoubleBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.symbolic.parser.EquationAliasManager;
 import us.ihmc.scs2.symbolic.parser.EquationOperation;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.util.List;
 import java.util.Map;
@@ -50,7 +52,7 @@ public class Equation
          {
             String aliasName = alias.getName();
             EquationInputDefinition aliasValue = alias.getValue();
-            equationAliasManager.addVariable(aliasName, aliasValue);
+            equationAliasManager.addAlias(aliasName, aliasValue);
          }
       }
 
@@ -81,7 +83,7 @@ public class Equation
          {
             String aliasName = entry.getKey();
             String aliasValue = entry.getValue();
-            equationAliasManager.addVariable(aliasName, aliasValue);
+            equationAliasManager.addAlias(aliasName, aliasValue);
          }
       }
 
@@ -109,7 +111,7 @@ public class Equation
          return;
 
       this.operations = builder.build();
-      result = operations.get(operations.size() - 1).getResult();
+      result = operations.get(operations.size() - 1).getValue();
    }
 
    public boolean isBuilt()
@@ -120,21 +122,20 @@ public class Equation
    /**
     * Executes the sequence of operations
     */
-   public EquationInput compute()
+   public EquationInput compute(double time)
    {
-      if (!isBuilt())
-         build();
+      checkBuildStatus();
 
-      if (!isBuilt())
-      {
-         throw new RuntimeException(
-               "Failed to build the equation: " + builder.getEquationString() + ", missing inputs: " + builder.getAliasManager().getMissingInputs());
-      }
+      operations.forEach(equationOperation -> equationOperation.setTime(time));
 
-      for (int i = 0; i < operations.size(); i++)
-      {
-         operations.get(i).calculate();
-      }
+      operations.forEach(equationOperation ->
+                         {
+                            equationOperation.computeValue(time);
+                            // TODO This is a hack to make sure the derivative is computed.
+                            //     The derivative should be computed only when needed.
+                            equationOperation.computeDerivative(time);
+                         });
+      operations.forEach(equationOperation -> equationOperation.updatePreviousInputValues());
 
       return result;
    }
@@ -142,11 +143,46 @@ public class Equation
    /**
     * Updates the history of the variables used in this equation by evaluating every single data point in the active part of the buffer.
     */
-   public void updateHistory()
+   public void updateHistory(YoDouble yoTime)
    {
       if (!builder.getAliasManager().hasBuffer())
          return;
 
+      checkBuildStatus();
+
+      builder.getAliasManager().setHistoryUpdate(true);
+      operations.forEach(EquationOperation::resetInputs);
+      YoBufferPropertiesReadOnly bufferProperties = builder.getAliasManager().getBufferProperties();
+      YoDoubleBuffer timeBuffer = (YoDoubleBuffer) builder.getAliasManager().getYoSharedBuffer().getRegistryBuffer().findYoVariableBuffer(yoTime);
+
+      int historyIndex = bufferProperties.getInPoint();
+
+      for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
+      {
+         builder.getAliasManager().setHistoryIndex(i);
+         historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
+
+         double time = timeBuffer.getBuffer()[historyIndex];
+         operations.forEach(equationOperation -> equationOperation.computeValue(time));
+         operations.forEach(equationOperation -> equationOperation.updatePreviousInputValues());
+      }
+
+      builder.getAliasManager().setHistoryUpdate(false);
+      operations.forEach(EquationOperation::resetInputs);
+   }
+
+   public void reset()
+   {
+      checkBuildStatus();
+
+      for (EquationOperation<?> operation : operations)
+      {
+         operation.resetInputs();
+      }
+   }
+
+   private void checkBuildStatus()
+   {
       if (!isBuilt())
          build();
 
@@ -155,19 +191,6 @@ public class Equation
          throw new RuntimeException(
                "Failed to build the equation: " + builder.getEquationString() + ", missing inputs: " + builder.getAliasManager().getMissingInputs());
       }
-
-      builder.getAliasManager().setHistoryUpdate(true);
-      YoBufferPropertiesReadOnly bufferProperties = builder.getAliasManager().getBufferProperties();
-
-      int historyIndex = bufferProperties.getInPoint();
-
-      for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
-      {
-         builder.getAliasManager().setHistoryIndex(i);
-         historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
-         compute();
-      }
-      builder.getAliasManager().setHistoryUpdate(false);
    }
 
    /**

@@ -39,6 +39,7 @@ import java.util.function.Consumer;
 /**
  * Base class for implementing a session, e.g. a simulation, log reading, or a remote session.
  */
+@SuppressWarnings("CallToPrintStackTrace")
 public abstract class Session
 {
    /**
@@ -233,7 +234,7 @@ public abstract class Session
    protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, DEFAULT_INITIAL_BUFFER_SIZE);
 
    // TODO Not sure if that's the right place for this.
-   protected final YoEquationManager equationManager = new YoEquationManager(sharedBuffer, userRegistry);
+   protected final YoEquationManager equationManager = new YoEquationManager(time, sharedBuffer, userRegistry);
    /**
     * The current mode this session is running, see {@link SessionMode}.
     */
@@ -795,7 +796,7 @@ public abstract class Session
     */
    public void submitPlaybackRealTimeRate(double realTimeRate)
    {
-      if (playbackRealTimeRate.get().doubleValue() == realTimeRate)
+      if (playbackRealTimeRate.get() == realTimeRate)
          return;
 
       playbackRealTimeRate.set(Double.valueOf(realTimeRate));
@@ -1507,7 +1508,7 @@ public abstract class Session
    {
       return new SessionProperties(activeMode.get(),
                                    runAtRealTimeRate.get(),
-                                   playbackRealTimeRate.get().doubleValue(),
+                                   playbackRealTimeRate.get(),
                                    sessionDTNanoseconds.get(),
                                    bufferRecordTickPeriod.get());
    }
@@ -1562,6 +1563,9 @@ public abstract class Session
          lastSessionPropertiesPublishTimestamp = currentTimestamp;
          reportActiveMode();
       }
+
+      if (pendingEquationListChange.hasPendingRequest())
+         equationManager.setEquationListChange(pendingEquationListChange.poll());
    }
 
    /**
@@ -1609,6 +1613,12 @@ public abstract class Session
          runSpecificTimer.start();
          time.set(doSpecificRunTick());
          runSpecificTimer.stop();
+
+         if (nextRunBufferRecordTickCounter <= 0)  // TODO Not sure if that's the best place to update the equation manager.
+         { // This is to make sure the equation manager is updated at the same rate as the buffer.
+            equationManager.update(time.getValue());
+         }
+
          caughtException = false;
       }
       catch (Throwable e)
@@ -1645,6 +1655,7 @@ public abstract class Session
    {
       if (firstRunTick)
       {
+         equationManager.reset();
          sharedBuffer.incrementBufferIndex(true);
          sharedBuffer.processLinkedPushRequests(false);
          nextRunBufferRecordTickCounter = 0;
@@ -1679,9 +1690,6 @@ public abstract class Session
     */
    protected void finalizeRunTick(boolean forceWriteBuffer)
    {
-      if (pendingEquationListChange.hasPendingRequest())
-         equationManager.setEquationListChange(pendingEquationListChange.poll());
-
       boolean writeBuffer = nextRunBufferRecordTickCounter <= 0;
 
       if (!writeBuffer && forceWriteBuffer)
@@ -1692,8 +1700,6 @@ public abstract class Session
 
       if (writeBuffer)
       {
-         // TODO Not sure if that's the best place to update the equation manager.
-         equationManager.update();
          sharedBuffer.writeBuffer();
 
          long currentTimestamp = System.nanoTime();
@@ -1732,15 +1738,15 @@ public abstract class Session
    {
       long timeIncrement = sessionDTNanoseconds.get() * bufferRecordTickPeriod.get();
 
-      if (playbackRealTimeRate.get().doubleValue() <= 0.5)
+      if (playbackRealTimeRate.get() <= 0.5)
       {
          stepSizePerPlaybackTick = 1;
-         return (long) (timeIncrement / playbackRealTimeRate.get().doubleValue());
+         return (long) (timeIncrement / playbackRealTimeRate.get());
       }
       else
       {
-         stepSizePerPlaybackTick = 2 * Math.max(1, (int) Math.floor(playbackRealTimeRate.get().doubleValue()));
-         return (long) (timeIncrement * stepSizePerPlaybackTick / playbackRealTimeRate.get().doubleValue());
+         stepSizePerPlaybackTick = 2 * Math.max(1, (int) Math.floor(playbackRealTimeRate.get()));
+         return (long) (timeIncrement * stepSizePerPlaybackTick / playbackRealTimeRate.get());
       }
    }
 
@@ -1818,9 +1824,6 @@ public abstract class Session
     */
    protected void finalizePlaybackTick()
    {
-      if (pendingEquationListChange.hasPendingRequest())
-         equationManager.setEquationListChange(pendingEquationListChange.poll());
-
       long currentTimestamp = System.nanoTime();
 
       if (currentTimestamp - lastPublishedBufferTimestamp > desiredBufferPublishPeriod.get())
@@ -1911,9 +1914,6 @@ public abstract class Session
     */
    protected void finalizePauseTick(boolean shouldReadBuffer)
    {
-      if (pendingEquationListChange.hasPendingRequest())
-         equationManager.setEquationListChange(pendingEquationListChange.poll());
-
       if (shouldReadBuffer)
          sharedBuffer.readBuffer();
 
@@ -1983,23 +1983,23 @@ public abstract class Session
       if (bufferChangesPermitted)
       {
          if (newIndex != null)
-            hasBufferBeenUpdated |= sharedBuffer.setCurrentIndex(newIndex.intValue());
+            hasBufferBeenUpdated |= sharedBuffer.setCurrentIndex(newIndex);
 
          if (newInPoint != null)
-            hasBufferBeenUpdated |= sharedBuffer.setInPoint(newInPoint.intValue());
+            hasBufferBeenUpdated |= sharedBuffer.setInPoint(newInPoint);
 
          if (newOutPoint != null)
-            hasBufferBeenUpdated |= sharedBuffer.setOutPoint(newOutPoint.intValue());
+            hasBufferBeenUpdated |= sharedBuffer.setOutPoint(newOutPoint);
 
          if (incStepSize != null)
          {
-            sharedBuffer.incrementBufferIndex(false, incStepSize.intValue());
+            sharedBuffer.incrementBufferIndex(false, incStepSize);
             hasBufferBeenUpdated = true;
          }
 
          if (decStepSize != null)
          {
-            sharedBuffer.decrementBufferIndex(decStepSize.intValue());
+            sharedBuffer.decrementBufferIndex(decStepSize);
             hasBufferBeenUpdated = true;
          }
 
@@ -2023,7 +2023,7 @@ public abstract class Session
       }
 
       if (newSize != null)
-         hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize.intValue());
+         hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize);
 
       return hasBufferBeenUpdated;
    }
@@ -2095,7 +2095,7 @@ public abstract class Session
     */
    public double getPlaybackRealTimeRate()
    {
-      return playbackRealTimeRate.get().doubleValue();
+      return playbackRealTimeRate.get();
    }
 
    /**
@@ -2297,9 +2297,6 @@ public abstract class Session
       private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
       private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
 
-      private final Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener = createBufferPropertiesListener();
-      private final Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
-
       private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
       private final TopicListener<YoEquationListChange> equationListChangeRequestListener = Session.this::submitEquationListChange;
 
@@ -2307,6 +2304,7 @@ public abstract class Session
       {
          this.messager = messager;
 
+         Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener = createBufferPropertiesListener();
          addCurrentBufferPropertiesListener(bufferPropertiesListener);
 
          messager.addTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
@@ -2319,6 +2317,7 @@ public abstract class Session
          messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
          messager.addTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
 
+         Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
          addSessionPropertiesListener(sessionPropertiesListener);
 
          messager.addTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
@@ -2626,11 +2625,11 @@ public abstract class Session
     * the class API. This class offers to either submit a request to be handled asynchronously or
     * synchronously by blocking the calling thread until the request has been processed.
     */
-   protected class SessionUserField<T>
+   protected static class SessionUserField<T>
    {
       private final AtomicReference<T> nonBlockingRequest;
       private final ConcurrentLinkedQueue<BlockingRequest> blockingRequests = new ConcurrentLinkedQueue<>();
-      private T currentValue;
+      private final T currentValue;
 
       public SessionUserField()
       {

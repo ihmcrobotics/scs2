@@ -11,7 +11,7 @@ public class EquationToken
    /**
     * Specifies the type of data stored in a Token.
     */
-   public enum Type
+   public enum TokenType
    {
       /**
        * The token has been identified as referring to a function.
@@ -93,18 +93,18 @@ public class EquationToken
       this.equationStringTokenLength = equationStringTokenLength;
    }
 
-   public Type getType()
+   public TokenType getType()
    {
       if (functionName != null)
-         return Type.FUNCTION;
+         return TokenType.FUNCTION;
       else if (variable != null)
-         return Type.VARIABLE;
+         return TokenType.VARIABLE;
       else if (operationFactory != null)
-         return Type.OPERATION;
+         return TokenType.OPERATION;
       else if (word != null)
-         return Type.WORD;
+         return TokenType.WORD;
       else
-         return Type.SYMBOL;
+         return TokenType.SYMBOL;
    }
 
    public EquationInput getVariable()

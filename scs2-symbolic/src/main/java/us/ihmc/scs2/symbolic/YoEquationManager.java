@@ -8,6 +8,7 @@ import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -21,16 +22,19 @@ public class YoEquationManager
    private final Map<String, Equation> equations = new LinkedHashMap<>();
 
    private final List<Consumer<YoEquationListChange>> changeListeners = new ArrayList<>();
+   private final YoDouble yoTime;
    private final YoRegistry userRegistry;
 
-   public YoEquationManager(YoRegistry rootRegistry, YoRegistry userRegistry)
+   public YoEquationManager(YoDouble yoTime, YoRegistry rootRegistry, YoRegistry userRegistry)
    {
+      this.yoTime = yoTime;
       this.userRegistry = userRegistry;
       equationParser.getAliasManager().addRegistry(rootRegistry);
    }
 
-   public YoEquationManager(YoSharedBuffer yoSharedBuffer, YoRegistry userRegistry)
+   public YoEquationManager(YoDouble yoTime, YoSharedBuffer yoSharedBuffer, YoRegistry userRegistry)
    {
+      this.yoTime = yoTime;
       this.userRegistry = userRegistry;
       equationParser.getAliasManager().setYoSharedBuffer(yoSharedBuffer);
    }
@@ -78,7 +82,7 @@ public class YoEquationManager
          }
          ensureUserAliasesExist(equationDefinition);
          Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
-         updateEquationHistory(newEquation);
+         updateEquationHistory(newEquation, yoTime);
          equations.put(equationDefinition.getName(), newEquation);
       }
 
@@ -125,7 +129,7 @@ public class YoEquationManager
          {
             ensureUserAliasesExist(equationDefinition);
             Equation newEquation = Equation.fromDefinition(equationDefinition, equationParser);
-            updateEquationHistory(newEquation);
+            updateEquationHistory(newEquation, yoTime);
             equations.put(equationDefinition.getName(), newEquation);
          }
       }
@@ -154,19 +158,27 @@ public class YoEquationManager
       }
    }
 
-   public void update()
+   public void reset()
    {
       for (Equation equation : equations.values())
       {
-         equationCompute(equation);
+         equation.reset();
       }
    }
 
-   private static void equationCompute(Equation equation)
+   public void update(double time)
+   {
+      for (Equation equation : equations.values())
+      {
+         equationCompute(equation, time);
+      }
+   }
+
+   private static void equationCompute(Equation equation, double time)
    {
       try
       {
-         equation.compute();
+         equation.compute(time);
       }
       catch (Exception e)
       {
@@ -180,11 +192,11 @@ public class YoEquationManager
       return equations.values().stream().map(Equation::toYoEquationDefinition).toList();
    }
 
-   private static void updateEquationHistory(Equation equation)
+   private static void updateEquationHistory(Equation equation, YoDouble yoTime)
    {
       try
       {
-         equation.updateHistory();
+         equation.updateHistory(yoTime);
       }
       catch (Exception e)
       {
