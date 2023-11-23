@@ -29,14 +29,14 @@ public class MCAPFrameTransformManager
    private static final String PARENT_FRAME_FIELD_NAME = "parent_frame_id";
    private static final String CHILD_FRAME_FIELD_NAME = "child_frame_id";
    private static final String ROTATION_FIELD_NAME = "rotation";
-   private static final String ROTATION_X_FIELD_NAME = "rotation.x";
-   private static final String ROTATION_Y_FIELD_NAME = "rotation.y";
-   private static final String ROTATION_Z_FIELD_NAME = "rotation.z";
-   private static final String ROTATION_W_FIELD_NAME = "rotation.w";
+   private static final String ROTATION_X_FIELD_NAME = "rotation-x";
+   private static final String ROTATION_Y_FIELD_NAME = "rotation-y";
+   private static final String ROTATION_Z_FIELD_NAME = "rotation-z";
+   private static final String ROTATION_W_FIELD_NAME = "rotation-w";
    private static final String TRANSLATION_FIELD_NAME = "translation";
-   private static final String TRANSLATION_X_FIELD_NAME = "translation.x";
-   private static final String TRANSLATION_Y_FIELD_NAME = "translation.y";
-   private static final String TRANSLATION_Z_FIELD_NAME = "translation.z";
+   private static final String TRANSLATION_X_FIELD_NAME = "translation-x";
+   private static final String TRANSLATION_Y_FIELD_NAME = "translation-y";
+   private static final String TRANSLATION_Z_FIELD_NAME = "translation-z";
 
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
    private final ReferenceFrame inertialFrame;
@@ -161,6 +161,10 @@ public class MCAPFrameTransformManager
             unattachedRootNames.add(transformInfo.parentFrameName());
          }
       }
+
+      //TODO: (AM) Small hack to test files without any transform messages
+      if (allTransforms.size() < 1)
+         allTransforms.put("dummy_frame", new BasicTransformInfo("dummy_transform_topic", "world", ""));
 
       Queue<BasicTransformInfo> ordered = new PriorityQueue<>(allTransforms.size(), (o1, o2) ->
       {
