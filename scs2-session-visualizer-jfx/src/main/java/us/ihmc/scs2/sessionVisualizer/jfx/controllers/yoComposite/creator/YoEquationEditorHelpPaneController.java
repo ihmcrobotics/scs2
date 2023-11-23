@@ -19,8 +19,7 @@ import javafx.util.Pair;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.symbolic.parser.EquationAliasManager;
 import us.ihmc.scs2.symbolic.parser.EquationAliasManager.EquationAlias;
-import us.ihmc.scs2.symbolic.parser.EquationOperationFactory;
-import us.ihmc.scs2.symbolic.parser.EquationOperationFactoryLibrary;
+import us.ihmc.scs2.symbolic.parser.EquationOperationLibrary;
 import us.ihmc.scs2.symbolic.parser.EquationSymbol;
 
 import java.util.Map.Entry;
@@ -54,11 +53,9 @@ public class YoEquationEditorHelpPaneController
          symbolsListView.getItems().add(new Pair<>(symbol.getSymbolString(), symbol.getDescription()));
       }
 
-      EquationOperationFactoryLibrary library = new EquationOperationFactoryLibrary();
-
-      for (EquationOperationFactory function : library.getAllFunctionFactories())
+      for (String name : EquationOperationLibrary.getOperationNames())
       {
-         functionsListView.getItems().add(new Pair<>(function.getName(), function.getDescription()));
+         functionsListView.getItems().add(new Pair<>(name, EquationOperationLibrary.getOperationDescription(name)));
       }
 
       Stage stage = new Stage();
