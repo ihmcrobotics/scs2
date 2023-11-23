@@ -190,15 +190,16 @@ public class OMGIDLSchemaTest
    @Test
    public void testFlattenArray() throws Exception
    {
-      String schemaName = "NavigationAppHealth";
+      String schemaName = "flatten_array_test";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
-      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("");
-      OMGIDLSchema.OMGIDLSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(3);
+      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("a");
+      OMGIDLSchema.OMGIDLSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(1);
       List<OMGIDLSchema.OMGIDLSchemaField> flatFields = schema.flattenField(field);
+//      System.out.println(subSchema.flattenSchema(schema.getSubSchemaMap()));
       System.out.println(flatFields);
 
 //      OMGIDLSchema flatSchema = schema.flattenSchema();
-//      System.out.println(flatSchema);
+//      System.out.println(schema.flattenSchema());
    }
 }
