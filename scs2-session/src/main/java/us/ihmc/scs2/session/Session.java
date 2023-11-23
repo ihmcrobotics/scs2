@@ -116,15 +116,21 @@ public abstract class Session
     * Name of the registry that will contain variables related to the internal state of SCS2.
     */
    public static final String SESSION_INTERNAL_REGISTRY_NAME = Session.class.getSimpleName() + "InternalRegistry";
+   /**
+    * Name of the registry that will contain variables related to user application.
+    */
    public static final String USER_REGISTRY_NAME = "userRegistry";
    /**
     * Namespace of the root registry for any session.
     */
    public static final YoNamespace ROOT_NAMESPACE = new YoNamespace(ROOT_REGISTRY_NAME);
    /**
-    * Namespace of the registry that will contains variables related to the internal state of SCS2.
+    * Namespace of the registry that will contain variables related to the internal state of SCS2.
     */
    public static final YoNamespace SESSION_INTERNAL_NAMESPACE = ROOT_NAMESPACE.append(SESSION_INTERNAL_REGISTRY_NAME);
+   /**
+    * Namespace of the registry that will contain variables related to user application.
+    */
    public static final YoNamespace USER_REGISTRY_NAMESPACE = ROOT_NAMESPACE.append(USER_REGISTRY_NAME);
    /**
     * Name suffix for any {@link ReferenceFrame} that only serve internal purpose as for instance
@@ -150,6 +156,13 @@ public abstract class Session
     */
    protected final YoRegistry sessionRegistry = new YoRegistry(SESSION_INTERNAL_REGISTRY_NAME);
 
+   /**
+    * The instance of the registry that is used to register variables related to user application.
+    * <p>
+    * Typically, this registry is used to register variables that are not initially part of the session.
+    * These variable can be used to store the result of an equation.
+    * </p>
+    */
    protected final YoRegistry userRegistry = new YoRegistry(USER_REGISTRY_NAME);
 
    /**
@@ -234,6 +247,9 @@ public abstract class Session
    protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, DEFAULT_INITIAL_BUFFER_SIZE);
 
    // TODO Not sure if that's the right place for this.
+   /**
+    * The manager used to handle the creation and evaluation of equations.
+    */
    protected final YoEquationManager equationManager = new YoEquationManager(time, sharedBuffer, userRegistry);
    /**
     * The current mode this session is running, see {@link SessionMode}.
@@ -714,6 +730,11 @@ public abstract class Session
       }
    }
 
+   /**
+    * Submits a request to edit the list of equations for this session.
+    *
+    * @param change the change to apply to the list of equations.
+    */
    public void submitEquationListChange(YoEquationListChange change)
    {
       pendingEquationListChange.submit(change);
@@ -2204,6 +2225,14 @@ public abstract class Session
       return Collections.emptyList();
    }
 
+   /**
+    * Gets the list of all the equations this session is handling.
+    * <p>
+    * This list is notably used by the GUI to visualize the equations.
+    * </p>
+    *
+    * @return the list of equations.
+    */
    public List<YoEquationDefinition> getYoEquationDefinitions()
    {
       return equationManager.getEquationDefinitions();
