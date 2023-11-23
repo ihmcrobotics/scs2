@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import de.jensd.fx.glyphs.fontawesome.*?>
 <?import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIconView?>
-<?import java.lang.String?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuItem?>
-
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
 <Menu text="YoComposite" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoCompositeMenuController">
     <items>

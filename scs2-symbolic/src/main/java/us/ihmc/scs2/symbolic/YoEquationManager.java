@@ -75,9 +75,11 @@ public class YoEquationManager
       for (YoEquationDefinition equationDefinition : equationDefinitions)
       {
          Objects.requireNonNull(equationDefinition.getName());
-         if (equations.containsKey(equationDefinition.getName()))
+         if (equations.containsKey(equationDefinition.getName()) && !equations.get(equationDefinition.getName())
+                                                                              .toYoEquationDefinition()
+                                                                              .equals(equationDefinition))
          {
-            LogTools.warn("Duplicate equation name: {}; skipping.", equationDefinition.getName());
+            LogTools.warn("Duplicate equation name: {}; skipping. Equation: {}", equationDefinition.getName(), equationDefinition.getEquation());
             continue;
          }
          ensureUserAliasesExist(equationDefinition);

@@ -110,7 +110,7 @@ public class EquationAliasManager
          for (EquationToken token : tokens)
          {
             if (token.getType() == TokenType.OPERATION)
-               inputs.add(token.getOperationFactory().getOperation().getValue());
+               inputs.add(token.getOperationFactory().getOperation());
             else if (token.getType() == TokenType.WORD)
                inputs.add(getAlias(token.getWord()).input);
             else if (token.getType() == TokenType.VARIABLE)

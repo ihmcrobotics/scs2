@@ -272,6 +272,20 @@ public class MultiSessionManager
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
+      if (configuration.hasYoEquationConfiguration())
+      {
+         try (InputStream inputStream = new FileInputStream(configuration.getYoEquationConfigurationFile()))
+         {
+            YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
+            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null)
+               messager.submitMessage(topics.getSessionYoEquationListChangeRequest(), YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
+      }
+
       if (LOAD_MAIN_WINDOW_CONFIGURATION)
       {
          JavaFXMissingTools.runAndWait(getClass(), () ->
@@ -331,20 +345,6 @@ public class MultiSessionManager
                              configuration.getShowYoVariableUniqueNames() ? YoNameDisplay.UNIQUE_NAME : YoNameDisplay.SHORT_NAME);
       if (configuration.hasYoSliderboardConfiguration())
          messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile(), synchronizeHint);
-
-      if (configuration.hasYoEquationConfiguration())
-      {
-         try (InputStream inputStream = new FileInputStream(configuration.getYoEquationConfigurationFile()))
-         {
-            YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
-            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null)
-               messager.submitMessage(topics.getSessionYoEquationListChangeRequest(), YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace();
-         }
-      }
 
       if (LOAD_SESSION_TIME)
       {

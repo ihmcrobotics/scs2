@@ -1,6 +1,5 @@
 package us.ihmc.scs2.symbolic.parser;
 
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 import us.ihmc.scs2.sharedMemory.YoDoubleBuffer;
@@ -185,6 +184,7 @@ public class YoEquationInputHandler
       @Override
       public void reset()
       {
+         time = Double.NaN;
          previousTime = Double.NaN;
          previousValue = Double.NaN;
       }
@@ -251,6 +251,7 @@ public class YoEquationInputHandler
       @Override
       public void reset()
       {
+         time = Double.NaN;
          previousTime = Double.NaN;
          previousValue = Integer.MIN_VALUE;
       }
@@ -375,6 +376,7 @@ public class YoEquationInputHandler
       @Override
       public void reset()
       {
+         time = Double.NaN;
          previousTime = Double.NaN;
          previousValue = Double.NaN;
          valueDot = 0.0;
@@ -387,7 +389,6 @@ public class YoEquationInputHandler
 
          if (currentValue != previousValue)
          { // TODO This is to handle data being updated at different rates, probably not ideal.
-            LogTools.info("previousTime = " + previousTime + ", time = " + time + ", currentValue = " + currentValue + ", previousValue = " + previousValue);
             valueDot = (currentValue - previousValue) / (this.time - previousTime);
 
             previousTime = this.time;
@@ -441,6 +442,7 @@ public class YoEquationInputHandler
       @Override
       public void reset()
       {
+         time = Double.NaN;
          previousTime = Double.NaN;
          previousValue = Integer.MIN_VALUE;
       }

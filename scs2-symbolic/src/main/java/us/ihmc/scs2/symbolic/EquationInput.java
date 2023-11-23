@@ -43,6 +43,16 @@ public interface EquationInput
       };
    }
 
+   static DoubleVariable newDoubleVariable()
+   {
+      return new SimpleDoubleVariable();
+   }
+
+   static IntegerVariable newIntegerVariable()
+   {
+      return new SimpleIntegerVariable();
+   }
+
    static ScalarInput parseConstant(InputType type, String valueAsString)
    {
       return switch (type)
@@ -58,6 +68,11 @@ public interface EquationInput
        * @return the value of this input as a {@code double}.
        */
       double getValueAsDouble();
+
+      /**
+       * @return the value of this input as an {@code int}.
+       */
+      int getValueAsInteger();
 
       double getValueDot();
    }
@@ -82,6 +97,12 @@ public interface EquationInput
       default double getValueAsDouble()
       {
          return getValue();
+      }
+
+      @Override
+      default int getValueAsInteger()
+      {
+         return (int) getValue();
       }
 
       double getPreviousTime();
@@ -168,6 +189,12 @@ public interface EquationInput
          return getValue();
       }
 
+      @Override
+      default int getValueAsInteger()
+      {
+         return getValue();
+      }
+
       double getPreviousTime();
 
       int getPreviousValue();
@@ -203,12 +230,6 @@ public interface EquationInput
 
       @Override
       int getValue();
-
-      @Override
-      default double getValueAsDouble()
-      {
-         return getValue();
-      }
 
       @Override
       default double getPreviousTime()
@@ -276,6 +297,8 @@ public interface EquationInput
       @Override
       public void reset()
       {
+         time = Double.NaN;
+         value = Double.NaN;
          previousTime = Double.NaN;
          previousValue = Double.NaN;
       }
@@ -370,6 +393,8 @@ public interface EquationInput
       @Override
       public void reset()
       {
+         time = Double.NaN;
+         value = Integer.MIN_VALUE;
          previousTime = Double.NaN;
          previousValue = Integer.MIN_VALUE;
       }

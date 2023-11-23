@@ -1,47 +1,52 @@
 package us.ihmc.scs2.symbolic.parser;
 
+import us.ihmc.scs2.symbolic.parser.EquationOperationLibrary.*;
+
 import java.util.Arrays;
 import java.util.List;
 
 public enum EquationSymbol
 {
-   PLUS('+', "Addition"),
-   MINUS('-', "Subtraction"),
-   TIMES('*', "Multiplication"),
-   DIVIDE('/', "Division"),
-   POWER('^', "Power"),
-   PERIOD('.', "Not supported for now"),
-   ASSIGN('=', "Assignment"),
-   PAREN_LEFT('(', "Parenthesis (opening)"),
-   PAREN_RIGHT(')', "Parenthesis (closing)"),
-   BRACKET_LEFT('[', "Not supported for now"),
-   BRACKET_RIGHT(']', "Not supported for now"),
-   GREATER_THAN('>', "Not supported for now"),
-   LESS_THAN('<', "Not supported for now"),
-   GREATER_THAN_EQ(">=", "Not supported for now"),
-   LESS_THAN_EQ("<=", "Not supported for now"),
-   COMMA(',', "Separator for function inputs"),
-   COLON(':', "Not supported for now"),
-   SEMICOLON(';', "Not supported for now");
+   PLUS('+', AddOperation.NAME, "Addition"),
+   MINUS('-', SubtractOperation.NAME, "Subtraction"),
+   TIMES('*', MultiplyOperation.NAME, "Multiplication"),
+   DIVIDE('/', DivideOperation.NAME, "Division"),
+   POWER('^', PowerDoubleOperation.NAME, "Power"),
+   PERIOD('.', null, "Not supported for now"),
+   ASSIGN('=', AssignmentOperation.NAME, "Assignment"),
+   PAREN_LEFT('(', null, "Parenthesis (opening)"),
+   PAREN_RIGHT(')', null, "Parenthesis (closing)"),
+   BRACKET_LEFT('[', null, "Not supported for now"),
+   BRACKET_RIGHT(']', null, "Not supported for now"),
+   GREATER_THAN('>', null, "Not supported for now"),
+   LESS_THAN('<', null, "Not supported for now"),
+   GREATER_THAN_EQ(">=", null, "Not supported for now"),
+   LESS_THAN_EQ("<=", null, "Not supported for now"),
+   COMMA(',', null, "Separator for function inputs"),
+   COLON(':', null, "Not supported for now"),
+   SEMICOLON(';', null, "Not supported for now");
 
    final boolean isSingleChar;
    final char symbolChar;
    final String symbolString;
+   final String operationName;
    final String description;
 
-   EquationSymbol(char symbolChar, String description)
+   EquationSymbol(char symbolChar, String operationName, String description)
    {
       isSingleChar = true;
       this.symbolChar = symbolChar;
       this.symbolString = new String(new char[] {symbolChar});
+      this.operationName = operationName;
       this.description = description;
    }
 
-   EquationSymbol(String symbolString, String description)
+   EquationSymbol(String symbolString, String operationName, String description)
    {
       isSingleChar = false;
       this.symbolChar = 0;
       this.symbolString = symbolString;
+      this.operationName = operationName;
       this.description = description;
    }
 
