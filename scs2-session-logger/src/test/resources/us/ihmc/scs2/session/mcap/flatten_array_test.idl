@@ -1,5 +1,6 @@
 struct b {
     string name;
+    long val;
 };
 
 struct a {
@@ -9,5 +10,6 @@ struct a {
 };
 
 struct flatten_array_test {
-    sequence<a, 3> seq;
+    sequence<a, 1> seq;
+    sequence<double, 2> double_seq;
 };
