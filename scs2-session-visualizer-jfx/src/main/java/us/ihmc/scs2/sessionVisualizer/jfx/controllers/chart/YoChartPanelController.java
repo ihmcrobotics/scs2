@@ -23,7 +23,6 @@ import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.javaFXExtensions.chart.FastNumberAxis;
-import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -37,7 +36,10 @@ import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart.ChartStyle;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData.ChartDataUpdate;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.*;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -358,19 +360,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
 
    public void addYoVariableToPlot(String yoVariableFullName)
    {
-      YoVariableDatabase rootRegistryDatabase = yoManager.getRootRegistryDatabase();
-      YoVariable yoVariable = rootRegistryDatabase.searchExact(yoVariableFullName);
-      if (yoVariable == null)
-      {
-         LogTools.warn("Incompatible variable name, searching similar variables to " + yoVariableFullName);
-         yoVariable = rootRegistryDatabase.searchSimilar(yoVariableFullName, 0.90);
-      }
-      if (yoVariable == null)
-      {
-         LogTools.warn("Could not find YoVariable: " + yoVariableFullName);
-         return;
-      }
-      addYoVariableToPlot(yoVariable);
+      YoVariable yoVariable = yoManager.searchYoVariable(yoVariableFullName);
+      if (yoVariable != null)
+         addYoVariableToPlot(yoVariable);
    }
 
    public void addYoVariableToPlot(YoVariable yoVariable)

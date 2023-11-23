@@ -126,6 +126,25 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       return rootRegistryDatabase;
    }
 
+   public YoVariable searchYoVariable(String yoVariableFullName)
+   {
+      if (yoVariableFullName == null)
+         return null;
+
+      YoVariable yoVariable = rootRegistryDatabase.searchExact(yoVariableFullName);
+      if (yoVariable == null)
+      {
+         LogTools.warn("Incompatible variable name, searching similar variables to " + yoVariableFullName);
+         yoVariable = rootRegistryDatabase.searchSimilar(yoVariableFullName, 0.90);
+      }
+      if (yoVariable == null)
+      {
+         LogTools.warn("Could not find YoVariable: " + yoVariableFullName);
+         return null;
+      }
+      return yoVariable;
+   }
+
    public boolean isUpdatingYoVariables()
    {
       return updatingYoVariables;
@@ -166,7 +185,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoDouble variable = findYoVariable(YoDouble.class, variableName);
+      YoDouble variable = findExactYoVariable(YoDouble.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -186,7 +205,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoInteger variable = findYoVariable(YoInteger.class, variableName);
+      YoInteger variable = findExactYoVariable(YoInteger.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -206,7 +225,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoLong variable = findYoVariable(YoLong.class, variableName);
+      YoLong variable = findExactYoVariable(YoLong.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -226,7 +245,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoBoolean variable = findYoVariable(YoBoolean.class, variableName);
+      YoBoolean variable = findExactYoVariable(YoBoolean.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -246,7 +265,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      @SuppressWarnings("unchecked") YoEnum<E> variable = findYoVariable(YoEnum.class, variableName);
+      @SuppressWarnings("unchecked") YoEnum<E> variable = findExactYoVariable(YoEnum.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -259,7 +278,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
    }
 
    @SuppressWarnings("unchecked")
-   private <T extends YoVariable> T findYoVariable(Class<T> type, String variableName)
+   private <T extends YoVariable> T findExactYoVariable(Class<T> type, String variableName)
    {
       int separatorIndex = variableName.lastIndexOf(YoTools.NAMESPACE_SEPERATOR_STRING);
 

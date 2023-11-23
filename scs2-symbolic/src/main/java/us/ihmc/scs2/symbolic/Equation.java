@@ -111,7 +111,7 @@ public class Equation
          return;
 
       this.operations = builder.build();
-      result = operations.get(operations.size() - 1).getValue();
+      result = operations.get(operations.size() - 1);
    }
 
    public boolean isBuilt()
@@ -126,16 +126,8 @@ public class Equation
    {
       checkBuildStatus();
 
-      operations.forEach(equationOperation -> equationOperation.setTime(time));
-
-      operations.forEach(equationOperation ->
-                         {
-                            equationOperation.computeValue(time);
-                            // TODO This is a hack to make sure the derivative is computed.
-                            //     The derivative should be computed only when needed.
-                            equationOperation.computeDerivative(time);
-                         });
-      operations.forEach(equationOperation -> equationOperation.updatePreviousInputValues());
+      operations.forEach(equationOperation -> equationOperation.updateValue(time));
+      operations.forEach(equationOperation -> equationOperation.updatePreviousValue());
 
       return result;
    }
@@ -151,7 +143,7 @@ public class Equation
       checkBuildStatus();
 
       builder.getAliasManager().setHistoryUpdate(true);
-      operations.forEach(EquationOperation::resetInputs);
+      operations.forEach(EquationOperation::reset);
       YoBufferPropertiesReadOnly bufferProperties = builder.getAliasManager().getBufferProperties();
       YoDoubleBuffer timeBuffer = (YoDoubleBuffer) builder.getAliasManager().getYoSharedBuffer().getRegistryBuffer().findYoVariableBuffer(yoTime);
 
@@ -163,12 +155,12 @@ public class Equation
          historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
 
          double time = timeBuffer.getBuffer()[historyIndex];
-         operations.forEach(equationOperation -> equationOperation.computeValue(time));
-         operations.forEach(equationOperation -> equationOperation.updatePreviousInputValues());
+         operations.forEach(equationOperation -> equationOperation.updateValue(time));
+         operations.forEach(equationOperation -> equationOperation.updatePreviousValue());
       }
 
       builder.getAliasManager().setHistoryUpdate(false);
-      operations.forEach(EquationOperation::resetInputs);
+      operations.forEach(EquationOperation::reset);
    }
 
    public void reset()
@@ -177,7 +169,7 @@ public class Equation
 
       for (EquationOperation<?> operation : operations)
       {
-         operation.resetInputs();
+         operation.reset();
       }
    }
 
