@@ -21,11 +21,12 @@ public class EquationOperationLibrary
 
    static
    {
-      Class<?>[] operationClasses = EquationOperationLibrary.class.getDeclaredClasses();
+      List<Class<?>> operationClasses = new ArrayList<>(Arrays.asList(EquationOperationLibrary.class.getDeclaredClasses()));
+      operationClasses.sort(Comparator.comparing(Class::getSimpleName));
 
-      List<String> names = new ArrayList<>(operationClasses.length);
-      Map<String, String> descriptionMap = new LinkedHashMap<>(operationClasses.length);
-      Map<String, Function<List<? extends EquationInput>, EquationOperation<?>>> builderMap = new LinkedHashMap<>(operationClasses.length);
+      List<String> names = new ArrayList<>(operationClasses.size());
+      Map<String, String> descriptionMap = new LinkedHashMap<>(operationClasses.size());
+      Map<String, Function<List<? extends EquationInput>, EquationOperation<?>>> builderMap = new LinkedHashMap<>(operationClasses.size());
 
       try
       {
