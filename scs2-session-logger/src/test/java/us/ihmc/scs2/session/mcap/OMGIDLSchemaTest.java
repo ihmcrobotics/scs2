@@ -183,7 +183,7 @@ public class OMGIDLSchemaTest
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
       OMGIDLSchema flatSchema = schema.flattenSchema();
       //      System.out.println(schema.toString());
-      System.out.println(flatSchema.toString());
+      System.out.println(flatSchema);
    }
 
    @Disabled
@@ -193,8 +193,8 @@ public class OMGIDLSchemaTest
       String schemaName = "flatten_array_test";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
-      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("a");
-      OMGIDLSchema.OMGIDLSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(1);
+//      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("a");
+      OMGIDLSchema.OMGIDLSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(0);
       List<OMGIDLSchema.OMGIDLSchemaField> flatFields = schema.flattenField(field);
 //      System.out.println(subSchema.flattenSchema(schema.getSubSchemaMap()));
       System.out.println(flatFields);
