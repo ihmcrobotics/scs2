@@ -223,7 +223,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
          if (subSchema == null)
             throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
 
-         for(Map.Entry<String, OMGIDLSchema> entry: subSchemaMap.entrySet())
+         for (Map.Entry<String, OMGIDLSchema> entry : subSchemaMap.entrySet())
          {
             if (!entry.getKey().equals(fieldName))
                subSchema.getSubSchemaMap().put(entry.getKey(), entry.getValue());
@@ -232,7 +232,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
          if (!isArrayOrVector)
          {
             //TODO: (AM) This will include struct definitions and instantiations, handle them properly
-            YoRegistry fieldRegistry = new YoRegistry(fieldName);
+            YoRegistry fieldRegistry = new YoRegistry(fieldName.replaceAll(":", "-"));
             messageRegistry.addChild(fieldRegistry);
             YoOMGIDLMessage subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
             deserializers.add(subMessage.deserializer);
@@ -240,21 +240,6 @@ public class YoOMGIDLMessage implements YoMCAPMessage
          else
          {
             // TODO: (AM) will we ever even get here?
-//            OMGIDLSchema finalSubSchema = subSchema;
-//            BiFunction<String, YoRegistry, YoOMGIDLMessage> elementBuilder = (name, yoRegistry) ->
-//            {
-//               YoOMGIDLMessage newElement = newMessage(finalSubSchema, -1, new YoRegistry(name), subSchemaMap);
-//               messageRegistry.addChild(newElement.getRegistry());
-//               return newElement;
-//            };
-//            createFieldArray(YoOMGIDLMessage.class,
-//                             elementBuilder,
-//                             YoOMGIDLMessage::deserialize,
-//                             YoOMGIDLMessage::clearData,
-//                             fieldName,
-//                             field.isArray(),
-//                             field.getMaxLength(),
-//                             messageRegistry);
          }
       }
 
@@ -347,18 +332,45 @@ public class YoOMGIDLMessage implements YoMCAPMessage
       Map<String, YoVariable[]> fieldArrayMap = new HashMap<>();
       Map<String, YoConversionToolbox> fieldConversionMap = new HashMap<>();
 
+      int maxLength = field.getMaxLength();
+
+      YoRegistry[] subRegistryArray = new YoRegistry[maxLength];//(YoRegistry[]) Array.newInstance(YoRegistry.class, maxLength);
+
+      // create subregs for the field array
+      for (int i = 0; i < maxLength; i++)
+      {
+         subRegistryArray[i] = new YoRegistry(field.getName() + "[" + i + "]");
+         registry.addChild(subRegistryArray[i]);
+      }
+
       for (OMGIDLSchemaField flatField : flatFields)
       {
+         //TODO: (AM) No string support for now
+         if (flatField.getType().equals("string"))
+            continue;
+         // Build every YoVariable in this field
          YoConversionToolbox conversion = conversionMap.get(flatField.getType());
          if (conversion == null)
+            //TODO: (AM) having only simple types in flatfield prevents entering this branch
             return null;
-         fieldArrayMap.put(flatField.getName(), (YoVariable[]) Array.newInstance(conversion.yoType, field.getMaxLength()));
+         fieldArrayMap.put(flatField.getName(), (YoVariable[]) Array.newInstance(conversion.yoType, maxLength));
          fieldConversionMap.put(flatField.getName(), conversion);
+         String[] flatFieldHierarchy = flatField.getName().split("-");
 
-         for (int i = 0; i < field.getMaxLength(); ++i)
+         for (int i = 0; i < maxLength; i++)
          {
-            fieldArrayMap.get(flatField.getName())[i] = (YoVariable) fieldConversionMap.get(flatField.getName()).yoBuilder.apply(
-                  flatField.getName() + "[" + i + "]", registry);
+            YoRegistry subFieldRegistry = subRegistryArray[i];
+            // traverse from the second to the second last element to add all sub-registries
+            for (int j = 1; j < flatFieldHierarchy.length - 1; j++)
+            {
+               if (subFieldRegistry.getChild(flatFieldHierarchy[j]) == null)
+                  subFieldRegistry.addChild(new YoRegistry(flatFieldHierarchy[j]));
+               subFieldRegistry = subFieldRegistry.getChild(flatFieldHierarchy[j]);
+            }
+
+            fieldArrayMap.get(flatField.getName())[i] = (YoVariable) fieldConversionMap.get(flatField.getName()).yoBuilder.apply(flatFieldHierarchy[
+                                                                                                                                       flatFieldHierarchy.length
+                                                                                                                                       - 1], subFieldRegistry);
          }
       }
 
@@ -369,7 +381,11 @@ public class YoOMGIDLMessage implements YoMCAPMessage
          {
             for (OMGIDLSchemaField flatField : flatFields)
             {
-               for (int i = 0; i < field.getMaxLength(); ++i)
+               //TODO: (AM) No string support for now
+               if (flatField.getType().equals("string"))
+                  continue;
+
+               for (int i = 0; i < maxLength; i++)
                {
                   fieldConversionMap.get(flatField.getName()).yoResetter.accept(fieldArrayMap.get(flatField.getName())[i]);
                }
@@ -383,10 +399,13 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                               {
                                  for (OMGIDLSchemaField flatField : flatFields)
                                  {
+                                    //TODO: (AM) No string support for now
+                                    if (flatField.getType().equals("string"))
+                                       continue;
                                     fieldConversionMap.get(flatField.getName()).deserializer.accept(fieldArrayMap.get(flatField.getName())[elementIndex],
                                                                                                     deserializer);
                                  }
-                              }, field.getMaxLength());
+                              }, maxLength);
             }
             else if (field.isVector())
             {
@@ -394,6 +413,10 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                                             {
                                                for (OMGIDLSchemaField flatField : flatFields)
                                                {
+                                                  //TODO: (AM) No string support for now
+                                                  if (flatField.getType().equals("string"))
+                                                     continue;
+
                                                   fieldConversionMap.get(flatField.getName()).deserializer.accept(fieldArrayMap.get(flatField.getName())[elementIndex],
                                                                                                                   deserializer);
                                                }
@@ -401,7 +424,10 @@ public class YoOMGIDLMessage implements YoMCAPMessage
                // Reset remaining elements
                for (OMGIDLSchemaField flatField : flatFields)
                {
-                  for (int i = size; i < field.getMaxLength(); i++)
+                  if (flatField.getType().equals("string"))
+                     continue;
+
+                  for (int i = size; i < maxLength; i++)
                      fieldConversionMap.get(flatField.getName()).yoResetter.accept(fieldArrayMap.get(flatField.getName())[i]);
                }
             }

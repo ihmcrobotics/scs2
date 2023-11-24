@@ -5,11 +5,11 @@ struct b {
 
 struct a {
     short num1;
-    double num2;
-    b mode;
+    b weird;
 };
 
 struct flatten_array_test {
-    sequence<a, 1> seq;
-    sequence<double, 2> double_seq;
+//    sequence<a, 1> seq;
+//    sequence<double, 2> double_seq;
+    a weird[2];
 };
