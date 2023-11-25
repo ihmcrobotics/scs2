@@ -13,7 +13,7 @@ public class ROS2MessageSchema implements MCAPSchema
    private boolean isSchemaFlat;
    private Map<String, ROS2MessageSchema> subSchemaMap;
 
-   public static ROS2MessageSchema loadSchema(Mcap.Schema mcapSchema)
+   public static ROS2MessageSchema loadSchema(MCAP.Schema mcapSchema)
    {
       ROS2MessageSchema schema = loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
       mcapSchema.unloadData();
@@ -361,7 +361,7 @@ public class ROS2MessageSchema implements MCAPSchema
       return "\t".repeat(indent);
    }
 
-   public static String mcapROS2MessageToString(Mcap.Message message, ROS2MessageSchema schema)
+   public static String mcapROS2MessageToString(MCAP.Message message, ROS2MessageSchema schema)
    {
       CDRDeserializer cdr = new CDRDeserializer();
       cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());

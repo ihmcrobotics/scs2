@@ -51,21 +51,21 @@ public class MCAPFrameTransformManager
    private final Set<String> unattachedRootNames = new LinkedHashSet<>();
 
    private final YoGraphicGroupDefinition yoGraphicGroupDefinition = new YoGraphicGroupDefinition("FoxgloveFrameTransforms");
-   private Mcap.Schema mcapSchema;
+   private MCAP.Schema mcapSchema;
 
    public MCAPFrameTransformManager(ReferenceFrame inertialFrame)
    {
       this.inertialFrame = inertialFrame;
    }
 
-   public void initialize(Mcap mcap) throws IOException
+   public void initialize(MCAP mcap) throws IOException
    {
-      for (Mcap.Record record : mcap.records())
+      for (MCAP.Record record : mcap.records())
       {
-         if (record.op() != Mcap.Opcode.SCHEMA)
+         if (record.op() != MCAP.Opcode.SCHEMA)
             continue;
 
-         mcapSchema = (Mcap.Schema) record.body();
+         mcapSchema = (MCAP.Schema) record.body();
          if (mcapSchema.name().equalsIgnoreCase("foxglove::FrameTransform"))
          {
             if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
@@ -106,11 +106,11 @@ public class MCAPFrameTransformManager
       }
 
       TIntObjectHashMap<String> channelIdToTopicMap = new TIntObjectHashMap<>();
-      for (Mcap.Record record : mcap.records())
+      for (MCAP.Record record : mcap.records())
       {
-         if (record.op() == Mcap.Opcode.CHANNEL)
+         if (record.op() == MCAP.Opcode.CHANNEL)
          {
-            Mcap.Channel channel = (Mcap.Channel) record.body();
+            MCAP.Channel channel = (MCAP.Channel) record.body();
             if (channel.schemaId() == foxgloveFrameTransformSchema.getId())
             {
                channelIdToTopicMap.put(channel.id(), channel.topic());
@@ -122,16 +122,16 @@ public class MCAPFrameTransformManager
 
       Map<String, BasicTransformInfo> allTransforms = new LinkedHashMap<>();
 
-      for (Mcap.Record record : mcap.records())
+      for (MCAP.Record record : mcap.records())
       {
-         if (record.op() == Mcap.Opcode.CHUNK)
+         if (record.op() == MCAP.Opcode.CHUNK)
          {
-            Mcap.Chunk chunk = (Mcap.Chunk) record.body();
-            for (Mcap.Record chunkRecord : chunk.records())
+            MCAP.Chunk chunk = (MCAP.Chunk) record.body();
+            for (MCAP.Record chunkRecord : chunk.records())
             {
-               if (chunkRecord.op() == Mcap.Opcode.MESSAGE)
+               if (chunkRecord.op() == MCAP.Opcode.MESSAGE)
                {
-                  Mcap.Message message = (Mcap.Message) chunkRecord.body();
+                  MCAP.Message message = (MCAP.Message) chunkRecord.body();
                   String topic = channelIdToTopicMap.get(message.channelId());
                   if (topic == null)
                      continue;
@@ -142,9 +142,9 @@ public class MCAPFrameTransformManager
             chunk.unloadRecords();
             record.unloadBody();
          }
-         else if (record.op() == Mcap.Opcode.MESSAGE)
+         else if (record.op() == MCAP.Opcode.MESSAGE)
          {
-            Mcap.Message message = (Mcap.Message) record.body();
+            MCAP.Message message = (MCAP.Message) record.body();
             String topic = channelIdToTopicMap.get(message.channelId());
             if (topic == null)
                continue;
@@ -221,7 +221,7 @@ public class MCAPFrameTransformManager
     * @param message the message to read.
     * @return {@code true} if the message was successfully read, {@code false} otherwise.
     */
-   public boolean readMessage(Mcap.Message message)
+   public boolean readMessage(MCAP.Message message)
    {
       if (!channelIds.contains(message.channelId()))
       {
@@ -339,7 +339,7 @@ public class MCAPFrameTransformManager
       return registry;
    }
 
-   public Mcap.Schema getMCAPSchema()
+   public MCAP.Schema getMCAPSchema()
    {
       return mcapSchema;
    }
@@ -354,7 +354,7 @@ public class MCAPFrameTransformManager
       return sanitizedNameToTransformMap.get(name);
    }
 
-   private static BasicTransformInfo extractFromMessage(MCAPSchema flatSchema, String topic, Mcap.Message message)
+   private static BasicTransformInfo extractFromMessage(MCAPSchema flatSchema, String topic, MCAP.Message message)
    {
       if (!flatSchema.isSchemaFlat())
          throw new IllegalArgumentException("The schema is not flat.");
