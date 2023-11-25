@@ -7,6 +7,9 @@ import us.ihmc.pubsub.common.SerializedPayload;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * Helper class to deserialize data from a buffer that uses the CDR (Common Data Representation) format.
+ */
 public class CDRDeserializer
 {
    private static final int encapsulation_size = 4;
@@ -108,6 +111,11 @@ public class CDRDeserializer
       buffer.limit(initialLimit);
    }
 
+   /**
+    * Reads the encapsulation from the buffer.
+    *
+    * @param buffer the buffer to read from.
+    */
    private static void readEncapsulation(ByteBuffer buffer)
    {
       // @formatter:off
@@ -183,9 +191,9 @@ public class CDRDeserializer
    }
 
    /**
-    * Reads a byte {@code uint8} from the buffer.
+    * Reads an unsigned byte {@code uint8} from the buffer.
     *
-    * @return the byte value.
+    * @return the unsigned byte value.
     * @see CDR#read_type_9()
     */
    public int read_uint8()
@@ -206,9 +214,9 @@ public class CDRDeserializer
    }
 
    /**
-    * Reads a short {@code uint16} from the buffer.
+    * Reads an unsigned short {@code uint16} from the buffer.
     *
-    * @return the short value.
+    * @return the unsigned short value.
     * @see CDR#read_type_3()
     */
    public int read_uint16()
@@ -229,9 +237,9 @@ public class CDRDeserializer
    }
 
    /**
-    * Reads an integer {@code uint32} from the buffer.
+    * Reads an unsigned integer {@code uint32} from the buffer.
     *
-    * @return the integer value.
+    * @return the unsigned integer value.
     * @see CDR#read_type_4()
     */
    public long read_uint32()
@@ -252,9 +260,13 @@ public class CDRDeserializer
    }
 
    /**
-    * Reads a long {@code uint64} from the buffer.
+    * Reads an unsigned long {@code uint64} from the buffer.
+    * <p>
+    * Note that there is no unsigned long in Java, so the value is returned as a long.
+    * The value is checked to be positive and a warning is printed if it is not.
+    * </p>
     *
-    * @return the long value.
+    * @return the unsigned long value.
     * @see CDR#read_type_12()
     */
    public long read_uint64()
@@ -370,11 +382,24 @@ public class CDRDeserializer
       };
    }
 
+   /**
+    * Reads a type from the buffer and returns its value as a string.
+    *
+    * @param type the type to read.
+    * @return the value of the type as a string.
+    */
    public String readTypeAsString(Type type)
    {
       return readTypeAsString(type, -1);
    }
 
+   /**
+    * Reads a type from the buffer and returns its value as a string.
+    *
+    * @param type        the type to read.
+    * @param arrayLength the length of the array to read if known, {@code -1} if unknown.
+    * @return the value of the type as a string.
+    */
    public String readTypeAsString(Type type, int arrayLength)
    {
       return switch (type)
@@ -438,6 +463,13 @@ public class CDRDeserializer
       return skipNext(nextType, -1);
    }
 
+   /**
+    * Skips the next element in the buffer.
+    *
+    * @param nextType    the type of the next element to skip.
+    * @param arrayLength the length of the array to skip if known, {@code -1} if unknown.
+    * @return {@code true} if the element was skipped, {@code false} if the element could not be skipped.
+    */
    public boolean skipNext(Type nextType, int arrayLength)
    {
       boolean success = true;
@@ -472,7 +504,7 @@ public class CDRDeserializer
       return success;
    }
 
-   public int align(int byteBoundary)
+   private int align(int byteBoundary)
    {
       int position = buffer.position() - offset - encapsulation_size;
       int adv = (position % byteBoundary);
@@ -485,8 +517,17 @@ public class CDRDeserializer
       return adv;
    }
 
+   /**
+    * Interface used to read elements of an array or sequence from a buffer.
+    */
    public interface ElementReader
    {
+      /**
+       * Reads an element of an array or a sequence from the buffer.
+       *
+       * @param elementIndex the index of the element to read.
+       * @param deserializer the deserializer to use to read the element.
+       */
       void read(int elementIndex, CDRDeserializer deserializer);
    }
 }

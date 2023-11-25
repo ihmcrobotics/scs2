@@ -2,34 +2,70 @@ package us.ihmc.scs2.session.mcap;
 
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
+import us.ihmc.scs2.session.mcap.MCAP.ChunkIndex;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
+/**
+ * This class is used to manage the chunks of an MCAP file.
+ * <p>
+ * The MCAP file is composed of a list of chunks. Each chunk contains a list of records. The records typically contains messages which are the actual data that
+ * we want to read.
+ * </p>
+ * <p>
+ * This class intends to simplify the access to the messages by automatically loading and unloading chunks as needed.
+ * </p>
+ */
 public class MCAPChunkManager
 {
+   /**
+    * The timestamps of all the messages in the MCAP file.
+    */
    private final TLongArrayList allMessageTimestamps = new TLongArrayList();
+   /**
+    * All the chunk indices of the MCAP file.
+    */
    private final List<MCAP.ChunkIndex> mcapChunkIndices = new ArrayList<>();
+   /**
+    * The number of chunks currently loaded. It can either be 0, 1 or 2.
+    */
    private int numberOfLoadedChunks = -1;
+   /**
+    * Wrapper for the currently loaded chunks.
+    */
    private ChunkExtra loadedChunkA = new ChunkExtra();
+   /**
+    * Wrapper for the currently loaded chunks.
+    */
    private ChunkExtra loadedChunkB = new ChunkExtra();
 
    public MCAPChunkManager()
    {
    }
 
+   /**
+    * @return the timestamp of the message at the given index.
+    */
    public long getTimestampAtIndex(int index)
    {
       return allMessageTimestamps.get(index);
    }
 
+   /**
+    * @return the timestamp of the message at the given index relative to the first message timestamp.
+    */
    public long getRelativeTimestampAtIndex(int index)
    {
       return allMessageTimestamps.get(index) - firstMessageTimestamp();
    }
 
+   /**
+    * @return the index of the message with the given timestamp.
+    */
    public int getIndexFromTimestamp(long timestamp)
    {
       int index = allMessageTimestamps.binarySearch(timestamp);
@@ -38,11 +74,17 @@ public class MCAPChunkManager
       return index;
    }
 
+   /**
+    * @return the number of messages in the MCAP file.
+    */
    public int getNumberOfEntries()
    {
       return allMessageTimestamps.size();
    }
 
+   /**
+    * Initializes this manager from the given MCAP file.
+    */
    public void loadFromMCAP(MCAP mcap)
    {
       for (MCAP.Record record : mcap.records())
@@ -82,19 +124,28 @@ public class MCAPChunkManager
          }
       }
       // TODO The underlying algorithm seems quite expensive.
-      Collections.sort(mcapChunkIndices, (c1, c2) -> Long.compare(c1.messageStartTime(), c2.messageStartTime()));
+      mcapChunkIndices.sort(Comparator.comparingLong(ChunkIndex::messageStartTime));
    }
 
+   /**
+    * @return the timestamp of the first message in the MCAP file.
+    */
    public long firstMessageTimestamp()
    {
       return mcapChunkIndices.get(0).messageStartTime();
    }
 
+   /**
+    * @return the timestamp of the last message in the MCAP file.
+    */
    public long lastMessageTimestamp()
    {
       return mcapChunkIndices.get(mcapChunkIndices.size() - 1).messageEndTime();
    }
 
+   /**
+    * @return the timestamp of the next message after the given timestamp.
+    */
    public long nextMessageTimestamp(long timestamp)
    {
       if (timestamp < allMessageTimestamps.get(0))
@@ -127,6 +178,9 @@ public class MCAPChunkManager
       return allMessageTimestamps.get(index);
    }
 
+   /**
+    * @return retrieves the messages at the given timestamp.
+    */
    public List<MCAP.Message> loadMessages(long timestamp) throws IOException
    {
       if (timestamp <= getActiveChunkStartTimestamp() || timestamp >= getActiveChunkEndTimestamp())
@@ -162,6 +216,15 @@ public class MCAPChunkManager
       throw new RuntimeException("Unexpected number of chunks: " + numberOfLoadedChunks);
    }
 
+   /**
+    * Loads the chunk that contains the given timestamp.
+    * <p>
+    * If the given timestamp is not contained in the MCAP file, this method will return {@code false} and the manager will be empty.
+    * </p>
+    *
+    * @param timestamp the timestamp of the message to load.
+    * @return {@code true} if the chunk was successfully loaded, {@code false} otherwise.
+    */
    public boolean loadChunk(long timestamp) throws IOException
    {
       int index;
@@ -281,6 +344,9 @@ public class MCAPChunkManager
       loadedChunkB = temp;
    }
 
+   /**
+    * @return the timestamp of the first message in the currently loaded chunk.
+    */
    public long getActiveChunkStartTimestamp()
    {
       if (numberOfLoadedChunks <= 0)
@@ -289,6 +355,9 @@ public class MCAPChunkManager
          return loadedChunkA.chunk.messageStartTime();
    }
 
+   /**
+    * @return the timestamp of the last message in the currently loaded chunk.
+    */
    public long getActiveChunkEndTimestamp()
    {
       if (numberOfLoadedChunks <= 0)
@@ -338,7 +407,13 @@ public class MCAPChunkManager
 
    private static class ChunkExtra
    {
+      /**
+       * The index of the chunk in mcapChunkIndices.
+       */
       private int index = -1;
+      /**
+       * The chunk currently loaded.
+       */
       private MCAP.Chunk chunk;
       /**
        * Messages bundle per their timestamp.

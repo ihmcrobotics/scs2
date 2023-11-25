@@ -1,5 +1,12 @@
 package us.ihmc.scs2.session.mcap;
 
+import net.jpountz.lz4.LZ4Exception;
+import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.lz4.LZ4SafeDecompressor;
+import net.jpountz.xxhash.StreamingXXHash32;
+import net.jpountz.xxhash.XXHash32;
+import net.jpountz.xxhash.XXHashFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -7,43 +14,11 @@ import java.nio.ByteOrder;
 import java.util.BitSet;
 import java.util.Locale;
 
-import net.jpountz.lz4.LZ4Exception;
-import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.lz4.LZ4SafeDecompressor;
-import net.jpountz.xxhash.StreamingXXHash32;
-
-/*
- * Copyright 2020 The Apache Software Foundation and the lz4-java contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-import net.jpountz.xxhash.XXHash32;
-import net.jpountz.xxhash.XXHashFactory;
-
 /**
- * Implementation of the v1.5.1 LZ4 Frame format. This class is NOT thread safe.
+ * This class is a modified version of the original LZ4FrameInputStream from the lz4-java project.
  * <p>
- * Not Supported:
- * <ul>
- * <li>Dependent blocks</li>
- * <li>Legacy streams</li>
- * </ul>
- * <p>
- * Originally based on kafka's KafkaLZ4BlockInputStream.
- *
- * @see <a href="https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md">LZ4 Framing Format
- *       Spec 1.5.1</a>
+ * This version allows to decode a byte array into another byte array, without using any {@link InputStream}.
+ * </p>
  */
 public class LZ4FrameDecoder
 {

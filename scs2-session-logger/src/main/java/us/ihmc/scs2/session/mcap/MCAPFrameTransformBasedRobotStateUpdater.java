@@ -1,15 +1,20 @@
 package us.ihmc.scs2.session.mcap;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
+import us.ihmc.scs2.session.mcap.MCAPFrameTransformManager.YoFoxGloveFrameTransform;
 import us.ihmc.scs2.simulation.robot.Robot;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * This class is used to update the robot state based on the frame transforms.
+ */
 public class MCAPFrameTransformBasedRobotStateUpdater
 {
    private final List<Runnable> jointStateUpdaters = new ArrayList<>();
@@ -18,9 +23,16 @@ public class MCAPFrameTransformBasedRobotStateUpdater
    {
       for (JointBasics joint : robot.getAllJoints())
       {
-         MCAPFrameTransformManager.YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(joint.getSuccessor().getName());
-         MCAPFrameTransformManager.YoFoxGloveFrameTransform parentJointTransform = frameTransformManager.getTransformFromSanitizedName(joint.getPredecessor()
-                                                                                                                                            .getName());
+         String successorName = joint.getSuccessor().getName();
+         String predecessorName = joint.getPredecessor().getName();
+         YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(successorName);
+         YoFoxGloveFrameTransform parentJointTransform = frameTransformManager.getTransformFromSanitizedName(predecessorName);
+
+         if (transform == null || parentJointTransform == null)
+         {
+            LogTools.warn("Missing transform for joint: {}. Looked for transforms: {} and {}", joint.getName(), successorName, predecessorName);
+            continue;
+         }
 
          if (joint instanceof OneDoFJointBasics oneDoFJoint)
          {
