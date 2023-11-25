@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.mcap.ROS2MessageSchema.ROS2SchemaField;
+import us.ihmc.scs2.session.mcap.ROS2Schema.ROS2SchemaField;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 
@@ -85,7 +85,7 @@ public class YoROS2Message implements YoMCAPMessage
       conversionMap = allConversions.stream().collect(Collectors.toMap(conversion -> conversion.primitiveType, conversion -> conversion));
    }
 
-   private final ROS2MessageSchema schema;
+   private final ROS2Schema schema;
    private final int channelId;
    private final YoRegistry registry;
    private final Consumer<CDRDeserializer> deserializer;
@@ -97,25 +97,25 @@ public class YoROS2Message implements YoMCAPMessage
 
    public YoROS2Message newMessage(int channelId, MCAPSchema schema)
    {
-      return newMessage(channelId, (ROS2MessageSchema) schema);
+      return newMessage(channelId, (ROS2Schema) schema);
    }
 
-   public static YoROS2Message newMessage(int channelId, ROS2MessageSchema schema)
+   public static YoROS2Message newMessage(int channelId, ROS2Schema schema)
    {
       return newMessage(schema.getName(), channelId, schema);
    }
 
-   public static YoROS2Message newMessage(String name, int channelId, ROS2MessageSchema schema)
+   public static YoROS2Message newMessage(String name, int channelId, ROS2Schema schema)
    {
       return newMessage(schema, channelId, new YoRegistry(name));
    }
 
-   public static YoROS2Message newMessage(ROS2MessageSchema schema, int channelId, YoRegistry registry)
+   public static YoROS2Message newMessage(ROS2Schema schema, int channelId, YoRegistry registry)
    {
       return newMessage(schema, channelId, registry, schema.getSubSchemaMap());
    }
 
-   public static YoROS2Message newMessage(ROS2MessageSchema schema, int channelId, YoRegistry messageRegistry, Map<String, ROS2MessageSchema> subSchemaMap)
+   public static YoROS2Message newMessage(ROS2Schema schema, int channelId, YoRegistry messageRegistry, Map<String, ROS2Schema> subSchemaMap)
    {
       Objects.requireNonNull(schema, "Schema cannot be null. name = " + messageRegistry.getName());
 
@@ -142,7 +142,7 @@ public class YoROS2Message implements YoMCAPMessage
             continue;
          }
 
-         ROS2MessageSchema subSchema = subSchemaMap.get(field.getType());
+         ROS2Schema subSchema = subSchemaMap.get(field.getType());
 
          if (subSchema == null)
             throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
@@ -180,7 +180,7 @@ public class YoROS2Message implements YoMCAPMessage
       });
    }
 
-   private YoROS2Message(ROS2MessageSchema schema, int channelId, YoRegistry registry, Consumer<CDRDeserializer> deserializer)
+   private YoROS2Message(ROS2Schema schema, int channelId, YoRegistry registry, Consumer<CDRDeserializer> deserializer)
    {
       this.schema = schema;
       this.channelId = channelId;
@@ -226,7 +226,7 @@ public class YoROS2Message implements YoMCAPMessage
       return channelId;
    }
 
-   public ROS2MessageSchema getSchema()
+   public ROS2Schema getSchema()
    {
       return schema;
    }
