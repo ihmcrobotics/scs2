@@ -25,5 +25,5 @@ public interface YoMCAPMessage
       return null;
    }
 
-   void readMessage(Mcap.Message message);
+   void readMessage(MCAP.Message message);
 }

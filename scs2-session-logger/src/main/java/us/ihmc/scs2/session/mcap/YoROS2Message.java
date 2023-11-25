@@ -188,7 +188,7 @@ public class YoROS2Message implements YoMCAPMessage
       this.deserializer = deserializer;
    }
 
-   public void readMessage(Mcap.Message message)
+   public void readMessage(MCAP.Message message)
    {
       if (message.channelId() != channelId)
          throw new IllegalArgumentException("Expected channel ID: " + channelId + ", but received: " + message.channelId());
