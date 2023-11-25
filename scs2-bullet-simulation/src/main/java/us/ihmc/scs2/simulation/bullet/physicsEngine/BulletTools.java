@@ -29,6 +29,8 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.*;
 
+import java.util.List;
+
 public class BulletTools
 {
    public static void toBullet(RigidBodyTransform rigidBodyTransform, btTransform bulletAffineToPack)
@@ -128,10 +130,8 @@ public class BulletTools
    {
       btCollisionShape btCollisionShape = null;
 
-      if (collisionShapeDefinition.getGeometryDefinition() instanceof TriangleMesh3DDefinition)
+      if (collisionShapeDefinition.getGeometryDefinition() instanceof TriangleMesh3DDefinition triangleMesh3DDefinition)
       {
-         TriangleMesh3DDefinition triangleMesh3DDefinition = (TriangleMesh3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-
          btTransform identity = new btTransform();
          btTriangleMesh btTriangleMesh = convertTriangleMesh3D(collisionShapeDefinition.getOriginPose(), triangleMesh3DDefinition);
 
@@ -159,37 +159,32 @@ public class BulletTools
             btCollisionShape = btCompoundShape;
          }
       }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Box3DDefinition boxGeometryDefinition)
       {
-         Box3DDefinition boxGeometryDefinition = (Box3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btBoxShape boxShape = new btBoxShape(new btVector3(boxGeometryDefinition.getSizeX() / 2.0,
                                                             boxGeometryDefinition.getSizeY() / 2.0,
                                                             boxGeometryDefinition.getSizeZ() / 2.0));
          btCollisionShape = boxShape;
       }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Sphere3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Sphere3DDefinition sphereGeometryDefinition)
       {
-         Sphere3DDefinition sphereGeometryDefinition = (Sphere3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btSphereShape sphereShape = new btSphereShape(sphereGeometryDefinition.getRadius());
          btCollisionShape = sphereShape;
       }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cylinder3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cylinder3DDefinition cylinderGeometryDefinition)
       {
-         Cylinder3DDefinition cylinderGeometryDefinition = (Cylinder3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btCylinderShapeZ cylinderShape = new btCylinderShapeZ(new btVector3(cylinderGeometryDefinition.getRadius(),
                                                                              cylinderGeometryDefinition.getRadius(),
                                                                              cylinderGeometryDefinition.getLength() / 2.0));
          btCollisionShape = cylinderShape;
       }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cone3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Cone3DDefinition coneGeometryDefinition)
       {
-         Cone3DDefinition coneGeometryDefinition = (Cone3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          btConeShapeZ coneShape = new btConeShapeZ(coneGeometryDefinition.getRadius(), coneGeometryDefinition.getHeight());
          btCollisionShape = coneShape;
       }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Capsule3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Capsule3DDefinition capsuleGeometryDefinition)
       {
-         Capsule3DDefinition capsuleGeometryDefinition = (Capsule3DDefinition) collisionShapeDefinition.getGeometryDefinition();
          if (capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusY()
           || capsuleGeometryDefinition.getRadiusX() != capsuleGeometryDefinition.getRadiusZ()
           || capsuleGeometryDefinition.getRadiusY() != capsuleGeometryDefinition.getRadiusZ())
@@ -197,9 +192,45 @@ public class BulletTools
          btCapsuleShapeZ capsuleShape = new btCapsuleShapeZ(capsuleGeometryDefinition.getRadiusX(), capsuleGeometryDefinition.getLength());
          btCollisionShape = capsuleShape;
       }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof ConvexPolytope3DDefinition)
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Ellipsoid3DDefinition ellipsoidGeometryDefinition)
       {
-         ConvexPolytope3DDefinition convexPolytopeDefinition = (ConvexPolytope3DDefinition) collisionShapeDefinition.getGeometryDefinition();
+         btSphereShape ellipsoidShape = new btSphereShape(1.0f);
+         // Scale the sphere to be an ellipsoid
+         btVector3 scaling = new btVector3(ellipsoidGeometryDefinition.getRadiusX(),
+                                           ellipsoidGeometryDefinition.getRadiusY(),
+                                           ellipsoidGeometryDefinition.getRadiusZ());
+         ellipsoidShape.setLocalScaling(scaling);
+         btCollisionShape = ellipsoidShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Ramp3DDefinition rampGeometryDefinition)
+      {
+         btConvexHullShape convexHullShape = new btConvexHullShape();
+         double rampX = rampGeometryDefinition.getSizeX();
+         double rampY = rampGeometryDefinition.getSizeY();
+         double rampZ = rampGeometryDefinition.getSizeZ();
+         // Technically, you only need 6 vertices, but the debug drawing doesn't look as good
+         btVector3 v0 = new btVector3(-rampX / 2.0, -rampY / 2.0, 0.0);
+         btVector3 v1 = new btVector3(-rampX / 2.0, rampY / 2.0, 0.0);
+         btVector3 v2 = new btVector3(rampX / 2.0, rampY / 2.0, 0.0);
+         btVector3 v3 = new btVector3(rampX / 2.0, -rampY / 2.0, 0.0);
+         btVector3 v4 = new btVector3(rampX / 2.0, rampY / 2.0, rampZ);
+         btVector3 v5 = new btVector3(rampX / 2.0, -rampY / 2.0, rampZ);
+         convexHullShape.addPoint(v0);
+         convexHullShape.addPoint(v1);
+         convexHullShape.addPoint(v2);
+         convexHullShape.addPoint(v3);
+         convexHullShape.addPoint(v0);
+         convexHullShape.addPoint(v5);
+         convexHullShape.addPoint(v3);
+         convexHullShape.addPoint(v5);
+         convexHullShape.addPoint(v4);
+         convexHullShape.addPoint(v2);
+         convexHullShape.addPoint(v4);
+         convexHullShape.addPoint(v1);
+         btCollisionShape = convexHullShape;
+      }
+      else if (collisionShapeDefinition.getGeometryDefinition() instanceof ConvexPolytope3DDefinition convexPolytopeDefinition)
+      {
          btConvexHullShape convexHullShape = new btConvexHullShape();
          for (Face3DReadOnly face : convexPolytopeDefinition.getConvexPolytope().getFaces())
          {
@@ -209,17 +240,6 @@ public class BulletTools
             }
          }
          btCollisionShape = convexHullShape;
-      }
-      else if (collisionShapeDefinition.getGeometryDefinition() instanceof Ellipsoid3DDefinition)
-      {
-         Ellipsoid3DDefinition ellipsoidGeometryDefinition = (Ellipsoid3DDefinition) collisionShapeDefinition.getGeometryDefinition();
-         btSphereShape ellipsoidShape = new btSphereShape(1.0f);
-         // Scale the sphere to be an ellipsoid
-         btVector3 scaling = new btVector3(ellipsoidGeometryDefinition.getRadiusX(),
-                                           ellipsoidGeometryDefinition.getRadiusY(),
-                                           ellipsoidGeometryDefinition.getRadiusZ());
-         ellipsoidShape.setLocalScaling(scaling);
-         btCollisionShape = ellipsoidShape;
       }
       else
       {
