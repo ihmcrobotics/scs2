@@ -5,30 +5,50 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ROS2MessageSchema implements MCAPSchema
+/**
+ * Class used to represent a Java interpreter of a MCAP schema which encoding is "ros2msg".
+ * This schema resembles much of ROS2 messages.
+ */
+public class ROS2Schema implements MCAPSchema
 {
+   public static final String SUB_SCHEMA_SEPARATOR_REGEX = "\n(=+)\n";
+   public static final String SUB_SCHEMA_PREFIX = "MSG: fastdds/";
    private int id;
    private String name;
    private List<ROS2SchemaField> fields;
    private boolean isSchemaFlat;
-   private Map<String, ROS2MessageSchema> subSchemaMap;
+   private Map<String, ROS2Schema> subSchemaMap;
 
-   public static ROS2MessageSchema loadSchema(MCAP.Schema mcapSchema)
+   /**
+    * Loads a schema from the given {@link MCAP.Schema}.
+    *
+    * @param mcapSchema the schema to load.
+    * @return the loaded schema.
+    */
+   public static ROS2Schema loadSchema(MCAP.Schema mcapSchema)
    {
-      ROS2MessageSchema schema = loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
+      ROS2Schema schema = loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
       mcapSchema.unloadData();
       return schema;
    }
 
-   public static ROS2MessageSchema loadSchema(String name, int id, byte[] data)
+   /**
+    * Loads a schema from the given data.
+    *
+    * @param name the name of the schema.
+    * @param id   the ID of the schema.
+    * @param data the data of the schema, expected to be a {@link String} using UTF-8 encoding.
+    * @return the loaded schema.
+    */
+   public static ROS2Schema loadSchema(String name, int id, byte[] data)
    {
-      ROS2MessageSchema schema = new ROS2MessageSchema();
+      ROS2Schema schema = new ROS2Schema();
       schema.name = name;
       schema.id = id;
 
       String schemasBundledString = new String(data);
       schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
-      String[] schemasStrings = schemasBundledString.split("\n(=+)\n");
+      String[] schemasStrings = schemasBundledString.split(SUB_SCHEMA_SEPARATOR_REGEX);
 
       schema.fields = schemasStrings[0].lines().map(ROS2SchemaField::fromLine).collect(Collectors.toList());
 
@@ -37,11 +57,11 @@ public class ROS2MessageSchema implements MCAPSchema
       {
          String schemaString = schemasStrings[i];
 
-         ROS2MessageSchema subSchema = new ROS2MessageSchema();
+         ROS2Schema subSchema = new ROS2Schema();
 
          int firstNewLineCharacter = schemaString.indexOf("\n");
          String firstLine = schemaString.substring(0, firstNewLineCharacter);
-         subSchema.name = firstLine.replace("MSG: fastdds/", "").trim();
+         subSchema.name = firstLine.replace(SUB_SCHEMA_PREFIX, "").trim();
          subSchema.fields = schemaString.substring(firstNewLineCharacter + 1).lines().map(ROS2SchemaField::fromLine).collect(Collectors.toList());
          schema.subSchemaMap.put(subSchema.name, subSchema);
       }
@@ -55,7 +75,7 @@ public class ROS2MessageSchema implements MCAPSchema
             field.isComplexType = true;
          }
 
-         for (ROS2MessageSchema subSchema : schema.subSchemaMap.values())
+         for (ROS2Schema subSchema : schema.subSchemaMap.values())
          {
             for (ROS2SchemaField subField : subSchema.fields)
             {
@@ -70,27 +90,31 @@ public class ROS2MessageSchema implements MCAPSchema
       return schema;
    }
 
+   @Override
    public int getId()
    {
       return id;
    }
 
+   @Override
    public String getName()
    {
       return name;
    }
 
+   @Override
    public boolean isSchemaFlat()
    {
       return isSchemaFlat;
    }
 
+   @Override
    public List<ROS2SchemaField> getFields()
    {
       return fields;
    }
 
-   public Map<String, ROS2MessageSchema> getSubSchemaMap()
+   public Map<String, ROS2Schema> getSubSchemaMap()
    {
       return subSchemaMap;
    }
@@ -101,9 +125,10 @@ public class ROS2MessageSchema implements MCAPSchema
     *
     * @return the flattened schema.
     */
-   public ROS2MessageSchema flattenSchema()
+   @Override
+   public ROS2Schema flattenSchema()
    {
-      ROS2MessageSchema flatSchema = new ROS2MessageSchema();
+      ROS2Schema flatSchema = new ROS2Schema();
       flatSchema.id = id;
       flatSchema.name = name;
       flatSchema.isSchemaFlat = true;
@@ -145,7 +170,7 @@ public class ROS2MessageSchema implements MCAPSchema
       }
       else
       {
-         ROS2MessageSchema subSchema = subSchemaMap.get(flatField.getType());
+         ROS2Schema subSchema = subSchemaMap.get(flatField.getType());
          if (subSchema != null)
          {
             for (ROS2SchemaField subField : subSchema.fields)
@@ -247,6 +272,7 @@ public class ROS2MessageSchema implements MCAPSchema
          return field;
       }
 
+      @Override
       public ROS2SchemaField clone()
       {
          ROS2SchemaField clone = new ROS2SchemaField();
@@ -260,11 +286,13 @@ public class ROS2MessageSchema implements MCAPSchema
          return clone;
       }
 
+      @Override
       public ROS2SchemaField getParent()
       {
          return parent;
       }
 
+      @Override
       public String getType()
       {
          return type;
@@ -275,6 +303,7 @@ public class ROS2MessageSchema implements MCAPSchema
          this.type = type;
       }
 
+      @Override
       public String getName()
       {
          return name;
@@ -285,6 +314,7 @@ public class ROS2MessageSchema implements MCAPSchema
          this.name = name;
       }
 
+      @Override
       public boolean isArray()
       {
          return isArray;
@@ -295,6 +325,7 @@ public class ROS2MessageSchema implements MCAPSchema
          this.isArray = isArray;
       }
 
+      @Override
       public boolean isVector()
       {
          return isVector;
@@ -324,6 +355,7 @@ public class ROS2MessageSchema implements MCAPSchema
        *
        * @return {@code true} if this field is for an array or a sub-schema, {@code false} otherwise.
        */
+      @Override
       public boolean isComplexType()
       {
          return isComplexType;
@@ -361,7 +393,7 @@ public class ROS2MessageSchema implements MCAPSchema
       return "\t".repeat(indent);
    }
 
-   public static String mcapROS2MessageToString(MCAP.Message message, ROS2MessageSchema schema)
+   public static String mcapROS2MessageToString(MCAP.Message message, ROS2Schema schema)
    {
       CDRDeserializer cdr = new CDRDeserializer();
       cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
@@ -372,7 +404,7 @@ public class ROS2MessageSchema implements MCAPSchema
       return output;
    }
 
-   private static String mcapROS2MessageToString(CDRDeserializer cdr, ROS2MessageSchema schema, int indent)
+   private static String mcapROS2MessageToString(CDRDeserializer cdr, ROS2Schema schema, int indent)
    {
       StringBuilder out = new StringBuilder(schema.getName() + ":");
       for (ROS2SchemaField field : schema.fields)
@@ -384,7 +416,7 @@ public class ROS2MessageSchema implements MCAPSchema
       return out.toString();
    }
 
-   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, ROS2SchemaField field, ROS2MessageSchema schema, int indent)
+   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, ROS2SchemaField field, ROS2Schema schema, int indent)
    {
       if (schema == null && field.isComplexType())
       { // Dealing with a flat schema, skip this field.
@@ -417,7 +449,7 @@ public class ROS2MessageSchema implements MCAPSchema
 
          if (fieldValue == null)
          {
-            ROS2MessageSchema subSchema = schema.getSubSchemaMap() == null ? null : schema.getSubSchemaMap().get(field.getType());
+            ROS2Schema subSchema = schema.getSubSchemaMap() == null ? null : schema.getSubSchemaMap().get(field.getType());
             if (subSchema != null)
             {
                fieldValue = "\n" + indentString(indent + 1) + mcapROS2MessageToString(cdr, subSchema, indent + 1);

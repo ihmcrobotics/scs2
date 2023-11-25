@@ -70,7 +70,7 @@ public class MCAPFrameTransformManager
          {
             if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
             {
-               foxgloveFrameTransformSchema = ROS2MessageSchema.loadSchema(mcapSchema);
+               foxgloveFrameTransformSchema = ROS2Schema.loadSchema(mcapSchema);
             }
             else if (mcapSchema.encoding().equalsIgnoreCase("omgidl"))
             {

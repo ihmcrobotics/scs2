@@ -35,18 +35,7 @@ public class OMGIDLSchema implements MCAPSchema
       schema.subSchemaMap = new LinkedHashMap<>();
       schema.fields = new ArrayList<>();
 
-      String schemasBundledString = new String(data);
-
-      CharStream bytesAsChar = null;
-
-      try
-      {
-         bytesAsChar = CharStreams.fromStream(new ByteArrayInputStream(data));
-      }
-      catch (IOException e)
-      {
-         throw e;
-      }
+      CharStream bytesAsChar = CharStreams.fromStream(new ByteArrayInputStream(data));
 
       IDLLexer lexer = new IDLLexer(bytesAsChar);
       CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -74,21 +63,25 @@ public class OMGIDLSchema implements MCAPSchema
    {
    }
 
+   @Override
    public int getId()
    {
       return id;
    }
 
+   @Override
    public String getName()
    {
       return name;
    }
 
+   @Override
    public boolean isSchemaFlat()
    {
       return isSchemaFlat;
    }
 
+   @Override
    public List<OMGIDLSchemaField> getFields()
    {
       return fields;
@@ -105,6 +98,7 @@ public class OMGIDLSchema implements MCAPSchema
     *
     * @return the flattened schema.
     */
+   @Override
    public OMGIDLSchema flattenSchema()
    {
       return flattenSchema(this.subSchemaMap);
@@ -311,6 +305,7 @@ public class OMGIDLSchema implements MCAPSchema
          this.parent = null;
       }
 
+      @Override
       public OMGIDLSchemaField clone()
       {
          OMGIDLSchemaField clone = new OMGIDLSchemaField();
@@ -324,11 +319,13 @@ public class OMGIDLSchema implements MCAPSchema
          return clone;
       }
 
+      @Override
       public OMGIDLSchemaField getParent()
       {
          return parent;
       }
 
+      @Override
       public String getType()
       {
          return type;
@@ -339,6 +336,7 @@ public class OMGIDLSchema implements MCAPSchema
          this.type = type;
       }
 
+      @Override
       public String getName()
       {
          return name;
@@ -349,6 +347,7 @@ public class OMGIDLSchema implements MCAPSchema
          this.name = name;
       }
 
+      @Override
       public boolean isArray()
       {
          return isArray;
@@ -378,6 +377,7 @@ public class OMGIDLSchema implements MCAPSchema
        *
        * @return {@code true} if this field is for an array or a sub-schema, {@code false} otherwise.
        */
+      @Override
       public boolean isComplexType()
       {
          return isComplexType;
