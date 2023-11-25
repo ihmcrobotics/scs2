@@ -1,5 +1,9 @@
 package us.ihmc.scs2.session.mcap;
 
+import com.github.luben.zstd.ZstdDecompressCtx;
+import gnu.trove.map.hash.TLongObjectHashMap;
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
+
 import java.io.IOException;
 import java.io.Serial;
 import java.nio.ByteBuffer;
@@ -10,11 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.github.luben.zstd.ZstdDecompressCtx;
-
-import gnu.trove.map.hash.TLongObjectHashMap;
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
-
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary
  * message serialization. It is primarily intended for use in robotics applications, and works well
@@ -24,7 +23,7 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
  *
  * @see <a href="https://github.com/foxglove/mcap/tree/c1cc51d/docs/specification#readme">Source</a>
  */
-public class Mcap
+public class MCAP
 {
    /**
     * Stream object that this KaitaiStruct-based structure was parsed from.
@@ -81,7 +80,7 @@ public class Mcap
 
    private Record footer;
 
-   public Mcap(FileChannel fileChannel) throws IOException
+   public MCAP(FileChannel fileChannel) throws IOException
    {
       this.fileChannel = fileChannel;
       _read();

@@ -22,7 +22,7 @@ public class OMGIDLSchema implements MCAPSchema
    private boolean isSchemaFlat;
    private Map<String, OMGIDLSchema> subSchemaMap;
 
-   public static OMGIDLSchema loadSchema(Mcap.Schema mcapSchema) throws IOException
+   public static OMGIDLSchema loadSchema(MCAP.Schema mcapSchema) throws IOException
    {
       return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
    }
@@ -185,15 +185,15 @@ public class OMGIDLSchema implements MCAPSchema
             flatElementFields.add(elementField);
          }
          // Add all the elements to flatFields
-//         for (int i = 0; i < flatField.getMaxLength(); i++)
-//         {
-//            for (OMGIDLSchemaField flatElementField : flatElementFields)
-//            {
-//               OMGIDLSchemaField subField = flatElementField.clone();
-//               subField.name = subField.name + "[" + i + "]";
-//               flatFields.add(subField);
-//            }
-//         }
+         //         for (int i = 0; i < flatField.getMaxLength(); i++)
+         //         {
+         //            for (OMGIDLSchemaField flatElementField : flatElementFields)
+         //            {
+         //               OMGIDLSchemaField subField = flatElementField.clone();
+         //               subField.name = subField.name + "[" + i + "]";
+         //               flatFields.add(subField);
+         //            }
+         //         }
          flatFields.addAll(flatElementFields);
       }
       else

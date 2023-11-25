@@ -38,7 +38,7 @@ public class MCAPLogFileReader
    private final FileInputStream mcapFileInputStream;
    private final FileChannel mcapFileChannel;
    private final YoRegistry mcapRegistry;
-   private final Mcap mcap;
+   private final MCAP mcap;
    private final MCAPChunkManager chunkManager = new MCAPChunkManager();
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
@@ -55,7 +55,7 @@ public class MCAPLogFileReader
       mcapRegistry.addChild(propertiesRegistry);
       mcapFileInputStream = new FileInputStream(mcapFile);
       mcapFileChannel = mcapFileInputStream.getChannel();
-      mcap = new Mcap(mcapFileChannel);
+      mcap = new MCAP(mcapFileChannel);
       chunkManager.loadFromMCAP(mcap);
       initialTimestamp = chunkManager.firstMessageTimestamp();
       finalTimestamp = chunkManager.lastMessageTimestamp();
@@ -101,17 +101,17 @@ public class MCAPLogFileReader
       }
       catch (Exception e)
       {
-         Mcap.Schema schema = frameTransformManager.getMCAPSchema();
+         MCAP.Schema schema = frameTransformManager.getMCAPSchema();
          File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
          LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
          throw e;
       }
 
-      for (Mcap.Record record : mcap.records())
+      for (MCAP.Record record : mcap.records())
       {
-         if (record.op() != Mcap.Opcode.SCHEMA)
+         if (record.op() != MCAP.Opcode.SCHEMA)
             continue;
-         Mcap.Schema schema = (Mcap.Schema) record.body();
+         MCAP.Schema schema = (MCAP.Schema) record.body();
          if (schema.id() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
          try
@@ -144,11 +144,11 @@ public class MCAPLogFileReader
 
    public void loadChannels() throws IOException
    {
-      for (Mcap.Record record : mcap.records())
+      for (MCAP.Record record : mcap.records())
       {
-         if (record.op() != Mcap.Opcode.CHANNEL)
+         if (record.op() != MCAP.Opcode.CHANNEL)
             continue;
-         Mcap.Channel channel = (Mcap.Channel) record.body();
+         MCAP.Channel channel = (MCAP.Channel) record.body();
          if (channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
 
@@ -187,7 +187,7 @@ public class MCAPLogFileReader
          {
             exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, schema, e);
             e.printStackTrace();
-//            throw e;
+            //            throw e;
          }
       }
    }
@@ -235,11 +235,11 @@ public class MCAPLogFileReader
 
    public void readMessagesAtCurrentTimestamp() throws IOException
    {
-      List<Mcap.Message> messages = chunkManager.loadMessages(currentTimestamp.getValue());
+      List<MCAP.Message> messages = chunkManager.loadMessages(currentTimestamp.getValue());
       currentChunkStartTimestamp.set(chunkManager.getActiveChunkStartTimestamp());
       currentChunkEndTimestamp.set(chunkManager.getActiveChunkEndTimestamp());
 
-      for (Mcap.Message message : messages)
+      for (MCAP.Message message : messages)
       {
          try
          {
@@ -264,7 +264,7 @@ public class MCAPLogFileReader
       frameTransformManager.update();
    }
 
-   public File exportSchemaToFile(Path path, Mcap.Schema schema, Exception e) throws IOException
+   public File exportSchemaToFile(Path path, MCAP.Schema schema, Exception e) throws IOException
    {
       String filename;
       if (e != null)
@@ -281,7 +281,7 @@ public class MCAPLogFileReader
       return debugFile;
    }
 
-   private static void exportChannelToFile(Path path, Mcap.Channel channel, MCAPSchema schema, Exception e) throws IOException
+   private static void exportChannelToFile(Path path, MCAP.Channel channel, MCAPSchema schema, Exception e) throws IOException
    {
       File debugFile;
       if (e != null)
