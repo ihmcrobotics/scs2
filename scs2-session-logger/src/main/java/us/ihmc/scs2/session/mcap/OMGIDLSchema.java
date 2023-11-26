@@ -14,11 +14,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static us.ihmc.scs2.session.mcap.MCAPSchema.indent;
+import static us.ihmc.scs2.session.mcap.MCAPSchema.indentString;
+
 public class OMGIDLSchema implements MCAPSchema
 {
    private int id;
    private String name;
-   private List<OMGIDLSchemaField> fields;
+   private List<MCAPSchemaField> fields;
    private boolean isSchemaFlat;
    private Map<String, OMGIDLSchema> subSchemaMap;
 
@@ -82,7 +85,7 @@ public class OMGIDLSchema implements MCAPSchema
    }
 
    @Override
-   public List<OMGIDLSchemaField> getFields()
+   public List<MCAPSchemaField> getFields()
    {
       return fields;
    }
@@ -101,146 +104,56 @@ public class OMGIDLSchema implements MCAPSchema
    @Override
    public OMGIDLSchema flattenSchema()
    {
-      return flattenSchema(this.subSchemaMap);
-   }
-
-   public OMGIDLSchema flattenSchema(Map<String, OMGIDLSchema> subSchemaMap)
-   {
       OMGIDLSchema flatSchema = new OMGIDLSchema();
       flatSchema.id = this.id;
       flatSchema.name = this.name;
       flatSchema.isSchemaFlat = true;
       flatSchema.fields = new ArrayList<>();
 
-      for (OMGIDLSchemaField field : this.getFields())
+      for (MCAPSchemaField field : this.getFields())
       {
-         flatSchema.fields.addAll(this.flattenField(field, subSchemaMap));
+         flatSchema.fields.addAll(this.flattenField(field));
       }
 
       return flatSchema;
    }
 
-   public List<OMGIDLSchemaField> flattenField(OMGIDLSchemaField field)
+   public List<MCAPSchemaField> flattenField(MCAPSchemaField field)
    {
-      return flattenField(field, this.subSchemaMap);
-   }
+      MCAPSchemaField flatField = field.clone();
 
-   public List<OMGIDLSchemaField> flattenField(OMGIDLSchemaField field, Map<String, OMGIDLSchema> subSchemaMap)
-   {
-      //TODO: (AM) Check correctness and refactor, super ugly code follows
-      //       1. Note that this will not flatten vectors or arrays of types.
-      //       As such, nested arrays and sequences are not supported for now
-      //       2. This method doesn't modify the original fields or schemas, and as such
-      //       has a bunch of copy operations, this is not ideal, but keeps flattenSchema stateless
-
-      OMGIDLSchemaField flatField = field.clone();
-
-      //TODO: (AM) check that isComplexType is set properly for every non-flat field
-      if (!field.isComplexType)
+      if (!field.isComplexType())
       {
          return Collections.singletonList(flatField);
       }
-      List<OMGIDLSchemaField> flatFields = new ArrayList<>();
-      //      flatFields.add(flatField);
 
-      List<OMGIDLSchemaField> flatElementFields = new ArrayList<>();
-      if (flatField.isArray() || flatField.isVector())
+      List<MCAPSchemaField> flatFields = new ArrayList<>();
+      flatFields.add(flatField);
+
+      if (flatField.isArray())
       {
-         flatFields.add(flatField);
-         String baseType = flatField.getType();
-         if (flatField.isVector())
-            baseType = baseType.split("[<,>]")[1];
-
-         // This assumes that we have access to the highest level subSchemaMap,
-         // if a type is not found in this map, it will be assumed to be a primitive type
-         if (subSchemaMap.containsKey(baseType))
+         for (int i = 0; i < flatField.getMaxLength(); i++)
          {
-            // Array/vector of structs, recursively flatten
-            OMGIDLSchema subSchema = subSchemaMap.get(baseType);
-            for (OMGIDLSchemaField subField : subSchema.getFields())
-            {
-               OMGIDLSchemaField flatSubField = subField.clone();
-               flatSubField.parent = flatField;
-               flatSubField.name = flatField.name + "-" + subField.name;
-               flatElementFields.addAll(this.flattenField(flatSubField, subSchemaMap).stream().filter(f -> !f.isComplexType()).toList());
-            }
+            MCAPSchemaField subField = new MCAPSchemaField();
+            subField.setParent(flatField);
+            subField.setType(flatField.getType());
+            subField.setName(flatField.getName() + "[" + i + "]");
+            subField.setArray(false);
+            subField.setVector(false);
+            subField.setMaxLength(-1);
+            flatFields.add(subField);
          }
-         else
-         {
-            //Array/vector of primitive types;
-            OMGIDLSchemaField elementField = new OMGIDLSchemaField();
-            elementField.parent = flatField;
-            elementField.type = baseType;
-            elementField.name = flatField.name;
-            elementField.isArray = false;
-            elementField.isVector = false;
-            elementField.isComplexType = false;
-            elementField.maxLength = -1;
-            flatElementFields.add(elementField);
-         }
-         // Add all the elements to flatFields
-         //         for (int i = 0; i < flatField.getMaxLength(); i++)
-         //         {
-         //            for (OMGIDLSchemaField flatElementField : flatElementFields)
-         //            {
-         //               OMGIDLSchemaField subField = flatElementField.clone();
-         //               subField.name = subField.name + "[" + i + "]";
-         //               flatFields.add(subField);
-         //            }
-         //         }
-         flatFields.addAll(flatElementFields);
       }
       else
       {
-         OMGIDLSchema subSchema = subSchemaMap.get(flatField.getName());
+         OMGIDLSchema subSchema = subSchemaMap.get(flatField.getType());
          if (subSchema != null)
          {
-            // we are entering a struct definition
-            for (OMGIDLSchemaField subField : subSchema.getFields())
+            for (MCAPSchemaField subField : subSchema.fields)
             {
-               OMGIDLSchemaField childSubField = subField.clone();
-               childSubField.parent = flatField;
-               if (subSchemaMap.containsKey(childSubField.getType()) || childSubField.isArray() || childSubField.isVector())
-               {
-                  // if this field is a struct of another type, then flatten recursively
-                  childSubField.parent = flatField;
-                  flatFields.addAll(this.flattenField(childSubField));
-               }
-               else
-               {
-                  // if this field is a simple element of a primitive type, then add it to flatFields
-                  OMGIDLSchemaField flatSubField = subField.clone();
-                  flatSubField.parent = flatField;
-                  flatFields.add(flatSubField);
-               }
-            }
-         }
-         else
-         {
-            // entering a struct type instantiation
-            flatFields.add(flatField);
-            subSchema = subSchemaMap.get(flatField.getType());
-            if (subSchema != null)
-            {
-               for (OMGIDLSchemaField subField : subSchema.getFields())
-               {
-                  OMGIDLSchemaField childSubField = subField.clone();
-                  childSubField.parent = flatField;
-                  childSubField.name = flatField.name + "-" + subField.name;
-                  if (subSchemaMap.containsKey(childSubField.getType()))
-                  {
-                     // if this field is a struct of another type, then flatten recursively
-                     flatFields.addAll(this.flattenField(childSubField));
-                  }
-                  else
-                  {
-                     // if this field is a base type, then add it to flatfields
-                     OMGIDLSchemaField flatSubField = subField.clone();
-                     flatSubField.parent = flatField;
-                     flatSubField.name = flatField.getName() + "-" + subField.getName();
-                     flatFields.add(flatSubField);
-                  }
-               }
+               subField.setParent(flatField);
+               subField.setName(flatField.getName() + "." + subField.getName());
+               flatFields.add(subField);
             }
          }
       }
@@ -266,158 +179,5 @@ public class OMGIDLSchema implements MCAPSchema
                                                                                                                                       .toString(indent + 2)
                                                                                                                                       .replace("^(\t*)", ""));
       return indent(out, indent);
-   }
-
-   public static class OMGIDLSchemaField implements MCAPSchemaField
-   {
-      /**
-       * The parent is used when flattening the schema.
-       */
-      private OMGIDLSchemaField parent;
-      private String type;
-      private String name;
-      private boolean isArray;
-      /**
-       * For non array fields, maxLength should be <= 0
-       */
-      private int maxLength;
-      /**
-       * This is {@code  true} whenever this field is for an array, sequence, or struct.
-       */
-      private boolean isComplexType;
-      private boolean isVector;
-
-      private OMGIDLSchemaField()
-      {
-
-      }
-
-      protected OMGIDLSchemaField(String type, String name, int maxLength, boolean isSequence, boolean isComplexType)
-      {
-         this.type = Objects.requireNonNull(type, "The type of a field cannot be null.");
-         this.name = Objects.requireNonNull(name, "The name of a field cannot be null.");
-         this.maxLength = maxLength;
-         this.isArray = maxLength > -1 && !isSequence;
-         this.isVector = isSequence;
-         this.isComplexType = isComplexType;
-      }
-
-      @Override
-      public OMGIDLSchemaField clone()
-      {
-         OMGIDLSchemaField clone = new OMGIDLSchemaField();
-         clone.parent = parent;
-         clone.type = type;
-         clone.name = name;
-         clone.isArray = isArray;
-         clone.maxLength = maxLength;
-         clone.isComplexType = isComplexType;
-         clone.isVector = isVector;
-         return clone;
-      }
-
-      @Override
-      public OMGIDLSchemaField getParent()
-      {
-         return parent;
-      }
-
-      @Override
-      public String getType()
-      {
-         return type;
-      }
-
-      public void setType(String type)
-      {
-         this.type = type;
-      }
-
-      @Override
-      public String getName()
-      {
-         return name;
-      }
-
-      public void setName(String name)
-      {
-         this.name = name;
-      }
-
-      @Override
-      public boolean isArray()
-      {
-         return isArray;
-      }
-
-      public void setArray(boolean isArray)
-      {
-         this.isArray = isArray;
-      }
-
-      public int getMaxLength()
-      {
-         return maxLength;
-      }
-
-      public void setMaxLength(int maxLength)
-      {
-         this.maxLength = maxLength;
-      }
-
-      /**
-       * This is {@code  true} whenever this field is for an array or a sub-schema.
-       * <p>
-       * If this field is belongs to a flat schema, the subsequent fields will be the elements of the array or the fields of the sub-schema, such that this
-       * field can be skipped when deseriliazing a message.
-       * </p>
-       *
-       * @return {@code true} if this field is for an array or a sub-schema, {@code false} otherwise.
-       */
-      @Override
-      public boolean isComplexType()
-      {
-         return isComplexType;
-      }
-
-      @Override
-      public boolean isVector()
-      {
-         return this.isVector;
-      }
-
-      @Override
-      public String toString()
-      {
-         return toString(0);
-      }
-
-      public String toString(int indent)
-      {
-         String out = getClass().getSimpleName() + ":";
-         out += "\n\t-type=" + type;
-         out += "\n\t-name=" + name;
-         out += "\n\t-isArray=" + isArray;
-         out += "\n\t-isVector=" + isVector;
-         out += "\n\t-isComplexType=" + isComplexType;
-         if (isArray || isVector)
-            out += "\n\t-maxLength=" + maxLength;
-         out += "\n\t-parent=" + (parent == null ? "null" : parent.name);
-         out += "\n";
-         return indent(out, indent);
-      }
-   }
-
-   private static String indent(String stringToIndent, int indent)
-   {
-      if (indent <= 0)
-         return stringToIndent;
-      String indentStr = indentString(indent);
-      return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
-   }
-
-   private static String indentString(int indent)
-   {
-      return "\t".repeat(indent);
    }
 }
