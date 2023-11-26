@@ -40,17 +40,23 @@ public class OMGIDLSchemaTest
    {
       String schemaName = "simple_idl_with_structs";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
-      OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
+      MCAPSchema schema = OMGIDLSchemaParser.loadSchema(schemaName, 0, is.readAllBytes());
 
       // Anything with structures in it is not flat
       assertFalse(schema.isSchemaFlat());
-      assertEquals(2, schema.getFields().size());
-      assertEquals("double_const", schema.getFields().get(0).getName());
-      assertEquals("simple_idl_with_structs", schema.getFields().get(1).getName());
+      assertEquals(1, schema.getStaticFields().size());
+      assertEquals(5, schema.getFields().size());
+      assertEquals("double_const", schema.getStaticFields().get(0).getName());
+      assertEquals("6.9", schema.getStaticFields().get(0).getDefaultValue());
+      assertEquals("float_var", schema.getFields().get(0).getName());
+      assertEquals("boolean_var", schema.getFields().get(1).getName());
+      assertEquals("long_array_var", schema.getFields().get(2).getName());
+      assertEquals("struct_1_var", schema.getFields().get(3).getName());
+      assertEquals("long_double_var", schema.getFields().get(4).getName());
 
       // Check const field
-      assertEquals("double_const", schema.getFields().get(0).getName());
-      assertEquals("const double", schema.getFields().get(0).getType());
+      assertEquals("double_const", schema.getStaticFields().get(0).getName());
+      assertEquals("double", schema.getStaticFields().get(0).getType());
       assertFalse(schema.getFields().get(0).isComplexType());
       assertFalse(schema.getFields().get(0).isArray());
       assertEquals(-1, schema.getFields().get(0).getMaxLength());
@@ -58,14 +64,12 @@ public class OMGIDLSchemaTest
 
       // Check that sub-schemas for structures exist
       assertTrue(schema.getSubSchemaMap().containsKey("struct_1"));
-      assertTrue(schema.getSubSchemaMap().containsKey("simple_idl_with_structs"));
 
       // Check fields in the subschemas
       //TODO: (AM) Check isVector for everything
-      OMGIDLSchema expectedSubSchema = schema.getSubSchemaMap().get("struct_1");
+      MCAPSchema expectedSubSchema = schema.getSubSchemaMap().get("struct_1");
       assertTrue(expectedSubSchema.isSchemaFlat());
       assertEquals(6, expectedSubSchema.getFields().size());
-      assertEquals(1, expectedSubSchema.getId());
 
       // short signed_short_var;
       assertEquals("signed_short_var", expectedSubSchema.getFields().get(0).getName());
@@ -115,63 +119,61 @@ public class OMGIDLSchemaTest
 
       // sequence<double, 27> sequence_var;
       assertEquals("sequence_var", expectedSubSchema.getFields().get(5).getName());
-      assertEquals("sequence<double,27>", expectedSubSchema.getFields().get(5).getType());
+      assertEquals("double", expectedSubSchema.getFields().get(5).getType());
       assertTrue(expectedSubSchema.getFields().get(5).isComplexType());
       assertFalse(expectedSubSchema.getFields().get(5).isArray());
       assertTrue(expectedSubSchema.getFields().get(5).isVector());
       assertEquals(27, expectedSubSchema.getFields().get(5).getMaxLength());
       assertNull(expectedSubSchema.getFields().get(5).getParent());
 
-      // Check the second sub-schema
-      expectedSubSchema = schema.getSubSchemaMap().get("simple_idl_with_structs");
-      assertTrue(expectedSubSchema.isSchemaFlat());
-      assertEquals(5, expectedSubSchema.getFields().size());
-      assertEquals(2, expectedSubSchema.getId());
+      // Check the main schema
+      assertFalse(schema.isSchemaFlat());
+      assertEquals(5, schema.getFields().size());
 
       // float float_var;
-      assertEquals("float_var", expectedSubSchema.getFields().get(0).getName());
-      assertEquals("float", expectedSubSchema.getFields().get(0).getType());
-      assertFalse(expectedSubSchema.getFields().get(0).isComplexType());
-      assertFalse(expectedSubSchema.getFields().get(0).isArray());
-      assertFalse(expectedSubSchema.getFields().get(0).isVector());
-      assertEquals(-1, expectedSubSchema.getFields().get(0).getMaxLength());
-      assertNull(expectedSubSchema.getFields().get(0).getParent());
+      assertEquals("float_var", schema.getFields().get(0).getName());
+      assertEquals("float", schema.getFields().get(0).getType());
+      assertFalse(schema.getFields().get(0).isComplexType());
+      assertFalse(schema.getFields().get(0).isArray());
+      assertFalse(schema.getFields().get(0).isVector());
+      assertEquals(-1, schema.getFields().get(0).getMaxLength());
+      assertNull(schema.getFields().get(0).getParent());
 
       // boolean boolean_var;
-      assertEquals("boolean_var", expectedSubSchema.getFields().get(1).getName());
-      assertEquals("boolean", expectedSubSchema.getFields().get(1).getType());
-      assertFalse(expectedSubSchema.getFields().get(1).isComplexType());
-      assertFalse(expectedSubSchema.getFields().get(1).isArray());
-      assertFalse(expectedSubSchema.getFields().get(1).isVector());
-      assertEquals(-1, expectedSubSchema.getFields().get(1).getMaxLength());
-      assertNull(expectedSubSchema.getFields().get(1).getParent());
+      assertEquals("boolean_var", schema.getFields().get(1).getName());
+      assertEquals("boolean", schema.getFields().get(1).getType());
+      assertFalse(schema.getFields().get(1).isComplexType());
+      assertFalse(schema.getFields().get(1).isArray());
+      assertFalse(schema.getFields().get(1).isVector());
+      assertEquals(-1, schema.getFields().get(1).getMaxLength());
+      assertNull(schema.getFields().get(1).getParent());
 
       // long long_array_var[13];
-      assertEquals("long_array_var", expectedSubSchema.getFields().get(2).getName());
-      assertEquals("long", expectedSubSchema.getFields().get(2).getType());
-      assertTrue(expectedSubSchema.getFields().get(2).isComplexType());
-      assertTrue(expectedSubSchema.getFields().get(2).isArray());
-      assertFalse(expectedSubSchema.getFields().get(2).isVector());
-      assertEquals(13, expectedSubSchema.getFields().get(2).getMaxLength());
-      assertNull(expectedSubSchema.getFields().get(2).getParent());
+      assertEquals("long_array_var", schema.getFields().get(2).getName());
+      assertEquals("long", schema.getFields().get(2).getType());
+      assertTrue(schema.getFields().get(2).isComplexType());
+      assertTrue(schema.getFields().get(2).isArray());
+      assertFalse(schema.getFields().get(2).isVector());
+      assertEquals(13, schema.getFields().get(2).getMaxLength());
+      assertNull(schema.getFields().get(2).getParent());
 
       // struct_1 strut_1_var;
-      assertEquals("struct_1_var", expectedSubSchema.getFields().get(3).getName());
-      assertEquals("struct_1", expectedSubSchema.getFields().get(3).getType());
-      assertTrue(expectedSubSchema.getFields().get(3).isComplexType());
-      assertFalse(expectedSubSchema.getFields().get(3).isArray());
-      assertFalse(expectedSubSchema.getFields().get(3).isVector());
-      assertEquals(-1, expectedSubSchema.getFields().get(3).getMaxLength());
-      assertNull(expectedSubSchema.getFields().get(3).getParent());
+      assertEquals("struct_1_var", schema.getFields().get(3).getName());
+      assertEquals("struct_1", schema.getFields().get(3).getType());
+      assertTrue(schema.getFields().get(3).isComplexType());
+      assertFalse(schema.getFields().get(3).isArray());
+      assertFalse(schema.getFields().get(3).isVector());
+      assertEquals(-1, schema.getFields().get(3).getMaxLength());
+      assertNull(schema.getFields().get(3).getParent());
 
       // long double long_double_var;
-      assertEquals("long_double_var", expectedSubSchema.getFields().get(4).getName());
-      assertEquals("longdouble", expectedSubSchema.getFields().get(4).getType());
-      assertFalse(expectedSubSchema.getFields().get(4).isComplexType());
-      assertFalse(expectedSubSchema.getFields().get(4).isArray());
-      assertFalse(expectedSubSchema.getFields().get(4).isVector());
-      assertEquals(-1, expectedSubSchema.getFields().get(4).getMaxLength());
-      assertNull(expectedSubSchema.getFields().get(4).getParent());
+      assertEquals("long_double_var", schema.getFields().get(4).getName());
+      assertEquals("longdouble", schema.getFields().get(4).getType());
+      assertFalse(schema.getFields().get(4).isComplexType());
+      assertFalse(schema.getFields().get(4).isArray());
+      assertFalse(schema.getFields().get(4).isVector());
+      assertEquals(-1, schema.getFields().get(4).getMaxLength());
+      assertNull(schema.getFields().get(4).getParent());
    }
 
    @Disabled
@@ -181,8 +183,8 @@ public class OMGIDLSchemaTest
       //TODO: (AM) implement test
       String schemaName = "NavigationAppHealth";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
-      OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
-      OMGIDLSchema flatSchema = schema.flattenSchema();
+      MCAPSchema schema = OMGIDLSchemaParser.loadSchema(schemaName, 0, is.readAllBytes());
+      MCAPSchema flatSchema = schema.flattenSchema();
       //      System.out.println(schema.toString());
       System.out.println(flatSchema);
    }
@@ -193,14 +195,14 @@ public class OMGIDLSchemaTest
    {
       String schemaName = "flatten_array_test";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
-      OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
-      //      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("a");
+      MCAPSchema schema = OMGIDLSchemaParser.loadSchema(schemaName, 0, is.readAllBytes());
+      //      OMGIDLSchemaParser subSchema = schema.getSubSchemaMap().get("a");
       MCAPSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(0);
       List<MCAPSchemaField> flatFields = schema.flattenField(field);
       //      System.out.println(subSchema.flattenSchema(schema.getSubSchemaMap()));
       System.out.println(flatFields);
 
-      //      OMGIDLSchema flatSchema = schema.flattenSchema();
+      //      OMGIDLSchemaParser flatSchema = schema.flattenSchema();
       //      System.out.println(schema.flattenSchema());
    }
 }

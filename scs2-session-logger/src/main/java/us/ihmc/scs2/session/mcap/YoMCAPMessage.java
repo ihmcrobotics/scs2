@@ -6,16 +6,13 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public abstract class YoMCAPMessage
+public final class YoMCAPMessage
 {
    private final MCAPSchema schema;
    private final int channelId;
@@ -26,7 +23,81 @@ public abstract class YoMCAPMessage
     */
    private final CDRDeserializer cdr = new CDRDeserializer();
 
-   public YoMCAPMessage(MCAPSchema schema, int channelId, YoRegistry registry, Consumer<CDRDeserializer> deserializer)
+   public static YoMCAPMessage newMessage(MCAPSchema schema, int channelId, YoRegistry registry)
+   {
+      return newMessage(schema, channelId, registry, schema.getSubSchemaMap());
+   }
+
+   private static YoMCAPMessage newMessage(MCAPSchema schema, int channelId, YoRegistry messageRegistry, Map<String, MCAPSchema> subSchemaMap)
+   {
+      Objects.requireNonNull(schema, "Schema cannot be null. name = " + messageRegistry.getName());
+
+      List<Consumer<CDRDeserializer>> deserializers = new ArrayList<>();
+
+      for (MCAPSchemaField field : schema.getFields())
+      {
+         String fieldName = field.getName();
+
+         if (field.isVector() && field.isArray())
+            throw new IllegalArgumentException("Field cannot be both a vector and an array: " + field + ", registry: " + messageRegistry);
+
+         boolean isArrayOrVector = field.isArray() || field.isVector();
+
+         Consumer<CDRDeserializer> deserializer = null;
+         if (!isArrayOrVector)
+            deserializer = createYoVariable(field, messageRegistry);
+         else
+            deserializer = createYoVariableArray(field, messageRegistry);
+
+         if (deserializer != null)
+         {
+            deserializers.add(deserializer);
+            continue;
+         }
+         else if (!field.isComplexType())
+         {
+            throw new IllegalStateException("Could not deserialize non-complex field of type: %s".formatted(field.getType()));
+         }
+
+         MCAPSchema subSchema = subSchemaMap.get(field.getType());
+
+         if (subSchema == null)
+            throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
+
+         if (!isArrayOrVector)
+         {
+            YoRegistry fieldRegistry = new YoRegistry(fieldName);
+            messageRegistry.addChild(fieldRegistry);
+            YoMCAPMessage subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
+            deserializers.add(subMessage.deserializer);
+         }
+         else
+         {
+            BiFunction<String, YoRegistry, YoMCAPMessage> elementBuilder = (name, yoRegistry) ->
+            {
+               YoMCAPMessage newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
+               messageRegistry.addChild(newElement.getRegistry());
+               return newElement;
+            };
+            createFieldArray(YoMCAPMessage.class,
+                             elementBuilder,
+                             YoMCAPMessage::deserialize,
+                             YoMCAPMessage::clearData,
+                             fieldName,
+                             field.isArray(),
+                             field.getMaxLength(),
+                             messageRegistry);
+         }
+      }
+
+      return new YoMCAPMessage(schema, channelId, messageRegistry, cdr ->
+      {
+         for (Consumer<CDRDeserializer> deserializer : deserializers)
+            deserializer.accept(cdr);
+      });
+   }
+
+   private YoMCAPMessage(MCAPSchema schema, int channelId, YoRegistry registry, Consumer<CDRDeserializer> deserializer)
    {
       this.schema = schema;
       this.channelId = channelId;

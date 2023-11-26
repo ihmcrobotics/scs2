@@ -1,33 +1,61 @@
 package us.ihmc.scs2.session.mcap;
 
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.scs2.session.mcap.MCAP.Schema;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface used to represent a Java interpreter of a MCAP schema.
- * <p>
- * Two implementations are provided:
- * <ul>
- *    <li>{@link ROS2Schema} is for the ROS2 message schema, encoding is "ros2msg".
- *    <li>{@link OMGIDLSchema} is for the OMG IDL schema, encoding is "omgidl".
- * </ul>
  */
-public interface MCAPSchema
+public class MCAPSchema
 {
+   private int id;
+   private String name;
+   private List<MCAPSchemaField> staticFields = new ArrayList<>();
+   private List<MCAPSchemaField> fields;
+   private Map<String, MCAPSchema> subSchemaMap;
+
+   protected MCAPSchema(String name, int id)
+   {
+      this(name, id, new ArrayList<>(), null);
+   }
+
+   protected MCAPSchema(String name, int id, List<MCAPSchemaField> fields)
+   {
+      this(name, id, fields, null);
+   }
+
+   protected MCAPSchema(String name, int id, List<MCAPSchemaField> fields, Map<String, MCAPSchema> subSchemaMap)
+   {
+      this.name = name;
+      this.id = id;
+      this.subSchemaMap = subSchemaMap;
+      this.fields = fields;
+   }
+
    /**
     * The ID of the schema as defined in the MCAP schema file, {@link Schema#id()}.
     *
     * @return the ID of the schema.
     */
-   int getId();
+   public int getId()
+   {
+      return id;
+   }
 
    /**
     * The name of the schema as defined in the MCAP schema file, {@link Schema#name()}.
     *
     * @return the name of the schema.
     */
-   String getName();
+   public String getName()
+   {
+      return name;
+   }
 
    /**
     * The fields declared in the schema.
@@ -37,22 +65,185 @@ public interface MCAPSchema
     *
     * @return the fields of the schema.
     */
-   List<? extends MCAPSchemaField> getFields();
+   public List<MCAPSchemaField> getFields()
+   {
+      return fields;
+   }
 
-   /**
-    * Flattens this schema into a new schema where all the fields are primitive types.
-    *
-    * @param <T> the type of the flattened schema.
-    * @return the flattened schema.
-    */
-   MCAPSchema flattenSchema();
+   public Map<String, MCAPSchema> getSubSchemaMap()
+   {
+      return subSchemaMap;
+   }
 
    /**
     * Indicates whether this schema is already flat.
     *
     * @return {@code true} if this schema is already flat, {@code false} otherwise.
     */
-   boolean isSchemaFlat();
+   public boolean isSchemaFlat()
+   {
+      return subSchemaMap == null || subSchemaMap.isEmpty();
+   }
+
+   public List<MCAPSchemaField> getStaticFields()
+   {
+      return staticFields;
+   }
+
+   /**
+    * Returns a schema equivalent to this one but with all the complex types flattened, i.e. all the fields that are arrays or sub-schemas are expanded into
+    * multiple fields.
+    *
+    * @return the flattened schema.
+    */
+   public MCAPSchema flattenSchema()
+   {
+      List<MCAPSchemaField> flattenedFields = new ArrayList<>();
+
+      for (MCAPSchemaField field : fields)
+      {
+         flattenedFields.addAll(flattenField(field));
+      }
+
+      MCAPSchema mcapSchema = new MCAPSchema(name, id, flattenedFields, null);
+      mcapSchema.getStaticFields().addAll(staticFields);
+      return mcapSchema;
+   }
+
+   List<MCAPSchemaField> flattenField(MCAPSchemaField field)
+   {
+      MCAPSchemaField flatField = field.clone();
+
+      if (!field.isComplexType())
+      {
+         return Collections.singletonList(flatField);
+      }
+
+      List<MCAPSchemaField> flatFields = new ArrayList<>();
+      flatFields.add(flatField);
+
+      if (flatField.isArray())
+      {
+         for (int i = 0; i < flatField.getMaxLength(); i++)
+         {
+            MCAPSchemaField subField = new MCAPSchemaField();
+            subField.setParent(flatField);
+            subField.setType(flatField.getType());
+            subField.setName(flatField.getName() + "[" + i + "]");
+            subField.setArray(false);
+            subField.setVector(false);
+            subField.setMaxLength(-1);
+            flatFields.add(subField);
+         }
+      }
+      else
+      {
+         MCAPSchema subSchema = subSchemaMap.get(flatField.getType());
+         if (subSchema != null)
+         {
+            for (MCAPSchemaField subField : subSchema.fields)
+            {
+               subField.setParent(flatField);
+               subField.setName(flatField.getName() + "." + subField.getName());
+               flatFields.add(subField);
+            }
+         }
+      }
+      return flatFields;
+   }
+
+   @Override
+   public String toString()
+   {
+      return toString(0);
+   }
+
+   public String toString(int indent)
+   {
+      String out = getClass().getSimpleName() + ":";
+      out += "\n\t-name=" + name;
+      if (fields != null)
+         out += "\n\t-fields=\n" + EuclidCoreIOTools.getCollectionString("\n", fields, f -> f.toString(indent + 2));
+      if (subSchemaMap != null)
+         out += "\n\t-subSchemaMap=\n" + indentString(indent + 2) + EuclidCoreIOTools.getCollectionString("\n" + indentString(indent + 2),
+                                                                                                          subSchemaMap.entrySet(),
+                                                                                                          e -> e.getKey() + "->\n" + e.getValue()
+                                                                                                                                      .toString(indent + 3)
+                                                                                                                                      .replace("^(\t*)", ""));
+      return indent(out, indent);
+   }
+
+   public static String mcapMCAPMessageToString(MCAP.Message message, MCAPSchema schema)
+   {
+      CDRDeserializer cdr = new CDRDeserializer();
+      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
+
+      String output = mcapMCAPMessageToString(cdr, schema, 0);
+
+      cdr.finalize(true);
+      return output;
+   }
+
+   private static String mcapMCAPMessageToString(CDRDeserializer cdr, MCAPSchema schema, int indent)
+   {
+      StringBuilder out = new StringBuilder(schema.getName() + ":");
+      for (MCAPSchemaField field : schema.getFields())
+      {
+         String fieldToString = mcapMCAPMessageFieldToString(cdr, field, schema, indent + 1);
+         if (fieldToString != null)
+            out.append(fieldToString);
+      }
+      return out.toString();
+   }
+
+   private static String mcapMCAPMessageFieldToString(CDRDeserializer cdr, MCAPSchemaField field, MCAPSchema schema, int indent)
+   {
+      if (schema == null && field.isComplexType())
+      { // Dealing with a flat schema, skip this field.
+         return null;
+      }
+
+      StringBuilder out = new StringBuilder("\n" + indentString(indent) + field.getName() + ": ");
+
+      if (field.isArray())
+      {
+         out.append("[");
+         for (int i = 0; i < field.getMaxLength(); i++)
+         {
+            out.append("\n").append(indentString(indent + 1)).append(i).append(": ");
+            out.append(mcapMCAPMessageFieldToString(cdr, field, schema, indent + 2));
+         }
+         out.append("\n").append(indentString(indent)).append("]");
+      }
+      else
+      {
+         String fieldValue = null;
+         try
+         {
+            fieldValue = cdr.readTypeAsString(CDRDeserializer.Type.parseType(field.getType()), field.getMaxLength());
+         }
+         catch (IllegalArgumentException e)
+         {
+            // Ignore
+         }
+
+         if (fieldValue == null)
+         {
+            MCAPSchema subSchema = schema.getSubSchemaMap() == null ? null : schema.getSubSchemaMap().get(field.getType());
+            if (subSchema != null)
+            {
+               fieldValue = "\n" + indentString(indent + 1) + mcapMCAPMessageToString(cdr, subSchema, indent + 1);
+            }
+            else if (!schema.isSchemaFlat())
+            {
+               fieldValue = "Unknown type: " + field.getType();
+            }
+         }
+         out.append(fieldValue);
+      }
+
+      return out.toString();
+   }
 
    /**
     * Interface used to represent a field of a MCAP schema.
@@ -60,7 +251,7 @@ public interface MCAPSchema
     * A field can be a primitive type, an array, a vector, or a sub-schema.
     * </p>
     */
-   final class MCAPSchemaField
+   public static final class MCAPSchemaField
    {
       private MCAPSchemaField parent;
       private String name;
@@ -69,6 +260,8 @@ public interface MCAPSchema
       private boolean isVector;
       private int maxLength;
       private boolean isComplexType;
+      // Used for static fields
+      private String defaultValue;
 
       public MCAPSchemaField()
       {
@@ -110,6 +303,11 @@ public interface MCAPSchema
          this.type = type;
       }
 
+      public void setParent(MCAPSchemaField parent)
+      {
+         this.parent = parent;
+      }
+
       public void setArray(boolean array)
       {
          isArray = array;
@@ -130,9 +328,17 @@ public interface MCAPSchema
          isComplexType = complexType;
       }
 
-      public void setParent(MCAPSchemaField parent)
+      /**
+       * The default value of the field as defined in the MCAP schema.
+       * <p>
+       * This is only used for static fields.
+       * </p>
+       *
+       * @param defaultValue the default value of the field.
+       */
+      public void setDefaultValue(String defaultValue)
       {
-         this.parent = parent;
+         this.defaultValue = defaultValue;
       }
 
       /**
@@ -190,6 +396,11 @@ public interface MCAPSchema
          return maxLength;
       }
 
+      public String getDefaultValue()
+      {
+         return defaultValue;
+      }
+
       /**
        * Whether this field is a complex type such as an array, a vector, or a sub-schema.
        *
@@ -216,7 +427,7 @@ public interface MCAPSchema
       }
    }
 
-   static String indent(String stringToIndent, int indent)
+   public static String indent(String stringToIndent, int indent)
    {
       if (indent <= 0)
          return stringToIndent;
@@ -224,7 +435,7 @@ public interface MCAPSchema
       return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
    }
 
-   static String indentString(int indent)
+   public static String indentString(int indent)
    {
       return "\t".repeat(indent);
    }
