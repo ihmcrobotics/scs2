@@ -246,6 +246,10 @@ public class BulletTools
          throw new UnsupportedOperationException("Unsupported shape: " + collisionShapeDefinition.getGeometryDefinition().getClass().getSimpleName());
       }
 
+      // For some shapes the default margin seems to be larger,
+      // so let's set them all to 1 mm on creation
+      btCollisionShape.setMargin(0.001);
+
       return btCollisionShape;
    }
 
