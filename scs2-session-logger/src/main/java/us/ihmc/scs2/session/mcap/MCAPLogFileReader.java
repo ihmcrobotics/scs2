@@ -118,11 +118,11 @@ public class MCAPLogFileReader
          {
             if (schema.encoding().equalsIgnoreCase("ros2msg"))
             {
-               schemas.put(schema.id(), ROS2Schema.loadSchema(schema));
+               schemas.put(schema.id(), ROS2SchemaParser.loadSchema(schema));
             }
             else if (schema.encoding().equalsIgnoreCase("omgidl"))
             {
-               schemas.put(schema.id(), OMGIDLSchema.loadSchema(schema));
+               schemas.put(schema.id(), OMGIDLSchemaParser.loadSchema(schema));
             }
             else
             {
@@ -173,15 +173,7 @@ public class MCAPLogFileReader
             }
             YoNamespace namespace = new YoNamespace(topic).prepend(mcapRegistry.getNamespace());
             YoRegistry channelRegistry = SharedMemoryTools.ensurePathExists(mcapRegistry, namespace);
-
-            if (schema instanceof ROS2Schema)
-            {
-               yoMessageMap.put(channel.id(), YoROS2Message.newMessage((ROS2Schema) schema, channel.id(), channelRegistry));
-            }
-            else if (schema instanceof OMGIDLSchema)
-            {
-               yoMessageMap.put(channel.id(), YoOMGIDLMessage.newMessage((OMGIDLSchema) schema, channel.id(), channelRegistry));
-            }
+            yoMessageMap.put(channel.id(), YoMCAPMessage.newMessage(schema, channel.id(), channelRegistry));
          }
          catch (Exception e)
          {
