@@ -71,7 +71,7 @@ public class ROS2SchemaParser
 
          for (MCAPSchema subSchema : subSchemaMap.values())
          {
-            for (MCAPSchemaField subField : fields)
+            for (MCAPSchemaField subField : subSchema.getFields())
             {
                if (subSchemaMap.containsKey(subField.getType()))
                {
