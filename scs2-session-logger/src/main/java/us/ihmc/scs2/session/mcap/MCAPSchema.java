@@ -81,7 +81,7 @@ public interface MCAPSchema
        *
        * @return the parent schema of the field.
        */
-      <T extends MCAPSchemaField> T getParent();
+      MCAPSchemaField getParent();
 
       /**
        * Whether this field is an array.
