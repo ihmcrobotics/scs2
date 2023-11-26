@@ -5,6 +5,9 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static us.ihmc.scs2.session.mcap.MCAPSchema.indent;
+import static us.ihmc.scs2.session.mcap.MCAPSchema.indentString;
+
 /**
  * Class used to represent a Java interpreter of a MCAP schema which encoding is "ros2msg".
  * This schema resembles much of ROS2 messages.
@@ -15,7 +18,7 @@ public class ROS2Schema implements MCAPSchema
    public static final String SUB_SCHEMA_PREFIX = "MSG: fastdds/";
    private int id;
    private String name;
-   private List<ROS2SchemaField> fields;
+   private List<MCAPSchemaField> fields;
    private boolean isSchemaFlat;
    private Map<String, ROS2Schema> subSchemaMap;
 
@@ -50,7 +53,7 @@ public class ROS2Schema implements MCAPSchema
       schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
       String[] schemasStrings = schemasBundledString.split(SUB_SCHEMA_SEPARATOR_REGEX);
 
-      schema.fields = schemasStrings[0].lines().map(ROS2SchemaField::fromLine).collect(Collectors.toList());
+      schema.fields = schemasStrings[0].lines().map(ROS2Schema::parseMCAPSchemaField).collect(Collectors.toList());
 
       schema.subSchemaMap = new LinkedHashMap<>();
       for (int i = 1; i < schemasStrings.length; i++)
@@ -62,32 +65,77 @@ public class ROS2Schema implements MCAPSchema
          int firstNewLineCharacter = schemaString.indexOf("\n");
          String firstLine = schemaString.substring(0, firstNewLineCharacter);
          subSchema.name = firstLine.replace(SUB_SCHEMA_PREFIX, "").trim();
-         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1).lines().map(ROS2SchemaField::fromLine).collect(Collectors.toList());
+         subSchema.fields = schemaString.substring(firstNewLineCharacter + 1).lines().map(ROS2Schema::parseMCAPSchemaField).collect(Collectors.toList());
          schema.subSchemaMap.put(subSchema.name, subSchema);
       }
       schema.isSchemaFlat = schema.subSchemaMap.isEmpty();
 
       // Update the fields to indicate whether they are complex types or not.
-      for (ROS2SchemaField field : schema.fields)
+      for (MCAPSchemaField field : schema.fields)
       {
          if (schema.subSchemaMap.containsKey(field.getType()))
          {
-            field.isComplexType = true;
+            field.setComplexType(true);
          }
 
          for (ROS2Schema subSchema : schema.subSchemaMap.values())
          {
-            for (ROS2SchemaField subField : subSchema.fields)
+            for (MCAPSchemaField subField : subSchema.fields)
             {
                if (schema.subSchemaMap.containsKey(subField.getType()))
                {
-                  subField.isComplexType = true;
+                  subField.setComplexType(true);
                }
             }
          }
       }
 
       return schema;
+   }
+
+   public static MCAPSchemaField parseMCAPSchemaField(String line)
+   {
+      MCAPSchemaField field = new MCAPSchemaField();
+      field.setType(line.substring(0, line.indexOf(' ')).trim());
+      field.setName(line.substring(line.indexOf(' ') + 1).trim());
+
+      int lBracketIndex = field.getType().indexOf('[');
+      int rBracketIndex = field.getType().indexOf(']');
+
+      if (lBracketIndex < rBracketIndex)
+      {
+         String maxLengthStr = field.getType().substring(lBracketIndex + 1, rBracketIndex);
+         if (maxLengthStr.startsWith("<="))
+         {
+            field.setArray(false);
+            field.setVector(true);
+            maxLengthStr = maxLengthStr.substring(2);
+         }
+         else
+         {
+            field.setArray(true);
+            field.setVector(false);
+         }
+         field.setComplexType(true);
+         try
+         {
+            field.setMaxLength(Integer.parseInt(maxLengthStr));
+         }
+         catch (NumberFormatException e)
+         {
+            // The length is probably defined as a maximum length "array[<=54]"
+            maxLengthStr = maxLengthStr.replace("<=", "");
+            field.setMaxLength(Integer.parseInt(maxLengthStr));
+         }
+         field.setType(field.getType().substring(0, lBracketIndex));
+      }
+      else
+      {
+         field.setArray(false);
+         field.setVector(false);
+         field.setMaxLength(-1);
+      }
+      return field;
    }
 
    @Override
@@ -109,7 +157,7 @@ public class ROS2Schema implements MCAPSchema
    }
 
    @Override
-   public List<ROS2SchemaField> getFields()
+   public List<MCAPSchemaField> getFields()
    {
       return fields;
    }
@@ -134,7 +182,7 @@ public class ROS2Schema implements MCAPSchema
       flatSchema.isSchemaFlat = true;
       flatSchema.fields = new ArrayList<>();
 
-      for (ROS2SchemaField field : fields)
+      for (MCAPSchemaField field : fields)
       {
          flatSchema.fields.addAll(flattenField(field));
       }
@@ -142,29 +190,29 @@ public class ROS2Schema implements MCAPSchema
       return flatSchema;
    }
 
-   private List<ROS2SchemaField> flattenField(ROS2SchemaField field)
+   private List<MCAPSchemaField> flattenField(MCAPSchemaField field)
    {
-      ROS2SchemaField flatField = field.clone();
+      MCAPSchemaField flatField = field.clone();
 
-      if (!field.isComplexType)
+      if (!field.isComplexType())
       {
          return Collections.singletonList(flatField);
       }
 
-      List<ROS2SchemaField> flatFields = new ArrayList<>();
+      List<MCAPSchemaField> flatFields = new ArrayList<>();
       flatFields.add(flatField);
 
       if (flatField.isArray())
       {
-         for (int i = 0; i < flatField.maxLength; i++)
+         for (int i = 0; i < flatField.getMaxLength(); i++)
          {
-            ROS2SchemaField subField = new ROS2SchemaField();
-            subField.parent = flatField;
-            subField.type = flatField.type;
-            subField.name = flatField.name + "[" + i + "]";
-            subField.isArray = false;
-            subField.isVector = false;
-            subField.maxLength = -1;
+            MCAPSchemaField subField = new MCAPSchemaField();
+            subField.setParent(flatField);
+            subField.setType(flatField.getType());
+            subField.setName(flatField.getName() + "[" + i + "]");
+            subField.setArray(false);
+            subField.setVector(false);
+            subField.setMaxLength(-1);
             flatFields.add(subField);
          }
       }
@@ -173,10 +221,10 @@ public class ROS2Schema implements MCAPSchema
          ROS2Schema subSchema = subSchemaMap.get(flatField.getType());
          if (subSchema != null)
          {
-            for (ROS2SchemaField subField : subSchema.fields)
+            for (MCAPSchemaField subField : subSchema.fields)
             {
-               subField.parent = flatField;
-               subField.name = flatField.name + "." + subField.name;
+               subField.setParent(flatField);
+               subField.setName(flatField.getName() + "." + subField.getName());
                flatFields.add(subField);
             }
          }
@@ -205,194 +253,6 @@ public class ROS2Schema implements MCAPSchema
       return indent(out, indent);
    }
 
-   public static class ROS2SchemaField implements MCAPSchemaField
-   {
-      /**
-       * The parent is used when flattening the schema.
-       */
-      private ROS2SchemaField parent;
-      private String type;
-      private String name;
-      /**
-       * An array is a fixed-length array, versus a vector, which is a variable-length array.
-       */
-      private boolean isArray;
-      /**
-       * A vector is a variable-length array, versus an array, which is a fixed-length array.
-       */
-      private boolean isVector;
-      private int maxLength;
-      /**
-       * This is {@code  true} whenever this field is for an array or a sub-schema.
-       */
-      private boolean isComplexType;
-
-      public static ROS2SchemaField fromLine(String line)
-      {
-         ROS2SchemaField field = new ROS2SchemaField();
-         field.type = line.substring(0, line.indexOf(' ')).trim();
-         field.name = line.substring(line.indexOf(' ') + 1).trim();
-
-         int lBracketIndex = field.type.indexOf('[');
-         int rBracketIndex = field.type.indexOf(']');
-
-         if (lBracketIndex < rBracketIndex)
-         {
-            String maxLengthStr = field.type.substring(lBracketIndex + 1, rBracketIndex);
-            if (maxLengthStr.startsWith("<="))
-            {
-               field.isArray = false;
-               field.isVector = true;
-               maxLengthStr = maxLengthStr.substring(2);
-            }
-            else
-            {
-               field.isArray = true;
-               field.isVector = false;
-            }
-            field.isComplexType = true;
-            try
-            {
-               field.maxLength = Integer.parseInt(maxLengthStr);
-            }
-            catch (NumberFormatException e)
-            {
-               // The length is probably defined as a maximum length "array[<=54]"
-               maxLengthStr = maxLengthStr.replace("<=", "");
-               field.maxLength = Integer.parseInt(maxLengthStr);
-            }
-            field.type = field.type.substring(0, lBracketIndex);
-         }
-         else
-         {
-            field.isArray = false;
-            field.isVector = false;
-            field.maxLength = -1;
-         }
-         return field;
-      }
-
-      @Override
-      public ROS2SchemaField clone()
-      {
-         ROS2SchemaField clone = new ROS2SchemaField();
-         clone.parent = parent;
-         clone.type = type;
-         clone.name = name;
-         clone.isArray = isArray;
-         clone.isVector = isVector;
-         clone.maxLength = maxLength;
-         clone.isComplexType = isComplexType;
-         return clone;
-      }
-
-      @Override
-      public ROS2SchemaField getParent()
-      {
-         return parent;
-      }
-
-      @Override
-      public String getType()
-      {
-         return type;
-      }
-
-      public void setType(String type)
-      {
-         this.type = type;
-      }
-
-      @Override
-      public String getName()
-      {
-         return name;
-      }
-
-      public void setName(String name)
-      {
-         this.name = name;
-      }
-
-      @Override
-      public boolean isArray()
-      {
-         return isArray;
-      }
-
-      public void setArray(boolean isArray)
-      {
-         this.isArray = isArray;
-      }
-
-      @Override
-      public boolean isVector()
-      {
-         return isVector;
-      }
-
-      public void setVector(boolean vector)
-      {
-         isVector = vector;
-      }
-
-      public int getMaxLength()
-      {
-         return maxLength;
-      }
-
-      public void setMaxLength(int maxLength)
-      {
-         this.maxLength = maxLength;
-      }
-
-      /**
-       * This is {@code  true} whenever this field is for an array or a sub-schema.
-       * <p>
-       * If this field is belongs to a flat schema, the subsequent fields will be the elements of the array or the fields of the sub-schema, such that this
-       * field can be skipped when deseriliazing a message.
-       * </p>
-       *
-       * @return {@code true} if this field is for an array or a sub-schema, {@code false} otherwise.
-       */
-      @Override
-      public boolean isComplexType()
-      {
-         return isComplexType;
-      }
-
-      @Override
-      public String toString()
-      {
-         return toString(0);
-      }
-
-      public String toString(int indent)
-      {
-         String out = getClass().getSimpleName() + ":";
-         out += "\n\t-type=" + type;
-         out += "\n\t-name=" + name;
-         out += "\n\t-isArray=" + isArray;
-         out += "\n\t-isVector=" + isVector;
-         if (isArray || isVector)
-            out += "\n\t-maxLength=" + maxLength;
-         return indent(out, indent);
-      }
-   }
-
-   private static String indent(String stringToIndent, int indent)
-   {
-      if (indent <= 0)
-         return stringToIndent;
-      String indentStr = indentString(indent);
-      return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
-   }
-
-   private static String indentString(int indent)
-   {
-      return "\t".repeat(indent);
-   }
-
    public static String mcapROS2MessageToString(MCAP.Message message, ROS2Schema schema)
    {
       CDRDeserializer cdr = new CDRDeserializer();
@@ -407,7 +267,7 @@ public class ROS2Schema implements MCAPSchema
    private static String mcapROS2MessageToString(CDRDeserializer cdr, ROS2Schema schema, int indent)
    {
       StringBuilder out = new StringBuilder(schema.getName() + ":");
-      for (ROS2SchemaField field : schema.fields)
+      for (MCAPSchemaField field : schema.fields)
       {
          String fieldToString = mcapROS2MessageFieldToString(cdr, field, schema, indent + 1);
          if (fieldToString != null)
@@ -416,7 +276,7 @@ public class ROS2Schema implements MCAPSchema
       return out.toString();
    }
 
-   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, ROS2SchemaField field, ROS2Schema schema, int indent)
+   private static String mcapROS2MessageFieldToString(CDRDeserializer cdr, MCAPSchemaField field, ROS2Schema schema, int indent)
    {
       if (schema == null && field.isComplexType())
       { // Dealing with a flat schema, skip this field.
@@ -428,7 +288,7 @@ public class ROS2Schema implements MCAPSchema
       if (field.isArray())
       {
          out.append("[");
-         for (int i = 0; i < field.maxLength; i++)
+         for (int i = 0; i < field.getMaxLength(); i++)
          {
             out.append("\n").append(indentString(indent + 1)).append(i).append(": ");
             out.append(mcapROS2MessageFieldToString(cdr, field, schema, indent + 2));

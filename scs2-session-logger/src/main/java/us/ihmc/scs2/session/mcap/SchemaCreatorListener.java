@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.mcap.OMGIDLSchema.OMGIDLSchemaField;
+import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
 
@@ -74,7 +74,7 @@ public class SchemaCreatorListener implements IDLListener
    public void exitConst_decl(IDLParser.Const_declContext ctx)
    {
       // constants have the type "const base_type"
-      OMGIDLSchemaField newField = new OMGIDLSchemaField("const " + ctx.const_type().getText(), ctx.identifier().getText(), -1, false, false);
+      MCAPSchemaField newField = new MCAPSchemaField(ctx.identifier().getText(), "const " + ctx.const_type().getText(), false, false, -1, false);
       this.currentSchema.getFields().add(newField);
    }
 
@@ -130,11 +130,12 @@ public class SchemaCreatorListener implements IDLListener
       assert currentMemberInfo.name != null : String.format("Got a null member name for %s", ctx.declarators().getText());
 
       //Create field here for each member
-      OMGIDLSchemaField newField = new OMGIDLSchemaField(currentMemberInfo.type,
-                                                         currentMemberInfo.name,
-                                                         currentMemberInfo.maxLength,
-                                                         currentMemberInfo.isSequence,
-                                                         currentMemberInfo.isComplexType);
+      MCAPSchemaField newField = new MCAPSchemaField(currentMemberInfo.name,
+                                                     currentMemberInfo.type,
+                                                     currentMemberInfo.isArray,
+                                                     currentMemberInfo.isSequence,
+                                                     currentMemberInfo.maxLength,
+                                                     currentMemberInfo.isComplexType);
       this.currentSchema.getFields().add(newField);
 
       // reset Member stats after we are done visiting the member
