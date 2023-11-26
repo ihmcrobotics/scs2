@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLLexer;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
 import us.ihmc.scs2.session.mcap.omgidl_parser.PrintListener;
@@ -193,13 +194,13 @@ public class OMGIDLSchemaTest
       String schemaName = "flatten_array_test";
       InputStream is = getClass().getResourceAsStream(schemaName + ".idl");
       OMGIDLSchema schema = OMGIDLSchema.loadSchema(schemaName, 0, is.readAllBytes());
-//      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("a");
-      OMGIDLSchema.OMGIDLSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(0);
-      List<OMGIDLSchema.OMGIDLSchemaField> flatFields = schema.flattenField(field);
-//      System.out.println(subSchema.flattenSchema(schema.getSubSchemaMap()));
+      //      OMGIDLSchema subSchema = schema.getSubSchemaMap().get("a");
+      MCAPSchemaField field = schema.getSubSchemaMap().get(schemaName).getFields().get(0);
+      List<MCAPSchemaField> flatFields = schema.flattenField(field);
+      //      System.out.println(subSchema.flattenSchema(schema.getSubSchemaMap()));
       System.out.println(flatFields);
 
-//      OMGIDLSchema flatSchema = schema.flattenSchema();
-//      System.out.println(schema.flattenSchema());
+      //      OMGIDLSchema flatSchema = schema.flattenSchema();
+      //      System.out.println(schema.flattenSchema());
    }
 }
