@@ -150,6 +150,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
     */
    private final CDRDeserializer cdr = new CDRDeserializer();
 
+   @Override
    public YoOMGIDLMessage newMessage(int channelId, MCAPSchema schema)
    {
       return newMessage(channelId, (OMGIDLSchema) schema);
@@ -187,14 +188,9 @@ public class YoOMGIDLMessage implements YoMCAPMessage
 
          Consumer<CDRDeserializer> deserializer = null;
          if (!isArrayOrVector)
-         {
-            deserializer = createYoVariable(schema, field, messageRegistry);
-         }
+            deserializer = createYoVariable(field, messageRegistry);
          else
-         {
-            // TODO: (AM) check if nested sequences work properly
-            deserializer = createYoVariableArray(schema, field, messageRegistry);
-         }
+            deserializer = createYoVariableArray(field, messageRegistry);
 
          if (deserializer != null)
          {
@@ -206,32 +202,13 @@ public class YoOMGIDLMessage implements YoMCAPMessage
             throw new IllegalStateException("Could not deserialize non-complex field of type: %s".formatted(field.getType()));
          }
 
-         OMGIDLSchema subSchema = null;
-         if (field.getType().equals("struct"))
-         {
-            subSchema = subSchemaMap.get(field.getName());
-         }
-         else if (field.getType().contains("sequence"))
-         {
-            subSchema = subSchemaMap.get(field.getType().split("[<,>]")[1]);
-         }
-         else
-         {
-            subSchema = subSchemaMap.get(field.getType());
-         }
+         OMGIDLSchema subSchema = subSchemaMap.get(field.getType());
 
          if (subSchema == null)
             throw new IllegalStateException("Could not find a schema for the type: %s. Might be missing a primitive type.".formatted(field.getType()));
 
-         for (Map.Entry<String, OMGIDLSchema> entry : subSchemaMap.entrySet())
-         {
-            if (!entry.getKey().equals(fieldName))
-               subSchema.getSubSchemaMap().put(entry.getKey(), entry.getValue());
-         }
-
          if (!isArrayOrVector)
          {
-            //TODO: (AM) This will include struct definitions and instantiations, handle them properly
             YoRegistry fieldRegistry = new YoRegistry(fieldName.replaceAll(":", "-"));
             messageRegistry.addChild(fieldRegistry);
             YoOMGIDLMessage subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
@@ -239,7 +216,20 @@ public class YoOMGIDLMessage implements YoMCAPMessage
          }
          else
          {
-            // TODO: (AM) will we ever even get here?
+            BiFunction<String, YoRegistry, YoOMGIDLMessage> elementBuilder = (name, yoRegistry) ->
+            {
+               YoOMGIDLMessage newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
+               messageRegistry.addChild(newElement.getRegistry());
+               return newElement;
+            };
+            createFieldArray(YoOMGIDLMessage.class,
+                             elementBuilder,
+                             YoOMGIDLMessage::deserialize,
+                             YoOMGIDLMessage::clearData,
+                             fieldName,
+                             field.isArray(),
+                             field.getMaxLength(),
+                             messageRegistry);
          }
       }
 
@@ -258,6 +248,7 @@ public class YoOMGIDLMessage implements YoMCAPMessage
       this.deserializer = deserializer;
    }
 
+   @Override
    public void readMessage(MCAP.Message message)
    {
       if (message.channelId() != channelId)
@@ -296,20 +287,21 @@ public class YoOMGIDLMessage implements YoMCAPMessage
       return channelId;
    }
 
+   @Override
    public OMGIDLSchema getSchema()
    {
       return schema;
    }
 
+   @Override
    public YoRegistry getRegistry()
    {
       return registry;
    }
 
    @SuppressWarnings({"rawtypes", "unchecked"})
-   private static Consumer<CDRDeserializer> createYoVariable(OMGIDLSchema schema, OMGIDLSchemaField field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariable(OMGIDLSchemaField field, YoRegistry registry)
    {
-      //      List<OMGIDLSchemaField> flatFields = schema.flattenField(field).stream().filter(f -> !f.isComplexType()).toList();
       String fieldName = field.getName();
       String fieldType = field.getType();
 
@@ -320,119 +312,33 @@ public class YoOMGIDLMessage implements YoMCAPMessage
    /**
     * Creates an array of {@code YoVariable}s which can be used to parse an OMGIDL field that is either an array or a vector.
     *
-    * @param schema
     * @param field    the ROS2 field to instantiate into a {@code YoVariable} array.
     * @param registry the registry in which the {@code YoVariable}s are to be added.
     * @return the parsing function.
     */
    @SuppressWarnings({"unchecked", "rawtypes"})
-   private static Consumer<CDRDeserializer> createYoVariableArray(OMGIDLSchema schema, OMGIDLSchemaField field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariableArray(OMGIDLSchemaField field, YoRegistry registry)
    {
-      List<OMGIDLSchemaField> flatFields = schema.flattenField(field).stream().filter(f -> !f.isComplexType()).toList();
-      Map<String, YoVariable[]> fieldArrayMap = new HashMap<>();
-      Map<String, YoConversionToolbox> fieldConversionMap = new HashMap<>();
-
       int maxLength = field.getMaxLength();
+      String fieldName = field.getName();
+      String fieldType = field.getType();
 
-      YoRegistry[] subRegistryArray = new YoRegistry[maxLength];//(YoRegistry[]) Array.newInstance(YoRegistry.class, maxLength);
+      if (field.isVector() == field.isArray())
+         throw new IllegalArgumentException("Field is neither a vector nor an array: " + field + ", registry: " + registry);
 
-      // create subregs for the field array
-      for (int i = 0; i < maxLength; i++)
-      {
-         subRegistryArray[i] = new YoRegistry(field.getName() + "[" + i + "]");
-         registry.addChild(subRegistryArray[i]);
-      }
+      boolean isFixedSize = field.isArray();
 
-      for (OMGIDLSchemaField flatField : flatFields)
-      {
-         //TODO: (AM) No string support for now
-         if (flatField.getType().equals("string"))
-            continue;
-         // Build every YoVariable in this field
-         YoConversionToolbox conversion = conversionMap.get(flatField.getType());
-         if (conversion == null)
-            //TODO: (AM) having only simple types in flatfield prevents entering this branch
-            return null;
-         fieldArrayMap.put(flatField.getName(), (YoVariable[]) Array.newInstance(conversion.yoType, maxLength));
-         fieldConversionMap.put(flatField.getName(), conversion);
-         String[] flatFieldHierarchy = flatField.getName().split("-");
-
-         for (int i = 0; i < maxLength; i++)
-         {
-            YoRegistry subFieldRegistry = subRegistryArray[i];
-            // traverse from the second to the second last element to add all sub-registries
-            for (int j = 1; j < flatFieldHierarchy.length - 1; j++)
-            {
-               if (subFieldRegistry.getChild(flatFieldHierarchy[j]) == null)
-                  subFieldRegistry.addChild(new YoRegistry(flatFieldHierarchy[j]));
-               subFieldRegistry = subFieldRegistry.getChild(flatFieldHierarchy[j]);
-            }
-
-            fieldArrayMap.get(flatField.getName())[i] = (YoVariable) fieldConversionMap.get(flatField.getName()).yoBuilder.apply(flatFieldHierarchy[
-                                                                                                                                       flatFieldHierarchy.length
-                                                                                                                                       - 1], subFieldRegistry);
-         }
-      }
-
-      return cdr ->
-      {
-
-         if (cdr == null)
-         {
-            for (OMGIDLSchemaField flatField : flatFields)
-            {
-               //TODO: (AM) No string support for now
-               if (flatField.getType().equals("string"))
-                  continue;
-
-               for (int i = 0; i < maxLength; i++)
-               {
-                  fieldConversionMap.get(flatField.getName()).yoResetter.accept(fieldArrayMap.get(flatField.getName())[i]);
-               }
-            }
-         }
-         else
-         {
-            if (field.isArray())
-            {
-               cdr.read_array((elementIndex, deserializer) ->
-                              {
-                                 for (OMGIDLSchemaField flatField : flatFields)
-                                 {
-                                    //TODO: (AM) No string support for now
-                                    if (flatField.getType().equals("string"))
-                                       continue;
-                                    fieldConversionMap.get(flatField.getName()).deserializer.accept(fieldArrayMap.get(flatField.getName())[elementIndex],
-                                                                                                    deserializer);
-                                 }
-                              }, maxLength);
-            }
-            else if (field.isVector())
-            {
-               int size = cdr.read_sequence((elementIndex, deserializer) ->
-                                            {
-                                               for (OMGIDLSchemaField flatField : flatFields)
-                                               {
-                                                  //TODO: (AM) No string support for now
-                                                  if (flatField.getType().equals("string"))
-                                                     continue;
-
-                                                  fieldConversionMap.get(flatField.getName()).deserializer.accept(fieldArrayMap.get(flatField.getName())[elementIndex],
-                                                                                                                  deserializer);
-                                               }
-                                            });
-               // Reset remaining elements
-               for (OMGIDLSchemaField flatField : flatFields)
-               {
-                  if (flatField.getType().equals("string"))
-                     continue;
-
-                  for (int i = size; i < maxLength; i++)
-                     fieldConversionMap.get(flatField.getName()).yoResetter.accept(fieldArrayMap.get(flatField.getName())[i]);
-               }
-            }
-         }
-      };
+      YoConversionToolbox conversion = conversionMap.get(fieldType);
+      if (conversion != null)
+         return createFieldArray(conversion.yoType,
+                                 conversion.yoBuilder,
+                                 conversion.deserializer,
+                                 conversion.yoResetter,
+                                 fieldName,
+                                 isFixedSize,
+                                 maxLength,
+                                 registry);
+      return null;
    }
 
    /**
