@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
+import us.ihmc.scs2.session.mcap.omgidl_parser.IDLBaseListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLLexer;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
@@ -42,7 +43,7 @@ public class OMGIDLSchemaParser
       return schema;
    }
 
-   private static class SchemaCreatorListener implements IDLListener
+   private static class SchemaCreatorListener extends IDLBaseListener
    {
       // Each top level struct gets its own schema
       private final MCAPSchema rootSchema;
