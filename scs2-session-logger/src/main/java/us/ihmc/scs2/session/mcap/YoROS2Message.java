@@ -95,6 +95,7 @@ public class YoROS2Message implements YoMCAPMessage
     */
    private final CDRDeserializer cdr = new CDRDeserializer();
 
+   @Override
    public YoROS2Message newMessage(int channelId, MCAPSchema schema)
    {
       return newMessage(channelId, (ROS2Schema) schema);
@@ -140,6 +141,10 @@ public class YoROS2Message implements YoMCAPMessage
          {
             deserializers.add(deserializer);
             continue;
+         }
+         else if (!field.isComplexType())
+         {
+            throw new IllegalStateException("Could not deserialize non-complex field of type: %s".formatted(field.getType()));
          }
 
          ROS2Schema subSchema = subSchemaMap.get(field.getType());
@@ -188,6 +193,7 @@ public class YoROS2Message implements YoMCAPMessage
       this.deserializer = deserializer;
    }
 
+   @Override
    public void readMessage(MCAP.Message message)
    {
       if (message.channelId() != channelId)
@@ -226,11 +232,13 @@ public class YoROS2Message implements YoMCAPMessage
       return channelId;
    }
 
+   @Override
    public ROS2Schema getSchema()
    {
       return schema;
    }
 
+   @Override
    public YoRegistry getRegistry()
    {
       return registry;

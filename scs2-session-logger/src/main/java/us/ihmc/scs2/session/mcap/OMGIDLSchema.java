@@ -292,17 +292,14 @@ public class OMGIDLSchema implements MCAPSchema
 
       }
 
-      protected OMGIDLSchemaField(String type, String name, int maxLength, boolean isComplexType)
+      protected OMGIDLSchemaField(String type, String name, int maxLength, boolean isSequence, boolean isComplexType)
       {
-         this.type = type;
-         this.name = name;
-         this.isArray = (maxLength > -1 && !type.contains("sequence"));
+         this.type = Objects.requireNonNull(type, "The type of a field cannot be null.");
+         this.name = Objects.requireNonNull(name, "The name of a field cannot be null.");
          this.maxLength = maxLength;
-         //TODO: (AM) don't assume that all scoped types are complex
-         //this.isComplexType = (isArray || type.contains("::") || type.equals("sequence") || type.equals("struct"));
+         this.isArray = maxLength > -1 && !isSequence;
+         this.isVector = isSequence;
          this.isComplexType = isComplexType;
-         this.isVector = type.contains("sequence");
-         this.parent = null;
       }
 
       @Override
