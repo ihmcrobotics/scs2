@@ -1,18 +1,9 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.Random;
-
-import org.bytedeco.bullet.BulletCollision.btBoxShape;
-import org.bytedeco.bullet.BulletCollision.btCapsuleShapeZ;
-import org.bytedeco.bullet.BulletCollision.btCollisionShape;
-import org.bytedeco.bullet.BulletCollision.btConeShapeZ;
-import org.bytedeco.bullet.BulletCollision.btCylinderShapeZ;
-import org.bytedeco.bullet.BulletCollision.btSphereShape;
+import org.bytedeco.bullet.BulletCollision.*;
 import org.bytedeco.bullet.LinearMath.btQuaternion;
 import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
@@ -22,12 +13,11 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
+
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BulletToolsTest
 {
@@ -259,13 +249,18 @@ public class BulletToolsTest
          assertEquals(capsuleShape.getHalfHeight(), capsuleGeometryDefinition.getLength() / 2.0, EPSILON);
       }
 
-      Ellipsoid3DDefinition polytypeGeometryDefinition = new Ellipsoid3DDefinition(1.0, 1.0, 1.0);
-      CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(polytypeGeometryDefinition);
-
-      Assertions.assertThrows(UnsupportedOperationException.class, () ->
+      for (int i = 0; i < ITERATIONS; i++)
       {
-         BulletTools.createBulletCollisionShape(collisionShapeDefinition);
-      });
+         Ellipsoid3DDefinition ellipsoidGeometryDefinition = new Ellipsoid3DDefinition(random.nextDouble(), random.nextDouble(), random.nextDouble());
+         CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(ellipsoidGeometryDefinition);
+         btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
 
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
+
+         btSphereShape ellipsoidShape = (btSphereShape) btCollisionShape;
+         assertEquals(ellipsoidShape.getLocalScaling().getX(), ellipsoidGeometryDefinition.getRadiusX(), EPSILON);
+         assertEquals(ellipsoidShape.getLocalScaling().getY(), ellipsoidGeometryDefinition.getRadiusY(), EPSILON);
+         assertEquals(ellipsoidShape.getLocalScaling().getZ(), ellipsoidGeometryDefinition.getRadiusZ(), EPSILON);
+      }
    }
 }
