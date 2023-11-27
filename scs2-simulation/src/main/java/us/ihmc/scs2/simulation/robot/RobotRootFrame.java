@@ -1,20 +1,13 @@
 package us.ihmc.scs2.simulation.robot;
 
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.mecano.frames.FixedMovingReferenceFrame;
 
 public class RobotRootFrame extends FixedMovingReferenceFrame
 {
-   private final Robot robot;
-
-   public RobotRootFrame(Robot robot)
+   public RobotRootFrame(String robotName, ReferenceFrame inertialFrame)
    {
-      super(robot.getName() + "RootFrame", robot.getInertialFrame(), new RigidBodyTransform());
-      this.robot = robot;
-   }
-
-   public Robot getRobot()
-   {
-      return robot;
+      super(robotName + "RootFrame", inertialFrame, new RigidBodyTransform());
    }
 }
