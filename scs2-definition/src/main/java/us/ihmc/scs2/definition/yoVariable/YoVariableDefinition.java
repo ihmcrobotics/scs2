@@ -1,11 +1,14 @@
 package us.ihmc.scs2.definition.yoVariable;
 
+import us.ihmc.yoVariables.tools.YoTools;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
 public abstract class YoVariableDefinition
 {
    private String name;
+   private String namespace;
    private String description;
    private double lowerBound;
    private double upperBound;
@@ -18,6 +21,12 @@ public abstract class YoVariableDefinition
    public void setName(String name)
    {
       this.name = name;
+   }
+
+   @XmlAttribute
+   public void setNamespace(String namespace)
+   {
+      this.namespace = namespace;
    }
 
    @XmlAttribute
@@ -41,6 +50,19 @@ public abstract class YoVariableDefinition
    public String getName()
    {
       return name;
+   }
+
+   public String getNamespace()
+   {
+      return namespace;
+   }
+
+   public String getFullname()
+   {
+      if (namespace != null)
+         return namespace + YoTools.NAMESPACE_SEPERATOR_STRING + name;
+      else
+         return name;
    }
 
    public String getDescription()

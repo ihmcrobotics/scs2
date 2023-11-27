@@ -1,54 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuItem?>
-
-<Menu text="YoComposite" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoCompositeMenuController">
-   <items>
-      <MenuItem onAction="#loadYoCompositePattern" text="Load YoCompositePattern...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="load-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#saveYoCompositePattern" text="Save YoCompositePattern...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="save-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#refreshAllYoComposite" text="Refresh all YoComposite">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="refresh-composite-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#openYoCompositePatternEditor" text="YoCompositePattern properties...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="properties-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-   </items>
-   <graphic>
-      <FontAwesomeIconView glyphName="BOOKMARK" />
-   </graphic>
+<?import de.jensd.fx.glyphs.fontawesome.*?>
+<?import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIconView?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<Menu text="YoComposite" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoCompositeMenuController">
+    <items>
+        <MenuItem onAction="#createYoComposite" text="Create YoComposite...">
+            <graphic>
+                <MaterialDesignIconView>
+                    <styleClass>
+                        <String fx:value="create-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </MaterialDesignIconView>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#loadYoCompositePattern" text="Load YoCompositePattern...">
+            <graphic>
+                <FontAwesomeIconView>
+                    <styleClass>
+                        <String fx:value="load-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontAwesomeIconView>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#saveYoCompositePattern" text="Save YoCompositePattern...">
+            <graphic>
+                <FontAwesomeIconView>
+                    <styleClass>
+                        <String fx:value="save-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontAwesomeIconView>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#refreshAllYoComposite" text="Refresh all YoComposite">
+            <graphic>
+                <FontAwesomeIconView>
+                    <styleClass>
+                        <String fx:value="refresh-composite-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontAwesomeIconView>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#openYoCompositePatternEditor" text="YoCompositePattern properties...">
+            <graphic>
+                <FontAwesomeIconView>
+                    <styleClass>
+                        <String fx:value="properties-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontAwesomeIconView>
+            </graphic>
+        </MenuItem>
+    </items>
+    <graphic>
+        <FontAwesomeIconView glyphName="BOOKMARK"/>
+    </graphic>
 </Menu>

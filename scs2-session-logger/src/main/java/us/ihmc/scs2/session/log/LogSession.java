@@ -1,13 +1,5 @@
 package us.ihmc.scs2.session.log;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
@@ -24,6 +16,14 @@ import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class LogSession extends Session
 {
@@ -106,6 +106,9 @@ public class LogSession extends Session
    {
       if (firstRunTick)
       {
+         // TODO Can probably be a little smarter here, sometimes we don't need to reset the equation manager.
+         equationManager.reset();
+
          YoBufferPropertiesReadOnly properties = sharedBuffer.getProperties();
 
          if (properties.getCurrentIndex() != properties.getOutPoint())
@@ -114,7 +117,7 @@ public class LogSession extends Session
             sharedBuffer.setInPoint(properties.getCurrentIndex());
          sharedBuffer.incrementBufferIndex(true);
          // Sync the log position index (logDataReader.index) the current YoVariable (logDataReader.currentRecordTick()) value.
-         // Without that, scrubbing through a chart and then resuming log reading reading will start from an arbitrary position in the log file (corresponding to where we last stop reading the log file).
+         // Without that, scrubbing through a chart and then resuming log reading will start from an arbitrary position in the log file (corresponding to where we last stop reading the log file).
          logDataReader.seek(logDataReader.getCurrentLogPosition());
          nextRunBufferRecordTickCounter = 0;
          firstRunTick = false;

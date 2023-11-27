@@ -1,10 +1,8 @@
 package us.ihmc.scs2.definition.configuration;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "SCSGuiConfiguration")
 public class SCSGuiConfigurationDefinition
@@ -14,6 +12,7 @@ public class SCSGuiConfigurationDefinition
    private String yoCompositePatternListFilename;
    private String yoEntryConfigurationFilename;
    private String yoSliderboardConfigurationFilename;
+   private String yoEquationFilename;
    private String mainYoChartGroupConfigurationFilename;
    private List<String> secondaryYoChartGroupConfigurationsFilenames;
 
@@ -53,6 +52,11 @@ public class SCSGuiConfigurationDefinition
    public void setYoSliderboardConfigurationFilename(String yoSliderboardConfigurationFilename)
    {
       this.yoSliderboardConfigurationFilename = yoSliderboardConfigurationFilename;
+   }
+
+   public void setYoEquationFilename(String yoEquationFilename)
+   {
+      this.yoEquationFilename = yoEquationFilename;
    }
 
    public void setMainYoChartGroupConfigurationFilename(String mainYoChartGroupConfigurationFilename)
@@ -133,6 +137,11 @@ public class SCSGuiConfigurationDefinition
    public String getYoSliderboardConfigurationFilename()
    {
       return yoSliderboardConfigurationFilename;
+   }
+
+   public String getYoEquationFilename()
+   {
+      return yoEquationFilename;
    }
 
    public String getMainYoChartGroupConfigurationFilename()
