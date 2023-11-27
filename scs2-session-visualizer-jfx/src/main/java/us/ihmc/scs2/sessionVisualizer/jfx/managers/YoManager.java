@@ -7,38 +7,30 @@ import javafx.beans.property.SimpleLongProperty;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sharedMemory.LinkedBufferProperties;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
-import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoSearchTools;
 import us.ihmc.yoVariables.tools.YoTools;
-import us.ihmc.yoVariables.variable.YoBoolean;
-import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoEnum;
-import us.ihmc.yoVariables.variable.YoInteger;
-import us.ihmc.yoVariables.variable.YoLong;
-import us.ihmc.yoVariables.variable.YoVariable;
+import us.ihmc.yoVariables.variable.*;
 
 public class YoManager extends ObservedAnimationTimer implements Manager
 {
-   private static final boolean DEFAULT_ENABLE_FUZZY_SEARCH = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.yovariable.enablefuzzysearch", false);
+   private static final boolean DEFAULT_ENABLE_FUZZY_SEARCH = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.yovariable.enablefuzzysearch",
+                                                                                                          false);
 
    private final LongProperty rootRegistryChangeCounter = new SimpleLongProperty(this, "rootRegistryChangeCounter", 0);
    private final BooleanProperty enableFuzzyYoSearch = new SimpleBooleanProperty(this, "enableFuzzySearch", DEFAULT_ENABLE_FUZZY_SEARCH);
    private final YoRegistryChangedListener counterUpdater = changer -> rootRegistryChangeCounter.set(rootRegistryChangeCounter.get() + 1);
 
    private YoRegistry rootRegistry;
+   private YoRegistry userRegistry;
    private LinkedYoRegistry linkedRootRegistry;
    private LinkedBufferProperties linkedBufferProperties;
    private LinkedYoVariableFactory linkedYoVariableFactory;
@@ -49,10 +41,11 @@ public class YoManager extends ObservedAnimationTimer implements Manager
 
    public YoManager()
    {
-      enableFuzzyYoSearch.addListener((o, oldValue, newValue) -> {
-         if (rootRegistryDatabase != null)
-            rootRegistryDatabase.setEnableFuzzySearch(newValue);
-      });
+      enableFuzzyYoSearch.addListener((o, oldValue, newValue) ->
+                                      {
+                                         if (rootRegistryDatabase != null)
+                                            rootRegistryDatabase.setEnableFuzzySearch(newValue);
+                                      });
    }
 
    @Override
@@ -66,10 +59,11 @@ public class YoManager extends ObservedAnimationTimer implements Manager
    public void startSession(Session session)
    {
       LogTools.info("Linking YoVariables");
-      rootRegistry = new YoRegistry(SimulationSession.ROOT_REGISTRY_NAME);
+      rootRegistry = new YoRegistry(Session.ROOT_REGISTRY_NAME);
       linkedYoVariableFactory = session.getLinkedYoVariableFactory();
       linkedRootRegistry = linkedYoVariableFactory.newLinkedYoRegistry(rootRegistry);
       linkedBufferProperties = linkedYoVariableFactory.newLinkedBufferProperties();
+      userRegistry = rootRegistry.getChild(Session.USER_REGISTRY_NAME);
 
       updatingYoVariables = true;
       rootRegistry.addListener(counterUpdater);
@@ -89,8 +83,9 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       linkedYoVariableFactory = null;
       linkedRootRegistry = null;
       linkedBufferProperties = null;
+      userRegistry = null;
       rootRegistry.removeListener(counterUpdater);
-      rootRegistry.clear();
+      rootRegistry.destroy();
       rootRegistry = null;
       rootRegistryChangeCounter.set(rootRegistryChangeCounter.get() + 1);
    }
@@ -121,9 +116,33 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       return rootRegistry;
    }
 
+   public YoRegistry getUserRegistry()
+   {
+      return userRegistry;
+   }
+
    public YoVariableDatabase getRootRegistryDatabase()
    {
       return rootRegistryDatabase;
+   }
+
+   public YoVariable searchYoVariable(String yoVariableFullName)
+   {
+      if (yoVariableFullName == null)
+         return null;
+
+      YoVariable yoVariable = rootRegistryDatabase.searchExact(yoVariableFullName);
+      if (yoVariable == null)
+      {
+         LogTools.warn("Incompatible variable name, searching similar variables to " + yoVariableFullName);
+         yoVariable = rootRegistryDatabase.searchSimilar(yoVariableFullName, 0.90);
+      }
+      if (yoVariable == null)
+      {
+         LogTools.warn("Could not find YoVariable: " + yoVariableFullName);
+         return null;
+      }
+      return yoVariable;
    }
 
    public boolean isUpdatingYoVariables()
@@ -166,7 +185,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoDouble variable = findYoVariable(YoDouble.class, variableName);
+      YoDouble variable = findExactYoVariable(YoDouble.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -186,7 +205,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoInteger variable = findYoVariable(YoInteger.class, variableName);
+      YoInteger variable = findExactYoVariable(YoInteger.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -206,7 +225,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoLong variable = findYoVariable(YoLong.class, variableName);
+      YoLong variable = findExactYoVariable(YoLong.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -226,7 +245,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      YoBoolean variable = findYoVariable(YoBoolean.class, variableName);
+      YoBoolean variable = findExactYoVariable(YoBoolean.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -246,8 +265,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
          return null;
       }
 
-      @SuppressWarnings("unchecked")
-      YoEnum<E> variable = findYoVariable(YoEnum.class, variableName);
+      @SuppressWarnings("unchecked") YoEnum<E> variable = findExactYoVariable(YoEnum.class, variableName);
       if (variable == null)
       {
          LogTools.error("Could not find variable from name: {}", variableName);
@@ -260,7 +278,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
    }
 
    @SuppressWarnings("unchecked")
-   private <T extends YoVariable> T findYoVariable(Class<T> type, String variableName)
+   private <T extends YoVariable> T findExactYoVariable(Class<T> type, String variableName)
    {
       int separatorIndex = variableName.lastIndexOf(YoTools.NAMESPACE_SEPERATOR_STRING);
 

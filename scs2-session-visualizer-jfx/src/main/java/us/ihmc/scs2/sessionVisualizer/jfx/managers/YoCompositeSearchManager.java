@@ -64,11 +64,11 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoCompositeSearchManager implements Manager
 {
-   private final YoCompositePattern yoVariablePattern = YoCompositePattern.singleton(YO_VARIABLE);
-   private final YoCompositePattern yoBooleanPattern = YoCompositePattern.singleton(YO_BOOLEAN);
-   private final YoCompositePattern yoDoublePattern = YoCompositePattern.singleton(YO_DOUBLE);
-   private final YoCompositePattern yoIntegerPattern = YoCompositePattern.singleton(YO_INTEGER);
-   private final YoCompositePattern yoLongPattern = YoCompositePattern.singleton(YO_LONG);
+   public static final YoCompositePattern yoVariablePattern = YoCompositePattern.singleton(YO_VARIABLE);
+   public static final YoCompositePattern yoBooleanPattern = YoCompositePattern.singleton(YO_BOOLEAN);
+   public static final YoCompositePattern yoDoublePattern = YoCompositePattern.singleton(YO_DOUBLE);
+   public static final YoCompositePattern yoIntegerPattern = YoCompositePattern.singleton(YO_INTEGER);
+   public static final YoCompositePattern yoLongPattern = YoCompositePattern.singleton(YO_LONG);
 
    private final Set<YoCompositePattern> primitivePatterns = new LinkedHashSet<>(Arrays.asList(yoVariablePattern,
                                                                                                yoBooleanPattern,
