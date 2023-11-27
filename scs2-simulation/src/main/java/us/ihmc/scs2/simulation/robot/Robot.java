@@ -1,64 +1,29 @@
 package us.ihmc.scs2.simulation.robot;
 
+import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.log.LogTools;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
+import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
+import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
+import us.ihmc.scs2.definition.robot.*;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
+import us.ihmc.scs2.definition.state.*;
+import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
+import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
+import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.*;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
+import us.ihmc.yoVariables.registry.YoRegistry;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
-import us.ihmc.log.LogTools;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.PlanarJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
-import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
-import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
-import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
-import us.ihmc.scs2.definition.robot.FixedJointDefinition;
-import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
-import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.LoopClosureDefinition;
-import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
-import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
-import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
-import us.ihmc.scs2.definition.robot.RevoluteTwinsJointDefinition;
-import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
-import us.ihmc.scs2.definition.robot.RobotDefinition;
-import us.ihmc.scs2.definition.robot.RobotStateDefinition;
-import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
-import us.ihmc.scs2.definition.robot.SensorDefinition;
-import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
-import us.ihmc.scs2.definition.robot.SphericalJointDefinition;
-import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
-import us.ihmc.scs2.definition.state.JointState;
-import us.ihmc.scs2.definition.state.JointStateBase;
-import us.ihmc.scs2.definition.state.OneDoFJointState;
-import us.ihmc.scs2.definition.state.PlanarJointState;
-import us.ihmc.scs2.definition.state.SixDoFJointState;
-import us.ihmc.scs2.definition.state.SphericalJointState;
-import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
-import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
-import us.ihmc.scs2.simulation.robot.controller.RobotControllerManager;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimCrossFourBarJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFixedJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPlanarJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimPrismaticJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRevoluteTwinsJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimRigidBody;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSixDoFJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.SimSphericalJoint;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
-import us.ihmc.yoVariables.registry.YoRegistry;
 
 public class Robot implements RobotInterface
 {
@@ -94,7 +59,7 @@ public class Robot implements RobotInterface
     * For simulation, make sure to use the same inertial frame as the session. By default, a simulation
     * session will use {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
     * </p>
-    * 
+    *
     * @param robotDefinition the template of the robot.
     * @param inertialFrame   the global to use for this robot, typically is
     *                        {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
@@ -110,7 +75,7 @@ public class Robot implements RobotInterface
     * For simulation, make sure to use the same inertial frame as the session. By default, a simulation
     * session will use {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
     * </p>
-    * 
+    *
     * @param robotDefinition the template of the robot.
     * @param inertialFrame   the global to use for this robot, typically is
     *                        {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
@@ -123,7 +88,7 @@ public class Robot implements RobotInterface
       this.inertialFrame = inertialFrame;
 
       name = robotDefinition.getName();
-      robotRootFrame = new RobotRootFrame(this); // TODO Passing the robot itself might not be the best idea
+      robotRootFrame = new RobotRootFrame(name, inertialFrame);
 
       registry = new YoRegistry(name);
 
@@ -204,27 +169,29 @@ public class Robot implements RobotInterface
             continue;
 
          controllerDefinitions.add((controllerInput, controllerOutput) ->
-         {
-            String name = jointDefinition.getName();
-            LoopClosureDefinition loopClosureDefinition = jointDefinition.getLoopClosureDefinition();
-            RigidBodyTransformReadOnly transformToParentJoint = jointDefinition.getTransformToParent();
-            RigidBodyTransformReadOnly transformToSuccessorParentJoint = loopClosureDefinition.getTransformToSuccessorParent();
+                                   {
+                                      String name = jointDefinition.getName();
+                                      LoopClosureDefinition loopClosureDefinition = jointDefinition.getLoopClosureDefinition();
+                                      RigidBodyTransformReadOnly transformToParentJoint = jointDefinition.getTransformToParent();
+                                      RigidBodyTransformReadOnly transformToSuccessorParentJoint = loopClosureDefinition.getTransformToSuccessorParent();
 
-            Matrix3DReadOnly constraintForceSubSpace = LoopClosureDefinition.jointForceSubSpace(jointDefinition);
-            Matrix3DReadOnly constraintMomentSubSpace = LoopClosureDefinition.jointMomentSubSpace(jointDefinition);
-            if (constraintForceSubSpace == null || constraintMomentSubSpace == null)
-               throw new UnsupportedOperationException("Loop closure not supported for " + jointDefinition);
+                                      Matrix3DReadOnly constraintForceSubSpace = LoopClosureDefinition.jointForceSubSpace(jointDefinition);
+                                      Matrix3DReadOnly constraintMomentSubSpace = LoopClosureDefinition.jointMomentSubSpace(jointDefinition);
+                                      if (constraintForceSubSpace == null || constraintMomentSubSpace == null)
+                                         throw new UnsupportedOperationException("Loop closure not supported for " + jointDefinition);
 
-            LoopClosureSoftConstraintController constraint = new LoopClosureSoftConstraintController(name,
-                                                                                                     transformToParentJoint,
-                                                                                                     transformToSuccessorParentJoint,
-                                                                                                     constraintForceSubSpace,
-                                                                                                     constraintMomentSubSpace);
-            constraint.setParentJoint((SimJointBasics) controllerInput.getInput().findJoint(jointDefinition.getParentJoint().getName()));
-            constraint.setSuccessor((SimRigidBodyBasics) controllerInput.getInput().findRigidBody(jointDefinition.getSuccessor().getName()));
-            constraint.setGains(loopClosureDefinition.getKpSoftConstraint(), loopClosureDefinition.getKdSoftConstraint());
-            return constraint;
-         });
+                                      LoopClosureSoftConstraintController constraint = new LoopClosureSoftConstraintController(name,
+                                                                                                                               transformToParentJoint,
+                                                                                                                               transformToSuccessorParentJoint,
+                                                                                                                               constraintForceSubSpace,
+                                                                                                                               constraintMomentSubSpace);
+                                      constraint.setParentJoint((SimJointBasics) controllerInput.getInput()
+                                                                                                .findJoint(jointDefinition.getParentJoint().getName()));
+                                      constraint.setSuccessor((SimRigidBodyBasics) controllerInput.getInput()
+                                                                                                  .findRigidBody(jointDefinition.getSuccessor().getName()));
+                                      constraint.setGains(loopClosureDefinition.getKpSoftConstraint(), loopClosureDefinition.getKdSoftConstraint());
+                                      return constraint;
+                                   });
       }
 
       return controllerDefinitions;

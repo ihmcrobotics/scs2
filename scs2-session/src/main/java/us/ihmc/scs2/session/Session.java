@@ -1,26 +1,5 @@
 package us.ihmc.scs2.session;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-
-import javax.xml.bind.JAXBException;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
@@ -41,6 +20,18 @@ import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import javax.xml.bind.JAXBException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /**
  * Base class for implementing a session, e.g. a simulation, log reading, or a remote session.
@@ -666,6 +657,32 @@ public abstract class Session
       pendingRobotDefinitionListChange.submit(change);
    }
 
+   /**
+    * Adds a listener to be notified whenever a change to the list of robots for this session has been performed.
+    *
+    * @param listener the listener to add.
+    */
+   public void addRobotDefinitionListChangeListener(Consumer<SessionRobotDefinitionListChange> listener)
+   {
+      robotDefinitionListChangeListeners.add(listener);
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeRobotDefinitionListChangeListener(Consumer<SessionRobotDefinitionListChange> listener)
+   {
+      return robotDefinitionListChangeListeners.remove(listener);
+   }
+
+   /**
+    * Reports a change to the list of robots for this session to all listeners.
+    *
+    * @param change the change to report.
+    */
    protected void reportRobotDefinitionListChange(SessionRobotDefinitionListChange change)
    {
       if (change.getChangeType() == SessionRobotDefinitionListChange.SessionRobotDefinitionListChangeType.ADD
@@ -2283,14 +2300,13 @@ public abstract class Session
          messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
          messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
 
-         // TODO Need to add all the Java API to Session for adding/removing listeners.
-         robotDefinitionListChangeListeners.add(change ->
-                                                {
-                                                   if (messager.isMessagerOpen())
-                                                   {
-                                                      messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
-                                                   }
-                                                });
+         addRobotDefinitionListChangeListener(change ->
+                                              {
+                                                 if (messager.isMessagerOpen())
+                                                 {
+                                                    messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
+                                                 }
+                                              });
 
          messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
       }
@@ -2350,7 +2366,7 @@ public abstract class Session
    }
 
    /**
-    * Interface to to implement a conditional based transition from one session mode to the next.
+    * Interface to implement a conditional based transition from one session mode to the next.
     * <p>
     * For instance, this transition be used to schedule a simulation of a fixed amount of time at the
     * end of which the pause mode should be entered.
