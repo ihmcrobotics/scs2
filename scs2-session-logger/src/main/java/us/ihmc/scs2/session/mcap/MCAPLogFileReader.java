@@ -228,6 +228,11 @@ public class MCAPLogFileReader
    public void readMessagesAtCurrentTimestamp() throws IOException
    {
       List<MCAP.Message> messages = chunkManager.loadMessages(currentTimestamp.getValue());
+      if (messages == null)
+      {
+         LogTools.error("No messages at timestamp {}.", currentTimestamp.getValue());
+         return;
+      }
       currentChunkStartTimestamp.set(chunkManager.getActiveChunkStartTimestamp());
       currentChunkEndTimestamp.set(chunkManager.getActiveChunkEndTimestamp());
 
