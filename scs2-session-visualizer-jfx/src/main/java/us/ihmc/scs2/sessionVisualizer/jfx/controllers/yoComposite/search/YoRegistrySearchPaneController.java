@@ -1,27 +1,12 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import javafx.beans.property.Property;
-import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.input.InputEvent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionState;
@@ -35,6 +20,16 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeViewTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class YoRegistrySearchPaneController extends ObservedAnimationTimer
 {
@@ -79,18 +74,19 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       {
          MenuItem openStatisticsMenuItem = new MenuItem("Open statistics...");
          openStatisticsMenuItem.setOnAction(e ->
-         {
-            TreeItem<YoRegistry> selectedRegistry = treeView.getSelectionModel().getSelectedItem();
-            if (selectedRegistry == null)
-               return;
-            messager.submitMessage(topics.getOpenWindowRequest(),
-                                   NewWindowRequest.registryStatisticWindow(toolkit.getMainWindow(), selectedRegistry.getValue()));
-         });
+                                            {
+                                               TreeItem<YoRegistry> selectedRegistry = treeView.getSelectionModel().getSelectedItem();
+                                               if (selectedRegistry == null)
+                                                  return;
+                                               messager.submitMessage(topics.getOpenWindowRequest(),
+                                                                      NewWindowRequest.registryStatisticWindow(toolkit.getMainWindow(),
+                                                                                                               selectedRegistry.getValue()));
+                                            });
          return openStatisticsMenuItem;
       });
       yoManager.rootRegistryChangeCounter().addListener((o, oldValue, newValue) -> refreshRootRegistry = true);
 
-      searchTextField.textProperty().addListener((ChangeListener<String>) (observable, oldValue, newValue) -> search(newValue));
+      searchTextField.textProperty().addListener((observable, oldValue, newValue) -> search(newValue));
 
       activeSearchEngine = messager.createInput(topics.getYoSearchEngine(), SearchEngines.DEFAULT);
 
@@ -187,20 +183,22 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
       if (searchQuery != null && !searchQuery.isEmpty())
       {
          backgroundSearch = backgroundExecutorManager.executeInBackground(() ->
-         {
-            if (allRegistries == null)
-            {
-               refreshRootRegistry = true;
-               return null;
-            }
+                                                                          {
+                                                                             if (allRegistries == null)
+                                                                             {
+                                                                                refreshRootRegistry = true;
+                                                                                return null;
+                                                                             }
 
-            return createRootItemForRegistries(YoVariableTools.search(allRegistries,
-                                                                      registry -> registry.getNamespace().getName(),
-                                                                      searchQuery,
-                                                                      YoVariableTools.fromSearchEnginesEnum(activeSearchEngine.get()),
-                                                                      Integer.MAX_VALUE,
-                                                                      Collectors.toSet()));
-         });
+                                                                             return createRootItemForRegistries(YoVariableTools.search(allRegistries,
+                                                                                                                                       registry -> registry.getNamespace()
+                                                                                                                                                           .getName(),
+                                                                                                                                       searchQuery,
+                                                                                                                                       YoVariableTools.fromSearchEnginesEnum(
+                                                                                                                                             activeSearchEngine.get()),
+                                                                                                                                       Integer.MAX_VALUE,
+                                                                                                                                       Collectors.toSet()));
+                                                                          });
       }
       else
       {

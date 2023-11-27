@@ -7,6 +7,7 @@ pluginManagement {
 buildscript {
    repositories {
       maven { url = uri("https://plugins.gradle.org/m2/") }
+      maven { url = uri("https://mvnrepository.com/artifact/org.antlr/antlr4-runtime") }
       mavenLocal()
    }
    dependencies {

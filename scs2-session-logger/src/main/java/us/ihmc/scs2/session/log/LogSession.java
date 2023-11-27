@@ -37,6 +37,12 @@ public class LogSession extends Session
    private final LogDataReader logDataReader;
    private final LogPropertiesReader logProperties;
 
+   /**
+    * This is used to jump to a specific position in the log when the user drags the slider.
+    * <p>
+    * It is thread-safe.
+    * </p>
+    */
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
