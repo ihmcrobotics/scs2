@@ -1,11 +1,13 @@
 package us.ihmc.scs2.definition.yoComposite;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A {@link YoQuaternionDefinition} represents a template for creating a quaternion which components
@@ -30,6 +32,7 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
 {
    public static final String YoQuaternion = "YoQuaternion";
    public static final String[] YoQuaternionIdentifiers = new String[] {"qx", "qy", "qz", "qs"};
+   public static final List<String[]> YoQuaternionAlternateIdentifiers = Collections.singletonList(new String[] {"x, y, z, w"});
 
    /**
     * The components of this quaternion.
@@ -49,7 +52,9 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
     */
    private String referenceFrame;
 
-   /** Creates an empty quaternion which components need to be initialized. */
+   /**
+    * Creates an empty quaternion which components need to be initialized.
+    */
    public YoQuaternionDefinition()
    {
    }
@@ -190,21 +195,45 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
       this.referenceFrame = referenceFrame;
    }
 
+   /**
+    * Returns the constant value representation or {@code YoVariable} name/fullname for the
+    * x-component.
+    *
+    * @return the x-component.
+    */
    public String getX()
    {
       return x;
    }
 
+   /**
+    * Returns the constant value representation or {@code YoVariable} name/fullname for the
+    * y-component.
+    *
+    * @return the y-component.
+    */
    public String getY()
    {
       return y;
    }
 
+   /**
+    * Returns the constant value representation or {@code YoVariable} name/fullname for the
+    * z-component.
+    *
+    * @return the z-component.
+    */
    public String getZ()
    {
       return z;
    }
 
+   /**
+    * Returns the constant value representation or {@code YoVariable} name/fullname for the
+    * s-component.
+    *
+    * @return the s-component.
+    */
    public String getS()
    {
       return s;
@@ -226,6 +255,12 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
    public String[] getComponentIdentifiers()
    {
       return YoQuaternionIdentifiers;
+   }
+
+   @Override
+   public List<String[]> getAlternateComponentIdentifiers()
+   {
+      return YoQuaternionAlternateIdentifiers;
    }
 
    @Override

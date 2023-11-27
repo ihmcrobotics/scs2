@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -11,6 +12,7 @@ public class YoCompositePattern
 {
    private final String type;
    private final String[] componentIdentifiers;
+   private final List<String[]> alternateComponentIdentifiers = new ArrayList<>();
    private final boolean crossRegistry;
    private final List<ChartGroupModel> preferredChartConfigurations;
 
@@ -20,6 +22,11 @@ public class YoCompositePattern
    }
 
    public YoCompositePattern(String type, boolean crossRegistry, String[] componentIdentifiers, List<ChartGroupModel> preferredChartConfigurations)
+   {
+      this(type, crossRegistry, componentIdentifiers, Collections.emptyList(), preferredChartConfigurations);
+   }
+
+   public YoCompositePattern(String type, boolean crossRegistry, String[] componentIdentifiers, List<String[]> alternateComponentIdentifiers, List<ChartGroupModel> preferredChartConfigurations)
    {
       this.type = type;
       this.crossRegistry = crossRegistry;
@@ -36,15 +43,32 @@ public class YoCompositePattern
             if (chartIdentifierList.size() != componentIdentifiers.length)
             {
                throw new IllegalArgumentException("Unexpected chart configuration size for composite " + type + ".\n"
-                     + "The size of each preferred chart configuration should be equal to the number of components in the composite.\n"
-                     + "Problematic chart configuration: " + chartIdentifierList.getName() + " configuration size " + chartIdentifierList.size() + " expected "
-                     + componentIdentifiers.length + ".");
+                                                  + "The size of each preferred chart configuration should be equal to the number of components in the composite.\n"
+                                                  + "Problematic chart configuration: " + chartIdentifierList.getName() + " configuration size "
+                                                  + chartIdentifierList.size() + " expected " + componentIdentifiers.length + ".");
             }
          }
+      }
+      if (componentIdentifiers == null && !alternateComponentIdentifiers.isEmpty())
+      {
+         throw new IllegalArgumentException("Unexpected alternate component identifiers for composite " + type + ".\n"
+                                            + "The alternate component identifiers can only be set if the component identifiers are set.\n"
+                                            + "Problematic alternate component identifiers: " + alternateComponentIdentifiers);
       }
 
       this.componentIdentifiers = componentIdentifiers;
       this.preferredChartConfigurations = preferredChartConfigurations;
+      alternateComponentIdentifiers.forEach(this::addAlternateComponentIdentifiers);
+   }
+
+   public void addAlternateComponentIdentifiers(String[] alternateComponentIdentifiers)
+   {
+      if (alternateComponentIdentifiers.length != componentIdentifiers.length)
+         throw new IllegalArgumentException("Unexpected alternate component identifiers size for composite " + type + ".\n"
+                                            + "The size of each alternate component identifiers should be equal to the number of components in the composite.\n"
+                                            + "Problematic alternate component identifiers: " + Arrays.toString(alternateComponentIdentifiers) + " expected "
+                                            + componentIdentifiers.length + ".");
+      this.alternateComponentIdentifiers.add(alternateComponentIdentifiers);
    }
 
    public String getType()
@@ -55,6 +79,11 @@ public class YoCompositePattern
    public String[] getComponentIdentifiers()
    {
       return componentIdentifiers;
+   }
+
+   public List<String[]> getAlternateComponentIdentifiers()
+   {
+      return alternateComponentIdentifiers;
    }
 
    public boolean isCrossRegistry()

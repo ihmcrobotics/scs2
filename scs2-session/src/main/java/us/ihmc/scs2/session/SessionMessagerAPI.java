@@ -27,6 +27,8 @@ public class SessionMessagerAPI
 
    private static final CategoryTheme Run = apiFactory.createCategoryTheme("Run");
    private static final CategoryTheme Playback = apiFactory.createCategoryTheme("Playback");
+   private static final CategoryTheme Change = apiFactory.createCategoryTheme("Change");
+   private static final CategoryTheme RobotDefinition = apiFactory.createCategoryTheme("RobotDefinition");
 
    private static final TopicTheme RealTimeRate = apiFactory.createTopicTheme("RealTimeRate");
    private static final TopicTheme Period = apiFactory.createTypedTopicTheme("Period");
@@ -34,6 +36,7 @@ public class SessionMessagerAPI
    private static final TopicTheme Mode = apiFactory.createTypedTopicTheme("Mode");
    private static final TopicTheme TickPeriod = apiFactory.createTypedTopicTheme("TickPeriod");
    private static final TopicTheme Data = apiFactory.createTypedTopicTheme("Data");
+   private static final TopicTheme Request = apiFactory.createTypedTopicTheme("Request");
 
    public static final Topic<Long> SessionDTNanoseconds = root.child(Session).child(Run).topic(Period);
    public static final Topic<SessionState> SessionCurrentState = root.child(Session).topic(State);
@@ -45,6 +48,14 @@ public class SessionMessagerAPI
    public static final Topic<Double> PlaybackRealTimeRate = root.child(Session).child(Playback).topic(RealTimeRate);
 
    public static final Topic<SessionDataExportRequest> SessionDataExportRequest = root.child(Session).child(Export).topic(Data);
+   public static final Topic<SessionRobotDefinitionListChange> SessionRobotDefinitionListChangeRequest = root.child(Session)
+                                                                                                             .child(Change)
+                                                                                                             .child(RobotDefinition)
+                                                                                                             .topic(Request);
+   public static final Topic<SessionRobotDefinitionListChange> SessionRobotDefinitionListChangeState = root.child(Session)
+                                                                                                           .child(Change)
+                                                                                                           .child(RobotDefinition)
+                                                                                                           .topic(State);
 
    static
    { // Ensure that the Sensors is loaded before closing the API.
