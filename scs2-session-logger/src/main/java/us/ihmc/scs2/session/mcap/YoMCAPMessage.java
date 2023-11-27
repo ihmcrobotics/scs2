@@ -79,14 +79,14 @@ public final class YoMCAPMessage
                messageRegistry.addChild(newElement.getRegistry());
                return newElement;
             };
-            createFieldArray(YoMCAPMessage.class,
-                             elementBuilder,
-                             YoMCAPMessage::deserialize,
-                             YoMCAPMessage::clearData,
-                             fieldName,
-                             field.isArray(),
-                             field.getMaxLength(),
-                             messageRegistry);
+            deserializers.add(createFieldArray(YoMCAPMessage.class,
+                                               elementBuilder,
+                                               YoMCAPMessage::deserialize,
+                                               YoMCAPMessage::clearData,
+                                               fieldName,
+                                               field.isArray(),
+                                               field.getMaxLength(),
+                                               messageRegistry));
          }
       }
 
@@ -164,7 +164,8 @@ public final class YoMCAPMessage
    }
 
    /**
-    * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an array or a vector.
+    * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an
+    * array or a vector.
     *
     * @param field    the ROS2 field to instantiate into a {@code YoVariable} array.
     * @param registry the registry in which the {@code YoVariable}s are to be added.
@@ -196,11 +197,13 @@ public final class YoMCAPMessage
    }
 
    /**
-    * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an array or a vector.
+    * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an
+    * array or a vector.
     *
     * @param variableType        the type of the {@code YoVariable} to be created.
     * @param elementBuilder      the function used to create a new {@code YoVariable}.
-    * @param elementDeserializer the function used to deserialize a ROS2 message and update the {@code YoVariable}.
+    * @param elementDeserializer the function used to deserialize a ROS2 message and update the
+    *                            {@code YoVariable}.
     * @param elementResetter     the function used to reset a {@code YoVariable}.
     * @param name                the base name of the {@code YoVariable}.
     * @param isFixedSize         whether the array is fixed size or not.
@@ -218,7 +221,8 @@ public final class YoMCAPMessage
                                                                    int length,
                                                                    YoRegistry registry)
    {
-      @SuppressWarnings("unchecked") T[] array = (T[]) Array.newInstance(variableType, length);
+      @SuppressWarnings("unchecked")
+      T[] array = (T[]) Array.newInstance(variableType, length);
       for (int i = 0; i < length; i++)
          array[i] = elementBuilder.apply(name + "[" + i + "]", registry);
       return cdr ->
@@ -283,8 +287,11 @@ public final class YoMCAPMessage
       conversionMap = allConversions.stream().collect(Collectors.toMap(YoConversionToolbox::primitiveType, conversion -> conversion));
    }
 
-   public record YoConversionToolbox<T extends YoVariable>(String primitiveType, Class<T> yoType, BiFunction<String, YoRegistry, T> yoBuilder,
-                                                           BiConsumer<T, CDRDeserializer> deserializer, Consumer<T> yoResetter)
+   public record YoConversionToolbox<T extends YoVariable>(String primitiveType,
+                                                           Class<T> yoType,
+                                                           BiFunction<String, YoRegistry, T> yoBuilder,
+                                                           BiConsumer<T, CDRDeserializer> deserializer,
+                                                           Consumer<T> yoResetter)
    {
       public Consumer<CDRDeserializer> createYoVariable(String name, YoRegistry registry)
       {
@@ -323,6 +330,21 @@ public final class YoMCAPMessage
          {
             return cdr ->
             {
+               if (cdr == null)
+               {
+                  if (yoResetter == null)
+                     return;
+                  try
+                  {
+                     yoResetter.accept(null);
+                  }
+                  catch (Exception e)
+                  {
+                     LogTools.error("Failed to reset variable: " + name + ", registry: " + registry);
+                     throw new RuntimeException(e);
+                  }
+               }
+
                try
                {
                   deserializer.accept(null, cdr);
