@@ -337,6 +337,11 @@ public class CompositePropertyTools
       return doubleProperties.stream().map(CompositePropertyTools::toDoublePropertyName).collect(Collectors.toList());
    }
 
+   public static boolean isParsableAsNumber(String string)
+   { // TODO: Probably need to add more to this like long, etc.
+      return isParsableAsDouble(string) || isParsableAsInteger(string);
+   }
+
    public static boolean areParsableAsDoubles(String... strings)
    {
       if (strings == null || strings.length == 0)
