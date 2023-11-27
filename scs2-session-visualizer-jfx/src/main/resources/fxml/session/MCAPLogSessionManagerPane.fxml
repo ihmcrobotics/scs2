@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXSpinner?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import com.jfoenix.controls.JFXTrimSlider?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:id="mainPane" minHeight="-Infinity" minWidth="-Infinity" prefWidth="600.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPLogSessionManagerController">
+   <children>
+      <VBox layoutY="45.0" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox alignment="CENTER" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" VBox.vgrow="NEVER">
+               <children>
+                  <JFXSpinner fx:id="loadingSpinner" prefHeight="30.0" prefWidth="30.0" visible="false" HBox.hgrow="NEVER" />
+                  <JFXButton fx:id="openSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Open log..." />
+                  <JFXButton fx:id="endSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="end-session-button" text="End session" />
+               </children>
+            </HBox>
+            <GridPane hgap="5.0" minHeight="-Infinity" minWidth="-Infinity" vgap="5.0" VBox.vgrow="NEVER">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="NEVER" />
+                  <ColumnConstraints hgrow="SOMETIMES" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label minHeight="-Infinity" minWidth="-Infinity" text="Session name:" />
+                  <Label fx:id="sessionNameLabel" minHeight="-Infinity" minWidth="-Infinity" text="sessionNameLabel" GridPane.columnIndex="1" />
+                  <Label minHeight="-Infinity" minWidth="-Infinity" text="Date:" GridPane.rowIndex="1" />
+                  <Label fx:id="dateLabel" minHeight="-Infinity" minWidth="-Infinity" text="dateLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label minHeight="-Infinity" minWidth="-Infinity" text="Log path:" GridPane.rowIndex="2" />
+                  <Label fx:id="logPathLabel" minHeight="-Infinity" minWidth="-Infinity" text="logPathLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               </children>
+            </GridPane>
+            <JFXTrimSlider fx:id="logPositionSlider">
+               <padding>
+                  <Insets bottom="20.0" />
+               </padding>
+            </JFXTrimSlider>
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Label text="Link robot model:" />
+                  <JFXTextField fx:id="currentModelFilePathTextField" editable="false" text="Path to model file" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                  </JFXTextField>
+                  <JFXButton onAction="#requestLoadRobotModelFile" styleClass="open-robot-model-file-button" text="Load robot..." />
+               </children>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </HBox>
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </VBox>
+   </children>
+</AnchorPane>

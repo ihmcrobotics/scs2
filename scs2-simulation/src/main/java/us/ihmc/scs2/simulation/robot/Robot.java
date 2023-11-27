@@ -1,33 +1,15 @@
 package us.ihmc.scs2.simulation.robot;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.log.LogTools;
-import us.ihmc.mecano.frames.MovingReferenceFrame;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.PlanarJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.SphericalJointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.robot.*;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition.JointStateEntry;
-import us.ihmc.scs2.definition.state.JointState;
-import us.ihmc.scs2.definition.state.JointStateBase;
-import us.ihmc.scs2.definition.state.OneDoFJointState;
-import us.ihmc.scs2.definition.state.PlanarJointState;
-import us.ihmc.scs2.definition.state.SixDoFJointState;
-import us.ihmc.scs2.definition.state.SphericalJointState;
+import us.ihmc.scs2.definition.state.*;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.robot.controller.LoopClosureSoftConstraintController;
@@ -36,6 +18,12 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.*;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Robot implements RobotInterface
 {
@@ -53,7 +41,7 @@ public class Robot implements RobotInterface
    protected final String name;
    protected final SimRigidBody rootBody;
    protected final ReferenceFrame inertialFrame;
-   protected final ReferenceFrame robotRootFrame;
+   protected final RobotRootFrame robotRootFrame;
 
    protected final List<SimJointBasics> allJoints;
    protected final List<SimRigidBodyBasics> allRigidBodies;
@@ -72,7 +60,7 @@ public class Robot implements RobotInterface
     * For simulation, make sure to use the same inertial frame as the session. By default, a simulation
     * session will use {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
     * </p>
-    * 
+    *
     * @param robotDefinition the template of the robot.
     * @param inertialFrame   the global to use for this robot, typically is
     *                        {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
@@ -88,7 +76,7 @@ public class Robot implements RobotInterface
     * For simulation, make sure to use the same inertial frame as the session. By default, a simulation
     * session will use {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
     * </p>
-    * 
+    *
     * @param robotDefinition the template of the robot.
     * @param inertialFrame   the global to use for this robot, typically is
     *                        {@link SimulationSession#DEFAULT_INERTIAL_FRAME}.
@@ -99,9 +87,9 @@ public class Robot implements RobotInterface
    {
       this.robotDefinition = robotDefinition;
       this.inertialFrame = inertialFrame;
-      robotRootFrame = createRobotRootFrame(robotDefinition, inertialFrame);
 
       name = robotDefinition.getName();
+      robotRootFrame = new RobotRootFrame(name, inertialFrame);
 
       registry = new YoRegistry(name);
       secondaryRegistry = new YoRegistry(name + "InertialParameters");
@@ -125,11 +113,6 @@ public class Robot implements RobotInterface
          createSoftConstraintControllerDefinitions(robotDefinition).forEach(controllerManager::addController);
          robotDefinition.getControllerDefinitions().forEach(controllerManager::addController);
       }
-   }
-
-   public static ReferenceFrame createRobotRootFrame(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
-   {
-      return MovingReferenceFrame.constructFrameFixedInParent(robotDefinition.getName() + "RootFrame", inertialFrame, new RigidBodyTransform());
    }
 
    public static SimRigidBody createRobot(RigidBodyDefinition rootBodyDefinition,
@@ -188,30 +171,37 @@ public class Robot implements RobotInterface
             continue;
 
          controllerDefinitions.add((controllerInput, controllerOutput) ->
-         {
-            String name = jointDefinition.getName();
-            LoopClosureDefinition loopClosureDefinition = jointDefinition.getLoopClosureDefinition();
-            RigidBodyTransformReadOnly transformToParentJoint = jointDefinition.getTransformToParent();
-            RigidBodyTransformReadOnly transformToSuccessorParentJoint = loopClosureDefinition.getTransformToSuccessorParent();
+                                   {
+                                      String name = jointDefinition.getName();
+                                      LoopClosureDefinition loopClosureDefinition = jointDefinition.getLoopClosureDefinition();
+                                      RigidBodyTransformReadOnly transformToParentJoint = jointDefinition.getTransformToParent();
+                                      RigidBodyTransformReadOnly transformToSuccessorParentJoint = loopClosureDefinition.getTransformToSuccessorParent();
 
-            Matrix3DReadOnly constraintForceSubSpace = LoopClosureDefinition.jointForceSubSpace(jointDefinition);
-            Matrix3DReadOnly constraintMomentSubSpace = LoopClosureDefinition.jointMomentSubSpace(jointDefinition);
-            if (constraintForceSubSpace == null || constraintMomentSubSpace == null)
-               throw new UnsupportedOperationException("Loop closure not supported for " + jointDefinition);
+                                      Matrix3DReadOnly constraintForceSubSpace = LoopClosureDefinition.jointForceSubSpace(jointDefinition);
+                                      Matrix3DReadOnly constraintMomentSubSpace = LoopClosureDefinition.jointMomentSubSpace(jointDefinition);
+                                      if (constraintForceSubSpace == null || constraintMomentSubSpace == null)
+                                         throw new UnsupportedOperationException("Loop closure not supported for " + jointDefinition);
 
-            LoopClosureSoftConstraintController constraint = new LoopClosureSoftConstraintController(name,
-                                                                                                     transformToParentJoint,
-                                                                                                     transformToSuccessorParentJoint,
-                                                                                                     constraintForceSubSpace,
-                                                                                                     constraintMomentSubSpace);
-            constraint.setParentJoint((SimJointBasics) controllerInput.getInput().findJoint(jointDefinition.getParentJoint().getName()));
-            constraint.setSuccessor((SimRigidBodyBasics) controllerInput.getInput().findRigidBody(jointDefinition.getSuccessor().getName()));
-            constraint.setGains(loopClosureDefinition.getKpSoftConstraint(), loopClosureDefinition.getKdSoftConstraint());
-            return constraint;
-         });
+                                      LoopClosureSoftConstraintController constraint = new LoopClosureSoftConstraintController(name,
+                                                                                                                               transformToParentJoint,
+                                                                                                                               transformToSuccessorParentJoint,
+                                                                                                                               constraintForceSubSpace,
+                                                                                                                               constraintMomentSubSpace);
+                                      constraint.setParentJoint((SimJointBasics) controllerInput.getInput()
+                                                                                                .findJoint(jointDefinition.getParentJoint().getName()));
+                                      constraint.setSuccessor((SimRigidBodyBasics) controllerInput.getInput()
+                                                                                                  .findRigidBody(jointDefinition.getSuccessor().getName()));
+                                      constraint.setGains(loopClosureDefinition.getKpSoftConstraint(), loopClosureDefinition.getKdSoftConstraint());
+                                      return constraint;
+                                   });
       }
 
       return controllerDefinitions;
+   }
+
+   public ReferenceFrame getRobotRootFrame()
+   {
+      return robotRootFrame;
    }
 
    @Override
@@ -327,6 +317,12 @@ public class Robot implements RobotInterface
 
       definition.setJointStateEntries(jointStateEntries);
       return definition;
+   }
+
+   public void destroy()
+   {
+      registry.destroy();
+      robotRootFrame.remove();
    }
 
    private static JointStateBase extractJointState(JointReadOnly joint)

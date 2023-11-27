@@ -176,6 +176,7 @@ public class SessionVisualizerIOTools
    public static final URL REMOTE_SESSION_INFO_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "YoClientInformationPane");
    public static final URL LOG_SESSION_MANAGER_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "LogSessionManagerPane");
    public static final URL LOG_CROP_PROGRESS_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "LogCropProgressPane");
+   public static final URL MCAP_LOG_SESSION_MANAGER_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "MCAPLogSessionManagerPane");
 
    // Cloudy Crown Skybox
    public static final String SKYBOX_CLOUDY_FOLDER = "cloudy/";
@@ -485,12 +486,12 @@ public class SessionVisualizerIOTools
 
    }
 
-   private static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)
+   public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)
    {
       return showOpenDialog(owner, title, extensionFilter, "filePath");
    }
 
-   private static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
+   public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
       FileChooser fileChooser = fileChooser(title, extensionFilter);
       File result = fileChooser.showOpenDialog(owner);

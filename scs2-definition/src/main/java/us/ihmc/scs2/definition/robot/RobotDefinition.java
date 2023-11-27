@@ -1,16 +1,5 @@
 package us.ihmc.scs2.definition.robot;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-
 import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
@@ -30,30 +19,98 @@ import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.state.interfaces.JointStateBasics;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+/**
+ * Definition for a robot. A robot is a tree structure of {@link RigidBodyDefinition} connected by
+ * {@link JointDefinition}.
+ * <p>
+ * A robot definition can be used to create a Robot object that can be simulated or visualized.
+ * </p>
+ */
 @XmlRootElement(name = "Robot")
 public class RobotDefinition
 {
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Default implementation for creating a {@link JointBasics} from a {@link JointDefinition}.
+    * </p>
+    */
    public static final JointCreator DEFAULT_JOINT_BUILDER = (predecessor, definition) -> definition.toJoint(predecessor);
-   public static final RootBodyCreator DEFAUL_ROOT_BODY_BUILDER = (rootFrame, definition) -> definition.toRootBody(rootFrame);
-   public static final RigidBodyCreator DEFAUL_RIGID_BODY_BUILDER = (parentJoint, definition) -> definition.toRigidBody(parentJoint);
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Default implementation for creating a {@link RigidBodyBasics} from a {@link RigidBodyDefinition} that will be used as the root body.
+    * </p>
+    */
+   public static final RootBodyCreator DEFAULT_ROOT_BODY_BUILDER = (rootFrame, definition) -> definition.toRootBody(rootFrame);
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Default implementation for creating a {@link RigidBodyBasics} from a {@link RigidBodyDefinition}.
+    * </p>
+    */
+   public static final RigidBodyCreator DEFAULT_RIGID_BODY_BUILDER = (parentJoint, definition) -> definition.toRigidBody(parentJoint);
 
+   /**
+    * The name for the robot.
+    */
    private String name;
+   /**
+    * The root body of the robot.
+    * <p>
+    * The root body is the first body of the robot, it is the body that is attached to the world. The robot kinematics is defined by the tree of bodies and
+    * joints starting from the root body.
+    * </p>
+    */
    private RigidBodyDefinition rootBodyDefinition;
+   /**
+    * The names of the joints to ignore in either the controller or the simulation.
+    */
    private List<String> nameOfJointsToIgnore = new ArrayList<>();
-
+   /**
+    * EXPERIMENTAL: The controllers to be used with this robot.
+    */
    private final List<ControllerDefinition> controllerDefinitions = new ArrayList<>();
-
+   /**
+    * The class loader used to load the resources associated with this robot.
+    * <p>
+    * Typically used to load mesh files for the visual and collision shapes.
+    * </p>
+    */
    private ClassLoader resourceClassLoader;
 
+   /**
+    * Creates an empty robot definition. Typically used for XML marshalling.
+    */
    public RobotDefinition()
    {
    }
 
+   /**
+    * Creates and initializes a robot definition.
+    *
+    * @param name the name for the robot.
+    */
    public RobotDefinition(String name)
    {
       setName(name);
    }
 
+   /**
+    * Copy constructor.
+    *
+    * @param other the other robot definition to copy. Not modified.
+    */
    public RobotDefinition(RobotDefinition other)
    {
       name = other.name;
@@ -70,12 +127,26 @@ public class RobotDefinition
       resourceClassLoader = other.resourceClassLoader;
    }
 
+   /**
+    * Sets the name for this robot.
+    *
+    * @param name the name for this robot.
+    */
    @XmlAttribute
    public void setName(String name)
    {
       this.name = name;
    }
 
+   /**
+    * Sets the root body for this robot.
+    * <p>
+    * The root body is the first body of the robot, it is the body that is attached to the world. The robot kinematics is defined by the tree of bodies and
+    * joints starting from the root body.
+    * </p>
+    *
+    * @param rootBodyDefinition the root body for this robot.
+    */
    @XmlElement(name = "rootBody")
    public void setRootBodyDefinition(RigidBodyDefinition rootBodyDefinition)
    {
@@ -94,17 +165,42 @@ public class RobotDefinition
       }
    }
 
+   /**
+    * Specifies the joints that should not be simulated/controlled.
+    * <p>
+    * Typically used to ignore the finger joints of a humanoid robot that are numerous and hve a negligible effect on the robot's dynamics.
+    * </p>
+    *
+    * @param nameOfJointsToIgnore the name of the joints to ignore.
+    */
    @XmlElement(name = "jointToIgnore")
    public void setNameOfJointsToIgnore(List<String> nameOfJointsToIgnore)
    {
       this.nameOfJointsToIgnore = nameOfJointsToIgnore;
    }
 
+   /**
+    * Specifies the joints that should not be simulated/controlled. This method adds the given joint to the list of joints to ignore.
+    * <p>
+    * Typically used to ignore the finger joints of a humanoid robot that are numerous and hve a negligible effect on the robot's dynamics.
+    * </p>
+    *
+    * @param nameOfJointToIgnore the name of the joints to ignore.
+    */
    public void addJointToIgnore(String nameOfJointToIgnore)
    {
       nameOfJointsToIgnore.add(nameOfJointToIgnore);
    }
 
+   /**
+    * Specifies the joints that should not be simulated/controlled. This method adds the given joint's subtree to the list of joints to ignore.
+    * <p>
+    * Typically used to ignore the finger joints of a humanoid robot that are numerous and hve a negligible effect on the robot's dynamics.
+    * </p>
+    *
+    * @param nameOfLastJointToConsider the name of the last joint to consider, the subtree starting from this joint will be added to the list of joints to
+    *                                  ignore.
+    */
    public void addSubtreeJointsToIgnore(String nameOfLastJointToConsider)
    {
       List<JointDefinition> definitionOfJointsToIgnore = collectSubtreeJointDefinitions(getJointDefinition(nameOfLastJointToConsider).getSuccessor());
@@ -115,6 +211,11 @@ public class RobotDefinition
       }
    }
 
+   /**
+    * Adds a controller to this robot.
+    *
+    * @param controllerDefinition the controller to add.
+    */
    public void addControllerDefinition(ControllerDefinition controllerDefinition)
    {
       controllerDefinitions.add(controllerDefinition);
@@ -123,18 +224,18 @@ public class RobotDefinition
    /**
     * Simplifies this robot kinematics by removing any fixed joint, i.e. joints with 0 degree of
     * freedom.
-    * 
+    *
     * @see #simplifyKinematics(JointDefinition, Predicate)
     */
    public void simplifyKinematics()
    {
-      simplifyKinematics((Predicate<FixedJointDefinition>) null);
+      simplifyKinematics(null);
    }
 
    /**
     * Simplifies this robot kinematics by removing any fixed joint, i.e. joints with 0 degree of
     * freedom.
-    * 
+    *
     * @param simplifyKinematicsFilter filter that allows to preserve some fixed joints during this
     *                                 operation. A fixed joint is preserved only if the filter is
     *                                 defined and returns {@code false} when queried.
@@ -149,7 +250,7 @@ public class RobotDefinition
    /**
     * Transforms all the robot local frames such that they are pointing z-up and x-forward when the
     * robot is in the zero configuration.
-    * 
+    *
     * @see #transformAllFramesToZUp(JointDefinition)
     */
    public void transformAllFramesToZUp()
@@ -158,22 +259,73 @@ public class RobotDefinition
          transformAllFramesToZUp(rootBodyDefinition.getChildrenJoints().get(i));
    }
 
+   /**
+    * Sanitizes the names of the joints and rigid-bodies by replacing all dots '.' with underscores
+    * '_'.
+    */
+   public void sanitizeNames()
+   {
+      forEachJointDefinition(jointDefinition ->
+                             {
+                                String sanitizedName = jointDefinition.getName();
+                                sanitizedName = sanitizedName.replace('.', '_');
+                                jointDefinition.setName(sanitizedName);
+                             });
+      forEachRigidBodyDefinition(rigidBodyDefinition ->
+                                 {
+                                    String sanitizedName = rigidBodyDefinition.getName();
+                                    sanitizedName = sanitizedName.replace('.', '_');
+                                    rigidBodyDefinition.setName(sanitizedName);
+                                 });
+   }
+
+   /**
+    * Sets the class loader used to load the resources associated with this robot.
+    * <p>
+    * Typically used to load mesh files for the visual and collision shapes.
+    * </p>
+    *
+    * @param resourceClassLoader the class loader used to load the resources associated with this robot.
+    */
    @XmlTransient
    public void setResourceClassLoader(ClassLoader resourceClassLoader)
    {
       this.resourceClassLoader = resourceClassLoader;
    }
 
+   /**
+    * Returns the name for this robot.
+    *
+    * @return the name for this robot.
+    */
    public String getName()
    {
       return name;
    }
 
+   /**
+    * Returns the root body for this robot.
+    * <p>
+    * The root body is the first body of the robot, it is the body that is attached to the world. The robot kinematics is defined by the tree of bodies and
+    * joints starting from the root body.
+    * </p>
+    *
+    * @return the root body for this robot.
+    */
    public RigidBodyDefinition getRootBodyDefinition()
    {
       return rootBodyDefinition;
    }
 
+   /**
+    * Returns the floating root joint definition for this robot.
+    * <p>
+    * The floating root joint is the first joint of the robot, it is the joint that is attached to the world. The robot kinematics is defined by the tree of
+    * bodies and joints starting from the floating root joint.
+    * </p>
+    *
+    * @return the floating root joint definition for this robot.
+    */
    public SixDoFJointDefinition getFloatingRootJointDefinition()
    {
       if (rootBodyDefinition == null)
@@ -189,26 +341,59 @@ public class RobotDefinition
       return null;
    }
 
+   /**
+    * Returns the all the root joint definitions for this robot.
+    * <p>
+    * Typically, there is a single root joint that is of the type {@link SixDoFJointDefinition}.
+    * </p>
+    *
+    * @return the all the root joint definitions for this robot.
+    */
    public List<JointDefinition> getRootJointDefinitions()
    {
       return rootBodyDefinition.getChildrenJoints();
    }
 
+   /**
+    * Returns the names of the joints to ignore in either the controller or the simulation.
+    *
+    * @return the names of the joints to ignore in either the controller or the simulation.
+    */
    public List<String> getNameOfJointsToIgnore()
    {
       return nameOfJointsToIgnore;
    }
 
+   /**
+    * Returns the class loader used to load the resources associated with this robot.
+    * <p>
+    * Typically used to load mesh files for the visual and collision shapes.
+    * </p>
+    *
+    * @return the class loader used to load the resources associated with this robot.
+    */
    public ClassLoader getResourceClassLoader()
    {
       return resourceClassLoader;
    }
 
+   /**
+    * Returns the joint definition for the given joint name.
+    *
+    * @param jointName the name of the joint to retrieve.
+    * @return the joint definition for the given joint name or {@code null} if no joint could be found.
+    */
    public JointDefinition getJointDefinition(String jointName)
    {
       return findJointDefinition(rootBodyDefinition, jointName);
    }
 
+   /**
+    * Returns the one degree-of-freedom joint definition for the given joint name.
+    *
+    * @param jointName the name of the joint to retrieve.
+    * @return the one degree-of-freedom joint definition for the given joint name or {@code null} if no joint could be found.
+    */
    public OneDoFJointDefinition getOneDoFJointDefinition(String jointName)
    {
       JointDefinition jointDefinition = getJointDefinition(jointName);
@@ -218,16 +403,32 @@ public class RobotDefinition
          return null;
    }
 
+   /**
+    * Returns the rigid-body definition for the given rigid-body name.
+    *
+    * @param bodyName the name of the rigid-body to retrieve.
+    * @return the rigid-body definition for the given rigid-body name or {@code null} if no rigid-body could be found.
+    */
    public RigidBodyDefinition getRigidBodyDefinition(String bodyName)
    {
       return findRigidBodyDefinition(rootBodyDefinition, bodyName);
    }
 
+   /**
+    * Performs the given action for each joint definition in the robot.
+    *
+    * @param jointConsumer the action to perform.
+    */
    public void forEachJointDefinition(Consumer<JointDefinition> jointConsumer)
    {
       forEachJointDefinition(rootBodyDefinition, jointConsumer);
    }
 
+   /**
+    * Performs the given action for each one degree-of-freedom joint definition in the robot.
+    *
+    * @param jointConsumer the action to perform.
+    */
    public void forEachOneDoFJointDefinition(Consumer<OneDoFJointDefinition> jointConsumer)
    {
       forEachJointDefinition(rootBodyDefinition, joint ->
@@ -237,11 +438,21 @@ public class RobotDefinition
       });
    }
 
+   /**
+    * Performs the given action for each rigid-body definition in the robot.
+    *
+    * @param rigidBodyConsumer the action to perform.
+    */
    public void forEachRigidBodyDefinition(Consumer<RigidBodyDefinition> rigidBodyConsumer)
    {
       forEachRigidBodyDefinition(rootBodyDefinition, rigidBodyConsumer);
    }
 
+   /**
+    * Returns the list of all the joint definitions in the robot.
+    *
+    * @return the list of all the joint definitions in the robot.
+    */
    public List<JointDefinition> getAllJoints()
    {
       List<JointDefinition> joints = new ArrayList<>();
@@ -249,6 +460,11 @@ public class RobotDefinition
       return joints;
    }
 
+   /**
+    * Returns the list of all the one degree-of-freedom joint definitions in the robot.
+    *
+    * @return the list of all the one degree-of-freedom joint definitions in the robot.
+    */
    public List<OneDoFJointDefinition> getAllOneDoFJoints()
    {
       List<OneDoFJointDefinition> joints = new ArrayList<>();
@@ -256,21 +472,46 @@ public class RobotDefinition
       return joints;
    }
 
+   /**
+    * Returns the list of all the rigid-body definitions in the robot.
+    *
+    * @return the list of all the rigid-body definitions in the robot.
+    */
    public List<RigidBodyDefinition> getAllRigidBodies()
    {
       return collectSubtreeRigidBodyDefinitions(rootBodyDefinition);
    }
 
+   /**
+    * Returns the list of all the controllers for this robot.
+    *
+    * @return the list of all the controllers for this robot.
+    */
    public List<ControllerDefinition> getControllerDefinitions()
    {
       return controllerDefinitions;
    }
 
+   /**
+    * Instantiates a new robot with the given root frame.
+    *
+    * @param rootFrame the root frame for the robot.
+    * @return the new robot.
+    */
    public RigidBodyBasics newInstance(ReferenceFrame rootFrame)
    {
-      return newInstance(rootFrame, DEFAUL_ROOT_BODY_BUILDER, DEFAULT_JOINT_BUILDER, DEFAUL_RIGID_BODY_BUILDER);
+      return newInstance(rootFrame, DEFAULT_ROOT_BODY_BUILDER, DEFAULT_JOINT_BUILDER, DEFAULT_RIGID_BODY_BUILDER);
    }
 
+   /**
+    * Instantiates a new robot with the given root frame.
+    *
+    * @param rootFrame        the root frame for the robot.
+    * @param rootBodyCreator  the creator for the root body.
+    * @param jointCreator     the creator for the joints.
+    * @param rigidBodyCreator the creator for the rigid-bodies.
+    * @return the new robot.
+    */
    public RigidBodyBasics newInstance(ReferenceFrame rootFrame, RootBodyCreator rootBodyCreator, JointCreator jointCreator, RigidBodyCreator rigidBodyCreator)
    {
       if (rootBodyDefinition == null)
@@ -301,6 +542,13 @@ public class RobotDefinition
       }
    }
 
+   /**
+    * <i>-- Intended for internal use --</i>
+    * Recursively closes the loops in the robot.
+    *
+    * @param predecessor           the predecessor of the subtree to close the loops for.
+    * @param predecessorDefinition the definition of the predecessor of the subtree to close the loops for.
+    */
    public static void closeLoops(RigidBodyBasics predecessor, RigidBodyDefinition predecessorDefinition)
    {
       if (predecessor == null)
@@ -323,6 +571,12 @@ public class RobotDefinition
       }
    }
 
+   /**
+    * Recursively traverses the robot kinematics and returns the list of all the joints that belong to the {@code start} subtree.
+    *
+    * @param start the subtree to collect the joints from.
+    * @return the list of all the joints that belong to the {@code start} subtree.
+    */
    public static List<JointDefinition> collectSubtreeJointDefinitions(RigidBodyDefinition start)
    {
       List<JointDefinition> joints = new ArrayList<>();
@@ -330,6 +584,12 @@ public class RobotDefinition
       return joints;
    }
 
+   /**
+    * Recursively traverses the robot kinematics and returns the list of all the rigid-bodies that belong to the {@code start} subtree.
+    *
+    * @param start the subtree to collect the rigid-bodies from.
+    * @return the list of all the rigid-bodies that belong to the {@code start} subtree.
+    */
    public static List<RigidBodyDefinition> collectSubtreeRigidBodyDefinitions(RigidBodyDefinition start)
    {
       List<RigidBodyDefinition> rigidBodies = new ArrayList<>();
@@ -337,6 +597,13 @@ public class RobotDefinition
       return rigidBodies;
    }
 
+   /**
+    * Searches the robot kinematics for the joint definition with the given name and that is a descendant of {@code start}.
+    *
+    * @param start     the subtree to start the search from.
+    * @param jointName the name of the joint to find.
+    * @return the joint definition with the given name or {@code null} if no joint could be found.
+    */
    public static JointDefinition findJointDefinition(RigidBodyDefinition start, String jointName)
    {
       if (start == null)
@@ -358,6 +625,13 @@ public class RobotDefinition
       return null;
    }
 
+   /**
+    * Assuming the given {@code robotDefinition} and {@code rootBody} are compatible, this method recurse through the robot kinematics and initializes the
+    * robot state to the initial state specified in the robot definition.
+    *
+    * @param robotDefinition the definition with initial state.
+    * @param rootBody        the root body of the robot to initialize the state of.
+    */
    public static void initializeRobotState(RobotDefinition robotDefinition, RigidBodyBasics rootBody)
    {
       initializeRobotStateRecursive(robotDefinition.getRootBodyDefinition(), rootBody);
@@ -394,6 +668,13 @@ public class RobotDefinition
       }
    }
 
+   /**
+    * Searches the robot kinematics for the rigid-body definition with the given name and that is a descendant of {@code start}.
+    *
+    * @param start         the subtree to start the search from.
+    * @param rigidBodyName the name of the rigid-body to find.
+    * @return the rigid-body definition with the given name or {@code null} if no rigid-body could be found.
+    */
    public static RigidBodyDefinition findRigidBodyDefinition(RigidBodyDefinition start, String rigidBodyName)
    {
       if (start == null)
@@ -411,6 +692,12 @@ public class RobotDefinition
       return null;
    }
 
+   /**
+    * Performs the given action for each joint definition in the robot.
+    *
+    * @param start         the subtree to start performing the action from.
+    * @param jointConsumer the action to perform.
+    */
    public static void forEachJointDefinition(RigidBodyDefinition start, Consumer<JointDefinition> jointConsumer)
    {
       if (start == null)
@@ -424,6 +711,12 @@ public class RobotDefinition
       }
    }
 
+   /**
+    * Performs the given action for each rigid-body definition in the robot.
+    *
+    * @param start             the subtree to start performing the action from.
+    * @param rigidBodyConsumer the action to perform.
+    */
    public static void forEachRigidBodyDefinition(RigidBodyDefinition start, Consumer<RigidBodyDefinition> rigidBodyConsumer)
    {
       if (start == null)
@@ -437,18 +730,51 @@ public class RobotDefinition
       }
    }
 
-   public static interface JointCreator
+   /**
+    * Interface used to create a {@link JointBasics} from a {@link JointDefinition}.
+    */
+   public interface JointCreator
    {
+      /**
+       * Creates a new joint from the given {@code definition} and attaches it to the given
+       * {@code predecessor}.
+       *
+       * @param predecessor the predecessor of the new joint.
+       * @param definition  the definition of the new joint.
+       * @return the new joint.
+       */
       JointBasics newJoint(RigidBodyBasics predecessor, JointDefinition definition);
    }
 
-   public static interface RigidBodyCreator
+   /**
+    * Interface used to create a {@link RigidBodyBasics} from a {@link RigidBodyDefinition}.
+    */
+   public interface RigidBodyCreator
    {
+      /**
+       * Creates a new rigid-body from the given {@code definition} and attaches it to the given
+       * {@code parentJoint}.
+       *
+       * @param parentJoint the parent joint of the new rigid-body.
+       * @param definition  the definition of the new rigid-body.
+       * @return the new rigid-body.
+       */
       RigidBodyBasics newRigidBody(JointBasics parentJoint, RigidBodyDefinition definition);
    }
 
-   public static interface RootBodyCreator
+   /**
+    * Interface used to create a {@link RigidBodyBasics} from a {@link RigidBodyDefinition} that will be used as the root body.
+    */
+   public interface RootBodyCreator
    {
+      /**
+       * Creates a new root body from the given {@code definition} and attaches it to the given
+       * {@code parentFrame}.
+       *
+       * @param parentFrame the parent frame of the new root body.
+       * @param definition  the definition of the new root body.
+       * @return the new root body.
+       */
       RigidBodyBasics newRootBody(ReferenceFrame parentFrame, RigidBodyDefinition definition);
    }
 
@@ -496,7 +822,7 @@ public class RobotDefinition
     * <li>transform the moment of inertia for all rigid-body such that their inertia pose is only a
     * translation.
     * </ul>
-    * 
+    *
     * @param jointDefinition starting point for the recursion.
     */
    public static void transformAllFramesToZUp(JointDefinition jointDefinition)
@@ -558,7 +884,7 @@ public class RobotDefinition
     * of each sensor so they remain at the same physical location on the robot.
     * </ul>
     * </p>
-    * 
+    *
     * @param joint  the first joint from which to simplify the kinematics.
     * @param filter a fixed joint is only removed if: the filter is {@code null} or
     *               {@code filter.test(joint)} is {@code true}. If a filter is provided, any fixed
@@ -568,7 +894,7 @@ public class RobotDefinition
    {
       // The children list may shrink or grow depending the simplyKinematics(joint.child)
       // Also, if a child is a fixed-joint, the successor of this joint will be replaced with a new one, so can't save the successor as a local variable.
-      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size();)
+      for (int i = 0; i < joint.getSuccessor().getChildrenJoints().size(); )
       {
          List<JointDefinition> children = joint.getSuccessor().getChildrenJoints();
          JointDefinition child = children.get(i);
@@ -594,35 +920,35 @@ public class RobotDefinition
          parentJoint.getSuccessor().addChildJoints(oldParentRigidBody.getChildrenJoints());
 
          joint.getKinematicPointDefinitions().removeIf(kp ->
-         {
-            kp.applyTransform(transformToParentJoint);
-            parentJoint.addKinematicPointDefinition(kp);
-            return true;
-         });
+                                                       {
+                                                          kp.applyTransform(transformToParentJoint);
+                                                          parentJoint.addKinematicPointDefinition(kp);
+                                                          return true;
+                                                       });
          joint.getExternalWrenchPointDefinitions().removeIf(efp ->
-         {
-            efp.applyTransform(transformToParentJoint);
-            parentJoint.addExternalWrenchPointDefinition(efp);
-            return true;
-         });
+                                                            {
+                                                               efp.applyTransform(transformToParentJoint);
+                                                               parentJoint.addExternalWrenchPointDefinition(efp);
+                                                               return true;
+                                                            });
          joint.getGroundContactPointDefinitions().removeIf(gcp ->
-         {
-            gcp.applyTransform(transformToParentJoint);
-            parentJoint.addGroundContactPointDefinition(gcp);
-            return true;
-         });
+                                                           {
+                                                              gcp.applyTransform(transformToParentJoint);
+                                                              parentJoint.addGroundContactPointDefinition(gcp);
+                                                              return true;
+                                                           });
          joint.getSensorDefinitions().removeIf(sensor ->
-         {
-            sensor.applyTransform(transformToParentJoint);
-            parentJoint.addSensorDefinition(sensor);
-            return true;
-         });
+                                               {
+                                                  sensor.applyTransform(transformToParentJoint);
+                                                  parentJoint.addSensorDefinition(sensor);
+                                                  return true;
+                                               });
          joint.getSuccessor().getChildrenJoints().removeIf(child ->
-         {
-            child.getTransformToParent().preMultiply(transformToParentJoint);
-            parentJoint.getSuccessor().addChildJoint(child);
-            return true;
-         });
+                                                           {
+                                                              child.getTransformToParent().preMultiply(transformToParentJoint);
+                                                              parentJoint.getSuccessor().addChildJoint(child);
+                                                              return true;
+                                                           });
          parentJoint.getSuccessor().removeChildJoint(joint);
       }
    }
@@ -637,7 +963,7 @@ public class RobotDefinition
     * Note the following property:
     * {@code merge("bodyAB", bodyA, bodyB) == merge("bodyAB", bodyB, bodyA)}.
     * </p>
-    * 
+    *
     * @param name       the name of the merged rigid-body.
     * @param rigidBodyA the first rigid-body to merge.
     * @param rigidBodyB the second rigid-body to merge.

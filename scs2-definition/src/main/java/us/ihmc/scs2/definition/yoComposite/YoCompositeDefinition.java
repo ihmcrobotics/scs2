@@ -1,6 +1,8 @@
 package us.ihmc.scs2.definition.yoComposite;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlSeeAlso;
@@ -41,6 +43,19 @@ public abstract class YoCompositeDefinition
    public abstract String[] getComponentIdentifiers();
 
    /**
+    * Returns an alternate set of identifiers (or name) in order associated to each component.
+    * <p>
+    * This is typically used when searching for a composite when naming conventions can vary.
+    * </p>
+    *
+    * @return the list of alternate identifiers in order for each component.
+    */
+   public List<String[]> getAlternateComponentIdentifiers()
+   {
+      return Collections.emptyList();
+   }
+
+   /**
     * Returns the value in order for each component.
     *
     * @return the value in order for each component.
@@ -60,7 +75,7 @@ public abstract class YoCompositeDefinition
     * expressed in, or {@code null} if it is expressed in world frame.
     *
     * @return the fullname of the reference frame this composite is expressed in, or {@code null} if it
-    *         is expressed in world frame.
+    *       is expressed in world frame.
     */
    public abstract String getReferenceFrame();
 

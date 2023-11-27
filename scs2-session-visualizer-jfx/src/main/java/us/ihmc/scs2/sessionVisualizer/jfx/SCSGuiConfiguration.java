@@ -229,6 +229,11 @@ public class SCSGuiConfiguration
       definition.setShowAdvancedControls(showAdvancedControls);
    }
 
+   public void setShowYoVariableUniqueNames(boolean showYoVariableUniqueNames)
+   {
+      definition.setShowYoVariableUniqueNames(showYoVariableUniqueNames);
+   }
+
    public void setMainStage(Stage stage)
    {
       definition.setMainWindowConfiguration(toWindowConfigurationDefinition(stage));
@@ -322,7 +327,7 @@ public class SCSGuiConfiguration
    public boolean hasSecondaryWindowConfigurations()
    {
       return definition != null && definition.getSecondaryWindowConfigurations() != null
-            && definition.getSecondaryWindowConfigurations().size() == getNumberOfSecondaryYoChartGroupConfigurations();
+             && definition.getSecondaryWindowConfigurations().size() == getNumberOfSecondaryYoChartGroupConfigurations();
    }
 
    public File getMainConfigurationFile()
@@ -397,6 +402,11 @@ public class SCSGuiConfiguration
    public boolean getShowAdvancedControls()
    {
       return definition.isShowAdvancedControls();
+   }
+
+   public boolean getShowYoVariableUniqueNames()
+   {
+      return definition.isShowYoVariableUniqueNames();
    }
 
    public void getMainWindowConfiguration(Stage stage)
