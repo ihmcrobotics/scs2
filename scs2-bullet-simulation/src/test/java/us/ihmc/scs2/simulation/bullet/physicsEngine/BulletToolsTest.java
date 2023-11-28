@@ -22,12 +22,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
 
 public class BulletToolsTest
 {
@@ -259,7 +254,22 @@ public class BulletToolsTest
          assertEquals(capsuleShape.getHalfHeight(), capsuleGeometryDefinition.getLength() / 2.0, EPSILON);
       }
 
-      Ellipsoid3DDefinition polytypeGeometryDefinition = new Ellipsoid3DDefinition(1.0, 1.0, 1.0);
+      for (int i = 0; i < ITERATIONS; i++)
+      {
+         Ellipsoid3DDefinition ellipsoidGeometryDefinition = new Ellipsoid3DDefinition(random.nextDouble(), random.nextDouble(), random.nextDouble());
+         CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(ellipsoidGeometryDefinition);
+         btCollisionShape btCollisionShape = BulletTools.createBulletCollisionShape(collisionShapeDefinition);
+
+         assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
+
+         btSphereShape sphereShape = (btSphereShape) btCollisionShape;
+         assertEquals(sphereShape.getRadius(), ellipsoidGeometryDefinition.getRadiusX(), EPSILON);
+         assertEquals(sphereShape.getLocalScaling().getX(), ellipsoidGeometryDefinition.getRadiusX(), EPSILON);
+         assertEquals(sphereShape.getLocalScaling().getY(), ellipsoidGeometryDefinition.getRadiusY(), EPSILON);
+         assertEquals(sphereShape.getLocalScaling().getZ(), ellipsoidGeometryDefinition.getRadiusZ(), EPSILON);
+      }
+
+      PyramidBox3DDefinition polytypeGeometryDefinition = new PyramidBox3DDefinition(1.0, 1.0, 1.0, 1.0);
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(polytypeGeometryDefinition);
 
       Assertions.assertThrows(UnsupportedOperationException.class, () ->
