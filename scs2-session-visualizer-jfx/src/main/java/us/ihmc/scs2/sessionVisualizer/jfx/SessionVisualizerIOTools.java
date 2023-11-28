@@ -40,7 +40,6 @@ public class SessionVisualizerIOTools
 
    public static final Path SCS2_HOME = SessionIOTools.SCS2_HOME;
    public static final Path SCS2_CONFIGURATION_DEFAULT_PATH = SCS2_HOME.resolve("Configurations");
-   public static final String SCS2_CONFIGURATION_FOLDER_KEY = "scsConfigFolderPath";
 
    static
    {
@@ -496,7 +495,7 @@ public class SessionVisualizerIOTools
          }
       }
 
-      setDefaultFilePath(result);
+      setDefaultFilePath(pathKey, result);
 
       return result;
    }
@@ -511,7 +510,7 @@ public class SessionVisualizerIOTools
       FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       File result = fileChooser.showOpenDialog(owner);
       if (result != null)
-         setDefaultFilePath(result);
+         setDefaultFilePath(pathKey, result);
       return result;
    }
 
