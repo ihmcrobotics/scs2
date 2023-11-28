@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D capsule.
@@ -31,7 +32,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a regular 3D capsule.
-    * 
+    *
     * @param length the capsule's length or height. Distance separating the center of the two half
     *               spheres.
     * @param radius the capsule's radius.
@@ -43,7 +44,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D capsule.
-    * 
+    *
     * @param length  the capsule's length or height. Distance separating the center of the two half
     *                ellipsoids.
     * @param radiusX radius of along the x-axis.
@@ -61,7 +62,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a regular 3D capsule.
-    * 
+    *
     * @param length     the capsule's length or height. Distance separating the center of the two half
     *                   spheres.
     * @param radius     the capsule's radius.
@@ -74,7 +75,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D capsule.
-    * 
+    *
     * @param length     the capsule's length or height. Distance separating the center of the two half
     *                   ellipsoids.
     * @param radiusX    radius of the capsule along the x-axis.
@@ -104,7 +105,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the length of the capsule.
-    * 
+    *
     * @param length the capsule's length or height. Distance separating the center of the two half
     *               ellipsoids.
     */
@@ -116,7 +117,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Tests whether the capsule is a regular capsule, i.e. all radii are equal.
-    * 
+    *
     * @return {@code true} if the capsule is regular, {@code false} otherwise.
     */
    public boolean isRegular()
@@ -126,7 +127,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the x-axis of the capsule.
-    * 
+    *
     * @param radiusX radius of the capsule along the x-axis.
     */
    @XmlElement
@@ -137,7 +138,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the y-axis of the capsule.
-    * 
+    *
     * @param radiusY radius of the capsule along the y-axis.
     */
    @XmlElement
@@ -148,7 +149,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the z-axis of the capsule.
-    * 
+    *
     * @param radiusZ radius of the capsule along the z-axis.
     */
    @XmlElement
@@ -159,7 +160,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the same radius along the three axes making the capsule regular.
-    * 
+    *
     * @param radius the capsule's radius.
     */
    public void setRadius(double radius)
@@ -169,7 +170,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radii for the capsule along each axis individually.
-    * 
+    *
     * @param radiusX radius of the capsule along the x-axis.
     * @param radiusY radius of the capsule along the y-axis.
     * @param radiusZ radius of the capsule along the z-axis.
@@ -183,7 +184,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Sets the capsule's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the capsule's resolution.
     */
    @XmlElement
@@ -194,9 +195,9 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Returns the length of the capsule.
-    * 
+    *
     * @return the capsule's length or height. Distance separating the center of the two half
-    *         ellipsoids.
+    *       ellipsoids.
     */
    public double getLength()
    {
@@ -205,7 +206,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Returns the capsule's radius along the x-axis.
-    * 
+    *
     * @return the radius along the x-axis.
     */
    public double getRadiusX()
@@ -215,7 +216,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Returns the capsule's radius along the y-axis.
-    * 
+    *
     * @return the radius along the y-axis.
     */
    public double getRadiusY()
@@ -225,7 +226,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Returns the capsule's radius along the z-axis.
-    * 
+    *
     * @return the radius along the z-axis.
     */
    public double getRadiusZ()
@@ -235,7 +236,7 @@ public class Capsule3DDefinition extends GeometryDefinition
 
    /**
     * Returns the capsule's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the capsule's resolution.
     */
    public int getResolution()
@@ -271,13 +272,13 @@ public class Capsule3DDefinition extends GeometryDefinition
 
       Capsule3DDefinition other = (Capsule3DDefinition) object;
 
-      if (Double.doubleToLongBits(length) != Double.doubleToLongBits(other.length))
+      if (!EuclidCoreTools.equals(length, other.length))
          return false;
-      if (Double.doubleToLongBits(radiusX) != Double.doubleToLongBits(other.radiusX))
+      if (!EuclidCoreTools.equals(radiusX, other.radiusX))
          return false;
-      if (Double.doubleToLongBits(radiusY) != Double.doubleToLongBits(other.radiusY))
+      if (!EuclidCoreTools.equals(radiusY, other.radiusY))
          return false;
-      if (Double.doubleToLongBits(radiusZ) != Double.doubleToLongBits(other.radiusZ))
+      if (!EuclidCoreTools.equals(radiusZ, other.radiusZ))
          return false;
       if (resolution != other.resolution)
          return false;
@@ -288,7 +289,12 @@ public class Capsule3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return "Capsule: [name: " + getName() + ", length: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, length)
-            + EuclidCoreIOTools.getStringOf(", radii: (", ")", ", ", radiusX, radiusY, radiusZ) + ", resolution: " + resolution + "]";
+      return "Capsule: [name: " + getName() + ", length: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, length) + EuclidCoreIOTools.getStringOf(
+            ", radii: (",
+            ")",
+            ", ",
+            radiusX,
+            radiusY,
+            radiusZ) + ", resolution: " + resolution + "]";
    }
 }

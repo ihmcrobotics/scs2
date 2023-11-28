@@ -1,15 +1,15 @@
 package us.ihmc.scs2.definition.robot;
 
-import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.Axis3D;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 public class CameraSensorDefinition extends SensorDefinition
 {
@@ -22,9 +22,13 @@ public class CameraSensorDefinition extends SensorDefinition
    private int imageWidth;
    private int imageHeight;
 
-   /** Selects the axis in the sensor frame towards which the camera is looking at. */
+   /**
+    * Selects the axis in the sensor frame towards which the camera is looking at.
+    */
    private Vector3D depthAxis = new Vector3D(Axis3D.X);
-   /** Selects the axis in the sensor frame that represents the up direction. */
+   /**
+    * Selects the axis in the sensor frame that represents the up direction.
+    */
    private Vector3D upAxis = new Vector3D(Axis3D.Z);
 
    public CameraSensorDefinition()
@@ -199,11 +203,11 @@ public class CameraSensorDefinition extends SensorDefinition
       CameraSensorDefinition other = (CameraSensorDefinition) object;
       if (enable != other.enable)
          return false;
-      if (Double.doubleToLongBits(fieldOfView) != Double.doubleToLongBits(other.fieldOfView))
+      if (!EuclidCoreTools.equals(fieldOfView, other.fieldOfView))
          return false;
-      if (Double.doubleToLongBits(clipNear) != Double.doubleToLongBits(other.clipNear))
+      if (!EuclidCoreTools.equals(clipNear, other.clipNear))
          return false;
-      if (Double.doubleToLongBits(clipFar) != Double.doubleToLongBits(other.clipFar))
+      if (!EuclidCoreTools.equals(clipFar, other.clipFar))
          return false;
       if (imageWidth != other.imageWidth)
          return false;
