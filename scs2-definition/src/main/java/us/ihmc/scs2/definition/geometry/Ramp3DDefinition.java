@@ -1,10 +1,11 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D ramp.
@@ -29,7 +30,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D ramp.
-    * 
+    *
     * @param sizeX the length of the ramp along the x-axis.
     * @param sizeY the width of the ramp along the y-axis.
     * @param sizeZ the height of the ramp along the z-axis.
@@ -44,7 +45,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D ramp.
-    * 
+    *
     * @param size the size of the ramp along the 3 axes.
     */
    public Ramp3DDefinition(Tuple3DReadOnly size)
@@ -62,7 +63,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Sets the length of the ramp along the x-axis.
-    * 
+    *
     * @param sizeX the length of the ramp along the x-axis.
     */
    @XmlElement
@@ -73,7 +74,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Sets the width of the ramp along the y-axis.
-    * 
+    *
     * @param sizeY the width of the ramp along the y-axis.
     */
    @XmlElement
@@ -84,7 +85,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Sets the height of the ramp along the z-axis.
-    * 
+    *
     * @param sizeZ the height of the ramp along the z-axis.
     */
    @XmlElement
@@ -95,7 +96,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Sets the size of the ramp.
-    * 
+    *
     * @param sizeX the length of the ramp along the x-axis.
     * @param sizeY the width of the ramp along the y-axis.
     * @param sizeZ the height of the ramp along the z-axis.
@@ -109,7 +110,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Returns the length of the ramp along the x-axis.
-    * 
+    *
     * @return the length of the ramp along the x-axis.
     */
    public double getSizeX()
@@ -119,7 +120,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Returns the width of the ramp along the y-axis.
-    * 
+    *
     * @return the width of the ramp along the y-axis.
     */
    public double getSizeY()
@@ -129,7 +130,7 @@ public class Ramp3DDefinition extends GeometryDefinition
 
    /**
     * Returns the height of the ramp along the z-axis.
-    * 
+    *
     * @return the height of the ramp along the z-axis.
     */
    public double getSizeZ()
@@ -163,11 +164,11 @@ public class Ramp3DDefinition extends GeometryDefinition
 
       Ramp3DDefinition other = (Ramp3DDefinition) object;
 
-      if (Double.doubleToLongBits(sizeX) != Double.doubleToLongBits(other.sizeX))
+      if (!EuclidCoreTools.equals(sizeX, other.sizeX))
          return false;
-      if (Double.doubleToLongBits(sizeY) != Double.doubleToLongBits(other.sizeY))
+      if (!EuclidCoreTools.equals(sizeY, other.sizeY))
          return false;
-      if (Double.doubleToLongBits(sizeZ) != Double.doubleToLongBits(other.sizeZ))
+      if (!EuclidCoreTools.equals(sizeZ, other.sizeZ))
          return false;
 
       return true;

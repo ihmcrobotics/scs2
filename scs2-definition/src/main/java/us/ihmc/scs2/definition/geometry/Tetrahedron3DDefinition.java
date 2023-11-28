@@ -1,8 +1,9 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a regular 3D tetrahedron.
@@ -53,7 +54,7 @@ public class Tetrahedron3DDefinition extends GeometryDefinition
 
    /**
     * Returns the length for all edges.
-    * 
+    *
     * @return the length for all edges.
     */
    public double getEdgeLength()
@@ -85,7 +86,7 @@ public class Tetrahedron3DDefinition extends GeometryDefinition
 
       Tetrahedron3DDefinition other = (Tetrahedron3DDefinition) object;
 
-      if (Double.doubleToLongBits(edgeLength) != Double.doubleToLongBits(other.edgeLength))
+      if (!EuclidCoreTools.equals(edgeLength, other.edgeLength))
          return false;
 
       return true;
