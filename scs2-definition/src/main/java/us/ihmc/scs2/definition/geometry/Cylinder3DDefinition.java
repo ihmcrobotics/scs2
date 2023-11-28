@@ -1,8 +1,9 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D cylinder.
@@ -32,7 +33,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
     * <p>
     * The cylinder is assumed to be centered at the origin.
     * </p>
-    * 
+    *
     * @param radius the cylinder's radius.
     * @param length the cylinder's length or height.
     */
@@ -48,7 +49,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
     * <p>
     * The cylinder is assumed to be centered at the origin.
     * </p>
-    * 
+    *
     * @param radius     the cylinder's radius.
     * @param length     the cylinder's length or height.
     * @param resolution used for discretizing the geometry.
@@ -63,7 +64,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D cylinder.
-    * 
+    *
     * @param radius   the cylinder's radius.
     * @param length   the cylinder's length or height.
     * @param centered {@code true} to center the cylinder are the origin, {@code false} to center its
@@ -79,7 +80,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D cylinder.
-    * 
+    *
     * @param radius     the cylinder's radius.
     * @param length     the cylinder's length or height.
     * @param centered   {@code true} to center the cylinder are the origin, {@code false} to center its
@@ -106,7 +107,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Sets the length of the cylinder.
-    * 
+    *
     * @param length the cylinder's length or height.
     */
    @XmlElement
@@ -117,7 +118,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius of the cylinder.
-    * 
+    *
     * @param radius the cylinder's radius.
     */
    @XmlElement
@@ -128,7 +129,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Sets whether the cylinder should be centered at the origin or if its bottom face should be.
-    * 
+    *
     * @param centered {@code true} for the cylinder to be centered at the origin, {@code false} for the
     *                 bottom face to be centered at the origin.
     */
@@ -140,7 +141,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Sets the cylinder's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the cylinder's resolution.
     */
    @XmlElement
@@ -151,7 +152,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Returns the length of the cylinder.
-    * 
+    *
     * @return the cylinder's length or height.
     */
    public double getLength()
@@ -161,7 +162,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius of the cylinder.
-    * 
+    *
     * @return the cylinder's radius.
     */
    public double getRadius()
@@ -171,9 +172,9 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Returns whether the cylinder should be centered at the origin.
-    * 
+    *
     * @return {@code true} if the cylinder should be centered at the origin, {@code false} if its
-    *         bottom face should centered at the origin.
+    *       bottom face should centered at the origin.
     */
    public boolean isCentered()
    {
@@ -182,7 +183,7 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
    /**
     * Returns the cylinder's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the cylinder's resolution.
     */
    public int getResolution()
@@ -217,9 +218,9 @@ public class Cylinder3DDefinition extends GeometryDefinition
 
       Cylinder3DDefinition other = (Cylinder3DDefinition) object;
 
-      if (Double.doubleToLongBits(length) != Double.doubleToLongBits(other.length))
+      if (!EuclidCoreTools.equals(length, other.length))
          return false;
-      if (Double.doubleToLongBits(radius) != Double.doubleToLongBits(other.radius))
+      if (!EuclidCoreTools.equals(radius, other.radius))
          return false;
       if (centered != other.centered)
          return false;

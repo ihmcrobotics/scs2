@@ -1,15 +1,15 @@
 package us.ihmc.scs2.definition.robot;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
-
 import org.ejml.data.DMatrix;
-
 import us.ihmc.euclid.matrix.interfaces.Matrix3DBasics;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlType;
 
 @XmlType(propOrder = {"ixx", "iyy", "izz", "ixy", "ixz", "iyz"})
 public class MomentOfInertiaDefinition implements Matrix3DBasics
@@ -300,17 +300,17 @@ public class MomentOfInertiaDefinition implements Matrix3DBasics
 
       MomentOfInertiaDefinition other = (MomentOfInertiaDefinition) object;
 
-      if (Double.doubleToLongBits(ixx) != Double.doubleToLongBits(other.ixx))
+      if (!EuclidCoreTools.equals(ixx, other.ixx))
          return false;
-      if (Double.doubleToLongBits(iyy) != Double.doubleToLongBits(other.iyy))
+      if (!EuclidCoreTools.equals(iyy, other.iyy))
          return false;
-      if (Double.doubleToLongBits(izz) != Double.doubleToLongBits(other.izz))
+      if (!EuclidCoreTools.equals(izz, other.izz))
          return false;
-      if (Double.doubleToLongBits(ixy) != Double.doubleToLongBits(other.ixy))
+      if (!EuclidCoreTools.equals(ixy, other.ixy))
          return false;
-      if (Double.doubleToLongBits(ixz) != Double.doubleToLongBits(other.ixz))
+      if (!EuclidCoreTools.equals(ixz, other.ixz))
          return false;
-      if (Double.doubleToLongBits(iyz) != Double.doubleToLongBits(other.iyz))
+      if (!EuclidCoreTools.equals(iyz, other.iyz))
          return false;
       return true;
    }
