@@ -429,7 +429,7 @@ public class SessionVisualizerIOTools
       List<String> extensions = extensionFilter != null ? extensionFilter.getExtensions() : Collections.emptyList();
       boolean hasExtension = !extensions.isEmpty();
 
-      FileChooser fileChooser = fileChooser(title, extensionFilter);
+      FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       if (hasExtension && !SystemUtils.IS_OS_WINDOWS)
          fileChooser.setInitialFileName(extensions.get(0));
       File result = fileChooser.showSaveDialog(owner);
@@ -508,18 +508,18 @@ public class SessionVisualizerIOTools
 
    public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
-      FileChooser fileChooser = fileChooser(title, extensionFilter);
+      FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       File result = fileChooser.showOpenDialog(owner);
       if (result != null)
          setDefaultFilePath(result);
       return result;
    }
 
-   private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter)
+   private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter, String pathKey)
    {
       FileChooser fileChooser = new FileChooser();
       fileChooser.setTitle(title);
-      fileChooser.setInitialDirectory(getDefaultFilePath());
+      fileChooser.setInitialDirectory(getDefaultFilePath(pathKey));
       fileChooser.getExtensionFilters().add(extensionFilter);
       return fileChooser;
    }
@@ -536,6 +536,9 @@ public class SessionVisualizerIOTools
 
    public static File getDefaultFilePath(String key)
    {
+      if (key == null)
+         key = "filePath";
+
       Preferences prefs = Preferences.userNodeForPackage(SessionVisualizerIOTools.class);
       String filePath = prefs.get(key, null);
 
