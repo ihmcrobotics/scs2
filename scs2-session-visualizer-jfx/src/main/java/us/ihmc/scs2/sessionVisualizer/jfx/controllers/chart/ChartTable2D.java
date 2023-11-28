@@ -1,17 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ChartTable2D
 {
@@ -29,11 +29,11 @@ public class ChartTable2D
       this.chartBuilder = chartBuilder;
 
       size.addListener((o, oldValue, newValue) ->
-      {
-         if (ignoreSizePropertyListener)
-            return;
-         resize(oldValue, newValue, false);
-      });
+                       {
+                          if (ignoreSizePropertyListener)
+                             return;
+                          resize(oldValue, newValue, false);
+                       });
    }
 
    public ChartTable2DSize getSize()
@@ -76,8 +76,8 @@ public class ChartTable2D
          {
             YoChartPanelController newChart = chartBuilder.get();
             newTable[row][col] = newChart;
+            notifyChartAdded(newChart, row, col); // Listener first, so listener on chart plotted variables can be added.
             newChart.setChartConfiguration(newTableDefinition[row][col]);
-            notifyChartAdded(newChart, row, col);
          }
       }
       chartTable = newTable;
@@ -218,7 +218,7 @@ public class ChartTable2D
          }
          else
          { // Increasing rows and decreasing columns.
-           // Figure out if it is possible to decrease the number of columns as desired.
+            // Figure out if it is possible to decrease the number of columns as desired.
             int minCols = computeMinColumns(oldSize, onlyConsiderNullForDownsize);
             if (minCols > desiredSize.getNumberOfCols())
             { // Can't reduce as much, doing best effort.
@@ -353,7 +353,6 @@ public class ChartTable2D
    public void removeNullRowsAndColumns()
    {
       resize(new ChartTable2DSize(0, 0), true);
-
    }
 
    public YoChartPanelController get(int row, int col)
@@ -527,7 +526,7 @@ public class ChartTable2D
    public enum ChangeType
    {
       ADD, REMOVE, MOVE
-   };
+   }
 
    public static class ChartChange
    {
