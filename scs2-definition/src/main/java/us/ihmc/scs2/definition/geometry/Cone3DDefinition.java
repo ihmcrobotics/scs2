@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D cone.
@@ -29,7 +30,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a regular 3D cone.
-    * 
+    *
     * @param height the height of the cone.
     * @param radius the radius of the base.
     */
@@ -42,7 +43,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a regular 3D cone.
-    * 
+    *
     * @param height     the height of the cone.
     * @param radius     the radius of the base.
     * @param resolution used for discretizing the geometry.
@@ -65,7 +66,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Sets the height of the cone.
-    * 
+    *
     * @param height the height of the cone.
     */
    @XmlElement
@@ -76,7 +77,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius of the cone.
-    * 
+    *
     * @param radius the radius of the base.
     */
    @XmlElement
@@ -87,7 +88,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Sets the cone's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the cone's resolution.
     */
    @XmlElement
@@ -98,7 +99,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the height of the cone.
-    * 
+    *
     * @return the cone's height.
     */
    public double getHeight()
@@ -108,7 +109,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius of the cone.
-    * 
+    *
     * @return the radius of the base.
     */
    public double getRadius()
@@ -118,7 +119,7 @@ public class Cone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the cone's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the cone's resolution.
     */
    public int getResolution()
@@ -152,9 +153,9 @@ public class Cone3DDefinition extends GeometryDefinition
 
       Cone3DDefinition other = (Cone3DDefinition) object;
 
-      if (Double.doubleToLongBits(height) != Double.doubleToLongBits(other.height))
+      if (!EuclidCoreTools.equals(height, other.height))
          return false;
-      if (Double.doubleToLongBits(radius) != Double.doubleToLongBits(other.radius))
+      if (!EuclidCoreTools.equals(radius, other.radius))
          return false;
       if (resolution != other.resolution)
          return false;
@@ -165,7 +166,8 @@ public class Cone3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return "Cone: [name: " + getName() + ", height: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, height) + ", radius: "
-            + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, radius) + ", resolution: " + resolution + "]";
+      return "Cone: [name: " + getName() + ", height: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, height) + ", radius: " + String.format(
+            EuclidCoreIOTools.DEFAULT_FORMAT,
+            radius) + ", resolution: " + resolution + "]";
    }
 }

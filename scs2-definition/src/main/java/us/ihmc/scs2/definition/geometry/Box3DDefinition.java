@@ -1,10 +1,11 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D box.
@@ -30,7 +31,7 @@ public class Box3DDefinition extends GeometryDefinition
     * <p>
     * The box is centered at the origin.
     * </p>
-    * 
+    *
     * @param sizeX box size along the x-axis.
     * @param sizeY box size along the y-axis.
     * @param sizeZ box size along the z-axis.
@@ -45,7 +46,7 @@ public class Box3DDefinition extends GeometryDefinition
     * <p>
     * The box is centered at the origin.
     * </p>
-    * 
+    *
     * @param sizeX    box size along the x-axis.
     * @param sizeY    box size along the y-axis.
     * @param sizeZ    box size along the z-axis.
@@ -66,7 +67,7 @@ public class Box3DDefinition extends GeometryDefinition
     * <p>
     * The box is centered at the origin.
     * </p>
-    * 
+    *
     * @param size box size along each axis.
     */
    public Box3DDefinition(Tuple3DReadOnly size)
@@ -85,7 +86,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Sets the size of the box along the x-axis.
-    * 
+    *
     * @param sizeX the box size along the x-axis.
     */
    @XmlElement
@@ -96,7 +97,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Sets the size of the box along the y-axis.
-    * 
+    *
     * @param sizeY the box size along the y-axis.
     */
    @XmlElement
@@ -107,7 +108,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Sets the size of the box along the z-axis.
-    * 
+    *
     * @param sizeZ the box size along the z-axis.
     */
    @XmlElement
@@ -118,7 +119,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Sets the size of the box.
-    * 
+    *
     * @param sizeX the box size along the x-axis.
     * @param sizeY the box size along the y-axis.
     * @param sizeZ the box size along the z-axis.
@@ -132,7 +133,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Sets the size of the box.
-    * 
+    *
     * @param size the size of the box. Not modified.
     */
    public void setSize(Tuple3DReadOnly size)
@@ -142,7 +143,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Sets whether the box should be centered at the origin or if its bottom face should be.
-    * 
+    *
     * @param centered {@code true} for the box to be centered at the origin, {@code false} for the
     *                 bottom face to be centered at the origin.
     */
@@ -154,7 +155,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Returns the size of the box along the x-axis.
-    * 
+    *
     * @return the box size along the x-axis.
     */
    public double getSizeX()
@@ -164,7 +165,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Returns the size of the box along the y-axis.
-    * 
+    *
     * @return the box size along the y-axis.
     */
    public double getSizeY()
@@ -174,7 +175,7 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Returns the size of the box along the z-axis.
-    * 
+    *
     * @return the box size along the z-axis.
     */
    public double getSizeZ()
@@ -184,9 +185,9 @@ public class Box3DDefinition extends GeometryDefinition
 
    /**
     * Returns whether the box should be centered at the origin.
-    * 
+    *
     * @return {@code true} if the box should be centered at the origin, {@code false} if its bottom
-    *         face should centered at the origin.
+    *       face should centered at the origin.
     */
    public boolean isCentered()
    {
@@ -219,11 +220,11 @@ public class Box3DDefinition extends GeometryDefinition
          return false;
 
       Box3DDefinition other = (Box3DDefinition) object;
-      if (Double.doubleToLongBits(sizeX) != Double.doubleToLongBits(other.sizeX))
+      if (!EuclidCoreTools.equals(sizeX, other.sizeX))
          return false;
-      if (Double.doubleToLongBits(sizeY) != Double.doubleToLongBits(other.sizeY))
+      if (!EuclidCoreTools.equals(sizeY, other.sizeY))
          return false;
-      if (Double.doubleToLongBits(sizeZ) != Double.doubleToLongBits(other.sizeZ))
+      if (!EuclidCoreTools.equals(sizeZ, other.sizeZ))
          return false;
       if (centered != other.centered)
          return false;

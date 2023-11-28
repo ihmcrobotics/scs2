@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a truncated 3D cone.
@@ -311,7 +312,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Sets whether the truncated cone should be centered at the origin or if its bottom face should be.
-    * 
+    *
     * @param centered {@code true} for the truncated cone to be centered at the origin, {@code false}
     *                 for the bottom face to be centered at the origin.
     */
@@ -323,7 +324,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Sets the truncated cone's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the cone's resolution.
     */
    @XmlElement
@@ -334,7 +335,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the height of the truncated cone.
-    * 
+    *
     * @return the truncated cone's height.
     */
    public double getHeight()
@@ -344,7 +345,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius for the top face along the x-axis.
-    * 
+    *
     * @return the radius for the top face along the x-axis.
     */
    public double getTopRadiusX()
@@ -354,7 +355,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius for the top face along the y-axis.
-    * 
+    *
     * @return the radius for the top face along the y-axis.
     */
    public double getTopRadiusY()
@@ -364,7 +365,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius for the bottom face along the x-axis.
-    * 
+    *
     * @return the radius for the bottom face along the x-axis.
     */
    public double getBaseRadiusX()
@@ -374,7 +375,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius for the bottom face along the y-axis.
-    * 
+    *
     * @return the radius for the bottom face along the y-axis.
     */
    public double getBaseRadiusY()
@@ -384,9 +385,9 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns whether the truncated cone should be centered at the origin.
-    * 
+    *
     * @return {@code true} if the truncated cone should be centered at the origin, {@code false} if its
-    *         bottom face should centered at the origin.
+    *       bottom face should centered at the origin.
     */
    public boolean getCentered()
    {
@@ -395,7 +396,7 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
    /**
     * Returns the truncated cone's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the cone's resolution.
     */
    public int getResolution()
@@ -433,15 +434,15 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
 
       TruncatedCone3DDefinition other = (TruncatedCone3DDefinition) object;
 
-      if (Double.doubleToLongBits(height) != Double.doubleToLongBits(other.height))
+      if (!EuclidCoreTools.equals(height, other.height))
          return false;
-      if (Double.doubleToLongBits(topRadiusX) != Double.doubleToLongBits(other.topRadiusX))
+      if (!EuclidCoreTools.equals(topRadiusX, other.topRadiusX))
          return false;
-      if (Double.doubleToLongBits(topRadiusY) != Double.doubleToLongBits(other.topRadiusY))
+      if (!EuclidCoreTools.equals(topRadiusY, other.topRadiusY))
          return false;
-      if (Double.doubleToLongBits(baseRadiusX) != Double.doubleToLongBits(other.baseRadiusX))
+      if (!EuclidCoreTools.equals(baseRadiusX, other.baseRadiusX))
          return false;
-      if (Double.doubleToLongBits(baseRadiusY) != Double.doubleToLongBits(other.baseRadiusY))
+      if (!EuclidCoreTools.equals(baseRadiusY, other.baseRadiusY))
          return false;
       if (centered != other.centered)
          return false;
@@ -454,8 +455,11 @@ public class TruncatedCone3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return "Truncated Cone: [name: " + getName() + ", height: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, height)
-            + EuclidCoreIOTools.getStringOf(", top radii: (", ")", ", ", topRadiusX, topRadiusY)
-            + EuclidCoreIOTools.getStringOf(", base radii: (", ")", ", ", baseRadiusX, baseRadiusY) + ", resolution: " + resolution + "]";
+      return "Truncated Cone: [name: " + getName() + ", height: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, height) + EuclidCoreIOTools.getStringOf(
+            ", top radii: (",
+            ")",
+            ", ",
+            topRadiusX,
+            topRadiusY) + EuclidCoreIOTools.getStringOf(", base radii: (", ")", ", ", baseRadiusX, baseRadiusY) + ", resolution: " + resolution + "]";
    }
 }

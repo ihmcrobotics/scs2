@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D pyramid-box, i.e. a 3D box which bottom and top faces are each
@@ -176,13 +177,13 @@ public class PyramidBox3DDefinition extends GeometryDefinition
 
       PyramidBox3DDefinition other = (PyramidBox3DDefinition) object;
 
-      if (Double.doubleToLongBits(boxSizeX) != Double.doubleToLongBits(other.boxSizeX))
+      if (!EuclidCoreTools.equals(boxSizeX, other.boxSizeX))
          return false;
-      if (Double.doubleToLongBits(boxSizeY) != Double.doubleToLongBits(other.boxSizeY))
+      if (!EuclidCoreTools.equals(boxSizeY, other.boxSizeY))
          return false;
-      if (Double.doubleToLongBits(boxSizeZ) != Double.doubleToLongBits(other.boxSizeZ))
+      if (!EuclidCoreTools.equals(boxSizeZ, other.boxSizeZ))
          return false;
-      if (Double.doubleToLongBits(pyramidHeight) != Double.doubleToLongBits(other.pyramidHeight))
+      if (!EuclidCoreTools.equals(pyramidHeight, other.pyramidHeight))
          return false;
 
       return true;
@@ -191,7 +192,11 @@ public class PyramidBox3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return EuclidCoreIOTools.getStringOf("Pyramid-box: [name: " + getName()
-            + ", box size: (", "), pryamid height: " + pyramidHeight + "]", ", ", boxSizeX, boxSizeY, boxSizeZ);
+      return EuclidCoreIOTools.getStringOf("Pyramid-box: [name: " + getName() + ", box size: (",
+                                           "), pryamid height: " + pyramidHeight + "]",
+                                           ", ",
+                                           boxSizeX,
+                                           boxSizeY,
+                                           boxSizeZ);
    }
 }
