@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D hemi-ellipsoid.
@@ -30,7 +31,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D hemi-ellipsoid.
-    * 
+    *
     * @param radiusX radius of the hemi-ellipsoid along the x-axis.
     * @param radiusY radius of the hemi-ellipsoid along the y-axis.
     * @param radiusZ radius of the hemi-ellipsoid along the z-axis.
@@ -45,7 +46,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D hemi-ellipsoid.
-    * 
+    *
     * @param radiusX    radius of the hemi-ellipsoid along the x-axis.
     * @param radiusY    radius of the hemi-ellipsoid along the y-axis.
     * @param radiusZ    radius of the hemi-ellipsoid along the z-axis.
@@ -71,7 +72,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the x-axis for the hemi-ellipsoid.
-    * 
+    *
     * @param radiusX the hemi-ellipsoid's radius along the x-axis.
     */
    @XmlElement
@@ -82,7 +83,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the y-axis for the hemi-ellipsoid.
-    * 
+    *
     * @param radiusY the hemi=ellipsoid's radius along the y-axis.
     */
    @XmlElement
@@ -93,7 +94,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the z-axis for the hemi-ellipsoid.
-    * 
+    *
     * @param radiusZ the hemi-ellipsoid's radius along the z-axis.
     */
    @XmlElement
@@ -104,7 +105,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radii of the hemi-ellipsoid.
-    * 
+    *
     * @param radiusX the hemi-ellipsoid's radius along the x-axis.
     * @param radiusY the hemi-ellipsoid's radius along the y-axis.
     * @param radiusZ the hemi-ellipsoid's radius along the z-axis.
@@ -118,7 +119,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the hemi-ellipsoid's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the hemi-ellipsoid's resolution.
     */
    @XmlElement
@@ -129,7 +130,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius along the x-axis of the hemi-ellipsoid.
-    * 
+    *
     * @return the hemi-ellipsoid's radius along the x-axis.
     */
    public double getRadiusX()
@@ -139,7 +140,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius along the y-axis of the hemi-ellipsoid.
-    * 
+    *
     * @return the hemi-ellipsoid's radius along the y-axis.
     */
    public double getRadiusY()
@@ -149,7 +150,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius along the z-axis of the hemi-ellipsoid.
-    * 
+    *
     * @return the hemi-ellipsoid's radius along the z-axis.
     */
    public double getRadiusZ()
@@ -159,7 +160,7 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the hemi-ellipsoid's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the hemi-ellipsoid's resolution.
     */
    public int getResolution()
@@ -194,11 +195,11 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
 
       HemiEllipsoid3DDefinition other = (HemiEllipsoid3DDefinition) object;
 
-      if (Double.doubleToLongBits(radiusX) != Double.doubleToLongBits(other.radiusX))
+      if (!EuclidCoreTools.equals(radiusX, other.radiusX))
          return false;
-      if (Double.doubleToLongBits(radiusY) != Double.doubleToLongBits(other.radiusY))
+      if (!EuclidCoreTools.equals(radiusY, other.radiusY))
          return false;
-      if (Double.doubleToLongBits(radiusZ) != Double.doubleToLongBits(other.radiusZ))
+      if (!EuclidCoreTools.equals(radiusZ, other.radiusZ))
          return false;
       if (resolution != other.resolution)
          return false;
@@ -209,7 +210,11 @@ public class HemiEllipsoid3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return EuclidCoreIOTools.getStringOf("Hemi-ellipsoid: [name: " + getName()
-            + ", radii: (", "), resolution: " + resolution + "]", ", ", radiusX, radiusY, radiusZ);
+      return EuclidCoreIOTools.getStringOf("Hemi-ellipsoid: [name: " + getName() + ", radii: (",
+                                           "), resolution: " + resolution + "]",
+                                           ", ",
+                                           radiusX,
+                                           radiusY,
+                                           radiusZ);
    }
 }

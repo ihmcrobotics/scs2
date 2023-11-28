@@ -1,8 +1,8 @@
 package us.ihmc.scs2.definition.state;
 
 import org.ejml.data.DMatrixRMaj;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
@@ -216,29 +216,29 @@ public class PlanarJointState extends JointStateBase implements PlanarJointState
 
       PlanarJointState other = (PlanarJointState) object;
 
-      if (Double.doubleToLongBits(pitch) != Double.doubleToLongBits(other.pitch))
+      if (!EuclidCoreTools.equals(pitch, other.pitch))
          return false;
-      if (Double.doubleToLongBits(positionX) != Double.doubleToLongBits(other.positionX))
+      if (!EuclidCoreTools.equals(positionX, other.positionX))
          return false;
-      if (Double.doubleToLongBits(positionZ) != Double.doubleToLongBits(other.positionZ))
+      if (!EuclidCoreTools.equals(positionZ, other.positionZ))
          return false;
-      if (Double.doubleToLongBits(pitchVelocity) != Double.doubleToLongBits(other.pitchVelocity))
+      if (!EuclidCoreTools.equals(pitchVelocity, other.pitchVelocity))
          return false;
-      if (Double.doubleToLongBits(linearVelocityX) != Double.doubleToLongBits(other.linearVelocityX))
+      if (!EuclidCoreTools.equals(linearVelocityX, other.linearVelocityX))
          return false;
-      if (Double.doubleToLongBits(linearVelocityZ) != Double.doubleToLongBits(other.linearVelocityZ))
+      if (!EuclidCoreTools.equals(linearVelocityZ, other.linearVelocityZ))
          return false;
-      if (Double.doubleToLongBits(pitchAcceleration) != Double.doubleToLongBits(other.pitchAcceleration))
+      if (!EuclidCoreTools.equals(pitchAcceleration, other.pitchAcceleration))
          return false;
-      if (Double.doubleToLongBits(linearAccelerationX) != Double.doubleToLongBits(other.linearAccelerationX))
+      if (!EuclidCoreTools.equals(linearAccelerationX, other.linearAccelerationX))
          return false;
-      if (Double.doubleToLongBits(linearAccelerationZ) != Double.doubleToLongBits(other.linearAccelerationZ))
+      if (!EuclidCoreTools.equals(linearAccelerationZ, other.linearAccelerationZ))
          return false;
-      if (Double.doubleToLongBits(torqueY) != Double.doubleToLongBits(other.torqueY))
+      if (!EuclidCoreTools.equals(torqueY, other.torqueY))
          return false;
-      if (Double.doubleToLongBits(forceX) != Double.doubleToLongBits(other.forceX))
+      if (!EuclidCoreTools.equals(forceX, other.forceX))
          return false;
-      if (Double.doubleToLongBits(forceZ) != Double.doubleToLongBits(other.forceZ))
+      if (!EuclidCoreTools.equals(forceZ, other.forceZ))
          return false;
 
       return true;

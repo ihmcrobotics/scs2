@@ -1,8 +1,9 @@
 package us.ihmc.scs2.definition.visual;
 
-import java.util.Objects;
-
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import java.util.Objects;
 
 public class MaterialDefinition
 {
@@ -228,7 +229,7 @@ public class MaterialDefinition
       if (!Objects.equals(emissiveColor, other.emissiveColor))
          return false;
 
-      if (Double.doubleToLongBits(shininess) == Double.doubleToLongBits(other.shininess))
+      if (!EuclidCoreTools.equals(shininess, other.shininess))
          return false;
 
       if (!Objects.equals(diffuseMap, other.diffuseMap))
@@ -245,5 +246,4 @@ public class MaterialDefinition
 
       return true;
    }
-
 }
