@@ -1,17 +1,15 @@
 package us.ihmc.scs2.definition.geometry;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import us.ihmc.euclid.tools.EuclidCoreTools;
+import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.util.Objects;
-
-import us.ihmc.euclid.tools.EuclidHashCodeTools;
 
 public class ExtrusionDefinition extends GeometryDefinition
 {
@@ -122,7 +120,7 @@ public class ExtrusionDefinition extends GeometryDefinition
 
       if (!Objects.equals(image, other.image))
          return false;
-      if (Double.doubleToLongBits(thickness) != Double.doubleToLongBits(other.thickness))
+      if (!EuclidCoreTools.equals(thickness, other.thickness))
          return false;
 
       return true;

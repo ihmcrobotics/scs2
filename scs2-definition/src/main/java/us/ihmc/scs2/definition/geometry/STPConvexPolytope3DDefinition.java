@@ -2,6 +2,7 @@ package us.ihmc.scs2.definition.geometry;
 
 import us.ihmc.euclid.shape.convexPolytope.interfaces.ConvexPolytope3DReadOnly;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 
 public class STPConvexPolytope3DDefinition extends ConvexPolytope3DDefinition
@@ -80,9 +81,9 @@ public class STPConvexPolytope3DDefinition extends ConvexPolytope3DDefinition
 
       STPConvexPolytope3DDefinition other = (STPConvexPolytope3DDefinition) object;
 
-      if (Double.doubleToLongBits(minimumMargin) != Double.doubleToLongBits(other.minimumMargin))
+      if (!EuclidCoreTools.equals(minimumMargin, other.minimumMargin))
          return false;
-      if (Double.doubleToLongBits(maximumMargin) != Double.doubleToLongBits(other.maximumMargin))
+      if (!EuclidCoreTools.equals(maximumMargin, other.maximumMargin))
          return false;
 
       return true;

@@ -1,19 +1,10 @@
 package us.ihmc.scs2.definition.robot;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
-
 import us.ihmc.euclid.interfaces.Transformable;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.transform.interfaces.Transform;
@@ -26,13 +17,24 @@ import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
 @XmlType(propOrder = {"name", "mass", "momentOfInertia", "inertiaPose", "childrenJoints", "visualDefinitions", "collisionShapeDefinitions"})
 public class RigidBodyDefinition implements Transformable
 {
    private String name;
    private double mass;
    private MomentOfInertiaDefinition momentOfInertia = new MomentOfInertiaDefinition();
-   /** In parent after joint frame. */
+   /**
+    * In parent after joint frame.
+    */
    private YawPitchRollTransformDefinition inertiaPose = new YawPitchRollTransformDefinition();
 
    private JointDefinition parentJoint;
@@ -307,7 +309,7 @@ public class RigidBodyDefinition implements Transformable
 
       if (!Objects.equals(name, other.name))
          return false;
-      if (Double.doubleToLongBits(mass) != Double.doubleToLongBits(other.mass))
+      if (!EuclidCoreTools.equals(mass, other.mass))
          return false;
       if (!Objects.equals(momentOfInertia, other.momentOfInertia))
          return false;
