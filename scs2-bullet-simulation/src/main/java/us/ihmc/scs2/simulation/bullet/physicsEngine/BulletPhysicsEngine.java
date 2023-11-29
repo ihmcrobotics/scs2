@@ -233,6 +233,11 @@ public class BulletPhysicsEngine implements PhysicsEngine
       return robotList.stream().map(BulletRobot::getRobot).collect(Collectors.toList());
    }
 
+   public List<BulletRobot> getBulletRobots()
+   {
+      return robotList;
+   }
+
    public List<BulletTerrainObject> getTerrainObjects()
    {
       return terrainObjectList;
