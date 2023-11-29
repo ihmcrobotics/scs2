@@ -37,6 +37,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartGroupLayout;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartGroupModel;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
@@ -92,6 +93,10 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
+
+   private ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
+   private Property<YoNameDisplay> userDesiredDisplayProperty;
+   private BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -151,28 +156,19 @@ public class YoChartGroupPanelController implements VisualizerController
          }
       });
 
-      BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
-      ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
+      userDesiredDisplayProperty = messager.createPropertyInput(topics.getYoVariableNameDisplay(), YoNameDisplay.SHORT_NAME);
 
       plottedVariableList.addListener((ListChangeListener<? super YoVariable>) change ->
       {
-         ObservableList<? extends YoVariable> changeList = change.getList();
-
-         if (changeList.isEmpty())
-         {
-            // No YoVariable left, resetting the user group
-            automatedChartGroupName.set(null);
-            userDefinedChartGroupName.set(null);
-         }
-         else
-         {
-            automatedChartGroupName.set(StringTools.commonSubString(changeList.stream().map(YoVariable::getName).collect(Collectors.toList())));
-         }
-
-         List<? extends YoVariable> distinctVariables = changeList.stream().distinct().toList();
-         long distinctNameCount = distinctVariables.stream().map(YoVariable::getName).distinct().count();
-         useUniqueNames.set(distinctNameCount < distinctVariables.size());
+         updateAutoUniqueNameDisplay();
       });
+      userDesiredDisplayProperty.addListener((o, oldValue, newValue) ->
+                                             {
+                                                if (newValue == YoNameDisplay.UNIQUE_NAME)
+                                                   useUniqueNames.set(true);
+                                                else
+                                                   updateAutoUniqueNameDisplay();
+                                             });
 
       SetChangeListener<YoVariable> plottedVariableChangeListener = change ->
       {
@@ -205,6 +201,31 @@ public class YoChartGroupPanelController implements VisualizerController
                                         throw new IllegalStateException("Unexpected change type: " + c.type());
                                   }
                                });
+   }
+
+   private void updateAutoUniqueNameDisplay()
+   {
+      if (plottedVariableList.isEmpty())
+      {
+         // No YoVariable left, resetting the user group
+         automatedChartGroupName.set(null);
+         userDefinedChartGroupName.set(null);
+      }
+      else
+      {
+         automatedChartGroupName.set(StringTools.commonSubString(plottedVariableList.stream().map(YoVariable::getName).collect(Collectors.toList())));
+      }
+
+      if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
+      {
+         useUniqueNames.set(true);
+      }
+      else
+      {
+         List<? extends YoVariable> distinctVariables = plottedVariableList.stream().distinct().toList();
+         long distinctNameCount = distinctVariables.stream().map(YoVariable::getName).distinct().count();
+         useUniqueNames.set(distinctNameCount < distinctVariables.size());
+      }
    }
 
    public void setChartGroupConfiguration(YoChartGroupConfigurationDefinition definition)
