@@ -14,6 +14,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -73,14 +74,45 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
             }
 
             result.ifPresent(rigidBodyFrameNode ->
-            {
-               if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
-                  messager.submitMessage(topics.getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
-            });
+                             {
+                                if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
+                                   messager.submitMessage(topics.getCamera3DRequest(),
+                                                          new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
+                             });
          }
       });
 
       messager.addTopicListener(topics.getRobotVisualRequest(), this::handleRobotVisualRequest);
+      messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), this::handleSessionRobotDefinitionListChangeState);
+   }
+
+   private void handleSessionRobotDefinitionListChangeState(SessionRobotDefinitionListChange change)
+   {
+      if (change.getAddedRobotDefinition() == null)
+      {
+         LogTools.warn("Received request but robot definition is null, ignoring.");
+         return;
+      }
+
+      switch (change.getChangeType())
+      {
+         case ADD:
+         {
+            addRobotDefinition(change.getAddedRobotDefinition());
+            break;
+         }
+         case REMOVE:
+         {
+            removeRobotDefinition(change.getRemovedRobotDefinition());
+            break;
+         }
+         case REPLACE:
+         {
+            removeRobotDefinition(change.getRemovedRobotDefinition());
+            addRobotDefinition(change.getAddedRobotDefinition());
+            break;
+         }
+      }
    }
 
    private void handleRobotVisualRequest(NewRobotVisualRequest request)

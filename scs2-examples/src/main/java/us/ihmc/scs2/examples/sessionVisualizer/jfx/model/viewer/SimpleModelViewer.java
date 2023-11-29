@@ -1,6 +1,7 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx.model.viewer;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -58,9 +59,9 @@ public class SimpleModelViewer
          URDFModel urdfModel;
          try
          {
-            urdfModel = URDFTools.loadURDFModel(modelFile);
+            urdfModel = URDFTools.loadURDFModel(modelFile, Collections.singletonList(modelFile.getParent()));
          }
-         catch (JAXBException e)
+         catch (Exception e)
          {
             throw new RuntimeException(e);
          }

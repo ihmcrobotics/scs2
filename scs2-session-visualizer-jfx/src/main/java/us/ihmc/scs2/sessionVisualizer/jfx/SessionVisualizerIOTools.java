@@ -1,5 +1,25 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Region;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+import org.apache.commons.lang3.SystemUtils;
+import us.ihmc.commons.nio.FileTools;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.session.SessionIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,34 +34,12 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.prefs.Preferences;
 
-import org.apache.commons.lang3.SystemUtils;
-
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Region;
-import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.Stage;
-import javafx.stage.Window;
-import us.ihmc.commons.nio.FileTools;
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.SessionIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
-
 public class SessionVisualizerIOTools
 {
    private static final ClassLoader classLoader = SessionVisualizerIOTools.class.getClassLoader();
 
    public static final Path SCS2_HOME = SessionIOTools.SCS2_HOME;
    public static final Path SCS2_CONFIGURATION_DEFAULT_PATH = SCS2_HOME.resolve("Configurations");
-   public static final String SCS2_CONFIGURATION_FOLDER_KEY = "scsConfigFolderPath";
 
    static
    {
@@ -63,6 +61,7 @@ public class SessionVisualizerIOTools
    public static final String yoEntryConfigurationFileExtension = ".scs2.yoEntry";
    public static final String yoSliderboardConfigurationFileExtension = ".scs2.yoSliderboard";
    public static final String yoVariableGroupConfigurationFileExtension = ".scs2.yoVariableGroup";
+   public static final String yoEquationFileExtension = ".scs2.yoEquation";
    public static final String videoFileExtension = ".mp4";
    public static final ExtensionFilter scs2InfoFilter = new ExtensionFilter("SCS2 Info File", "*" + SessionIOTools.infoFileExtension);
    public static final ExtensionFilter scs2ConfigurationFilter = new ExtensionFilter("SCS2 Config File", "*" + scsConfigurationFileExtension);
@@ -76,6 +75,7 @@ public class SessionVisualizerIOTools
                                                                                               "*" + yoSliderboardConfigurationFileExtension);
    public static final ExtensionFilter yoVariableGroupConfigurationFilter = new ExtensionFilter("SCS2 YoVariable Group File",
                                                                                                 "*" + yoVariableGroupConfigurationFileExtension);
+   public static final ExtensionFilter yoEquationFilter = new ExtensionFilter("SCS2 YoEquation File", "*" + yoEquationFileExtension);
 
    public static final ExtensionFilter videoExtensionFilter = new ExtensionFilter("MP4", "*" + videoFileExtension);
 
@@ -101,6 +101,7 @@ public class SessionVisualizerIOTools
    // FXML list:
    private static final String CHART = "chart/";
    private static final String YO_COMPOSITE = "yoComposite/";
+   private static final String YO_COMPOSITE_CREATOR = YO_COMPOSITE + "creator/";
    private static final String YO_COMPOSITE_PATTERN = YO_COMPOSITE + "pattern/";
    private static final String YO_COMPOSITE_SEARCH = YO_COMPOSITE + "search/";
    private static final String YO_COMPOSITE_ENTRY = YO_COMPOSITE + "entry/";
@@ -117,6 +118,10 @@ public class SessionVisualizerIOTools
    public static final String DEFAULT_YO_COMPOSITE_PATTERNS_FILE = "DefaultYoCompositePatterns" + yoCompositeConfigurationFileExtension;
    public static final URL YO_COMPOSITE_PATTERN_EDITOR_PANE_URL = getFXMLResource(YO_COMPOSITE_PATTERN, "YoCompositePatternEditorPane");
    public static final URL YO_COMPOSITE_PATTERN_PROPERTY_WINDOW_URL = getFXMLResource(YO_COMPOSITE_PATTERN, "YoCompositePatternPropertyWindow");
+   public static final URL YO_COMPOSITE_AND_EQUATION_EDITOR_WINDOW_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoCompositeAndEquationEditorWindow");
+   public static final URL YO_COMPOSITE_CREATOR_DIALOG_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoCompositeCreatorDialog");
+   public static final URL YO_EQUATION_EDITOR_PANE_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoEquationEditorPane");
+   public static final URL YO_EQUATION_EDITOR_HELP_PANE_URL = getFXMLResource(YO_COMPOSITE_CREATOR, "YoEquationEditorHelpPane");
    public static final URL YO_COMPOSITE_SEARCH_PANEL_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoCompositeSearchPane");
    public static final URL YO_SEARCH_TAB_PANE_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoSearchTabPane");
    public static final URL YO_ENTRY_LIST_VIEW_URL = getFXMLResource(YO_COMPOSITE_ENTRY, "YoEntryListView");
@@ -176,6 +181,7 @@ public class SessionVisualizerIOTools
    public static final URL REMOTE_SESSION_INFO_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "YoClientInformationPane");
    public static final URL LOG_SESSION_MANAGER_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "LogSessionManagerPane");
    public static final URL LOG_CROP_PROGRESS_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "LogCropProgressPane");
+   public static final URL MCAP_LOG_SESSION_MANAGER_PANE_FXML_URL = getFXMLResource(SESSION_FOLDER, "MCAPLogSessionManagerPane");
 
    // Cloudy Crown Skybox
    public static final String SKYBOX_CLOUDY_FOLDER = "cloudy/";
@@ -397,6 +403,16 @@ public class SessionVisualizerIOTools
       return showSaveDialog(owner, "Save YoVariable Group", yoVariableGroupConfigurationFilter);
    }
 
+   public static File yoEquationOpenFileDialog(Window owner)
+   {
+      return showOpenDialog(owner, "Load YoEquation", yoEquationFilter);
+   }
+
+   public static File yoEquationSaveFileDialog(Window owner)
+   {
+      return showSaveDialog(owner, "Save YoEquation", yoEquationFilter);
+   }
+
    public static File videoExportSaveFileDialog(Window owner)
    {
       return showSaveDialog(owner, "Save Video", videoExtensionFilter, "video");
@@ -412,7 +428,7 @@ public class SessionVisualizerIOTools
       List<String> extensions = extensionFilter != null ? extensionFilter.getExtensions() : Collections.emptyList();
       boolean hasExtension = !extensions.isEmpty();
 
-      FileChooser fileChooser = fileChooser(title, extensionFilter);
+      FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       if (hasExtension && !SystemUtils.IS_OS_WINDOWS)
          fileChooser.setInitialFileName(extensions.get(0));
       File result = fileChooser.showSaveDialog(owner);
@@ -479,31 +495,30 @@ public class SessionVisualizerIOTools
          }
       }
 
-      setDefaultFilePath(result);
+      setDefaultFilePath(pathKey, result);
 
       return result;
-
    }
 
-   private static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)
+   public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter)
    {
       return showOpenDialog(owner, title, extensionFilter, "filePath");
    }
 
-   private static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
+   public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
-      FileChooser fileChooser = fileChooser(title, extensionFilter);
+      FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       File result = fileChooser.showOpenDialog(owner);
       if (result != null)
-         setDefaultFilePath(result);
+         setDefaultFilePath(pathKey, result);
       return result;
    }
 
-   private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter)
+   private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter, String pathKey)
    {
       FileChooser fileChooser = new FileChooser();
       fileChooser.setTitle(title);
-      fileChooser.setInitialDirectory(getDefaultFilePath());
+      fileChooser.setInitialDirectory(getDefaultFilePath(pathKey));
       fileChooser.getExtensionFilters().add(extensionFilter);
       return fileChooser;
    }
@@ -520,6 +535,9 @@ public class SessionVisualizerIOTools
 
    public static File getDefaultFilePath(String key)
    {
+      if (key == null)
+         key = "filePath";
+
       Preferences prefs = Preferences.userNodeForPackage(SessionVisualizerIOTools.class);
       String filePath = prefs.get(key, null);
 

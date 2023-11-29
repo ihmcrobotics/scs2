@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <YoCompositePatternList name='defaultComposites'>
-   <yoCompositePatterns name='YoTuple2D'>
-      <crossRegistry>false</crossRegistry>
-      <identifiers>x</identifiers>
-      <identifiers>y</identifiers>
+   <yoCompositePatterns name='YoTuple2D' crossRegistry='false' ids='x,y'>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -18,11 +15,7 @@
          <chartIdentifiers row='1' column='0'/>
       </preferredConfigurations>
    </yoCompositePatterns>
-   <yoCompositePatterns name='YoTuple3D'>
-      <crossRegistry>false</crossRegistry>
-      <identifiers>x</identifiers>
-      <identifiers>y</identifiers>
-      <identifiers>z</identifiers>
+   <yoCompositePatterns name='YoTuple3D' crossRegistry='false' ids='x,y,z'>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -39,12 +32,8 @@
          <chartIdentifiers row='2' column='0'/>
       </preferredConfigurations>
    </yoCompositePatterns>
-   <yoCompositePatterns name='YoQuaternion'>
-      <crossRegistry>false</crossRegistry>
-      <identifiers>qx</identifiers>
-      <identifiers>qy</identifiers>
-      <identifiers>qz</identifiers>
-      <identifiers>qs</identifiers>
+   <yoCompositePatterns name='YoQuaternion' crossRegistry='false' ids='qx,qy,qz,qs'>
+      <altIds>x,y,z,w</altIds>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>
@@ -64,11 +53,7 @@
          <chartIdentifiers row='3' column='0'/>
       </preferredConfigurations>
    </yoCompositePatterns>
-   <yoCompositePatterns name='YoYawPitchRoll'>
-      <crossRegistry>false</crossRegistry>
-      <identifiers>yaw</identifiers>
-      <identifiers>pitch</identifiers>
-      <identifiers>roll</identifiers>
+   <yoCompositePatterns name='YoYawPitchRoll' crossRegistry='false' ids='yaw,pitch,roll'>
       <preferredConfigurations name='single'>
          <chartIdentifiers row='0' column='0'/>
          <chartIdentifiers row='0' column='0'/>

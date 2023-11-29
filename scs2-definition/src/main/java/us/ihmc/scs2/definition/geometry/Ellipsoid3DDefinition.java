@@ -1,10 +1,11 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D ellipsoid.
@@ -27,7 +28,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D ellipsoid.
-    * 
+    *
     * @param radiusX radius of the ellipsoid along the x-axis.
     * @param radiusY radius of the ellipsoid along the y-axis.
     * @param radiusZ radius of the ellipsoid along the z-axis.
@@ -42,7 +43,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D ellipsoid.
-    * 
+    *
     * @param radiusX    radius of the ellipsoid along the x-axis.
     * @param radiusY    radius of the ellipsoid along the y-axis.
     * @param radiusZ    radius of the ellipsoid along the z-axis.
@@ -59,7 +60,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D ellipsoid.
-    * 
+    *
     * @param radii the tuple containing the 3 radii of the ellipsoid.
     */
    public Ellipsoid3DDefinition(Tuple3DReadOnly radii)
@@ -69,7 +70,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D ellipsoid.
-    * 
+    *
     * @param radii      the tuple containing the 3 radii of the ellipsoid.
     * @param resolution used for discretizing the geometry.
     */
@@ -89,7 +90,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Tests if this ellipsoid is a sphere, i.e. all three radii are equal.
-    * 
+    *
     * @return {@code true} if this ellipsoid is a sphere, {@code false} if it is an ellipsoid.
     */
    public boolean isSphere()
@@ -99,7 +100,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the x-axis for the ellipsoid.
-    * 
+    *
     * @param radiusX the ellipsoid's radius along the x-axis.
     */
    @XmlElement
@@ -110,7 +111,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the y-axis for the ellipsoid.
-    * 
+    *
     * @param radiusY the ellipsoid's radius along the y-axis.
     */
    @XmlElement
@@ -121,7 +122,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius along the z-axis for the ellipsoid.
-    * 
+    *
     * @param radiusZ the ellipsoid's radius along the z-axis.
     */
    @XmlElement
@@ -132,7 +133,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radii of the ellipsoid.
-    * 
+    *
     * @param radiusX the ellipsoid's radius along the x-axis.
     * @param radiusY the ellipsoid's radius along the y-axis.
     * @param radiusZ the ellipsoid's radius along the z-axis.
@@ -146,7 +147,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Sets the ellipsoid's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the ellipsoid's resolution.
     */
    @XmlElement
@@ -157,7 +158,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius along the x-axis of the ellipsoid.
-    * 
+    *
     * @return the ellipsoid's radius along the x-axis.
     */
    public double getRadiusX()
@@ -167,7 +168,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius along the y-axis of the ellipsoid.
-    * 
+    *
     * @return the ellipsoid's radius along the y-axis.
     */
    public double getRadiusY()
@@ -177,7 +178,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius along the z-axis of the ellipsoid.
-    * 
+    *
     * @return the ellipsoid's radius along the z-axis.
     */
    public double getRadiusZ()
@@ -187,7 +188,7 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
    /**
     * Returns the ellipsoid's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the ellipsoid's resolution.
     */
    public int getResolution()
@@ -222,11 +223,11 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
 
       Ellipsoid3DDefinition other = (Ellipsoid3DDefinition) object;
 
-      if (Double.doubleToLongBits(radiusX) != Double.doubleToLongBits(other.radiusX))
+      if (!EuclidCoreTools.equals(radiusX, other.radiusX))
          return false;
-      if (Double.doubleToLongBits(radiusY) != Double.doubleToLongBits(other.radiusY))
+      if (!EuclidCoreTools.equals(radiusY, other.radiusY))
          return false;
-      if (Double.doubleToLongBits(radiusZ) != Double.doubleToLongBits(other.radiusZ))
+      if (!EuclidCoreTools.equals(radiusZ, other.radiusZ))
          return false;
       if (resolution != other.resolution)
          return false;
@@ -237,7 +238,11 @@ public class Ellipsoid3DDefinition extends GeometryDefinition
    @Override
    public String toString()
    {
-      return EuclidCoreIOTools.getStringOf("Ellipsoid: [name: " + getName()
-            + ", radii: (", "), resolution: " + resolution + "]", ", ", radiusX, radiusY, radiusZ);
+      return EuclidCoreIOTools.getStringOf("Ellipsoid: [name: " + getName() + ", radii: (",
+                                           "), resolution: " + resolution + "]",
+                                           ", ",
+                                           radiusX,
+                                           radiusY,
+                                           radiusZ);
    }
 }

@@ -1,0 +1,7 @@
+struct test_struct
+{
+    string string_var;
+    string current;
+    string info;
+    sequence<float, 2> short_seq;
+};

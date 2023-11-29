@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.robot;
 
-import javax.xml.bind.annotation.XmlElement;
-
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
 
 public class LidarSensorDefinition extends SensorDefinition
 {
@@ -222,27 +223,27 @@ public class LidarSensorDefinition extends SensorDefinition
 
       LidarSensorDefinition other = (LidarSensorDefinition) object;
 
-      if (Double.doubleToLongBits(sweepYawMin) != Double.doubleToLongBits(other.sweepYawMin))
+      if (!EuclidCoreTools.equals(sweepYawMin, other.sweepYawMin))
          return false;
-      if (Double.doubleToLongBits(sweepYawMax) != Double.doubleToLongBits(other.sweepYawMax))
+      if (!EuclidCoreTools.equals(sweepYawMax, other.sweepYawMax))
          return false;
-      if (Double.doubleToLongBits(heightPitchMin) != Double.doubleToLongBits(other.heightPitchMin))
+      if (!EuclidCoreTools.equals(heightPitchMin, other.heightPitchMin))
          return false;
-      if (Double.doubleToLongBits(heightPitchMax) != Double.doubleToLongBits(other.heightPitchMax))
+      if (!EuclidCoreTools.equals(heightPitchMax, other.heightPitchMax))
          return false;
-      if (Double.doubleToLongBits(minRange) != Double.doubleToLongBits(other.minRange))
+      if (!EuclidCoreTools.equals(minRange, other.minRange))
          return false;
-      if (Double.doubleToLongBits(maxRange) != Double.doubleToLongBits(other.maxRange))
+      if (!EuclidCoreTools.equals(maxRange, other.maxRange))
          return false;
-      if (Double.doubleToLongBits(rangeResolution) != Double.doubleToLongBits(other.rangeResolution))
+      if (!EuclidCoreTools.equals(rangeResolution, other.rangeResolution))
          return false;
       if (pointsPerSweep != other.pointsPerSweep)
          return false;
       if (scanHeight != other.scanHeight)
          return false;
-      if (Double.doubleToLongBits(gaussianNoiseMean) != Double.doubleToLongBits(other.gaussianNoiseMean))
+      if (!EuclidCoreTools.equals(gaussianNoiseMean, other.gaussianNoiseMean))
          return false;
-      if (Double.doubleToLongBits(gaussianNoiseStandardDeviation) != Double.doubleToLongBits(other.gaussianNoiseStandardDeviation))
+      if (!EuclidCoreTools.equals(gaussianNoiseStandardDeviation, other.gaussianNoiseStandardDeviation))
          return false;
 
       return true;

@@ -1,9 +1,8 @@
 package us.ihmc.scs2.definition.configuration;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "SCSGuiConfiguration")
 public class SCSGuiConfigurationDefinition
@@ -13,6 +12,7 @@ public class SCSGuiConfigurationDefinition
    private String yoCompositePatternListFilename;
    private String yoEntryConfigurationFilename;
    private String yoSliderboardConfigurationFilename;
+   private String yoEquationFilename;
    private String mainYoChartGroupConfigurationFilename;
    private List<String> secondaryYoChartGroupConfigurationsFilenames;
 
@@ -22,6 +22,10 @@ public class SCSGuiConfigurationDefinition
    private boolean showYoSearchPanel = false;
    private boolean showOverheadPlotter = false;
    private boolean showAdvancedControls = false;
+   /**
+    * Whether to show the unique names of the yoVariables.
+    */
+   private boolean showYoVariableUniqueNames = false;
    private WindowConfigurationDefinition mainWindowConfiguration;
    private List<WindowConfigurationDefinition> secondaryWindowConfigurations;
 
@@ -48,6 +52,11 @@ public class SCSGuiConfigurationDefinition
    public void setYoSliderboardConfigurationFilename(String yoSliderboardConfigurationFilename)
    {
       this.yoSliderboardConfigurationFilename = yoSliderboardConfigurationFilename;
+   }
+
+   public void setYoEquationFilename(String yoEquationFilename)
+   {
+      this.yoEquationFilename = yoEquationFilename;
    }
 
    public void setMainYoChartGroupConfigurationFilename(String mainYoChartGroupConfigurationFilename)
@@ -90,6 +99,11 @@ public class SCSGuiConfigurationDefinition
       this.showAdvancedControls = showAdvancedControls;
    }
 
+   public void setShowYoVariableUniqueNames(boolean showYoVariableUniqueNames)
+   {
+      this.showYoVariableUniqueNames = showYoVariableUniqueNames;
+   }
+
    public void setMainWindowConfiguration(WindowConfigurationDefinition mainWindowConfiguration)
    {
       this.mainWindowConfiguration = mainWindowConfiguration;
@@ -123,6 +137,11 @@ public class SCSGuiConfigurationDefinition
    public String getYoSliderboardConfigurationFilename()
    {
       return yoSliderboardConfigurationFilename;
+   }
+
+   public String getYoEquationFilename()
+   {
+      return yoEquationFilename;
    }
 
    public String getMainYoChartGroupConfigurationFilename()
@@ -165,6 +184,11 @@ public class SCSGuiConfigurationDefinition
       return showAdvancedControls;
    }
 
+   public boolean isShowYoVariableUniqueNames()
+   {
+      return showYoVariableUniqueNames;
+   }
+
    public WindowConfigurationDefinition getMainWindowConfiguration()
    {
       return mainWindowConfiguration;
@@ -182,11 +206,9 @@ public class SCSGuiConfigurationDefinition
       {
          return true;
       }
-      else if (object instanceof SCSGuiConfigurationDefinition)
+      else if (object instanceof SCSGuiConfigurationDefinition other)
       {
-         SCSGuiConfigurationDefinition other = (SCSGuiConfigurationDefinition) object;
-
-         if (name == null ? other.name != null : !name.equals(other.name))
+         if (!Objects.equals(name, other.name))
             return false;
          if (!Objects.equals(yoGraphicsFilename, other.yoGraphicsFilename))
             return false;
@@ -212,7 +234,9 @@ public class SCSGuiConfigurationDefinition
             return false;
          if (showAdvancedControls != other.showAdvancedControls)
             return false;
-         if (mainWindowConfiguration == null ? other.mainWindowConfiguration == null : !mainWindowConfiguration.equals(other.mainWindowConfiguration))
+         if (showYoVariableUniqueNames != other.showYoVariableUniqueNames)
+            return false;
+         if (!Objects.equals(mainWindowConfiguration, other.mainWindowConfiguration))
             return false;
          if (!Objects.equals(secondaryWindowConfigurations, other.secondaryWindowConfigurations))
             return false;
@@ -228,11 +252,11 @@ public class SCSGuiConfigurationDefinition
    public String toString()
    {
       return "name: " + name + "\nyoGraphics: " + yoGraphicsFilename + "\nyoCompositePatternList: " + yoCompositePatternListFilename
-            + "\nyoEntryConfiguration: " + yoEntryConfigurationFilename + "\nyoSliderboardConfiguration: " + yoSliderboardConfigurationFilename
-            + "\nmainYoChartGroupConfiguration: " + mainYoChartGroupConfigurationFilename + "\nsecondaryYoChartGroupConfigurations: "
-            + secondaryYoChartGroupConfigurationsFilenames + "\nbufferSize: " + bufferSize + "\nrecordTickPeriod: " + recordTickPeriod + "\nnumberPrecision: "
-            + numberPrecision + "\nshowYoSearchPanel: " + showYoSearchPanel + "\nshowOverheadPlotter: " + showOverheadPlotter + "\nshowAdvancedControls: "
-            + showAdvancedControls + "\nmainWindowConfiguration: " + mainWindowConfiguration + "\nsecondaryWindowConfigurations: "
-            + secondaryWindowConfigurations;
+             + "\nyoEntryConfiguration: " + yoEntryConfigurationFilename + "\nyoSliderboardConfiguration: " + yoSliderboardConfigurationFilename
+             + "\nmainYoChartGroupConfiguration: " + mainYoChartGroupConfigurationFilename + "\nsecondaryYoChartGroupConfigurations: "
+             + secondaryYoChartGroupConfigurationsFilenames + "\nbufferSize: " + bufferSize + "\nrecordTickPeriod: " + recordTickPeriod + "\nnumberPrecision: "
+             + numberPrecision + "\nshowYoSearchPanel: " + showYoSearchPanel + "\nshowOverheadPlotter: " + showOverheadPlotter + "\nshowAdvancedControls: "
+             + showAdvancedControls + "\nmainWindowConfiguration: " + mainWindowConfiguration + "\nsecondaryWindowConfigurations: "
+             + secondaryWindowConfigurations;
    }
 }
