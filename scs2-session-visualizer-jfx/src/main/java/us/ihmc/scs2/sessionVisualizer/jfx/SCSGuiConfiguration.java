@@ -23,6 +23,7 @@ import static us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools.*;
 
 public class SCSGuiConfiguration
 {
+   public static final String DEFAULT_ROBOT_CONFIGURATION_NAME = "DefaultRobotConfiguration";
    private final Path configurationFolderPath;
 
    private final String mainConfigurationFilename;
@@ -45,6 +46,11 @@ public class SCSGuiConfiguration
 
    private SCSGuiConfigurationDefinition definition;
 
+   public static SCSGuiConfiguration defaultLoader(String robotName)
+   {
+      return defaultLoader(robotName, DEFAULT_ROBOT_CONFIGURATION_NAME);
+   }
+
    public static SCSGuiConfiguration defaultLoader(String robotName, String simulationName)
    {
       try
@@ -56,6 +62,11 @@ public class SCSGuiConfiguration
          e.printStackTrace();
          return null;
       }
+   }
+
+   public static SCSGuiConfiguration defaultSaver(String robotName)
+   {
+      return defaultSaver(robotName, DEFAULT_ROBOT_CONFIGURATION_NAME);
    }
 
    public static SCSGuiConfiguration defaultSaver(String robotName, String simulationName)
