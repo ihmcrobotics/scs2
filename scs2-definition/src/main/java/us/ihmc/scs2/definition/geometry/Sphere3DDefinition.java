@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D sphere.
@@ -24,7 +25,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D sphere.
-    * 
+    *
     * @param radius the radius of the sphere.
     */
    public Sphere3DDefinition(double radius)
@@ -35,7 +36,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D sphere.
-    * 
+    *
     * @param radius     the radius of the sphere.
     * @param resolution used for discretizing the geometry.
     */
@@ -55,7 +56,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
    /**
     * Sets the radius of the sphere.
-    * 
+    *
     * @param radius the radius of the sphere.
     */
    @XmlElement
@@ -66,7 +67,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
    /**
     * Sets the sphere's resolution used when discretizing it.
-    * 
+    *
     * @param resolution the sphere's resolution.
     */
    @XmlElement
@@ -77,7 +78,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
    /**
     * Returns the radius of the sphere.
-    * 
+    *
     * @return the radius of the sphere.
     */
    public double getRadius()
@@ -87,7 +88,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
    /**
     * Returns the sphere's resolution which can be used for discretizing it.
-    * 
+    *
     * @return the sphere's resolution.
     */
    public int getResolution()
@@ -120,7 +121,7 @@ public class Sphere3DDefinition extends GeometryDefinition
 
       Sphere3DDefinition other = (Sphere3DDefinition) object;
 
-      if (Double.doubleToLongBits(radius) != Double.doubleToLongBits(other.radius))
+      if (!EuclidCoreTools.equals(radius, other.radius))
          return false;
       if (resolution != other.resolution)
          return false;

@@ -1,17 +1,13 @@
 package us.ihmc.scs2.definition.geometry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Definition for creating an extruded 2D polygon.
@@ -37,7 +33,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for an extruded 2D polygon.
-    * 
+    *
     * @param polygonVertices         the 2D polygon's vertices.
     * @param counterClockwiseOrdered indicate the winding of the polygon: {@code true} if the polygon
     *                                is counter clockwise, {@code false} if clockwise.
@@ -54,7 +50,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for an extruded 2D polygon.
-    * 
+    *
     * @param polygonVertices         the 2D polygon's vertices.
     * @param counterClockwiseOrdered indicate the winding of the polygon: {@code true} if the polygon
     *                                is counter clockwise, {@code false} if clockwise.
@@ -92,7 +88,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Sets the polygon's vertices.
-    * 
+    *
     * @param polygonVertices the polygon's vertices.
     */
    @XmlElement
@@ -103,7 +99,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Sets the flag for indicating the winding of the polygon.
-    * 
+    *
     * @param counterClockwiseOrdered indicate the winding of the polygon: {@code true} if the polygon
     *                                is counter clockwise, {@code false} if clockwise.
     */
@@ -115,7 +111,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Sets the z-coordinate for the top face of the extrusion.
-    * 
+    *
     * @param topZ the z-coordinate of the top face of the extrusion.
     */
    @XmlElement
@@ -126,7 +122,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Sets the z-coordinate for the bottom face of the extrusion.
-    * 
+    *
     * @param bottomZ the z-coordinate of the bottom face of the extrusion.
     */
    @XmlElement
@@ -138,7 +134,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
    /**
     * Sets the thickness of the extrusion and sets the z-coordinate of the bottom face of the extrusion
     * to zero.
-    * 
+    *
     * @param extrusionHeight the thickness of the extrusion along the z-axis.
     */
    public void setExtrusionHeight(double extrusionHeight)
@@ -149,7 +145,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Returns the polygon's vertices.
-    * 
+    *
     * @return the polygon's vertices.
     */
    public List<Point2DDefinition> getPolygonVertices()
@@ -159,7 +155,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Returns the winding of the polygon.
-    * 
+    *
     * @return {@code true} if the polygon is counter clockwise, {@code false} if clockwise.
     */
    public boolean isCounterClockwiseOrdered()
@@ -169,7 +165,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Returns the z-coordinate of the top face of the extrusion.
-    * 
+    *
     * @return the z-coordinate of the top face of the extrusion.
     */
    public double getTopZ()
@@ -179,7 +175,7 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
 
    /**
     * Returns the z-coordinate of the bottom face of the extrusion.
-    * 
+    *
     * @return the z-coordinate of the bottom face of the extrusion.
     */
    public double getBottomZ()
@@ -218,9 +214,9 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
          return false;
       if (counterClockwiseOrdered != other.counterClockwiseOrdered)
          return false;
-      if (Double.doubleToLongBits(topZ) != Double.doubleToLongBits(other.topZ))
+      if (!EuclidCoreTools.equals(topZ, other.topZ))
          return false;
-      if (Double.doubleToLongBits(bottomZ) != Double.doubleToLongBits(other.bottomZ))
+      if (!EuclidCoreTools.equals(bottomZ, other.bottomZ))
          return false;
 
       return true;
@@ -230,7 +226,10 @@ public class ExtrudedPolygon2DDefinition extends GeometryDefinition
    public String toString()
    {
       String ordering = counterClockwiseOrdered ? "counter-clockwise" : "clockwise";
-      return "Extruded Polygon 2D: [name: " + getName() + ", " + ordering + ", vertices: "
-            + EuclidCoreIOTools.getCollectionString("[", "]", ", ", polygonVertices, Object::toString);
+      return "Extruded Polygon 2D: [name: " + getName() + ", " + ordering + ", vertices: " + EuclidCoreIOTools.getCollectionString("[",
+                                                                                                                                   "]",
+                                                                                                                                   ", ",
+                                                                                                                                   polygonVertices,
+                                                                                                                                   Object::toString);
    }
 }

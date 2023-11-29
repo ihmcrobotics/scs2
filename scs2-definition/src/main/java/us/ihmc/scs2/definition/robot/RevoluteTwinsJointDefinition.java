@@ -1,5 +1,6 @@
 package us.ihmc.scs2.definition.robot;
 
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -216,9 +217,9 @@ public class RevoluteTwinsJointDefinition extends OneDoFJointDefinition
          return false;
       if (actuatedJointIndex != other.actuatedJointIndex)
          return false;
-      if (Double.doubleToLongBits(constraintRatio) != Double.doubleToLongBits(other.constraintRatio))
+      if (!EuclidCoreTools.equals(constraintRatio, other.constraintRatio))
          return false;
-      if (Double.doubleToLongBits(constraintOffset) != Double.doubleToLongBits(other.constraintOffset))
+      if (!EuclidCoreTools.equals(constraintOffset, other.constraintOffset))
          return false;
       return true;
    }

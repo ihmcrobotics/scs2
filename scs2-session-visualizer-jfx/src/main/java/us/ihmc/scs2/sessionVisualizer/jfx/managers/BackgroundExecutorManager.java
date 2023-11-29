@@ -146,6 +146,13 @@ public class BackgroundExecutorManager
       return newFuture;
    }
 
+   public Future<?> scheduleTaskInBackground(Runnable task, long delay, TimeUnit unit)
+   {
+      ScheduledFuture<?> newFuture =  backgroundExecutor.schedule(toPrintExceptionRunnable(task), delay, unit);
+      futures.add(newFuture);
+      return newFuture;
+   }
+
    public void stopSession()
    {
       isStoppingSession = true;

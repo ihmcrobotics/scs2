@@ -12,24 +12,42 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class SessionInformationDefinition
 {
-   /** The name of the session that was running. */
+   /**
+    * The name of the session that was running.
+    */
    private String sessionName;
-   /** The update period of the session. */
+   /**
+    * The update period of the session.
+    */
    private double sessionDTSeconds;
-   /** The update period at which the data was recorded. */
+   /**
+    * The update period at which the data was recorded.
+    */
    private double recordDTSeconds;
 
-   /** The file names of the exported robots, 1 per robot. */
+   /**
+    * The file names of the exported robots, 1 per robot.
+    */
    private List<String> robotFileNames = new ArrayList<>();
-   /** The file names of the exported terrains, 1 per terrain. */
+   /**
+    * The file names of the exported terrains, 1 per terrain.
+    */
    private List<String> terrainFileNames = new ArrayList<>();
-   /** The file names of the exported robot states, 1 per robot. */
+   /**
+    * The file names of the exported robot states, 1 per robot.
+    */
    private List<String> robotStateFileNames = new ArrayList<>();
-   /** The file name of the exported yoGraphics. */
+   /**
+    * The file name of the exported yoGraphics.
+    */
    private String graphicFileName;
-   /** The file name of the exported yoRegistry structure. */
+   /**
+    * The file name of the exported yoRegistry structure.
+    */
    private String registryFileName;
-   /** The file name of the exported buffer data. */
+   /**
+    * The file name of the exported buffer data.
+    */
    private String dataFileName;
 
    public SessionInformationDefinition()

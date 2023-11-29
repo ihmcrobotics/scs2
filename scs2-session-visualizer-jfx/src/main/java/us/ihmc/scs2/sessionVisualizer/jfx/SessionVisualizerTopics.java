@@ -1,32 +1,16 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.List;
-
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-
 import javafx.stage.Window;
 import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
-import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.session.SessionDataExportRequest;
-import us.ihmc.scs2.session.SessionDataFilterParameters;
-import us.ihmc.scs2.session.SessionMessagerAPI;
+import us.ihmc.scs2.definition.yoSlider.*;
+import us.ihmc.scs2.session.*;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
-import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.session.SessionState;
-import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -35,6 +19,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.List;
 
 public class SessionVisualizerTopics
 {
@@ -63,6 +52,7 @@ public class SessionVisualizerTopics
    private Topic<List<String>> yoCompositeSelected;
    private Topic<Boolean> yoCompositeRefreshAll;
    private Topic<Boolean> showSCS2YoVariables;
+   private Topic<YoNameDisplay> yoVariableNameDisplay;
 
    private Topic<File> yoGraphicLoadRequest;
    private Topic<File> yoGraphicSaveRequest;
@@ -116,6 +106,12 @@ public class SessionVisualizerTopics
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
 
+   private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeRequest;
+   private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeState;
+
+   private Topic<YoEquationListChange> sessionYoEquationListChangeRequest;
+   private Topic<YoEquationListChange> sessionYoEquationListChangeState;
+
    private Topic<Integer> yoBufferCurrentIndexRequest;
    private Topic<Integer> yoBufferIncrementCurrentIndexRequest, yoBufferDecrementCurrentIndexRequest;
    private Topic<Integer> yoBufferInPointIndexRequest, yoBufferOutPointIndexRequest;
@@ -155,6 +151,7 @@ public class SessionVisualizerTopics
       yoCompositeSelected = SessionVisualizerMessagerAPI.YoSearch.YoCompositePatternSelected;
       yoCompositeRefreshAll = SessionVisualizerMessagerAPI.YoSearch.YoCompositeRefreshAll;
       showSCS2YoVariables = SessionVisualizerMessagerAPI.YoSearch.ShowSCS2YoVariables;
+      yoVariableNameDisplay = SessionVisualizerMessagerAPI.YoSearch.YoVariableNameDisplay;
 
       yoGraphicLoadRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicLoadRequest;
       yoGraphicSaveRequest = SessionVisualizerMessagerAPI.YoGraphic.YoGraphicSaveRequest;
@@ -205,6 +202,12 @@ public class SessionVisualizerTopics
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
+
+      sessionRobotDefinitionListChangeRequest = SessionMessagerAPI.SessionRobotDefinitionListChangeRequest;
+      sessionRobotDefinitionListChangeState = SessionMessagerAPI.SessionRobotDefinitionListChangeState;
+
+      sessionYoEquationListChangeRequest = SessionMessagerAPI.SessionYoEquationListChangeRequest;
+      sessionYoEquationListChangeState = SessionMessagerAPI.SessionYoEquationListChangeState;
 
       yoBufferCurrentIndexRequest = YoSharedBufferMessagerAPI.CurrentIndexRequest;
       yoBufferIncrementCurrentIndexRequest = YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest;
@@ -339,6 +342,11 @@ public class SessionVisualizerTopics
    public Topic<Boolean> getShowSCS2YoVariables()
    {
       return showSCS2YoVariables;
+   }
+
+   public Topic<YoNameDisplay> getYoVariableNameDisplay()
+   {
+      return yoVariableNameDisplay;
    }
 
    public Topic<File> getYoGraphicLoadRequest()
@@ -549,6 +557,26 @@ public class SessionVisualizerTopics
    public Topic<OpenSessionControlsRequest> getOpenSessionControlsRequest()
    {
       return openSessionControlsRequest;
+   }
+
+   public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeRequest()
+   {
+      return sessionRobotDefinitionListChangeRequest;
+   }
+
+   public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeState()
+   {
+      return sessionRobotDefinitionListChangeState;
+   }
+
+   public Topic<YoEquationListChange> getSessionYoEquationListChangeRequest()
+   {
+      return sessionYoEquationListChangeRequest;
+   }
+
+   public Topic<YoEquationListChange> getSessionYoEquationListChangeState()
+   {
+      return sessionYoEquationListChangeState;
    }
 
    public Topic<Integer> getYoBufferCurrentIndexRequest()

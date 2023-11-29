@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a partial 3D torus.
@@ -30,7 +31,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a partial 3D torus.
-    * 
+    *
     * @param startAngle  the angle at which the torus starts. The angle is in radians, it is expressed
     *                    with respect to the x-axis, and a positive angle corresponds to a
     *                    counter-clockwise rotation.
@@ -51,7 +52,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a partial 3D torus.
-    * 
+    *
     * @param startAngle  the angle at which the torus starts. The angle is in radians, it is expressed
     *                    with respect to the x-axis, and a positive angle corresponds to a
     *                    counter-clockwise rotation.
@@ -89,7 +90,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
     * The angle is in radians, it is expressed with respect to the x-axis, and a positive angle
     * corresponds to a counter-clockwise rotation.
     * </p>
-    * 
+    *
     * @param startAngle the angle at which the torus starts.
     */
    @XmlElement
@@ -105,7 +106,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
     * expressed with respect to the x-axis, and a positive angle corresponds to a counter-clockwise
     * rotation.
     * </p>
-    * 
+    *
     * @param endAngle the angle at which the torus ends.
     */
    @XmlElement
@@ -116,7 +117,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Sets the torus' major radius.
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     */
    @XmlElement
@@ -127,7 +128,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Sets the torus' minor radius.
-    * 
+    *
     * @param minorRadius the radius of the tube.
     */
    @XmlElement
@@ -138,7 +139,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Sets the torus' resolution used when discretizing it.
-    * 
+    *
     * @param resolution the torus' resolution.
     */
    @XmlElement
@@ -153,7 +154,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
     * The angle is in radians, it is expressed with respect to the x-axis, and a positive angle
     * corresponds to a counter-clockwise rotation.
     * </p>
-    * 
+    *
     * @return the start angle.
     */
    public double getStartAngle()
@@ -168,7 +169,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
     * expressed with respect to the x-axis, and a positive angle corresponds to a counter-clockwise
     * rotation.
     * </p>
-    * 
+    *
     * @return the end angle.
     */
    public double getEndAngle()
@@ -178,7 +179,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Returns the torus' major radius.
-    * 
+    *
     * @return the radius from the torus centroid to the tube center.
     */
    public double getMajorRadius()
@@ -188,7 +189,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Returns the torus' minor radius.
-    * 
+    *
     * @return the radius of the tube.
     */
    public double getMinorRadius()
@@ -198,7 +199,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
    /**
     * Returns the torus' resolution which can be used for discretizing it.
-    * 
+    *
     * @return the torus' resolution.
     */
    public int getResolution()
@@ -234,13 +235,13 @@ public class ArcTorus3DDefinition extends GeometryDefinition
 
       ArcTorus3DDefinition other = (ArcTorus3DDefinition) object;
 
-      if (Double.doubleToLongBits(startAngle) != Double.doubleToLongBits(other.startAngle))
+      if (!EuclidCoreTools.equals(startAngle, other.startAngle))
          return false;
-      if (Double.doubleToLongBits(endAngle) != Double.doubleToLongBits(other.endAngle))
+      if (!EuclidCoreTools.equals(endAngle, other.endAngle))
          return false;
-      if (Double.doubleToLongBits(majorRadius) != Double.doubleToLongBits(other.majorRadius))
+      if (!EuclidCoreTools.equals(majorRadius, other.majorRadius))
          return false;
-      if (Double.doubleToLongBits(minorRadius) != Double.doubleToLongBits(other.minorRadius))
+      if (!EuclidCoreTools.equals(minorRadius, other.minorRadius))
          return false;
       if (resolution != other.resolution)
          return false;
@@ -252,7 +253,7 @@ public class ArcTorus3DDefinition extends GeometryDefinition
    public String toString()
    {
       return "Arc-Torus: [name: " + getName() + EuclidCoreIOTools.getStringOf(", radii: (", ")", ", ", majorRadius, minorRadius) + ", start angle: "
-            + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, startAngle) + ", end angle: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, endAngle)
-            + ", resolution: " + resolution + "]";
+             + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, startAngle) + ", end angle: " + String.format(EuclidCoreIOTools.DEFAULT_FORMAT, endAngle)
+             + ", resolution: " + resolution + "]";
    }
 }

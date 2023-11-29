@@ -135,6 +135,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<List<String>> YoCompositePatternSelected = APIRoot.child(YoSearch).child(YoCompositePattern).topic(Selected);
       public static final Topic<Boolean> YoCompositeRefreshAll = APIRoot.child(YoSearch).child(YoCompositePattern).topic(Refresh);
       public static final Topic<Boolean> ShowSCS2YoVariables = APIRoot.child(YoSearch).child(Debug).topic(Show);
+      public static final Topic<YoNameDisplay> YoVariableNameDisplay = APIRoot.child(YoSearch).topic(Name);
    }
 
    public static class YoGraphic

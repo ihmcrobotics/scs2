@@ -1,10 +1,11 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+
+import javax.xml.bind.annotation.XmlElement;
 
 public class STPRamp3DDefinition extends Ramp3DDefinition
 {
@@ -84,9 +85,9 @@ public class STPRamp3DDefinition extends Ramp3DDefinition
 
       STPRamp3DDefinition other = (STPRamp3DDefinition) object;
 
-      if (Double.doubleToLongBits(minimumMargin) != Double.doubleToLongBits(other.minimumMargin))
+      if (!EuclidCoreTools.equals(minimumMargin, other.minimumMargin))
          return false;
-      if (Double.doubleToLongBits(maximumMargin) != Double.doubleToLongBits(other.maximumMargin))
+      if (!EuclidCoreTools.equals(maximumMargin, other.maximumMargin))
          return false;
 
       return true;

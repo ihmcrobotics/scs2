@@ -1,26 +1,5 @@
 package us.ihmc.scs2.session;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-
-import javax.xml.bind.JAXBException;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
@@ -31,20 +10,36 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.symbolic.YoEquationManager;
+import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+import javax.xml.bind.JAXBException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+
 /**
  * Base class for implementing a session, e.g. a simulation, log reading, or a remote session.
  */
+@SuppressWarnings("CallToPrintStackTrace")
 public abstract class Session
 {
    /**
@@ -113,14 +108,30 @@ public abstract class Session
    public static final long DEFAULT_BUFFER_PUBLISH_PERIOD = SessionPropertiesHelper.loadLongProperty("scs2.session.buffer.publishperiod",
                                                                                                      (long) (1.0 / 30.0 * 1.0e9));
 
-   /** Name of the root registry for any session. */
+   /**
+    * Name of the root registry for any session.
+    */
    public static final String ROOT_REGISTRY_NAME = "root";
-   /** Name of the registry that will contains variables related to the internal state of SCS2. */
+   /**
+    * Name of the registry that will contain variables related to the internal state of SCS2.
+    */
    public static final String SESSION_INTERNAL_REGISTRY_NAME = Session.class.getSimpleName() + "InternalRegistry";
-   /** Namespace of the root registry for any session. */
+   /**
+    * Name of the registry that will contain variables related to user application.
+    */
+   public static final String USER_REGISTRY_NAME = "userRegistry";
+   /**
+    * Namespace of the root registry for any session.
+    */
    public static final YoNamespace ROOT_NAMESPACE = new YoNamespace(ROOT_REGISTRY_NAME);
-   /** Namespace of the registry that will contains variables related to the internal state of SCS2. */
+   /**
+    * Namespace of the registry that will contain variables related to the internal state of SCS2.
+    */
    public static final YoNamespace SESSION_INTERNAL_NAMESPACE = ROOT_NAMESPACE.append(SESSION_INTERNAL_REGISTRY_NAME);
+   /**
+    * Namespace of the registry that will contain variables related to user application.
+    */
+   public static final YoNamespace USER_REGISTRY_NAMESPACE = ROOT_NAMESPACE.append(USER_REGISTRY_NAME);
    /**
     * Name suffix for any {@link ReferenceFrame} that only serve internal purpose as for instance
     * helping with the physics engine's calculation.
@@ -144,6 +155,16 @@ public abstract class Session
     * SCS2.
     */
    protected final YoRegistry sessionRegistry = new YoRegistry(SESSION_INTERNAL_REGISTRY_NAME);
+
+   /**
+    * The instance of the registry that is used to register variables related to user application.
+    * <p>
+    * Typically, this registry is used to register variables that are not initially part of the session.
+    * These variable can be used to store the result of an equation.
+    * </p>
+    */
+   protected final YoRegistry userRegistry = new YoRegistry(USER_REGISTRY_NAME);
+
    /**
     * Variable holding the current time (in seconds) for this session. It represents notably:
     * <ul>
@@ -159,18 +180,28 @@ public abstract class Session
     */
    private final JVMStatisticsGenerator jvmStatisticsGenerator = new JVMStatisticsGenerator("SCS2Stats", sessionRegistry);
 
-   /** Registry gathering debug variables related to {@link #runTick()}. */
+   /**
+    * Registry gathering debug variables related to {@link #runTick()}.
+    */
    protected final YoRegistry runRegistry = new YoRegistry("runStatistics");
-   /** Timer used to measured the time elapsed between 2 calls of {@link #runTick()}. */
+   /**
+    * Timer used to measure the time elapsed between 2 calls of {@link #runTick()}.
+    */
    private final YoTimer runActualDT = new YoTimer("runActualDT", TimeUnit.MILLISECONDS, runRegistry);
-   /** Timer used to measured the total time spent in each call of {@link #runTick()}. */
+   /**
+    * Timer used to measure the total time spent in each call of {@link #runTick()}.
+    */
    private final YoTimer runTimer = new YoTimer("runTimer", TimeUnit.MILLISECONDS, runRegistry);
-   /** Timer used to measured the total time spent in each call of {@link #initializeRunTick()}. */
+   /**
+    * Timer used to measure the total time spent in each call of {@link #initializeRunTick()}.
+    */
    private final YoTimer runInitializeTimer = new YoTimer("runInitializeTimer", TimeUnit.MILLISECONDS, runRegistry);
-   /** Timer used to measured the total time spent in each call of {@link #doSpecificRunTick()}. */
+   /**
+    * Timer used to measure the total time spent in each call of {@link #doSpecificRunTick()}.
+    */
    private final YoTimer runSpecificTimer = new YoTimer("runSpecificTimer", TimeUnit.MILLISECONDS, runRegistry);
    /**
-    * Timer used to measured the total time spent in each call of {@link #finalizeRunTick(boolean)}.
+    * Timer used to measure the total time spent in each call of {@link #finalizeRunTick(boolean)}.
     */
    private final YoTimer runFinalizeTimer = new YoTimer("runFinalizeTimer", TimeUnit.MILLISECONDS, runRegistry);
    /**
@@ -183,18 +214,30 @@ public abstract class Session
     */
    private final YoDouble runRealtimeRate = new YoDouble("runRealtimeRate", runRegistry);
 
-   /** Registry gathering debug variables related to {@link #playbackTick()}. */
+   /**
+    * Registry gathering debug variables related to {@link #playbackTick()}.
+    */
    protected final YoRegistry playbackRegistry = new YoRegistry("playbackStatistics");
-   /** Timer used to measured the time elapsed between 2 calls of {@link #playbackTick()}. */
+   /**
+    * Timer used to measure the time elapsed between 2 calls of {@link #playbackTick()}.
+    */
    private final YoTimer playbackActualDT = new YoTimer("playbackActualDT", TimeUnit.MILLISECONDS, playbackRegistry);
-   /** Timer used to measured the total time spent in each call of {@link #playbackTick()}. */
+   /**
+    * Timer used to measure the total time spent in each call of {@link #playbackTick()}.
+    */
    private final YoTimer playbackTimer = new YoTimer("playbackTimer", TimeUnit.MILLISECONDS, playbackRegistry);
 
-   /** Registry gathering debug variables related to {@link #pauseTick()}. */
+   /**
+    * Registry gathering debug variables related to {@link #pauseTick()}.
+    */
    protected final YoRegistry pauseRegistry = new YoRegistry("pauseStatistics");
-   /** Timer used to measured the time elapsed between 2 calls of {@link #pauseTick()}. */
+   /**
+    * Timer used to measure the time elapsed between 2 calls of {@link #pauseTick()}.
+    */
    private final YoTimer pauseActualDT = new YoTimer("pauseActualDT", TimeUnit.MILLISECONDS, pauseRegistry);
-   /** Timer used to measured the total time spent in each call of {@link #pauseTick()}. */
+   /**
+    * Timer used to measure the total time spent in each call of {@link #pauseTick()}.
+    */
    private final YoTimer pauseTimer = new YoTimer("pauseTimer", TimeUnit.MILLISECONDS, pauseRegistry);
 
    /**
@@ -202,6 +245,12 @@ public abstract class Session
     * {@link YoVariable} registered as a descendant of the {@link #rootRegistry}.
     */
    protected final YoSharedBuffer sharedBuffer = new YoSharedBuffer(rootRegistry, DEFAULT_INITIAL_BUFFER_SIZE);
+
+   // TODO Not sure if that's the right place for this.
+   /**
+    * The manager used to handle the creation and evaluation of equations.
+    */
+   protected final YoEquationManager equationManager = new YoEquationManager(time, sharedBuffer, userRegistry);
    /**
     * The current mode this session is running, see {@link SessionMode}.
     */
@@ -210,7 +259,9 @@ public abstract class Session
     * Whether the {@link SessionMode#RUNNING} mode should be capped to run no faster that real-time.
     */
    private final AtomicBoolean runAtRealTimeRate = new AtomicBoolean(DEFAULT_RUN_AT_REALTIME_RATE);
-   /** The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data. */
+   /**
+    * The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data.
+    */
    private final AtomicReference<Double> playbackRealTimeRate = new AtomicReference<>(DEFAULT_PLAYBACK_REALTIME_RATE);
    /**
     * The number of ticks to step while in playback mode. Allows to play back at faster rates by
@@ -243,14 +294,22 @@ public abstract class Session
    private final AtomicLong desiredBufferPublishPeriod = new AtomicLong(DEFAULT_BUFFER_PUBLISH_PERIOD);
 
    // State listener to publish internal to outside world
-   /** Period at which the current session properties are to be published. */
+   /**
+    * Period at which the current session properties are to be published.
+    */
    private final long sessionPropertiesPublishPeriod = 500L;
-   /** To keep track of the last time the session properties were published. */
+   /**
+    * To keep track of the last time the session properties were published.
+    */
    private long lastSessionPropertiesPublishTimestamp = -1L;
    // Listeners
-   /** Listeners that get notified right after the session mode has changed. */
+   /**
+    * Listeners that get notified right after the session mode has changed.
+    */
    private final List<SessionModeChangeListener> sessionModeChangeListeners = new ArrayList<>();
-   /** Listeners that get notified right before the session mode has changed. */
+   /**
+    * Listeners that get notified right before the session mode has changed.
+    */
    private final List<SessionModeChangeListener> preSessionModeChangeListeners = new ArrayList<>();
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
    private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
@@ -259,6 +318,13 @@ public abstract class Session
    // For exception handling
    private final List<Consumer<Throwable>> runThrowableListeners = new ArrayList<>();
    private final List<Consumer<Throwable>> playbackThrowableListeners = new ArrayList<>();
+
+   /**
+    * Listeners that get notified when a change to the list of robot definitions has been performed.
+    */
+   private final List<Consumer<SessionRobotDefinitionListChange>> robotDefinitionListChangeListeners = new ArrayList<>();
+   protected final SessionUserField<SessionRobotDefinitionListChange> pendingRobotDefinitionListChange = new SessionUserField<>();
+   protected final SessionUserField<YoEquationListChange> pendingEquationListChange = new SessionUserField<>();
 
    // Fields for external requests on buffer.
    private final SessionUserField<CropBufferRequest> pendingCropBufferRequest = new SessionUserField<>();
@@ -301,6 +367,7 @@ public abstract class Session
       sessionRegistry.addChild(runRegistry);
       sessionRegistry.addChild(playbackRegistry);
       sessionRegistry.addChild(pauseRegistry);
+      rootRegistry.addChild(userRegistry);
 
       setSessionModeTask(SessionMode.RUNNING, this::runTick);
       setSessionModeTask(SessionMode.PLAYBACK, this::playbackTick);
@@ -427,7 +494,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removeSessionModeChangeListener(SessionModeChangeListener listener)
    {
@@ -450,7 +517,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removePreSessionModeChangeListener(SessionModeChangeListener listener)
    {
@@ -472,7 +539,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removeShutdownListener(Runnable listener)
    {
@@ -495,7 +562,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removeSessionPropertiesListener(Consumer<SessionProperties> listener)
    {
@@ -518,7 +585,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removeCurrentBufferPropertiesListener(Consumer<YoBufferPropertiesReadOnly> listener)
    {
@@ -542,7 +609,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removeRunThrowableListener(Consumer<Throwable> listener)
    {
@@ -566,7 +633,7 @@ public abstract class Session
     *
     * @param listener the listener to remove.
     * @return {@code true} if the listener was successfully removed, {@code false} if it could not be
-    *         found.
+    *       found.
     */
    public boolean removePlaybackThrowableListener(Consumer<Throwable> listener)
    {
@@ -595,7 +662,7 @@ public abstract class Session
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
     *
-    * @param sessionDTSeconds the time increment in nanoseconds per running tick.
+    * @param sessionDTNanoseconds the time increment in nanoseconds per running tick.
     * @see SessionMode
     */
    public void setSessionDTNanoseconds(long sessionDTNanoseconds)
@@ -605,6 +672,72 @@ public abstract class Session
 
       this.sessionDTNanoseconds.set(sessionDTNanoseconds);
       scheduleSessionTask(getActiveMode());
+   }
+
+   /**
+    * Request a change to the list of robots for this session.
+    * <p>
+    * This is a non-blocking operation and schedules the change to be performed as soon as possible.
+    * </p>
+    *
+    * @param change the change to apply to the list of robots.
+    */
+   public void submitRobotDefinitionListChange(SessionRobotDefinitionListChange change)
+   {
+      pendingRobotDefinitionListChange.submit(change);
+   }
+
+   /**
+    * Adds a listener to be notified whenever a change to the list of robots for this session has been performed.
+    *
+    * @param listener the listener to add.
+    */
+   public void addRobotDefinitionListChangeListener(Consumer<SessionRobotDefinitionListChange> listener)
+   {
+      robotDefinitionListChangeListeners.add(listener);
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeRobotDefinitionListChangeListener(Consumer<SessionRobotDefinitionListChange> listener)
+   {
+      return robotDefinitionListChangeListeners.remove(listener);
+   }
+
+   /**
+    * Reports a change to the list of robots for this session to all listeners.
+    *
+    * @param change the change to report.
+    */
+   protected void reportRobotDefinitionListChange(SessionRobotDefinitionListChange change)
+   {
+      if (change.getChangeType() == SessionRobotDefinitionListChange.SessionRobotDefinitionListChangeType.ADD
+          || change.getChangeType() == SessionRobotDefinitionListChange.SessionRobotDefinitionListChangeType.REPLACE)
+      {
+         if (change.getAddedRobotDefinition() == null)
+         {
+            LogTools.error("The added robot definition is null, cannot report the change properly!");
+         }
+      }
+
+      for (Consumer<SessionRobotDefinitionListChange> listener : robotDefinitionListChangeListeners)
+      {
+         listener.accept(change);
+      }
+   }
+
+   /**
+    * Submits a request to edit the list of equations for this session.
+    *
+    * @param change the change to apply to the list of equations.
+    */
+   public void submitEquationListChange(YoEquationListChange change)
+   {
+      pendingEquationListChange.submit(change);
    }
 
    /**
@@ -619,7 +752,7 @@ public abstract class Session
     * </p>
     *
     * @param bufferSize the initial size of the buffer. Default value
-    *                   {@value #DEFAULT_INITIAL_BUFFER_SIZE}.
+    *                   {@link #DEFAULT_INITIAL_BUFFER_SIZE}.
     * @return {@code true} if the request is going through, {@code false} if it is being ignored.
     */
    public boolean initializeBufferSize(int bufferSize)
@@ -640,8 +773,8 @@ public abstract class Session
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
     * </p>
     *
-    * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
-    *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
+    * @param bufferRecordTickPeriod the period in ticks that data should be stored in the
+    *                               buffer. Default value {@link #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     * @return {@code true} if the request is going through, {@code false} if it is being ignored.
     */
    public boolean initializeBufferRecordTickPeriod(int bufferRecordTickPeriod)
@@ -653,7 +786,7 @@ public abstract class Session
    }
 
    /**
-    * Sets whether or not the {@link SessionMode#RUNNING} mode of this session should be capped to be
+    * Sets whether the {@link SessionMode#RUNNING} mode of this session should be capped to be
     * running no faster than real-time.
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
@@ -661,7 +794,7 @@ public abstract class Session
     *
     * @param runAtRealTimeRate {@code true} to cap the running mode at real-time rate, {@code false} to
     *                          let the running mode run as fast as possible. Default value
-    *                          {@value #DEFAULT_RUN_AT_REALTIME_RATE}.
+    *                          {@link #DEFAULT_RUN_AT_REALTIME_RATE}.
     */
    public void submitRunAtRealTimeRate(boolean runAtRealTimeRate)
    {
@@ -680,11 +813,11 @@ public abstract class Session
     * </p>
     *
     * @param realTimeRate the real-time factor for playing back data in the buffer. Default value
-    *                     {@value #DEFAULT_PLAYBACK_REALTIME_RATE}.
+    *                     {@link #DEFAULT_PLAYBACK_REALTIME_RATE}.
     */
    public void submitPlaybackRealTimeRate(double realTimeRate)
    {
-      if (playbackRealTimeRate.get().doubleValue() == realTimeRate)
+      if (playbackRealTimeRate.get() == realTimeRate)
          return;
 
       playbackRealTimeRate.set(Double.valueOf(realTimeRate));
@@ -699,7 +832,7 @@ public abstract class Session
     * </p>
     *
     * @param bufferRecordTickPeriod the period in number of ticks that data should be stored in the
-    *                               buffer. Default value {@value #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
+    *                               buffer. Default value {@link #DEFAULT_BUFFER_RECORD_TICK_PERIOD}.
     */
    public void setBufferRecordTickPeriod(int bufferRecordTickPeriod)
    {
@@ -719,7 +852,7 @@ public abstract class Session
     *
     * @param publishPeriod period in nanoseconds at which the buffer data is publish while in
     *                      {@link SessionMode#RUNNING} mode. Default value
-    *                      {@value #DEFAULT_BUFFER_PUBLISH_PERIOD}.
+    *                      {@link #DEFAULT_BUFFER_PUBLISH_PERIOD}.
     */
    public void setDesiredBufferPublishPeriod(long publishPeriod)
    {
@@ -776,7 +909,7 @@ public abstract class Session
     * otherwise.
     * </p>
     *
-    * @param bufferSizeRequest
+    * @param bufferSizeRequest the new size of the buffer.
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
    public void submitBufferSizeRequest(Integer bufferSizeRequest)
@@ -967,7 +1100,7 @@ public abstract class Session
     * otherwise.
     * </p>
     *
-    * @param bufferSizeRequest
+    * @param bufferSizeRequest the new size of the buffer.
     * @see #submitCropBufferRequest(CropBufferRequest)
     */
    public void submitBufferSizeRequestAndWait(Integer bufferSizeRequest)
@@ -1158,7 +1291,7 @@ public abstract class Session
     * Starts the internal thread of this session running the current session mode.
     *
     * @return {@code true} if the thread has started, {@code false} if it could not be started, e.g. it
-    *         was already started or the session was shutdown.
+    *       was already started or the session was shutdown.
     */
    public boolean startSessionThread()
    {
@@ -1191,7 +1324,7 @@ public abstract class Session
     * </p>
     *
     * @return {@code true} if the thread has stopped, {@code false} if it could not be stopped, e.g. it
-    *         was already stopped or the session was shutdown.
+    *       was already stopped or the session was shutdown.
     */
    public boolean stopSessionThread()
    {
@@ -1238,7 +1371,7 @@ public abstract class Session
       sessionTopicListenerManagers.forEach(SessionTopicListenerManager::detachFromMessager);
       sessionTopicListenerManagers.clear();
       sharedBuffer.dispose();
-      rootRegistry.clear();
+      rootRegistry.destroy();
 
       executorService.shutdown();
       inertialFrame.removeListeners();
@@ -1319,10 +1452,10 @@ public abstract class Session
                if (terminated)
                {
                   executorService.execute(() ->
-                  {
-                     setSessionMode(transition.getNextMode());
-                     transition.notifyTransitionComplete();
-                  });
+                                          {
+                                             setSessionMode(transition.getNextMode());
+                                             transition.notifyTransitionComplete();
+                                          });
                }
             }
          };
@@ -1356,17 +1489,12 @@ public abstract class Session
     */
    private long computeThreadPeriod(SessionMode mode)
    {
-      switch (mode)
+      return switch (mode)
       {
-         case RUNNING:
-            return computeRunTaskPeriod();
-         case PAUSE:
-            return computePauseTaskPeriod();
-         case PLAYBACK:
-            return computePlaybackTaskPeriod();
-         default:
-            throw new UnsupportedOperationException("Unhandled session mode: " + mode);
-      }
+         case RUNNING -> computeRunTaskPeriod();
+         case PAUSE -> computePauseTaskPeriod();
+         case PLAYBACK -> computePlaybackTaskPeriod();
+      };
    }
 
    /**
@@ -1385,19 +1513,23 @@ public abstract class Session
       sessionModeToTaskMap.put(sessionMode, runnable);
    }
 
-   /** Reports the current {@link SessionProperties} to the listeners. */
+   /**
+    * Reports the current {@link SessionProperties} to the listeners.
+    */
    private void reportActiveMode()
    {
       for (Consumer<SessionProperties> listener : sessionPropertiesListeners)
          listener.accept(getSessionProperties());
    }
 
-   /** Creates new {@link SessionProperties} with the current properties. */
+   /**
+    * Creates new {@link SessionProperties} with the current properties.
+    */
    public SessionProperties getSessionProperties()
    {
       return new SessionProperties(activeMode.get(),
                                    runAtRealTimeRate.get(),
-                                   playbackRealTimeRate.get().doubleValue(),
+                                   playbackRealTimeRate.get(),
                                    sessionDTNanoseconds.get(),
                                    bufferRecordTickPeriod.get());
    }
@@ -1452,6 +1584,9 @@ public abstract class Session
          lastSessionPropertiesPublishTimestamp = currentTimestamp;
          reportActiveMode();
       }
+
+      if (pendingEquationListChange.hasPendingRequest())
+         equationManager.setEquationListChange(pendingEquationListChange.poll());
    }
 
    /**
@@ -1479,7 +1614,7 @@ public abstract class Session
     * </p>
     *
     * @return {@code true} if the tick was run successfully, {@code false} if an exception was caught
-    *         in {@link #doSpecificRunTick()}, e.g. the simulation failed or the controller crashed.
+    *       in {@link #doSpecificRunTick()}, e.g. the simulation failed or the controller crashed.
     */
    public boolean runTick()
    {
@@ -1499,6 +1634,12 @@ public abstract class Session
          runSpecificTimer.start();
          time.set(doSpecificRunTick());
          runSpecificTimer.stop();
+
+         if (nextRunBufferRecordTickCounter <= 0)  // TODO Not sure if that's the best place to update the equation manager.
+         { // This is to make sure the equation manager is updated at the same rate as the buffer.
+            equationManager.update(time.getValue());
+         }
+
          caughtException = false;
       }
       catch (Throwable e)
@@ -1535,6 +1676,7 @@ public abstract class Session
    {
       if (firstRunTick)
       {
+         equationManager.reset();
          sharedBuffer.incrementBufferIndex(true);
          sharedBuffer.processLinkedPushRequests(false);
          nextRunBufferRecordTickCounter = 0;
@@ -1617,15 +1759,15 @@ public abstract class Session
    {
       long timeIncrement = sessionDTNanoseconds.get() * bufferRecordTickPeriod.get();
 
-      if (playbackRealTimeRate.get().doubleValue() <= 0.5)
+      if (playbackRealTimeRate.get() <= 0.5)
       {
          stepSizePerPlaybackTick = 1;
-         return (long) (timeIncrement / playbackRealTimeRate.get().doubleValue());
+         return (long) (timeIncrement / playbackRealTimeRate.get());
       }
       else
       {
-         stepSizePerPlaybackTick = 2 * Math.max(1, (int) Math.floor(playbackRealTimeRate.get().doubleValue()));
-         return (long) (timeIncrement * stepSizePerPlaybackTick / playbackRealTimeRate.get().doubleValue());
+         stepSizePerPlaybackTick = 2 * Math.max(1, (int) Math.floor(playbackRealTimeRate.get()));
+         return (long) (timeIncrement * stepSizePerPlaybackTick / playbackRealTimeRate.get());
       }
    }
 
@@ -1734,7 +1876,7 @@ public abstract class Session
     * <li>{@link #initializePauseTick()}: initialize the buffer, mostly about fetching the changes
     * requested by the user,
     * <li>{@link #doSpecificPauseTick()}: this should pretty much always do nothing,
-    * <li>{@link #finalizePauseTick()}: buffer operations to finalize the tick and publishes data to
+    * <li>{@link #finalizePauseTick(boolean)}: buffer operations to finalize the tick and publishes data to
     * the listeners.
     * </ol>
     * </p>
@@ -1862,23 +2004,23 @@ public abstract class Session
       if (bufferChangesPermitted)
       {
          if (newIndex != null)
-            hasBufferBeenUpdated |= sharedBuffer.setCurrentIndex(newIndex.intValue());
+            hasBufferBeenUpdated |= sharedBuffer.setCurrentIndex(newIndex);
 
          if (newInPoint != null)
-            hasBufferBeenUpdated |= sharedBuffer.setInPoint(newInPoint.intValue());
+            hasBufferBeenUpdated |= sharedBuffer.setInPoint(newInPoint);
 
          if (newOutPoint != null)
-            hasBufferBeenUpdated |= sharedBuffer.setOutPoint(newOutPoint.intValue());
+            hasBufferBeenUpdated |= sharedBuffer.setOutPoint(newOutPoint);
 
          if (incStepSize != null)
          {
-            sharedBuffer.incrementBufferIndex(false, incStepSize.intValue());
+            sharedBuffer.incrementBufferIndex(false, incStepSize);
             hasBufferBeenUpdated = true;
          }
 
          if (decStepSize != null)
          {
-            sharedBuffer.decrementBufferIndex(decStepSize.intValue());
+            sharedBuffer.decrementBufferIndex(decStepSize);
             hasBufferBeenUpdated = true;
          }
 
@@ -1902,7 +2044,7 @@ public abstract class Session
       }
 
       if (newSize != null)
-         hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize.intValue());
+         hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize);
 
       return hasBufferBeenUpdated;
    }
@@ -1974,7 +2116,7 @@ public abstract class Session
     */
    public double getPlaybackRealTimeRate()
    {
-      return playbackRealTimeRate.get().doubleValue();
+      return playbackRealTimeRate.get();
    }
 
    /**
@@ -1982,7 +2124,7 @@ public abstract class Session
     * into the buffer.
     *
     * @return the period, in number of run ticks, at which the {@link YoVariable}s are saved into the
-    *         buffer.
+    *       buffer.
     */
    public int getBufferRecordTickPeriod()
    {
@@ -2083,11 +2225,25 @@ public abstract class Session
       return Collections.emptyList();
    }
 
+   /**
+    * Gets the list of all the equations this session is handling.
+    * <p>
+    * This list is notably used by the GUI to visualize the equations.
+    * </p>
+    *
+    * @return the list of equations.
+    */
+   public List<YoEquationDefinition> getYoEquationDefinitions()
+   {
+      return equationManager.getEquationDefinitions();
+   }
+
    /*
     * FIXME This implementation doesn't look right. This is a workaround for the fact that Robot
     * doesn't live in this project. It seems that Robot, LogSession, RemoteSession,
     * SimulationDataSession, and VisualizationSession should live in the session project.
     */
+
    /**
     * Override me to allow exporting robot states.
     *
@@ -2170,13 +2326,14 @@ public abstract class Session
       private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
       private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
 
-      private final Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener = createBufferPropertiesListener();
-      private final Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
+      private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
+      private final TopicListener<YoEquationListChange> equationListChangeRequestListener = Session.this::submitEquationListChange;
 
       private SessionTopicListenerManager(Messager messager)
       {
          this.messager = messager;
 
+         Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener = createBufferPropertiesListener();
          addCurrentBufferPropertiesListener(bufferPropertiesListener);
 
          messager.addTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
@@ -2189,6 +2346,7 @@ public abstract class Session
          messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
          messager.addTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
 
+         Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
          addSessionPropertiesListener(sessionPropertiesListener);
 
          messager.addTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
@@ -2199,6 +2357,19 @@ public abstract class Session
          messager.addTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
          messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
          messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+
+         addRobotDefinitionListChangeListener(change ->
+                                              {
+                                                 if (messager.isMessagerOpen())
+                                                 {
+                                                    messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
+                                                 }
+                                              });
+
+         messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
+
+         equationManager.addChangeListener(change -> messager.submitMessage(SessionMessagerAPI.SessionYoEquationListChangeState, change));
+         messager.addTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
       }
 
       private void detachFromMessager()
@@ -2224,6 +2395,9 @@ public abstract class Session
          messager.removeTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
          messager.removeTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
          messager.removeTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+
+         messager.removeTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
       }
 
       private Consumer<YoBufferPropertiesReadOnly> createBufferPropertiesListener()
@@ -2254,7 +2428,7 @@ public abstract class Session
    }
 
    /**
-    * Interface to to implement a conditional based transition from one session mode to the next.
+    * Interface to implement a conditional based transition from one session mode to the next.
     * <p>
     * For instance, this transition be used to schedule a simulation of a fixed amount of time at the
     * end of which the pause mode should be entered.
@@ -2291,7 +2465,7 @@ public abstract class Session
        *                      terminated.
        * @param nextMode      the mode to switch to once the current mode is done.
        * @return the transition that can be used with
-       *         {@link Session#setSessionMode(SessionMode, SessionModeTransition)}.
+       *       {@link Session#setSessionMode(SessionMode, SessionModeTransition)}.
        */
       static SessionModeTransition newTransition(BooleanSupplier doneCondition, SessionMode nextMode)
       {
@@ -2341,19 +2515,31 @@ public abstract class Session
    public static class PeriodicTaskWrapper implements Runnable
    {
       protected Thread owner;
-      /** The task to run periodically. */
+      /**
+       * The task to run periodically.
+       */
       protected final Runnable task;
-      /** The period at which the task should be run. */
+      /**
+       * The period at which the task should be run.
+       */
       protected final long desiredPeriodInNanos;
 
-      /** Variable to track the next absolute desired time to run the task. */
+      /**
+       * Variable to track the next absolute desired time to run the task.
+       */
       private long desiredTimeNanos = Long.MIN_VALUE;
-      /** Variable to track the current measured time spent running the task. */
+      /**
+       * Variable to track the current measured time spent running the task.
+       */
       private long currentTimeNanos = Long.MIN_VALUE;
 
-      /** Whether the task is being run or not. */
+      /**
+       * Whether the task is being run or not.
+       */
       protected final AtomicBoolean running = new AtomicBoolean(true);
-      /** Indicates whether the task is done running or not. */
+      /**
+       * Indicates whether the task is done running or not.
+       */
       protected final AtomicBoolean isDone = new AtomicBoolean(false);
       protected final CountDownLatch startedLatch = new CountDownLatch(1);
       protected final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -2468,11 +2654,11 @@ public abstract class Session
     * the class API. This class offers to either submit a request to be handled asynchronously or
     * synchronously by blocking the calling thread until the request has been processed.
     */
-   protected class SessionUserField<T>
+   protected static class SessionUserField<T>
    {
       private final AtomicReference<T> nonBlockingRequest;
       private final ConcurrentLinkedQueue<BlockingRequest> blockingRequests = new ConcurrentLinkedQueue<>();
-      private T currentValue;
+      private final T currentValue;
 
       public SessionUserField()
       {
@@ -2506,6 +2692,11 @@ public abstract class Session
          catch (InterruptedException e)
          {
          }
+      }
+
+      public boolean hasPendingRequest()
+      {
+         return !blockingRequests.isEmpty() || nonBlockingRequest.get() != null;
       }
 
       public T poll()
