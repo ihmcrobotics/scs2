@@ -1853,8 +1853,8 @@ public abstract class Session
          lastPublishedBufferTimestamp = currentTimestamp;
       }
 
+      processBufferRequests(true, false);
       sharedBuffer.incrementBufferIndex(false, stepSizePerPlaybackTick);
-      processBufferRequests(false);
       publishBufferProperties(sharedBuffer.getProperties());
    }
 
@@ -1969,14 +1969,28 @@ public abstract class Session
     * filling.
     * </p>
     *
-    * @param bufferChangesPermitted indicates whether all operations onto the buffer are permitted
-    *                               ({@code true)} or only a minimal subset is permitted
-    *                               ({@code false}). When in {@link SessionMode#RUNNING} or
-    *                               {@link SessionMode#PLAYBACK}, changing the indices is not allowed
-    *                               for instance.
+    * @param bufferChangesPermitted indicates whether all operations onto the buffer are permitted ({@code true)} or only a minimal subset is permitted
+    *                               ({@code false}). When in {@link SessionMode#RUNNING}, changing the indices is not allowed for instance.
     * @return whether the buffer has been modified.
     */
    protected boolean processBufferRequests(boolean bufferChangesPermitted)
+   {
+      return processBufferRequests(bufferChangesPermitted, bufferChangesPermitted);
+   }
+
+   /**
+    * Handles user requests for modifying the buffer.
+    * <p>
+    * Operations handled here are: changing indices (current, in-point, out-point), resizing, cropping,
+    * filling.
+    * </p>
+    *
+    * @param bufferIndexChangePermitted indicates whether changing the current index is permitted.
+    * @param bufferChangesPermitted     indicates whether all other operations onto the buffer are permitted ({@code true)} or only a minimal subset is
+    *                                   permitted ({@code false}). When in {@link SessionMode#RUNNING}, changing the indices is not allowed for instance.
+    * @return whether the buffer has been modified.
+    */
+   protected boolean processBufferRequests(boolean bufferIndexChangePermitted, boolean bufferChangesPermitted)
    {
       boolean hasBufferBeenUpdated = false;
 
@@ -2001,11 +2015,14 @@ public abstract class Session
       FillBufferRequest fillBufferRequest = pendingFillBufferRequest.poll();
       SessionDataExportRequest dataExportRequest = pendingDataExportRequest.poll();
 
-      if (bufferChangesPermitted)
+      if (bufferIndexChangePermitted)
       {
          if (newIndex != null)
             hasBufferBeenUpdated |= sharedBuffer.setCurrentIndex(newIndex);
+      }
 
+      if (bufferChangesPermitted)
+      {
          if (newInPoint != null)
             hasBufferBeenUpdated |= sharedBuffer.setInPoint(newInPoint);
 
