@@ -4,7 +4,6 @@ import org.bytedeco.bullet.BulletCollision.*;
 import org.bytedeco.bullet.LinearMath.btQuaternion;
 import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.euclid.transform.RigidBodyTransform;
@@ -268,7 +267,7 @@ public class BulletToolsTest
       PyramidBox3DDefinition polytypeGeometryDefinition = new PyramidBox3DDefinition(1.0, 1.0, 1.0, 1.0);
       CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(polytypeGeometryDefinition);
 
-      Assertions.assertThrows(UnsupportedOperationException.class, () ->
+      assertThrows(UnsupportedOperationException.class, () ->
       {
          BulletTools.createBulletCollisionShape(collisionShapeDefinition);
       });
