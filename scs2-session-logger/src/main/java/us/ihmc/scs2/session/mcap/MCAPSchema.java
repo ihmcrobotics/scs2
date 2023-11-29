@@ -411,6 +411,12 @@ public class MCAPSchema
          return isComplexType;
       }
 
+      @Override
+      public String toString()
+      {
+         return toString(0);
+      }
+
       public String toString(int indent)
       {
          String out = getClass().getSimpleName() + ":";
