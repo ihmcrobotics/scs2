@@ -1,11 +1,13 @@
 package us.ihmc.scs2.session.mcap;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
+import org.apache.commons.io.FileUtils;
 import us.ihmc.commons.nio.FileTools;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionIOTools;
+import us.ihmc.scs2.session.mcap.MCAP.Schema;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -16,9 +18,11 @@ import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 public class MCAPLogFileReader
 {
+   private static final Set<String> SCHEMA_TO_IGNORE = Set.of("foxglove::Grid");
    private static final Path SCS2_MCAP_DEBUG_HOME = SessionIOTools.SCS2_HOME.resolve("mcap-debug");
 
    static
@@ -35,12 +39,11 @@ public class MCAPLogFileReader
 
    private final YoRegistry propertiesRegistry = new YoRegistry("MCAPProperties");
    private final File mcapFile;
-   private final FileInputStream mcapFileInputStream;
-   private final FileChannel mcapFileChannel;
    private final YoRegistry mcapRegistry;
    private final MCAP mcap;
    private final MCAPChunkManager chunkManager = new MCAPChunkManager();
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
+   private final TIntObjectHashMap<MCAP.Schema> rawSchemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
    private final MCAPFrameTransformManager frameTransformManager;
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
@@ -50,11 +53,16 @@ public class MCAPLogFileReader
 
    public MCAPLogFileReader(File mcapFile, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
    {
+      if (SCS2_MCAP_DEBUG_HOME.toFile().exists())
+      {
+         // Cleaning up the debug folder.
+         FileUtils.cleanDirectory(SCS2_MCAP_DEBUG_HOME.toFile());
+      }
       this.mcapFile = mcapFile;
       this.mcapRegistry = mcapRegistry;
       mcapRegistry.addChild(propertiesRegistry);
-      mcapFileInputStream = new FileInputStream(mcapFile);
-      mcapFileChannel = mcapFileInputStream.getChannel();
+      FileInputStream mcapFileInputStream = new FileInputStream(mcapFile);
+      FileChannel mcapFileChannel = mcapFileInputStream.getChannel();
       mcap = new MCAP(mcapFileChannel);
       chunkManager.loadFromMCAP(mcap);
       initialTimestamp = chunkManager.firstMessageTimestamp();
@@ -112,6 +120,12 @@ public class MCAPLogFileReader
          if (record.op() != MCAP.Opcode.SCHEMA)
             continue;
          MCAP.Schema schema = (MCAP.Schema) record.body();
+
+         if (SCHEMA_TO_IGNORE.contains(schema.name()))
+            continue;
+
+         rawSchemas.put(schema.id(), schema);
+
          if (schema.id() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
          try
@@ -156,6 +170,10 @@ public class MCAPLogFileReader
 
          if (schema == null)
          {
+            Schema rawSchema = rawSchemas.get(channel.schemaId());
+            if (rawSchema != null && SCHEMA_TO_IGNORE.contains(rawSchema.name()))
+               continue;
+
             LogTools.error("Failed to find schema for channel: " + channel.id());
             continue;
          }
@@ -248,13 +266,24 @@ public class MCAPLogFileReader
 
             if (yoMCAPMessage == null)
             {
-               throw new IllegalStateException("No YoMCAP message found for channel ID " + message.channelId());
+               //               throw new IllegalStateException("No YoMCAP message found for channel ID " + message.channelId());
+               continue;
             }
             yoMCAPMessage.readMessage(message);
          }
          catch (Exception e)
          {
             e.printStackTrace();
+
+            YoMCAPMessage yoMCAPMessage = yoMessageMap.get(message.channelId());
+            if (yoMCAPMessage != null)
+            {
+               LogTools.error("Failed to read message. Channel ID {}, schema name: {}. Exporting message data & schema to file.",
+                              message.channelId(),
+                              yoMCAPMessage.getSchema().getName());
+               exportMessageDataToFile(SCS2_MCAP_DEBUG_HOME, message, yoMCAPMessage.getSchema(), e);
+               exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, rawSchemas.get(yoMCAPMessage.getSchema().getId()), e);
+            }
          }
       }
       // Update the Tf transforms wrt to world.
@@ -265,9 +294,9 @@ public class MCAPLogFileReader
    {
       String filename;
       if (e != null)
-         filename = "schema-%s-%s.txt".formatted(schema.name().replace(':', '-'), e.getClass().getSimpleName());
+         filename = "schema-%s-%s.txt".formatted(cleanupName(schema.name()), e.getClass().getSimpleName());
       else
-         filename = "schema-%s.txt".formatted(schema.name().replace(':', '-'));
+         filename = "schema-%s.txt".formatted(cleanupName(schema.name()));
       File debugFile = path.resolve(filename).toFile();
       if (debugFile.exists())
          debugFile.delete();
@@ -282,16 +311,37 @@ public class MCAPLogFileReader
    {
       File debugFile;
       if (e != null)
-         debugFile = path.resolve("channel-%d-schema-%s-%s.txt".formatted(channel.id(), schema.getName().replace(':', '-'), e.getClass().getSimpleName()))
-                         .toFile();
+         debugFile = path.resolve("channel-%d-schema-%s-%s.txt".formatted(channel.id(), cleanupName(schema.getName()), e.getClass().getSimpleName())).toFile();
       else
-         debugFile = path.resolve("channel-%d-schema-%s.txt".formatted(channel.id(), schema.getName().replace(':', '-'))).toFile();
+         debugFile = path.resolve("channel-%d-schema-%s.txt".formatted(channel.id(), cleanupName(schema.getName()))).toFile();
       if (debugFile.exists())
          debugFile.delete();
       debugFile.createNewFile();
       PrintWriter pw = new PrintWriter(debugFile);
       pw.write(channel.toString());
       pw.close();
+   }
+
+   private static void exportMessageDataToFile(Path path, MCAP.Message message, MCAPSchema schema, Exception e) throws IOException
+   {
+      File debugFile;
+      String prefix = "messageData-timestamp-%d-schema-%s";
+      if (e != null)
+         debugFile = path.resolve((prefix + "-%s.txt").formatted(message.logTime(), cleanupName(schema.getName()), e.getClass().getSimpleName())).toFile();
+      else
+         debugFile = path.resolve((prefix + ".txt").formatted(message.logTime(), cleanupName(schema.getName()))).toFile();
+
+      if (debugFile.exists())
+         debugFile.delete();
+      debugFile.createNewFile();
+      FileOutputStream os = new FileOutputStream(debugFile);
+      os.write(message.data());
+      os.close();
+   }
+
+   private static String cleanupName(String name)
+   {
+      return name.replace(':', '-');
    }
 
    public MCAPChunkManager getChunkManager()
