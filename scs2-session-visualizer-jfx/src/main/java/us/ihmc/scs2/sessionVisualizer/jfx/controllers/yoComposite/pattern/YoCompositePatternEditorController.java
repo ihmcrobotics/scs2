@@ -6,6 +6,7 @@ import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.removeMenuI
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -101,12 +102,13 @@ public class YoCompositePatternEditorController implements UIElement
       componentIdentifiersListView.getItems().addListener((ListChangeListener<String>) change ->
       {
          YoCompositePatternDefinition newPattern = new YoCompositePatternDefinition(patternDefinitionProperty.get());
-         newPattern.setIdentifiers(new ArrayList<>(change.getList()));
+         newPattern.setIdentifiers(change.getList().toArray(String[]::new));
       });
 
       componentIdentifiersListView.getItems().addListener((ListChangeListener<String>) change ->
       {
          YoCompositePatternDefinition newPattern = new YoCompositePatternDefinition(patternDefinitionProperty.get());
+         List<String> newIdentifiers = new ArrayList<>(Arrays.asList(newPattern.getIdentifiers()));
 
          while (change.next())
          {
@@ -115,7 +117,7 @@ public class YoCompositePatternEditorController implements UIElement
                for (int oldIndex = change.getFrom(); oldIndex < change.getTo(); oldIndex++)
                {
                   int newIndex = change.getPermutation(oldIndex);
-                  Collections.swap(newPattern.getIdentifiers(), oldIndex, newIndex);
+                  Collections.swap(newIdentifiers, oldIndex, newIndex);
 
                   for (YoChartGroupModelDefinition model : newPattern.getPreferredConfigurations())
                      Collections.swap(model.getChartIdentifiers(), oldIndex, newIndex);
@@ -129,7 +131,7 @@ public class YoCompositePatternEditorController implements UIElement
             { // The component has been renamed
                for (int i = change.getFrom(); i < change.getTo(); i++)
                {
-                  newPattern.getIdentifiers().set(i, change.getList().get(i));
+                  newIdentifiers.set(i, change.getList().get(i));
                }
             }
             else
@@ -138,7 +140,7 @@ public class YoCompositePatternEditorController implements UIElement
                {
                   for (int i = 0; i < change.getRemovedSize(); i++)
                   {
-                     newPattern.getIdentifiers().remove(change.getFrom());
+                     newIdentifiers.remove(change.getFrom());
                      for (YoChartGroupModelDefinition model : newPattern.getPreferredConfigurations())
                         model.getChartIdentifiers().remove(change.getFrom());
                   }
@@ -148,13 +150,14 @@ public class YoCompositePatternEditorController implements UIElement
                {
                   for (int i = change.getFrom(); i < change.getTo(); i++)
                   {
-                     newPattern.getIdentifiers().add(i, change.getList().get(i));
+                     newIdentifiers.add(i, change.getList().get(i));
                      for (YoChartGroupModelDefinition model : newPattern.getPreferredConfigurations())
                         model.getChartIdentifiers().add(i, new YoChartIdentifierDefinition());
                   }
                }
             }
 
+            newPattern.setIdentifiers(newIdentifiers.toArray(String[]::new));
             patternDefinitionProperty.set(newPattern);
             ObservableList<YoChartGroupModelEditorController> chartGroupModelControllers = chartGroupModelEditorListView.getItems();
 
@@ -162,7 +165,7 @@ public class YoCompositePatternEditorController implements UIElement
             {
                YoChartGroupModelEditorController controller = chartGroupModelControllers.get(i);
                YoChartGroupModelDefinition chartGroupModel = newPattern.getPreferredConfigurations().get(i);
-               controller.setInput(chartGroupModel, newPattern.getIdentifiers());
+               controller.setInput(chartGroupModel, newIdentifiers);
             }
          }
       });
@@ -202,13 +205,13 @@ public class YoCompositePatternEditorController implements UIElement
          return NEW_COMPONENT_IDENTIFIER + index;
       };
       MenuTools.setupContextMenu(componentIdentifiersListView,
-                                        addBeforeMenuItemFactory(addAction),
-                                        addAfterMenuItemFactory(addAction),
-                                        removeMenuItemFactory(false));
+                                 addBeforeMenuItemFactory(addAction),
+                                 addAfterMenuItemFactory(addAction),
+                                 removeMenuItemFactory(false));
       MenuTools.setupContextMenu(chartGroupModelEditorListView,
-                                        addBeforeMenuItemFactory(() -> newYoChartGroupModelEditor()),
-                                        addAfterMenuItemFactory(() -> newYoChartGroupModelEditor()),
-                                        removeMenuItemFactory(false));
+                                 addBeforeMenuItemFactory(() -> newYoChartGroupModelEditor()),
+                                 addAfterMenuItemFactory(() -> newYoChartGroupModelEditor()),
+                                 removeMenuItemFactory(false));
 
       setPrefHeight();
    }
@@ -226,14 +229,16 @@ public class YoCompositePatternEditorController implements UIElement
       });
 
       componentIdentifiersListView.setStyle(YoCompositePatternControllerTools.getValidityStyleBorder(componentIdentifiersValidityProperty.get()));
-      componentIdentifiersValidityProperty.addListener((o, oldValue,
+      componentIdentifiersValidityProperty.addListener((o,
+                                                        oldValue,
                                                         newValue) -> componentIdentifiersListView.setStyle(YoCompositePatternControllerTools.getValidityStyleBorder(newValue)));
 
       componentIdentifiersListView.getItems()
                                   .addListener((ListChangeListener<String>) change -> componentIdentifiersValidityProperty.set(YoCompositePatternControllerTools.areComponentIdentifierNamesValid(change.getList())));
 
       chartGroupModelEditorListView.setStyle(YoCompositePatternControllerTools.getValidityStyleBorder(chartGroupModelsValidityProperty.get()));
-      chartGroupModelsValidityProperty.addListener((o, oldValue,
+      chartGroupModelsValidityProperty.addListener((o,
+                                                    oldValue,
                                                     newValue) -> chartGroupModelEditorListView.setStyle(YoCompositePatternControllerTools.getValidityStyleBorder(newValue)));
 
       chartGroupModelEditorListView.getItems().addListener((ListChangeListener<YoChartGroupModelEditorController>) change ->
@@ -277,12 +282,12 @@ public class YoCompositePatternEditorController implements UIElement
       crossRegistryCompositeCheckBox.setSelected(definitionBeforeEdits.isCrossRegistry());
 
       ObservableList<String> idsListItems = componentIdentifiersListView.getItems();
-      while (idsListItems.size() < definitionBeforeEdits.getIdentifiers().size())
+      while (idsListItems.size() < definitionBeforeEdits.getIdentifiers().length)
          addComponent(false);
-      while (idsListItems.size() > definitionBeforeEdits.getIdentifiers().size())
+      while (idsListItems.size() > definitionBeforeEdits.getIdentifiers().length)
          idsListItems.remove(idsListItems.size() - 1);
       for (int i = 0; i < idsListItems.size(); i++)
-         idsListItems.set(i, definitionBeforeEdits.getIdentifiers().get(i));
+         idsListItems.set(i, definitionBeforeEdits.getIdentifiers()[i]);
 
       ObservableList<YoChartGroupModelEditorController> modelListItems = chartGroupModelEditorListView.getItems();
       while (modelListItems.size() < definitionBeforeEdits.getPreferredConfigurations().size())
@@ -293,7 +298,7 @@ public class YoCompositePatternEditorController implements UIElement
          removedController.closeAndDispose();
       }
       for (int i = 0; i < modelListItems.size(); i++)
-         modelListItems.get(i).setInput(definitionBeforeEdits.getPreferredConfigurations().get(i), definitionBeforeEdits.getIdentifiers());
+         modelListItems.get(i).setInput(definitionBeforeEdits.getPreferredConfigurations().get(i), Arrays.asList(definitionBeforeEdits.getIdentifiers()));
    }
 
    private AnimationTimer prefHeightAdjustmentAnimation;
@@ -390,7 +395,7 @@ public class YoCompositePatternEditorController implements UIElement
    private YoChartGroupModelEditorController newYoChartGroupModelEditor()
    {
       YoChartGroupModelDefinition initialModel = new YoChartGroupModelDefinition("New Chart Group Model");
-      while (initialModel.getChartIdentifiers().size() < patternDefinitionProperty.get().getIdentifiers().size())
+      while (initialModel.getChartIdentifiers().size() < patternDefinitionProperty.get().getIdentifiers().length)
          initialModel.getChartIdentifiers().add(new YoChartIdentifierDefinition());
       return newYoChartGroupModelEditor(initialModel);
    }
@@ -404,7 +409,7 @@ public class YoCompositePatternEditorController implements UIElement
          YoChartGroupModelEditorController editor = loader.getController();
          editor.initialize(toolkit);
          if (initialModel != null)
-            editor.setInput(initialModel, patternDefinitionProperty.get().getIdentifiers());
+            editor.setInput(initialModel, Arrays.asList(patternDefinitionProperty.get().getIdentifiers()));
          JavaFXMissingTools.runNFramesLater(1, () -> editor.startEditingChartGroupModelName());
          return editor;
       }

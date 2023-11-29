@@ -1,31 +1,6 @@
 package us.ihmc.scs2.definition.robot;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static us.ihmc.euclid.tools.EuclidCoreTestTools.addPrefixToMessage;
-import static us.ihmc.euclid.tools.EuclidCoreTestTools.throwNotEqualAssertionError;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
-
-import javax.xml.bind.JAXBException;
-
 import org.junit.jupiter.api.Test;
-
 import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DBasics;
@@ -41,6 +16,16 @@ import us.ihmc.scs2.definition.robot.sdf.items.SDFRoot;
 import us.ihmc.scs2.definition.robot.urdf.URDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+
+import javax.xml.bind.JAXBException;
+import java.io.*;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static us.ihmc.euclid.tools.EuclidCoreTestTools.addPrefixToMessage;
+import static us.ihmc.euclid.tools.EuclidCoreTestTools.throwNotEqualAssertionError;
 
 public class ValkyrieModelLoadingTest
 {
@@ -285,7 +270,7 @@ public class ValkyrieModelLoadingTest
    {
       if (!Objects.equals(expected.getName(), actual.getName()))
          throwNotEqualAssertionError("Rigid-bodies do not have the same name", expected.getName(), actual.getName());
-      if (Double.doubleToLongBits(expected.getMass()) != Double.doubleToLongBits(expected.getMass()))
+      if (!EuclidCoreTools.equals(expected.getMass(), actual.getMass()))
          throwNotEqualAssertionError("Rigid-bodies (%s) do not have the same mass".formatted(expected.getName()),
                                      Double.toString(expected.getMass()),
                                      Double.toString(actual.getMass()));

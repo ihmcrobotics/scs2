@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoVariable;
 
-import java.util.List;
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import java.util.List;
 
 @XmlRootElement(name = "YoRegistry")
 public class YoRegistryDefinition
@@ -56,6 +55,6 @@ public class YoRegistryDefinition
    public String toString()
    {
       return "name: " + name + ", yoVariables: " + EuclidCoreIOTools.getCollectionString("[", "]", ", ", yoVariables, YoVariableDefinition::getName)
-            + ", yoRegistries: " + EuclidCoreIOTools.getCollectionString("[", "]", ", ", yoRegistries, YoRegistryDefinition::getName);
+             + ", yoRegistries: " + EuclidCoreIOTools.getCollectionString("[", "]", ", ", yoRegistries, YoRegistryDefinition::getName);
    }
 }

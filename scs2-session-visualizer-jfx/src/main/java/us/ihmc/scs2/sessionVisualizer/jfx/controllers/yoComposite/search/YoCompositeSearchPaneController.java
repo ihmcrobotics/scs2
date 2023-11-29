@@ -1,39 +1,20 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TextField;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
+import javafx.scene.control.*;
+import javafx.scene.input.*;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -47,6 +28,17 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 {
@@ -65,11 +57,12 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
    private BackgroundExecutorManager backgroundExecutorManager;
 
    private ObjectProperty<String> searchTargetProperty;
+
+   private final Property<YoNameDisplay> yoVariableNameDisplay = new SimpleObjectProperty<>(this, "yoVariableNameDisplay", YoNameDisplay.SHORT_NAME);
    private AtomicReference<SearchEngines> activeSearchEngine;
    private AtomicReference<Integer> maxNumberOfItemsReference;
    private Future<ObservableList<YoComposite>> backgroundSearch;
 
-   private final BooleanProperty showUniqueNamesProperty = new SimpleBooleanProperty(this, "showUniqueNames", false);
    private Consumer<YoNamespace> registryViewRequestConsumer = null;
 
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -87,16 +80,19 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
 
+      messager.bindBidirectional(topics.getYoVariableNameDisplay(), yoVariableNameDisplay, false);
+      yoVariableNameDisplay.addListener((o, oldValue, newValue) -> search(searchTextField.getText()));
+
       this.ownerRegistry = ownerRegistry;
-      yoCompositeListView.setCellFactory(param -> new YoCompositeListCell(yoManager, showUniqueNamesProperty, numberPrecision, param));
+      yoCompositeListView.setCellFactory(param -> new YoCompositeListCell(yoManager, yoVariableNameDisplay, numberPrecision, param));
       yoCompositeListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-      searchTextField.textProperty().addListener((ChangeListener<String>) (observable, oldValue, newValue) -> search(newValue));
+      searchTextField.textProperty().addListener((observable, oldValue, newValue) -> search(newValue));
 
       activeSearchEngine = messager.createInput(topics.getYoSearchEngine(), SearchEngines.DEFAULT);
       maxNumberOfItemsReference = messager.createInput(topics.getYoSearchMaxListSize(), 500);
 
-      MenuTools.setupContextMenu(yoCompositeListView, listView ->
+      Function<ListView<YoComposite>, MenuItem> openNamespace = listView ->
       {
          if (registryViewRequestConsumer == null)
             return null;
@@ -107,7 +103,8 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
          YoNamespace namespace = selectedItem.getNamespace();
          menuItem.setOnAction(e -> registryViewRequestConsumer.accept(namespace));
          return menuItem;
-      }, listView ->
+      };
+      Function<ListView<YoComposite>, MenuItem> copyVariableName = listView ->
       {
          YoComposite selectedItem = yoCompositeListView.getSelectionModel().getSelectedItem();
          if (selectedItem == null)
@@ -116,7 +113,8 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
          String name = selectedItem.getName();
          menuItem.setOnAction(e -> Clipboard.getSystemClipboard().setContent(Collections.singletonMap(DataFormat.PLAIN_TEXT, name)));
          return menuItem;
-      }, listView ->
+      };
+      Function<ListView<YoComposite>, MenuItem> copyVariableFullname = listView ->
       {
          YoComposite selectedItem = yoCompositeListView.getSelectionModel().getSelectedItem();
          if (selectedItem == null)
@@ -125,37 +123,37 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
          String name = selectedItem.getFullname();
          menuItem.setOnAction(e -> Clipboard.getSystemClipboard().setContent(Collections.singletonMap(DataFormat.PLAIN_TEXT, name)));
          return menuItem;
-      }, listView ->
+      };
+      Function<ListView<YoComposite>, MenuItem> showUniqueNames = listView ->
       {
          YoComposite selectedItem = yoCompositeListView.getSelectionModel().getSelectedItem();
          if (selectedItem == null)
             return null;
          CheckMenuItem menuItem = new CheckMenuItem("Show unique names");
-         menuItem.selectedProperty().bindBidirectional(showUniqueNamesProperty);
+         menuItem.setSelected(yoVariableNameDisplay.getValue() == YoNameDisplay.UNIQUE_NAME);
+         menuItem.setOnAction(e -> messager.submitMessage(topics.getYoVariableNameDisplay(),
+                                                          menuItem.isSelected() ? YoNameDisplay.UNIQUE_NAME : YoNameDisplay.SHORT_NAME));
          return menuItem;
-      });
+      };
+      MenuTools.setupContextMenu(yoCompositeListView, openNamespace, copyVariableName, copyVariableFullname, showUniqueNames);
 
       ObservableMap<String, Property<YoCompositeCollection>> nameToCompositeCollection = yoCompositeSearchManager.typeToCompositeCollection();
       searchTargetComboBox.setItems(FXCollections.observableArrayList(nameToCompositeCollection.keySet()));
 
-      nameToCompositeCollection.addListener(new MapChangeListener<String, Property<YoCompositeCollection>>()
+      nameToCompositeCollection.addListener((MapChangeListener<String, Property<YoCompositeCollection>>) change ->
       {
-         @Override
-         public void onChanged(Change<? extends String, ? extends Property<YoCompositeCollection>> change)
-         {
-            ObservableList<String> items = searchTargetComboBox.getItems();
+         ObservableList<String> items = searchTargetComboBox.getItems();
 
-            if (change.wasAdded())
-            {
-               if (!items.contains(change.getKey()))
-                  items.add(change.getKey());
-            }
-            else if (change.wasRemoved())
-            {
-               if (searchTargetComboBox.getValue() == change.getKey())
-                  searchTargetComboBox.getSelectionModel().select(YoCompositeTools.YO_VARIABLE);
-               items.remove(change.getKey());
-            }
+         if (change.wasAdded())
+         {
+            if (!items.contains(change.getKey()))
+               items.add(change.getKey());
+         }
+         else if (change.wasRemoved())
+         {
+            if (searchTargetComboBox.getValue() == change.getKey())
+               searchTargetComboBox.getSelectionModel().select(YoCompositeTools.YO_VARIABLE);
+            items.remove(change.getKey());
          }
       });
 
@@ -163,20 +161,20 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       searchTargetProperty.set(YoCompositeTools.YO_VARIABLE);
 
       searchTargetProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == null)
-         {
-            searchTargetProperty.set(oldValue);
-            return;
-         }
-         else if (newValue == oldValue && !defaultItemList.isEmpty())
-         {
-            return;
-         }
+                                       {
+                                          if (newValue == null)
+                                          {
+                                             searchTargetProperty.set(oldValue);
+                                             return;
+                                          }
+                                          else if (Objects.equals(newValue, oldValue) && !defaultItemList.isEmpty())
+                                          {
+                                             return;
+                                          }
 
-         refreshDefaultItemList(newValue);
-         search(searchTextField.getText());
-      });
+                                          refreshDefaultItemList(newValue);
+                                          search(searchTextField.getText());
+                                       });
 
       messager.addFXTopicListener(topics.getSessionCurrentState(), state ->
       {
@@ -187,10 +185,12 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       });
 
       yoCompositeListView.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue != null)
-            messager.submitMessage(topics.getYoCompositeSelected(), Arrays.asList(newValue.getPattern().getType(), newValue.getFullname()));
-      });
+                                                                                 {
+                                                                                    if (newValue != null)
+                                                                                       messager.submitMessage(topics.getYoCompositeSelected(),
+                                                                                                              Arrays.asList(newValue.getPattern().getType(),
+                                                                                                                            newValue.getFullname()));
+                                                                                 });
    }
 
    public void requestFocusForSearchBox()
@@ -203,19 +203,9 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       registryViewRequestConsumer = consumer;
    }
 
-   public ObjectProperty<String> searchTargetProperty()
-   {
-      return searchTargetProperty;
-   }
-
    public String getSearchTarget()
    {
       return searchTargetProperty.get();
-   }
-
-   public void setSearchTarget(String searchTarget)
-   {
-      searchTargetProperty.set(searchTarget);
    }
 
    @Override
@@ -269,7 +259,7 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
    }
 
    private Property<YoCompositeCollection> activeCompositeCollectionProperty = null;
-   private ChangeListener<Object> autoRefreshListener = (o, oldV, newV) -> refreshDefaultItemList(getSearchTarget());
+   private final ChangeListener<Object> autoRefreshListener = (o, oldV, newV) -> refreshDefaultItemList(getSearchTarget());
 
    private void refreshDefaultItemList(String searchTarget)
    {
@@ -299,23 +289,29 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 
       if (searchQuery != null && !searchQuery.isEmpty() && defaultItemList != null && !defaultItemList.isEmpty())
       {
-         backgroundSearch = backgroundExecutorManager.executeInBackground(() ->
-         {
-            List<YoComposite> yoVariables = YoVariableTools.search(defaultItemList,
-                                                                   YoComposite::getName,
-                                                                   searchQuery,
-                                                                   YoVariableTools.fromSearchEnginesEnum(activeSearchEngine.get()),
-                                                                   maxNumberOfItemsReference.get());
-            if (yoVariables == null)
-               return FXCollections.emptyObservableList();
-            else
-               return FXCollections.observableArrayList(yoVariables);
-         });
+         backgroundSearch = backgroundExecutorManager.executeInBackground(() -> performSearch(searchQuery));
       }
       else
       {
          searchResult = defaultItemList;
       }
+   }
+
+   private ObservableList<YoComposite> performSearch(String searchQuery)
+   {
+      Function<YoComposite, String> nameExtractor = switch (yoVariableNameDisplay.getValue())
+      {
+         case UNIQUE_NAME -> YoComposite::getUniqueName;
+         case SHORT_NAME -> YoComposite::getName;
+         case FULL_NAME -> YoComposite::getFullname;
+      };
+
+      List<YoComposite> yoVariables = YoVariableTools.search(defaultItemList,
+                                                             nameExtractor,
+                                                             searchQuery,
+                                                             YoVariableTools.fromSearchEnginesEnum(activeSearchEngine.get()),
+                                                             maxNumberOfItemsReference.get());
+      return yoVariables == null ? FXCollections.emptyObservableList() : FXCollections.observableArrayList(yoVariables);
    }
 
    @FXML
@@ -338,7 +334,8 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       }
       else
       {
-         List<String> content = yoComposites.stream().flatMap(c -> Arrays.asList(c.getPattern().getType(), c.getFullname()).stream())
+         List<String> content = yoComposites.stream()
+                                            .flatMap(c -> Arrays.asList(c.getPattern().getType(), c.getFullname()).stream())
                                             .collect(Collectors.toList());
          clipboardContent.put(DragAndDropTools.YO_COMPOSITE_LIST_REFERENCE, content);
       }

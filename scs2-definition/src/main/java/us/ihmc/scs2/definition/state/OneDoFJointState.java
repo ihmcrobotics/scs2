@@ -1,15 +1,15 @@
 package us.ihmc.scs2.definition.state;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
-
 import org.ejml.data.DMatrixRMaj;
-
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
+
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
 
 @XmlType(propOrder = {"configuration", "velocity", "acceleration", "effort"})
 public class OneDoFJointState extends JointStateBase implements OneDoFJointStateBasics
@@ -168,13 +168,13 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
 
       OneDoFJointState other = (OneDoFJointState) object;
 
-      if (Double.doubleToLongBits(configuration) != Double.doubleToLongBits(other.configuration))
+      if (!EuclidCoreTools.equals(configuration, other.configuration))
          return false;
-      if (Double.doubleToLongBits(velocity) != Double.doubleToLongBits(other.velocity))
+      if (!EuclidCoreTools.equals(velocity, other.velocity))
          return false;
-      if (Double.doubleToLongBits(acceleration) != Double.doubleToLongBits(other.acceleration))
+      if (!EuclidCoreTools.equals(acceleration, other.acceleration))
          return false;
-      if (Double.doubleToLongBits(effort) != Double.doubleToLongBits(other.effort))
+      if (!EuclidCoreTools.equals(effort, other.effort))
          return false;
 
       return true;

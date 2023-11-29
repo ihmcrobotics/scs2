@@ -1,30 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.MapChangeListener;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
-import javafx.collections.ObservableSet;
+import javafx.collections.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -34,20 +14,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.PickResult;
-import javafx.scene.input.ScrollEvent;
-import javafx.scene.input.TransferMode;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -55,7 +23,6 @@ import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.javaFXExtensions.chart.FastNumberAxis;
-import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -64,29 +31,25 @@ import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIdentifier;
-import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIntegerBounds;
-import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartMarker;
-import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicChartLegend;
-import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart;
+import us.ihmc.scs2.sessionVisualizer.jfx.charts.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart.ChartStyle;
-import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData.ChartDataUpdate;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.ChartDataManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class YoChartPanelController extends ObservedAnimationTimer implements VisualizerController
 {
@@ -115,6 +78,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private final ObservableList<ChartMarker> keyFrameMarkers = FXCollections.observableArrayList();
 
    private YoCompositeSearchManager yoCompositeSearchManager;
+   private final BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
 
    private Property<Integer> legendPrecision;
 
@@ -124,7 +88,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private final ObservableSet<YoVariable> plottedVariables = FXCollections.observableSet(new LinkedHashSet<>());
    private YoBufferPropertiesReadOnly lastBufferProperties = null;
    private AtomicReference<YoBufferPropertiesReadOnly> newBufferProperties;
-   private final TopicListener<int[]> keyFrameMarkerListener = newKeyFrames -> updateKeyFrameMarkers(newKeyFrames);
+   private final TopicListener<int[]> keyFrameMarkerListener = this::updateKeyFrameMarkers;
    private AtomicReference<List<String>> yoCompositeSelected;
    private Topic<List<String>> yoCompositeSelectedTopic;
 
@@ -263,11 +227,11 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       dynamicLineChart.setOnMouseDragged(this::handleMouseDrag);
       dynamicLineChart.setOnMouseReleased(this::handleMouseReleased);
       dynamicLineChart.setOnScroll(this::handleScroll);
-      contextMenuProperty.addListener((ChangeListener<ContextMenu>) (observable, oldValue, newValue) ->
-      {
-         if (oldValue != null)
-            oldValue.hide();
-      });
+      contextMenuProperty.addListener((observable, oldValue, newValue) ->
+                                      {
+                                         if (oldValue != null)
+                                            oldValue.hide();
+                                      });
       charts.addListener((MapChangeListener<YoVariable, YoVariableChartPackage>) change ->
       {
          if (change.wasAdded())
@@ -294,7 +258,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       yoCompositeSelected = messager.createInput(yoCompositeSelectedTopic);
 
       // CSS style doesn't get applied immediately
-      ChangeListener<? super Border> borderInitializer = new ChangeListener<Border>()
+      ChangeListener<? super Border> borderInitializer = new ChangeListener<>()
       {
          @Override
          public void changed(ObservableValue<? extends Border> o, Border oldValue, Border newValue)
@@ -396,26 +360,16 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
 
    public void addYoVariableToPlot(String yoVariableFullName)
    {
-      YoVariableDatabase rootRegistryDatabase = yoManager.getRootRegistryDatabase();
-      YoVariable yoVariable = rootRegistryDatabase.searchExact(yoVariableFullName);
-      if (yoVariable == null)
-      {
-         LogTools.warn("Incompatible variable name, searching similar variables to " + yoVariableFullName);
-         yoVariable = rootRegistryDatabase.searchSimilar(yoVariableFullName, 0.90);
-      }
-      if (yoVariable == null)
-      {
-         LogTools.warn("Could not find YoVariable: " + yoVariableFullName);
-         return;
-      }
-      addYoVariableToPlot(yoVariable);
+      YoVariable yoVariable = yoManager.searchYoVariable(yoVariableFullName);
+      if (yoVariable != null)
+         addYoVariableToPlot(yoVariable);
    }
 
    public void addYoVariableToPlot(YoVariable yoVariable)
    {
       if (charts.containsKey(yoVariable))
          return;
-      charts.put(yoVariable, new YoVariableChartPackage(yoVariable));
+      charts.put(yoVariable, new YoVariableChartPackage(yoVariable, yoCompositeSearchManager.getYoVariableCollection().getYoVariableUniqueName(yoVariable)));
    }
 
    public void addYoVariablesToPlot(Collection<? extends YoVariable> yoVariables)
@@ -526,24 +480,23 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private ContextMenu newGraphContextMenu()
    {
       ContextMenu contextMenu = new ContextMenu();
-      for (YoVariable yoVariable : charts.keySet())
+      for (YoVariableChartPackage chartPackage : charts.values())
       {
-         MenuItem menuItem = new MenuItem("Remove " + yoVariable.getName());
+         MenuItem menuItem = new MenuItem("Remove " + chartPackage.getSeries().getSeriesName());
          menuItem.setMnemonicParsing(false);
-         menuItem.setOnAction(e -> removeYoVariableFromPlot(yoVariable));
+         menuItem.setOnAction(e -> removeYoVariableFromPlot(chartPackage.getYoVariable()));
          contextMenu.getItems().add(menuItem);
       }
 
-      FastAxisBase yAxis = dynamicLineChart.getYAxis();
-      boolean isYAxisVisible = !(yAxis instanceof FastNumberAxis);
+      boolean isYAxisVisible = !(dynamicLineChart.getYAxis() instanceof FastNumberAxis);
       MenuItem yAxisVisibleItem = new MenuItem(isYAxisVisible ? "Hide y-axis" : "Show y-axis");
       yAxisVisibleItem.setOnAction(e ->
-      {
-         if (isYAxisVisible)
-            dynamicLineChart.setYAxis(new FastNumberAxis());
-         else
-            dynamicLineChart.setYAxis(FastAxisBase.wrap(new NumberAxis()));
-      });
+                                   {
+                                      if (isYAxisVisible)
+                                         dynamicLineChart.setYAxis(new FastNumberAxis());
+                                      else
+                                         dynamicLineChart.setYAxis(FastAxisBase.wrap(new NumberAxis()));
+                                   });
       contextMenu.getItems().add(yAxisVisibleItem);
 
       return contextMenu;
@@ -686,7 +639,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       FastAxisBase xAxis = dynamicLineChart.getXAxis();
       double xLocal = xAxis.screenToLocal(screenX, screenY).getX();
       int index = (int) Math.round(xAxis.getValueForDisplay(xLocal));
-      return MathTools.clamp(index, 0, lastBufferProperties.getSize());
+      return MathTools.clamp(index, 0, lastBufferProperties.getSize() - 1);
    }
 
    private void handleScroll(ScrollEvent event)
@@ -724,13 +677,17 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       if (intersectedNode instanceof Text)
       {
          Text legend = (Text) intersectedNode;
-         String yoVariableName = legend.getText().split("\\s+")[0];
-         YoVariable yoVariableSelected = charts.keySet().stream().filter(yoVariable -> yoVariable.getName().equals(yoVariableName)).findFirst().orElse(null);
-         if (yoVariableSelected == null)
+         String pickedName = legend.getText().split("\\s+")[0];
+         Optional<YoVariableChartPackage> chartData = charts.values()
+                                                            .stream()
+                                                            .filter(dataPackage -> dataPackage.series.getSeriesName().equals(pickedName))
+                                                            .findFirst();
+         if (!chartData.isPresent())
             return;
          Dragboard dragBoard = legend.startDragAndDrop(TransferMode.COPY);
          ClipboardContent clipboardContent = new ClipboardContent();
-         clipboardContent.put(DragAndDropTools.YO_COMPOSITE_REFERENCE, Arrays.asList(YoCompositeTools.YO_VARIABLE, yoVariableSelected.getFullNameString()));
+         clipboardContent.put(DragAndDropTools.YO_COMPOSITE_REFERENCE,
+                              Arrays.asList(YoCompositeTools.YO_VARIABLE, chartData.get().getYoVariable().getFullNameString()));
          dragBoard.setContent(clipboardContent);
       }
 
@@ -801,6 +758,11 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, yoCompositeSearchManager) != null;
    }
 
+   public BooleanProperty useUniqueNamesProperty()
+   {
+      return useUniqueNames;
+   }
+
    public ObservableSet<YoVariable> getPlottedVariables()
    {
       return plottedVariables;
@@ -851,11 +813,15 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       private final YoVariableChartData chartData;
       private final Object callerID = YoChartPanelController.this;
 
-      public YoVariableChartPackage(YoVariable yoVariable)
+      public YoVariableChartPackage(YoVariable yoVariable, String variableUniqueName)
       {
          series = new YoNumberSeries(yoVariable, legendPrecision);
          chartData = chartDataManager.getYoVariableChartData(callerID, yoVariable);
          dynamicLineChart.addSeries(series);
+
+         if (useUniqueNames.get())
+            series.setSeriesName(variableUniqueName);
+         useUniqueNames.addListener((o, oldValue, newValue) -> series.setSeriesName(newValue ? variableUniqueName : yoVariable.getName()));
       }
 
       public void updateLegend()

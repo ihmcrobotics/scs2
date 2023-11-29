@@ -1,0 +1,18 @@
+const double double_const = 6.9;
+
+struct struct_1 {
+    short signed_short_var;
+    unsigned short unsigned_short_var;
+    octet octet_var;
+    char char_var;
+    string string_var;
+    sequence<double, 27> sequence_var;
+};
+
+struct simple_idl_with_structs {
+    float float_var;
+    boolean boolean_var;
+    long long_array_var[13];
+    struct_1 struct_1_var;
+    long double long_double_var;
+};

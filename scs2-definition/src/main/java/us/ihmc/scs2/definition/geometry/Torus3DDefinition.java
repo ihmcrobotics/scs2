@@ -1,9 +1,10 @@
 package us.ihmc.scs2.definition.geometry;
 
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a 3D torus.
@@ -28,7 +29,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a 3D torus.
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     * @param minorRadius the radius of the tube.
     */
@@ -41,7 +42,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Creates and initializes a definition for a partial 3D torus.
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     * @param minorRadius the radius of the tube.
     * @param resolution  used for discretizing the geometry.
@@ -64,7 +65,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Sets the torus' major radius.
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     */
    @XmlElement
@@ -75,7 +76,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Sets the torus' minor radius.
-    * 
+    *
     * @param minorRadius the radius of the tube.
     */
    @XmlElement
@@ -86,7 +87,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Sets the torus' resolution used when discretizing it.
-    * 
+    *
     * @param resolution the torus' resolution.
     */
    @XmlElement
@@ -97,7 +98,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Returns the torus' major radius.
-    * 
+    *
     * @return the radius from the torus centroid to the tube center.
     */
    public double getMajorRadius()
@@ -107,7 +108,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Returns the torus' minor radius.
-    * 
+    *
     * @return the radius of the tube.
     */
    public double getMinorRadius()
@@ -117,7 +118,7 @@ public class Torus3DDefinition extends GeometryDefinition
 
    /**
     * Returns the torus' resolution which can be used for discretizing it.
-    * 
+    *
     * @return the torus' resolution.
     */
    public int getResolution()
@@ -151,9 +152,9 @@ public class Torus3DDefinition extends GeometryDefinition
 
       Torus3DDefinition other = (Torus3DDefinition) object;
 
-      if (Double.doubleToLongBits(majorRadius) != Double.doubleToLongBits(other.majorRadius))
+      if (!EuclidCoreTools.equals(majorRadius, other.majorRadius))
          return false;
-      if (Double.doubleToLongBits(minorRadius) != Double.doubleToLongBits(other.minorRadius))
+      if (!EuclidCoreTools.equals(minorRadius, other.minorRadius))
          return false;
       if (resolution != other.resolution)
          return false;
@@ -165,6 +166,6 @@ public class Torus3DDefinition extends GeometryDefinition
    public String toString()
    {
       return "Torus: [name: " + getName() + EuclidCoreIOTools.getStringOf(", radii: (", ")", ", ", majorRadius, minorRadius) + ", resolution: " + resolution
-            + "]";
+             + "]";
    }
 }

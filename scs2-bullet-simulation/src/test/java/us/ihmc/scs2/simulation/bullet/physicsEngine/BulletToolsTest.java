@@ -1,14 +1,6 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.Random;
-
-import org.bytedeco.bullet.BulletCollision.btBoxShape;
-import org.bytedeco.bullet.BulletCollision.btCapsuleShapeZ;
-import org.bytedeco.bullet.BulletCollision.btCollisionShape;
-import org.bytedeco.bullet.BulletCollision.btConeShapeZ;
-import org.bytedeco.bullet.BulletCollision.btCylinderShapeZ;
-import org.bytedeco.bullet.BulletCollision.btSphereShape;
+import org.bytedeco.bullet.BulletCollision.*;
 import org.bytedeco.bullet.LinearMath.btQuaternion;
 import org.bytedeco.bullet.LinearMath.btTransform;
 import org.bytedeco.bullet.LinearMath.btVector3;
@@ -23,6 +15,10 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.*;
+
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BulletToolsTest
 {
@@ -276,6 +272,5 @@ public class BulletToolsTest
       {
          BulletTools.createBulletCollisionShape(collisionShapeDefinition);
       });
-
    }
 }

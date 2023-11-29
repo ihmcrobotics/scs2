@@ -1,36 +1,27 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
-import java.util.Collection;
-import java.util.List;
-
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.AutoCompletionBinding.ISuggestionRequest;
-import org.controlsfx.control.textfield.TextFields;
-
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.util.Callback;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+import org.controlsfx.control.textfield.AutoCompletionBinding.ISuggestionRequest;
+import org.controlsfx.control.textfield.TextFields;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
  * Wrapper around a simple {@link TextField} to add search functionality, auto-completion,
  * validation.
- * 
- * @author Sylvain Bertrand
+ *
  * @param <T>
+ * @author Sylvain Bertrand
  */
 public abstract class PropertySearchField<T extends Property<?>>
 {
@@ -46,23 +37,23 @@ public abstract class PropertySearchField<T extends Property<?>>
          attachValidImageView(validImageView);
 
       textField.textProperty().addListener((observable, oldValue, newValue) ->
-      {
-         if (newValue != null && newValue.equals(oldValue))
-            return;
+                                           {
+                                              if (newValue != null && newValue.equals(oldValue))
+                                                 return;
 
-         String simplifiedText = simplifyText(newValue);
-         if (simplifiedText != null)
-         {
-            textField.setText(simplifiedText);
-            return;
-         }
-         boolean isTextValid = isTextValid(newValue);
+                                              String simplifiedText = simplifyText(newValue);
+                                              if (simplifiedText != null)
+                                              {
+                                                 textField.setText(simplifiedText);
+                                                 return;
+                                              }
+                                              boolean isTextValid = isTextValid(newValue);
 
-         validityProperty.set(isTextValid);
+                                              validityProperty.set(isTextValid);
 
-         if (isTextValid)
-            supplierProperty.set(toSupplier(newValue));
-      });
+                                              if (isTextValid)
+                                                 supplierProperty.set(toSupplier(newValue));
+                                           });
 
       textField.setOnDragEntered(this::handleDragEntered);
       textField.setOnDragExited(this::handleDragExited);
@@ -171,5 +162,10 @@ public abstract class PropertySearchField<T extends Property<?>>
          return false;
 
       return retrieveYoCompositesFromDragboard(event.getDragboard()) != null;
+   }
+
+   public TextField getTextField()
+   {
+      return textField;
    }
 }
