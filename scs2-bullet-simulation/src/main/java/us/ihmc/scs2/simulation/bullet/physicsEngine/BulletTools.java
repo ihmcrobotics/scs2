@@ -29,8 +29,6 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.*;
 
-import java.util.List;
-
 public class BulletTools
 {
    public static void toBullet(RigidBodyTransform rigidBodyTransform, btTransform bulletAffineToPack)
