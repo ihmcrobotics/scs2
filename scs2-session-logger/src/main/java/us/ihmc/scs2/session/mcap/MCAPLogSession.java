@@ -1,17 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBException;
-
 import org.apache.commons.io.FilenameUtils;
-
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -26,6 +15,15 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class MCAPLogSession extends Session
 {
@@ -47,9 +45,9 @@ public class MCAPLogSession extends Session
     */
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
-   public MCAPLogSession(File mcapFile, File robotModelFile) throws IOException
+   public MCAPLogSession(File mcapFile, long desiredLogDT, File robotModelFile) throws IOException
    {
-      mcapLogFileReader = new MCAPLogFileReader(mcapFile, getInertialFrame(), mcapRegistry);
+      mcapLogFileReader = new MCAPLogFileReader(mcapFile, desiredLogDT, getInertialFrame(), mcapRegistry);
       mcapLogFileReader.loadSchemas();
       mcapLogFileReader.loadChannels();
       yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());

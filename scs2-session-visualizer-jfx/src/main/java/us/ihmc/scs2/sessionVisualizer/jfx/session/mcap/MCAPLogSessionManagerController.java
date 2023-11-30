@@ -2,7 +2,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTrimSlider;
+import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
@@ -10,12 +12,15 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.converter.LongStringConverter;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -29,10 +34,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController.TimeStringBinding;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -51,6 +58,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private JFXTrimSlider logPositionSlider;
    @FXML
    private JFXTextField currentModelFilePathTextField;
+   @FXML
+   private TextField desiredLogDTTextField;
 
    private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
 
@@ -60,6 +69,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private BackgroundExecutorManager backgroundExecutorManager;
 
    private File defaultRobotModelFile = null;
+
+   private final LongProperty desiredLogDTProperty = new SimpleLongProperty(this, "desiredLogDT", TimeUnit.MILLISECONDS.toNanos(1));
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -77,6 +88,19 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          MCAPLogFileReader mcapLogFileReader = activeSessionProperty.get().getMCAPLogFileReader();
          return mcapLogFileReader.getRelativeTimestampAtIndex(position.intValue());
       }));
+
+      desiredLogDTTextField.setTextFormatter(new TextFormatter<>(new LongStringConverter(), 1000L, new PositiveIntegerValueFilter()));
+      desiredLogDTTextField.textProperty().addListener((o, oldValue, newValue) ->
+                                                       {
+                                                          try
+                                                          {
+                                                             desiredLogDTProperty.set(TimeUnit.MICROSECONDS.toNanos(Long.parseLong(newValue)));
+                                                          }
+                                                          catch (NumberFormatException e)
+                                                          {
+                                                             desiredLogDTTextField.setText(Long.toString(TimeUnit.NANOSECONDS.toMicros(desiredLogDTProperty.get())));
+                                                          }
+                                                       });
 
       ChangeListener<? super MCAPLogSession> activeSessionListener = (o, oldValue, newValue) ->
       {
@@ -202,7 +226,9 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                                        try
                                                        {
                                                           LogTools.info("Creating log session.");
-                                                          MCAPLogSession newSession = new MCAPLogSession(result, defaultRobotModelFile);
+                                                          MCAPLogSession newSession = new MCAPLogSession(result,
+                                                                                                         desiredLogDTProperty.get(),
+                                                                                                         defaultRobotModelFile);
                                                           LogTools.info("Created log session.");
                                                           JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
                                                           SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
