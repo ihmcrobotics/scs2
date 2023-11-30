@@ -94,9 +94,9 @@ public class YoChartGroupPanelController implements VisualizerController
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
 
-   private ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
+   private final ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
    private Property<YoNameDisplay> userDesiredDisplayProperty;
-   private BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
+   private final BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -156,7 +156,7 @@ public class YoChartGroupPanelController implements VisualizerController
          }
       });
 
-      userDesiredDisplayProperty = messager.createPropertyInput(topics.getYoVariableNameDisplay(), YoNameDisplay.SHORT_NAME);
+      userDesiredDisplayProperty = messager.createPropertyInput(topics.getYoVariableNameDisplay());
 
       plottedVariableList.addListener((ListChangeListener<? super YoVariable>) change ->
       {
@@ -169,6 +169,9 @@ public class YoChartGroupPanelController implements VisualizerController
                                                 else
                                                    updateAutoUniqueNameDisplay();
                                              });
+
+      if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
+         useUniqueNames.set(true);
 
       SetChangeListener<YoVariable> plottedVariableChangeListener = change ->
       {
