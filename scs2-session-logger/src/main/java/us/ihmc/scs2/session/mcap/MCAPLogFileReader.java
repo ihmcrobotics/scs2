@@ -41,7 +41,7 @@ public class MCAPLogFileReader
    private final File mcapFile;
    private final YoRegistry mcapRegistry;
    private final MCAP mcap;
-   private final MCAPChunkManager chunkManager = new MCAPChunkManager();
+   private final MCAPChunkManager chunkManager;
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<MCAP.Schema> rawSchemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
@@ -49,9 +49,13 @@ public class MCAPLogFileReader
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
    private final YoLong currentChunkEndTimestamp = new YoLong("MCAPCurrentChunkEndTimestamp", propertiesRegistry);
    private final YoLong currentTimestamp = new YoLong("MCAPCurrentTimestamp", propertiesRegistry);
+   /**
+    * When greater than 0, the log reader will enforce a regular time step. The log time of messages will be rounded to the closest multiple of this value.
+    */
+   private final long desiredLogDT;
    private final long initialTimestamp, finalTimestamp;
 
-   public MCAPLogFileReader(File mcapFile, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
+   public MCAPLogFileReader(File mcapFile, long desiredLogDT, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
    {
       if (SCS2_MCAP_DEBUG_HOME.toFile().exists())
       {
@@ -59,11 +63,13 @@ public class MCAPLogFileReader
          FileUtils.cleanDirectory(SCS2_MCAP_DEBUG_HOME.toFile());
       }
       this.mcapFile = mcapFile;
+      this.desiredLogDT = desiredLogDT;
       this.mcapRegistry = mcapRegistry;
       mcapRegistry.addChild(propertiesRegistry);
       FileInputStream mcapFileInputStream = new FileInputStream(mcapFile);
       FileChannel mcapFileChannel = mcapFileInputStream.getChannel();
       mcap = new MCAP(mcapFileChannel);
+      chunkManager = new MCAPChunkManager(desiredLogDT);
       chunkManager.loadFromMCAP(mcap);
       initialTimestamp = chunkManager.firstMessageTimestamp();
       finalTimestamp = chunkManager.lastMessageTimestamp();
