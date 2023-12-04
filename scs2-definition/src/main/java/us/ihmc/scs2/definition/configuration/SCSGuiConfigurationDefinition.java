@@ -25,7 +25,7 @@ public class SCSGuiConfigurationDefinition
    /**
     * Whether to show the unique names of the yoVariables.
     */
-   private boolean showYoVariableUniqueNames = false;
+   private boolean showYoVariableUniqueNames = true;
    private WindowConfigurationDefinition mainWindowConfiguration;
    private List<WindowConfigurationDefinition> secondaryWindowConfigurations;
 
