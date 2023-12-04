@@ -20,6 +20,7 @@ import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,6 +52,26 @@ public class MCAPLogSession extends Session
       mcapLogFileReader.loadSchemas();
       mcapLogFileReader.loadChannels();
       yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());
+
+      if (robotModelFile == null)
+      {
+
+         File[] modelFiles = mcapFile.getParentFile()
+                                     .listFiles(file -> FilenameUtils.isExtension(file.getName(), "urdf") || FilenameUtils.isExtension(file.getName(), "sdf"));
+         if (modelFiles != null && modelFiles.length == 1)
+         {
+            robotModelFile = modelFiles[0];
+            LogTools.info("Found a robot model file in the same directory as the MCAP file: " + robotModelFile.getAbsolutePath());
+         }
+         else
+         {
+            LogTools.error(
+                  "Could not find a robot model file in the same directory as the MCAP file: " + mcapFile.getAbsolutePath() + ", found candidates: " + (
+                        modelFiles == null ?
+                              "none" :
+                              Arrays.toString(modelFiles)));
+         }
+      }
 
       RobotDefinition robotDefinition = null;
       if (robotModelFile != null)
