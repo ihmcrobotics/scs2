@@ -78,7 +78,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    private final BooleanProperty leftDrawerOpen = new SimpleBooleanProperty(this, "leftDrawerOpenProperty", false);
    private final BooleanProperty rightDrawerOpen = new SimpleBooleanProperty(this, "rightDrawerOpenProperty", false);
    private final BooleanProperty disableUserControls = new SimpleBooleanProperty(this, "disableUserControlsProperty", false);
-   private final Property<YoNameDisplay> yoNameDisplayProperty = new SimpleObjectProperty<>(this, "yoNameDisplayProperty", YoNameDisplay.SHORT_NAME);
+   private final Property<YoNameDisplay> yoNameDisplayProperty = new SimpleObjectProperty<>(this, "yoNameDisplayProperty", YoNameDisplay.UNIQUE_NAME);
 
    /**
     * Controller for the left pane where variable search and entries are displayed.
