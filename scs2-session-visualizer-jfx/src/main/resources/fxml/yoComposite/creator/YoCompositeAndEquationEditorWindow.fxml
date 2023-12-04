@@ -17,7 +17,7 @@
          <children>
             <HBox spacing="5.0" VBox.vgrow="ALWAYS">
                <children>
-                  <VBox spacing="10.0">
+                  <VBox prefWidth="250.0" spacing="10.0" HBox.hgrow="SOMETIMES">
                      <children>
                         <HBox alignment="CENTER" maxHeight="-Infinity" minHeight="-Infinity" spacing="10.0">
                            <children>
@@ -48,8 +48,8 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </padding>
                   </VBox>
-                  <Separator orientation="VERTICAL" />
-                  <VBox fx:id="equationEditorContainer" prefWidth="400.0" spacing="10.0">
+                  <Separator orientation="VERTICAL" HBox.hgrow="NEVER" />
+                  <VBox fx:id="equationEditorContainer" prefWidth="400.0" spacing="10.0" HBox.hgrow="SOMETIMES">
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </padding>
