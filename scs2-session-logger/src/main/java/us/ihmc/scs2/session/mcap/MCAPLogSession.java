@@ -13,6 +13,8 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -218,6 +220,27 @@ public class MCAPLogSession extends Session
          robotDefinitions.add(robotDefinitionToAdd);
          rootRegistry.addChild(robotToAdd.getRegistry());
          robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+
+         // Update the robot state history
+         YoBufferPropertiesReadOnly bufferProperties = getBufferProperties();
+         int previousBufferIndex = bufferProperties.getCurrentIndex();
+         int historyIndex = bufferProperties.getInPoint();
+
+         for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
+         {
+            sharedBuffer.setCurrentIndex(historyIndex);
+            sharedBuffer.readBuffer();
+            robotStateUpdater.updateRobotState();
+            sharedBuffer.writeBuffer();
+            historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
+         }
+
+         // Go back to the previous buffer index
+         sharedBuffer.setCurrentIndex(previousBufferIndex);
+         sharedBuffer.readBuffer();
+         robotStateUpdater.updateRobotState(); // Just to make sure the robot is updated.
+         sharedBuffer.writeBuffer();
+
          addedRobot = robotDefinitionToAdd;
       }
 
