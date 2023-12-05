@@ -1,6 +1,10 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
 import java.util.ArrayList;
+
+import org.bytedeco.bullet.BulletCollision.btCollisionObject;
+import org.bytedeco.bullet.BulletDynamics.btMultiBody;
+import org.bytedeco.bullet.BulletDynamics.btMultiBodyLinkCollider;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
@@ -79,6 +83,34 @@ public class BulletRobot extends RobotExtension
          afterRootLink.pullStateFromBullet(dt);
       }
       robotPhysics.update(dt);
+   }
+
+   /**
+    * Sets the whole robot to be a Bullet kinematic object, which can be moved around
+    * and exerts forces on other non-kinematic objects, but is not subject to receiving
+    * forces or contacts.
+    */
+   public void setIsKinematicObject(boolean isKinematicObject)
+   {
+      btMultiBody btMultiBody = bulletMultiBodyRobot.getBtMultiBody();
+      btMultiBodyLinkCollider collider = btMultiBody.getBaseCollider();
+
+      if (isKinematicObject)
+         collider.setCollisionFlags(collider.getCollisionFlags() | btCollisionObject.CF_KINEMATIC_OBJECT);
+      else
+         collider.setCollisionFlags(collider.getCollisionFlags() & ~btCollisionObject.CF_KINEMATIC_OBJECT);
+
+      for (int i = 0; i < btMultiBody.getNumLinks(); i++)
+      {
+         collider = btMultiBody.getLink(i).m_collider();
+         if (!collider.isNull())
+         {
+            if (isKinematicObject)
+               collider.setCollisionFlags(collider.getCollisionFlags() | btCollisionObject.CF_KINEMATIC_OBJECT);
+            else
+               collider.setCollisionFlags(collider.getCollisionFlags() & ~btCollisionObject.CF_KINEMATIC_OBJECT);
+         }
+      }
    }
 
    public BulletMultiBodyRobot getBulletMultiBodyRobot()
