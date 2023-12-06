@@ -77,6 +77,11 @@ public class MCAPLogFileReader
       mcapRegistry.addChild(frameTransformManager.getRegistry());
    }
 
+   public long getDesiredLogDT()
+   {
+      return desiredLogDT;
+   }
+
    public long getInitialTimestamp()
    {
       return initialTimestamp;

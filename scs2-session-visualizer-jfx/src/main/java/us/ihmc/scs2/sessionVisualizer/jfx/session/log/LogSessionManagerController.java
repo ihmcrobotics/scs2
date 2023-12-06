@@ -1,18 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collectors;
-
 import com.jfoenix.controls.JFXTrimSlider;
-
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
@@ -27,12 +15,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TitledPane;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
@@ -58,6 +41,17 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 
 public class LogSessionManagerController implements SessionControlsController
 {
@@ -95,7 +89,9 @@ public class LogSessionManagerController implements SessionControlsController
    private enum OutputFormat
    {
       Default, MATLAB, CSV;
-   };
+   }
+
+   ;
 
    private final ObjectProperty<MultiVideoViewer> multiVideoViewerProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
    private final ObjectProperty<LogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
@@ -136,55 +132,25 @@ public class LogSessionManagerController implements SessionControlsController
 
          if (newValue == null)
          {
-            sessionNameLabel.setText("N/D");
-            dateLabel.setText("N/D");
-            logPathLabel.setText("N/D");
-            endSessionButton.setDisable(true);
-            logPositionSlider.setDisable(true);
-            showTrimsButton.setSelected(false);
-            cropControlsContainer.setDisable(true);
-            multiVideoViewerProperty.set(null);
-            logCropperProperty.set(null);
+            clearControls();
          }
          else
          {
             messager.submitMessage(topics.getStartNewSessionRequest(), newValue);
-            File logDirectory = newValue.getLogDirectory();
-            LogDataReader logDataReader = newValue.getLogDataReader();
-            LogPropertiesReader logProperties = newValue.getLogProperties();
-
-            sessionNameLabel.setText(newValue.getSessionName());
-            dateLabel.setText(getDate(logProperties));
-            logPathLabel.setText(logDirectory.getAbsolutePath());
-            endSessionButton.setDisable(false);
-            logPositionSlider.setDisable(false);
-            logPositionSlider.setValue(0.0);
-            logPositionSlider.setMin(0.0);
-            logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
-            cropControlsContainer.setDisable(false);
-            MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
-            multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
-            logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
-            multiVideoViewerProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
-            logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
-            boolean logHasVideos = multiReader.getNumberOfVideos() > 0;
-            thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
-            thumbnailsTitledPane.setExpanded(logHasVideos);
-            thumbnailsTitledPane.setDisable(!logHasVideos);
-            JavaFXMissingTools.runLater(getClass(), () -> stage.sizeToScene());
+            initializeControls(newValue);
          }
       };
 
       AtomicBoolean logPositionUpdate = new AtomicBoolean(true);
 
       logPositionSlider.valueProperty().addListener((o, oldValue, newValue) ->
-      {
-         LogSession logSession = activeSessionProperty.get();
-         if (logSession == null || logPositionUpdate.get())
-            return;
+                                                    {
+                                                       LogSession logSession = activeSessionProperty.get();
+                                                       if (logSession == null || logPositionUpdate.get())
+                                                          return;
 
-         logSession.submitLogPositionRequest(newValue.intValue());
-      });
+                                                       logSession.submitLogPositionRequest(newValue.intValue());
+                                                    });
 
       AtomicBoolean sliderFeedbackEnabled = new AtomicBoolean(true);
 
@@ -216,32 +182,40 @@ public class LogSessionManagerController implements SessionControlsController
       };
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (oldValue != null)
-            oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
-         if (newValue != null)
-            newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
-      });
+                                        {
+                                           if (oldValue != null)
+                                              oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                           if (newValue != null)
+                                              newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                        });
 
       multiVideoViewerProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (oldValue != null)
-            oldValue.stop();
-         if (newValue != null)
-            newValue.start();
-      });
+                                           {
+                                              if (oldValue != null)
+                                                 oldValue.stop();
+                                              if (newValue != null)
+                                                 newValue.start();
+                                           });
 
+      if (toolkit.getSession() instanceof LogSession logSession)
+      {
+         activeSessionProperty.set(logSession);
+         initializeControls(logSession);
+      }
+      else
+      {
+         clearControls();
+      }
       activeSessionProperty.addListener(activeSessionListener);
-      activeSessionListener.changed(null, null, null);
 
       thumbnailsTitledPane.expandedProperty().addListener((o, oldValue, newValue) -> JavaFXMissingTools.runLater(getClass(), stage::sizeToScene));
 
       logPositionSlider.showTrimProperty().bind(showTrimsButton.selectedProperty());
       logPositionSlider.showTrimProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue)
-            resetTrims();
-      });
+                                                       {
+                                                          if (newValue)
+                                                             resetTrims();
+                                                       });
       startTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       endTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       resetTrimsButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
@@ -257,42 +231,42 @@ public class LogSessionManagerController implements SessionControlsController
       openSessionButton.setOnAction(e -> openLogFile());
 
       endSessionButton.setOnAction(e ->
-      {
-         LogSession logSession = activeSessionProperty.get();
-         if (logSession != null)
-            logSession.shutdownSession();
-         activeSessionProperty.set(null);
-      });
+                                   {
+                                      LogSession logSession = activeSessionProperty.get();
+                                      if (logSession != null)
+                                         logSession.shutdownSession();
+                                      activeSessionProperty.set(null);
+                                   });
 
       outputFormatComboxBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
       outputFormatComboxBox.getSelectionModel().select(OutputFormat.Default);
       enableVariableFilterToggleButton.setDisable(true); // Only available if export format is MATLAB/CSV for now.
 
       outputFormatComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
-         {
-            enableVariableFilterToggleButton.setSelected(false);
-            enableVariableFilterToggleButton.setDisable(true);
-         }
-         else
-         {
-            enableVariableFilterToggleButton.setDisable(false);
-         }
-      });
+                                                                                   {
+                                                                                      if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
+                                                                                      {
+                                                                                         enableVariableFilterToggleButton.setSelected(false);
+                                                                                         enableVariableFilterToggleButton.setDisable(true);
+                                                                                      }
+                                                                                      else
+                                                                                      {
+                                                                                         enableVariableFilterToggleButton.setDisable(false);
+                                                                                      }
+                                                                                   });
 
       showTrimsButton.selectedProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue && outputFormatComboxBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
-         {
-            enableVariableFilterToggleButton.setDisable(false);
-         }
-         else
-         {
-            enableVariableFilterToggleButton.setSelected(false);
-            enableVariableFilterToggleButton.setDisable(true);
-         }
-      });
+                                                     {
+                                                        if (newValue && outputFormatComboxBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
+                                                        {
+                                                           enableVariableFilterToggleButton.setDisable(false);
+                                                        }
+                                                        else
+                                                        {
+                                                           enableVariableFilterToggleButton.setSelected(false);
+                                                           enableVariableFilterToggleButton.setDisable(true);
+                                                        }
+                                                     });
 
       messager.addFXTopicListener(topics.getDisableUserControls(), m ->
       {
@@ -303,43 +277,47 @@ public class LogSessionManagerController implements SessionControlsController
       });
 
       enableVariableFilterToggleButton.selectedProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue)
-         {
-            if (variableFilterControllerProperty.get() == null)
-            {
-               try
-               {
-                  FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SESSION_VARIABLE_FILTER_PANE_URL);
-                  loader.load();
-                  SessionVariableFilterPaneController controller = loader.getController();
-                  Set<String> logVariableSet = activeSessionProperty.get()
-                                                                    .getLogDataReader()
-                                                                    .getParser()
-                                                                    .getYoVariablesList()
-                                                                    .stream()
-                                                                    .map(YoVariable::getFullNameString)
-                                                                    .collect(Collectors.toSet());
-                  controller.initialize(toolkit, var -> logVariableSet.contains(var.getFullNameString()));
-                  variableFilterControllerProperty.set(controller);
-               }
-               catch (IOException e1)
-               {
-                  e1.printStackTrace();
-               }
-            }
+                                                                      {
+                                                                         if (newValue)
+                                                                         {
+                                                                            if (variableFilterControllerProperty.get() == null)
+                                                                            {
+                                                                               try
+                                                                               {
+                                                                                  FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.SESSION_VARIABLE_FILTER_PANE_URL);
+                                                                                  loader.load();
+                                                                                  SessionVariableFilterPaneController controller = loader.getController();
+                                                                                  Set<String> logVariableSet = activeSessionProperty.get()
+                                                                                                                                    .getLogDataReader()
+                                                                                                                                    .getParser()
+                                                                                                                                    .getYoVariablesList()
+                                                                                                                                    .stream()
+                                                                                                                                    .map(YoVariable::getFullNameString)
+                                                                                                                                    .collect(Collectors.toSet());
+                                                                                  controller.initialize(toolkit,
+                                                                                                        var -> logVariableSet.contains(var.getFullNameString()));
+                                                                                  variableFilterControllerProperty.set(controller);
+                                                                               }
+                                                                               catch (IOException e1)
+                                                                               {
+                                                                                  e1.printStackTrace();
+                                                                               }
+                                                                            }
 
-            cropControlsContainer.getChildren().add(variableFilterControllerProperty.get().getMainPane());
-         }
-         else
-         {
-            if (variableFilterControllerProperty.get() != null)
-               cropControlsContainer.getChildren().remove(variableFilterControllerProperty.get().getMainPane());
-         }
+                                                                            cropControlsContainer.getChildren()
+                                                                                                 .add(variableFilterControllerProperty.get().getMainPane());
+                                                                         }
+                                                                         else
+                                                                         {
+                                                                            if (variableFilterControllerProperty.get() != null)
+                                                                               cropControlsContainer.getChildren()
+                                                                                                    .remove(variableFilterControllerProperty.get()
+                                                                                                                                            .getMainPane());
+                                                                         }
 
-         // Update the preferred size of the window
-         stage.sizeToScene();
-      });
+                                                                         // Update the preferred size of the window
+                                                                         stage.sizeToScene();
+                                                                      });
 
       stage.setScene(new Scene(mainPane));
       stage.setTitle("Log session controls");
@@ -349,6 +327,47 @@ public class LogSessionManagerController implements SessionControlsController
          if (!e.isConsumed())
             shutdown();
       });
+   }
+
+   private void initializeControls(LogSession newValue)
+   {
+      File logDirectory = newValue.getLogDirectory();
+      LogDataReader logDataReader = newValue.getLogDataReader();
+      LogPropertiesReader logProperties = newValue.getLogProperties();
+
+      sessionNameLabel.setText(newValue.getSessionName());
+      dateLabel.setText(getDate(logProperties));
+      logPathLabel.setText(logDirectory.getAbsolutePath());
+      endSessionButton.setDisable(false);
+      logPositionSlider.setDisable(false);
+      logPositionSlider.setValue(0.0);
+      logPositionSlider.setMin(0.0);
+      logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
+      cropControlsContainer.setDisable(false);
+      MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
+      multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
+      logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
+      multiVideoViewerProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
+      logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
+      boolean logHasVideos = multiReader.getNumberOfVideos() > 0;
+      thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
+      thumbnailsTitledPane.setExpanded(logHasVideos);
+      thumbnailsTitledPane.setDisable(!logHasVideos);
+      JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
+      JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
+   }
+
+   private void clearControls()
+   {
+      sessionNameLabel.setText("N/D");
+      dateLabel.setText("N/D");
+      logPathLabel.setText("N/D");
+      endSessionButton.setDisable(true);
+      logPositionSlider.setDisable(true);
+      showTrimsButton.setSelected(false);
+      cropControlsContainer.setDisable(true);
+      multiVideoViewerProperty.set(null);
+      logCropperProperty.set(null);
    }
 
    public void openLogFile()
@@ -365,22 +384,22 @@ public class LogSessionManagerController implements SessionControlsController
       setIsLoading(true);
 
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         LogSession newSession;
-         try
-         {
-            LogTools.info("Creating log session.");
-            newSession = new LogSession(result.getParentFile(), null); // TODO Need a progress window
-            LogTools.info("Created log session.");
-            JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
-            SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
-         }
-         catch (IOException ex)
-         {
-            ex.printStackTrace();
-            setIsLoading(false);
-         }
-      });
+                                                    {
+                                                       LogSession newSession;
+                                                       try
+                                                       {
+                                                          LogTools.info("Creating log session.");
+                                                          newSession = new LogSession(result.getParentFile(), null); // TODO Need a progress window
+                                                          LogTools.info("Created log session.");
+                                                          JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
+                                                          SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
+                                                       }
+                                                       catch (IOException ex)
+                                                       {
+                                                          ex.printStackTrace();
+                                                          setIsLoading(false);
+                                                       }
+                                                    });
    }
 
    public void setIsLoading(boolean isLoading)
@@ -473,31 +492,43 @@ public class LogSessionManagerController implements SessionControlsController
       List<YoVariable> logVariables = activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList();
 
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         setIsLoading(true);
-         messager.submitMessage(topics.getDisableUserControls(), true);
-         try
-         {
+                                                    {
+                                                       setIsLoading(true);
+                                                       messager.submitMessage(topics.getDisableUserControls(), true);
+                                                       try
+                                                       {
 
-            if (outputFormat == OutputFormat.MATLAB)
-               logCropper.cropMATLAB(destination, logVariables, variableFilter, registryFilter, from, to, controller);
-            else if (outputFormat == OutputFormat.CSV)
-               logCropper.cropCSV(destination, logVariables, variableFilter, registryFilter, from, to, controller);
-            else
-               logCropper.crop(destination, from, to, controller);
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace();
-            controller.error("Terminated with exception: " + e.getMessage());
-            controller.done();
-         }
-         finally
-         {
-            messager.submitMessage(topics.getDisableUserControls(), false);
-            setIsLoading(false);
-         }
-      });
+                                                          if (outputFormat == OutputFormat.MATLAB)
+                                                             logCropper.cropMATLAB(destination,
+                                                                                   logVariables,
+                                                                                   variableFilter,
+                                                                                   registryFilter,
+                                                                                   from,
+                                                                                   to,
+                                                                                   controller);
+                                                          else if (outputFormat == OutputFormat.CSV)
+                                                             logCropper.cropCSV(destination,
+                                                                                logVariables,
+                                                                                variableFilter,
+                                                                                registryFilter,
+                                                                                from,
+                                                                                to,
+                                                                                controller);
+                                                          else
+                                                             logCropper.crop(destination, from, to, controller);
+                                                       }
+                                                       catch (Exception e)
+                                                       {
+                                                          e.printStackTrace();
+                                                          controller.error("Terminated with exception: " + e.getMessage());
+                                                          controller.done();
+                                                       }
+                                                       finally
+                                                       {
+                                                          messager.submitMessage(topics.getDisableUserControls(), false);
+                                                          setIsLoading(false);
+                                                       }
+                                                    });
    }
 
    @Override
