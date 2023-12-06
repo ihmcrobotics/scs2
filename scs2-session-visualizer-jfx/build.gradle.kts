@@ -1,3 +1,5 @@
+import us.ihmc.cd.LogTools
+
 plugins {
    id("us.ihmc.ihmc-build")
    id("us.ihmc.ihmc-ci") version "8.3"
@@ -55,4 +57,81 @@ mainDependencies {
 
 testDependencies {
    api("org.apache.commons:commons-math:2.2")
+}
+
+
+ihmc.jarWithLibFolder()
+tasks.getByPath("installDist").dependsOn("compositeJar")
+app.entrypoint("SessionVisualizer", "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer")
+
+tasks.create("buildDebianPackage") {
+   dependsOn("installDist")
+
+   val deploymentFolder = "${project.projectDir}/deployment"
+
+   val debianFolder = "$deploymentFolder/debian"
+   File(debianFolder).deleteRecursively()
+
+   val baseFolder = "$deploymentFolder/debian/scs2-${ihmc.version}"
+   val sourceFolder = "$baseFolder/opt/scs2-${ihmc.version}/"
+
+   copy {
+      from("${project.projectDir}/src/main/resources/icons/scs-logo.png")
+      into("$sourceFolder/icon/scs2-icon.png")
+   }
+
+   copy {
+      from("${project.projectDir}/build/install/scs2-session-visualizer-jfx/")
+      into(sourceFolder)
+   }
+
+   fileTree("$sourceFolder/bin").matching {
+      include("*.bat")
+      include("scs2-session-visualizer-jfx")
+   }.forEach(File::delete)
+
+
+   File("$baseFolder/DEBIAN").mkdirs()
+   LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
+   val controlFile = File("$baseFolder/DEBIAN/control")
+   controlFile.writeText(
+      """
+      Package: scs2
+      Version: ${ihmc.version}
+      Section: base
+      Architecture: all
+      Depends: default-jre (>= 2:1.17) | java17-runtime 
+      Maintainer: Sylvain Bertrand <sbertrand@ihmc.org>
+      Description: Session Visualizer for SCS2
+      Homepage: ${ihmc.vcsUrl}
+   """.trimIndent()
+   )
+
+   File("$baseFolder/usr/share/applications/").mkdirs()
+   File("$baseFolder/usr/share/applications/scs2-${ihmc.version}-visualizer.desktop").writeText(
+      """
+      [Desktop Entry]
+      Name=SCS2 Session Visualizer
+      Comment=Session Visualizer for SCS2
+      Exec=/opt/scs2-${ihmc.version}/bin/SessionVisualizer
+      Icon=/opt/scs2-${ihmc.version}/icon/scs2-icon.png
+      Version=1.0
+      Terminal=true
+      Type=Application
+      Categories=Utility;Application;
+   """.trimIndent()
+   )
+
+   val osName = System.getProperty("os.name").lowercase();
+
+   if (osName.contains("ubuntu"))
+   {
+      doLast {
+         exec {
+            workingDir(File(debianFolder))
+            commandLine("chmod", "+x", "scs2-${ihmc.version}/usr/bin/SessionVisualizer")
+            commandLine("dpkg-deb", "--build", "scs2-${ihmc.version}")
+         }
+      }
+   }
 }
