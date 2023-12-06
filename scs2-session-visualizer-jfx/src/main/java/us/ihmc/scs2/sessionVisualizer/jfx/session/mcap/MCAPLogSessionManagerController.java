@@ -21,6 +21,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.LongStringConverter;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -90,8 +91,12 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       }));
 
       desiredLogDTTextField.setTextFormatter(new TextFormatter<>(new LongStringConverter(), 1000L, new PositiveIntegerValueFilter()));
+      MutableBoolean desiredLogDTTextFieldUpdate = new MutableBoolean(false);
       desiredLogDTTextField.textProperty().addListener((o, oldValue, newValue) ->
                                                        {
+                                                          if (desiredLogDTTextFieldUpdate.isTrue())
+                                                             return;
+                                                          desiredLogDTTextFieldUpdate.setTrue();
                                                           try
                                                           {
                                                              desiredLogDTProperty.set(TimeUnit.MICROSECONDS.toNanos(Long.parseLong(newValue)));
@@ -100,33 +105,30 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                                           {
                                                              desiredLogDTTextField.setText(Long.toString(TimeUnit.NANOSECONDS.toMicros(desiredLogDTProperty.get())));
                                                           }
+                                                          finally
+                                                          {
+                                                             desiredLogDTTextFieldUpdate.setFalse();
+                                                          }
                                                        });
+      desiredLogDTProperty.addListener((o, oldValue, newValue) ->
+                                       {
+                                          if (desiredLogDTTextFieldUpdate.isTrue())
+                                             return;
+                                          desiredLogDTTextFieldUpdate.setTrue();
+                                          desiredLogDTTextField.setText(Long.toString(TimeUnit.NANOSECONDS.toMicros(newValue.longValue())));
+                                          desiredLogDTTextFieldUpdate.setFalse();
+                                       });
 
       ChangeListener<? super MCAPLogSession> activeSessionListener = (o, oldValue, newValue) ->
       {
          if (newValue == null)
          {
-            sessionNameLabel.setText("N/D");
-            dateLabel.setText("N/D");
-            logPathLabel.setText("N/D");
-            endSessionButton.setDisable(true);
-            logPositionSlider.setDisable(true);
+            clearControls();
          }
          else
          {
             messager.submitMessage(topics.getStartNewSessionRequest(), newValue);
-            File logFile = newValue.getMCAPFile();
-            MCAPLogFileReader mcapLogFileReader = newValue.getMCAPLogFileReader();
-
-            sessionNameLabel.setText(newValue.getSessionName());
-            dateLabel.setText(getDate(logFile.getName()));
-            logPathLabel.setText(logFile.getAbsolutePath());
-            endSessionButton.setDisable(false);
-            logPositionSlider.setDisable(false);
-            logPositionSlider.setValue(0.0);
-            logPositionSlider.setMin(0.0);
-            logPositionSlider.setMax(mcapLogFileReader.getNumberOfEntries() - 1);
-            JavaFXMissingTools.runLater(getClass(), () -> stage.sizeToScene());
+            initializeControls(newValue);
          }
       };
 
@@ -178,10 +180,20 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                               newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
                                         });
 
-      openSessionButton.setOnAction(e -> openLogFile());
+      if (toolkit.getSession() instanceof MCAPLogSession mcapLogSession)
+      {
+         desiredLogDTProperty.set(mcapLogSession.getDesiredLogDT());
+         activeSessionProperty.set(mcapLogSession);
+         initializeControls(mcapLogSession);
+      }
+      else
+      {
+         clearControls();
+      }
 
       activeSessionProperty.addListener(activeSessionListener);
-      activeSessionListener.changed(null, null, null);
+
+      openSessionButton.setOnAction(e -> openLogFile());
 
       endSessionButton.setOnAction(e ->
                                    {
@@ -207,6 +219,32 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
             shutdown();
       });
       // TODO Auto-generated method stub
+   }
+
+   private void initializeControls(MCAPLogSession session)
+   {
+      File logFile = session.getMCAPFile();
+      MCAPLogFileReader mcapLogFileReader = session.getMCAPLogFileReader();
+
+      sessionNameLabel.setText(session.getSessionName());
+      dateLabel.setText(getDate(logFile.getName()));
+      logPathLabel.setText(logFile.getAbsolutePath());
+      endSessionButton.setDisable(false);
+      logPositionSlider.setDisable(false);
+      logPositionSlider.setValue(0.0);
+      logPositionSlider.setMin(0.0);
+      logPositionSlider.setMax(mcapLogFileReader.getNumberOfEntries() - 1);
+      JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
+      JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
+   }
+
+   private void clearControls()
+   {
+      sessionNameLabel.setText("N/D");
+      dateLabel.setText("N/D");
+      logPathLabel.setText("N/D");
+      endSessionButton.setDisable(true);
+      logPositionSlider.setDisable(true);
    }
 
    public void openLogFile()

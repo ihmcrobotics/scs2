@@ -91,6 +91,11 @@ public class MCAPLogSession extends Session
       rootRegistry.addChild(mcapRegistry);
    }
 
+   public long getDesiredLogDT()
+   {
+      return mcapLogFileReader.getDesiredLogDT();
+   }
+
    public void submitLogPositionRequest(int logPosition)
    {
       logPositionRequest.set(logPosition);
