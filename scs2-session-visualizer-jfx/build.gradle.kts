@@ -1,3 +1,4 @@
+import org.apache.tools.ant.taskdefs.condition.Os
 import us.ihmc.cd.LogTools
 
 plugins {
@@ -104,6 +105,7 @@ tasks.create("buildDebianPackage") {
       Maintainer: Sylvain Bertrand <sbertrand@ihmc.org>
       Description: Session Visualizer for SCS2
       Homepage: ${ihmc.vcsUrl}
+
    """.trimIndent()
    )
 
@@ -122,15 +124,13 @@ tasks.create("buildDebianPackage") {
    """.trimIndent()
    )
 
-   val osName = System.getProperty("os.name").lowercase();
-
-   if (osName.contains("ubuntu"))
+   if (Os.isFamily(Os.FAMILY_UNIX))
    {
       doLast {
          exec {
             workingDir(File(debianFolder))
             commandLine("chmod", "+x", "scs2-${ihmc.version}/usr/bin/SessionVisualizer")
-            commandLine("dpkg-deb", "--build", "scs2-${ihmc.version}")
+            commandLine("dpkg", "--build", "scs2-${ihmc.version}")
          }
       }
    }
