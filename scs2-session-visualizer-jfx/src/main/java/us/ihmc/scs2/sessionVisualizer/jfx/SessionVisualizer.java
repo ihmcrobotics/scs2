@@ -1,14 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-
+import com.martiansoftware.jsap.*;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
@@ -27,8 +19,11 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
+import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
@@ -37,15 +32,12 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
+import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.session.log.LogSession;
+import us.ihmc.scs2.session.mcap.MCAPLogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.CameraControlRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
@@ -53,15 +45,20 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 
 public class SessionVisualizer
 {
@@ -236,9 +233,104 @@ public class SessionVisualizer
       return toolkit;
    }
 
-   public static void main(String[] args)
+   public static void main(String[] args) throws JSAPException, IOException
    {
-      SessionVisualizerControls controls = startSessionVisualizer(null, true);
+      String logFileOption = "logFileName";
+      String desiredDTOption = "desiredDT";
+      String defaultRobotFileOption = "defaultRobotFileName";
+      SimpleJSAP jsap = new SimpleJSAP("SCS2 Session Visualizer",
+                                       "Visualizes a robot log file, or live data from a compatible source.",
+                                       new Parameter[] {new FlaggedOption(logFileOption,
+                                                                          JSAP.STRING_PARSER,
+                                                                          null,
+                                                                          JSAP.NOT_REQUIRED,
+                                                                          'l',
+                                                                          "log",
+                                                                          "Log file to load, can either be a SCS2 log file or a MCAP log file."),
+                                                        new FlaggedOption(desiredDTOption,
+                                                                          JSAP.DOUBLE_PARSER,
+                                                                          "0.001",
+                                                                          JSAP.NOT_REQUIRED,
+                                                                          't',
+                                                                          "dt",
+                                                                          "If possible, the desired DT in seconds to use for the session visualizer. Default value is 1 millisecond."),
+                                                        new FlaggedOption(defaultRobotFileOption,
+                                                                          JSAP.STRING_PARSER,
+                                                                          null,
+                                                                          JSAP.NOT_REQUIRED,
+                                                                          'r',
+                                                                          "robot",
+                                                                          "Default robot file to load in case the log file does not contain any robot definition. Can be either a URDF or SDF file.")});
+      JSAPResult config = jsap.parse(args);
+
+      if (jsap.messagePrinted())
+      {
+         System.out.println(jsap.getUsage());
+         System.out.println(jsap.getHelp());
+         System.exit(-1);
+      }
+
+      String logFileName = config.getString(logFileOption);
+      long desiredDT = (long) (1.0e9 * config.getDouble(desiredDTOption));
+      String defaultRobotFileName = config.getString(defaultRobotFileOption);
+
+      Session session = null;
+
+      if (logFileName != null)
+      {
+         File logFile = new File(logFileName);
+
+         if (!logFile.exists())
+         {
+            System.err.println("Cannot find log file: " + logFile.getAbsolutePath());
+            System.exit(-1);
+         }
+
+         if (FilenameUtils.getExtension(logFileName).equals("mcap"))
+         {
+            File defaultRobotFile;
+            if (defaultRobotFileName == null)
+            {
+               defaultRobotFile = null;
+            }
+            else
+            {
+               defaultRobotFile = new File(defaultRobotFileName);
+
+               if (!defaultRobotFile.exists())
+               {
+                  System.err.println("Cannot find default robot file: " + defaultRobotFile.getAbsolutePath());
+                  System.exit(-1);
+               }
+            }
+
+            session = new MCAPLogSession(logFile, desiredDT, defaultRobotFile);
+         }
+         else if (logFileName.equals(YoVariableLoggerListener.propertyFile))
+         {
+            session = new LogSession(logFile.getParentFile(), null);
+         }
+         else if (logFile.isDirectory())
+         {
+            File[] result = logFile.listFiles((dir, name) -> name.equals(YoVariableLoggerListener.propertyFile));
+            if (result == null || result.length == 0)
+            {
+               System.err.println("Cannot find log file: " + logFile.getAbsolutePath());
+               System.exit(-1);
+            }
+            else
+            {
+               session = new LogSession(logFile, null);
+            }
+         }
+         else
+         {
+            System.err.println("Unknown log file type: " + logFile.getAbsolutePath());
+            System.exit(-1);
+         }
+      }
+
+      SessionVisualizerControls controls = startSessionVisualizer(session, true);
       // When running as remote visualizer, some non-daemon threads are not cleaned up properly.
       controls.addVisualizerShutdownListener(() -> System.exit(0));
    }
@@ -492,43 +584,37 @@ public class SessionVisualizer
       @Override
       public void setSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, YoButtonDefinition buttonDefinition)
       {
-         submitMessage(getTopics().getYoSliderboardSetButton(),
-                       new ImmutableTriple<>(sliderboardName, sliderboardType, buttonDefinition));
+         submitMessage(getTopics().getYoSliderboardSetButton(), new ImmutableTriple<>(sliderboardName, sliderboardType, buttonDefinition));
       }
 
       @Override
       public void clearSliderboardButton(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
       {
-         submitMessage(getTopics().getYoSliderboardClearButton(),
-                       new ImmutableTriple<>(sliderboardName, sliderboardType, buttonIndex));
+         submitMessage(getTopics().getYoSliderboardClearButton(), new ImmutableTriple<>(sliderboardName, sliderboardType, buttonIndex));
       }
 
       @Override
       public void setSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, YoKnobDefinition knobDefinition)
       {
-         submitMessage(getTopics().getYoSliderboardSetKnob(),
-                       new ImmutableTriple<>(sliderboardName, sliderboardType, knobDefinition));
+         submitMessage(getTopics().getYoSliderboardSetKnob(), new ImmutableTriple<>(sliderboardName, sliderboardType, knobDefinition));
       }
 
       @Override
       public void clearSliderboardKnob(String sliderboardName, YoSliderboardType sliderboardType, int knobIndex)
       {
-         submitMessage(getTopics().getYoSliderboardClearKnob(),
-                       new ImmutableTriple<>(sliderboardName, sliderboardType, knobIndex));
+         submitMessage(getTopics().getYoSliderboardClearKnob(), new ImmutableTriple<>(sliderboardName, sliderboardType, knobIndex));
       }
 
       @Override
       public void setSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, YoSliderDefinition sliderDefinition)
       {
-         submitMessage(getTopics().getYoSliderboardSetSlider(),
-                       new ImmutableTriple<>(sliderboardName, sliderboardType, sliderDefinition));
+         submitMessage(getTopics().getYoSliderboardSetSlider(), new ImmutableTriple<>(sliderboardName, sliderboardType, sliderDefinition));
       }
 
       @Override
       public void clearSliderboardSlider(String sliderboardName, YoSliderboardType sliderboardType, int sliderIndex)
       {
-         submitMessage(getTopics().getYoSliderboardClearSlider(),
-                       new ImmutableTriple<>(sliderboardName, sliderboardType, sliderIndex));
+         submitMessage(getTopics().getYoSliderboardClearSlider(), new ImmutableTriple<>(sliderboardName, sliderboardType, sliderIndex));
       }
 
       @Override
@@ -546,11 +632,11 @@ public class SessionVisualizer
          CountDownLatch latch = new CountDownLatch(1);
          Runnable callback = request.getRecordingEndedCallback();
          request.setRecordingEndedCallback(() ->
-         {
-            latch.countDown();
-            if (callback != null)
-               callback.run();
-         });
+                                           {
+                                              latch.countDown();
+                                              if (callback != null)
+                                                 callback.run();
+                                           });
          messager.submitMessage(topics.getSceneVideoRecordingRequest(), request);
 
          try
@@ -563,14 +649,18 @@ public class SessionVisualizer
          }
       }
 
-      /** {@inheritDoc} */
+      /**
+       * {@inheritDoc}
+       */
       @Override
       public void disableGUIControls()
       {
          submitMessage(getTopics().getDisableUserControls(), true);
       }
 
-      /** {@inheritDoc} */
+      /**
+       * {@inheritDoc}
+       */
       @Override
       public void enableGUIControls()
       {
