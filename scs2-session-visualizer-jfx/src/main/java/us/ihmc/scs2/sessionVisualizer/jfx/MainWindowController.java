@@ -159,6 +159,11 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          ReferenceFrameManager referenceFrameManager = toolkit.getReferenceFrameManager();
          plotter2D.coordinateToTrackProperty().setValue(CompositePropertyTools.toTuple2DProperty(rootRegistryDatabase, referenceFrameManager, m));
       });
+
+      messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(),
+                                  m -> yoChartGroupPanelController.loadChartGroupConfiguration(m.getKey(), m.getValue()));
+      messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(),
+                                  m -> yoChartGroupPanelController.saveChartGroupConfiguration(m.getKey(), m.getValue()));
    }
 
    public void setupViewport3D(Pane viewportPane)
