@@ -35,6 +35,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
+import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
@@ -599,7 +600,14 @@ public class YoChartGroupPanelController implements VisualizerController
 
       try
       {
-         setChartGroupConfiguration(XMLTools.loadYoChartGroupConfigurationDefinition(new FileInputStream(file)));
+         Object loaded = XMLTools.loadYoChartGroupConfigurationUndefined(new FileInputStream(file));
+         if (loaded instanceof YoChartGroupConfigurationDefinition definition)
+            setChartGroupConfiguration(definition);
+         else if (loaded instanceof YoChartGroupConfigurationListDefinition)
+            LogTools.error("Chart group list is not supported. Probably loaded for the main window. Please load the file for a secondary window instead.");
+         else
+            LogTools.error(
+                  "Failed to load chart group configuration from file: " + file + ". definition type is not supported: " + loaded.getClass().getSimpleName());
       }
       catch (Exception e)
       {
