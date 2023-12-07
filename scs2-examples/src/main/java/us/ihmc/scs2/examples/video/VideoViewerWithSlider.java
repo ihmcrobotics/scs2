@@ -33,17 +33,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class VideoViewerWithSlider
 {
+   private final ExecutorService videoExecutor = Executors.newSingleThreadExecutor();
+   private File videoFile = null;
+   private ImageView imageView = null;
+   private FFmpegFrameGrabber frameGrabber = null;
+   private Slider timeSlider = null;
+   private final AtomicInteger currentFrameNumber = new AtomicInteger(-1);
+
    {
       // TODO: (AM) hack to suppress warnings from https://github.com/bytedeco/javacv/issues/780
       avutil.av_log_set_level(avutil.AV_LOG_ERROR);
    }
 
-   private File videoFile = null;
-   private ImageView imageView = null;
-   private FFmpegFrameGrabber frameGrabber = null;
-   private Slider timeSlider = null;
-   private AtomicInteger currentFrameNumber = new AtomicInteger(-1);
-   private final ExecutorService videoExecutor = Executors.newSingleThreadExecutor();
+   public static void main(String[] args)
+   {
+      Platform.setImplicitExit(true);
+      ApplicationRunner.runApplication(new Application()
+      {
+         final VideoViewerWithSlider demo = new VideoViewerWithSlider();
+
+         @Override
+         public void start(Stage primaryStage) throws Exception
+         {
+            demo.init(primaryStage);
+            demo.playVideoUsingSlider();
+         }
+      });
+   }
 
    public void init(Stage primaryStage)
    {
@@ -60,7 +76,6 @@ public class VideoViewerWithSlider
       {
          LogTools.error(e.getMessage());
       }
-
 
       final BorderPane root = new BorderPane();
       root.setPrefSize(1200, 800);
@@ -109,12 +124,15 @@ public class VideoViewerWithSlider
                               while (!Thread.interrupted())
                               {
                                  if (frameGrabber.getFrameNumber() == currentFrameNumber.get())
+                                 {
                                     continue;
+                                 }
 
                                  try
                                  {
                                     frameGrabber.setVideoFrameNumber(currentFrameNumber.get());
                                     Frame frame = frameGrabber.grabFrame();
+
                                     if (frame == null)
                                     {
                                        continue;
@@ -125,6 +143,7 @@ public class VideoViewerWithSlider
                                        Platform.runLater(new Runnable()
                                        {
                                           final Image image = frameConverter.convert(frame);
+
                                           @Override
                                           public void run()
                                           {
@@ -155,21 +174,5 @@ public class VideoViewerWithSlider
       {
          throw new RuntimeException(e);
       }
-   }
-
-   public static void main(String[] args)
-   {
-      Platform.setImplicitExit(true);
-      ApplicationRunner.runApplication(new Application()
-      {
-         VideoViewerWithSlider demo = new VideoViewerWithSlider();
-
-         @Override
-         public void start(Stage primaryStage) throws Exception
-         {
-            demo.init(primaryStage);
-            demo.playVideoUsingSlider();
-         }
-      });
    }
 }
