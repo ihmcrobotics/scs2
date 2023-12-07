@@ -2,7 +2,6 @@ package us.ihmc.scs2.examples.video;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,7 +14,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
@@ -44,7 +42,7 @@ public class VideoViewerWithSlider
    private ImageView imageView = null;
    private FFmpegFrameGrabber frameGrabber = null;
    private Slider timeSlider = null;
-   private AtomicInteger currentTimestamp = new AtomicInteger(-1);
+   private AtomicInteger currentFrameNumber = new AtomicInteger(-1);
    private final ExecutorService videoExecutor = Executors.newSingleThreadExecutor();
 
    public void init(Stage primaryStage)
@@ -104,15 +102,18 @@ public class VideoViewerWithSlider
       timeSlider.valueProperty().addListener((observable, oldValue, newValue) ->
                                              {
                                                 timeSlider.setValue(newValue.intValue()); // Snap the slider motion to integer increments
-                                                currentTimestamp.set(newValue.intValue());
+                                                currentFrameNumber.set(newValue.intValue());
                                              });
       videoExecutor.submit(() ->
                            {
                               while (!Thread.interrupted())
                               {
+                                 if (frameGrabber.getFrameNumber() == currentFrameNumber.get())
+                                    continue;
+
                                  try
                                  {
-                                    frameGrabber.setVideoFrameNumber(currentTimestamp.get());
+                                    frameGrabber.setVideoFrameNumber(currentFrameNumber.get());
                                     Frame frame = frameGrabber.grabFrame();
                                     if (frame == null)
                                     {
