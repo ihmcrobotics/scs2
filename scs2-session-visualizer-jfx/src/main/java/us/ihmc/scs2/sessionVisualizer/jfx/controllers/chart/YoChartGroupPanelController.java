@@ -50,15 +50,14 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,9 +81,6 @@ public class YoChartGroupPanelController implements VisualizerController
    private AnchorPane mainPane;
    @FXML
    private Button dropDownMenuButton;
-
-   private final TopicListener<Pair<Window, File>> loadChartGroupConfigurationListener = m -> loadChartGroupConfiguration(m.getKey(), m.getValue());
-   private final TopicListener<Pair<Window, File>> saveChartGroupConfigurationListener = m -> saveChartGroupConfiguration(m.getKey(), m.getValue());
    private final TopicListener<Pair<Window, String>> userDefinedChartGroupNameListener = m ->
    {
       if (m.getKey() == toolkit.getWindow())
@@ -206,6 +202,11 @@ public class YoChartGroupPanelController implements VisualizerController
                                });
    }
 
+   public boolean isEmpty()
+   {
+      return chartTable2D.isEmpty();
+   }
+
    private void updateAutoUniqueNameDisplay()
    {
       if (plottedVariableList.isEmpty())
@@ -245,8 +246,6 @@ public class YoChartGroupPanelController implements VisualizerController
       if (isMessagerSetup)
          return;
       isMessagerSetup = true;
-      messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
-      messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
       messager.addTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
    }
 
@@ -257,10 +256,6 @@ public class YoChartGroupPanelController implements VisualizerController
                                                                     if (!isMessagerSetup)
                                                                        return;
                                                                     isMessagerSetup = false;
-                                                                    messager.removeFXTopicListener(topics.getYoChartGroupLoadConfiguration(),
-                                                                                                   loadChartGroupConfigurationListener);
-                                                                    messager.removeFXTopicListener(topics.getYoChartGroupSaveConfiguration(),
-                                                                                                   saveChartGroupConfigurationListener);
                                                                     messager.removeTopicListener(topics.getYoChartGroupName(),
                                                                                                  userDefinedChartGroupNameListener);
                                                                  });
@@ -604,11 +599,9 @@ public class YoChartGroupPanelController implements VisualizerController
 
       try
       {
-         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationDefinition.class);
-         Unmarshaller unmarshaller = context.createUnmarshaller();
-         setChartGroupConfiguration((YoChartGroupConfigurationDefinition) unmarshaller.unmarshal(file));
+         setChartGroupConfiguration(XMLTools.loadYoChartGroupConfigurationDefinition(new FileInputStream(file)));
       }
-      catch (JAXBException e)
+      catch (Exception e)
       {
          e.printStackTrace();
       }
@@ -626,12 +619,9 @@ public class YoChartGroupPanelController implements VisualizerController
 
       try
       {
-         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationDefinition.class);
-         Marshaller marshaller = context.createMarshaller();
-         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-         marshaller.marshal(toYoChartGroupConfigurationDefinition(), file);
+         XMLTools.saveYoChartGroupConfigurationDefinition(new FileOutputStream(file), toYoChartGroupConfigurationDefinition());
       }
-      catch (JAXBException e)
+      catch (Exception e)
       {
          e.printStackTrace();
       }
@@ -645,5 +635,10 @@ public class YoChartGroupPanelController implements VisualizerController
       definition.setNumberOfColumns(chartTable2D.getSize().getNumberOfCols());
       definition.setChartConfigurations(chartTable2D.toChartDefinitions());
       return definition;
+   }
+
+   public AnchorPane getMainPane()
+   {
+      return mainPane;
    }
 }
