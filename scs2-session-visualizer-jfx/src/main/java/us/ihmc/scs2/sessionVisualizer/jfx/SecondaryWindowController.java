@@ -2,12 +2,16 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -16,6 +20,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
@@ -36,6 +41,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Function;
 
 public class SecondaryWindowController implements VisualizerController
@@ -50,12 +56,14 @@ public class SecondaryWindowController implements VisualizerController
    private SecondaryWindowControlsController controlsController;
 
    private final TopicListener<Pair<Window, File>> loadChartGroupConfigurationListener = m -> loadChartGroupConfiguration(m.getKey(), m.getValue());
-   private final TopicListener<Pair<Window, File>> saveChartGroupConfigurationListener = m -> saveChartGroupConfiguration(m.getKey(), m.getValue());
+   private final TopicListener<Pair<Window, File>> saveChartGroupConfigurationListener = m -> saveChartGroupConfiguration(m.getKey(), m.getValue(), false);
 
    private final ObservableMap<Tab, YoChartGroupPanelController> chartGroupControllers = FXCollections.observableHashMap();
 
    private SessionVisualizerWindowToolkit toolkit;
    private boolean isMessagerSetup = false;
+   private StringProperty userDefinedChartWindowName = new SimpleStringProperty(this, "userDefinedChartWindowName", null);
+   private Stage stage;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -64,7 +72,7 @@ public class SecondaryWindowController implements VisualizerController
       menuController.initialize(toolkit);
       controlsController.initialize(toolkit);
 
-      Stage stage = toolkit.getWindow();
+      stage = toolkit.getWindow();
       Scene scene = new Scene(mainNode, 1024, 768);
       stage.setScene(scene);
       SessionVisualizerIOTools.addSCSIconToWindow(stage);
@@ -77,24 +85,50 @@ public class SecondaryWindowController implements VisualizerController
          stage.close();
       });
 
+      ChangeListener<String> chartTitleListener = (o, oldValue, newValue) -> updateWindowTitle();
+
+      tabPane.tabClosingPolicyProperty().setValue(TabPane.TabClosingPolicy.ALL_TABS);
+      tabPane.tabDragPolicyProperty().setValue(TabPane.TabDragPolicy.REORDER);
       tabPane.getTabs().addListener((ListChangeListener<Tab>) c ->
       {
          while (c.next())
          {
+            if (c.wasAdded())
+            {
+               for (Tab tab : c.getAddedSubList())
+               {
+                  YoChartGroupPanelController controller = chartGroupControllers.get(tab);
+                  if (controller == null)
+                     continue;
+                  controller.chartGroupNameProperty().addListener(chartTitleListener);
+               }
+            }
             if (c.wasRemoved())
             {
                for (Tab tab : c.getRemoved())
                {
                   YoChartGroupPanelController controller = chartGroupControllers.remove(tab);
-                  if (controller != null)
-                     controller.closeAndDispose();
+                  if (controller == null)
+                     continue;
+                  controller.closeAndDispose();
+                  controller.chartGroupNameProperty().removeListener(chartTitleListener);
                }
             }
          }
 
          if (tabPane.getTabs().isEmpty())
             tabPane.getTabs().add(newChartGroupTab());
+
+         updateWindowTitle();
       });
+
+      userDefinedChartWindowName.addListener((o, oldValue, newValue) ->
+                                             {
+                                                if (newValue == null)
+                                                   updateWindowTitle();
+                                                else
+                                                   stage.setTitle("Chart Window" + ": " + newValue);
+                                             });
 
       tabPane.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
                                                                      {
@@ -128,6 +162,24 @@ public class SecondaryWindowController implements VisualizerController
       isMessagerSetup = true;
    }
 
+   private void updateWindowTitle()
+   {
+      if (userDefinedChartWindowName.get() != null)
+         return;
+
+      String title = "Chart Window";
+
+      List<String> nonEmptyTabNames = tabPane.getTabs()
+                                             .stream()
+                                             .filter(tab -> !chartGroupControllers.get(tab).isEmpty())
+                                             .map(chartGroupControllers::get)
+                                             .map(controller -> controller.chartGroupNameProperty().get())
+                                             .toList();
+      if (!nonEmptyTabNames.isEmpty())
+         title += " - [%s]".formatted(String.join(", ", nonEmptyTabNames));
+      stage.setTitle(title);
+   }
+
    private Tab newChartGroupTab()
    {
       YoChartGroupPanelController controller = newChartGroup();
@@ -145,13 +197,39 @@ public class SecondaryWindowController implements VisualizerController
                             });
       tab.setContent(controller.getMainPane());
 
+      Label tabHeader = TabPaneTools.editableTabHeader(tab);
+      MutableBoolean isAutoUpdating = new MutableBoolean(false);
       controller.chartGroupNameProperty().addListener((o, oldValue, newValue) ->
                                                       {
+                                                         if (isAutoUpdating.isTrue())
+                                                            return;
+                                                         isAutoUpdating.setTrue();
                                                          if (newValue == null || newValue.isEmpty())
-                                                            tab.setText(defaultText);
+                                                            tabHeader.setText(defaultText);
                                                          else
-                                                            tab.setText(newValue);
+                                                            tabHeader.setText(newValue);
+                                                         isAutoUpdating.setFalse();
                                                       });
+      tabHeader.textProperty().addListener((o, oldValue, newValue) ->
+                                           {
+                                              if (isAutoUpdating.isTrue())
+                                                 return;
+                                              isAutoUpdating.setTrue();
+                                              if (newValue.isEmpty())
+                                              {
+                                                 controller.setUserDefinedChartGroupName(null);
+                                                 if (controller.chartGroupNameProperty().get() == null)
+                                                    tabHeader.setText(defaultText);
+                                                 else
+                                                    tabHeader.setText(controller.chartGroupNameProperty().get());
+                                              }
+                                              else
+                                              {
+                                                 controller.setUserDefinedChartGroupName(newValue);
+                                              }
+                                              isAutoUpdating.setFalse();
+                                           });
+
       tabPane.getSelectionModel().select(tab);
       chartGroupControllers.put(tab, controller);
       return tab;
@@ -194,10 +272,10 @@ public class SecondaryWindowController implements VisualizerController
          MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
          menuItem.setOnAction(e ->
                               {
-                                 File result = SessionVisualizerIOTools.yoChartConfigurationSaveFileDialog(toolkit.getWindow());
+                                 File result = SessionVisualizerIOTools.yoChartConfigurationSaveFileDialog(stage);
                                  if (result == null)
                                     return;
-                                 controller.saveChartGroupConfiguration(toolkit.getWindow(), result);
+                                 controller.saveChartGroupConfiguration(stage, result);
                               });
          return menuItem;
       };
@@ -212,10 +290,10 @@ public class SecondaryWindowController implements VisualizerController
          MenuItem menuItem = new MenuItem("Export all tabs...", exportIcon);
          menuItem.setOnAction(e ->
                               {
-                                 File result = SessionVisualizerIOTools.yoChartConfigurationSaveFileDialog(toolkit.getWindow());
+                                 File result = SessionVisualizerIOTools.yoChartConfigurationSaveFileDialog(stage);
                                  if (result == null)
                                     return;
-                                 saveChartGroupConfiguration(toolkit.getWindow(), result);
+                                 saveChartGroupConfiguration(stage, result, false);
                               });
          return menuItem;
       };
@@ -230,7 +308,7 @@ public class SecondaryWindowController implements VisualizerController
          MenuItem menuItem = new MenuItem("Import tab(s)...", importIcon);
          menuItem.setOnAction(e ->
                               {
-                                 File result = SessionVisualizerIOTools.yoChartConfigurationOpenFileDialog(toolkit.getWindow());
+                                 File result = SessionVisualizerIOTools.yoChartConfigurationOpenFileDialog(stage);
                                  if (result == null)
                                     return;
                                  loadChartGroupConfiguration(result, tabPane.getSelectionModel().getSelectedItem());
@@ -241,7 +319,7 @@ public class SecondaryWindowController implements VisualizerController
 
    private void loadChartGroupConfiguration(Window source, File file)
    {
-      if (source != toolkit.getWindow())
+      if (source != stage)
          return;
 
       loadChartGroupConfiguration(file, tabPane.getSelectionModel().getSelectedItem());
@@ -267,6 +345,9 @@ public class SecondaryWindowController implements VisualizerController
                   return;
                insertionIndex++;
             }
+
+            if (chartGroupListDefinition.getName() != null)
+               userDefinedChartWindowName.set(chartGroupListDefinition.getName());
          }
          else
          {
@@ -312,9 +393,9 @@ public class SecondaryWindowController implements VisualizerController
       return true;
    }
 
-   private void saveChartGroupConfiguration(Window source, File file)
+   private void saveChartGroupConfiguration(Window source, File file, boolean isConfigurationFile)
    {
-      if (source != null && source != toolkit.getWindow())
+      if (source != null && source != stage)
          return;
 
       if (!Platform.isFxApplicationThread())
@@ -324,7 +405,10 @@ public class SecondaryWindowController implements VisualizerController
 
       try
       {
-         XMLTools.saveYoChartGroupConfigurationListDefinition(new FileOutputStream(file), toYoChartGroupConfigurationListDefinition());
+         YoChartGroupConfigurationListDefinition definition = toYoChartGroupConfigurationListDefinition();
+         if (definition.getName() == null && !isConfigurationFile)
+            definition.setName(file.getName().replace(SessionVisualizerIOTools.yoChartGroupConfigurationFileExtension, ""));
+         XMLTools.saveYoChartGroupConfigurationListDefinition(new FileOutputStream(file), definition);
       }
       catch (Exception e)
       {
@@ -347,8 +431,8 @@ public class SecondaryWindowController implements VisualizerController
 
    public void saveSessionConfiguration(SCSGuiConfiguration configuration)
    {
-      configuration.addSecondaryWindowConfiguration(SecondaryWindowManager.toWindowConfigurationDefinition(toolkit.getWindow()));
-      saveChartGroupConfiguration(toolkit.getWindow(), configuration.addSecondaryYoChartGroupConfigurationFile());
+      configuration.addSecondaryWindowConfiguration(SecondaryWindowManager.toWindowConfigurationDefinition(stage));
+      saveChartGroupConfiguration(stage, configuration.addSecondaryYoChartGroupConfigurationFile(), true);
    }
 
    public void start()
@@ -359,7 +443,7 @@ public class SecondaryWindowController implements VisualizerController
    public void closeAndDispose()
    {
       tabPane.getTabs().clear();
-      toolkit.getWindow().close();
+      stage.close();
 
       SCS2JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
