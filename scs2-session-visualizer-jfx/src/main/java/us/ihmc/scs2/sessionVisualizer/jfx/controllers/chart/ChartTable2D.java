@@ -36,6 +36,22 @@ public class ChartTable2D
                        });
    }
 
+   public boolean isEmpty()
+   {
+      if (getSize().isEmpty())
+         return true;
+
+      for (int row = 0; row < getSize().getNumberOfRows(); row++)
+      {
+         for (int col = 0; col < getSize().getNumberOfCols(); col++)
+         {
+            if (!isChartEmpty(row, col))
+               return false;
+         }
+      }
+      return true;
+   }
+
    public ChartTable2DSize getSize()
    {
       return sizeProperty().getValue();

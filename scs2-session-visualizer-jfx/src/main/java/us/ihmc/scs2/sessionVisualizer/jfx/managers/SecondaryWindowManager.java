@@ -234,7 +234,6 @@ public class SecondaryWindowManager implements Manager
          loader.load();
          SecondaryWindowController controller = loader.getController();
          controller.initialize(new SessionVisualizerWindowToolkit(stage, toolkit));
-         controller.setupChartGroup();
          secondaryWindowControllers.add(controller);
          stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
          {
