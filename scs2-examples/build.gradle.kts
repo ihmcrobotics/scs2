@@ -12,6 +12,11 @@ ihmc {
 }
 
 mainDependencies {
+   api("org.openjfx:javafx-base:21")
+   api("org.openjfx:javafx-graphics:21")
+   api("org.openjfx:javafx-controls:21")
+   api("org.bytedeco:javacv-platform:1.5.9")
+
    api("us.ihmc:scs2-simulation-construction-set:source")
    api("us.ihmc:scs2-session-visualizer-jfx:source")
    api("us.ihmc:scs2-bullet-simulation:source")
