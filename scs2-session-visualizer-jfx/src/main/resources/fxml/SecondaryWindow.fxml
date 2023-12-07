@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="mainNode" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController">
+<VBox fx:id="mainNode" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController">
    <children>
       <fx:include fx:id="menu" source="menu/MainWindowMenuBar.fxml" />
-      <AnchorPane prefHeight="200.0" VBox.vgrow="ALWAYS" />
+      <AnchorPane prefHeight="200.0" VBox.vgrow="ALWAYS">
+         <children>
+            <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+         </children></AnchorPane>
       <fx:include fx:id="controls" source="SecondaryWindowControls.fxml" />
    </children>
 </VBox>
