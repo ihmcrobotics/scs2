@@ -120,6 +120,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       leftDrawer.getChildren().add(rightDrawer);
       leftDrawer.setDefaultDrawerSize(300);
       leftDrawer.setDirection(DrawerDirection.LEFT);
+      leftDrawer.open();
 
       rightDrawer.getChildren().add(mainGUIPane);
       rightDrawer.setDirection(DrawerDirection.RIGHT);
