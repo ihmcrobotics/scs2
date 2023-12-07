@@ -113,7 +113,7 @@ tasks.create("buildDebianPackage") {
      #!/bin/bash
      echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
      echo "export SCS2_HOME=/opt/scs2-${ihmc.version}"
-     export PATH=${'$'}${'$'}PATH;${'$'}${'$'}SCS2_HOME/bin/
+     echo "export PATH=${'$'}PATH;${'$'}SCS2_HOME/bin/"
 
      """.trimIndent()
    )
@@ -137,9 +137,10 @@ tasks.create("buildDebianPackage") {
    {
       doLast {
          exec {
+            commandLine("chmod", "+x", "$baseFolder/DEBIAN/postinst")
+         }
+         exec {
             workingDir(File(debianFolder))
-            commandLine("chmod", "+x", "scs2-${ihmc.version}/DEBIAN/postinst")
-            commandLine("chmod", "+x", "scs2-${ihmc.version}/usr/bin/SessionVisualizer")
             commandLine("dpkg", "--build", "scs2-${ihmc.version}")
          }
       }
