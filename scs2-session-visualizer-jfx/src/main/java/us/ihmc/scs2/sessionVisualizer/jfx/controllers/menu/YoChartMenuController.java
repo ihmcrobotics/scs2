@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
-import java.io.File;
-
 import javafx.fxml.FXML;
 import javafx.stage.Window;
 import javafx.util.Pair;
@@ -11,6 +9,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+
+import java.io.File;
 
 public class YoChartMenuController implements VisualizerController
 {
@@ -39,11 +39,7 @@ public class YoChartMenuController implements VisualizerController
    {
       File result = SessionVisualizerIOTools.yoChartConfigurationSaveFileDialog(owner);
       if (result != null)
-      {
-         messager.submitMessage(topics.getYoChartGroupName(),
-                                new Pair<>(owner, result.getName().replace(SessionVisualizerIOTools.yoChartGroupConfigurationFileExtension, "")));
          messager.submitMessage(topics.getYoChartGroupSaveConfiguration(), new Pair<>(owner, result));
-      }
    }
 
    @FXML

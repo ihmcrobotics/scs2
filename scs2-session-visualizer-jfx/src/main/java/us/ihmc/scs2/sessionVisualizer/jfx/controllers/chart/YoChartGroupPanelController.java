@@ -30,9 +30,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.transform.Scale;
 import javafx.stage.Popup;
 import javafx.stage.Window;
-import javafx.util.Pair;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationListDefinition;
@@ -82,11 +80,6 @@ public class YoChartGroupPanelController implements VisualizerController
    private AnchorPane mainPane;
    @FXML
    private Button dropDownMenuButton;
-   private final TopicListener<Pair<Window, String>> userDefinedChartGroupNameListener = m ->
-   {
-      if (m.getKey() == toolkit.getWindow())
-         setUserDefinedChartGroupName(m.getValue());
-   };
 
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
@@ -240,28 +233,6 @@ public class YoChartGroupPanelController implements VisualizerController
       userDefinedChartGroupName.set(definition.getName());
    }
 
-   private boolean isMessagerSetup = false;
-
-   public void setupMessager()
-   {
-      if (isMessagerSetup)
-         return;
-      isMessagerSetup = true;
-      messager.addTopicListener(topics.getYoChartGroupName(), userDefinedChartGroupNameListener);
-   }
-
-   public void scheduleMessagerCleanup()
-   {
-      toolkit.getBackgroundExecutorManager().executeInBackground(() ->
-                                                                 {
-                                                                    if (!isMessagerSetup)
-                                                                       return;
-                                                                    isMessagerSetup = false;
-                                                                    messager.removeTopicListener(topics.getYoChartGroupName(),
-                                                                                                 userDefinedChartGroupNameListener);
-                                                                 });
-   }
-
    private void handleCloseChart(ActionEvent event, YoChartPanelController chartToClose)
    {
       chartTable2D.removeChart(getChartIdentifier(chartToClose));
@@ -319,7 +290,6 @@ public class YoChartGroupPanelController implements VisualizerController
    public void start()
    {
       isRunning.set(true);
-      setupMessager();
       chartTable2D.forEachChart(YoChartPanelController::start);
    }
 
@@ -338,7 +308,6 @@ public class YoChartGroupPanelController implements VisualizerController
    public void closeAndDispose()
    {
       stopAndClear();
-      scheduleMessagerCleanup();
    }
 
    @FXML
