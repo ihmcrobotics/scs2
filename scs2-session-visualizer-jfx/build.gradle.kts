@@ -94,8 +94,7 @@ tasks.create("buildDebianPackage") {
 
    File("$baseFolder/DEBIAN").mkdirs()
    LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
-   val controlFile = File("$baseFolder/DEBIAN/control")
-   controlFile.writeText(
+   File("$baseFolder/DEBIAN/control").writeText(
       """
       Package: scs2
       Version: ${ihmc.version}
@@ -107,6 +106,16 @@ tasks.create("buildDebianPackage") {
       Homepage: ${ihmc.vcsUrl}
 
    """.trimIndent()
+   )
+
+   File("$baseFolder/DEBIAN/postinst").writeText(
+      """
+     #!/bin/bash
+     echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
+     echo "export SCS2_HOME=/opt/scs2-${ihmc.version}"
+     export PATH=${'$'}${'$'}PATH;${'$'}${'$'}SCS2_HOME/bin/
+
+     """.trimIndent()
    )
 
    File("$baseFolder/usr/share/applications/").mkdirs()
@@ -129,6 +138,7 @@ tasks.create("buildDebianPackage") {
       doLast {
          exec {
             workingDir(File(debianFolder))
+            commandLine("chmod", "+x", "scs2-${ihmc.version}/DEBIAN/postinst")
             commandLine("chmod", "+x", "scs2-${ihmc.version}/usr/bin/SessionVisualizer")
             commandLine("dpkg", "--build", "scs2-${ihmc.version}")
          }
