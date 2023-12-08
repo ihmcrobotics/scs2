@@ -63,7 +63,7 @@ testDependencies {
 val sessionVisualizerExecutableName = "SCS2SessionVisualizer"
 ihmc.jarWithLibFolder()
 tasks.getByPath("installDist").dependsOn("compositeJar")
-app.entrypoint(sessionVisualizerExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer")
+app.entrypoint(sessionVisualizerExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer", listOf("-Djdk.gtk.version=2", "-Dprism.vsync=false"))
 
 tasks.create("buildDebianPackage") {
    dependsOn("installDist")
@@ -92,8 +92,15 @@ tasks.create("buildDebianPackage") {
          include("scs2-session-visualizer-jfx")
       }.forEach(File::delete)
 
+      val launchScriptFile = File("$sourceFolder/bin/$sessionVisualizerExecutableName")
+      var originalScript = launchScriptFile.readText()
+      originalScript = originalScript.replaceFirst("#!/bin/sh", "#!/bin/bash\nexport __GL_SYNC_TO_VBLANK=0\n")
+      launchScriptFile.delete()
+      launchScriptFile.writeText(originalScript)
+
       File("$baseFolder/DEBIAN").mkdirs()
       LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
+
       File("$baseFolder/DEBIAN/control").writeText(
          """
          Package: scs2
