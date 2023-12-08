@@ -60,83 +60,84 @@ testDependencies {
    api("org.apache.commons:commons-math:2.2")
 }
 
+val sessionVisualizerExecutableName = "SCS2SessionVisualizer"
 ihmc.jarWithLibFolder()
 tasks.getByPath("installDist").dependsOn("compositeJar")
-app.entrypoint("SessionVisualizer", "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer")
+app.entrypoint(sessionVisualizerExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer")
 
 tasks.create("buildDebianPackage") {
    dependsOn("installDist")
 
-   val deploymentFolder = "${project.projectDir}/deployment"
+   doLast {
+      val deploymentFolder = "${project.projectDir}/deployment"
 
-   val debianFolder = "$deploymentFolder/debian"
-   File(debianFolder).deleteRecursively()
+      val debianFolder = "$deploymentFolder/debian"
+      File(debianFolder).deleteRecursively()
 
-   val baseFolder = "$deploymentFolder/debian/scs2-${ihmc.version}"
-   val sourceFolder = "$baseFolder/opt/scs2-${ihmc.version}/"
+      val baseFolder = "$deploymentFolder/debian/scs2-${ihmc.version}"
+      val sourceFolder = "$baseFolder/opt/scs2-${ihmc.version}/"
 
-   copy {
-      from("${project.projectDir}/src/main/resources/icons/scs-icon.png")
-      into("$sourceFolder/icon/")
-   }
+      copy {
+         from("${project.projectDir}/src/main/resources/icons/scs-icon.png")
+         into("$sourceFolder/icon/")
+      }
 
-   copy {
-      from("${project.projectDir}/build/install/scs2-session-visualizer-jfx/")
-      into(sourceFolder)
-   }
+      copy {
+         from("${project.projectDir}/build/install/scs2-session-visualizer-jfx/")
+         into(sourceFolder)
+      }
 
-   fileTree("$sourceFolder/bin").matching {
-      include("*.bat")
-      include("scs2-session-visualizer-jfx")
-   }.forEach(File::delete)
+      fileTree("$sourceFolder/bin").matching {
+         include("*.bat")
+         include("scs2-session-visualizer-jfx")
+      }.forEach(File::delete)
 
-   File("$baseFolder/DEBIAN").mkdirs()
-   LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
-   File("$baseFolder/DEBIAN/control").writeText(
-      """
-      Package: scs2
-      Version: ${ihmc.version}
-      Section: base
-      Architecture: all
-      Depends: default-jre (>= 2:1.17) | java17-runtime
-      Maintainer: Sylvain Bertrand <sbertrand@ihmc.org>
-      Description: Session Visualizer for SCS2
-      Homepage: ${ihmc.vcsUrl}
-      
-   """.trimIndent()
-   )
+      File("$baseFolder/DEBIAN").mkdirs()
+      LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
+      File("$baseFolder/DEBIAN/control").writeText(
+         """
+         Package: scs2
+         Version: ${ihmc.version}
+         Section: base
+         Architecture: all
+         Depends: default-jre (>= 2:1.17) | java17-runtime
+         Maintainer: Sylvain Bertrand <sbertrand@ihmc.org>
+         Description: Session Visualizer for SCS2
+         Homepage: ${ihmc.vcsUrl}
+         
+         """.trimIndent()
+      )
 
-   File("$baseFolder/DEBIAN/postinst").writeText(
-      """
-     #!/bin/bash
-     echo "-----------------------------------------------------------------------------------------"
-     echo "---------------------------- Installation Notes: ----------------------------------------"
-     echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
-     echo "   export PATH=\${'$'}PATH:/opt/scs2-${ihmc.version}/bin/"
-     echo "Then try to run the command 'SessionVisualizer'"
-     echo "-----------------------------------------------------------------------------------------"
-     echo "-----------------------------------------------------------------------------------------"
-     """.trimIndent()
-   )
+      File("$baseFolder/DEBIAN/postinst").writeText(
+         """
+         #!/bin/bash
+         echo "-----------------------------------------------------------------------------------------"
+         echo "---------------------------- Installation Notes: ----------------------------------------"
+         echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
+         echo "   export PATH=\${'$'}PATH:/opt/scs2-${ihmc.version}/bin/"
+         echo "Then try to run the command '$sessionVisualizerExecutableName'"
+         echo "-----------------------------------------------------------------------------------------"
+         echo "-----------------------------------------------------------------------------------------"
+         """.trimIndent()
+      )
 
-   File("$baseFolder/usr/share/applications/").mkdirs()
-   File("$baseFolder/usr/share/applications/scs2-${ihmc.version}-visualizer.desktop").writeText(
-      """
-      [Desktop Entry]
-      Name=SCS2 Session Visualizer
-      Comment=Session Visualizer for SCS2
-      Exec=/opt/scs2-${ihmc.version}/bin/SessionVisualizer
-      Icon=/opt/scs2-${ihmc.version}/icon/scs-icon.png
-      Version=1.0
-      Terminal=true
-      Type=Application
-      Categories=Utility;Application;
-   """.trimIndent()
-   )
+      File("$baseFolder/usr/share/applications/").mkdirs()
+      File("$baseFolder/usr/share/applications/scs2-${ihmc.version}-visualizer.desktop").writeText(
+         """
+         [Desktop Entry]
+         Name=SCS2 Session Visualizer
+         Comment=Session Visualizer for SCS2
+         Exec=/opt/scs2-${ihmc.version}/bin/$sessionVisualizerExecutableName
+         Icon=/opt/scs2-${ihmc.version}/icon/scs-icon.png
+         Version=1.0
+         Terminal=true
+         Type=Application
+         Categories=Utility;Application;
+         """.trimIndent()
+      )
 
-   if (Os.isFamily(Os.FAMILY_UNIX))
-   {
-      doLast {
+      if (Os.isFamily(Os.FAMILY_UNIX))
+      {
          exec {
             commandLine("chmod", "+x", "$baseFolder/DEBIAN/postinst")
          }
