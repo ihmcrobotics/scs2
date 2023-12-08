@@ -2,6 +2,7 @@ package us.ihmc.scs2.session.mcap;
 
 import mslinks.ShellLink;
 import org.apache.commons.io.FilenameUtils;
+import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -109,6 +110,10 @@ public class MCAPLogSession extends Session
       }
 
       rootRegistry.addChild(mcapRegistry);
+
+      setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
+      setSessionDTNanoseconds(desiredLogDT);
+      setSessionMode(SessionMode.PAUSE);
    }
 
    public long getDesiredLogDT()
