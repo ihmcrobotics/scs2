@@ -199,6 +199,15 @@ public class Robot implements RobotInterface
       return controllerDefinitions;
    }
 
+   /**
+    * Deprecated: For backward compatibility only use {@link RobotRootFrame} instead.
+    */
+   @Deprecated
+   public static ReferenceFrame createRobotRootFrame(RobotDefinition robotDefinition, ReferenceFrame inertialFrame)
+   {
+      return new RobotRootFrame(robotDefinition.getName(), inertialFrame);
+   }
+
    public ReferenceFrame getRobotRootFrame()
    {
       return robotRootFrame;
