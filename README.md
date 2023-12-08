@@ -2,6 +2,12 @@
 [ ![scs2](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition)
 [ ![buildstatus](https://bamboo.ihmc.us/plugins/servlet/wittified/build-status/LIBS-SIMULATIONCONSTRUCTIONSET2)](https://bamboo.ihmc.us/plugins/servlet/wittified/build-status/LIBS-SIMULATIONCONSTRUCTIONSET2)
 
+# Install on Ubuntu 22.04 (Recommended)
+1. Install Java 17: `sudo apt install openjdk-17-jdk`
+2. Download the latest release (`scs2-[version].deb`) from the [releases page](https://github.com/ihmcrobotics/simulation-construction-set-2/releases).
+3. Install the package: `sudo dpkg -i scs2-[version].deb`
+4. If you want to run SCS2 from the command line, you can add the following line to your `~/.bashrc` file: `export PATH=$PATH:/opt/scs2-[version]/bin`
+
 # This is still an experimental version
 This version is not bug-free and still misses lots of features.
 Do not expect a fully functional application, however the main features should be available to make it usable.
