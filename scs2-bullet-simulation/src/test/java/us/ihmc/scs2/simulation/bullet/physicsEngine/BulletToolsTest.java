@@ -257,10 +257,19 @@ public class BulletToolsTest
 
          assertEquals(btCollisionShape.getShapeType(), BulletBroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE.ordinal());
 
-         btSphereShape ellipsoidShape = (btSphereShape) btCollisionShape;
-         assertEquals(ellipsoidShape.getLocalScaling().getX(), ellipsoidGeometryDefinition.getRadiusX(), EPSILON);
-         assertEquals(ellipsoidShape.getLocalScaling().getY(), ellipsoidGeometryDefinition.getRadiusY(), EPSILON);
-         assertEquals(ellipsoidShape.getLocalScaling().getZ(), ellipsoidGeometryDefinition.getRadiusZ(), EPSILON);
+         btSphereShape sphereShape = (btSphereShape) btCollisionShape;
+         assertEquals(sphereShape.getRadius(), ellipsoidGeometryDefinition.getRadiusX(), EPSILON);
+         assertEquals(sphereShape.getLocalScaling().getX(), ellipsoidGeometryDefinition.getRadiusX(), EPSILON);
+         assertEquals(sphereShape.getLocalScaling().getY(), ellipsoidGeometryDefinition.getRadiusY(), EPSILON);
+         assertEquals(sphereShape.getLocalScaling().getZ(), ellipsoidGeometryDefinition.getRadiusZ(), EPSILON);
       }
+
+      PyramidBox3DDefinition polytypeGeometryDefinition = new PyramidBox3DDefinition(1.0, 1.0, 1.0, 1.0);
+      CollisionShapeDefinition collisionShapeDefinition = new CollisionShapeDefinition(polytypeGeometryDefinition);
+
+      assertThrows(UnsupportedOperationException.class, () ->
+      {
+         BulletTools.createBulletCollisionShape(collisionShapeDefinition);
+      });
    }
 }
