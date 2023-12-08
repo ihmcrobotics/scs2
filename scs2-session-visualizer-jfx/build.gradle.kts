@@ -60,7 +60,6 @@ testDependencies {
    api("org.apache.commons:commons-math:2.2")
 }
 
-
 ihmc.jarWithLibFolder()
 tasks.getByPath("installDist").dependsOn("compositeJar")
 app.entrypoint("SessionVisualizer", "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer")
@@ -77,8 +76,8 @@ tasks.create("buildDebianPackage") {
    val sourceFolder = "$baseFolder/opt/scs2-${ihmc.version}/"
 
    copy {
-      from("${project.projectDir}/src/main/resources/icons/scs-logo.png")
-      into("$sourceFolder/icon/scs2-icon.png")
+      from("${project.projectDir}/src/main/resources/icons/scs-icon.png")
+      into("$sourceFolder/icon/")
    }
 
    copy {
@@ -91,7 +90,6 @@ tasks.create("buildDebianPackage") {
       include("scs2-session-visualizer-jfx")
    }.forEach(File::delete)
 
-
    File("$baseFolder/DEBIAN").mkdirs()
    LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
    File("$baseFolder/DEBIAN/control").writeText(
@@ -100,21 +98,24 @@ tasks.create("buildDebianPackage") {
       Version: ${ihmc.version}
       Section: base
       Architecture: all
-      Depends: default-jre (>= 2:1.17) | java17-runtime 
+      Depends: default-jre (>= 2:1.17) | java17-runtime
       Maintainer: Sylvain Bertrand <sbertrand@ihmc.org>
       Description: Session Visualizer for SCS2
       Homepage: ${ihmc.vcsUrl}
-
+      
    """.trimIndent()
    )
 
    File("$baseFolder/DEBIAN/postinst").writeText(
       """
      #!/bin/bash
+     echo "-----------------------------------------------------------------------------------------"
+     echo "---------------------------- Installation Notes: ----------------------------------------"
      echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
-     echo "export SCS2_HOME=/opt/scs2-${ihmc.version}"
-     echo "export PATH=${'$'}PATH;${'$'}SCS2_HOME/bin/"
-
+     echo "   export PATH=\${'$'}PATH:/opt/scs2-${ihmc.version}/bin/"
+     echo "Then try to run the command 'SessionVisualizer'"
+     echo "-----------------------------------------------------------------------------------------"
+     echo "-----------------------------------------------------------------------------------------"
      """.trimIndent()
    )
 
@@ -125,7 +126,7 @@ tasks.create("buildDebianPackage") {
       Name=SCS2 Session Visualizer
       Comment=Session Visualizer for SCS2
       Exec=/opt/scs2-${ihmc.version}/bin/SessionVisualizer
-      Icon=/opt/scs2-${ihmc.version}/icon/scs2-icon.png
+      Icon=/opt/scs2-${ihmc.version}/icon/scs-icon.png
       Version=1.0
       Terminal=true
       Type=Application
