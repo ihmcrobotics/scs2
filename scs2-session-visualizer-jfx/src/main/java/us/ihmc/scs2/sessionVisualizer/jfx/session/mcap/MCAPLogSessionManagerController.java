@@ -39,7 +39,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -271,7 +270,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                                           JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
                                                           SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
                                                        }
-                                                       catch (IOException ex)
+                                                       catch (Exception ex)
                                                        {
                                                           ex.printStackTrace();
                                                        }

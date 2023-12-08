@@ -52,7 +52,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -233,7 +232,7 @@ public class SessionVisualizer
       return toolkit;
    }
 
-   public static void main(String[] args) throws JSAPException, IOException
+   public static void main(String[] args) throws Exception
    {
       String logFileOption = "logFileName";
       String desiredDTOption = "desiredDT";

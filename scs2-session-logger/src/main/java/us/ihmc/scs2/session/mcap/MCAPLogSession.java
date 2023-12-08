@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
+import mslinks.ShellLink;
 import org.apache.commons.io.FilenameUtils;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -21,10 +22,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -48,7 +46,7 @@ public class MCAPLogSession extends Session
     */
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
-   public MCAPLogSession(File mcapFile, long desiredLogDT, File robotModelFile) throws IOException
+   public MCAPLogSession(File mcapFile, long desiredLogDT, File robotModelFile) throws Exception
    {
       mcapLogFileReader = new MCAPLogFileReader(mcapFile, desiredLogDT, getInertialFrame(), mcapRegistry);
       mcapLogFileReader.loadSchemas();
@@ -57,21 +55,43 @@ public class MCAPLogSession extends Session
 
       if (robotModelFile == null)
       {
+         List<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(mcapFile.getParentFile().listFiles())));
+         List<File> modelFiles = new ArrayList<>();
 
-         File[] modelFiles = mcapFile.getParentFile()
-                                     .listFiles(file -> FilenameUtils.isExtension(file.getName(), "urdf") || FilenameUtils.isExtension(file.getName(), "sdf"));
-         if (modelFiles != null && modelFiles.length == 1)
+         // Resolve all the shell links and add the target files to the list of files to check for robot model files.
+         for (int i = 0; i < files.size(); i++)
          {
-            robotModelFile = modelFiles[0];
+            File file = files.get(i);
+
+            if (FilenameUtils.isExtension(file.getName(), "lnk"))
+            {
+               try
+               {
+                  File targetFile = new File(new ShellLink(file).resolveTarget());
+                  if (targetFile.exists())
+                     files.add(targetFile);
+               }
+               catch (Exception e)
+               {
+               }
+            }
+         }
+
+         for (File file : files)
+         {
+            if (FilenameUtils.isExtension(file.getName(), "urdf") || FilenameUtils.isExtension(file.getName(), "sdf"))
+               modelFiles.add(file);
+         }
+
+         if (modelFiles.size() == 1)
+         {
+            robotModelFile = modelFiles.get(0);
             LogTools.info("Found a robot model file in the same directory as the MCAP file: " + robotModelFile.getAbsolutePath());
          }
          else
          {
-            LogTools.error(
-                  "Could not find a robot model file in the same directory as the MCAP file: " + mcapFile.getAbsolutePath() + ", found candidates: " + (
-                        modelFiles == null ?
-                              "none" :
-                              Arrays.toString(modelFiles)));
+            LogTools.error("Could not find a robot model file in the same directory as the MCAP file: " + mcapFile.getAbsolutePath() + ", found candidates: "
+                           + modelFiles);
          }
       }
 
