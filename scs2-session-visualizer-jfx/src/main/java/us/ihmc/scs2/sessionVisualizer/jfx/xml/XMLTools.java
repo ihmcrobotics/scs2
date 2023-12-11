@@ -1,17 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.xml;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.configuration.SCSGuiConfigurationDefinition;
+import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
+import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationListDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoCompositePatternListDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
@@ -19,6 +11,15 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoVariableGroupDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
 
 public class XMLTools
 {
@@ -95,6 +96,48 @@ public class XMLTools
          JAXBContext context = JAXBContext.newInstance(YoVariableGroupDefinition.class);
          Unmarshaller unmarshaller = context.createUnmarshaller();
          return (YoVariableGroupDefinition) unmarshaller.unmarshal(inputStream);
+      }
+      finally
+      {
+         inputStream.close();
+      }
+   }
+
+   public static YoChartGroupConfigurationDefinition loadYoChartGroupConfigurationDefinition(InputStream inputStream) throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationDefinition.class);
+         Unmarshaller unmarshaller = context.createUnmarshaller();
+         return (YoChartGroupConfigurationDefinition) unmarshaller.unmarshal(inputStream);
+      }
+      finally
+      {
+         inputStream.close();
+      }
+   }
+
+   public static YoChartGroupConfigurationListDefinition loadYoChartGroupConfigurationListDefinition(InputStream inputStream) throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationListDefinition.class);
+         Unmarshaller unmarshaller = context.createUnmarshaller();
+         return (YoChartGroupConfigurationListDefinition) unmarshaller.unmarshal(inputStream);
+      }
+      finally
+      {
+         inputStream.close();
+      }
+   }
+
+   public static Object loadYoChartGroupConfigurationUndefined(InputStream inputStream) throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationDefinition.class, YoChartGroupConfigurationListDefinition.class);
+         Unmarshaller unmarshaller = context.createUnmarshaller();
+         return unmarshaller.unmarshal(inputStream);
       }
       finally
       {
@@ -181,6 +224,40 @@ public class XMLTools
          Marshaller marshaller = context.createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
+      }
+      finally
+      {
+         outputStream.close();
+      }
+   }
+
+   public static void saveYoChartGroupConfigurationDefinition(OutputStream outputStream, YoChartGroupConfigurationDefinition definition)
+         throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationDefinition.class);
+         Marshaller marshaller = context.createMarshaller();
+         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+         marshaller.marshal(definition, outputStream);
+      }
+      finally
+      {
+         outputStream.close();
+      }
+   }
+
+   public static YoChartGroupConfigurationListDefinition saveYoChartGroupConfigurationListDefinition(OutputStream outputStream,
+                                                                                                     YoChartGroupConfigurationListDefinition definition)
+         throws JAXBException, IOException
+   {
+      try
+      {
+         JAXBContext context = JAXBContext.newInstance(YoChartGroupConfigurationListDefinition.class);
+         Marshaller marshaller = context.createMarshaller();
+         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+         marshaller.marshal(definition, outputStream);
+         return definition;
       }
       finally
       {

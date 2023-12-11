@@ -6,7 +6,10 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.*;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -133,8 +136,7 @@ public final class YoMCAPMessage
       }
       catch (Exception e)
       {
-         LogTools.error("Deserialization failed for message: " + registry.getName() + ", schema ID: " + schema.getId() + ", schema name: " + schema.getName()
-                        + ", message data: " + Arrays.toString(message.data()));
+         LogTools.error("Deserialization failed for message: " + registry.getName() + ", schema ID: " + schema.getId() + ", schema name: " + schema.getName());
          throw e;
       }
       finally
@@ -221,8 +223,7 @@ public final class YoMCAPMessage
                                                                    int length,
                                                                    YoRegistry registry)
    {
-      @SuppressWarnings("unchecked")
-      T[] array = (T[]) Array.newInstance(variableType, length);
+      @SuppressWarnings("unchecked") T[] array = (T[]) Array.newInstance(variableType, length);
       for (int i = 0; i < length; i++)
          array[i] = elementBuilder.apply(name + "[" + i + "]", registry);
       return cdr ->
@@ -287,11 +288,8 @@ public final class YoMCAPMessage
       conversionMap = allConversions.stream().collect(Collectors.toMap(YoConversionToolbox::primitiveType, conversion -> conversion));
    }
 
-   public record YoConversionToolbox<T extends YoVariable>(String primitiveType,
-                                                           Class<T> yoType,
-                                                           BiFunction<String, YoRegistry, T> yoBuilder,
-                                                           BiConsumer<T, CDRDeserializer> deserializer,
-                                                           Consumer<T> yoResetter)
+   public record YoConversionToolbox<T extends YoVariable>(String primitiveType, Class<T> yoType, BiFunction<String, YoRegistry, T> yoBuilder,
+                                                           BiConsumer<T, CDRDeserializer> deserializer, Consumer<T> yoResetter)
    {
       public Consumer<CDRDeserializer> createYoVariable(String name, YoRegistry registry)
       {

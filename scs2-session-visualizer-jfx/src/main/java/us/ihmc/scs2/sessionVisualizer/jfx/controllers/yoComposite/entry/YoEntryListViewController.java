@@ -49,7 +49,7 @@ public class YoEntryListViewController
       messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
-      Property<YoNameDisplay> yoVariableNameDisplay = messager.createPropertyInput(topics.getYoVariableNameDisplay(), YoNameDisplay.SHORT_NAME);
+      Property<YoNameDisplay> yoVariableNameDisplay = messager.createPropertyInput(topics.getYoVariableNameDisplay());
 
       yoManager = toolkit.getYoManager();
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();

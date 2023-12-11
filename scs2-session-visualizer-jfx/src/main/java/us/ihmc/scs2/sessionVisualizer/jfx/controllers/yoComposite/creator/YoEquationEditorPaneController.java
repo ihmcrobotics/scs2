@@ -15,6 +15,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.util.Pair;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
@@ -319,6 +320,9 @@ public class YoEquationEditorPaneController
          aliasNameLabel = new Label();
          setAliasName(aliasName);
          JFXTextField textField = new JFXTextField();
+         textField.setPrefWidth(200.0);
+         HBox.setHgrow(aliasNameLabel, Priority.NEVER);
+         HBox.setHgrow(textField, Priority.ALWAYS);
          mainPane.getChildren().addAll(aliasNameLabel, textField);
 
          aliasValueSearchField = new StringSearchField(textField, searchManager);
