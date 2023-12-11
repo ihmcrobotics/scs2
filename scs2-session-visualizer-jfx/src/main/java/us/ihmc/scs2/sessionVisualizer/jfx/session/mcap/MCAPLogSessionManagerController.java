@@ -20,6 +20,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.converter.IntegerStringConverter;
 import javafx.util.converter.LongStringConverter;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
@@ -48,6 +49,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private static final String LOG_FILE_KEY = "MCAPLogFilePath";
    private static final String ROBOT_MODEL_FILE_KEY = "MCAPRobotModelFilePath";
 
+   private static final String DEFAULT_MODEL_TEXT_FIELD_TEXT = "Path to model file";
+
    @FXML
    private AnchorPane mainPane;
    @FXML
@@ -60,6 +63,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private JFXTextField currentModelFilePathTextField;
    @FXML
    private TextField desiredLogDTTextField;
+   @FXML
+   private TextField bufferRecordTickPeriodTextField;
 
    private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
 
@@ -88,6 +93,10 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          MCAPLogFileReader mcapLogFileReader = activeSessionProperty.get().getMCAPLogFileReader();
          return mcapLogFileReader.getRelativeTimestampAtIndex(position.intValue());
       }));
+
+      TextFormatter<Integer> recordPeriodFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
+      bufferRecordTickPeriodTextField.setTextFormatter(recordPeriodFormatter);
+      messager.bindBidirectional(topics.getBufferRecordTickPeriod(), recordPeriodFormatter.valueProperty(), false);
 
       desiredLogDTTextField.setTextFormatter(new TextFormatter<>(new LongStringConverter(), 1000L, new PositiveIntegerValueFilter()));
       MutableBoolean desiredLogDTTextFieldUpdate = new MutableBoolean(false);
@@ -176,7 +185,18 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                            if (oldValue != null)
                                               oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
                                            if (newValue != null)
+                                           {
                                               newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                              if (newValue.getInitialRobotModelFile() != null && defaultRobotModelFile == null)
+                                              { // Display the robot model file path if it is available.
+                                                currentModelFilePathTextField.setText(newValue.getInitialRobotModelFile().getAbsolutePath());
+                                              }
+                                              else if (newValue.getInitialRobotModelFile() == null)
+                                              {
+                                                 currentModelFilePathTextField.setText(DEFAULT_MODEL_TEXT_FIELD_TEXT);
+                                              }
+                                              // Otherwise the text field will be updated when the robot model file is loaded.
+                                           }
                                         });
 
       if (toolkit.getSession() instanceof MCAPLogSession mcapLogSession)
