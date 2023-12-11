@@ -30,7 +30,7 @@ mainDependencies {
 debugDependencies {
    api(ihmc.sourceSetProject("main"))
 
-   api("us.ihmc:ihmc-javafx-toolkit:17-0.22.7") {
+   api("us.ihmc:ihmc-javafx-toolkit:17-0.22.8") {
       exclude(group="us.ihmc", module="jassimp")
       exclude(group="us.ihmc", module="euclid")
       exclude(group="us.ihmc", module="euclid-shape")
