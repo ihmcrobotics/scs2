@@ -95,9 +95,9 @@ tasks.create("buildDebianPackage") {
       val launchScriptFile = File("$sourceFolder/bin/$sessionVisualizerExecutableName")
       var originalScript = launchScriptFile.readText()
       originalScript = originalScript.replaceFirst("#!/bin/sh", """
-         "#!/bin/bash
-         // This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
-         export __GL_SYNC_TO_VBLANK=0"
+         #!/bin/bash
+         # This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
+         export __GL_SYNC_TO_VBLANK=0
          
       """.trimIndent())
 
