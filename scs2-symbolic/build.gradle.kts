@@ -16,7 +16,7 @@ mainDependencies {
    api("us.ihmc:scs2-shared-memory:source")
 
    api("us.ihmc:euclid:0.21.0")
-   api("us.ihmc:euclid-frame:0.20.0")
+   api("us.ihmc:euclid-frame:0.21.0")
    api("us.ihmc:ihmc-yovariables:0.11.0")
 }
 
