@@ -155,6 +155,9 @@ tasks.create("buildDebianPackage") {
             commandLine("chmod", "+x", "$baseFolder/DEBIAN/postinst")
          }
          exec {
+            commandLine("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName")
+         }
+         exec {
             workingDir(File(debianFolder))
             commandLine("dpkg", "--build", "scs2-${ihmc.version}")
          }
