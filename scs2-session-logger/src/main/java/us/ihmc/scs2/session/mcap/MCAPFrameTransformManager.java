@@ -162,47 +162,52 @@ public class MCAPFrameTransformManager
          }
       }
 
-      //TODO: (AM) Small hack to test files without any transform messages
-      if (allTransforms.size() < 1)
-         allTransforms.put("dummy_frame", new BasicTransformInfo("dummy_transform_topic", "world", ""));
+      if (!allTransforms.isEmpty())
+      {
+         LinkedList<BasicTransformInfo> ordered = sortTransforms(allTransforms);
 
-      Queue<BasicTransformInfo> ordered = new PriorityQueue<>(allTransforms.size(), (o1, o2) ->
-      {
-         int distanceToRoot1 = 0;
-         int distanceToRoot2 = 0;
-         while (o1 != null)
+         while (!ordered.isEmpty())
          {
-            distanceToRoot1++;
-            o1 = allTransforms.get(o1.parentFrameName());
+            BasicTransformInfo basicTransformInfo = ordered.poll();
+            YoFoxGloveFrameTransform transform = new YoFoxGloveFrameTransform(basicTransformInfo,
+                                                                              rawNameToTransformMap.get(basicTransformInfo.parentFrameName()),
+                                                                              inertialFrame,
+                                                                              registry);
+            yoGraphicGroupDefinition.addChild(YoGraphicDefinitionFactory.newYoGraphicCoordinateSystem3D(transform.rawName,
+                                                                                                        transform.poseToRoot,
+                                                                                                        0.2,
+                                                                                                        ColorDefinitions.SeaGreen()));
+            rawNameToTransformMap.put(basicTransformInfo.childFrameName(), transform);
          }
-         while (o2 != null)
+         transformList.addAll(rawNameToTransformMap.values());
+         for (YoFoxGloveFrameTransform transform : transformList)
          {
-            distanceToRoot1++;
-            o2 = allTransforms.get(o2.parentFrameName());
+            sanitizedNameToTransformMap.put(transform.sanitizedName, transform);
          }
-         return Integer.compare(distanceToRoot1, distanceToRoot2);
-      });
-      ordered.addAll(allTransforms.values());
+         yoGraphicGroupDefinition.setVisible(false);
+      }
+   }
 
-      while (!ordered.isEmpty())
-      {
-         BasicTransformInfo basicTransformInfo = ordered.poll();
-         YoFoxGloveFrameTransform transform = new YoFoxGloveFrameTransform(basicTransformInfo,
-                                                                           rawNameToTransformMap.get(basicTransformInfo.parentFrameName()),
-                                                                           inertialFrame,
-                                                                           registry);
-         yoGraphicGroupDefinition.addChild(YoGraphicDefinitionFactory.newYoGraphicCoordinateSystem3D(transform.rawName,
-                                                                                                     transform.poseToRoot,
-                                                                                                     0.2,
-                                                                                                     ColorDefinitions.SeaGreen()));
-         rawNameToTransformMap.put(basicTransformInfo.childFrameName(), transform);
-      }
-      transformList.addAll(rawNameToTransformMap.values());
-      for (YoFoxGloveFrameTransform transform : transformList)
-      {
-         sanitizedNameToTransformMap.put(transform.sanitizedName, transform);
-      }
-      yoGraphicGroupDefinition.setVisible(false);
+   private static LinkedList<BasicTransformInfo> sortTransforms(Map<String, BasicTransformInfo> allTransforms)
+   {
+      LinkedList<BasicTransformInfo> ordered = new LinkedList<>(allTransforms.values());
+      ordered.sort((o1, o2) ->
+                   {
+                      int distanceToRoot1 = 0;
+                      int distanceToRoot2 = 0;
+                      while (o1 != null)
+                      {
+                         distanceToRoot1++;
+                         o1 = allTransforms.get(o1.parentFrameName());
+                      }
+                      while (o2 != null)
+                      {
+                         distanceToRoot1++;
+                         o2 = allTransforms.get(o2.parentFrameName());
+                      }
+                      return Integer.compare(distanceToRoot1, distanceToRoot2);
+                   });
+      return ordered;
    }
 
    public void update()

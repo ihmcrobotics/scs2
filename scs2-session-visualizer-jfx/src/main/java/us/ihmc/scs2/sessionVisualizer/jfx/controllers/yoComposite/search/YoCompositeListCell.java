@@ -31,7 +31,8 @@ import java.util.stream.Collectors;
 // FIXME Need to manually do some cleanup when the cell is being updated.
 public class YoCompositeListCell extends ListCell<YoComposite>
 {
-   private static final double GRAPHIC_PREF_WIDTH = 100.0;
+   // TODO Need to make the controls resizable
+   private static final double GRAPHIC_PREF_WIDTH = 110.0;
 
    private final YoManager yoManager;
    private final ListView<YoComposite> owner;

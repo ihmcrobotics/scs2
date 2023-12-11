@@ -1224,9 +1224,13 @@ public class MCAP
          if (data == null)
          {
             data = new byte[lengthData];
+            int previousLimit = buffer.limit();
+            int previousPosition = buffer.position();
             buffer.limit(offsetData + lengthData);
             buffer.position(offsetData);
             buffer.get(data);
+            buffer.limit(previousLimit);
+            buffer.position(previousPosition);
          }
          return data;
       }
@@ -1973,7 +1977,8 @@ public class MCAP
          fileChannel = null;
          this._pos = _pos;
          this._length = _length;
-         buffer.order(ByteOrder.LITTLE_ENDIAN);
+         if (buffer != null)
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
       }
 
       public KaitaiStruct(FileChannel fileChannel, long _pos, int _length)

@@ -2,7 +2,6 @@ package us.ihmc.scs2.session.mcap;
 
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
-import us.ihmc.scs2.session.mcap.MCAP.ChunkIndex;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ public class MCAPChunkManager
     * All the chunk indices of the MCAP file.
     */
    private final List<MCAP.ChunkIndex> mcapChunkIndices = new ArrayList<>();
+   private final long desiredLogDT;
    /**
     * The number of chunks currently loaded. It can either be 0, 1 or 2.
     */
@@ -43,8 +43,9 @@ public class MCAPChunkManager
     */
    private ChunkExtra loadedChunkB = new ChunkExtra();
 
-   public MCAPChunkManager()
+   public MCAPChunkManager(long desiredLogDT)
    {
+      this.desiredLogDT = desiredLogDT;
    }
 
    /**
@@ -98,7 +99,7 @@ public class MCAPChunkManager
             MCAP.MessageIndex messageIndex = (MCAP.MessageIndex) record.body();
             for (MCAP.MessageIndex.MessageIndexEntry mcapEntry : messageIndex.records())
             {
-               long timestamp = mcapEntry.logTime();
+               long timestamp = round(mcapEntry.logTime(), desiredLogDT);
                if (allMessageTimestamps.isEmpty() || timestamp > allMessageTimestamps.get(allMessageTimestamps.size() - 1))
                {
                   allMessageTimestamps.add(timestamp);
@@ -124,7 +125,7 @@ public class MCAPChunkManager
          }
       }
       // TODO The underlying algorithm seems quite expensive.
-      mcapChunkIndices.sort(Comparator.comparingLong(ChunkIndex::messageStartTime));
+      mcapChunkIndices.sort(Comparator.comparingLong(chunkIndex -> round(chunkIndex.messageStartTime(), desiredLogDT)));
    }
 
    /**
@@ -132,7 +133,7 @@ public class MCAPChunkManager
     */
    public long firstMessageTimestamp()
    {
-      return mcapChunkIndices.get(0).messageStartTime();
+      return round(mcapChunkIndices.get(0).messageStartTime(), desiredLogDT);
    }
 
    /**
@@ -140,7 +141,7 @@ public class MCAPChunkManager
     */
    public long lastMessageTimestamp()
    {
-      return mcapChunkIndices.get(mcapChunkIndices.size() - 1).messageEndTime();
+      return round(mcapChunkIndices.get(mcapChunkIndices.size() - 1).messageEndTime(), desiredLogDT);
    }
 
    /**
@@ -245,13 +246,13 @@ public class MCAPChunkManager
 
       MCAP.ChunkIndex mcapChunkIndex = mcapChunkIndices.get(index);
 
-      if (timestamp == mcapChunkIndex.messageStartTime() && index > 0)
+      if (timestamp == round(mcapChunkIndex.messageStartTime(), desiredLogDT) && index > 0)
       { // We are in between 2 chunks
          indexA = index - 1;
          indexB = index;
          // Updating the active chunks at the end of this method.
       }
-      else if (timestamp == mcapChunkIndex.messageEndTime() && index < mcapChunkIndices.size() - 1)
+      else if (timestamp == round(mcapChunkIndex.messageEndTime(), desiredLogDT) && index < mcapChunkIndices.size() - 1)
       { // We are in between 2 chunks
          indexA = index;
          indexB = index + 1;
@@ -352,7 +353,7 @@ public class MCAPChunkManager
       if (numberOfLoadedChunks <= 0)
          return -1;
       else
-         return loadedChunkA.chunk.messageStartTime();
+         return round(loadedChunkA.chunk.messageStartTime(), desiredLogDT);
    }
 
    /**
@@ -363,9 +364,9 @@ public class MCAPChunkManager
       if (numberOfLoadedChunks <= 0)
          return -1;
       else if (numberOfLoadedChunks == 1)
-         return loadedChunkA.chunk.messageEndTime();
+         return round(loadedChunkA.chunk.messageEndTime(), desiredLogDT);
       else if (numberOfLoadedChunks == 2)
-         return loadedChunkB.chunk.messageEndTime();
+         return round(loadedChunkB.chunk.messageEndTime(), desiredLogDT);
       else
          throw new RuntimeException("Unexpected number of chunks: " + numberOfLoadedChunks);
    }
@@ -378,21 +379,23 @@ public class MCAPChunkManager
       int low = 0;
       int high = mcapChunkIndices.size() - 1;
 
-      if (timestamp < mcapChunkIndices.get(low).messageStartTime())
+      if (timestamp < round(mcapChunkIndices.get(low).messageStartTime(), desiredLogDT))
          return -1;
-      if (timestamp > mcapChunkIndices.get(high).messageEndTime())
+      if (timestamp > round(mcapChunkIndices.get(high).messageEndTime(), desiredLogDT))
          return -1;
 
       while (low <= high)
       {
          int mid = (low + high) >>> 1;
          MCAP.ChunkIndex midVal = mcapChunkIndices.get(mid);
-         if (timestamp == midVal.messageStartTime())
+         long midValStartTime = round(midVal.messageStartTime(), desiredLogDT);
+
+         if (timestamp == midValStartTime)
             return mid;
 
-         if (timestamp > midVal.messageStartTime())
+         if (timestamp > midValStartTime)
          {
-            if (timestamp <= midVal.messageEndTime())
+            if (timestamp <= round(midVal.messageEndTime(), desiredLogDT))
                return mid;
             else
                low = mid + 1;
@@ -405,7 +408,23 @@ public class MCAPChunkManager
       return -1;
    }
 
-   private static class ChunkExtra
+   /**
+    * Rounds the given value to the nearest multiple of the given step.
+    *
+    * @param value the value to round.
+    * @param step  the step to round to.
+    * @return the rounded value.
+    */
+   static long round(long value, long step)
+   {
+      if (step <= 1)
+         return value;
+      long floor = value / step * step;
+      long ceil = floor + step;
+      return value - floor < ceil - value ? floor : ceil;
+   }
+
+   private class ChunkExtra
    {
       /**
        * The index of the chunk in mcapChunkIndices.
@@ -437,11 +456,11 @@ public class MCAPChunkManager
                continue;
 
             MCAP.Message message = (MCAP.Message) record.body();
-            List<MCAP.Message> messages = bundledMessages.get(message.logTime());
+            List<MCAP.Message> messages = bundledMessages.get(round(message.logTime(), desiredLogDT));
             if (messages == null)
             {
                messages = new ArrayList<>();
-               bundledMessages.put(message.logTime(), messages);
+               bundledMessages.put(round(message.logTime(), desiredLogDT), messages);
             }
             messages.add(message);
          }
