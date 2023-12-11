@@ -151,12 +151,13 @@ public class Equation
 
       for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
       {
-         builder.getAliasManager().setHistoryIndex(i);
-         historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
+         builder.getAliasManager().setHistoryIndex(historyIndex);
 
          double time = timeBuffer.getBuffer()[historyIndex];
          operations.forEach(equationOperation -> equationOperation.updateValue(time));
          operations.forEach(equationOperation -> equationOperation.updatePreviousValue());
+
+         historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
       }
 
       builder.getAliasManager().setHistoryUpdate(false);
