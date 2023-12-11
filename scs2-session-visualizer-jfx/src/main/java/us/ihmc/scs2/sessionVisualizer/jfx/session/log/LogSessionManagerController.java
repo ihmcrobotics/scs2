@@ -91,8 +91,6 @@ public class LogSessionManagerController implements SessionControlsController
       Default, MATLAB, CSV;
    }
 
-   ;
-
    private final ObjectProperty<MultiVideoViewer> multiVideoViewerProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
    private final ObjectProperty<LogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
    private final ObjectProperty<YoVariableLogCropper> logCropperProperty = new SimpleObjectProperty<>(this, "logCropper", null);
