@@ -124,6 +124,8 @@ tasks.create("buildDebianPackage") {
       File("$baseFolder/DEBIAN/postinst").writeText(
          """
          #!/bin/bash
+         # Without this, the desktop file does not appear in the system menu.
+         sudo desktop-file-install /usr/share/applications/scs2-${ihmc.version}-visualizer.desktop
          echo "-----------------------------------------------------------------------------------------"
          echo "---------------------------- Installation Notes: ----------------------------------------"
          echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
