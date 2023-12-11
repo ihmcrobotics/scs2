@@ -34,6 +34,7 @@ public class MCAPLogSession extends Session
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
+   private final File initialRobotModelFile;
    private MCAPFrameTransformBasedRobotStateUpdater robotStateUpdater = null;
    private final MCAPLogFileReader mcapLogFileReader;
 
@@ -97,6 +98,8 @@ public class MCAPLogSession extends Session
       }
 
       RobotDefinition robotDefinition = null;
+      this.initialRobotModelFile = robotModelFile;
+
       if (robotModelFile != null)
          robotDefinition = loadRobotDefinition(robotModelFile);
 
@@ -114,6 +117,16 @@ public class MCAPLogSession extends Session
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
       setSessionDTNanoseconds(desiredLogDT);
       setSessionMode(SessionMode.PAUSE);
+   }
+
+   /**
+    * Returns the robot model file that was used to create this session.
+    *
+    * @return the robot model file that was used to create this session.
+    */
+   public File getInitialRobotModelFile()
+   {
+      return initialRobotModelFile;
    }
 
    public long getDesiredLogDT()
