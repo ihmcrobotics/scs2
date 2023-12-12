@@ -1,24 +1,23 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx;
 
-import java.util.Arrays;
-
-import org.fxyz3d.shapes.primitives.Text3DMesh;
-import org.fxyz3d.shapes.primitives.TexturedMesh;
-
-import javafx.scene.AmbientLight;
-import javafx.scene.Group;
-import javafx.scene.Node;
+import javafx.event.Event;
+import javafx.scene.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Sphere;
+import org.fxyz3d.shapes.primitives.Text3DMesh;
+import org.fxyz3d.shapes.primitives.TexturedMesh;
+import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.axisAngle.AxisAngle;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
-import us.ihmc.javaFXToolkit.JavaFXTools;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
-import us.ihmc.javaFXToolkit.text.Text3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 public class Simple3DViewer
 {
@@ -27,29 +26,51 @@ public class Simple3DViewer
       view3DObjects(Arrays.asList(nodesToView));
    }
 
-   public static void view3DObjects(Iterable<? extends Node> nodesToView)
+   public static void view3DObjects(Collection<? extends Node> nodesToView)
    {
       ApplicationRunner.runApplication(primaryStage ->
-      {
-         View3DFactory view3dFactory = new View3DFactory(600, 400);
-         FocusBasedCameraMouseEventHandler cameraController = view3dFactory.addCameraController(true);
-         cameraController.changeCameraPosition(-1.0, -1.0, 1.0);
-         view3dFactory.addNodesToView(nodesToView);
-         double ambientValue = 0.2;
-         double pointValue = 0.3;
-         double pointDistance = 100.0;
-         Color ambientColor = Color.color(ambientValue, ambientValue, ambientValue);
-         view3dFactory.addNodeToView(new AmbientLight(ambientColor));
-         Color indoorColor = Color.color(pointValue, pointValue, pointValue);
-         view3dFactory.addPointLight(pointDistance, pointDistance, pointDistance, indoorColor);
-         view3dFactory.addPointLight(-pointDistance, pointDistance, pointDistance, indoorColor);
-         view3dFactory.addPointLight(-pointDistance, -pointDistance, pointDistance, indoorColor);
-         view3dFactory.addPointLight(pointDistance, -pointDistance, pointDistance, indoorColor);
+                                       {
+                                          Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
+                                          Scene scene = new Scene(scene3DBuilder.getRoot(), 600, 400, true, SceneAntialiasing.BALANCED);
+                                          scene.setFill(Color.GREY);
+                                          setupCamera(scene, scene3DBuilder.getRoot());
+                                          scene3DBuilder.addNodesToView(nodesToView);
+                                          double ambientValue = 0.2;
+                                          double pointValue = 0.3;
+                                          double pointDistance = 100.0;
+                                          Color ambientColor = Color.color(ambientValue, ambientValue, ambientValue);
+                                          scene3DBuilder.addNodeToView(new AmbientLight(ambientColor));
+                                          Color indoorColor = Color.color(pointValue, pointValue, pointValue);
+                                          scene3DBuilder.addPointLight(pointDistance, pointDistance, pointDistance, indoorColor);
+                                          scene3DBuilder.addPointLight(-pointDistance, pointDistance, pointDistance, indoorColor);
+                                          scene3DBuilder.addPointLight(-pointDistance, -pointDistance, pointDistance, indoorColor);
+                                          scene3DBuilder.addPointLight(pointDistance, -pointDistance, pointDistance, indoorColor);
 
-         primaryStage.setMaximized(true);
-         primaryStage.setScene(view3dFactory.getScene());
-         primaryStage.show();
-      });
+                                          primaryStage.setMaximized(true);
+                                          primaryStage.setScene(scene);
+                                          primaryStage.show();
+                                       });
+   }
+
+   public static PerspectiveCameraController setupCamera(Scene scene, Group root)
+   {
+      PerspectiveCamera camera = new PerspectiveCamera(true);
+      camera.setNearClip(0.05);
+      camera.setFarClip(50.0);
+      scene.setCamera(camera);
+      PerspectiveCameraController cameraController = new PerspectiveCameraController(scene.widthProperty(), scene.heightProperty(), camera, Axis3D.Z, Axis3D.X);
+      cameraController.setCameraPosition(-1.0, -1.0, 1.0);
+      cameraController.enableShiftClickFocusTranslation();
+      cameraController.start();
+      scene.addEventHandler(Event.ANY, cameraController);
+
+      Sphere focusPointViz = cameraController.getFocalPointViz();
+      if (focusPointViz != null)
+      {
+         root.getChildren().add(focusPointViz);
+         focusPointViz.visibleProperty().bind(scene.getCamera().focusedProperty());
+      }
+      return cameraController;
    }
 
    public static Node createAxisLabels()
@@ -77,7 +98,7 @@ public class Simple3DViewer
       label.setFontHeight(height);
       label.setFontThickness(thickness);
       ((Text3DMesh) label.getNode()).getChildren().forEach(child -> ((TexturedMesh) child).setMaterial(new PhongMaterial(color)));
-      label.getNode().getTransforms().add(JavaFXTools.createAffineFromOrientation3DAndTuple(orientation, position));
+      label.getNode().getTransforms().add(JavaFXMissingTools.createAffineFromOrientation3DAndTuple(orientation, position));
 
       return label.getNode();
    }
