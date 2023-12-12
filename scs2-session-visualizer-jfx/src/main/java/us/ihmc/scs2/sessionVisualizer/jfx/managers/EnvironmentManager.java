@@ -1,10 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -15,16 +10,20 @@ import javafx.scene.shape.TriangleMesh;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
-import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.Skybox;
 import us.ihmc.scs2.sessionVisualizer.jfx.Skybox.SkyboxTheme;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class EnvironmentManager implements Manager
 {
@@ -65,17 +64,10 @@ public class EnvironmentManager implements Manager
    public void addWorldCoordinateSystem(double size)
    {
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         Node node = coordinateSystem(size);
-         JavaFXMissingTools.runLater(getClass(), () -> rootNode.getChildren().add(node));
-      });
-   }
-
-   private static Node coordinateSystem(double size)
-   {
-      VisualDefinitionFactory factory = new VisualDefinitionFactory();
-      factory.addCoordinateSystem(size, (ColorDefinition) null);
-      return JavaFXVisualTools.collectNodes(factory.getVisualDefinitions());
+                                                    {
+                                                       Node node = Scene3DBuilder.coordinateSystem(size);
+                                                       JavaFXMissingTools.runLater(getClass(), () -> rootNode.getChildren().add(node));
+                                                    });
    }
 
    public void addSkybox(Camera mainCamera)
@@ -112,9 +104,9 @@ public class EnvironmentManager implements Manager
       skybox.setupCamera(mainCamera);
 
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         JavaFXMissingTools.runLater(getClass(), () -> rootNode.getChildren().add(skybox));
-      });
+                                                    {
+                                                       JavaFXMissingTools.runLater(getClass(), () -> rootNode.getChildren().add(skybox));
+                                                    });
    }
 
    public void addStaticVisual(VisualDefinition visualDefinition)

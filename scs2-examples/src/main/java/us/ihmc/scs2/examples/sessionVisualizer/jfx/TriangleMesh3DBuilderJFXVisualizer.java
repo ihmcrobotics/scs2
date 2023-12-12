@@ -1,19 +1,12 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx;
 
-import java.util.Random;
-
-import javafx.stage.Stage;
 import us.ihmc.commons.RandomNumbers;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D32;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
-import us.ihmc.scs2.definition.visual.ColorDefinitions;
-import us.ihmc.scs2.definition.visual.MaterialDefinition;
-import us.ihmc.scs2.definition.visual.TriangleMesh3DBuilder;
-import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
-import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.visual.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+
+import java.util.Random;
 
 public class TriangleMesh3DBuilderJFXVisualizer
 {
@@ -24,15 +17,8 @@ public class TriangleMesh3DBuilderJFXVisualizer
 
    private static final MeshToDisplay MESH_TO_DISPLAY = MeshToDisplay.BOX;
 
-   public TriangleMesh3DBuilderJFXVisualizer(Stage primaryStage)
+   public TriangleMesh3DBuilderJFXVisualizer()
    {
-      primaryStage.setTitle(getClass().getSimpleName());
-
-      View3DFactory view3dFactory = new View3DFactory(600, 400);
-      view3dFactory.addCameraController();
-      view3dFactory.addWorldCoordinateSystem(0.3);
-      view3dFactory.addDefaultLighting();
-
       TriangleMesh3DBuilder meshBuilder = new TriangleMesh3DBuilder();
       switch (MESH_TO_DISPLAY)
       {
@@ -55,10 +41,7 @@ public class TriangleMesh3DBuilderJFXVisualizer
       MaterialDefinition materialDefinition = new MaterialDefinition(ColorDefinitions.Cyan());
       materialDefinition.setSpecularColor(ColorDefinitions.Cyan().brighter());
       materialDefinition.setShininess(3);
-      view3dFactory.addNodeToView(JavaFXVisualTools.toNode(new VisualDefinition(meshBuilder.generateTriangleMesh3D(), materialDefinition), null));
-
-      primaryStage.setScene(view3dFactory.getScene());
-      primaryStage.show();
+      Simple3DViewer.view3DObjects(JavaFXVisualTools.toNode(new VisualDefinition(meshBuilder.generateTriangleMesh3D(), materialDefinition), null));
    }
 
    public void addRandomBoxes(TriangleMesh3DBuilder meshBuilder)
@@ -105,6 +88,6 @@ public class TriangleMesh3DBuilderJFXVisualizer
 
    public static void main(String[] args)
    {
-      ApplicationRunner.runApplication(TriangleMesh3DBuilderJFXVisualizer::new);
+      new TriangleMesh3DBuilderJFXVisualizer();
    }
 }
