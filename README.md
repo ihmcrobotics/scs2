@@ -1,6 +1,6 @@
 # ![SCS2](logo/SCS2.png)
-[ ![scs2](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition)
-[ ![buildstatus](https://bamboo.ihmc.us/plugins/servlet/wittified/build-status/LIBS-SIMULATIONCONSTRUCTIONSET2)](https://bamboo.ihmc.us/plugins/servlet/wittified/build-status/LIBS-SIMULATIONCONSTRUCTIONSET2)
+![scs2](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition/badge.svg?style=plastic)
+![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/gradle.yml/badge.svg)
 
 # Install standalone application on Ubuntu 22.04 (Recommended)
 1. Install Java 17: `sudo apt install openjdk-17-jdk`
