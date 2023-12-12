@@ -1,9 +1,5 @@
 package us.ihmc.scs2.definition.visual;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.geometry.interfaces.ConvexPolygon2DReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
@@ -14,25 +10,24 @@ import us.ihmc.euclid.tuple3D.Point3D32;
 import us.ihmc.euclid.tuple3D.Vector3D32;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
-import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Extension of {@link TriangleMesh3DBuilder} that allows to combine multiple shapes/meshes into a
  * single mesh as well as defining colors for individual shapes/meshes being combined. This is
  * achieved by building a texture that is then used to map regions of the mesh to desired colors.
- * 
+ *
  * @author Sylvain Bertrand
  */
 public class MultiColorTriangleMesh3DBuilder
 {
-   /** Internally using a regular mesh builder to compute the mesh. */
+   /**
+    * Internally using a regular mesh builder to compute the mesh.
+    */
    private final TriangleMesh3DBuilder meshBuilder = new TriangleMesh3DBuilder();
    /**
     * Data structure used to build a texture that represents color palette which can be used to color
@@ -50,7 +45,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Creates an empty mesh builder given a texture color palette to use.
-    * 
+    *
     * @param colorPalette the color palette with this mesh builder.
     */
    public MultiColorTriangleMesh3DBuilder(TextureDefinitionColorPalette colorPalette)
@@ -60,7 +55,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Combines the given mesh with the triangle mesh contained in this builder.
-    * 
+    *
     * @param triangleMesh the triangle mesh to combine. Not Modified.
     * @param color        the color of the triangle mesh. Not modified.
     */
@@ -72,7 +67,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Translates then combines the given triangle mesh with the triangle mesh contained in this
     * builder.
-    * 
+    *
     * @param triangleMesh the triangle mesh to combine. Not Modified.
     * @param offset       used to translate the given triangle mesh. Can be {@code null}. Not modified.
     * @param color        the color of the triangle mesh. Not modified.
@@ -85,7 +80,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Rotates, translates, then combines the given triangle mesh with the triangle mesh contained in
     * this builder.
-    * 
+    *
     * @param triangleMesh the triangle mesh to combine. Not Modified.
     * @param offset       used to translate the given triangle mesh. Can be {@code null}. Not modified.
     * @param orientation  used to rotate the given triangle mesh. Can be {@code null}. Not modified.
@@ -111,7 +106,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Rotates, translates, then combines the given geometry to the triangle mesh contained in this
     * builder.
-    * 
+    *
     * @param geometry    the geometry to combine. Not Modified.
     * @param offset      coordinate of the geometry. Can be {@code null}. Not modified.
     * @param orientation the orientation of the geometry. Can be {@code null}. Not modified.
@@ -124,7 +119,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a box centered at (0, 0, 0) to this builder.
-    * 
+    *
     * @param sizeX box size along the x-axis.
     * @param sizeY box size along the y-axis.
     * @param sizeZ box size along the z-axis.
@@ -137,7 +132,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a box to this builder.
-    * 
+    *
     * @param sizeX  box size along the x-axis.
     * @param sizeY  box size along the y-axis.
     * @param sizeZ  box size along the z-axis.
@@ -151,7 +146,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a box to this builder.
-    * 
+    *
     * @param sizeX       box size along the x-axis.
     * @param sizeY       box size along the y-axis.
     * @param sizeZ       box size along the z-axis.
@@ -166,7 +161,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a capsule centered at (0, 0, 0) to this builder.
-    * 
+    *
     * @param length the capsule's length or height. Distance separating the center of the two half
     *               spheres.
     * @param radius the capsule's radius.
@@ -179,7 +174,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a capsule to this builder.
-    * 
+    *
     * @param length the capsule's length or height. Distance separating the center of the two half
     *               spheres.
     * @param radius the capsule's radius.
@@ -193,7 +188,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a capsule to this builder.
-    * 
+    *
     * @param length      the capsule's length or height. Distance separating the center of the two half
     *                    spheres.
     * @param radius      the capsule's radius.
@@ -209,7 +204,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Add a cone to this builder. Its axis is aligned with the z-axis and its top is the vertex with
     * the highest z value.
-    * 
+    *
     * @param height height along z of the cone.
     * @param radius radius of the cone's base.
     * @param color  the color of the geometry. Not modified.
@@ -222,7 +217,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Add a cone to this builder. Its axis is aligned with the z-axis and its top is the vertex with
     * the highest z value.
-    * 
+    *
     * @param height height along z of the cone.
     * @param radius radius of the cone's base.
     * @param offset coordinate of the geometry. Can be {@code null}. Not modified.
@@ -236,7 +231,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Add a cone to this builder. Its axis is aligned with the z-axis and its top is the vertex with
     * the highest z value in its local coordinate system.
-    * 
+    *
     * @param height      height along z of the cone.
     * @param radius      radius of the cone's base.
     * @param offset      coordinate of the geometry. Can be {@code null}. Not modified.
@@ -250,8 +245,8 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a cylinder to this builder. Its axis is aligned with the z-axis.
-    * 
-    * @param height height along z of the cylinder.
+    *
+    * @param length the cylinder's length or height.
     * @param radius the cylinder's radius.
     * @param color  the color of the geometry. Not modified.
     */
@@ -262,12 +257,11 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a cylinder to this builder. Its axis is aligned with the z-axis.
-    * 
-    * @param height      height along z of the cylinder.
-    * @param radius      the cylinder's radius.
-    * @param offset      coordinate of the geometry. Can be {@code null}. Not modified.
-    * @param orientation the orientation of the geometry. Can be {@code null}. Not modified.
-    * @param color       the color of the geometry. Not modified.
+    *
+    * @param length the cylinder's length or height.
+    * @param radius the cylinder's radius.
+    * @param offset coordinate of the geometry. Can be {@code null}. Not modified.
+    * @param color  the color of the geometry. Not modified.
     */
    public void addCylinder(double length, double radius, Tuple3DReadOnly offset, ColorDefinition color)
    {
@@ -277,8 +271,8 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Add a cylinder to this builder. Its axis is aligned with the z-axis in its local coordinate
     * system.
-    * 
-    * @param height      height along z of the cylinder.
+    *
+    * @param length      the cylinder's length or height.
     * @param radius      the cylinder's radius.
     * @param offset      coordinate of the geometry. Can be {@code null}. Not modified.
     * @param orientation the orientation of the geometry. Can be {@code null}. Not modified.
@@ -291,7 +285,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a 3D line to this builder.
-    * 
+    *
     * @param x0        x-coordinate of the line start.
     * @param y0        y-coordinate of the line start.
     * @param z0        z-coordinate of the line start.
@@ -308,7 +302,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a 3D line to this builder.
-    * 
+    *
     * @param start     start coordinate of the line. Not modified.
     * @param end       end coordinate of the line. Not modified.
     * @param lineWidth width of the line.
@@ -321,7 +315,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a series of connected 3D lines to this builder.
-    * 
+    *
     * @param transform the transform to apply to the points. Not modified.
     * @param points    coordinates of the line end points. Not modified.
     * @param lineWidth width of the lines.
@@ -342,7 +336,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a series of connected 3D lines to this builder.
-    * 
+    *
     * @param points    coordinates of the line end points. Not modified.
     * @param lineWidth width of the lines.
     * @param close     whether the end of the given array of points should be connected to the
@@ -371,7 +365,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a series of connected 3D lines to this builder.
-    * 
+    *
     * @param points    coordinates of the line end points. Not modified.
     * @param lineWidth width of the lines.
     * @param close     whether the end of the given array of points should be connected to the
@@ -401,7 +395,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Add a polygon to this builder, given its 2D vertex coordinates and its transform to world. No
     * check is performed on the ordering of the vertices.
-    * 
+    *
     * @param polygonPose the pose of the polygon. Can be {@code null}. Not modified.
     * @param polygon     the polygon's 2D vertices. Not modified.
     * @param color       the color of the geometry. Not modified.
@@ -413,7 +407,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a 2D polygon to this builder.
-    * 
+    *
     * @param polygonPose the pose of the polygon. Can be {@code null}. Not modified.
     * @param polygon     the polygon to render.
     * @param color       the color of the geometry. Not modified.
@@ -425,7 +419,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a sphere centered at (0, 0, 0) to this builder.
-    * 
+    *
     * @param radius the sphere radius.
     * @param color  the color of the geometry. Not modified.
     */
@@ -436,7 +430,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a sphere centered to this builder.
-    * 
+    *
     * @param radius the sphere radius.
     * @param offset the coordinate of the sphere. Not modified.
     * @param color  the color of the geometry. Not modified.
@@ -448,7 +442,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add an array of spheres to this builder.
-    * 
+    *
     * @param radius  the radius of the spheres. Not modified.
     * @param offsets the coordinates of each sphere. Not modified.
     * @param color   the color of the geometry. Not modified.
@@ -461,7 +455,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a regular tetrahedron to this builder.
-    * 
+    *
     * @param edgeLength edge length of the tetrahedron.
     * @param offset     coordinate of the geometry. Can be {@code null}. Not modified.
     * @param color      the color of the geometry. Not modified.
@@ -473,7 +467,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Add a regular tetrahedron to this builder.
-    * 
+    *
     * @param edgeLength  edge length of the tetrahedron.
     * @param offset      coordinate of the geometry. Can be {@code null}. Not modified.
     * @param orientation the orientation of the geometry. Can be {@code null}. Not modified.
@@ -486,7 +480,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Change the color palette used by this mesh builder.
-    * 
+    *
     * @param newColorPalette color palette to use in this mesh builder.
     */
    public void changeColorPalette(TextureDefinitionColorPalette2D newColorPalette)
@@ -504,7 +498,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Creates the texture that contains the color palette to use with this builder's mesh.
-    * 
+    *
     * @return the texture.
     */
    public TextureDefinition generateTexture()
@@ -514,7 +508,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Convenience method that creates a new material with the color palette set as the diffuse map.
-    * 
+    *
     * @return the material to use with this builder's mesh.
     */
    public MaterialDefinition generateMaterial()
@@ -524,7 +518,7 @@ public class MultiColorTriangleMesh3DBuilder
 
    /**
     * Generates the triangle mesh containing all the shapes/meshes previously added.
-    * 
+    *
     * @return the resulting mesh.
     */
    public TriangleMesh3DDefinition generateTriangleMesh3D()
@@ -535,7 +529,7 @@ public class MultiColorTriangleMesh3DBuilder
    /**
     * Creates a new visual ready to use. The visual contains the generated mesh and the proper texture
     * to color the mesh as desired.
-    * 
+    *
     * @return the resulting visual.
     */
    public VisualDefinition generateVisual()

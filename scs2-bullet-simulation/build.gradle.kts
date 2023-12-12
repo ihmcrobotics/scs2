@@ -28,13 +28,7 @@ mainDependencies {
 
 debugDependencies {
    api(ihmc.sourceSetProject("main"))
-
-   api("us.ihmc:ihmc-javafx-toolkit:17-0.22.8") {
-      exclude(group="us.ihmc", module="jassimp")
-      exclude(group="us.ihmc", module="euclid")
-      exclude(group="us.ihmc", module="euclid-shape")
-      exclude(group="us.ihmc", module="euclid-frame")
-   }
+   api("us.ihmc:scs2-session-visualizer-jfx:source")
 }
 
 testDependencies {

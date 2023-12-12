@@ -1,19 +1,13 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx.model.viewer;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.xml.bind.JAXBException;
-
 import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -21,9 +15,18 @@ import us.ihmc.scs2.definition.robot.sdf.SDFTools;
 import us.ihmc.scs2.definition.robot.sdf.items.SDFModel;
 import us.ihmc.scs2.definition.robot.urdf.URDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
+import us.ihmc.scs2.examples.sessionVisualizer.jfx.ApplicationRunner;
+import us.ihmc.scs2.examples.sessionVisualizer.jfx.Simple3DViewer;
+import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.RigidBodyFrameNodeFactories;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class SimpleModelViewer
 {
@@ -92,13 +95,15 @@ public class SimpleModelViewer
       rigidBody.updateFramesRecursively();
       frameNodes.values().forEach(FrameNode::updatePose);
 
-      View3DFactory view3dFactory = new View3DFactory(1024, 768);
-      view3dFactory.addWorldCoordinateSystem(0.2);
-      frameNodes.values().forEach(frameNode -> view3dFactory.addNodeToView(frameNode.getNode()));
-      view3dFactory.addCameraController();
+      Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
+      Scene scene = new Scene(scene3DBuilder.getRoot(), 1024, 768, true, SceneAntialiasing.BALANCED);
+      scene.setFill(Color.GREY);
+      scene3DBuilder.addCoordinateSystem(0.2);
+      frameNodes.values().forEach(frameNode -> scene3DBuilder.addNodeToView(frameNode.getNode()));
+      Simple3DViewer.setupCamera(scene, scene3DBuilder.getRoot());
 
       primaryStage.setTitle("Robot Model Viewer");
-      primaryStage.setScene(view3dFactory.getScene());
+      primaryStage.setScene(scene);
       primaryStage.show();
    }
 
