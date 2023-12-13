@@ -20,9 +20,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -152,6 +155,7 @@ public class SessionVisualizerIOTools
 
    public static final URL SIDE_PANE_URL = getFXMLResource("SidePane");
    public static final URL USER_SIDE_PANE_URL = getFXMLResource("UserSidePane");
+   public static final URL ABOUT_WINDOW_URL = getFXMLResource("AboutWindow");
    public static final URL VIDEO_PREVIEW_PANE_URL = getFXMLResource("VideoRecordingPreviewPane");
    public static final URL SESSION_DATA_EXPORT_STAGE_URL = getFXMLResource("SessionDataExportStage");
    public static final URL SESSION_VARIABLE_FILTER_PANE_URL = getFXMLResource("SessionVariableFilterPane");
@@ -568,5 +572,48 @@ public class SessionVisualizerIOTools
 
          prefs.put(key, file.getAbsolutePath());
       }
+   }
+
+   /**
+    * Opens the given URI in the user's default browser.
+    *
+    * @param uri the URI to open
+    * @return {@code true} if the URI was successfully opened, {@code false} otherwise.
+    */
+   public static boolean openWebpage(URI uri)
+   {
+      Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+      if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE))
+      {
+         try
+         {
+            desktop.browse(uri);
+            return true;
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
+      }
+      return false;
+   }
+
+   /**
+    * Opens the given URL in the user's default browser.
+    *
+    * @param url the URL to open
+    * @return {@code true} if the URL was successfully opened, {@code false} otherwise.
+    */
+   public static boolean openWebpage(URL url)
+   {
+      try
+      {
+         return openWebpage(url.toURI());
+      }
+      catch (URISyntaxException e)
+      {
+         e.printStackTrace();
+      }
+      return false;
    }
 }
