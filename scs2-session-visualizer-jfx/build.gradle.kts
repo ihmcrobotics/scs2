@@ -54,6 +54,10 @@ mainDependencies {
    api("us.ihmc:jimObjModelImporterJFX:0.8")
    api("us.ihmc:jimStlMeshImporterJFX:0.7")
    api("us.ihmc:jimX3dModelImporterJFX:0.4")
+
+   // Dependencies for checking the version
+   api("com.squareup.okhttp3:okhttp:4.12.0")
+   api("com.google.code.gson:gson:2.10.1")
 }
 
 testDependencies {
@@ -88,18 +92,19 @@ tasks.create("buildDebianPackage") {
       }
 
       fileTree("$sourceFolder/bin").matching {
-         include("*.bat")
-         include("scs2-session-visualizer-jfx")
+         exclude(sessionVisualizerExecutableName)
       }.forEach(File::delete)
 
       val launchScriptFile = File("$sourceFolder/bin/$sessionVisualizerExecutableName")
       var originalScript = launchScriptFile.readText()
-      originalScript = originalScript.replaceFirst("#!/bin/sh", """
+      originalScript = originalScript.replaceFirst(
+         "#!/bin/sh", """
          #!/bin/bash
          # This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
          export __GL_SYNC_TO_VBLANK=0
          
-      """.trimIndent())
+      """.trimIndent()
+      )
 
       launchScriptFile.delete()
       launchScriptFile.writeText(originalScript)
