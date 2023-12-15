@@ -62,7 +62,7 @@ public class SessionVisualizer
 
    static
    {
-      // Required for visualizing ROS topic which often have repeating sub-names in the topic names.
+      // Required for visualizing ROS topics which often have repeating sub-names in the topic names.
       System.setProperty("yo.allowRepeatingSubname", "true");
       DefinitionIOTools.loadResources();
       YoGraphicFXControllerTools.loadResources();
@@ -73,7 +73,7 @@ public class SessionVisualizer
    private final SessionVisualizerToolkit toolkit;
    private final MultiSessionManager multiSessionManager;
 
-   private final MainWindowController mainWindowController;
+   protected final MainWindowController mainWindowController;
    private final SCS2JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
    private final SessionVisualizerControlsImpl sessionVisualizerControls = createControls();

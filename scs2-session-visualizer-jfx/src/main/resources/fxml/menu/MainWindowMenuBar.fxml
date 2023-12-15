@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.MenuBar?>
-<MenuBar stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+<MenuBar fx:id="menuBar" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
          fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController">
     <menus>
         <fx:include fx:id="fileMenu" source="FileMenu.fxml"/>
