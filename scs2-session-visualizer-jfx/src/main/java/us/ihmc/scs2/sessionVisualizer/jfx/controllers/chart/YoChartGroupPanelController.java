@@ -48,6 +48,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolki
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
@@ -210,7 +211,10 @@ public class YoChartGroupPanelController implements VisualizerController
       }
       else
       {
-         automatedChartGroupName.set(toolkit.getGlobalToolkit().generateChartGroupTitle(plottedVariableList));
+         toolkit.getGlobalToolkit()
+                .generateChartGroupTitle(this,
+                                         plottedVariableList,
+                                         value -> JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> automatedChartGroupName.set(value)));
       }
 
       if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)

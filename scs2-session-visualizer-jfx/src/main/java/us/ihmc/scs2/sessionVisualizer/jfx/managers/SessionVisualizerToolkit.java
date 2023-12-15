@@ -29,6 +29,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
@@ -369,8 +370,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       return sessionTerrainObjectDefinitions;
    }
 
-   public String generateChartGroupTitle(Collection<YoVariable> variables)
+   public void generateChartGroupTitle(Object caller, Collection<YoVariable> variables, Consumer<String> callback)
    {
-      return StringTools.commonSubString(variables.stream().map(YoVariable::getName).collect(Collectors.toList()));
+      callback.accept(StringTools.commonSubString(variables.stream().map(YoVariable::getName).collect(Collectors.toList())));
    }
 }
