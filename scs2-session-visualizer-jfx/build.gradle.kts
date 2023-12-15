@@ -40,11 +40,14 @@ mainDependencies {
 
    // JavaFX extensions
    api("org.controlsfx:controlsfx:11.1.0")
+   // TODO Switch away from the de.jensd to ikonli
    api("de.jensd:fontawesomefx-commons:9.1.2")
    api("de.jensd:fontawesomefx-octicons:4.3.0-9.1.2")
    api("de.jensd:fontawesomefx-materialicons:2.2.0-9.1.2")
    api("de.jensd:fontawesomefx-materialdesignfont:2.0.26-9.1.2")
    api("de.jensd:fontawesomefx-fontawesome:4.7.0-9.1.2")
+   api("org.kordamp.ikonli:ikonli-javafx:12.3.1")
+   api("org.kordamp.ikonli:ikonli-fontawesome5-pack:12.3.1")
    api("us.ihmc:jfoenix:17-0.1.1")
    api("org.apache.commons:commons-text:1.9")
 
