@@ -360,7 +360,7 @@ public class SecondaryWindowController implements VisualizerController
       }
    }
 
-   private boolean loadDefinition(YoChartGroupConfigurationDefinition chartGroupDefinition, int insertionIndex)
+   public boolean loadDefinition(YoChartGroupConfigurationDefinition chartGroupDefinition, int insertionIndex)
    {
       if (insertionIndex == -1)
       {
