@@ -563,6 +563,28 @@ public class YoChartGroupPanelController implements VisualizerController
       return chartTable2D.getSize().contains(configuration.rowEnd(), configuration.columnEnd());
    }
 
+   public boolean addVariableToPlot(String variableName, int row, int column, boolean resizeToFit)
+   {
+      if (resizeToFit)
+      {
+         if (row >= chartTable2D.getSize().getNumberOfRows() || column >= chartTable2D.getSize().getNumberOfCols())
+         {
+            int numberOfRows = Math.max(row + 1, chartTable2D.getSize().getNumberOfRows());
+            int numberOfCols = Math.max(column + 1, chartTable2D.getSize().getNumberOfCols());
+            chartTable2D.resize(new ChartTable2DSize(numberOfRows, numberOfCols));
+         }
+      }
+      else
+      {
+         if (row >= chartTable2D.getSize().getNumberOfRows() || column >= chartTable2D.getSize().getNumberOfCols())
+            return false;
+      }
+
+      YoChartPanelController chartController = chartTable2D.get(row, column);
+      chartController.addYoVariableToPlot(variableName);
+      return true;
+   }
+
    public void loadChartGroupConfiguration(Window source, File file)
    {
       if (source != toolkit.getWindow())
