@@ -1,15 +1,17 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import org.bytedeco.bullet.LinearMath.btVector3;
-import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.bullet.LinearMath.btIDebugDraw;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
+import org.bytedeco.bullet.LinearMath.btIDebugDraw;
+import org.bytedeco.bullet.LinearMath.btVector3;
+import org.bytedeco.javacpp.BytePointer;
 import us.ihmc.euclid.tuple3D.Point3D;
-import us.ihmc.javaFXToolkit.shapes.JavaFXMultiColorMeshBuilder;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.MultiColorTriangleMesh3DBuilder;
+import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 
@@ -18,7 +20,7 @@ public class BulletDebugDrawingNode extends Group
    private int debugMode = btIDebugDraw.DBG_DrawWireframe; // TODO: Provide options to user
    private final btIDebugDraw btDebugDraw;
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
-   private final JavaFXMultiColorMeshBuilder meshHelper = new JavaFXMultiColorMeshBuilder();
+   private final MultiColorTriangleMesh3DBuilder meshHelper = new MultiColorTriangleMesh3DBuilder();
    private PrivateAnimationTimer animationTimer;
    private int lineDraws;
    private final int maxLineDrawsPerModel = 100;
@@ -50,7 +52,7 @@ public class BulletDebugDrawingNode extends Group
 
             BulletTools.toEuclid(from, fromEuclid);
             BulletTools.toEuclid(to, toEuclid);
-            Color colorJavaFX = new Color(color.getX(), color.getY(), color.getZ(), 1.0);
+            ColorDefinition colorJavaFX = new ColorDefinition(color.getX(), color.getY(), color.getZ(), 1.0);
 
             meshHelper.addLine(fromEuclid, toEuclid, 0.002, colorJavaFX);
 
@@ -60,7 +62,7 @@ public class BulletDebugDrawingNode extends Group
          @Override
          public void drawContactPoint(btVector3 pointOnB, btVector3 normalOnB, double distance, int lifeTime, btVector3 color)
          {
-            Color colorJavaFX = new Color(color.getX(), color.getY(), color.getZ(), 1.0);
+            ColorDefinition colorJavaFX = new ColorDefinition(color.getX(), color.getY(), color.getZ(), 1.0);
             BulletTools.toEuclid(pointOnB, pointOnEuclid);
             meshHelper.addSphere(0.005, pointOnEuclid, colorJavaFX);
             BulletTools.toEuclid(normalOnB, pointOnEuclid);
@@ -125,7 +127,7 @@ public class BulletDebugDrawingNode extends Group
 
    private void nextModel()
    {
-      MeshView meshView = new MeshView(meshHelper.generateMesh());
+      MeshView meshView = new MeshView(JavaFXVisualTools.toTriangleMesh(meshHelper.generateTriangleMesh3D()));
       meshView.setMaterial(new PhongMaterial(phongColor));
       getChildren().add(meshView);
       meshHelper.clear();

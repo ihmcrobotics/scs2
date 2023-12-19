@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.MenuBar?>
-
-<MenuBar stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController">
-   <menus>
-      <fx:include fx:id="fileMenu" source="FileMenu.fxml" />
-      <fx:include fx:id="sessionMenu" source="SessionMenu.fxml" />
-      <fx:include fx:id="runMenu" source="RunMenu.fxml" />
-      <fx:include fx:id="dataBufferMenu" source="DataBufferMenu.fxml" />
-      <fx:include fx:id="yoCompositeMenu" source="YoCompositeMenu.fxml" />
-      <fx:include fx:id="yoChartMenu" source="YoChartMenu.fxml" />
-      <fx:include fx:id="yoGraphicMenu" source="YoGraphicMenu.fxml" />
-      <fx:include fx:id="yoSliderboardMenu" source="YoSliderboardMenu.fxml" />
-   </menus>
+<MenuBar stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController">
+    <menus>
+        <fx:include fx:id="fileMenu" source="FileMenu.fxml"/>
+        <fx:include fx:id="sessionMenu" source="SessionMenu.fxml"/>
+        <fx:include fx:id="runMenu" source="RunMenu.fxml"/>
+        <fx:include fx:id="dataBufferMenu" source="DataBufferMenu.fxml"/>
+        <fx:include fx:id="yoCompositeMenu" source="YoCompositeMenu.fxml"/>
+        <fx:include fx:id="yoChartMenu" source="YoChartMenu.fxml"/>
+        <fx:include fx:id="yoGraphicMenu" source="YoGraphicMenu.fxml"/>
+        <fx:include fx:id="yoSliderboardMenu" source="YoSliderboardMenu.fxml"/>
+        <fx:include fx:id="helpMenu" source="HelpMenu.fxml"/>
+    </menus>
 </MenuBar>

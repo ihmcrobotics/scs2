@@ -1,28 +1,14 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import java.io.File;
-import java.util.List;
-
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-
 import javafx.stage.Window;
 import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.MessagerAPIFactory;
-import us.ihmc.messager.MessagerAPIFactory.Category;
-import us.ihmc.messager.MessagerAPIFactory.CategoryTheme;
-import us.ihmc.messager.MessagerAPIFactory.MessagerAPI;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.MessagerAPIFactory.TopicTheme;
-import us.ihmc.messager.MessagerAPIFactory.TypedTopicTheme;
+import us.ihmc.messager.MessagerAPIFactory.*;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
-import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
+import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
@@ -30,6 +16,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
+
+import java.io.File;
+import java.util.List;
 
 public class SessionVisualizerMessagerAPI
 {
@@ -87,7 +76,8 @@ public class SessionVisualizerMessagerAPI
    public static final Topic<NewTerrainVisualRequest> TerrainVisualRequest = APIRoot.child(Terrain).child(Visual).topic(Request);
    public static final Topic<NewWindowRequest> OpenWindowRequest = APIRoot.topic(Open);
    public static final Topic<Boolean> SessionVisualizerCloseRequest = APIRoot.topic(Close);
-   public static final Topic<Integer> ControlsNumberPrecision = APIRoot.child(Controls).topic(Precision); // TODO Not the greatest topic name, nor the best place.
+   public static final Topic<Integer> ControlsNumberPrecision = APIRoot.child(Controls)
+                                                                       .topic(Precision); // TODO Not the greatest topic name, nor the best place.
    public static final Topic<File> SessionVisualizerConfigurationLoadRequest = APIRoot.child(Configuration).topic(Load);
    public static final Topic<Boolean> SessionVisualizerDefaultConfigurationLoadRequest = APIRoot.child(Configuration).child(Default).topic(Load);
    public static final Topic<File> SessionVisualizerConfigurationSaveRequest = APIRoot.child(Configuration).topic(Save);
@@ -168,7 +158,6 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<Window, Integer>> YoChartRequestShift = APIRoot.child(YoChart).child(Shift).topic(Request);
       public static final Topic<Pair<Window, File>> YoChartGroupSaveConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Save);
       public static final Topic<Pair<Window, File>> YoChartGroupLoadConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Load);
-      public static final Topic<Pair<Window, String>> YoChartGroupName = APIRoot.child(YoChart).child(Group).topic(Name);
    }
 
    public static class YoEntry

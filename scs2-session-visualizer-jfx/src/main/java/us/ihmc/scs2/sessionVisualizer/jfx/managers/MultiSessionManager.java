@@ -38,7 +38,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.zip.ZipEntry;
 
 public class MultiSessionManager
 {
@@ -255,12 +254,15 @@ public class MultiSessionManager
 
       SCSGuiConfiguration configuration = SCSGuiConfiguration.defaultLoader(robotName, sessionName);
 
-      loadSessionConfiguration(configuration);
+      if (configuration == null || configuration.exists())
+         loadSessionConfiguration(configuration);
+      else // No default configuration, load the one from the robot.
+         loadSessionConfiguration(SCSGuiConfiguration.defaultLoader(robotName));
    }
 
    private void loadSessionConfiguration(SCSGuiConfiguration configuration)
    {
-      if (!configuration.exists())
+      if (configuration == null || !configuration.exists())
          return;
 
       JavaFXMissingTools.runAndWait(getClass(), () -> toolkit.getWindowManager().closeAllSecondaryWindows());
@@ -370,27 +372,16 @@ public class MultiSessionManager
       }
    }
 
-   public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException
-   {
-      File destFile = new File(destinationDir, zipEntry.getName());
-
-      String destDirPath = destinationDir.getCanonicalPath();
-      String destFilePath = destFile.getCanonicalPath();
-
-      if (!destFilePath.startsWith(destDirPath + File.separator))
-      {
-         throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
-      }
-
-      return destFile;
-   }
-
    public void saveSessionDefaultConfiguration(Session session)
    {
       SCSGuiConfiguration configuration = SCSGuiConfiguration.defaultSaver(robotName, sessionName);
       // TODO Some things like sliderboard aren't exported systematically, so we don't want to delete these files unless we change the save.
       // Cleanup files with old extensions.
       //      SessionIOTools.emptyDirectory(configuration.getMainConfigurationFile().getParentFile());
+      saveSessionConfiguration(configuration, session);
+
+      // Also save to the default robot location.
+      configuration = SCSGuiConfiguration.defaultSaver(robotName);
       saveSessionConfiguration(configuration, session);
    }
 

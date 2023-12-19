@@ -78,7 +78,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    private final BooleanProperty leftDrawerOpen = new SimpleBooleanProperty(this, "leftDrawerOpenProperty", false);
    private final BooleanProperty rightDrawerOpen = new SimpleBooleanProperty(this, "rightDrawerOpenProperty", false);
    private final BooleanProperty disableUserControls = new SimpleBooleanProperty(this, "disableUserControlsProperty", false);
-   private final Property<YoNameDisplay> yoNameDisplayProperty = new SimpleObjectProperty<>(this, "yoNameDisplayProperty", YoNameDisplay.SHORT_NAME);
+   private final Property<YoNameDisplay> yoNameDisplayProperty = new SimpleObjectProperty<>(this, "yoNameDisplayProperty", YoNameDisplay.UNIQUE_NAME);
 
    /**
     * Controller for the left pane where variable search and entries are displayed.
@@ -158,6 +158,11 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          ReferenceFrameManager referenceFrameManager = toolkit.getReferenceFrameManager();
          plotter2D.coordinateToTrackProperty().setValue(CompositePropertyTools.toTuple2DProperty(rootRegistryDatabase, referenceFrameManager, m));
       });
+
+      messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(),
+                                  m -> yoChartGroupPanelController.loadChartGroupConfiguration(m.getKey(), m.getValue()));
+      messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(),
+                                  m -> yoChartGroupPanelController.saveChartGroupConfiguration(m.getKey(), m.getValue()));
    }
 
    public void setupViewport3D(Pane viewportPane)

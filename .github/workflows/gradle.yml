@@ -1,0 +1,54 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+      id: setup-gradle
+      with:
+        gradle-version: 8.5
+
+    - name: Gradle test for scs2-definition
+      run: gradle scs2-definition:test
+    - name: Gradle test for scs2-shared-memory
+      run: gradle scs2-shared-memory:test
+    - name: Gradle test for scs2-symbolic
+      run: gradle scs2-symbolic:test
+    - name: Gradle test for scs2-session
+      run: gradle scs2-session:test
+    - name: Gradle test for scs2-session-logger
+      run: gradle scs2-session-logger:test
+    - name: Gradle test for scs2-session-visualizer
+      run: gradle scs2-session-visualizer:test
+    - name: Gradle test for scs2-session-visualizer-jfx
+      run: gradle scs2-session-visualizer-jfx:test
+    - name: Gradle test for scs2-simulation
+      run: gradle scs2-simulation:test
+    - name: Gradle test for scs2-bullet-simulation
+      run: gradle scs2-bullet-simulation:test
+    - name: Gradle test for scs2-examples
+      run: gradle scs2-examples:test
+    - name: Gradle test for scs2-simulation-construction-set
+      run: gradle scs2-simulation-construction-set:test

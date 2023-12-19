@@ -1,23 +1,29 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import java.util.Collections;
-import java.util.stream.Collectors;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.scene.AmbientLight;
-import javafx.scene.Group;
-import javafx.scene.LightBase;
-import javafx.scene.Node;
-import javafx.scene.PointLight;
+import javafx.scene.*;
 import javafx.scene.paint.Color;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
+import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 public class Scene3DBuilder
 {
    private final Group root = new Group();
    private final ObservableList<LightBase> allLights = FXCollections.observableArrayList();
+
+   public static Node coordinateSystem(double size)
+   {
+      VisualDefinitionFactory factory = new VisualDefinitionFactory();
+      factory.addCoordinateSystem(size, (ColorDefinition) null);
+      return JavaFXVisualTools.collectNodes(factory.getVisualDefinitions());
+   }
 
    private class LightsChangedListener implements ListChangeListener<Node>
    {
@@ -111,7 +117,7 @@ public class Scene3DBuilder
 
    /**
     * Add a {@link Color#WHITE} point light to the 3D view at the given coordinate.
-    * 
+    *
     * @param x the light x-coordinate.
     * @param y the light y-coordinate.
     * @param z the light z-coordinate.
@@ -123,7 +129,7 @@ public class Scene3DBuilder
 
    /**
     * Add a point light to the 3D view at the given coordinate.
-    * 
+    *
     * @param x     the light x-coordinate.
     * @param y     the light y-coordinate.
     * @param z     the light z-coordinate.
@@ -138,9 +144,14 @@ public class Scene3DBuilder
       addNodeToView(light);
    }
 
+   public void addCoordinateSystem(double scale)
+   {
+      addNodeToView(coordinateSystem(scale));
+   }
+
    /**
     * Add a set of nodes to the 3D view.
-    * 
+    *
     * @param nodes the nodes to display.
     */
    public void addNodesToView(Iterable<? extends Node> nodes)
@@ -150,7 +161,7 @@ public class Scene3DBuilder
 
    /**
     * Add a node to the 3D view.
-    * 
+    *
     * @param node the node to display.
     */
    public void addNodeToView(Node node)
@@ -163,7 +174,7 @@ public class Scene3DBuilder
     * When choosing target for mouse event, nodes with {@code mouseTransparent} set to {@code true} and
     * their subtrees won't be taken into account greatly reducing computation load especially when
     * rendering many nodes.
-    * 
+    *
     * @param value whether to make the entire scene mouse transparent or not.
     */
    public void setRootMouseTransparent(boolean value)
@@ -237,7 +248,6 @@ public class Scene3DBuilder
       };
       original.addListener(listener);
       return listener;
-
    }
 
    @SuppressWarnings("unchecked")
