@@ -19,8 +19,8 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.JavaFXFrameConverter;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.examples.sessionVisualizer.jfx.ApplicationRunner;
 
 import java.io.File;
 import java.util.concurrent.ExecutorService;
