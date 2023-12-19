@@ -1,7 +1,6 @@
 plugins {
    id("us.ihmc.ihmc-build")
    id("us.ihmc.ihmc-ci") version "8.3"
-   id("us.ihmc.ihmc-cd") version "1.26"
 }
 
 ihmc {
@@ -20,8 +19,8 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.21.0")
    api("us.ihmc:ihmc-messager:0.2.0")
-   api("us.ihmc:ihmc-yovariables:0.10.0")
-   api("us.ihmc:mecano-yovariables:17-0.15.0")
+   api("us.ihmc:ihmc-yovariables:0.11.0")
+   api("us.ihmc:mecano-yovariables:17-0.16.0")
 
    apiBytedecoNatives("javacpp")
    apiBytedecoNatives("bullet", "3.25-")
@@ -29,13 +28,7 @@ mainDependencies {
 
 debugDependencies {
    api(ihmc.sourceSetProject("main"))
-
-   api("us.ihmc:ihmc-javafx-toolkit:17-0.22.7") {
-      exclude(group="us.ihmc", module="jassimp")
-      exclude(group="us.ihmc", module="euclid")
-      exclude(group="us.ihmc", module="euclid-shape")
-      exclude(group="us.ihmc", module="euclid-frame")
-   }
+   api("us.ihmc:scs2-session-visualizer-jfx:source")
 }
 
 testDependencies {

@@ -1,17 +1,8 @@
 package us.ihmc.scs2.session.mcap;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBException;
-
+import mslinks.ShellLink;
 import org.apache.commons.io.FilenameUtils;
-
+import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -24,8 +15,17 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class MCAPLogSession extends Session
 {
@@ -34,6 +34,7 @@ public class MCAPLogSession extends Session
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
+   private final File initialRobotModelFile;
    private MCAPFrameTransformBasedRobotStateUpdater robotStateUpdater = null;
    private final MCAPLogFileReader mcapLogFileReader;
 
@@ -47,14 +48,58 @@ public class MCAPLogSession extends Session
     */
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
-   public MCAPLogSession(File mcapFile, File robotModelFile) throws IOException
+   public MCAPLogSession(File mcapFile, long desiredLogDT, File robotModelFile) throws Exception
    {
-      mcapLogFileReader = new MCAPLogFileReader(mcapFile, getInertialFrame(), mcapRegistry);
+      mcapLogFileReader = new MCAPLogFileReader(mcapFile, desiredLogDT, getInertialFrame(), mcapRegistry);
       mcapLogFileReader.loadSchemas();
       mcapLogFileReader.loadChannels();
       yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());
 
+      if (robotModelFile == null)
+      {
+         List<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(mcapFile.getParentFile().listFiles())));
+         List<File> modelFiles = new ArrayList<>();
+
+         // Resolve all the shell links and add the target files to the list of files to check for robot model files.
+         for (int i = 0; i < files.size(); i++)
+         {
+            File file = files.get(i);
+
+            if (FilenameUtils.isExtension(file.getName(), "lnk"))
+            {
+               try
+               {
+                  File targetFile = new File(new ShellLink(file).resolveTarget());
+                  if (targetFile.exists())
+                     files.add(targetFile);
+               }
+               catch (Exception e)
+               {
+               }
+            }
+         }
+
+         for (File file : files)
+         {
+            if (FilenameUtils.isExtension(file.getName(), "urdf") || FilenameUtils.isExtension(file.getName(), "sdf"))
+               modelFiles.add(file);
+         }
+
+         if (modelFiles.size() == 1)
+         {
+            robotModelFile = modelFiles.get(0);
+            LogTools.info("Found a robot model file in the same directory as the MCAP file: " + robotModelFile.getAbsolutePath());
+         }
+         else
+         {
+            LogTools.error("Could not find a robot model file in the same directory as the MCAP file: " + mcapFile.getAbsolutePath() + ", found candidates: "
+                           + modelFiles);
+         }
+      }
+
       RobotDefinition robotDefinition = null;
+      this.initialRobotModelFile = robotModelFile;
+
       if (robotModelFile != null)
          robotDefinition = loadRobotDefinition(robotModelFile);
 
@@ -68,6 +113,25 @@ public class MCAPLogSession extends Session
       }
 
       rootRegistry.addChild(mcapRegistry);
+
+      setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
+      setSessionDTNanoseconds(desiredLogDT);
+      setSessionMode(SessionMode.PAUSE);
+   }
+
+   /**
+    * Returns the robot model file that was used to create this session.
+    *
+    * @return the robot model file that was used to create this session.
+    */
+   public File getInitialRobotModelFile()
+   {
+      return initialRobotModelFile;
+   }
+
+   public long getDesiredLogDT()
+   {
+      return mcapLogFileReader.getDesiredLogDT();
    }
 
    public void submitLogPositionRequest(int logPosition)
@@ -199,6 +263,27 @@ public class MCAPLogSession extends Session
          robotDefinitions.add(robotDefinitionToAdd);
          rootRegistry.addChild(robotToAdd.getRegistry());
          robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+
+         // Update the robot state history
+         YoBufferPropertiesReadOnly bufferProperties = getBufferProperties();
+         int previousBufferIndex = bufferProperties.getCurrentIndex();
+         int historyIndex = bufferProperties.getInPoint();
+
+         for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
+         {
+            sharedBuffer.setCurrentIndex(historyIndex);
+            sharedBuffer.readBuffer();
+            robotStateUpdater.updateRobotState();
+            sharedBuffer.writeBuffer();
+            historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
+         }
+
+         // Go back to the previous buffer index
+         sharedBuffer.setCurrentIndex(previousBufferIndex);
+         sharedBuffer.readBuffer();
+         robotStateUpdater.updateRobotState(); // Just to make sure the robot is updated.
+         sharedBuffer.writeBuffer();
+
          addedRobot = robotDefinitionToAdd;
       }
 

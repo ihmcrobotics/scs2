@@ -1,21 +1,23 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Box;
 import javafx.stage.Stage;
 import us.ihmc.commons.RandomNumbers;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D32;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MultiColorTriangleMesh3DBuilder;
 import us.ihmc.scs2.definition.visual.TextureDefinitionColorAdaptivePalette;
+import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class MultiColorTriangleMesh3DBuilderVisualizer
 {
@@ -33,9 +35,11 @@ public class MultiColorTriangleMesh3DBuilderVisualizer
    {
       primaryStage.setTitle(getClass().getSimpleName());
 
-      View3DFactory view3dFactory = new View3DFactory(600, 400);
-      view3dFactory.addCameraController();
-      view3dFactory.addWorldCoordinateSystem(0.3);
+      Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
+      Scene scene = new Scene(scene3DBuilder.getRoot(), 600, 400, true, SceneAntialiasing.BALANCED);
+      scene.setFill(Color.GREY);
+      Simple3DViewer.setupCamera(scene, scene3DBuilder.getRoot());
+      scene3DBuilder.addCoordinateSystem(0.3);
 
       ColorDefinition[] colors;
       if (USE_RANDOM_COLORS)
@@ -60,7 +64,7 @@ public class MultiColorTriangleMesh3DBuilderVisualizer
       switch (MESH_TO_DISPLAY)
       {
          case BOX:
-            view3dFactory.addNodesToView(addRandomBoxes(colors, meshBuilder));
+            scene3DBuilder.addNodesToView(addRandomBoxes(colors, meshBuilder));
             break;
          case LINE:
             addLine(meshBuilder);
@@ -74,8 +78,8 @@ public class MultiColorTriangleMesh3DBuilderVisualizer
       //      materialDefinition.setShininess(3);
       //      view3dFactory.addNodeToView(JavaFXVisualTools.toNode(new VisualDefinition(meshBuilder.generateTriangleMesh3D(), materialDefinition), null));
 
-      view3dFactory.addNodeToView(JavaFXVisualTools.toNode(meshBuilder.generateVisual(), null));
-      primaryStage.setScene(view3dFactory.getScene());
+      scene3DBuilder.addNodeToView(JavaFXVisualTools.toNode(meshBuilder.generateVisual(), null));
+      primaryStage.setScene(scene);
       primaryStage.show();
    }
 

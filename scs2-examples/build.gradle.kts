@@ -1,7 +1,6 @@
 plugins {
    id("us.ihmc.ihmc-build")
    id("us.ihmc.ihmc-ci") version "8.3"
-   id("us.ihmc.ihmc-cd") version "1.26"
 }
 
 ihmc {
@@ -12,6 +11,7 @@ ihmc {
 }
 
 mainDependencies {
+   api("org.fxyz3d:fxyz3d:0.6.0")
    api("org.bytedeco:javacv-platform:1.5.9")
 
    api("us.ihmc:scs2-simulation-construction-set:source")
