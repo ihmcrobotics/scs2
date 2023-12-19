@@ -1,12 +1,9 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
-
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import us.ihmc.euclid.Axis3D;
@@ -17,15 +14,15 @@ import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Point2DReadOnly;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
-import us.ihmc.scs2.definition.visual.ColorDefinitions;
-import us.ihmc.scs2.definition.visual.MaterialDefinition;
-import us.ihmc.scs2.definition.visual.TextureDefinition;
-import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
+import us.ihmc.scs2.definition.visual.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class VisualDefinitionFactoryJFXVisualizer
 {
@@ -33,19 +30,20 @@ public class VisualDefinitionFactoryJFXVisualizer
 
    private final Random random = new Random(232);
 
-   private final View3DFactory view3dFactory;
+   private final Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
    private final MaterialDefinition material;
 
    public VisualDefinitionFactoryJFXVisualizer(Stage primaryStage)
    {
       primaryStage.setTitle(getClass().getSimpleName());
 
-      view3dFactory = new View3DFactory(600, 400);
-      FocusBasedCameraMouseEventHandler cameraController = view3dFactory.addCameraController(true);
-      cameraController.changeFocusPosition(0.0, 0.0, 0.15, false);
-      cameraController.changeCameraPosition(1.0, 1.0, 0.25);
-      view3dFactory.addWorldCoordinateSystem(0.25);
-      view3dFactory.addNodeToView(createAxisLabels());
+      Scene scene = new Scene(scene3DBuilder.getRoot(), 600, 400, true, SceneAntialiasing.BALANCED);
+      scene.setFill(Color.GREY);
+      PerspectiveCameraController cameraController = Simple3DViewer.setupCamera(scene, scene3DBuilder.getRoot());
+      cameraController.setFocalPoint(0.0, 0.0, 0.15, false);
+      cameraController.setCameraPosition(1.0, 1.0, 0.25);
+      scene3DBuilder.addCoordinateSystem(0.25);
+      scene3DBuilder.addNodeToView(createAxisLabels());
 
       if (USE_TEXTURE)
       {
@@ -105,10 +103,10 @@ public class VisualDefinitionFactoryJFXVisualizer
 
       List<VisualDefinition> visualDefinitions = factory.getVisualDefinitions();
       Node node = JavaFXVisualTools.collectNodes(visualDefinitions);
-      view3dFactory.addNodeToView(node);
+      scene3DBuilder.addNodeToView(node);
 
       primaryStage.setMaximized(true);
-      primaryStage.setScene(view3dFactory.getScene());
+      primaryStage.setScene(scene);
       primaryStage.show();
    }
 

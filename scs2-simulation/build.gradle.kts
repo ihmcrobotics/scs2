@@ -1,7 +1,6 @@
 plugins {
    id("us.ihmc.ihmc-build")
    id("us.ihmc.ihmc-ci") version "8.3"
-   id("us.ihmc.ihmc-cd") version "1.26"
 }
 
 ihmc {
@@ -17,7 +16,7 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.21.0")
    api("us.ihmc:ihmc-messager:0.2.0")
-   api("us.ihmc:mecano-yovariables:17-0.15.0")
+   api("us.ihmc:mecano-yovariables:17-0.16.0")
 }
 
 testDependencies {

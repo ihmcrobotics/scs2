@@ -1,12 +1,8 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
-
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -20,29 +16,33 @@ import us.ihmc.euclid.shape.convexPolytope.tools.EuclidPolytopeFactories;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Point2DReadOnly;
 import us.ihmc.euclid.tuple3D.Point3D;
-import us.ihmc.javaFXToolkit.cameraControllers.FocusBasedCameraMouseEventHandler;
-import us.ihmc.javaFXToolkit.scenes.View3DFactory;
-import us.ihmc.javaFXToolkit.shapes.JavaFXCoordinateSystem;
-import us.ihmc.javaFXToolkit.starter.ApplicationRunner;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
+import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition;
 
 public class TriangleMesh3DFactoriesVisualizer
 {
    private static final boolean USE_TEXTURE = false;
 
-   private final View3DFactory view3dFactory;
+   private final Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
    private final PhongMaterial defaultMaterial;
 
    public TriangleMesh3DFactoriesVisualizer(Stage primaryStage)
    {
       primaryStage.setTitle(getClass().getSimpleName());
 
-      view3dFactory = new View3DFactory(600, 400);
-      FocusBasedCameraMouseEventHandler cameraController = view3dFactory.addCameraController(true);
-      cameraController.changeCameraPosition(-1.0, -1.0, 1.0);
-      view3dFactory.addWorldCoordinateSystem(0.25);
-      view3dFactory.addNodeToView(Simple3DViewer.createAxisLabels());
+      Scene scene = new Scene(scene3DBuilder.getRoot(), 600, 400, true, SceneAntialiasing.BALANCED);
+      scene.setFill(Color.GREY);
+      Simple3DViewer.setupCamera(scene, scene3DBuilder.getRoot());
+      scene3DBuilder.addCoordinateSystem(0.25);
+      scene3DBuilder.addNodeToView(Simple3DViewer.createAxisLabels());
 
       if (USE_TEXTURE)
       {
@@ -90,11 +90,11 @@ public class TriangleMesh3DFactoriesVisualizer
       addTriangleMesh3DDefinitionToScene(TriangleMesh3DFactories.Box(0.1, 0.2, 0.3, true));
 
       addTriangleMesh3DDefinitionToScene(TriangleMesh3DFactories.PolygonCounterClockwise(polygonVertices.stream().map(p2D ->
-      {
-         Point3D p3D = new Point3D(p2D);
-         p3D.setZ(0.1 * (Math.random() - 0.5));
-         return p3D;
-      }).collect(Collectors.toList())));
+                                                                                                                      {
+                                                                                                                         Point3D p3D = new Point3D(p2D);
+                                                                                                                         p3D.setZ(0.1 * (Math.random() - 0.5));
+                                                                                                                         return p3D;
+                                                                                                                      }).collect(Collectors.toList())));
 
       addTriangleMesh3DDefinitionToScene(TriangleMesh3DFactories.Torus(0.15, 0.05, 64));
 
@@ -107,7 +107,7 @@ public class TriangleMesh3DFactoriesVisualizer
       addTriangleMesh3DDefinitionToScene(TriangleMesh3DFactories.toSTPRamp3DMesh(null, 0.3, 0.2, 0.1, 0.01, 2.5, true));
 
       primaryStage.setMaximized(true);
-      primaryStage.setScene(view3dFactory.getScene());
+      primaryStage.setScene(scene);
       primaryStage.show();
    }
 
@@ -130,17 +130,16 @@ public class TriangleMesh3DFactoriesVisualizer
 
       node.setMaterial(defaultMaterial);
 
-      JavaFXCoordinateSystem coordinateSystem = new JavaFXCoordinateSystem(0.20);
-      coordinateSystem.setMouseTransparent(true);
+      Node coordinateSystem = Scene3DBuilder.coordinateSystem(0.3);
 
       if (translate != null)
       {
          node.getTransforms().add(translate);
          coordinateSystem.getTransforms().add(translate);
-         view3dFactory.addNodeToView(coordinateSystem);
+         scene3DBuilder.addNodeToView(coordinateSystem);
       }
 
-      view3dFactory.addNodeToView(node);
+      scene3DBuilder.addNodeToView(node);
    }
 
    private final int gridWidth = 2;

@@ -1,13 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.function.BooleanSupplier;
-
-import org.apache.commons.lang3.mutable.MutableObject;
-
 import com.sun.javafx.application.PlatformImpl;
-
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -25,17 +18,13 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
-import javafx.scene.transform.Affine;
-import javafx.scene.transform.NonInvertibleTransformException;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Scale;
-import javafx.scene.transform.Transform;
-import javafx.scene.transform.Translate;
+import javafx.scene.transform.*;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import org.apache.commons.lang3.mutable.MutableObject;
 import us.ihmc.euclid.axisAngle.interfaces.AxisAngleReadOnly;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
 import us.ihmc.euclid.matrix.interfaces.RotationMatrixReadOnly;
@@ -43,14 +32,13 @@ import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
-import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
-import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
-import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
-import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
-import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.*;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.BooleanSupplier;
 
 public class JavaFXMissingTools
 {
@@ -418,9 +406,9 @@ public class JavaFXMissingTools
       };
 
       PlatformImpl.startup(() ->
-      {
-         runLater(application.getClass(), runnable);
-      });
+                           {
+                              runLater(application.getClass(), runnable);
+                           });
       PlatformImpl.setImplicitExit(false);
    }
 
@@ -442,13 +430,13 @@ public class JavaFXMissingTools
          // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
          // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
          dialog.setOnShown(e ->
-         {
-            runLater(JavaFXMissingTools.class, () ->
-            {
-               dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
-               dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
-            });
-         });
+                           {
+                              runLater(JavaFXMissingTools.class, () ->
+                              {
+                                 dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
+                                 dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
+                              });
+                           });
       }
    }
 

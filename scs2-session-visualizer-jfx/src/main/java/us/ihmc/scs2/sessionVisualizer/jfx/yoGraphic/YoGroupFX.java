@@ -106,14 +106,20 @@ public class YoGroupFX implements YoGraphicFXItem
             return;
 
          updating.setTrue();
-         itemChildren.forEach(child -> child.setVisible(newValue));
-         updating.setFalse();
+         try
+         {
+            itemChildren.forEach(child -> child.setVisible(newValue));
+         }
+         finally
+         {
+            updating.setFalse();
+         }
       });
 
-      itemChildren.addListener(new SetChangeListener<YoGraphicFXItem>()
+      itemChildren.addListener(new SetChangeListener<>()
       {
          ObservableBooleanValue observable = null;
-         ChangeListener<? super Boolean> changeListener = (o, oldValue, newValue) -> updateVisibility();
+         final ChangeListener<? super Boolean> changeListener = (o, oldValue, newValue) -> updateVisibility();
 
          @Override
          public void onChanged(Change<? extends YoGraphicFXItem> change)
@@ -127,6 +133,8 @@ public class YoGroupFX implements YoGraphicFXItem
                updateVisibility();
                return;
             }
+
+            observable = null;
 
             for (YoGraphicFXItem itemChild : change.getSet())
             {
@@ -146,8 +154,14 @@ public class YoGroupFX implements YoGraphicFXItem
                return;
 
             updating.setTrue();
-            visibleProperty.set(observable == null ? false : observable.get());
-            updating.setFalse();
+            try
+            {
+               visibleProperty.set(observable == null ? false : observable.get());
+            }
+            finally
+            {
+               updating.setFalse();
+            }
          }
       });
    }

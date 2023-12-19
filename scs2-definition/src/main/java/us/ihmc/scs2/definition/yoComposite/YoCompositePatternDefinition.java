@@ -198,6 +198,16 @@ public class YoCompositePatternDefinition
    }
 
    /**
+    * Only used for XML marshalling. Use {@link #getIdentifiers()} instead.
+    *
+    * @return the identifiers of the components of this composite pattern stored in a CSV format.
+    */
+   public String getIds()
+   {
+      return String.join(",", identifiers);
+   }
+
+   /**
     * Only used for XML marshalling. Use {@link #getAlternateIdentifiers()} instead.
     *
     * @return the list of alternate identifiers.

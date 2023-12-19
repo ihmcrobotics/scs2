@@ -22,6 +22,8 @@ public class MainWindowMenuBarController implements VisualizerController
    private SessionMenuController sessionMenuController;
    @FXML
    private YoSliderboardMenuController yoSliderboardMenuController;
+   @FXML
+   private HelpMenuController helpMenuController;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -34,5 +36,6 @@ public class MainWindowMenuBarController implements VisualizerController
       yoGraphicMenuController.initialize(toolkit);
       sessionMenuController.initialize(toolkit);
       yoSliderboardMenuController.initialize(toolkit);
+      helpMenuController.initialize(toolkit);
    }
 }
