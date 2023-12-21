@@ -1,12 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import javafx.scene.Group;
 import javafx.scene.Node;
 import us.ihmc.log.LogTools;
@@ -25,10 +18,15 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.YoRobotFX;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 {
    private final Group rootNode = new Group();
    private final List<YoRobotFX> robots = new ArrayList<>();
+   private final JavaFXMessager messager;
+   private final SessionVisualizerTopics topics;
    private final YoManager yoManager;
    private final ReferenceFrameManager referenceFrameManager;
    private final BackgroundExecutorManager backgroundExecutorManager;
@@ -41,6 +39,8 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
                            ReferenceFrameManager referenceFrameManager,
                            BackgroundExecutorManager backgroundExecutorManager)
    {
+      this.messager = messager;
+      this.topics = topics;
       this.yoManager = yoManager;
       this.referenceFrameManager = referenceFrameManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
@@ -75,7 +75,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
             result.ifPresent(rigidBodyFrameNode ->
                              {
-                                if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
+                                if (rigidBodyFrameNode.getNode() != null)
                                    messager.submitMessage(topics.getCamera3DRequest(),
                                                           new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
                              });
@@ -156,6 +156,8 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       {
          robots.add(robot);
          rootNode.getChildren().add(robot.getRootNode());
+         if (robots.size() == 1)
+            messager.submitMessage(topics.getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackNode(robot.getRootNode())));
       });
    }
 
