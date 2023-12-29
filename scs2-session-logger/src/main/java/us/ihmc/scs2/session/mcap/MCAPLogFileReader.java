@@ -97,6 +97,11 @@ public class MCAPLogFileReader
       return chunkManager.getTimestampAtIndex(index);
    }
 
+   public YoLong getCurrentTimestamp()
+   {
+      return currentTimestamp;
+   }
+
    public long getRelativeTimestampAtIndex(int index)
    {
       return chunkManager.getRelativeTimestampAtIndex(index);
