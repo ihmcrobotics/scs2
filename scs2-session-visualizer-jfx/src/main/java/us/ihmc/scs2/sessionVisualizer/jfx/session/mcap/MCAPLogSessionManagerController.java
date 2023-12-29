@@ -10,12 +10,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -46,11 +44,15 @@ import java.util.function.Consumer;
 
 public class MCAPLogSessionManagerController implements SessionControlsController
 {
+   private static final double THUMBNAIL_WIDTH = 200.0;
+
    private static final String LOG_FILE_KEY = "MCAPLogFilePath";
    private static final String ROBOT_MODEL_FILE_KEY = "MCAPRobotModelFilePath";
 
    private static final String DEFAULT_MODEL_TEXT_FIELD_TEXT = "Path to model file";
-
+   private final ObjectProperty<MultiVideoViewer> multiVideoViewerObjectProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
+   private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
+   private final LongProperty desiredLogDTProperty = new SimpleLongProperty(this, "desiredLogDT", TimeUnit.MILLISECONDS.toNanos(1));
    @FXML
    private AnchorPane mainPane;
    @FXML
@@ -65,17 +67,27 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private TextField desiredLogDTTextField;
    @FXML
    private TextField bufferRecordTickPeriodTextField;
-
-   private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
-
+   @FXML
+   private TitledPane thumbnailsTitledPane;
+   @FXML
+   private FlowPane videoThumbnailPane;
    private Stage stage;
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private BackgroundExecutorManager backgroundExecutorManager;
-
    private File defaultRobotModelFile = null;
 
-   private final LongProperty desiredLogDTProperty = new SimpleLongProperty(this, "desiredLogDT", TimeUnit.MILLISECONDS.toNanos(1));
+   private static String getDate(String filename)
+   { // FIXME it seems that the timestamps in the MCAP file are epoch unix timestamp. Should use that.
+      String year = filename.substring(0, 4);
+      String month = filename.substring(4, 6);
+      String day = filename.substring(6, 8);
+      String hour = filename.substring(9, 11);
+      String minute = filename.substring(11, 13);
+      String second = filename.substring(13, 15);
+
+      return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+   }
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -189,7 +201,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                               newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
                                               if (newValue.getInitialRobotModelFile() != null && defaultRobotModelFile == null)
                                               { // Display the robot model file path if it is available.
-                                                currentModelFilePathTextField.setText(newValue.getInitialRobotModelFile().getAbsolutePath());
+                                                 currentModelFilePathTextField.setText(newValue.getInitialRobotModelFile().getAbsolutePath());
                                               }
                                               else if (newValue.getInitialRobotModelFile() == null)
                                               {
@@ -198,6 +210,14 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                               // Otherwise the text field will be updated when the robot model file is loaded.
                                            }
                                         });
+
+      multiVideoViewerObjectProperty.addListener((o, oldValue, newValue) ->
+                                                 {
+                                                    if (oldValue != null)
+                                                       oldValue.stop();
+                                                    if (newValue != null)
+                                                       newValue.start();
+                                                 });
 
       if (toolkit.getSession() instanceof MCAPLogSession mcapLogSession)
       {
@@ -211,6 +231,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       }
 
       activeSessionProperty.addListener(activeSessionListener);
+
+      thumbnailsTitledPane.expandedProperty().addListener((o, oldValue, newValue) -> JavaFXMissingTools.runLater(getClass(), stage::sizeToScene));
 
       openSessionButton.setOnAction(e -> openLogFile());
 
@@ -253,6 +275,14 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       logPositionSlider.setValue(0.0);
       logPositionSlider.setMin(0.0);
       logPositionSlider.setMax(mcapLogFileReader.getNumberOfEntries() - 1);
+      MultiVideoDataReader multiReader = new MultiVideoDataReader(logFile.getParentFile(), backgroundExecutorManager);
+      multiReader.readVideoFrameNow(mcapLogFileReader.getCurrentTimeInLog());
+      mcapLogFileReader.getCurrentTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(mcapLogFileReader.getCurrentTimeInLog()));
+      multiVideoViewerObjectProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
+      boolean logHasVideos = multiReader.getNumberOfVideos() > 0;
+      thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
+      thumbnailsTitledPane.setExpanded(logHasVideos);
+      thumbnailsTitledPane.setDisable(!logHasVideos);
       JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
       JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
    }
@@ -264,6 +294,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       logPathLabel.setText("N/D");
       endSessionButton.setDisable(true);
       logPositionSlider.setDisable(true);
+      multiVideoViewerObjectProperty.set(null);
    }
 
    public void openLogFile()
@@ -322,18 +353,6 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    public Stage getStage()
    {
       return stage;
-   }
-
-   private static String getDate(String filename)
-   { // FIXME it seems that the timestamps in the MCAP file are epoch unix timestamp. Should use that.
-      String year = filename.substring(0, 4);
-      String month = filename.substring(4, 6);
-      String day = filename.substring(6, 8);
-      String hour = filename.substring(9, 11);
-      String minute = filename.substring(11, 13);
-      String second = filename.substring(13, 15);
-
-      return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
    }
 
    @FXML
