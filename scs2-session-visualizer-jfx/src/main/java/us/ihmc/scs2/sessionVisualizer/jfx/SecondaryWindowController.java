@@ -42,6 +42,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class SecondaryWindowController implements VisualizerController
@@ -360,7 +361,150 @@ public class SecondaryWindowController implements VisualizerController
       }
    }
 
-   private boolean loadDefinition(YoChartGroupConfigurationDefinition chartGroupDefinition, int insertionIndex)
+   /**
+    * Selects the active chart group by index.
+    * <p>
+    * The active chart group is the one that is currently displayed and that can be edited.
+    * </p>
+    *
+    * @param index the index of the chart group to select.
+    * @return {@code true} if the index is valid and the chart group was selected, {@code false} otherwise.
+    */
+   public boolean selectActiveChartGroup(int index)
+   {
+      if (index < 0 || index >= tabPane.getTabs().size())
+         return false;
+      tabPane.getSelectionModel().select(index);
+      return true;
+   }
+
+   /**
+    * Selects the active chart group by name.
+    * <p>
+    * The active chart group is the one that is currently displayed and that can be edited.
+    * If the chart group name is not found, nothing happens.
+    * </p>
+    *
+    * @param chartGroupName the name of the chart group to select.
+    * @return {@code true} if the chart group was found and selected, {@code false} otherwise.
+    */
+   public boolean selectActiveChartGroup(String chartGroupName)
+   {
+      for (Tab tab : tabPane.getTabs())
+      {
+         YoChartGroupPanelController controller = chartGroupControllers.get(tab);
+         if (controller == null)
+            continue;
+         if (controller.chartGroupNameProperty().get().equals(chartGroupName))
+         {
+            tabPane.getSelectionModel().select(tab);
+            return true;
+         }
+      }
+      return false;
+   }
+
+   /**
+    * Creates a new chart group with the given name.
+    *
+    * @param chartGroupName the name of the new chart group.
+    * @return {@code true} if the chart group was created, {@code false} otherwise.
+    */
+   public boolean createNewChartGroup(String chartGroupName)
+   {
+      Tab newTab = newChartGroupTab();
+      if (newTab == null)
+         return false;
+      YoChartGroupPanelController controller = chartGroupControllers.get(newTab);
+      controller.setUserDefinedChartGroupName(chartGroupName);
+      tabPane.getTabs().add(newTab);
+      return true;
+   }
+
+   /**
+    * Adds a variable to plot in the active chart group.
+    * <p>
+    * The active chart group is the one that is currently displayed and that can be edited.
+    * </p>
+    * <p>
+    * The chart group is resized, if needed, to fit the new variable.
+    * </p>
+    *
+    * @param variableName the name of the variable to plot.
+    * @param row          the row of the chart in the chart group.
+    * @param column       the column of the chart in the chart group.
+    * @return {@code true} if the variable has been plotted, {@code false} otherwise.
+    */
+   public boolean addVariableToActiveChartGroup(String variableName, int row, int column)
+   {
+      Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+      if (selectedTab == null)
+         return false;
+      YoChartGroupPanelController controller = chartGroupControllers.get(selectedTab);
+      if (controller == null)
+         return false;
+      return controller.addVariableToPlot(variableName, row, column, true);
+   }
+
+   /**
+    * Adds a variable to plot in the chart group with the given name.
+    * <p>
+    * The chart group is resized, if needed, to fit the new variable.
+    * </p>
+    *
+    * @param chartGroupName the name of the chart group to add the variable to.
+    * @param variableName   the name of the variable to plot.
+    * @param row            the row of the chart in the chart group.
+    * @param column         the column of the chart in the chart group.
+    * @param createIfAbsent whether to create a new chart group if the given name does not match any existing chart group.
+    * @return {@code true} if the variable has been plotted, {@code false} otherwise.
+    */
+   public boolean addVariableToChartGroup(String chartGroupName, String variableName, int row, int column, boolean createIfAbsent)
+   {
+      for (Tab tab : tabPane.getTabs())
+      {
+         YoChartGroupPanelController controller = chartGroupControllers.get(tab);
+         if (controller == null)
+            continue;
+         if (Objects.equals(controller.chartGroupNameProperty().get(), chartGroupName))
+            return controller.addVariableToPlot(variableName, row, column, true);
+      }
+
+      if (!createIfAbsent)
+         return false;
+
+      YoChartGroupPanelController emptyController = null;
+
+      for (Tab tab : tabPane.getTabs())
+      {
+         YoChartGroupPanelController controller = chartGroupControllers.get(tab);
+         if (controller == null)
+            continue;
+         if (controller.isEmpty())
+         {
+            emptyController = controller;
+            break;
+         }
+      }
+
+      if (emptyController != null)
+      {
+         emptyController.setUserDefinedChartGroupName(chartGroupName);
+         emptyController.addVariableToPlot(variableName, row, column, true);
+         return true;
+      }
+
+      Tab newTab = newChartGroupTab();
+      if (newTab == null)
+         return false;
+      YoChartGroupPanelController controller = chartGroupControllers.get(newTab);
+      controller.setUserDefinedChartGroupName(chartGroupName);
+      controller.addVariableToPlot(variableName, row, column, true);
+      tabPane.getTabs().add(newTab);
+      return true;
+   }
+
+   public boolean loadDefinition(YoChartGroupConfigurationDefinition chartGroupDefinition, int insertionIndex)
    {
       if (insertionIndex == -1)
       {

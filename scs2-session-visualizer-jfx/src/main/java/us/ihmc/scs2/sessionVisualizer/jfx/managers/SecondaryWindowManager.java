@@ -397,6 +397,16 @@ public class SecondaryWindowManager implements Manager
       secondary.setY(owner.getY() + 30.0);
    }
 
+   public int getNumberOfSecondaryWindows()
+   {
+      return secondaryWindows.size();
+   }
+
+   public SecondaryWindowController getSecondaryWindowController(int index)
+   {
+      return secondaryWindowControllers.get(index);
+   }
+
    public static class NewWindowRequest
    {
       public static final String REGISTRY_STATISTICS_WINDOW_TYPE = "YoRegistryStatisticsWindow";
