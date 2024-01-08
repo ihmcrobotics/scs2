@@ -1,14 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -25,13 +20,16 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.YoRobotFX;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
 public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 {
    private final Group rootNode = new Group();
    private final List<YoRobotFX> robots = new ArrayList<>();
-   private final YoManager yoManager;
-   private final ReferenceFrameManager referenceFrameManager;
-   private final BackgroundExecutorManager backgroundExecutorManager;
+   private final ObservableList<RobotDefinition> robotDefinitions = FXCollections.observableArrayList();
 
    private int numberOfRobotDefinitions = -1;
 
@@ -41,9 +39,49 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
                            ReferenceFrameManager referenceFrameManager,
                            BackgroundExecutorManager backgroundExecutorManager)
    {
-      this.yoManager = yoManager;
-      this.referenceFrameManager = referenceFrameManager;
-      this.backgroundExecutorManager = backgroundExecutorManager;
+      robotDefinitions.addListener(new ListChangeListener<>()
+      {
+         @Override
+         public void onChanged(Change<? extends RobotDefinition> c)
+         {
+            while (c.next())
+            {
+               if (c.wasAdded())
+               {
+                  List<YoRobotFX> robotsToAttach = c.getAddedSubList().stream().map(this::newYoRobotFX).toList();
+
+                  JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+                  {
+                     robots.addAll(robotsToAttach);
+                     rootNode.getChildren().addAll(robotsToAttach.stream().map(YoRobotFX::getRootNode).toList());
+                     if (robots.size() == 1)
+                        messager.submitMessage(topics.getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackNode(robots.get(0).getRootNode())));
+                  });
+               }
+               if (c.wasRemoved())
+               {
+                  List<YoRobotFX> robotsToRemove = c.getRemoved()
+                                                    .stream()
+                                                    .map(robotDefinition -> getRobotFX(robotDefinition))
+                                                    .filter(Optional::isPresent)
+                                                    .map(Optional::get)
+                                                    .toList();
+                  JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+                  {
+                     rootNode.getChildren().removeAll(robotsToRemove.stream().map(YoRobotFX::getRootNode).toList());
+                     robots.removeAll(robotsToRemove);
+                  });
+               }
+            }
+         }
+
+         private YoRobotFX newYoRobotFX(RobotDefinition robotDefinition)
+         {
+            YoRobotFX robot = new YoRobotFX(yoManager, referenceFrameManager, robotDefinition);
+            robot.loadRobot(command -> backgroundExecutorManager.queueTaskToExecuteInBackground(this, command));
+            return robot;
+         }
+      });
 
       messager.addTopicListener(topics.getCamera3DRequest(), request ->
       {
@@ -63,10 +101,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
             if (robotName != null)
             {
-               result = robots.stream()
-                              .filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName))
-                              .findFirst()
-                              .map(r -> r.findRigidBodyFrameNode(rigidBodyName));
+               result = getRobotFX(robotName).map(r -> r.findRigidBodyFrameNode(rigidBodyName));
             }
             else
             {
@@ -75,7 +110,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
             result.ifPresent(rigidBodyFrameNode ->
                              {
-                                if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
+                                if (rigidBodyFrameNode.getNode() != null)
                                    messager.submitMessage(topics.getCamera3DRequest(),
                                                           new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
                              });
@@ -98,18 +133,18 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       {
          case ADD:
          {
-            addRobotDefinition(change.getAddedRobotDefinition());
+            robotDefinitions.add(change.getAddedRobotDefinition());
             break;
          }
          case REMOVE:
          {
-            removeRobotDefinition(change.getRemovedRobotDefinition());
+            robotDefinitions.remove(change.getRemovedRobotDefinition());
             break;
          }
          case REPLACE:
          {
-            removeRobotDefinition(change.getRemovedRobotDefinition());
-            addRobotDefinition(change.getAddedRobotDefinition());
+            robotDefinitions.remove(change.getRemovedRobotDefinition());
+            robotDefinitions.add(change.getAddedRobotDefinition());
             break;
          }
       }
@@ -148,50 +183,17 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       }
    }
 
-   public void addRobotDefinition(RobotDefinition robotDefinition)
+   /**
+    * Returns the list of {@link RobotDefinition} that are currently being rendered.
+    * <p>
+    * Any modification to this list will be reflected in the rendering.
+    * </p>
+    *
+    * @return the list of {@link RobotDefinition} that are currently being rendered.
+    */
+   public ObservableList<RobotDefinition> getRobotDefinitions()
    {
-      YoRobotFX robot = new YoRobotFX(yoManager, referenceFrameManager, robotDefinition);
-      robot.loadRobot(command -> backgroundExecutorManager.queueTaskToExecuteInBackground(this, command));
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
-      {
-         robots.add(robot);
-         rootNode.getChildren().add(robot.getRootNode());
-      });
-   }
-
-   public void addRobotDefinitions(Collection<? extends RobotDefinition> robotDefinitions)
-   {
-      robotDefinitions.forEach(robotDefinition -> addRobotDefinition(robotDefinition));
-   }
-
-   public void removeRobotDefinition(RobotDefinition robotDefinition)
-   {
-      Optional<YoRobotFX> result = robots.stream().filter(robotFX -> robotFX.getRobotDefinition() == robotDefinition).findFirst();
-
-      if (result.isPresent())
-      {
-         YoRobotFX robotToRemove = result.get();
-         JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
-         {
-            rootNode.getChildren().remove(robotToRemove.getRootNode());
-            robots.remove(robotToRemove);
-         });
-      }
-   }
-
-   public void removeRobotDefinitions(Collection<? extends RobotDefinition> robotDefinitions)
-   {
-      robotDefinitions.forEach(this::removeRobotDefinition);
-   }
-
-   public void removeAllRobotDefinitions()
-   {
-      List<Node> nodesToDetach = robots.stream().map(YoRobotFX::getRootNode).collect(Collectors.toList());
-      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
-      {
-         rootNode.getChildren().removeAll(nodesToDetach);
-         robots.clear();
-      });
+      return robotDefinitions;
    }
 
    @Override
@@ -206,13 +208,13 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       start();
       List<RobotDefinition> robotDefinitions = session.getRobotDefinitions();
       numberOfRobotDefinitions = robotDefinitions.size();
-      addRobotDefinitions(robotDefinitions);
+      this.robotDefinitions.addAll(robotDefinitions);
    }
 
    @Override
    public void stopSession()
    {
-      removeAllRobotDefinitions();
+      robotDefinitions.clear();
       numberOfRobotDefinitions = -1;
    }
 
@@ -226,7 +228,17 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
    public RigidBodyReadOnly getRobotRootBody(String robotName)
    {
-      return robots.stream().filter(robot -> robot.getRobotDefinition().getName().equals(robotName)).findFirst().map(YoRobotFX::getRootBody).orElse(null);
+      return getRobotFX(robotName).map(YoRobotFX::getRootBody).orElse(null);
+   }
+
+   private Optional<YoRobotFX> getRobotFX(RobotDefinition robotDefinition)
+   {
+      return getRobotFX(robotDefinition.getName());
+   }
+
+   private Optional<YoRobotFX> getRobotFX(String robotName)
+   {
+      return robots.stream().filter(robot -> robot.getRobotDefinition().getName().equalsIgnoreCase(robotName)).findFirst();
    }
 
    public Group getRootNode()
