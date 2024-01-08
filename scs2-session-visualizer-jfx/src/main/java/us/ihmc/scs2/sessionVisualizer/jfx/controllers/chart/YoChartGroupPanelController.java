@@ -48,7 +48,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolki
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
@@ -211,7 +211,10 @@ public class YoChartGroupPanelController implements VisualizerController
       }
       else
       {
-         automatedChartGroupName.set(StringTools.commonSubString(plottedVariableList.stream().map(YoVariable::getName).collect(Collectors.toList())));
+         toolkit.getGlobalToolkit()
+                .generateChartGroupTitle(this,
+                                         plottedVariableList,
+                                         value -> JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> automatedChartGroupName.set(value)));
       }
 
       if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
@@ -558,6 +561,28 @@ public class YoChartGroupPanelController implements VisualizerController
    private boolean doesConfigurationFit(ChartGroupModel configuration)
    {
       return chartTable2D.getSize().contains(configuration.rowEnd(), configuration.columnEnd());
+   }
+
+   public boolean addVariableToPlot(String variableName, int row, int column, boolean resizeToFit)
+   {
+      if (resizeToFit)
+      {
+         if (row >= chartTable2D.getSize().getNumberOfRows() || column >= chartTable2D.getSize().getNumberOfCols())
+         {
+            int numberOfRows = Math.max(row + 1, chartTable2D.getSize().getNumberOfRows());
+            int numberOfCols = Math.max(column + 1, chartTable2D.getSize().getNumberOfCols());
+            chartTable2D.resize(new ChartTable2DSize(numberOfRows, numberOfCols));
+         }
+      }
+      else
+      {
+         if (row >= chartTable2D.getSize().getNumberOfRows() || column >= chartTable2D.getSize().getNumberOfCols())
+            return false;
+      }
+
+      YoChartPanelController chartController = chartTable2D.get(row, column);
+      chartController.addYoVariableToPlot(variableName);
+      return true;
    }
 
    public void loadChartGroupConfiguration(Window source, File file)
