@@ -145,7 +145,7 @@ public class YoCompositeAndEquationEditorWindowController
       //TODO: Fix this
       //      window.setOnHidden(e -> stop());
       //      window.setOnShowing(e -> start());
-      window.setTitle("YoGraphic properties");
+      window.setTitle("YoEquation editor");
       window.setScene(new Scene(mainPane));
       window.initOwner(toolkit.getMainWindow());
       refreshYoCompositeListView();
