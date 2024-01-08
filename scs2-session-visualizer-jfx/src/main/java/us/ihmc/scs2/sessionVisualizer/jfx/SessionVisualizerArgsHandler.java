@@ -16,6 +16,13 @@ public class SessionVisualizerArgsHandler
 {
    private Session session = null;
 
+   /**
+    * Parses the command line arguments.
+    *
+    * @param args the command line arguments.
+    * @return {@code true} if the arguments were parsed successfully, {@code false} otherwise.
+    * @throws Exception if an exception occurs while parsing the arguments.
+    */
    public boolean parseArgs(String[] args) throws Exception
    {
       String logFileOption = "logFileName";
