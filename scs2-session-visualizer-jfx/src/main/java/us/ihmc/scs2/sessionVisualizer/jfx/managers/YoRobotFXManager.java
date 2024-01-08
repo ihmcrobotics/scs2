@@ -48,12 +48,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
             {
                if (c.wasAdded())
                {
-                  List<YoRobotFX> robotsToAttach = c.getAddedSubList()
-                                                    .stream()
-                                                    .map(robotDefinition -> new YoRobotFX(yoManager, referenceFrameManager, robotDefinition))
-                                                    .peek(robot -> robot.loadRobot(command -> backgroundExecutorManager.queueTaskToExecuteInBackground(this,
-                                                                                                                                                       command)))
-                                                    .toList();
+                  List<YoRobotFX> robotsToAttach = c.getAddedSubList().stream().map(this::newYoRobotFX).toList();
 
                   JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
                   {
@@ -67,9 +62,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
                {
                   List<YoRobotFX> robotsToRemove = c.getRemoved()
                                                     .stream()
-                                                    .map(robotDefinition -> robots.stream()
-                                                                                  .filter(robot -> robot.getRobotDefinition() == robotDefinition)
-                                                                                  .findFirst())
+                                                    .map(robotDefinition -> getRobotFX(robotDefinition))
                                                     .filter(Optional::isPresent)
                                                     .map(Optional::get)
                                                     .toList();
@@ -80,6 +73,13 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
                   });
                }
             }
+         }
+
+         private YoRobotFX newYoRobotFX(RobotDefinition robotDefinition)
+         {
+            YoRobotFX robot = new YoRobotFX(yoManager, referenceFrameManager, robotDefinition);
+            robot.loadRobot(command -> backgroundExecutorManager.queueTaskToExecuteInBackground(this, command));
+            return robot;
          }
       });
 
@@ -101,10 +101,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
             if (robotName != null)
             {
-               result = robots.stream()
-                              .filter(r -> r.getRobotDefinition().getName().equalsIgnoreCase(robotName))
-                              .findFirst()
-                              .map(r -> r.findRigidBodyFrameNode(rigidBodyName));
+               result = getRobotFX(robotName).map(r -> r.findRigidBodyFrameNode(rigidBodyName));
             }
             else
             {
@@ -186,6 +183,14 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       }
    }
 
+   /**
+    * Returns the list of {@link RobotDefinition} that are currently being rendered.
+    * <p>
+    * Any modification to this list will be reflected in the rendering.
+    * </p>
+    *
+    * @return the list of {@link RobotDefinition} that are currently being rendered.
+    */
    public ObservableList<RobotDefinition> getRobotDefinitions()
    {
       return robotDefinitions;
@@ -223,7 +228,17 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 
    public RigidBodyReadOnly getRobotRootBody(String robotName)
    {
-      return robots.stream().filter(robot -> robot.getRobotDefinition().getName().equals(robotName)).findFirst().map(YoRobotFX::getRootBody).orElse(null);
+      return getRobotFX(robotName).map(YoRobotFX::getRootBody).orElse(null);
+   }
+
+   private Optional<YoRobotFX> getRobotFX(RobotDefinition robotDefinition)
+   {
+      return getRobotFX(robotDefinition.getName());
+   }
+
+   private Optional<YoRobotFX> getRobotFX(String robotName)
+   {
+      return robots.stream().filter(robot -> robot.getRobotDefinition().getName().equalsIgnoreCase(robotName)).findFirst();
    }
 
    public Group getRootNode()
