@@ -370,6 +370,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       return sessionTerrainObjectDefinitions;
    }
 
+   // TODO Move this to a more appropriate place
    public void generateChartGroupTitle(Object caller, Collection<YoVariable> variables, Consumer<String> callback)
    {
       callback.accept(StringTools.commonSubString(variables.stream().map(YoVariable::getName).collect(Collectors.toList())));

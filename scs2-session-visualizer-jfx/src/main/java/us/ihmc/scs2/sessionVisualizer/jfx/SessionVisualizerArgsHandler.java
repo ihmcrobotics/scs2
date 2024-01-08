@@ -9,6 +9,9 @@ import us.ihmc.scs2.session.mcap.MCAPLogSession;
 
 import java.io.File;
 
+/**
+ * This class is used to parse the command line arguments for the {@link SessionVisualizer}.
+ */
 public class SessionVisualizerArgsHandler
 {
    private Session session = null;

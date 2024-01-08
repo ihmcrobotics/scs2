@@ -361,6 +361,15 @@ public class SecondaryWindowController implements VisualizerController
       }
    }
 
+   /**
+    * Selects the active chart group by index.
+    * <p>
+    * The active chart group is the one that is currently displayed and that can be edited.
+    * </p>
+    *
+    * @param index the index of the chart group to select.
+    * @return {@code true} if the index is valid and the chart group was selected, {@code false} otherwise.
+    */
    public boolean selectActiveChartGroup(int index)
    {
       if (index < 0 || index >= tabPane.getTabs().size())
@@ -369,6 +378,16 @@ public class SecondaryWindowController implements VisualizerController
       return true;
    }
 
+   /**
+    * Selects the active chart group by name.
+    * <p>
+    * The active chart group is the one that is currently displayed and that can be edited.
+    * If the chart group name is not found, nothing happens.
+    * </p>
+    *
+    * @param chartGroupName the name of the chart group to select.
+    * @return {@code true} if the chart group was found and selected, {@code false} otherwise.
+    */
    public boolean selectActiveChartGroup(String chartGroupName)
    {
       for (Tab tab : tabPane.getTabs())
@@ -385,6 +404,12 @@ public class SecondaryWindowController implements VisualizerController
       return false;
    }
 
+   /**
+    * Creates a new chart group with the given name.
+    *
+    * @param chartGroupName the name of the new chart group.
+    * @return {@code true} if the chart group was created, {@code false} otherwise.
+    */
    public boolean createNewChartGroup(String chartGroupName)
    {
       Tab newTab = newChartGroupTab();
@@ -396,6 +421,20 @@ public class SecondaryWindowController implements VisualizerController
       return true;
    }
 
+   /**
+    * Adds a variable to plot in the active chart group.
+    * <p>
+    * The active chart group is the one that is currently displayed and that can be edited.
+    * </p>
+    * <p>
+    * The chart group is resized, if needed, to fit the new variable.
+    * </p>
+    *
+    * @param variableName the name of the variable to plot.
+    * @param row          the row of the chart in the chart group.
+    * @param column       the column of the chart in the chart group.
+    * @return {@code true} if the variable has been plotted, {@code false} otherwise.
+    */
    public boolean addVariableToActiveChartGroup(String variableName, int row, int column)
    {
       Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
@@ -407,6 +446,19 @@ public class SecondaryWindowController implements VisualizerController
       return controller.addVariableToPlot(variableName, row, column, true);
    }
 
+   /**
+    * Adds a variable to plot in the chart group with the given name.
+    * <p>
+    * The chart group is resized, if needed, to fit the new variable.
+    * </p>
+    *
+    * @param chartGroupName the name of the chart group to add the variable to.
+    * @param variableName   the name of the variable to plot.
+    * @param row            the row of the chart in the chart group.
+    * @param column         the column of the chart in the chart group.
+    * @param createIfAbsent whether to create a new chart group if the given name does not match any existing chart group.
+    * @return {@code true} if the variable has been plotted, {@code false} otherwise.
+    */
    public boolean addVariableToChartGroup(String chartGroupName, String variableName, int row, int column, boolean createIfAbsent)
    {
       for (Tab tab : tabPane.getTabs())
