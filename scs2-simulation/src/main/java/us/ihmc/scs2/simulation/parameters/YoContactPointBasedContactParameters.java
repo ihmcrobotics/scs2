@@ -1,21 +1,21 @@
 package us.ihmc.scs2.simulation.parameters;
 
 import org.apache.commons.lang3.StringUtils;
-
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class YoContactPointBasedContactParameters implements ContactPointBasedContactParametersBasics
 {
-   private YoDouble kxy;
-   private YoDouble bxy;
-   private YoDouble kz;
-   private YoDouble bz;
-   private YoDouble stiffeningLength;
-   private YoDouble alphaSlip;
-   private YoDouble alphaStick;
-   private YoBoolean enableSlip;
+   private final YoDouble kxy;
+   private final YoDouble bxy;
+   private final YoDouble kz;
+   private final YoDouble bz;
+   private final YoDouble stiffeningLength;
+   private final YoDouble alphaSlip;
+   private final YoDouble alphaStick;
+   private final YoBoolean enableSlip;
+   private final YoBoolean jointWrenchCalculationEnabled;
 
    public YoContactPointBasedContactParameters(String prefix, YoRegistry registry)
    {
@@ -27,6 +27,7 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
       String alphaSlipName = "alphaSlip";
       String alphaStickName = "alphaStick";
       String enableSlipName = "enableSlip";
+      String jointWrenchCalculationEnabledName = "jointWrenchCalculationEnabled";
 
       if (prefix != null && !prefix.isEmpty())
       {
@@ -38,6 +39,7 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
          alphaSlipName = prefix + StringUtils.capitalize(alphaSlipName);
          alphaStickName = prefix + StringUtils.capitalize(alphaStickName);
          enableSlipName = prefix + StringUtils.capitalize(enableSlipName);
+         jointWrenchCalculationEnabledName = prefix + StringUtils.capitalize(jointWrenchCalculationEnabledName);
       }
 
       kxy = new YoDouble(kxyName, registry);
@@ -48,6 +50,7 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
       alphaSlip = new YoDouble(alphaSlipName, registry);
       alphaStick = new YoDouble(alphaStickName, registry);
       enableSlip = new YoBoolean(enableSlipName, registry);
+      jointWrenchCalculationEnabled = new YoBoolean(jointWrenchCalculationEnabledName, registry);
    }
 
    @Override
@@ -99,6 +102,12 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
    }
 
    @Override
+   public void setJointWrenchCalculationEnabled(boolean jointWrenchCalculationEnabled)
+   {
+      this.jointWrenchCalculationEnabled.set(jointWrenchCalculationEnabled);
+   }
+
+   @Override
    public double getKxy()
    {
       return kxy.getValue();
@@ -144,5 +153,11 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
    public boolean isSlipEnabled()
    {
       return enableSlip.getValue();
+   }
+
+   @Override
+   public boolean isJointWrenchCalculationEnabled()
+   {
+      return jointWrenchCalculationEnabled.getValue();
    }
 }
