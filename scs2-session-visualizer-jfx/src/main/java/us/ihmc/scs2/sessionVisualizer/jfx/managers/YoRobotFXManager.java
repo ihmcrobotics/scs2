@@ -8,6 +8,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest;
@@ -55,7 +56,23 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
                      robots.addAll(robotsToAttach);
                      rootNode.getChildren().addAll(robotsToAttach.stream().map(YoRobotFX::getRootNode).toList());
                      if (robots.size() == 1)
-                        messager.submitMessage(topics.getCamera3DRequest(), new Camera3DRequest(FocalPointRequest.trackNode(robots.get(0).getRootNode())));
+                     {
+                        YoRobotFX robotToTrack = robots.get(0);
+                        SixDoFJointDefinition rootJoint = robotDefinitions.get(0).getFloatingRootJointDefinition();
+                        if (rootJoint != null)
+                        {
+                           String mainBody = rootJoint.getSuccessor().getName();
+                           backgroundExecutorManager.scheduleInBackgroundWithCondition(() -> isSessionLoaded(), () ->
+                           {
+                              FrameNode rigidBodyFrameNode = robotToTrack.findRigidBodyFrameNode(mainBody);
+                              if (rigidBodyFrameNode != null && rigidBodyFrameNode.getNode() != null)
+                              {
+                                 messager.submitMessage(topics.getCamera3DRequest(),
+                                                        new Camera3DRequest(FocalPointRequest.trackNode(rigidBodyFrameNode.getNode())));
+                              }
+                           });
+                        }
+                     }
                   });
                }
                if (c.wasRemoved())
