@@ -144,7 +144,7 @@ public class ContactPointBasedRobotPhysics
       forwardDynamicsCalculator.compute();
 
       if (jointWrenchMap != null)
-         jointWrenchMap.forEach((joint, wrench) -> wrench.set(forwardDynamicsCalculator.getExternalWrench(joint.getSuccessor())));
+         jointWrenchMap.forEach((joint, wrench) -> wrench.set(forwardDynamicsCalculator.getJointWrench(joint)));
    }
 
    public void writeJointAccelerations()
