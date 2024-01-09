@@ -1,8 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.interfaces.FrameVector3DReadOnly;
@@ -20,6 +17,9 @@ import us.ihmc.scs2.simulation.robot.trackers.GroundContactPoint;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePose3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ContactPointBasedForceCalculator
 {
@@ -41,6 +41,11 @@ public class ContactPointBasedForceCalculator
    public void setParameters(ContactPointBasedContactParametersReadOnly parameters)
    {
       this.parameters.set(parameters);
+   }
+
+   public ContactPointBasedContactParametersReadOnly getParameters()
+   {
+      return parameters;
    }
 
    public void reset(List<? extends RobotInterface> robots)
@@ -88,11 +93,13 @@ public class ContactPointBasedForceCalculator
             YoFramePoseUsingYawPitchRoll gcpPose = gcp.getPose();
 
             List<Collidable> activeCollidables = staticCollidableHolder.getCollidables().stream().filter(collidable ->
-            {
-               if (!collidable.getBoundingBox().isInsideInclusive(gcpPose.getPosition()))
-                  return false;
-               return collidable.getShape().isPointInside(gcpPose.getPosition());
-            }).collect(Collectors.toList());
+                                                                                                         {
+                                                                                                            if (!collidable.getBoundingBox()
+                                                                                                                           .isInsideInclusive(gcpPose.getPosition()))
+                                                                                                               return false;
+                                                                                                            return collidable.getShape()
+                                                                                                                             .isPointInside(gcpPose.getPosition());
+                                                                                                         }).collect(Collectors.toList());
 
             if (activeCollidables.isEmpty())
             {

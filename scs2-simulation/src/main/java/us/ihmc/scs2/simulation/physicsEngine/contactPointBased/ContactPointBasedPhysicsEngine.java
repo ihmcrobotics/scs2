@@ -1,9 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.spatial.Wrench;
@@ -25,17 +21,21 @@ import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
 import us.ihmc.scs2.simulation.robot.trackers.GroundContactPoint;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 {
    /**
     * The maximum translational acceleration this joint may undergo before throwing an
-    * {@link UnreasonableAccelerationException UnreasonableAccelerationException}.
+    * {@link IllegalStateException}.
     */
    public static final double MAX_TRANS_ACCEL = 1000000000000.0;
 
    /**
     * The maximum rotational acceleration this joint may undergo before throwing an
-    * {@link UnreasonableAccelerationException UnreasonableAccelerationException}.
+    * {@link IllegalStateException}.
     */
    public static final double MAX_ROT_ACCEL = 10000000.0;
 
@@ -144,12 +144,12 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
          robot.writeJointAccelerations();
 
          robot.getAllJoints().forEach(joint ->
-         {
-            if (joint.getJointTwist().getAngularPart().norm() > MAX_ROT_ACCEL)
-               throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
-            if (joint.getJointTwist().getLinearPart().norm() > MAX_TRANS_ACCEL)
-               throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
-         });
+                                      {
+                                         if (joint.getJointTwist().getAngularPart().norm() > MAX_ROT_ACCEL)
+                                            throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
+                                         if (joint.getJointTwist().getLinearPart().norm() > MAX_TRANS_ACCEL)
+                                            throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
+                                      });
 
          robot.integrateState(dt);
          robot.updateFrames();
@@ -176,6 +176,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       ContactPointBasedRobot cpbRobot = new ContactPointBasedRobot(robot, physicsEngineRegistry);
+      if (forceCalculator.getParameters().isJointWrenchCalculationEnabled())
+         cpbRobot.enableJointWrenchCalculator();
       rootRegistry.addChild(cpbRobot.getRegistry());
       physicsEngineRegistry.addChild(cpbRobot.getSecondaryRegistry());
       robotList.add(cpbRobot);

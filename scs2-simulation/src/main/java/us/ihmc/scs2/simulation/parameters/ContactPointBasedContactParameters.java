@@ -10,6 +10,7 @@ public class ContactPointBasedContactParameters implements ContactPointBasedCont
    private double alphaSlip;
    private double alphaStick;
    private boolean enableSlip;
+   private boolean jointWrenchCalculationEnabled;
 
    public static ContactPointBasedContactParameters defaultParameters()
    {
@@ -23,6 +24,7 @@ public class ContactPointBasedContactParameters implements ContactPointBasedCont
       parameters.setAlphaSlip(0.7);
       parameters.setAlphaStick(0.7);
       parameters.setEnableSlip(false);
+      parameters.setJointWrenchCalculationEnabled(false);
 
       return parameters;
    }
@@ -76,6 +78,12 @@ public class ContactPointBasedContactParameters implements ContactPointBasedCont
    }
 
    @Override
+   public void setJointWrenchCalculationEnabled(boolean jointWrenchCalculationEnabled)
+   {
+      this.jointWrenchCalculationEnabled = jointWrenchCalculationEnabled;
+   }
+
+   @Override
    public double getKxy()
    {
       return kxy;
@@ -121,5 +129,11 @@ public class ContactPointBasedContactParameters implements ContactPointBasedCont
    public boolean isSlipEnabled()
    {
       return enableSlip;
+   }
+
+   @Override
+   public boolean isJointWrenchCalculationEnabled()
+   {
+      return jointWrenchCalculationEnabled;
    }
 }

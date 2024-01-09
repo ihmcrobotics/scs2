@@ -12,6 +12,7 @@ public interface ContactPointBasedContactParametersBasics extends ContactPointBa
       setAlphaSlip(other.getAlphaSlip());
       setAlphaStick(other.getAlphaStick());
       setEnableSlip(other.isSlipEnabled());
+      setJointWrenchCalculationEnabled(other.isJointWrenchCalculationEnabled());
    }
 
    void setKxy(double kxy);
@@ -29,4 +30,6 @@ public interface ContactPointBasedContactParametersBasics extends ContactPointBa
    void setAlphaStick(double alphaStick);
 
    void setEnableSlip(boolean enableSlip);
+
+   void setJointWrenchCalculationEnabled(boolean jointWrenchCalculationEnabled);
 }
