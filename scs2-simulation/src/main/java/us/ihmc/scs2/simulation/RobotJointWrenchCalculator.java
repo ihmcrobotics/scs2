@@ -17,6 +17,13 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * This class is used to compute the wrenches acting on each joint of a robot.
+ * <p>
+ * It relies on the {@link ForwardDynamicsCalculator} to compute the wrenches due to the robot's mass and the joint accelerations. It also relies on the
+ * {@link RobotPhysicsOutput} to compute the wrenches due to external impulses.
+ * </p>
+ */
 public class RobotJointWrenchCalculator
 {
    private final YoRegistry registry;
@@ -25,6 +32,13 @@ public class RobotJointWrenchCalculator
    private final RobotPhysicsOutput robotPhysicsOutput;
    private final ForwardDynamicsCalculator forwardDynamicsCalculator;
 
+   /**
+    * Creates a new calculator.
+    *
+    * @param physicsOutput             the output of the physics engine. It is used to compute the wrenches due to external impulses.
+    * @param forwardDynamicsCalculator the calculator used to compute the wrenches due to the robot's mass and the joint accelerations.
+    * @param parentRegistry            the registry to which the calculator's variables are registered.
+    */
    public RobotJointWrenchCalculator(RobotPhysicsOutput physicsOutput, ForwardDynamicsCalculator forwardDynamicsCalculator, YoRegistry parentRegistry)
    {
       this.robotPhysicsOutput = physicsOutput;
@@ -44,6 +58,11 @@ public class RobotJointWrenchCalculator
       }
    }
 
+   /**
+    * Updates the wrenches acting on each joint.
+    *
+    * @param dt the time step used to compute the wrenches due to external impulses.
+    */
    public void update(double dt)
    {
       if (jointWrenchMap == null)
@@ -74,19 +93,27 @@ public class RobotJointWrenchCalculator
       }
    }
 
-   private Map<JointReadOnly, SpatialImpulseReadOnly> computeExternalImpulseMap(Collection<? extends JointReadOnly> joints,
-                                                                                Map<JointReadOnly, SpatialImpulseReadOnly> externalImpulseMapToPack)
+   /**
+    * Gets the impulse acting on the given joints and their subtrees.
+    *
+    * @param joints                   the joints to get the impulse for.
+    * @param externalImpulseMapToPack the map in which the impulse is stored.
+    */
+   private void computeExternalImpulseMap(Collection<? extends JointReadOnly> joints, Map<JointReadOnly, SpatialImpulseReadOnly> externalImpulseMapToPack)
    {
       for (JointReadOnly joint : joints)
       {
          computeExternalImpulseMap(joint, externalImpulseMapToPack);
       }
-
-      return externalImpulseMapToPack;
    }
 
-   private Map<JointReadOnly, SpatialImpulseReadOnly> computeExternalImpulseMap(JointReadOnly joint,
-                                                                                Map<JointReadOnly, SpatialImpulseReadOnly> externalImpulseMapToPack)
+   /**
+    * Recursively computes the external impulse acting on each joint.
+    *
+    * @param joint                    the joint to compute the external impulse for.
+    * @param externalImpulseMapToPack the map in which the external impulse is stored.
+    */
+   private void computeExternalImpulseMap(JointReadOnly joint, Map<JointReadOnly, SpatialImpulseReadOnly> externalImpulseMapToPack)
    {
       for (JointReadOnly childJoint : joint.getPredecessor().getChildrenJoints())
       {
@@ -123,7 +150,5 @@ public class RobotJointWrenchCalculator
             }
          }
       }
-
-      return externalImpulseMapToPack;
    }
 }
