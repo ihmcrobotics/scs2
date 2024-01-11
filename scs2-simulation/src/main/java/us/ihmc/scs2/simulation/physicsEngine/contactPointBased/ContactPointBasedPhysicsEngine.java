@@ -50,6 +50,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
    private final ContactPointBasedForceCalculator forceCalculator;
 
+   private boolean estimateJointWrenches = false;
    private boolean hasBeenInitialized = false;
 
    public ContactPointBasedPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
@@ -58,6 +59,11 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       this.rootRegistry = rootRegistry;
 
       forceCalculator = new ContactPointBasedForceCalculator(inertialFrame, physicsEngineRegistry);
+   }
+
+   public void setEstimateJointWrenches(boolean estimateJointWrenches)
+   {
+      this.estimateJointWrenches = estimateJointWrenches;
    }
 
    @Override
@@ -142,6 +148,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       for (ContactPointBasedRobot robot : robotList)
       {
          robot.writeJointAccelerations();
+         robot.computeJointWrenches(dt);
 
          robot.getAllJoints().forEach(joint ->
                                       {
@@ -176,7 +183,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       ContactPointBasedRobot cpbRobot = new ContactPointBasedRobot(robot, physicsEngineRegistry);
-      if (forceCalculator.getParameters().isJointWrenchCalculationEnabled())
+      if (estimateJointWrenches)
          cpbRobot.enableJointWrenchCalculator();
       rootRegistry.addChild(cpbRobot.getRegistry());
       physicsEngineRegistry.addChild(cpbRobot.getSecondaryRegistry());

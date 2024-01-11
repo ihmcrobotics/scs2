@@ -1,14 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.impulseBased;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -36,6 +27,15 @@ import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Physics engine that simulates the dynamic behavior of multiple robots and their contact
@@ -84,6 +84,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    private final YoTimer physicsEngineTotalTimer = new YoTimer("physicsEngineTotalTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
    private final YoDouble physicsEngineRealTimeRate = new YoDouble("physicsEngineRealTimeRate", physicsEngineRegistry);
 
+   private boolean estimateJointWrenches = false;
    private boolean hasBeenInitialized = false;
 
    private MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener;
@@ -105,6 +106,11 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       multiContactImpulseCalculatorPool = new YoMultiContactImpulseCalculatorPool(1, inertialFrame, multiContactCalculatorRegistry);
    }
 
+   public void setEstimateJointWrenches(boolean estimateJointWrenches)
+   {
+      this.estimateJointWrenches = estimateJointWrenches;
+   }
+
    public void setMultiContactCalculatorStepListener(MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener)
    {
       this.multiContactCalculatorStepListener = multiContactCalculatorStepListener;
@@ -122,6 +128,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       ImpulseBasedRobot ibRobot = new ImpulseBasedRobot(robot, physicsEngineRegistry);
+      if (estimateJointWrenches)
+         ibRobot.enableJointWrenchCalculator();
       robotMap.put(ibRobot.getRootBody(), ibRobot);
       rootRegistry.addChild(ibRobot.getRegistry());
       physicsEngineRegistry.addChild(ibRobot.getSecondaryRegistry());
@@ -276,6 +284,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       {
          robot.writeJointAccelerations();
          robot.writeJointDeltaVelocities();
+         robot.computeJointWrenches(dt);
          robot.integrateState(dt);
          robot.updateFrames();
          robot.updateSensors();
