@@ -1,25 +1,12 @@
 package us.ihmc.scs2.simulation.physicsEngine.impulseBased;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
-
 import us.ihmc.euclid.geometry.tools.EuclidGeometryRandomTools;
 import us.ihmc.euclid.matrix.Matrix3D;
-import us.ihmc.euclid.referenceFrame.FramePoint3D;
-import us.ihmc.euclid.referenceFrame.FrameSphere3D;
-import us.ihmc.euclid.referenceFrame.FrameUnitVector3D;
-import us.ihmc.euclid.referenceFrame.FrameVector3D;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.referenceFrame.*;
 import us.ihmc.euclid.referenceFrame.interfaces.FrameShape3DBasics;
 import us.ihmc.euclid.referenceFrame.interfaces.FrameVector3DReadOnly;
 import us.ihmc.euclid.referenceFrame.tools.EuclidFrameRandomTools;
@@ -40,11 +27,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.SpatialVector;
-import us.ihmc.mecano.tools.JointStateType;
-import us.ihmc.mecano.tools.MecanoRandomTools;
-import us.ihmc.mecano.tools.MecanoTestTools;
-import us.ihmc.mecano.tools.MomentOfInertiaFactory;
-import us.ihmc.mecano.tools.MultiBodySystemTools;
+import us.ihmc.mecano.tools.*;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionResult;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
@@ -54,6 +37,12 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBa
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.SimJointStateType;
 import us.ihmc.scs2.simulation.screwTools.SimMultiBodySystemRandomTools;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SingleContactImpulseCalculatorTest
 {
@@ -345,12 +334,11 @@ public class SingleContactImpulseCalculatorTest
    }
 
    public static void assertContactResponseProperties(String messagePrefix,
-                                               double dt,
-                                               FrameVector3D contactLinearVelocityNoImpulse,
-                                               SingleContactImpulseCalculator impulseCalculator,
-                                               double epsilon,
-                                               double postImpulseVelocityEpsilon)
-         throws Throwable
+                                                      double dt,
+                                                      FrameVector3D contactLinearVelocityNoImpulse,
+                                                      SingleContactImpulseCalculator impulseCalculator,
+                                                      double epsilon,
+                                                      double postImpulseVelocityEpsilon) throws Throwable
    {
       CollisionResult collisionResult = impulseCalculator.getCollisionResult();
       FrameUnitVector3D collisionAxisForA = collisionResult.getCollisionAxisForA();
@@ -391,8 +379,7 @@ public class SingleContactImpulseCalculatorTest
          impulseNormal.changeFrame(worldFrame);
          impulseTangential.changeFrame(worldFrame);
 
-         boolean isSticking = impulseTangential.norm() < (impulseCalculator.getContactParameters().getCoefficientOfFriction() - epsilon)
-               * impulseNormal.norm();
+         boolean isSticking = impulseTangential.norm() < (impulseCalculator.getContactParameters().getCoefficientOfFriction() - epsilon) * impulseNormal.norm();
 
          if (isSticking)
          {
@@ -434,7 +421,7 @@ public class SingleContactImpulseCalculatorTest
    public static ForwardDynamicsCalculator setupForwardDynamicsCalculator(Vector3DReadOnly gravity, RigidBodyBasics rigidBody)
    {
       ForwardDynamicsCalculator forwardDynamicsCalculator = new ForwardDynamicsCalculator(MultiBodySystemTools.getRootBody(rigidBody));
-      forwardDynamicsCalculator.setGravitionalAcceleration(gravity);
+      forwardDynamicsCalculator.setGravitationalAcceleration(gravity);
       forwardDynamicsCalculator.compute();
       return forwardDynamicsCalculator;
    }
