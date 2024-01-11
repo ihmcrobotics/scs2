@@ -20,7 +20,7 @@ mainDependencies {
    api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer:source")
 
-   var javaFXVersion = "17.0.2"
+   var javaFXVersion = "17.0.9"
    api(ihmc.javaFXModule("base", javaFXVersion))
    api(ihmc.javaFXModule("controls", javaFXVersion))
    api(ihmc.javaFXModule("graphics", javaFXVersion))
@@ -101,7 +101,7 @@ tasks.create("buildDebianPackage") {
       val launchScriptFile = File("$sourceFolder/bin/$sessionVisualizerExecutableName")
       var originalScript = launchScriptFile.readText()
       originalScript = originalScript.replaceFirst(
-         "#!/bin/sh", """
+            "#!/bin/sh", """
          #!/bin/bash
          # This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
          export __GL_SYNC_TO_VBLANK=0
@@ -116,7 +116,7 @@ tasks.create("buildDebianPackage") {
       LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
 
       File("$baseFolder/DEBIAN/control").writeText(
-         """
+            """
          Package: scs2
          Version: ${ihmc.version}
          Section: base
@@ -130,7 +130,7 @@ tasks.create("buildDebianPackage") {
       )
 
       File("$baseFolder/DEBIAN/postinst").writeText(
-         """
+            """
          #!/bin/bash
          # Without this, the desktop file does not appear in the system menu.
          sudo desktop-file-install /usr/share/applications/scs2-${ihmc.version}-visualizer.desktop
@@ -146,7 +146,7 @@ tasks.create("buildDebianPackage") {
 
       File("$baseFolder/usr/share/applications/").mkdirs()
       File("$baseFolder/usr/share/applications/scs2-${ihmc.version}-visualizer.desktop").writeText(
-         """
+            """
          [Desktop Entry]
          Name=SCS2 Session Visualizer
          Comment=Session Visualizer for SCS2
