@@ -15,7 +15,6 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
    private final YoDouble alphaSlip;
    private final YoDouble alphaStick;
    private final YoBoolean enableSlip;
-   private final YoBoolean jointWrenchCalculationEnabled;
 
    public YoContactPointBasedContactParameters(String prefix, YoRegistry registry)
    {
@@ -27,7 +26,6 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
       String alphaSlipName = "alphaSlip";
       String alphaStickName = "alphaStick";
       String enableSlipName = "enableSlip";
-      String jointWrenchCalculationEnabledName = "jointWrenchCalculationEnabled";
 
       if (prefix != null && !prefix.isEmpty())
       {
@@ -39,7 +37,6 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
          alphaSlipName = prefix + StringUtils.capitalize(alphaSlipName);
          alphaStickName = prefix + StringUtils.capitalize(alphaStickName);
          enableSlipName = prefix + StringUtils.capitalize(enableSlipName);
-         jointWrenchCalculationEnabledName = prefix + StringUtils.capitalize(jointWrenchCalculationEnabledName);
       }
 
       kxy = new YoDouble(kxyName, registry);
@@ -50,7 +47,6 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
       alphaSlip = new YoDouble(alphaSlipName, registry);
       alphaStick = new YoDouble(alphaStickName, registry);
       enableSlip = new YoBoolean(enableSlipName, registry);
-      jointWrenchCalculationEnabled = new YoBoolean(jointWrenchCalculationEnabledName, registry);
    }
 
    @Override
@@ -102,12 +98,6 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
    }
 
    @Override
-   public void setJointWrenchCalculationEnabled(boolean jointWrenchCalculationEnabled)
-   {
-      this.jointWrenchCalculationEnabled.set(jointWrenchCalculationEnabled);
-   }
-
-   @Override
    public double getKxy()
    {
       return kxy.getValue();
@@ -153,11 +143,5 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
    public boolean isSlipEnabled()
    {
       return enableSlip.getValue();
-   }
-
-   @Override
-   public boolean isJointWrenchCalculationEnabled()
-   {
-      return jointWrenchCalculationEnabled.getValue();
    }
 }

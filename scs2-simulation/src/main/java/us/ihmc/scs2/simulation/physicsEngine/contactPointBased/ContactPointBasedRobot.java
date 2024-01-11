@@ -53,6 +53,11 @@ public class ContactPointBasedRobot extends RobotExtension implements Collidable
       robotPhysics.doForwardDynamics(gravity);
    }
 
+   public void computeJointWrenches(double dt)
+   {
+      robotPhysics.computeJointWrenches(dt);
+   }
+
    public void updateCollidableBoundingBoxes()
    {
       robotPhysics.updateCollidableBoundingBoxes();

@@ -5,12 +5,9 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
-import us.ihmc.mecano.frames.MovingReferenceFrame;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
-import us.ihmc.mecano.spatial.interfaces.FixedFrameWrenchBasics;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
-import us.ihmc.mecano.yoVariables.spatial.YoFixedFrameSpatialVector;
-import us.ihmc.mecano.yoVariables.spatial.YoFixedFrameWrench;
+import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
@@ -22,12 +19,8 @@ import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.scs2.simulation.screwTools.SimJointStateType;
 import us.ihmc.scs2.simulation.screwTools.SimMultiBodySystemTools;
 import us.ihmc.scs2.simulation.screwTools.SingleRobotFirstOrderIntegrator;
-import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
-import us.ihmc.yoVariables.registry.YoRegistry;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ContactPointBasedRobotPhysics
@@ -42,10 +35,9 @@ public class ContactPointBasedRobotPhysics
 
    private final List<Collidable> collidables;
 
-   private Map<SimJointBasics, FixedFrameWrenchBasics> jointWrenchMap;
-
    // TODO Following fields are specific to the type of engine used, they need interfacing.
    private final ForwardDynamicsCalculator forwardDynamicsCalculator;
+   private RobotJointWrenchCalculator jointWrenchCalculator;
 
    private final SingleRobotFirstOrderIntegrator integrator;
 
@@ -75,21 +67,10 @@ public class ContactPointBasedRobotPhysics
 
    public void enableJointWrenchCalculator()
    {
-      if (jointWrenchMap != null)
+      if (jointWrenchCalculator != null)
          return;
 
-      jointWrenchMap = new LinkedHashMap<>();
-
-      YoRegistry registry = owner.getRegistry();
-
-      for (SimJointBasics joint : owner.getJointsToConsider())
-      {
-         MovingReferenceFrame successorFrame = joint.getSuccessor().getBodyFixedFrame();
-         MovingReferenceFrame frameAfterJoint = joint.getFrameAfterJoint();
-         YoFrameVector3D torquePart = new YoFrameVector3D(joint.getName() + "FullTorque", frameAfterJoint, registry);
-         YoFrameVector3D forcePart = new YoFrameVector3D(joint.getName() + "FullForce", frameAfterJoint, registry);
-         jointWrenchMap.put(joint, new YoFixedFrameWrench(successorFrame, new YoFixedFrameSpatialVector(torquePart, forcePart)));
-      }
+      jointWrenchCalculator = new RobotJointWrenchCalculator(physicsOutput, forwardDynamicsCalculator, owner.getRegistry());
    }
 
    public void resetCalculators()
@@ -142,9 +123,6 @@ public class ContactPointBasedRobotPhysics
                                                        return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
                                                     });
       forwardDynamicsCalculator.compute();
-
-      if (jointWrenchMap != null)
-         jointWrenchMap.forEach((joint, wrench) -> wrench.set(forwardDynamicsCalculator.getJointWrench(joint)));
    }
 
    public void writeJointAccelerations()
@@ -162,6 +140,14 @@ public class ContactPointBasedRobotPhysics
                                                           jointAccelerationMatrix,
                                                           1.0e12,
                                                           true);
+   }
+
+   public void computeJointWrenches(double dt)
+   {
+      if (jointWrenchCalculator == null)
+         return;
+
+      jointWrenchCalculator.update(dt);
    }
 
    public void integrateState(double dt)

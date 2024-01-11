@@ -17,7 +17,4 @@ public interface ContactPointBasedContactParametersReadOnly
    double getAlphaStick();
 
    boolean isSlipEnabled();
-
-   // TODO This is not the best place for this parameter, but the whole thing needs to be refactored.
-   boolean isJointWrenchCalculationEnabled();
 }

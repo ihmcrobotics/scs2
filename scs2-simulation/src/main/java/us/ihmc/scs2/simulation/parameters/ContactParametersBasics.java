@@ -1,9 +1,11 @@
 package us.ihmc.scs2.simulation.parameters;
 
+import us.ihmc.scs2.simulation.physicsEngine.impulseBased.ImpulseBasedPhysicsEngine;
+
 /**
  * Write and read interface for accessing/modifying a set of parameters used for resolving contacts
  * between pairs of collidables, see {@link ImpulseBasedPhysicsEngine}.
- * 
+ *
  * @author Sylvain Bertrand
  */
 public interface ContactParametersBasics extends ContactParametersReadOnly, ConstraintParametersBasics
@@ -27,7 +29,7 @@ public interface ContactParametersBasics extends ContactParametersReadOnly, Cons
     * normal. A larger minimum penetration implies greater robustness to numerical errors when
     * estimating the normal.
     * </p>
-    * 
+    *
     * @param minimumPenetration the distance before resolving the contact, recommended ~1.0e-5.
     */
    void setMinimumPenetration(double minimumPenetration);
@@ -38,7 +40,7 @@ public interface ContactParametersBasics extends ContactParametersReadOnly, Cons
     * Assuming the Coulomb friction model is used, the coefficient of friction <tt>&mu;</tt> defines
     * the relationship between normal contact force <tt>F<sub>n</sub></tt> and maximum achievable
     * tangential contact force <tt>F<sub>t</sub></tt>:
-    * 
+    *
     * <pre>
     * |F<sub>t</sub>| &leq; &mu; F<sub>n</sub>
     * </pre>
@@ -55,7 +57,7 @@ public interface ContactParametersBasics extends ContactParametersReadOnly, Cons
     * <p>
     * Note that the same coefficient is used for both static and sliding contacts.
     * </p>
-    * 
+    *
     * @param coefficientOfFriction the coefficient of friction, recommended 0.7.
     */
    void setCoefficientOfFriction(double coefficientOfFriction);
@@ -67,7 +69,7 @@ public interface ContactParametersBasics extends ContactParametersReadOnly, Cons
     * When enabled, only a moment around the normal axis of an active contact is computed with the goal
     * of canceling the angular velocity around the normal axis.
     * </p>
-    * 
+    *
     * @param computeFrictionMoment {@code true} to enable the friction moment calculation,
     *                              {@code false} to disable it.
     */
@@ -76,11 +78,11 @@ public interface ContactParametersBasics extends ContactParametersReadOnly, Cons
    /**
     * When computing the moment-impulse of friction for a contact, then Coulomb friction is replaced by
     * an elliptic law as follows:
-    * 
+    *
     * <pre>
     * F<sub>x</sub><sup>2</sup>/e<sub>x</sub><sup>2</sup> + F<sub>y</sub><sup>2</sup>/e<sub>y</sub><sup>2</sup> + T<sub>z</sub><sup>2</sup>/e<sub>zz</sub><sup>2</sup> &leq; &mu;F<sub>z</sub><sup>2</sup>
     * </pre>
-    * 
+    * <p>
     * where <tt>F<sub>x</sub></tt> and <tt>F<sub>y</sub></tt> are the tangential forces,
     * <tt>T<sub>z</sub></tt> the normal moment, <tt>F<sub>z</sub></tt> the normal force, and
     * <tt>&mu;</tt> the coefficient of friction. <tt>e<sub>i</sub> are positive constants defined by
@@ -89,7 +91,7 @@ public interface ContactParametersBasics extends ContactParametersReadOnly, Cons
     * In the current implementation of the solver, <tt>e<sub>x</sub> = e<sub>y</sub> = 1<tt> and only <tt>e<sub>zz</sub></tt>
     * is the ratio set by this method.
     * </p>
-    * 
+    *
     * @param coulombFrictionMomentRatio the value to use for <tt>e<sub>zz</sub></tt>, default is
     *                                   {@code 0.3}.
     */

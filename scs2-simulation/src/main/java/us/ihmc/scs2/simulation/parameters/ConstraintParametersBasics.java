@@ -1,19 +1,21 @@
 package us.ihmc.scs2.simulation.parameters;
 
+import us.ihmc.scs2.simulation.physicsEngine.impulseBased.ImpulseBasedPhysicsEngine;
+
 /**
  * Write and read interface for accessing/modifying a set of parameters used for resolving general
  * constraints in {@link ImpulseBasedPhysicsEngine}.
  * <p>
  * Constraints can either be: robot joint limits or contact between two collidables.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public interface ConstraintParametersBasics extends ConstraintParametersReadOnly
 {
    /**
     * Performs deep copy of {@code other} into {@code this}.
-    * 
+    *
     * @param other the other set of parameters. Not modified.
     */
    default void set(ConstraintParametersReadOnly other)
@@ -42,7 +44,7 @@ public interface ConstraintParametersBasics extends ConstraintParametersReadOnly
     * dissipated.
     * </ul>
     * </p>
-    * 
+    *
     * @param coefficientOfRestitution the coefficient of restitution.
     */
    void setCoefficientOfRestitution(double coefficientOfRestitution);
@@ -54,7 +56,7 @@ public interface ConstraintParametersBasics extends ConstraintParametersReadOnly
     * coefficient of restitution is used to resolve the impact, if it is below a coefficient of
     * restitution of zero is used.
     * </p>
-    * 
+    *
     * @param restitutionThreshold the restitution threshold on the pre-impulse velocity magnitude.
     */
    void setRestitutionThreshold(double restitutionThreshold);
@@ -77,7 +79,7 @@ public interface ConstraintParametersBasics extends ConstraintParametersReadOnly
     * single tick.
     * </ul>
     * </p>
-    * 
+    *
     * @param errorReductionParameter the error reduction parameter, recommended [0, 0.2].
     */
    void setErrorReductionParameter(double errorReductionParameter);
