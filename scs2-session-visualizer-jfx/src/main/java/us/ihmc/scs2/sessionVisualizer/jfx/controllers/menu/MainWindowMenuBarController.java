@@ -1,11 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 
 public class MainWindowMenuBarController implements VisualizerController
 {
+   @FXML
+   private MenuBar menuBar;
+   @FXML
+   private Menu fileMenu, sessionMenu, runMenu, dataBufferMenu, yoCompositeMenu, yoChartMenu, yoGraphicMenu, yoSliderboardMenu, helpMenu;
    @FXML
    private FileMenuController fileMenuController;
    @FXML
@@ -37,5 +43,10 @@ public class MainWindowMenuBarController implements VisualizerController
       sessionMenuController.initialize(toolkit);
       yoSliderboardMenuController.initialize(toolkit);
       helpMenuController.initialize(toolkit);
+   }
+
+   public void addMenu(int index, Menu menu)
+   {
+      menuBar.getMenus().add(index, menu);
    }
 }

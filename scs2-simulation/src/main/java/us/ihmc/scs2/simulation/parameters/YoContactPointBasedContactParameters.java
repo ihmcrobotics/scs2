@@ -1,21 +1,20 @@
 package us.ihmc.scs2.simulation.parameters;
 
 import org.apache.commons.lang3.StringUtils;
-
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 public class YoContactPointBasedContactParameters implements ContactPointBasedContactParametersBasics
 {
-   private YoDouble kxy;
-   private YoDouble bxy;
-   private YoDouble kz;
-   private YoDouble bz;
-   private YoDouble stiffeningLength;
-   private YoDouble alphaSlip;
-   private YoDouble alphaStick;
-   private YoBoolean enableSlip;
+   private final YoDouble kxy;
+   private final YoDouble bxy;
+   private final YoDouble kz;
+   private final YoDouble bz;
+   private final YoDouble stiffeningLength;
+   private final YoDouble alphaSlip;
+   private final YoDouble alphaStick;
+   private final YoBoolean enableSlip;
 
    public YoContactPointBasedContactParameters(String prefix, YoRegistry registry)
    {

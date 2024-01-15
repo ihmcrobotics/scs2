@@ -19,7 +19,15 @@ import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameQuaternion;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class MCAPFrameTransformManager
 {
@@ -85,7 +93,10 @@ public class MCAPFrameTransformManager
       }
 
       if (foxgloveFrameTransformSchema == null)
-         throw new RuntimeException("Could not find the schema for foxglove::FrameTransform");
+      {
+         LogTools.error("Could not find the schema for foxglove::FrameTransform");
+         return;
+      }
 
       // Flatten the schema to make it easier to read.
       foxgloveFrameTransformSchema = foxgloveFrameTransformSchema.flattenSchema();
@@ -212,6 +223,9 @@ public class MCAPFrameTransformManager
 
    public void update()
    {
+      if (foxgloveFrameTransformSchema == null)
+         return;
+
       for (YoFoxGloveFrameTransform transform : transformList)
       {
          transform.update();
@@ -228,10 +242,11 @@ public class MCAPFrameTransformManager
     */
    public boolean readMessage(MCAP.Message message)
    {
-      if (!channelIds.contains(message.channelId()))
-      {
+      if (foxgloveFrameTransformSchema == null)
          return false;
-      }
+
+      if (!channelIds.contains(message.channelId()))
+         return false;
 
       cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
 
@@ -342,6 +357,11 @@ public class MCAPFrameTransformManager
    public YoRegistry getRegistry()
    {
       return registry;
+   }
+
+   public boolean hasMCAPFrameTransforms()
+   {
+      return foxgloveFrameTransformSchema != null;
    }
 
    public MCAP.Schema getMCAPSchema()

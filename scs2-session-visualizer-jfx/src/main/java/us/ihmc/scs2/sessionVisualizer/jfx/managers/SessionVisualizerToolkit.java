@@ -1,8 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -25,7 +22,15 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
 {
@@ -363,5 +368,11 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public ObservableList<TerrainObjectDefinition> getSessionTerrainObjectDefinitions()
    {
       return sessionTerrainObjectDefinitions;
+   }
+
+   // TODO Move this to a more appropriate place
+   public void generateChartGroupTitle(Object caller, Collection<YoVariable> variables, Consumer<String> callback)
+   {
+      callback.accept(StringTools.commonSubString(variables.stream().map(YoVariable::getName).collect(Collectors.toList())));
    }
 }

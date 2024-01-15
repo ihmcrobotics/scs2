@@ -439,6 +439,21 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       return mainViewSplitPane;
    }
 
+   public MainWindowMenuBarController getMainWindowMenuBarController()
+   {
+      return mainWindowMenuBarController;
+   }
+
+   public SessionSimpleControlsController getSessionSimpleControlsController()
+   {
+      return sessionSimpleControlsController;
+   }
+
+   public SessionAdvancedControlsController getSessionAdvancedControlsController()
+   {
+      return sessionAdvancedControlsController;
+   }
+
    public YoChartGroupPanelController getYoChartGroupPanelController()
    {
       return yoChartGroupPanelController;
