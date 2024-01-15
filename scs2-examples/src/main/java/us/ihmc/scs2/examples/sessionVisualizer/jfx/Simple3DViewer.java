@@ -1,7 +1,12 @@
 package us.ihmc.scs2.examples.sessionVisualizer.jfx;
 
 import javafx.event.Event;
-import javafx.scene.*;
+import javafx.scene.AmbientLight;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.PerspectiveCamera;
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
@@ -56,7 +61,7 @@ public class Simple3DViewer
    {
       PerspectiveCamera camera = new PerspectiveCamera(true);
       camera.setNearClip(0.05);
-      camera.setFarClip(50.0);
+      camera.setFarClip(100000.0);
       scene.setCamera(camera);
       PerspectiveCameraController cameraController = new PerspectiveCameraController(scene.widthProperty(), scene.heightProperty(), camera, Axis3D.Z, Axis3D.X);
       cameraController.setCameraPosition(-1.0, -1.0, 1.0);

@@ -6,7 +6,6 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.axisAngle.AxisAngle;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryRandomTools;
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
@@ -14,7 +13,13 @@ import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Point2DReadOnly;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
-import us.ihmc.scs2.definition.visual.*;
+import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.visual.ColorDefinitions;
+import us.ihmc.scs2.definition.visual.MaterialDefinition;
+import us.ihmc.scs2.definition.visual.TextureDefinition;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
+import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.Scene3DBuilder;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
@@ -26,7 +31,7 @@ import java.util.stream.Collectors;
 
 public class VisualDefinitionFactoryJFXVisualizer
 {
-   private static final boolean USE_TEXTURE = false;
+   private static final boolean USE_TEXTURE = true;
 
    private final Random random = new Random(232);
 
@@ -48,7 +53,8 @@ public class VisualDefinitionFactoryJFXVisualizer
       if (USE_TEXTURE)
       {
          material = new MaterialDefinition();
-         material.setDiffuseMap(new TextureDefinition("debuggingTextureGrid.jpg"));
+         //         material.setDiffuseMap(new TextureDefinition("debuggingTextureGrid.jpg"));
+         material.setDiffuseMap(new TextureDefinition("textures/ground_grid.png"));
       }
       else
       {
@@ -62,44 +68,53 @@ public class VisualDefinitionFactoryJFXVisualizer
       VisualDefinitionFactory factory = new VisualDefinitionFactory();
       factory.setDefaultMaterial(material);
 
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addCoordinateSystem(0.25, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addArrow(Axis3D.Z, 0.3, ColorDefinitions.Tomato(), ColorDefinitions.BlueViolet());
+
       factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addCoordinateSystem(0.25, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addArrow(Axis3D.Z, 0.3, ColorDefinitions.Tomato(), ColorDefinitions.BlueViolet());
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addBox(0.1, 0.2, 0.3, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addBox(0.1, 0.2, 0.3, false, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addRamp(0.3, 0.2, 0.1, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addSphere(0.15, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addCapsule(0.2, 0.05, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addEllipsoid(0.025, 0.2, 0.1, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addCylinder(0.2, 0.05, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addCone(0.2, 0.1, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addTruncatedCone(0.2, 0.1, 0.04, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addTruncatedCone(0.175, 0.12, 0.075, 0.03, 0.06, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addHemiEllipsoid(0.15, 0.05, 0.225, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addTorus(0.2, 0.025, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addArcTorus(0.25 * Math.PI, 1.75 * Math.PI, 0.2, 0.025, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addPyramidBox(0.15, 0.075, 0.15, 0.1, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addPolygon3D(polygon3D, true, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addPolygon2D(polygon2D, true, material);
-      factory.getCurrentTransform().setTranslation(nextVisualPosition());
-      factory.addExtrudedPolygon(extrudedPolygon2D, true, 0.1, material);
+      TriangleMesh3DDefinition boxMesh = TriangleMesh3DFactories.Box(100.0, 100.0, 0.1, true);
+      for (int i = 0; i < boxMesh.getVertices().length; i++)
+      {
+         boxMesh.getTextures()[i].set(boxMesh.getVertices()[i].getX(), boxMesh.getVertices()[i].getY());
+      }
+
+      //      Box3DDefinition geometry = new Box3DDefinition(100.0, 100.0, 0.3, true);
+      factory.addGeometryDefinition(boxMesh, material);
+
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addBox(0.1, 0.2, 0.3, false, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addRamp(0.3, 0.2, 0.1, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addSphere(0.15, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addCapsule(0.2, 0.05, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addEllipsoid(0.025, 0.2, 0.1, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addCylinder(0.2, 0.05, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addCone(0.2, 0.1, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addTruncatedCone(0.2, 0.1, 0.04, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addTruncatedCone(0.175, 0.12, 0.075, 0.03, 0.06, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addHemiEllipsoid(0.15, 0.05, 0.225, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addTorus(0.2, 0.025, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addArcTorus(0.25 * Math.PI, 1.75 * Math.PI, 0.2, 0.025, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addPyramidBox(0.15, 0.075, 0.15, 0.1, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addPolygon3D(polygon3D, true, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addPolygon2D(polygon2D, true, material);
+      //      factory.getCurrentTransform().setTranslation(nextVisualPosition());
+      //      factory.addExtrudedPolygon(extrudedPolygon2D, true, 0.1, material);
 
       List<VisualDefinition> visualDefinitions = factory.getVisualDefinitions();
       Node node = JavaFXVisualTools.collectNodes(visualDefinitions);

@@ -1,15 +1,5 @@
 package us.ihmc.scs2.definition.visual;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.function.DoubleFunction;
-
 import gnu.trove.list.array.TIntArrayList;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.Axis3D;
@@ -60,6 +50,16 @@ import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.function.DoubleFunction;
+
 /**
  * This class provides factories to create generic meshes, i.e. {@code TriangleMesh3DDefinition}, to
  * represent a 3D shape.
@@ -97,10 +97,10 @@ public class TriangleMesh3DFactories
    /**
     * Tests the implementation of the given {@code description} and attempts to create the appropriate
     * triangle mesh.
-    * 
+    *
     * @param description the geometry to create the mesh for.
     * @return the generic triangle mesh or {@code null} if the given {@code description} is not
-    *         supported.
+    *       supported.
     */
    public static TriangleMesh3DDefinition TriangleMesh(GeometryDefinition description)
    {
@@ -172,8 +172,7 @@ public class TriangleMesh3DFactories
    public static TriangleMesh3DDefinition Sphere(Sphere3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = Sphere(description.getRadius(), description.getResolution(), description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -232,8 +231,7 @@ public class TriangleMesh3DFactories
                                                           description.getRadiusZ(),
                                                           description.getResolution(),
                                                           description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -280,9 +278,9 @@ public class TriangleMesh3DFactories
       int nPointsLatitude = latitudeResolution + 1;
 
       // Reminder of longitude and latitude: http://www.geographyalltheway.com/ks3_geography/maps_atlases/longitude_latitude.htm
-      Point3D32 points[] = new Point3D32[nPointsLatitude * nPointsLongitude];
+      Point3D32[] points = new Point3D32[nPointsLatitude * nPointsLongitude];
       Vector3D32[] normals = new Vector3D32[nPointsLatitude * nPointsLongitude];
-      Point2D32 textPoints[] = new Point2D32[nPointsLatitude * nPointsLongitude];
+      Point2D32[] textPoints = new Point2D32[nPointsLatitude * nPointsLongitude];
 
       for (int longitudeIndex = 0; longitudeIndex < nPointsLongitude; longitudeIndex++)
       {
@@ -421,7 +419,7 @@ public class TriangleMesh3DFactories
     *                                 transform is applied.
     * @param cwOrderedPolygonVertices the clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code cwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonClockwise(RigidBodyTransformReadOnly polygonPose, List<? extends Point2DReadOnly> cwOrderedPolygonVertices)
    {
@@ -438,7 +436,7 @@ public class TriangleMesh3DFactories
     *                                  no transform is applied.
     * @param ccwOrderedPolygonVertices the counter-clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonCounterClockwise(RigidBodyTransformReadOnly polygonPose,
                                                                   List<? extends Point2DReadOnly> ccwOrderedPolygonVertices)
@@ -458,9 +456,10 @@ public class TriangleMesh3DFactories
     * @param counterClockwiseOrdered {@code true} to indicate that the vertices are counter-clockwise
     *                                ordered, {@code false} for clockwise ordered.
     * @return the generic triangle mesh or {@code null} if {@code convexPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
-   public static TriangleMesh3DDefinition Polygon(RigidBodyTransformReadOnly polygonPose, List<? extends Point2DReadOnly> polygonVertices,
+   public static TriangleMesh3DDefinition Polygon(RigidBodyTransformReadOnly polygonPose,
+                                                  List<? extends Point2DReadOnly> polygonVertices,
                                                   boolean counterClockwiseOrdered)
    {
       if (polygonVertices == null)
@@ -562,7 +561,7 @@ public class TriangleMesh3DFactories
     *
     * @param cwOrderedPolygonVertices the clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code cwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonClockwise(List<? extends Point3DReadOnly> cwOrderedPolygonVertices)
    {
@@ -577,7 +576,7 @@ public class TriangleMesh3DFactories
     *
     * @param ccwOrderedPolygonVertices the counter-clockwise-ordered vertices of the polygon.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition PolygonCounterClockwise(List<? extends Point3DReadOnly> ccwOrderedPolygonVertices)
    {
@@ -594,7 +593,7 @@ public class TriangleMesh3DFactories
     * @param counterClockwiseOrdered {@code true} to indicate that the vertices are counter-clockwise
     *                                ordered, {@code false} for clockwise ordered.
     * @return the generic triangle mesh or {@code null} if {@code convexPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition Polygon(List<? extends Point3DReadOnly> convexPolygonVertices, boolean counterClockwiseOrdered)
    {
@@ -748,7 +747,7 @@ public class TriangleMesh3DFactories
     * @param extrusionHeight           thickness of the extrusion. The polygon is extruded upward along
     *                                  the z-axis.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
    public static TriangleMesh3DDefinition ExtrudedPolygon(List<? extends Point2DReadOnly> ccwOrderedPolygonVertices, double extrusionHeight)
    {
@@ -767,9 +766,10 @@ public class TriangleMesh3DFactories
     * @param bottomZ                   offset along the z-axis that is applied on all the vertices of
     *                                  the resulting mesh.
     * @return the generic triangle mesh or {@code null} if {@code ccwOrderedPolygonVertices} is
-    *         {@code null}.
+    *       {@code null}.
     */
-   public static TriangleMesh3DDefinition ExtrudedPolygonCounterClockwise(List<? extends Point2DReadOnly> ccwOrderedPolygonVertices, double topZ,
+   public static TriangleMesh3DDefinition ExtrudedPolygonCounterClockwise(List<? extends Point2DReadOnly> ccwOrderedPolygonVertices,
+                                                                          double topZ,
                                                                           double bottomZ)
    {
       return ExtrudedPolygon(ccwOrderedPolygonVertices, true, topZ, bottomZ);
@@ -788,7 +788,9 @@ public class TriangleMesh3DFactories
     * @param bottomZ                 z-coordinate of the top face.
     * @return the generic triangle mesh or {@code null} if {@code polygonVertices} is {@code null}.
     */
-   public static TriangleMesh3DDefinition ExtrudedPolygon(List<? extends Point2DReadOnly> polygonVertices, boolean counterClockwiseOrdered, double topZ,
+   public static TriangleMesh3DDefinition ExtrudedPolygon(List<? extends Point2DReadOnly> polygonVertices,
+                                                          boolean counterClockwiseOrdered,
+                                                          double topZ,
                                                           double bottomZ)
    {
       if (polygonVertices == null || polygonVertices.size() < 3)
@@ -796,8 +798,8 @@ public class TriangleMesh3DFactories
 
       int numberOfVertices = polygonVertices.size();
 
-      Point3D32 vertices[] = new Point3D32[6 * numberOfVertices + 4];
-      Vector3D32 normals[] = new Vector3D32[6 * numberOfVertices + 4];
+      Point3D32[] vertices = new Point3D32[6 * numberOfVertices + 4];
+      Vector3D32[] normals = new Vector3D32[6 * numberOfVertices + 4];
       Point2D32[] texturePoints = new Point2D32[6 * numberOfVertices + 4];
 
       float minX = polygonVertices.get(0).getX32();
@@ -966,8 +968,7 @@ public class TriangleMesh3DFactories
                                                               description.getRadiusZ(),
                                                               description.getResolution(),
                                                               description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1008,9 +1009,9 @@ public class TriangleMesh3DFactories
       int nPointsLatitude = latitudeResolution + 1;
 
       // Reminder of longitude and latitude: http://www.geographyalltheway.com/ks3_geography/maps_atlases/longitude_latitude.htm
-      Point3D32 points[] = new Point3D32[(nPointsLatitude + 1) * nPointsLongitude];
+      Point3D32[] points = new Point3D32[(nPointsLatitude + 1) * nPointsLongitude];
       Vector3D32[] normals = new Vector3D32[(nPointsLatitude + 1) * nPointsLongitude];
-      Point2D32 textPoints[] = new Point2D32[(nPointsLatitude + 1) * nPointsLongitude];
+      Point2D32[] textPoints = new Point2D32[(nPointsLatitude + 1) * nPointsLongitude];
 
       for (int longitudeIndex = 0; longitudeIndex < nPointsLongitude; longitudeIndex++)
       {
@@ -1100,7 +1101,7 @@ public class TriangleMesh3DFactories
       for (int longitudeIndex = 0; longitudeIndex < nPointsLongitude - 1; longitudeIndex++)
       {
          int nextLongitudeIndex = (longitudeIndex + 1) % nPointsLongitude;
-         triangleIndices[index++] = (nPointsLatitude - 0) * nPointsLongitude + longitudeIndex;
+         triangleIndices[index++] = (nPointsLatitude) * nPointsLongitude + longitudeIndex;
          triangleIndices[index++] = (nPointsLatitude - 1) * nPointsLongitude + longitudeIndex;
          triangleIndices[index++] = (nPointsLatitude - 1) * nPointsLongitude + nextLongitudeIndex;
       }
@@ -1124,8 +1125,7 @@ public class TriangleMesh3DFactories
                                                          description.getLength(),
                                                          description.getResolution(),
                                                          description.isCentered());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1154,7 +1154,7 @@ public class TriangleMesh3DFactories
     * The cylinder's axis is aligned with the z-axis. When {@code centered} is true, the cylinder is
     * centered at the origin, when false its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param radius     the cylinder's radius.
     * @param height     the cylinder's height or length.
     * @param resolution the resolution for the cylindrical part.
@@ -1164,9 +1164,9 @@ public class TriangleMesh3DFactories
     */
    public static TriangleMesh3DDefinition Cylinder(float radius, float height, int resolution, boolean centered)
    {
-      Point3D32 points[] = new Point3D32[4 * resolution + 2];
-      Vector3D32 normals[] = new Vector3D32[4 * resolution + 2];
-      Point2D32 texturePoints[] = new Point2D32[4 * resolution + 2];
+      Point3D32[] points = new Point3D32[4 * resolution + 2];
+      Vector3D32[] normals = new Vector3D32[4 * resolution + 2];
+      Point2D32[] texturePoints = new Point2D32[4 * resolution + 2];
 
       float zTop = centered ? 0.5f * height : height;
       float zBottom = centered ? -0.5f * height : 0.0f;
@@ -1232,7 +1232,7 @@ public class TriangleMesh3DFactories
 
       for (int i = 0; i < resolution; i++)
       { // The cylinder part
-        // Lower triangle
+         // Lower triangle
          triangleIndices[index++] = i + 2 * resolution;
          triangleIndices[index++] = (i + 1) % resolution + 2 * resolution;
          triangleIndices[index++] = i + 3 * resolution;
@@ -1251,15 +1251,14 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the cone's properties.
     * @return the generic triangle mesh.
     */
    public static TriangleMesh3DDefinition Cone(Cone3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = Cone(description.getHeight(), description.getRadius(), description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1269,7 +1268,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height     the height of the cone.
     * @param radius     the radius of the base.
     * @param resolution the resolution for the cylindrical part of the cone.
@@ -1286,7 +1285,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height     the height of the cone.
     * @param radius     the radius of the base.
     * @param resolution the resolution for the cylindrical part of the cone.
@@ -1359,7 +1358,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the cone's properties.
     * @return the generic triangle mesh.
     */
@@ -1372,8 +1371,7 @@ public class TriangleMesh3DFactories
                                                               description.getTopRadiusY(),
                                                               description.getResolution(),
                                                               description.getCentered());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1383,7 +1381,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height      the cone's height.
     * @param baseRadiusX radius around the x-axis of the base ellipse.
     * @param baseRadiusY radius around the y-axis of the base ellipse.
@@ -1394,8 +1392,13 @@ public class TriangleMesh3DFactories
     *                    center its bottom face at the origin.
     * @return the generic triangle mesh.
     */
-   public static TriangleMesh3DDefinition TruncatedCone(double height, double baseRadiusX, double baseRadiusY, double topRadiusX, double topRadiusY,
-                                                        int resolution, boolean centered)
+   public static TriangleMesh3DDefinition TruncatedCone(double height,
+                                                        double baseRadiusX,
+                                                        double baseRadiusY,
+                                                        double topRadiusX,
+                                                        double topRadiusY,
+                                                        int resolution,
+                                                        boolean centered)
    {
       return TruncatedCone((float) height, (float) baseRadiusX, (float) baseRadiusY, (float) topRadiusX, (float) topRadiusY, resolution, centered);
    }
@@ -1406,7 +1409,7 @@ public class TriangleMesh3DFactories
     * The cone's axis is aligned with the z-axis and is positioned such that the center of its bottom
     * face is at the origin.
     * </p>
-    * 
+    *
     * @param height      the cone's height.
     * @param baseRadiusX radius around the x-axis of the base ellipse.
     * @param baseRadiusY radius around the y-axis of the base ellipse.
@@ -1417,10 +1420,15 @@ public class TriangleMesh3DFactories
     *                    center its bottom face at the origin.
     * @return the generic triangle mesh.
     */
-   public static TriangleMesh3DDefinition TruncatedCone(float height, float baseRadiusX, float baseRadiusY, float topRadiusX, float topRadiusY, int resolution,
+   public static TriangleMesh3DDefinition TruncatedCone(float height,
+                                                        float baseRadiusX,
+                                                        float baseRadiusY,
+                                                        float topRadiusX,
+                                                        float topRadiusY,
+                                                        int resolution,
                                                         boolean centered)
    {
-      Point3D32 points[] = new Point3D32[4 * resolution + 2];
+      Point3D32[] points = new Point3D32[4 * resolution + 2];
       Vector3D32[] normals = new Vector3D32[4 * resolution + 2];
       Point2D32[] textPoints = new Point2D32[4 * resolution + 2];
 
@@ -1507,15 +1515,14 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the torus's properties.
     * @return the generic triangle mesh.
     */
    public static TriangleMesh3DDefinition Torus(Torus3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = Torus(description.getMajorRadius(), description.getMinorRadius(), description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1524,7 +1531,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     * @param minorRadius the radius of the tube.
     * @param resolution  used to define the longitudinal and radial resolutions.
@@ -1540,7 +1547,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param majorRadius the radius from the torus centroid to the tube center.
     * @param minorRadius the radius of the tube.
     * @param resolution  used to define the longitudinal and radial resolutions.
@@ -1556,7 +1563,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the torus's properties.
     * @return the generic triangle mesh.
     */
@@ -1567,8 +1574,7 @@ public class TriangleMesh3DFactories
                                                          description.getMajorRadius(),
                                                          description.getMinorRadius(),
                                                          description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1577,7 +1583,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param startAngle  the angle at which the torus starts. The angle is in radians, it is expressed
     *                    with respect to the x-axis, and a positive angle corresponds to a
     *                    counter-clockwise rotation.
@@ -1599,7 +1605,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The torus' axis is aligned with the z-axis and its centroid at the origin.
     * </p>
-    * 
+    *
     * @param startAngle  the angle at which the torus starts. The angle is in radians, it is expressed
     *                    with respect to the x-axis, and a positive angle corresponds to a
     *                    counter-clockwise rotation.
@@ -1630,7 +1636,7 @@ public class TriangleMesh3DFactories
       float stepAngle = (endAngle - startAngle) / (majorN - 1);
 
       int numberOfVertices = isClosed ? majorN * minorN : majorN * minorN + 2 * (resolution + 1);
-      Point3D32 points[] = new Point3D32[numberOfVertices];
+      Point3D32[] points = new Point3D32[numberOfVertices];
       Vector3D32[] normals = new Vector3D32[numberOfVertices];
       Point2D32[] texturePoints = new Point2D32[numberOfVertices];
 
@@ -1779,8 +1785,7 @@ public class TriangleMesh3DFactories
    public static TriangleMesh3DDefinition Box(Box3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = Box(description.getSizeX(), description.getSizeY(), description.getSizeZ(), description.isCentered());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -1811,9 +1816,9 @@ public class TriangleMesh3DFactories
     */
    public static TriangleMesh3DDefinition Box(float sizeX, float sizeY, float sizeZ, boolean centered)
    {
-      Point3D32 points[] = new Point3D32[24];
+      Point3D32[] points = new Point3D32[24];
       Vector3D32[] normals = new Vector3D32[24];
-      Point2D32 textPoints[] = new Point2D32[24];
+      Point2D32[] textPoints = new Point2D32[24];
 
       float zBottom = centered ? -sizeZ / 2f : 0;
       float zTop = centered ? sizeZ / 2f : sizeZ;
@@ -1967,7 +1972,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param sizeX the rectangle size along the x-axis.
     * @param sizeY the rectangle size along the y-axis.
     * @param z     the height of the rectangle.
@@ -1980,7 +1985,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param sizeX the rectangle size along the x-axis.
     * @param sizeY the rectangle size along the y-axis.
     * @param z     the height of the rectangle.
@@ -1993,7 +1998,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param minX the rectangle's lower-bound along the x-axis.
     * @param maxX the rectangle's upper-bound along the x-axis.
     * @param minY the rectangle's lower-bound along the y-axis.
@@ -2008,7 +2013,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a flat horizontal rectangle.
-    * 
+    *
     * @param minX the rectangle's lower-bound along the x-axis.
     * @param maxX the rectangle's upper-bound along the x-axis.
     * @param minY the rectangle's lower-bound along the y-axis.
@@ -2055,15 +2060,14 @@ public class TriangleMesh3DFactories
     * <p>
     * The ramp is positioned such that its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the ramp's properties.
     * @return the generic triangle mesh.
     */
    public static TriangleMesh3DDefinition Ramp(Ramp3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = Ramp(description.getSizeX(), description.getSizeY(), description.getSizeZ());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -2072,7 +2076,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The ramp is positioned such that its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param sizeX ramp size along the x-axis.
     * @param sizeY ramp size along the y-axis.
     * @param sizeZ ramp size along the z-axis.
@@ -2088,7 +2092,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The ramp is positioned such that its bottom face is centered at the origin.
     * </p>
-    * 
+    *
     * @param sizeX ramp size along the x-axis.
     * @param sizeY ramp size along the y-axis.
     * @param sizeZ ramp size along the z-axis.
@@ -2217,7 +2221,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a 3D box which bottom and top faces are extended with a pyramid.
-    * 
+    *
     * @param description the description holding the box's properties.
     * @return the generic triangle mesh.
     */
@@ -2227,14 +2231,13 @@ public class TriangleMesh3DFactories
                                                            description.getBoxSizeY(),
                                                            description.getBoxSizeZ(),
                                                            description.getPyramidHeight());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
    /**
     * Creates a triangle mesh for a 3D box which bottom and top faces are extended with a pyramid.
-    * 
+    *
     * @param boxSizeX      box size along the x-axis.
     * @param boxSizeY      box size along the y-axis.
     * @param boxSizeZ      box size along the z-axis.
@@ -2248,7 +2251,7 @@ public class TriangleMesh3DFactories
 
    /**
     * Creates a triangle mesh for a 3D box which bottom and top faces are extended with a pyramid.
-    * 
+    *
     * @param boxSizeX      box size along the x-axis.
     * @param boxSizeY      box size along the y-axis.
     * @param boxSizeZ      box size along the z-axis.
@@ -2257,9 +2260,9 @@ public class TriangleMesh3DFactories
     */
    public static TriangleMesh3DDefinition PyramidBox(float boxSizeX, float boxSizeY, float boxSizeZ, float pyramidHeight)
    {
-      Point3D32 points[] = new Point3D32[40];
+      Point3D32[] points = new Point3D32[40];
       Vector3D32[] normals = new Vector3D32[40];
-      Point2D32 textPoints[] = new Point2D32[40];
+      Point2D32[] textPoints = new Point2D32[40];
       float totalHeight = 2.0f * pyramidHeight + boxSizeZ;
 
       // Box front face
@@ -2499,7 +2502,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The line segment is implemented as an elongated 3D box.
     * </p>
-    * 
+    *
     * @param lineSegment used to define the mesh end points.
     * @param width       the thickness of the line.
     * @return the generic triangle mesh.
@@ -2530,7 +2533,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The line segment is implemented as an elongated 3D box.
     * </p>
-    * 
+    *
     * @param x0    the x-coordinate of the first endpoint for the line segment.
     * @param y0    the y-coordinate of the first endpoint for the line segment.
     * @param z0    the z-coordinate of the first endpoint for the line segment.
@@ -2550,7 +2553,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The line segment is implemented as an elongated 3D box.
     * </p>
-    * 
+    *
     * @param x0    the x-coordinate of the first endpoint for the line segment.
     * @param y0    the y-coordinate of the first endpoint for the line segment.
     * @param z0    the z-coordinate of the first endpoint for the line segment.
@@ -2640,8 +2643,7 @@ public class TriangleMesh3DFactories
                                                         description.getRadiusZ(),
                                                         description.getResolution(),
                                                         description.getResolution());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -2661,7 +2663,11 @@ public class TriangleMesh3DFactories
     *                            per latitude.
     * @return the generic triangle mesh.
     */
-   public static TriangleMesh3DDefinition Capsule(double height, double radiusX, double radiusY, double radiusZ, int latitudeResolution,
+   public static TriangleMesh3DDefinition Capsule(double height,
+                                                  double radiusX,
+                                                  double radiusY,
+                                                  double radiusZ,
+                                                  int latitudeResolution,
                                                   int longitudeResolution)
    {
       return Capsule((float) height, (float) radiusX, (float) radiusY, (float) radiusZ, latitudeResolution, longitudeResolution);
@@ -2692,9 +2698,9 @@ public class TriangleMesh3DFactories
 
       // Reminder of longitude and latitude: http://www.geographyalltheway.com/ks3_geography/maps_atlases/longitude_latitude.htm
       int numberOfVertices = latitudeResolution * longitudeResolution;
-      Point3D32 points[] = new Point3D32[numberOfVertices];
+      Point3D32[] points = new Point3D32[numberOfVertices];
       Vector3D32[] normals = new Vector3D32[numberOfVertices];
-      Point2D32 textPoints[] = new Point2D32[numberOfVertices];
+      Point2D32[] textPoints = new Point2D32[numberOfVertices];
 
       float texRatio = radiusZ / (2.0f * radiusZ + height);
 
@@ -2702,7 +2708,7 @@ public class TriangleMesh3DFactories
 
       for (int longitudeIndex = 0; longitudeIndex < longitudeResolution; longitudeIndex++)
       {
-         float longitudeAngle = TwoPi * ((float) longitudeIndex / (float) (longitudeResolution - 1.0f));
+         float longitudeAngle = TwoPi * ((float) longitudeIndex / (longitudeResolution - 1.0f));
          float textureX = (float) longitudeIndex / (float) (longitudeResolution - 1);
 
          // Bottom hemi-ellipsoid
@@ -2767,7 +2773,7 @@ public class TriangleMesh3DFactories
          textPoints[northPoleIndex] = new Point2D32(textureX, 1.0f / 256.0f);
       }
 
-      int numberOfTriangles = 2 * latitudeResolution * longitudeResolution + 1 * longitudeResolution;
+      int numberOfTriangles = 2 * latitudeResolution * longitudeResolution + longitudeResolution;
       int[] triangleIndices = new int[3 * numberOfTriangles];
 
       int index = 0;
@@ -2817,15 +2823,14 @@ public class TriangleMesh3DFactories
     * <p>
     * Its base is centered at the origin.
     * </p>
-    * 
+    *
     * @param description the description holding the tetrahedron's properties.
     * @return the generic triangle mesh.
     */
    public static TriangleMesh3DDefinition Tetrahedron(Tetrahedron3DDefinition description)
    {
       TriangleMesh3DDefinition meshDataHolder = Tetrahedron(description.getEdgeLength());
-      if (meshDataHolder != null)
-         meshDataHolder.setName(description.getName());
+      meshDataHolder.setName(description.getName());
       return meshDataHolder;
    }
 
@@ -2834,7 +2839,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The tetrahedron is centered at the origin.
     * </p>
-    * 
+    *
     * @param edgeLength length of the tetrahedron's edges.
     * @return the generic triangle mesh.
     */
@@ -2851,7 +2856,7 @@ public class TriangleMesh3DFactories
     * <p>
     * The tetrahedron is centered at the origin.
     * </p>
-    * 
+    *
     * @param edgeLength length of the tetrahedron's edges.
     * @return the generic triangle mesh.
     */
@@ -2968,7 +2973,7 @@ public class TriangleMesh3DFactories
     * The texture mapping is computed from the spherical coordinates of the vertices and may not be
     * appropriate depending on the polytope.
     * </p>
-    * 
+    *
     * @param description the description holding the polytope's properties.
     * @return the generic triangle mesh.
     */
@@ -2983,7 +2988,7 @@ public class TriangleMesh3DFactories
     * The texture mapping is computed from the spherical coordinates of the vertices and may not be
     * appropriate depending on the polytope.
     * </p>
-    * 
+    *
     * @param convexPolytope the polytope to create the triangle mesh for. Not modified.
     * @return the generic triangle mesh.
     */
@@ -3050,21 +3055,34 @@ public class TriangleMesh3DFactories
    /*
     * TODO: The following is for drawing STP shapes. Needs some cleanup.
     */
-   
-   public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose, Tuple3DReadOnly size, double smallRadius,
-                                                         double largeRadius, boolean highlightLimits)
+
+   public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose,
+                                                         Tuple3DReadOnly size,
+                                                         double smallRadius,
+                                                         double largeRadius,
+                                                         boolean highlightLimits)
    {
       return toSTPBox3DMesh(pose, size.getX(), size.getY(), size.getZ(), smallRadius, largeRadius, highlightLimits);
    }
 
-   public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose, double sizeX, double sizeY, double sizeZ, double smallRadius,
-                                                         double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition toSTPBox3DMesh(RigidBodyTransformReadOnly pose,
+                                                         double sizeX,
+                                                         double sizeY,
+                                                         double sizeZ,
+                                                         double smallRadius,
+                                                         double largeRadius,
+                                                         boolean highlightLimits)
    {
       return combine(true, false, toSTPBox3DMeshes(pose, sizeX, sizeY, sizeZ, smallRadius, largeRadius, highlightLimits));
    }
 
-   public static TriangleMesh3DDefinition[] toSTPBox3DMeshes(RigidBodyTransformReadOnly pose, double sizeX, double sizeY, double sizeZ, double smallRadius,
-                                                             double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition[] toSTPBox3DMeshes(RigidBodyTransformReadOnly pose,
+                                                             double sizeX,
+                                                             double sizeY,
+                                                             double sizeZ,
+                                                             double smallRadius,
+                                                             double largeRadius,
+                                                             boolean highlightLimits)
    {
       Box3D stpBox3D = new Box3D(sizeX, sizeY, sizeZ);
       if (pose != null)
@@ -3073,14 +3091,22 @@ public class TriangleMesh3DFactories
       return toSTPConvexPolytope3DMeshes(boxPolytope, smallRadius, largeRadius, highlightLimits);
    }
 
-   public static TriangleMesh3DDefinition toSTPCapsule3DMesh(RigidBodyTransformReadOnly pose, double radius, double length, double smallRadius,
-                                                             double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition toSTPCapsule3DMesh(RigidBodyTransformReadOnly pose,
+                                                             double radius,
+                                                             double length,
+                                                             double smallRadius,
+                                                             double largeRadius,
+                                                             boolean highlightLimits)
    {
       return combine(true, false, toSTPCapsule3DMeshes(pose, radius, length, smallRadius, largeRadius, highlightLimits));
    }
 
-   public static TriangleMesh3DDefinition[] toSTPCapsule3DMeshes(RigidBodyTransformReadOnly pose, double radius, double length, double smallRadius,
-                                                                 double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition[] toSTPCapsule3DMeshes(RigidBodyTransformReadOnly pose,
+                                                                 double radius,
+                                                                 double length,
+                                                                 double smallRadius,
+                                                                 double largeRadius,
+                                                                 boolean highlightLimits)
    {
       List<TriangleMesh3DDefinition> faceMeshes = new ArrayList<>();
 
@@ -3136,25 +3162,33 @@ public class TriangleMesh3DFactories
       RotationMatrix flipRotation = new RotationMatrix();
       flipRotation.setAxisAngle(axisOrthogonal.getX(), axisOrthogonal.getY(), axisOrthogonal.getZ(), Math.PI);
       Arrays.asList(capMesh.getVertices()).forEach(v ->
-      {
-         v.sub(position);
-         flipRotation.transform(v);
-         v.add(position);
-      });
+                                                   {
+                                                      v.sub(position);
+                                                      flipRotation.transform(v);
+                                                      v.add(position);
+                                                   });
       Arrays.asList(capMesh.getNormals()).forEach(n -> flipRotation.transform(n));
       faceMeshes.add(capMesh);
 
       return new TriangleMesh3DDefinition[] {combine(true, false, faceMeshes)};
    }
 
-   public static TriangleMesh3DDefinition toSTPCylinder3DMesh(RigidBodyTransformReadOnly pose, double radius, double length, double smallRadius,
-                                                              double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition toSTPCylinder3DMesh(RigidBodyTransformReadOnly pose,
+                                                              double radius,
+                                                              double length,
+                                                              double smallRadius,
+                                                              double largeRadius,
+                                                              boolean highlightLimits)
    {
       return combine(true, false, toSTPCylinder3DMeshes(pose, radius, length, smallRadius, largeRadius, highlightLimits));
    }
 
-   public static TriangleMesh3DDefinition[] toSTPCylinder3DMeshes(RigidBodyTransformReadOnly pose, double radius, double length, double smallRadius,
-                                                                  double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition[] toSTPCylinder3DMeshes(RigidBodyTransformReadOnly pose,
+                                                                  double radius,
+                                                                  double length,
+                                                                  double smallRadius,
+                                                                  double largeRadius,
+                                                                  boolean highlightLimits)
    {
       List<TriangleMesh3DDefinition> faceMeshes = new ArrayList<>();
       List<TriangleMesh3DDefinition> edgeMeshes = new ArrayList<>();
@@ -3222,11 +3256,11 @@ public class TriangleMesh3DFactories
          RotationMatrix flipRotation = new RotationMatrix();
          flipRotation.setAxisAngle(axisOrthogonal.getX(), axisOrthogonal.getY(), axisOrthogonal.getZ(), Math.PI);
          Arrays.asList(capMesh.getVertices()).forEach(v ->
-         {
-            v.sub(position);
-            flipRotation.transform(v);
-            v.add(position);
-         });
+                                                      {
+                                                         v.sub(position);
+                                                         flipRotation.transform(v);
+                                                         v.add(position);
+                                                      });
          Arrays.asList(capMesh.getNormals()).forEach(n -> flipRotation.transform(n));
          faceMeshes.add(capMesh);
 
@@ -3271,11 +3305,11 @@ public class TriangleMesh3DFactories
          RotationMatrix flipRotation = new RotationMatrix();
          flipRotation.setAxisAngle(axisOrthogonal.getX(), axisOrthogonal.getY(), axisOrthogonal.getZ(), Math.PI);
          Arrays.asList(edgeMesh.getVertices()).forEach(v ->
-         {
-            v.sub(position);
-            flipRotation.transform(v);
-            v.add(position);
-         });
+                                                       {
+                                                          v.sub(position);
+                                                          flipRotation.transform(v);
+                                                          v.add(position);
+                                                       });
          Arrays.asList(edgeMesh.getNormals()).forEach(n -> flipRotation.transform(n));
          faceMeshes.add(edgeMesh);
       }
@@ -3283,14 +3317,24 @@ public class TriangleMesh3DFactories
       return new TriangleMesh3DDefinition[] {combine(true, false, faceMeshes), combine(true, false, edgeMeshes)};
    }
 
-   public static TriangleMesh3DDefinition toSTPRamp3DMesh(RigidBodyTransformReadOnly pose, double sizeX, double sizeY, double sizeZ, double smallRadius,
-                                                          double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition toSTPRamp3DMesh(RigidBodyTransformReadOnly pose,
+                                                          double sizeX,
+                                                          double sizeY,
+                                                          double sizeZ,
+                                                          double smallRadius,
+                                                          double largeRadius,
+                                                          boolean highlightLimits)
    {
       return combine(true, false, toSTPRamp3DMeshes(pose, sizeX, sizeY, sizeZ, smallRadius, largeRadius, highlightLimits));
    }
 
-   public static TriangleMesh3DDefinition[] toSTPRamp3DMeshes(RigidBodyTransformReadOnly pose, double sizeX, double sizeY, double sizeZ, double smallRadius,
-                                                              double largeRadius, boolean highlightLimits)
+   public static TriangleMesh3DDefinition[] toSTPRamp3DMeshes(RigidBodyTransformReadOnly pose,
+                                                              double sizeX,
+                                                              double sizeY,
+                                                              double sizeZ,
+                                                              double smallRadius,
+                                                              double largeRadius,
+                                                              boolean highlightLimits)
    {
       Ramp3D stpRamp3D = new Ramp3D(sizeX, sizeY, sizeZ);
       if (pose != null)
@@ -3298,13 +3342,17 @@ public class TriangleMesh3DFactories
       return toSTPConvexPolytope3DMeshes(stpRamp3D.asConvexPolytope(), smallRadius, largeRadius, highlightLimits);
    }
 
-   public static TriangleMesh3DDefinition toSTPConvexPolytope3DMesh(ConvexPolytope3DReadOnly convexPolytope, double smallRadius, double largeRadius,
+   public static TriangleMesh3DDefinition toSTPConvexPolytope3DMesh(ConvexPolytope3DReadOnly convexPolytope,
+                                                                    double smallRadius,
+                                                                    double largeRadius,
                                                                     boolean highlightLimits)
    {
       return combine(true, false, toSTPConvexPolytope3DMeshes(convexPolytope, smallRadius, largeRadius, highlightLimits));
    }
 
-   public static TriangleMesh3DDefinition[] toSTPConvexPolytope3DMeshes(ConvexPolytope3DReadOnly convexPolytope, double smallRadius, double largeRadius,
+   public static TriangleMesh3DDefinition[] toSTPConvexPolytope3DMeshes(ConvexPolytope3DReadOnly convexPolytope,
+                                                                        double smallRadius,
+                                                                        double largeRadius,
                                                                         boolean highlightLimits)
    {
       List<TriangleMesh3DDefinition> faceMeshes = new ArrayList<>();
@@ -3414,8 +3462,13 @@ public class TriangleMesh3DFactories
       return true;
    }
 
-   public static List<TriangleMesh3DDefinition> toFaceSubSphere(Face3DReadOnly owner, Vertex3DReadOnly v0, Vertex3DReadOnly v1, Vertex3DReadOnly v2,
-                                                                double largeRadius, double smallRadius, boolean highlightLimits)
+   public static List<TriangleMesh3DDefinition> toFaceSubSphere(Face3DReadOnly owner,
+                                                                Vertex3DReadOnly v0,
+                                                                Vertex3DReadOnly v1,
+                                                                Vertex3DReadOnly v2,
+                                                                double largeRadius,
+                                                                double smallRadius,
+                                                                boolean highlightLimits)
    {
       List<TriangleMesh3DDefinition> meshes = new ArrayList<>();
 
@@ -3469,8 +3522,13 @@ public class TriangleMesh3DFactories
       return meshes;
    }
 
-   private static List<TriangleMesh3DDefinition> toFaceSubSphereLimits(Face3DReadOnly owner, Vertex3DReadOnly v0, Vertex3DReadOnly v1, Vertex3DReadOnly v2,
-                                                                       double largeRadius, double smallRadius, double lineThickness)
+   private static List<TriangleMesh3DDefinition> toFaceSubSphereLimits(Face3DReadOnly owner,
+                                                                       Vertex3DReadOnly v0,
+                                                                       Vertex3DReadOnly v1,
+                                                                       Vertex3DReadOnly v2,
+                                                                       double largeRadius,
+                                                                       double smallRadius,
+                                                                       double lineThickness)
    {
       List<TriangleMesh3DDefinition> meshes = new ArrayList<>();
 
@@ -3626,8 +3684,11 @@ public class TriangleMesh3DFactories
       return meshes;
    }
 
-   public static TriangleMesh3DDefinition toVertexPartialSphere(Vertex3DReadOnly vertex, HalfEdge3DReadOnly associatedEdge, double largeRadius,
-                                                                double smallRadius, boolean addVerticesMesh)
+   public static TriangleMesh3DDefinition toVertexPartialSphere(Vertex3DReadOnly vertex,
+                                                                HalfEdge3DReadOnly associatedEdge,
+                                                                double largeRadius,
+                                                                double smallRadius,
+                                                                boolean addVerticesMesh)
    {
       Vector3D limitC = new Vector3D();
       for (int faceIndex = 0; faceIndex < vertex.getNumberOfAssociatedEdges(); faceIndex++)
@@ -3647,7 +3708,10 @@ public class TriangleMesh3DFactories
                                    addVerticesMesh);
    }
 
-   public static List<TriangleMesh3DDefinition> toVertexPartialSpheres(Vertex3DReadOnly vertex, Face3DReadOnly neighbor, double largeRadius, double smallRadius,
+   public static List<TriangleMesh3DDefinition> toVertexPartialSpheres(Vertex3DReadOnly vertex,
+                                                                       Face3DReadOnly neighbor,
+                                                                       double largeRadius,
+                                                                       double smallRadius,
                                                                        boolean addVerticesMesh)
    {
       if (isFaceCyclicPolygon(neighbor, largeRadius, smallRadius))
@@ -3696,9 +3760,15 @@ public class TriangleMesh3DFactories
       return meshes;
    }
 
-   public static TriangleMesh3DDefinition toVertexPartialSphere(Vertex3DReadOnly vertex, Vector3DReadOnly limitC, Point3DReadOnly commonEdgeCenter,
-                                                                double commonEdgeLength, Point3DReadOnly sphereA, Point3DReadOnly sphereB, double largeRadius,
-                                                                double smallRadius, boolean addVerticesMesh)
+   public static TriangleMesh3DDefinition toVertexPartialSphere(Vertex3DReadOnly vertex,
+                                                                Vector3DReadOnly limitC,
+                                                                Point3DReadOnly commonEdgeCenter,
+                                                                double commonEdgeLength,
+                                                                Point3DReadOnly sphereA,
+                                                                Point3DReadOnly sphereB,
+                                                                double largeRadius,
+                                                                double smallRadius,
+                                                                boolean addVerticesMesh)
    {
       Vector3D sphereAToEdge = new Vector3D();
       sphereAToEdge.sub(commonEdgeCenter, sphereA);
@@ -3739,8 +3809,14 @@ public class TriangleMesh3DFactories
       return direction;
    }
 
-   public static List<TriangleMesh3DDefinition> toSegmentedLine3DMesh(Point3DReadOnly arcCenter, Vector3DReadOnly arcNormal, double arcRadius, double thickness,
-                                                                      Vector3DReadOnly startDirection, double angleSpan, int resolution, int radialResolution)
+   public static List<TriangleMesh3DDefinition> toSegmentedLine3DMesh(Point3DReadOnly arcCenter,
+                                                                      Vector3DReadOnly arcNormal,
+                                                                      double arcRadius,
+                                                                      double thickness,
+                                                                      Vector3DReadOnly startDirection,
+                                                                      double angleSpan,
+                                                                      int resolution,
+                                                                      int radialResolution)
    {
       SegmentedLine3DTriangleMeshFactory generator = new SegmentedLine3DTriangleMeshFactory(resolution, radialResolution);
 
@@ -3764,14 +3840,23 @@ public class TriangleMesh3DFactories
       return Arrays.asList(generator.getTriangleMesh3DDefinitions());
    }
 
-   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter, Tuple3DReadOnly limitA, Tuple3DReadOnly limitB,
-                                                              Tuple3DReadOnly limitC, double sphereRadius, int resolution)
+   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter,
+                                                              Tuple3DReadOnly limitA,
+                                                              Tuple3DReadOnly limitB,
+                                                              Tuple3DReadOnly limitC,
+                                                              double sphereRadius,
+                                                              int resolution)
    {
       return toPartialSphereMesh(sphereCenter, limitA, limitB, limitC, sphereRadius, resolution, false);
    }
 
-   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter, Tuple3DReadOnly limitA, Tuple3DReadOnly limitB,
-                                                              Tuple3DReadOnly limitC, double sphereRadius, int resolution, boolean addVerticesMesh)
+   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter,
+                                                              Tuple3DReadOnly limitA,
+                                                              Tuple3DReadOnly limitB,
+                                                              Tuple3DReadOnly limitC,
+                                                              double sphereRadius,
+                                                              int resolution,
+                                                              boolean addVerticesMesh)
    {
       return toPartialSphereMesh(sphereCenter,
                                  alpha -> interpolateVector3D(limitA, limitB, alpha),
@@ -3782,8 +3867,12 @@ public class TriangleMesh3DFactories
                                  addVerticesMesh);
    }
 
-   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter, DoubleFunction<? extends Tuple3DReadOnly> limitABFunction,
-                                                              Tuple3DReadOnly limitC, double sphereRadius, int resolution, boolean addVerticesMesh)
+   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter,
+                                                              DoubleFunction<? extends Tuple3DReadOnly> limitABFunction,
+                                                              Tuple3DReadOnly limitC,
+                                                              double sphereRadius,
+                                                              int resolution,
+                                                              boolean addVerticesMesh)
    {
       Vector3D limitA = new Vector3D(limitABFunction.apply(0.0));
       Vector3D limitB = new Vector3D(limitABFunction.apply(1.0));
@@ -3799,9 +3888,12 @@ public class TriangleMesh3DFactories
                                  addVerticesMesh);
    }
 
-   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter, DoubleFunction<? extends Tuple3DReadOnly> limitABFunction,
+   public static TriangleMesh3DDefinition toPartialSphereMesh(Point3DReadOnly sphereCenter,
+                                                              DoubleFunction<? extends Tuple3DReadOnly> limitABFunction,
                                                               DoubleFunction<? extends Tuple3DReadOnly> limitBCFunction,
-                                                              DoubleFunction<? extends Tuple3DReadOnly> limitCAFunction, double sphereRadius, int resolution,
+                                                              DoubleFunction<? extends Tuple3DReadOnly> limitCAFunction,
+                                                              double sphereRadius,
+                                                              int resolution,
                                                               boolean addVerticesMesh)
    {
       List<Point3D32> points = new ArrayList<>();
@@ -3912,8 +4004,11 @@ public class TriangleMesh3DFactories
       }
    }
 
-   public static TriangleMesh3DDefinition toArcPointsAndNormals(Point3DReadOnly arcPosition, double arcRadius, Vector3DReadOnly startDirection,
-                                                                Vector3DReadOnly endDirection, int resolution)
+   public static TriangleMesh3DDefinition toArcPointsAndNormals(Point3DReadOnly arcPosition,
+                                                                double arcRadius,
+                                                                Vector3DReadOnly startDirection,
+                                                                Vector3DReadOnly endDirection,
+                                                                int resolution)
    {
       Point3D32[] points = new Point3D32[resolution];
       Vector3D32[] normals = new Vector3D32[resolution];
@@ -3935,8 +4030,13 @@ public class TriangleMesh3DFactories
       return new TriangleMesh3DDefinition(points, null, normals, null);
    }
 
-   public static TriangleMesh3DDefinition applyRevolution(TriangleMesh3DDefinition subMesh, Point3DReadOnly rotationCenter, Vector3DReadOnly rotationAxis,
-                                                          double startAngle, double endAngle, int resolution, boolean addVerticesMesh)
+   public static TriangleMesh3DDefinition applyRevolution(TriangleMesh3DDefinition subMesh,
+                                                          Point3DReadOnly rotationCenter,
+                                                          Vector3DReadOnly rotationAxis,
+                                                          double startAngle,
+                                                          double endAngle,
+                                                          int resolution,
+                                                          boolean addVerticesMesh)
    {
       int subMeshSize = subMesh.getVertices().length;
       Point3D32[] points = new Point3D32[resolution * subMeshSize];
