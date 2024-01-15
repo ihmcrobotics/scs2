@@ -10,6 +10,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.YoTimer;
+import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionTools;
 import us.ihmc.scs2.simulation.parameters.ConstraintParametersReadOnly;
@@ -106,6 +107,18 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       multiContactImpulseCalculatorPool = new YoMultiContactImpulseCalculatorPool(1, inertialFrame, multiContactCalculatorRegistry);
    }
 
+   /**
+    * Whether to estimate the joint wrenches or not.
+    * <p>
+    * Estimating the joint wrenches is useful for estimating forces going through the robot limbs and can be used
+    * to do FEA analysis.
+    * </p>
+    * <p>
+    * When enabled, the joint wrenches are displayed in the simulation GUI under the {@link RobotJointWrenchCalculator} registry.
+    * </p>
+    *
+    * @param estimateJointWrenches {@code true} for estimating the joint wrenches, {@code false} otherwise.
+    */
    public void setEstimateJointWrenches(boolean estimateJointWrenches)
    {
       this.estimateJointWrenches = estimateJointWrenches;
