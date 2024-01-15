@@ -1,9 +1,6 @@
 package us.ihmc.scs2.simulation.physicsEngine.impulseBased;
 
-import java.util.List;
-
 import org.ejml.data.DMatrixRMaj;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
@@ -16,6 +13,8 @@ import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
+
+import java.util.List;
 
 public class ImpulseBasedRobot extends RobotExtension implements CollidableHolder
 {
@@ -31,6 +30,11 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
    {
       super(robotDefinition, inertialFrame, physicsRegistry);
       robotPhysics = new ImpulseBasedRobotPhysics(this, getRobotPhysicsRegistry());
+   }
+
+   public void enableJointWrenchCalculator()
+   {
+      robotPhysics.enableJointWrenchCalculator();
    }
 
    public void resetCalculators()
@@ -86,6 +90,11 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
    public void writeJointDeltaVelocities()
    {
       robotPhysics.writeJointDeltaVelocities();
+   }
+
+   public void computeJointWrenches(double dt)
+   {
+      robotPhysics.computeJointWrenches(dt);
    }
 
    public void resetDT()
