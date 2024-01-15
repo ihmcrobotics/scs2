@@ -2002,7 +2002,8 @@ public class MCAP
              *  While it is faster to read from a direct buffer,
              *  it is slower to create/destroy it which can be a problem if we are reading a lot of small records.
              */
-            buffer = ByteBuffer.allocate(_length);
+            // TODO Note that the ZSTD decompression requires a direct buffer.
+            buffer = ByteBuffer.allocateDirect(_length);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
          }
       }

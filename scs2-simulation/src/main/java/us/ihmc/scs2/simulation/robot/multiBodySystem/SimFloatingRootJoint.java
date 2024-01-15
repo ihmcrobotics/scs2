@@ -1,8 +1,9 @@
 package us.ihmc.scs2.simulation.robot.multiBodySystem;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
-
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.tools.MecanoTools;
 import us.ihmc.mecano.yoVariables.spatial.YoFixedFrameSpatialAcceleration;
@@ -47,36 +48,36 @@ public class SimFloatingRootJoint extends SimSixDoFJoint implements SimJointBasi
       MutableBoolean updatingQuat = new MutableBoolean(false);
 
       jointQuaternion.getYoQs().addListener(v ->
-      {
-         if (updatingQuat.booleanValue())
-            return;
+                                            {
+                                               if (updatingQuat.booleanValue())
+                                                  return;
 
-         updatingYPR.setTrue();
-         try
-         {
-            jointYawPitchRoll.set(jointQuaternion);
-         }
-         finally
-         {
-            updatingYPR.setFalse();
-         }
-      });
+                                               updatingYPR.setTrue();
+                                               try
+                                               {
+                                                  jointYawPitchRoll.set(jointQuaternion);
+                                               }
+                                               finally
+                                               {
+                                                  updatingYPR.setFalse();
+                                               }
+                                            });
 
       jointYawPitchRoll.attachVariableChangedListener(v ->
-      {
-         if (updatingYPR.booleanValue())
-            return;
+                                                      {
+                                                         if (updatingYPR.booleanValue())
+                                                            return;
 
-         updatingQuat.setTrue();
-         try
-         {
-            jointQuaternion.set(jointYawPitchRoll);
-         }
-         finally
-         {
-            updatingQuat.setFalse();
-         }
-      });
+                                                         updatingQuat.setTrue();
+                                                         try
+                                                         {
+                                                            jointQuaternion.set(jointYawPitchRoll);
+                                                         }
+                                                         finally
+                                                         {
+                                                            updatingQuat.setFalse();
+                                                         }
+                                                      });
 
       jointLinearVelocity = new YoFrameVector3D("qd" + varName + "world_", beforeJointFrame, registry);
       YoFixedFrameTwist jointTwist = getJointTwist();
@@ -85,22 +86,24 @@ public class SimFloatingRootJoint extends SimSixDoFJoint implements SimJointBasi
       MutableBoolean updatingTwist = new MutableBoolean(false);
 
       jointTwist.getLinearPart().attachVariableChangedListener(v ->
-      {
-         if (updatingTwist.booleanValue())
-            return;
-         updatingLinVel.setTrue();
-         jointLinearVelocity.setMatchingFrame(jointTwist.getLinearPart());
-         updatingLinVel.setFalse();
-      });
+                                                               {
+                                                                  if (updatingTwist.booleanValue())
+                                                                     return;
+                                                                  updatingLinVel.setTrue();
+                                                                  jointQuaternion.transform((Tuple3DReadOnly) jointTwist.getLinearPart(),
+                                                                                            (Tuple3DBasics) jointLinearVelocity);
+                                                                  updatingLinVel.setFalse();
+                                                               });
 
       jointLinearVelocity.attachVariableChangedListener(v ->
-      {
-         if (updatingLinVel.booleanValue())
-            return;
-         updatingTwist.setTrue();
-         jointTwist.getLinearPart().setMatchingFrame(jointLinearVelocity);
-         updatingTwist.setFalse();
-      });
+                                                        {
+                                                           if (updatingLinVel.booleanValue())
+                                                              return;
+                                                           updatingTwist.setTrue();
+                                                           jointQuaternion.inverseTransform((Tuple3DReadOnly) jointLinearVelocity,
+                                                                                            (Tuple3DBasics) jointTwist.getLinearPart());
+                                                           updatingTwist.setFalse();
+                                                        });
 
       jointLinearAcceleration = new YoFrameVector3D("qdd" + varName + "world_", beforeJointFrame, registry);
       YoFixedFrameSpatialAcceleration jointSpatialAcceleration = getJointAcceleration();
@@ -109,25 +112,29 @@ public class SimFloatingRootJoint extends SimSixDoFJoint implements SimJointBasi
       MutableBoolean updatingSpAcc = new MutableBoolean(false);
 
       jointSpatialAcceleration.getLinearPart().attachVariableChangedListener(v ->
-      {
-         if (updatingSpAcc.booleanValue())
-            return;
-         updatingLinAcc.setTrue();
-         jointLinearAcceleration.set((Vector3DReadOnly) jointSpatialAcceleration.getLinearPart());
-         MecanoTools.addCrossToVector(jointTwist.getAngularPart(), jointTwist.getLinearPart(), jointLinearAcceleration);
-         afterJointFrame.transformFromThisToDesiredFrame(beforeJointFrame, jointLinearAcceleration);
-         updatingLinAcc.setFalse();
-      });
+                                                                             {
+                                                                                if (updatingSpAcc.booleanValue())
+                                                                                   return;
+                                                                                updatingLinAcc.setTrue();
+                                                                                jointLinearAcceleration.set((Vector3DReadOnly) jointSpatialAcceleration.getLinearPart());
+                                                                                MecanoTools.addCrossToVector(jointTwist.getAngularPart(),
+                                                                                                             jointTwist.getLinearPart(),
+                                                                                                             jointLinearAcceleration);
+                                                                                jointQuaternion.transform((Tuple3DBasics) jointLinearAcceleration);
+                                                                                updatingLinAcc.setFalse();
+                                                                             });
 
       jointLinearAcceleration.attachVariableChangedListener(v ->
-      {
-         if (updatingLinAcc.booleanValue())
-            return;
-         updatingSpAcc.setTrue();
-         jointSpatialAcceleration.getLinearPart().setMatchingFrame(jointLinearAcceleration);
-         jointSpatialAcceleration.addCrossToLinearPart(jointTwist.getLinearPart(), jointTwist.getAngularPart());
-         updatingSpAcc.setFalse();
-      });
+                                                            {
+                                                               if (updatingLinAcc.booleanValue())
+                                                                  return;
+                                                               updatingSpAcc.setTrue();
+                                                               jointQuaternion.inverseTransform((Tuple3DReadOnly) jointSpatialAcceleration.getLinearPart(),
+                                                                                                (Tuple3DBasics) jointLinearAcceleration);
+                                                               jointSpatialAcceleration.addCrossToLinearPart(jointTwist.getLinearPart(),
+                                                                                                             jointTwist.getAngularPart());
+                                                               updatingSpAcc.setFalse();
+                                                            });
    }
 
    @Override
