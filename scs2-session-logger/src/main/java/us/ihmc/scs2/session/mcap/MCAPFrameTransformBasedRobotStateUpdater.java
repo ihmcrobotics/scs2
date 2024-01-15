@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * This class is used to update the robot state based on the frame transforms.
  */
-public class MCAPFrameTransformBasedRobotStateUpdater
+public class MCAPFrameTransformBasedRobotStateUpdater implements RobotStateUpdater
 {
    private final List<Runnable> jointStateUpdaters = new ArrayList<>();
 
@@ -38,6 +38,7 @@ public class MCAPFrameTransformBasedRobotStateUpdater
       }
    }
 
+   @Override
    public void updateRobotState()
    {
       for (Runnable jointStateUpdater : jointStateUpdaters)
