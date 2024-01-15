@@ -1,7 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
-import java.util.List;
-
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
@@ -13,6 +11,8 @@ import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
+import java.util.List;
+
 public class ContactPointBasedRobot extends RobotExtension implements CollidableHolder
 {
    private final ContactPointBasedRobotPhysics robotPhysics;
@@ -21,6 +21,11 @@ public class ContactPointBasedRobot extends RobotExtension implements Collidable
    {
       super(robot, physicsRegistry);
       robotPhysics = new ContactPointBasedRobotPhysics(this);
+   }
+
+   public void enableJointWrenchCalculator()
+   {
+      robotPhysics.enableJointWrenchCalculator();
    }
 
    public void resetCalculators()
@@ -46,6 +51,11 @@ public class ContactPointBasedRobot extends RobotExtension implements Collidable
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       robotPhysics.doForwardDynamics(gravity);
+   }
+
+   public void computeJointWrenches(double dt)
+   {
+      robotPhysics.computeJointWrenches(dt);
    }
 
    public void updateCollidableBoundingBoxes()
