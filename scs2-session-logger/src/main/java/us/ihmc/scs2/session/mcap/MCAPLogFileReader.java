@@ -9,12 +9,17 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.session.mcap.MCAP.Schema;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoLong;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.List;
@@ -137,8 +142,9 @@ public class MCAPLogFileReader
 
          rawSchemas.put(schema.id(), schema);
 
-         if (schema.id() == frameTransformManager.getFrameTransformSchema().getId())
+         if (frameTransformManager.hasMCAPFrameTransforms() && schema.id() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
+
          try
          {
             if (schema.encoding().equalsIgnoreCase("ros2msg"))
@@ -174,7 +180,7 @@ public class MCAPLogFileReader
          if (record.op() != MCAP.Opcode.CHANNEL)
             continue;
          MCAP.Channel channel = (MCAP.Channel) record.body();
-         if (channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
+         if (frameTransformManager.hasMCAPFrameTransforms() && channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
 
          MCAPSchema schema = schemas.get(channel.schemaId());
@@ -368,5 +374,21 @@ public class MCAPLogFileReader
    public MCAPFrameTransformManager getFrameTransformManager()
    {
       return frameTransformManager;
+   }
+
+   public RobotStateUpdater createRobotStateUpdater(Robot robot)
+   {
+      if (frameTransformManager.hasMCAPFrameTransforms())
+      {
+         return new MCAPFrameTransformBasedRobotStateUpdater(robot, frameTransformManager);
+      }
+
+      for (YoMCAPMessage yoMCAPMessage : yoMessageMap.valueCollection())
+      {
+         if (MCAPMujocoBasedRobotStateUpdater.isRobotMujocoStateMessage(robot, yoMCAPMessage))
+            return new MCAPMujocoBasedRobotStateUpdater(robot, yoMCAPMessage);
+      }
+
+      return null;
    }
 }
