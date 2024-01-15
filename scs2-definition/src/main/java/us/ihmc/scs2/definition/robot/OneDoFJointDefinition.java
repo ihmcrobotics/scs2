@@ -18,12 +18,12 @@ public abstract class OneDoFJointDefinition extends JointDefinition
    private double positionLowerLimit = Double.NEGATIVE_INFINITY, positionUpperLimit = Double.POSITIVE_INFINITY;
    private double velocityLowerLimit = Double.NEGATIVE_INFINITY, velocityUpperLimit = Double.POSITIVE_INFINITY;
    private double effortLowerLimit = Double.NEGATIVE_INFINITY, effortUpperLimit = Double.POSITIVE_INFINITY;
-   private double damping = -1.0;
-   private double stiction = -1.0;
+   private double damping = 0.0;
+   private double stiction = 0.0;
 
-   private double kpSoftLimitStop = -1.0;
-   private double kdSoftLimitStop = -1.0;
-   private double dampingVelocitySoftLimit = -1.0;
+   private double kpSoftLimitStop = 0.0;
+   private double kdSoftLimitStop = 0.0;
+   private double dampingVelocitySoftLimit = 0.0;
 
    private OneDoFJointState initialJointState;
 
@@ -325,9 +325,6 @@ public abstract class OneDoFJointDefinition extends JointDefinition
          return false;
       if (!EuclidCoreTools.equals(dampingVelocitySoftLimit, other.dampingVelocitySoftLimit))
          return false;
-      if (!Objects.equals(initialJointState, other.initialJointState))
-         return false;
-
-      return true;
+      return Objects.equals(initialJointState, other.initialJointState);
    }
 }
