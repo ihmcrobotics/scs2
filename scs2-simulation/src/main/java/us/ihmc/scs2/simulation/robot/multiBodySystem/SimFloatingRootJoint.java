@@ -129,8 +129,8 @@ public class SimFloatingRootJoint extends SimSixDoFJoint implements SimJointBasi
                                                                if (updatingLinAcc.booleanValue())
                                                                   return;
                                                                updatingSpAcc.setTrue();
-                                                               jointQuaternion.inverseTransform((Tuple3DReadOnly) jointSpatialAcceleration.getLinearPart(),
-                                                                                                (Tuple3DBasics) jointLinearAcceleration);
+                                                               jointQuaternion.inverseTransform((Tuple3DReadOnly) jointLinearAcceleration,
+                                                                                                (Tuple3DBasics) jointSpatialAcceleration.getLinearPart());
                                                                jointSpatialAcceleration.addCrossToLinearPart(jointTwist.getLinearPart(),
                                                                                                              jointTwist.getAngularPart());
                                                                updatingSpAcc.setFalse();
