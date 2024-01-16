@@ -11,10 +11,12 @@ import us.ihmc.scs2.session.mcap.omgidl_parser.IDLBaseListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLLexer;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
+import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser.Enum_typeContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -61,7 +63,10 @@ public class OMGIDLSchemaParser
          private int maxLength;
          private boolean isArray;
          private boolean isSequence;
+         private boolean isEnum;
          private boolean isComplexType;
+
+         private String[] enumConstants;
 
          public MemberInfo()
          {
@@ -75,14 +80,16 @@ public class OMGIDLSchemaParser
             this.maxLength = -1;
             this.isArray = false;
             this.isSequence = false;
+            this.isEnum = false;
             this.isComplexType = false;
+            this.enumConstants = null;
          }
 
          @Override
          public String toString()
          {
             return "MemberInfo{" + "type='" + type + '\'' + ", name='" + name + '\'' + ", maxLength=" + maxLength + ", isArray=" + isArray + ", isSequence="
-                   + isSequence + ", isComplexType=" + isComplexType + '}';
+                   + isSequence + ", isEnum=" + isEnum + ", isComplexType=" + isComplexType + ", enumConstants=" + Arrays.toString(enumConstants) + '}';
          }
       }
 
@@ -195,6 +202,14 @@ public class OMGIDLSchemaParser
 
          currentMemberInfo.isSequence = true;
          currentMemberInfo.isComplexType = true;
+      }
+
+      @Override
+      public void exitEnum_type(Enum_typeContext ctx)
+      {
+         String name = ctx.identifier().getText();
+         MCAPSchema enumSchema = new MCAPSchema(name, -1, ctx.enumerator().stream().map(it -> it.identifier().ID().getText()).toArray(String[]::new));
+         this.currentSchema.getSubSchemaMap().put(name, enumSchema);
       }
 
       @Override
