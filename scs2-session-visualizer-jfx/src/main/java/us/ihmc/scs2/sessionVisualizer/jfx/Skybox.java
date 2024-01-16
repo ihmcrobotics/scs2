@@ -1,11 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
@@ -21,12 +15,18 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import us.ihmc.log.LogTools;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
 public class Skybox extends Group
 {
    public enum SkyboxTheme
    {
-      CLOUDY_CROWN_MIDDAY, SCS1, CUSTOM
-   };
+      CLOUDY_CROWN_MIDDAY, SCS1, OFF, CUSTOM
+   }
 
    private final Translate translate = new Translate();
    private final DoubleProperty size = new SimpleDoubleProperty(this, "size", 100000.0);
@@ -52,7 +52,8 @@ public class Skybox extends Group
       translate.setX(newValue.getTx());
       translate.setY(newValue.getTy());
       translate.setZ(newValue.getTz());
-   };;
+   };
+   ;
 
    public Skybox()
    {
@@ -143,7 +144,6 @@ public class Skybox extends Group
       backView.setViewport(new Rectangle2D(frontX, frontY, sideSize, sideSize));
       rightView.setViewport(new Rectangle2D(rightX, rightY, sideSize, sideSize));
       frontView.setViewport(new Rectangle2D(backX, backY, sideSize, sideSize));
-
    }
 
    public void setupSkybox(Image topImage, Image bottomImage, Image leftImage, Image rightImage, Image frontImage, Image backImage)
