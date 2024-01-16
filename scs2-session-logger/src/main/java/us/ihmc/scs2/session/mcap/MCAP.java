@@ -2032,6 +2032,7 @@ public class MCAP
             throw new ValidationNotEqualError(computedLength, _length, buffer);
       }
 
+      @Override
       public int getItemTotalLength()
       {
          if (_length == -1)
