@@ -27,8 +27,16 @@ import us.ihmc.yoVariables.variable.YoVariable;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,6 +50,15 @@ import java.util.function.Consumer;
 @SuppressWarnings("CallToPrintStackTrace")
 public abstract class Session
 {
+   /**
+    * The default upper-bound ratio of the buffer memory to the total memory available.
+    * <p>
+    * This ratio is used to estimate the maximum amount of memory that can be used by the buffer. Helps clamp the buffer size to avoid running out of memory.
+    * </p>
+    */
+   public static final double ADMISSIBLE_BUFFER_TO_MAX_MEMORY_RATIO = SessionPropertiesHelper.loadDoubleProperty(
+         "scs2.session.buffer.admissiblebuffertomaxmemoryratio",
+         0.65);
    /**
     * Default buffer size.
     * <p>
@@ -2061,7 +2078,21 @@ public abstract class Session
       }
 
       if (newSize != null)
+      {
+         if (newSize > sharedBuffer.getProperties().getSize())
+         {
+            long maxMemory = Runtime.getRuntime().maxMemory();
+            long singleFrame = sharedBuffer.getSingleBufferFrameMemorySize();
+            long maxSize = (long) (ADMISSIBLE_BUFFER_TO_MAX_MEMORY_RATIO * (maxMemory / singleFrame));
+            if (newSize > maxSize)
+            {
+               LogTools.warn("Requested buffer size is too large: {} > {}. Buffer size will be set to {}.", newSize, maxSize, maxSize);
+               newSize = (int) maxSize;
+            }
+         }
+
          hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize);
+      }
 
       return hasBufferBeenUpdated;
    }
