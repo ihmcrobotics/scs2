@@ -29,7 +29,12 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoSlider.*;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
@@ -40,7 +45,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
@@ -64,6 +73,7 @@ public class SessionVisualizer
    {
       // Required for visualizing ROS topics which often have repeating sub-names in the topic names.
       System.setProperty("yo.allowRepeatingSubname", "true");
+      System.setProperty("prism.forceGPU", "true");
       DefinitionIOTools.loadResources();
       YoGraphicFXControllerTools.loadResources();
    }
@@ -163,7 +173,7 @@ public class SessionVisualizer
       stage.setWidth(width);
       stage.setHeight(height);
       double centerX = bounds.getMinX() + (bounds.getWidth() - width) * 0.5;
-      double centerY = bounds.getMinY() + (bounds.getHeight() - height) * 1.0 / 3.0;
+      double centerY = bounds.getMinY() + (bounds.getHeight() - height) / 3.0;
       stage.setX(centerX);
       stage.setY(centerY);
    }
