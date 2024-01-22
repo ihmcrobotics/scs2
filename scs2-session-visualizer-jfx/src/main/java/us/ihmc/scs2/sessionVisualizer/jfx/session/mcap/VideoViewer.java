@@ -40,18 +40,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 public class VideoViewer
 {
 
-   private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
-                                                                                                              "SCS2_GUI_LOGGER_VIDEO_DEBUG",
-                                                                                                              false);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
-//   private final Label queryRobotTimestampLabel = new Label();
-//   private final Label demuxerCurrentPTSLabel = new Label();
-//   private final Label cameraCurrentPTSLabel = new Label();
-//   private final Label robotTimestampLabel = new Label();
 
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
@@ -105,8 +98,6 @@ public class VideoViewer
             JavaFXMissingTools.setAnchorConstraints(root, 0);
             imageViewRootPane.set(root);
 
-            setupVideoStatistics(anchorPane);
-
             videoWindowProperty.set(stage);
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
             stage.setTitle(reader.toString());
@@ -130,48 +121,6 @@ public class VideoViewer
          stage.toFront();
          stage.show();
       });
-   }
-
-   private void setupVideoStatistics(AnchorPane anchorPane)
-   {
-      Label videoStatisticTitle = new Label("Video Statistics");
-      videoStatisticTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-
-      Background generalBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
-      Border noRightBorder = new Border(new BorderStroke(Color.BLACK, null, Color.BLACK, Color.BLACK,
-                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID,
-                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
-      Border noLeftBorder = new Border(new BorderStroke(Color.BLACK, Color.BLACK, Color.BLACK, null,
-                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE,
-                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
-
-      Border generalBorder = new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT));
-      Insets textInsets = new Insets(0, 2, 0, 2);
-
-
-//      if (LOGGER_VIDEO_DEBUG)
-//      {
-//         VBox videoStatisticBox = new VBox(videoStatisticTitle);
-//         videoStatisticBox.setAlignment(Pos.CENTER);
-//         videoStatisticBox.setBackground(generalBackground);
-//         videoStatisticBox.setBorder(generalBorder);
-//
-//         VBox videoStatisticLabels = new VBox(new Label("queryRobotTimestamp"), new Label("robotTimestamp"), new Label("cameraCurrentPTS"), new Label("demuxerCurrentPTS"));
-//         videoStatisticLabels.setBackground(generalBackground);
-//         videoStatisticLabels.setBorder(noRightBorder);
-//         videoStatisticLabels.setPadding(textInsets);
-//
-//         VBox videoStatistics = new VBox(queryRobotTimestampLabel, robotTimestampLabel, cameraCurrentPTSLabel, demuxerCurrentPTSLabel);
-//         videoStatistics.setBackground(generalBackground);
-//         videoStatistics.setBorder(noLeftBorder);
-//         videoStatistics.setPadding(textInsets);
-//
-//         HBox labelsContainer = new HBox(0, videoStatisticLabels, videoStatistics);
-//         VBox videoStatisticsDisplay = new VBox(0, videoStatisticBox, labelsContainer);
-//         anchorPane.getChildren().add(videoStatisticsDisplay);
-//         AnchorPane.setLeftAnchor(videoStatisticsDisplay, 0.0);
-//         AnchorPane.setBottomAnchor(videoStatisticsDisplay, 0.0);
-//      }
    }
 
    private static Pane createImageViewPane(ImageView imageView)
@@ -205,8 +154,17 @@ public class VideoViewer
 
       if (currentFrame == null || currentFrame.image == null)
          return;
+      Image currentImage = null;
+      try
+      {
+         currentImage = this.frameConverter.convert(currentFrame);
+      } catch (RuntimeException e)
+      {
+         LogTools.error("Frame has {} image channels", currentFrame.imageChannels);
+      }
 
-      Image currentImage = this.frameConverter.convert(currentFrame);
+      if (currentImage == null)
+         return;
 
       thumbnailContainer.setPrefWidth(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize);
       thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * currentImage.getHeight() / currentImage.getWidth());
@@ -216,23 +174,10 @@ public class VideoViewer
       if (updateVideoView.get())
       {
          videoView.setImage(currentImage);
-//         queryRobotTimestampLabel.setText(Long.toString(currentFrameData.queryRobotTimestamp));
-//         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
-//         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
-//         demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
 
          if (imageViewRootPane.get() != null)
          {
             imageViewRootPane.get().setPadding(new Insets(16,16,16,16));
-
-//            if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
-//            {
-//               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.DARKORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
-//            }
-//            else
-//            {
-//               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-//            }
          }
       }
    }
