@@ -21,7 +21,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
@@ -87,7 +86,7 @@ public class YoMultiSliderboardWindowController
    {
       this.toolkit = toolkit;
       owner = toolkit.getMainWindow();
-      window = new Stage(StageStyle.UTILITY);
+      window = new Stage();
 
       MenuTools.setupContextMenu(sliderboardTabPane,
                                  TabPaneTools.addBeforeMenuItemFactory(this::newBFC2000SliderboardTab, "Add BFC2000 tab before"),
@@ -170,8 +169,8 @@ public class YoMultiSliderboardWindowController
       });
 
       window.setTitle("YoSliderboard controller");
+      SessionVisualizerIOTools.addSCSIconToWindow(window);
       window.setScene(new Scene(sliderboardRoot));
-      window.initOwner(toolkit.getMainWindow());
    }
 
    public void setInput(YoSliderboardListDefinition input)
