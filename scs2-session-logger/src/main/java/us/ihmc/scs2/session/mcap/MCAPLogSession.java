@@ -118,6 +118,22 @@ public class MCAPLogSession extends Session
             LogTools.warn("Unable to create a robot state updater for robot: " + robotDefinition.getName());
       }
 
+      long frameByteSize = SharedMemoryTools.getRegistryMemorySize(mcapRegistry);
+      int numberOfVariables = mcapRegistry.getNumberOfVariablesDeep();
+      long maxMemory = Runtime.getRuntime().maxMemory();
+
+      LogTools.info("MCAP log: [number of variables: " + numberOfVariables + ", frame byte size: " + frameByteSize + "]");
+
+      long maxBufferSize = Math.max(1, (long) (ADMISSIBLE_BUFFER_TO_MAX_MEMORY_RATIO * (maxMemory / frameByteSize)));
+
+      if (sharedBuffer.getProperties().getSize() > maxBufferSize)
+      {
+         LogTools.warn(
+               "The log buffer size is too large for the available memory. Reducing the buffer size from " + sharedBuffer.getProperties().getSize() + " to "
+               + maxBufferSize);
+         sharedBuffer.resizeBuffer((int) maxBufferSize);
+      }
+
       rootRegistry.addChild(mcapRegistry);
 
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));

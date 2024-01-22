@@ -1,12 +1,5 @@
 package us.ihmc.scs2.sharedMemory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Predicate;
-
 import us.ihmc.scs2.sharedMemory.interfaces.LinkedYoVariableFactory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
@@ -14,6 +7,13 @@ import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 /**
  * {@code YoSharedBuffer} allows to control read/write on {@code YoVariable} buffers of a session.
@@ -38,26 +38,26 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * Here are 3 typical use-case for a {@code YoSharedBuffer} from the buffer manager's perspective:
  * <ol>
  * <li>The buffer manager is computing data and storing it over time:
- * 
+ *
  * <pre>
- * yoSharedBuffer.processLinkedPushRequests(); // Apply linked requests if desired, skip this to only give read-only access to the buffer consumers. 
+ * yoSharedBuffer.processLinkedPushRequests(); // Apply linked requests if desired, skip this to only give read-only access to the buffer consumers.
  * // Do calculation and write result in yoVariables
  * yoSharedBuffer.writeBuffer();
  * yoSharedBuffer.prepareLinkedBuffersForPull(); // Allow the buffer consumers to read the new data.
  * yoSharedBuffer.incrementBufferIndex(true); // Increment the current read/write index in the buffer.
  * </pre>
- * 
+ *
  * <li>The buffer manager is playing back some pre-recorded data from the buffer:
- * 
+ *
  * <pre>
  * yoSharedBuffer.readBuffer(); // Load values for the yoVariables from the buffer.
  * yoSharedBuffer.prepareLinkedBuffersForPull(); // Allow the buffer consumers to read the new data.
  * yoSharedBuffer.incrementBufferIndex(false, stepSizePerPlaybackTick); // Step forward in the buffer. stepSizePerPlaybackTick is typically greater than 0 to read forward, to play backward use a negative value.
  * </pre>
- * 
+ *
  * <li>The buffer manager is paused, i.e. the buffer index is not changing, but it authorizes
  * modifications from the buffer consumers:
- * 
+ *
  * <pre>
  * boolean isBufferModified = yoSharedBuffer.processLinkedPushRequests(); // Apply requested changes.
  * if (isBufferModified)
@@ -72,7 +72,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * </pre>
  * </ol>
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public class YoSharedBuffer implements LinkedYoVariableFactory
@@ -105,7 +105,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param request request defining the new size as well as the part of the buffer to preserve.
     */
    public void cropBuffer(CropBufferRequest request)
@@ -127,7 +127,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param request request defining the region of the buffer to fill in.
     */
    public void fillBuffer(FillBufferRequest request)
@@ -152,7 +152,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param newSize the new size for this buffer.
     * @return {@code true} if the buffer was resized, {@code false} otherwise.
     */
@@ -205,6 +205,16 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    }
 
    /**
+    * Returns the size of a single frame in the buffer in bytes.
+    *
+    * @return the size of a single frame in the buffer in bytes.
+    */
+   public long getSingleBufferFrameMemorySize()
+   {
+      return registryBuffer.getRegistryMemorySize();
+   }
+
+   /**
     * Changes the current position in the buffer.
     * <p>
     * This operation does not update the {@code YoVariable}'s value, to do so a call to
@@ -214,7 +224,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param newIndex the new position in the buffer.
     * @return {@code true} if the index was changed successfully, {@code false} otherwise.
     */
@@ -233,7 +243,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param newInPoint the new index for the in point.
     * @return {@code true} if the index has changed, {@code false} otherwise.
     */
@@ -252,7 +262,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param newOutPoint the new index for the out point.
     * @return {@code true} if the index has changed, {@code false} otherwise.
     */
@@ -276,13 +286,13 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param writeBuffer when {@code true} any actual modification is written in both at the current
     *                    reading index in the buffer and in the buffer's {@code YoVariable}. When
     *                    {@code false}, the value is pushed only to the buffer's {@code YoVariable},
     *                    the buffer remains unchanged.
     * @return {@code true} if this operation actually resulted in at least one modification,
-    *         {@code false} otherwise.
+    *       {@code false} otherwise.
     */
    public boolean processLinkedPushRequests(boolean writeBuffer)
    {
@@ -385,7 +395,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @return {@code true} if at least one request is still pending, {@code false} otherwise.
     */
    public boolean hasRequestPending()
@@ -421,7 +431,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param updateBufferBounds when {@code true} the out-point will automatically be pushed back by
     *                           the current index. Usually {@code true} when the buffer manager is
     *                           writing into the buffer and usually {@code false} when data is being
@@ -454,7 +464,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param updateBufferBounds when {@code true} the out-point will automatically be pushed back by
     *                           the current index. Usually {@code true} when the buffer manager is
     *                           writing into the buffer and usually {@code false} when data is being
@@ -480,7 +490,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * <p>
     * Operation for the buffer manager only.
     * </p>
-    * 
+    *
     * @param stepSize the size of the decrement to apply to the reading position.
     * @return the new position of the reading index.
     */
@@ -491,7 +501,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
 
    /**
     * Applies a function to the buffer from the in-point to the out-point.
-    * 
+    *
     * @param processor the function to apply to the buffer.
     */
    public void applyProcessor(YoBufferProcessor processor)
@@ -550,7 +560,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
     * Properties include information about the current reading index, in point, out point, and buffer
     * size.
     * </p>
-    * 
+    *
     * @return the properties of this buffer.
     */
    public YoBufferPropertiesReadOnly getProperties()
@@ -560,7 +570,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
 
    /**
     * Gets the root registry this buffer was created for.
-    * 
+    *
     * @return the root registry.
     */
    public YoRegistry getRootRegistry()
@@ -570,7 +580,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
 
    /**
     * Gets the internal buffer holder.
-    * 
+    *
     * @return the root registry buffer listing the buffer for every {@code YoVariable}.
     */
    public YoRegistryBuffer getRegistryBuffer()
@@ -581,7 +591,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    /**
     * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
     * where each variable is stored as on line.
-    * 
+    *
     * @param outputStream the stream to write to.
     */
    public void exportDataASCII(OutputStream outputStream)
@@ -592,7 +602,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    /**
     * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
     * where each variable is stored as one line.
-    * 
+    *
     * @param outputStream   the stream to write to.
     * @param variableFilter a filter to downselect the {@link YoVariable}s to be exported. A
     *                       {@link YoVariable} is exported if the given predicate returns {@code true}.
@@ -609,7 +619,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    /**
     * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
     * where each variable is stored as one column and columns are separated by a comma.
-    * 
+    *
     * @param outputStream the stream to write to.
     */
    public void exportDataCSV(OutputStream outputStream)
@@ -620,7 +630,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    /**
     * Writes all the yoVariable buffers to the given {@code outputStream} using a non-compressed format
     * where each variable is stored as one column and columns are separated by a comma.
-    * 
+    *
     * @param outputStream   the stream to write to.
     * @param variableFilter a filter to downselect the {@link YoVariable}s to be exported. A
     *                       {@link YoVariable} is exported if the given predicate returns {@code true}.
@@ -637,7 +647,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    /**
     * Writes all the yoVariable buffers to the given {@code file} using Matlab data structure and file
     * format.
-    * 
+    *
     * @param file the file to write to.
     */
    public void exportDataMatlab(File file) throws IOException
@@ -648,7 +658,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    /**
     * Writes all the yoVariable buffers to the given {@code file} using Matlab data structure and file
     * format.
-    * 
+    *
     * @param file           the file to write to.
     * @param variableFilter a filter to downselect the {@link YoVariable}s to be exported. A
     *                       {@link YoVariable} is exported if the given predicate returns {@code true}.

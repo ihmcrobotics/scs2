@@ -77,7 +77,7 @@ public class SecondaryViewport3DManager implements SingleViewport3DManager
 
       snapshotParameters.setCamera(camera);
       snapshotParameters.setDepthBuffer(true);
-      snapshotParameters.setFill(Color.GRAY);
+      snapshotParameters.setFill(Color.web(MainViewport3DManager.VIEWPORT_BACKGROUND_COLOR));
 
       animationTimer.start();
    }
