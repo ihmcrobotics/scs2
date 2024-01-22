@@ -1,20 +1,11 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-
-import javax.xml.bind.JAXBException;
-
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Window;
 import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
@@ -32,6 +23,13 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.Manager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 public class YoSliderboardManager implements Manager
 {
@@ -133,7 +131,7 @@ public class YoSliderboardManager implements Manager
    {
       YoSliderboardListDefinition definitionToSave;
       if (behringerSliderboard.getValue() != null)
-         definitionToSave = behringerSliderboard.getValue().toYoSliderboardListDefinition();
+         definitionToSave = behringerSliderboard.getValue().toYoSliderboardListDefinition(true);
       else
          definitionToSave = initialConfiguration;
 
@@ -156,7 +154,12 @@ public class YoSliderboardManager implements Manager
 
       try
       {
-         handleSetRequest(XMLTools.loadYoSliderboardListDefinition(new FileInputStream(file)));
+         YoSliderboardListDefinition definition = XMLTools.loadYoSliderboardListDefinition(new FileInputStream(file));
+         handleSetRequest(definition);
+         if (definition.getWindowConfiguration() != null && !definition.getYoSliderboards().isEmpty() && definition.getWindowConfiguration().isShowing())
+         {
+            openSliderboardWindow(null, definition.getYoSliderboards().get(0).getType());
+         }
       }
       catch (IOException | JAXBException e)
       {
@@ -224,20 +227,7 @@ public class YoSliderboardManager implements Manager
       }
       else
       {
-         if (initialConfiguration == null)
-            initialConfiguration = new YoSliderboardListDefinition();
-
-         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
-         YoSliderboardDefinition sliderboard;
-         if (sliderboardIndex != -1)
-         {
-            sliderboard = initialConfiguration.getYoSliderboards().get(sliderboardIndex);
-         }
-         else
-         {
-            sliderboard = new YoSliderboardDefinition(sliderboardName);
-            initialConfiguration.getYoSliderboards().add(sliderboard);
-         }
+         YoSliderboardDefinition sliderboard = getOrCreateSliderboardDefinition(sliderboardName, sliderboardType);
          sliderboard.getButtons().add(new YoButtonDefinition(buttonDefinition));
       }
    }
@@ -250,20 +240,7 @@ public class YoSliderboardManager implements Manager
       }
       else
       {
-         if (initialConfiguration == null)
-            initialConfiguration = new YoSliderboardListDefinition();
-
-         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
-         YoSliderboardDefinition sliderboard;
-         if (sliderboardIndex != -1)
-         {
-            sliderboard = initialConfiguration.getYoSliderboards().get(sliderboardIndex);
-         }
-         else
-         {
-            sliderboard = new YoSliderboardDefinition(sliderboardName);
-            initialConfiguration.getYoSliderboards().add(sliderboard);
-         }
+         YoSliderboardDefinition sliderboard = getOrCreateSliderboardDefinition(sliderboardName, sliderboardType);
          sliderboard.getKnobs().add(new YoKnobDefinition(knobDefinition));
       }
    }
@@ -276,22 +253,28 @@ public class YoSliderboardManager implements Manager
       }
       else
       {
-         if (initialConfiguration == null)
-            initialConfiguration = new YoSliderboardListDefinition();
-
-         int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
-         YoSliderboardDefinition sliderboard;
-         if (sliderboardIndex != -1)
-         {
-            sliderboard = initialConfiguration.getYoSliderboards().get(sliderboardIndex);
-         }
-         else
-         {
-            sliderboard = new YoSliderboardDefinition(sliderboardName);
-            initialConfiguration.getYoSliderboards().add(sliderboard);
-         }
+         YoSliderboardDefinition sliderboard = getOrCreateSliderboardDefinition(sliderboardName, sliderboardType);
          sliderboard.getSliders().add(new YoSliderDefinition(sliderDefinition));
       }
+   }
+
+   private YoSliderboardDefinition getOrCreateSliderboardDefinition(String sliderboardName, YoSliderboardType sliderboardType)
+   {
+      if (initialConfiguration == null)
+         initialConfiguration = new YoSliderboardListDefinition();
+
+      int sliderboardIndex = findSliderboardIndex(sliderboardName, sliderboardType);
+      YoSliderboardDefinition sliderboard;
+      if (sliderboardIndex != -1)
+      {
+         sliderboard = initialConfiguration.getYoSliderboards().get(sliderboardIndex);
+      }
+      else
+      {
+         sliderboard = new YoSliderboardDefinition(sliderboardName);
+         initialConfiguration.getYoSliderboards().add(sliderboard);
+      }
+      return sliderboard;
    }
 
    private void handleClearButtonRequest(String sliderboardName, YoSliderboardType sliderboardType, int buttonIndex)
@@ -415,6 +398,8 @@ public class YoSliderboardManager implements Manager
          if (initialConfiguration != null)
          {
             controller.setInput(initialConfiguration);
+            if (initialConfiguration.getWindowConfiguration() == null)
+               SecondaryWindowManager.initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
             initialConfiguration = null;
          }
          else
@@ -422,9 +407,9 @@ public class YoSliderboardManager implements Manager
             YoSliderboardListDefinition initial = new YoSliderboardListDefinition();
             initial.getYoSliderboards().add(new YoSliderboardDefinition(YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME, type));
             controller.setInput(initial);
+            SecondaryWindowManager.initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          }
          behringerSliderboard.setValue(controller);
-         SecondaryWindowManager.initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }
       catch (IOException e)
@@ -432,5 +417,4 @@ public class YoSliderboardManager implements Manager
          e.printStackTrace();
       }
    }
-
 }

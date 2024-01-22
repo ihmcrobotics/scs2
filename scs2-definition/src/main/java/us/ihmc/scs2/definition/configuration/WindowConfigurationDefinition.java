@@ -5,6 +5,27 @@ public class WindowConfigurationDefinition
    private double positionX, positionY;
    private double width, height;
    private boolean maximized;
+   /** This is informative and is not used by some utility classes. */
+   private boolean isShowing;
+
+   public WindowConfigurationDefinition()
+   {
+   }
+
+   public WindowConfigurationDefinition(WindowConfigurationDefinition other)
+   {
+      set(other);
+   }
+
+   public void set(WindowConfigurationDefinition other)
+   {
+      positionX = other.positionX;
+      positionY = other.positionY;
+      width = other.width;
+      height = other.height;
+      maximized = other.maximized;
+      isShowing = other.isShowing;
+   }
 
    public void setPositionX(double positionX)
    {
@@ -29,6 +50,11 @@ public class WindowConfigurationDefinition
    public void setMaximized(boolean maximized)
    {
       this.maximized = maximized;
+   }
+
+   public void setShowing(boolean isShowing)
+   {
+      this.isShowing = isShowing;
    }
 
    public double getPositionX()
@@ -56,6 +82,11 @@ public class WindowConfigurationDefinition
       return maximized;
    }
 
+   public boolean isShowing()
+   {
+      return isShowing;
+   }
+
    @Override
    public boolean equals(Object object)
    {
@@ -76,6 +107,8 @@ public class WindowConfigurationDefinition
             return false;
          if (maximized != other.maximized)
             return false;
+         if (isShowing != other.isShowing)
+            return false;
          return true;
       }
       else
@@ -87,6 +120,7 @@ public class WindowConfigurationDefinition
    @Override
    public String toString()
    {
-      return "positionX: " + positionX + ", positionY: " + positionY + ", width: " + width + ", height: " + height + ", maximized: " + maximized;
+      return "positionX: " + positionX + ", positionY: " + positionY + ", width: " + width + ", height: " + height + ", maximized: " + maximized
+             + ", isShowing: " + isShowing;
    }
 }
