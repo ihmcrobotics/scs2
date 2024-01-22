@@ -3,7 +3,12 @@ package us.ihmc.scs2.session.mcap;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.*;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -69,27 +74,42 @@ public final class YoMCAPMessage
 
          if (!isArrayOrVector)
          {
-            YoRegistry fieldRegistry = new YoRegistry(fieldName);
-            messageRegistry.addChild(fieldRegistry);
-            YoMCAPMessage subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
-            deserializers.add(subMessage.deserializer);
+            if (subSchema.isEnum())
+            {
+               deserializers.add(Objects.requireNonNull(createYoEnum(field, subSchema, messageRegistry),
+                                                        "Failed to create enum for field: " + field + ", registry: " + messageRegistry));
+            }
+            else
+            {
+               YoRegistry fieldRegistry = new YoRegistry(fieldName);
+               messageRegistry.addChild(fieldRegistry);
+               YoMCAPMessage subMessage = newMessage(subSchema, -1, fieldRegistry, subSchemaMap);
+               deserializers.add(subMessage.deserializer);
+            }
          }
          else
          {
-            BiFunction<String, YoRegistry, YoMCAPMessage> elementBuilder = (name, yoRegistry) ->
+            if (subSchema.isEnum())
             {
-               YoMCAPMessage newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
-               messageRegistry.addChild(newElement.getRegistry());
-               return newElement;
-            };
-            deserializers.add(createFieldArray(YoMCAPMessage.class,
-                                               elementBuilder,
-                                               YoMCAPMessage::deserialize,
-                                               YoMCAPMessage::clearData,
-                                               fieldName,
-                                               field.isArray(),
-                                               field.getMaxLength(),
-                                               messageRegistry));
+               deserializers.add(createYoEnumArray(field, subSchema, messageRegistry));
+            }
+            else
+            {
+               BiFunction<String, YoRegistry, YoMCAPMessage> elementBuilder = (name, yoRegistry) ->
+               {
+                  YoMCAPMessage newElement = newMessage(subSchema, -1, new YoRegistry(name), subSchemaMap);
+                  messageRegistry.addChild(newElement.getRegistry());
+                  return newElement;
+               };
+               deserializers.add(createFieldArray(YoMCAPMessage.class,
+                                                  elementBuilder,
+                                                  YoMCAPMessage::deserialize,
+                                                  YoMCAPMessage::clearData,
+                                                  fieldName,
+                                                  field.isArray(),
+                                                  field.getMaxLength(),
+                                                  messageRegistry));
+            }
          }
       }
 
@@ -145,24 +165,39 @@ public final class YoMCAPMessage
       }
    }
 
-   protected void deserialize(CDRDeserializer cdr)
+   private void deserialize(CDRDeserializer cdr)
    {
       deserializer.accept(cdr);
    }
 
-   protected void clearData()
+   private void clearData()
    {
       deserializer.accept(null);
    }
 
    @SuppressWarnings({"rawtypes", "unchecked"})
-   protected static Consumer<CDRDeserializer> createYoVariable(MCAPSchemaField field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariable(MCAPSchemaField field, YoRegistry registry)
    {
       String fieldName = field.getName();
       String fieldType = field.getType();
 
       YoConversionToolbox conversion = conversionMap.get(fieldType);
       return conversion != null ? conversion.createYoVariable(fieldName, registry) : null;
+   }
+
+   private static Consumer<CDRDeserializer> createYoEnum(MCAPSchemaField field, MCAPSchema enumSchema, YoRegistry registry)
+   {
+      String fieldName = field.getName();
+
+      return createYoEnum(fieldName, enumSchema, registry);
+   }
+
+   private static Consumer<CDRDeserializer> createYoEnum(String fieldName, MCAPSchema enumSchema, YoRegistry registry)
+   {
+      if (!enumSchema.isEnum())
+         throw new IllegalArgumentException("Schema is not an enum: " + enumSchema + ", registry: " + registry);
+
+      return createYoEnumConversionToolbox(enumSchema).createYoVariable(fieldName, registry);
    }
 
    /**
@@ -174,7 +209,7 @@ public final class YoMCAPMessage
     * @return the parsing function.
     */
    @SuppressWarnings({"unchecked", "rawtypes"})
-   protected static Consumer<CDRDeserializer> createYoVariableArray(MCAPSchemaField field, YoRegistry registry)
+   private static Consumer<CDRDeserializer> createYoVariableArray(MCAPSchemaField field, YoRegistry registry)
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();
@@ -198,6 +233,28 @@ public final class YoMCAPMessage
       return null;
    }
 
+   private static Consumer<CDRDeserializer> createYoEnumArray(MCAPSchemaField field, MCAPSchema enumSchema, YoRegistry registry)
+   {
+      int maxLength = field.getMaxLength();
+      String fieldName = field.getName();
+      String fieldType = field.getType();
+
+      if (field.isVector() == field.isArray())
+         throw new IllegalArgumentException("Field is neither a vector nor an array: " + field + ", registry: " + registry);
+
+      boolean isFixedSize = field.isArray();
+
+      YoConversionToolbox<YoEnum> conversion = createYoEnumConversionToolbox(enumSchema);
+      return createFieldArray(conversion.yoType(),
+                              conversion.yoBuilder(),
+                              conversion.deserializer(),
+                              conversion.yoResetter(),
+                              fieldName,
+                              isFixedSize,
+                              maxLength,
+                              registry);
+   }
+
    /**
     * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an
     * array or a vector.
@@ -214,14 +271,14 @@ public final class YoMCAPMessage
     * @param <T>                 the type of the {@code YoVariable}.
     * @return the parsing function.
     */
-   protected static <T> Consumer<CDRDeserializer> createFieldArray(Class<T> variableType,
-                                                                   BiFunction<String, YoRegistry, T> elementBuilder,
-                                                                   BiConsumer<T, CDRDeserializer> elementDeserializer,
-                                                                   Consumer<T> elementResetter,
-                                                                   String name,
-                                                                   boolean isFixedSize,
-                                                                   int length,
-                                                                   YoRegistry registry)
+   private static <T> Consumer<CDRDeserializer> createFieldArray(Class<T> variableType,
+                                                                 BiFunction<String, YoRegistry, T> elementBuilder,
+                                                                 BiConsumer<T, CDRDeserializer> elementDeserializer,
+                                                                 Consumer<T> elementResetter,
+                                                                 String name,
+                                                                 boolean isFixedSize,
+                                                                 int length,
+                                                                 YoRegistry registry)
    {
       @SuppressWarnings("unchecked") T[] array = (T[]) Array.newInstance(variableType, length);
       for (int i = 0; i < length; i++)
@@ -250,6 +307,16 @@ public final class YoMCAPMessage
    }
 
    public static final Map<String, YoConversionToolbox<?>> conversionMap;
+
+   private static YoConversionToolbox<YoEnum> createYoEnumConversionToolbox(MCAPSchema enumSchema)
+   {
+      return new YoConversionToolbox<>("enum",
+                                       YoEnum.class,
+                                       (name, registry) -> new YoEnum<>(name, "", registry, true, enumSchema.getEnumConstants()),
+                                       (v, cdr1) -> v.set(cdr1.read_int32()),
+                                       // TODO Not sure if this is the right way to read an enum
+                                       v -> v.set(YoEnum.NULL_VALUE));
+   }
 
    static
    {
