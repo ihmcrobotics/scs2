@@ -85,6 +85,8 @@ public class EnvironmentManager implements Manager
          case SCS1:
             skybox.setupSCS1Skybox();
             break;
+         case OFF:
+            break;
          case CUSTOM:
             if (SKYBOX_CUSTOM_PATH == null)
             {

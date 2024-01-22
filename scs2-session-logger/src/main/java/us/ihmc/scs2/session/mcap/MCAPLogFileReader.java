@@ -27,7 +27,7 @@ import java.util.Set;
 
 public class MCAPLogFileReader
 {
-   private static final Set<String> SCHEMA_TO_IGNORE = Set.of("foxglove::Grid");
+   private static final Set<String> SCHEMA_TO_IGNORE = Set.of("foxglove::Grid", "foxglove::SceneUpdate", "foxglove::FrameTransforms", "HandDeviceHealth");
    private static final Path SCS2_MCAP_DEBUG_HOME = SessionIOTools.SCS2_HOME.resolve("mcap-debug");
 
    static
@@ -142,10 +142,10 @@ public class MCAPLogFileReader
             continue;
          MCAP.Schema schema = (MCAP.Schema) record.body();
 
+         rawSchemas.put(schema.id(), schema);
+
          if (SCHEMA_TO_IGNORE.contains(schema.name()))
             continue;
-
-         rawSchemas.put(schema.id(), schema);
 
          if (frameTransformManager.hasMCAPFrameTransforms() && schema.id() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
@@ -196,9 +196,10 @@ public class MCAPLogFileReader
             if (rawSchema != null && SCHEMA_TO_IGNORE.contains(rawSchema.name()))
                continue;
 
-            LogTools.error("Failed to find schema for channel: " + channel.id());
+            LogTools.error("Failed to find schema for channel: " + channel.id() + ", schema ID: " + channel.schemaId());
             continue;
          }
+
          try
          {
             if (!"cdr".equalsIgnoreCase(channel.messageEncoding()))
@@ -213,13 +214,20 @@ public class MCAPLogFileReader
             }
             YoNamespace namespace = new YoNamespace(topic).prepend(mcapRegistry.getNamespace());
             YoRegistry channelRegistry = SharedMemoryTools.ensurePathExists(mcapRegistry, namespace);
-            yoMessageMap.put(channel.id(), YoMCAPMessage.newMessage(schema, channel.id(), channelRegistry));
+            YoMCAPMessage newMessage = YoMCAPMessage.newMessage(schema, channel.id(), channelRegistry);
+            if (channelRegistry.getNumberOfVariablesDeep() > 15000)
+            {
+               LogTools.warn("Message registry has more than 15000 variables, schema {}, topic {}. This may cause performance issues.",
+                             schema.getName(),
+                             channel.topic());
+            }
+            yoMessageMap.put(channel.id(), newMessage);
          }
          catch (Exception e)
          {
             exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, schema, e);
+            LogTools.error("Failed to load channel: " + channel.id() + ", schema ID: " + channel.schemaId() + ", saved to: " + SCS2_MCAP_DEBUG_HOME);
             e.printStackTrace();
-            //            throw e;
          }
       }
    }

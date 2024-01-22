@@ -1,8 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.io.IOException;
-import java.util.function.Predicate;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -33,6 +30,7 @@ import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.Camera3DOptionsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraControlMode;
@@ -48,8 +46,15 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
+import java.io.IOException;
+import java.util.function.Predicate;
+
 public class MainViewport3DManager implements SingleViewport3DManager
 {
+   /** The viewport background color when there is no skybox. */
+   public static final String VIEWPORT_BACKGROUND_COLOR = SessionPropertiesHelper.loadStringPropertyOrEnvironment("scs2.session.gui.viewport.background",
+                                                                                                                  "SCS2_GUI_VIEWPORT_BACKGROUND",
+                                                                                                                  "gray");
    private final Pane container;
    private final SubScene subScene;
    private final Group rootNode3D;
@@ -70,7 +75,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
 
       // Creating sub-scene
       subScene = new SubScene(rootNode3D, -1, -1, true, SceneAntialiasing.BALANCED);
-      subScene.setFill(Color.GRAY);
+      subScene.setFill(Color.web(VIEWPORT_BACKGROUND_COLOR));
       subScene.setOnMousePressed(event -> subScene.requestFocus());
 
       // Embedding sub-scene in pane.
@@ -316,30 +321,30 @@ public class MainViewport3DManager implements SingleViewport3DManager
             return null;
          MenuItem menuItem = new MenuItem("Start tracking node: " + intersectedNode.getId());
          menuItem.setOnAction(e ->
-         {
-            nodeToTrackProperty.set(intersectedNode);
-         });
+                              {
+                                 nodeToTrackProperty.set(intersectedNode);
+                              });
          return menuItem;
       }, (owner, event) ->
-      {
-         if (nodeToTrackProperty.get() == null || focalPointHandler.isTrackingDisabled())
-            return null;
-         MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeToTrackProperty.get().getId());
-         menuItem.setOnAction(e ->
-         {
-            nodeToTrackProperty.set(null);
-         });
-         return menuItem;
-      }, (owner, event) ->
-      {
-         MenuItem menuItem = new MenuItem("Camera properties...");
-         menuItem.setOnAction(e -> openCameraPropertiesDialog(cameraController,
-                                                              searchManager,
-                                                              yoManager.getLinkedRootRegistry(),
-                                                              referenceFrameManager,
-                                                              viewport));
-         return menuItem;
-      });
+                                 {
+                                    if (nodeToTrackProperty.get() == null || focalPointHandler.isTrackingDisabled())
+                                       return null;
+                                    MenuItem menuItem = new MenuItem("Stop tracking node: " + nodeToTrackProperty.get().getId());
+                                    menuItem.setOnAction(e ->
+                                                         {
+                                                            nodeToTrackProperty.set(null);
+                                                         });
+                                    return menuItem;
+                                 }, (owner, event) ->
+                                 {
+                                    MenuItem menuItem = new MenuItem("Camera properties...");
+                                    menuItem.setOnAction(e -> openCameraPropertiesDialog(cameraController,
+                                                                                         searchManager,
+                                                                                         yoManager.getLinkedRootRegistry(),
+                                                                                         referenceFrameManager,
+                                                                                         viewport));
+                                    return menuItem;
+                                 });
    }
 
    static void openCameraPropertiesDialog(PerspectiveCameraController cameraController,

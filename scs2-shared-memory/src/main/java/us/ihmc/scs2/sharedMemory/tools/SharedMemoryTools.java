@@ -2,13 +2,25 @@ package us.ihmc.scs2.sharedMemory.tools;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
-import us.ihmc.yoVariables.euclid.referenceFrame.*;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint2D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector2D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
+import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameYawPitchRoll;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.*;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
+import us.ihmc.yoVariables.variable.YoVariableType;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +33,59 @@ import java.util.stream.Collectors;
  */
 public class SharedMemoryTools
 {
+   /**
+    * Calculates the size of a registry in bytes.
+    *
+    * @param registry the registry to calculate the size of.
+    * @return the size of the registry in bytes.
+    */
+   public static long getRegistryMemorySize(YoRegistry registry)
+   {
+      long size = getVariablesMemorySize(registry.getVariables());
+
+      for (YoRegistry child : registry.getChildren())
+      {
+         size += getRegistryMemorySize(child);
+      }
+
+      return size;
+   }
+
+   /**
+    * Calculates the size of a list of variables in bytes.
+    *
+    * @param yoVariables the list of variables to calculate the size of.
+    * @return the size of the list of variables in bytes.
+    */
+   public static long getVariablesMemorySize(Collection<YoVariable> yoVariables)
+   {
+      int size = 0;
+
+      for (YoVariable yoVariable : yoVariables)
+      {
+         size += getVariableMemorySize(yoVariable);
+      }
+
+      return size;
+   }
+
+   /**
+    * Calculates the size of a variable in bytes.
+    *
+    * @param yoVariable the variable to calculate the size of.
+    * @return the size of the variable in bytes.
+    */
+   public static int getVariableMemorySize(YoVariable yoVariable)
+   {
+      return switch (yoVariable.getType())
+      {
+         case DOUBLE -> Double.BYTES;
+         case INTEGER -> Integer.BYTES;
+         case LONG -> Long.BYTES;
+         case BOOLEAN, ENUM -> Byte.BYTES;
+      };
+   }
+
    /**
     * Concatenates multiple arrays into a single array.
     *
@@ -615,9 +680,8 @@ public class SharedMemoryTools
          if (!targetVariableNames.contains(originalVariable.getName()))
          { // FIXME YoEnum.duplicate needs to handle this case.
             YoVariable newYoVariable;
-            if (originalVariable instanceof YoEnum && !((YoEnum<?>) originalVariable).isBackedByEnum())
+            if (originalVariable instanceof YoEnum<?> originalEnum && !((YoEnum<?>) originalVariable).isBackedByEnum())
             {
-               YoEnum<?> originalEnum = (YoEnum<?>) originalVariable;
                newYoVariable = new YoEnum<>(originalEnum.getName(),
                                             originalEnum.getDescription(),
                                             target,
