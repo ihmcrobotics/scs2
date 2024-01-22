@@ -1,18 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import javax.xml.bind.JAXBException;
-
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -45,6 +32,7 @@ import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
+import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -53,6 +41,18 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.BCF2000SliderboardController;
 import us.ihmc.scs2.sessionVisualizer.sliderboard.XTouchCompactSliderboardController;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class YoMultiSliderboardWindowController
 {
@@ -158,12 +158,6 @@ public class YoMultiSliderboardWindowController
             window.close();
       });
 
-      toolkit.getMainWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e ->
-      {
-         if (!e.isConsumed())
-            window.close();
-      });
-
       window.addEventHandler(WindowEvent.WINDOW_HIDING, e ->
       {
          LogTools.info("Stopping sliderboard binding.");
@@ -195,6 +189,9 @@ public class YoMultiSliderboardWindowController
          YoSliderboardDefinition sliderboard = sliderboards.get(i);
          setSliderboard(sliderboard);
       }
+
+      if (input.getWindowConfiguration() != null)
+         SCSGuiConfiguration.loadWindowConfigurationDefinition(input.getWindowConfiguration(), window);
    }
 
    public void setSliderboard(YoSliderboardDefinition sliderboardDefinition)
@@ -347,7 +344,6 @@ public class YoMultiSliderboardWindowController
             return null;
 
          return exportTabMenuItem(() -> selectedTab);
-
       };
    }
 
@@ -358,17 +354,16 @@ public class YoMultiSliderboardWindowController
       MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
 
       menuItem.setOnAction(e ->
-      {
-         if (selectedTab == null)
-            return;
+                           {
+                              if (selectedTab == null)
+                                 return;
 
-         File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
-         if (result != null)
-            tabToControllerMap.get(selectedTab.get()).save(result);
-      });
+                              File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
+                              if (result != null)
+                                 tabToControllerMap.get(selectedTab.get()).save(result);
+                           });
 
       return menuItem;
-
    }
 
    private Function<TabPane, MenuItem> exportAllTabMenuItemFactory()
@@ -380,11 +375,11 @@ public class YoMultiSliderboardWindowController
          MenuItem menuItem = new MenuItem("Export all tabs...", exportIcon);
 
          menuItem.setOnAction(e ->
-         {
-            File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
-            if (result != null)
-               exportAllTabs(result);
-         });
+                              {
+                                 File result = SessionVisualizerIOTools.yoSliderboardConfigurationSaveFileDialog(owner);
+                                 if (result != null)
+                                    exportAllTabs(result);
+                              });
 
          return menuItem;
       };
@@ -410,16 +405,15 @@ public class YoMultiSliderboardWindowController
       exportIcon.getStyleClass().add("load-icon-view");
       MenuItem menuItem = new MenuItem("Import tab(s)...", exportIcon);
       menuItem.setOnAction(e ->
-      {
-         if (selectedTab.get() == null)
-            return;
+                           {
+                              if (selectedTab.get() == null)
+                                 return;
 
-         File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
-         if (result != null)
-            importTabsAt(result, selectedTab.get());
-      });
+                              File result = SessionVisualizerIOTools.yoSliderboardConfigurationOpenFileDialog(owner);
+                              if (result != null)
+                                 importTabsAt(result, selectedTab.get());
+                           });
       return menuItem;
-
    }
 
    private Tab newSliderboardTab(YoSliderboardType type)
@@ -438,7 +432,6 @@ public class YoMultiSliderboardWindowController
          default:
             throw new RuntimeException("Invalid sliderboard type: " + type);
       }
-
    }
 
    private Tab newBFC2000SliderboardTab()
@@ -491,7 +484,7 @@ public class YoMultiSliderboardWindowController
 
       try
       {
-         XMLTools.saveYoSliderboardListDefinition(new FileOutputStream(file), toYoSliderboardListDefinition());
+         XMLTools.saveYoSliderboardListDefinition(new FileOutputStream(file), toYoSliderboardListDefinition(false));
       }
       catch (IOException | JAXBException e)
       {
@@ -542,7 +535,7 @@ public class YoMultiSliderboardWindowController
       return tabToControllerMap.get(query).isEmpty();
    }
 
-   public YoSliderboardListDefinition toYoSliderboardListDefinition()
+   public YoSliderboardListDefinition toYoSliderboardListDefinition(boolean exportWindowConfiguration)
    {
       YoSliderboardListDefinition definition = new YoSliderboardListDefinition();
       definition.setYoSliderboards(new ArrayList<>());
@@ -550,6 +543,8 @@ public class YoMultiSliderboardWindowController
       {
          definition.getYoSliderboards().add(tabToControllerMap.get(tab).toYoSliderboardDefinition());
       }
+      if (exportWindowConfiguration)
+         definition.setWindowConfiguration(SCSGuiConfiguration.toWindowConfigurationDefinition(window));
       return definition;
    }
 
@@ -569,5 +564,4 @@ public class YoMultiSliderboardWindowController
       sliderboardTabPane.getTabs().add(tab);
       sliderboardTabPane.getSelectionModel().select(index);
    }
-
 }
