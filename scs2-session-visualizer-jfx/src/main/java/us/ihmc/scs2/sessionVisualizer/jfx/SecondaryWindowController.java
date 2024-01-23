@@ -11,6 +11,7 @@ import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
@@ -63,7 +64,7 @@ public class SecondaryWindowController implements VisualizerController
 
    private SessionVisualizerWindowToolkit toolkit;
    private boolean isMessagerSetup = false;
-   private StringProperty userDefinedChartWindowName = new SimpleStringProperty(this, "userDefinedChartWindowName", null);
+   private final StringProperty userDefinedChartWindowName = new SimpleStringProperty(this, "userDefinedChartWindowName", null);
    private Stage stage;
 
    @Override
@@ -84,6 +85,14 @@ public class SecondaryWindowController implements VisualizerController
             return;
          closeAndDispose();
          stage.close();
+      });
+
+      MenuTools.setupContextMenu(menuController.getMenuBar(), n ->
+      {
+         CheckMenuItem menuItem = new CheckMenuItem("Always on top");
+         menuItem.setSelected(stage.isAlwaysOnTop());
+         menuItem.setOnAction(event -> stage.setAlwaysOnTop(menuItem.isSelected()));
+         return menuItem;
       });
 
       ChangeListener<String> chartTitleListener = (o, oldValue, newValue) -> updateWindowTitle();
