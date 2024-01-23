@@ -17,6 +17,7 @@ import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
+import us.ihmc.scs2.simulation.robot.controller.RobotOneDoFJointDampingCalculator;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.*;
@@ -55,6 +56,7 @@ public class ImpulseBasedRobotPhysics
    private final Map<RigidBodyBasics, YoSingleContactImpulseCalculatorPool> interRobotContactConstraintCalculatorPools = new HashMap<>();
 
    private final SingleRobotFirstOrderIntegrator integrator;
+   private final RobotOneDoFJointDampingCalculator robotOneDoFJointDampingCalculator;
 
    private final RobotPhysicsOutput physicsOutput;
 
@@ -78,8 +80,9 @@ public class ImpulseBasedRobotPhysics
       collidables.forEach(collidable -> collidable.setFrameShapePosePredictor(frameShapePosePredictor));
 
       YoRegistry jointLimitConstraintCalculatorRegistry = new YoRegistry(RobotJointLimitImpulseBasedCalculator.class.getSimpleName());
-
       jointLimitConstraintCalculator = new YoRobotJointLimitImpulseBasedCalculator(owner, forwardDynamicsCalculator, jointLimitConstraintCalculatorRegistry);
+
+      robotOneDoFJointDampingCalculator = new RobotOneDoFJointDampingCalculator(owner);
 
       environmentContactConstraintCalculatorPool = new YoSingleContactImpulseCalculatorPool(20,
                                                                                             owner.getName() + "Single",
@@ -110,6 +113,7 @@ public class ImpulseBasedRobotPhysics
       robotPhysicsRegistry.addChild(environmentContactCalculatorRegistry);
       robotPhysicsRegistry.addChild(interRobotContactCalculatorRegistry);
       robotPhysicsRegistry.addChild(selfContactCalculatorRegistry);
+      robotPhysicsRegistry.addChild(robotOneDoFJointDampingCalculator.getRegistry());
    }
 
    public void enableJointWrenchCalculator()
@@ -130,6 +134,11 @@ public class ImpulseBasedRobotPhysics
       environmentContactConstraintCalculatorPool.clear();
       selfContactConstraintCalculatorPool.clear();
       interRobotContactConstraintCalculatorPools.forEach((rigidBodyBasics, calculators) -> calculators.clear());
+   }
+
+   public void computeJointDamping()
+   {
+      robotOneDoFJointDampingCalculator.compute();
    }
 
    public void addJointVelocityChange(DMatrixRMaj velocityChange)

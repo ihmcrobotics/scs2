@@ -212,6 +212,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       for (ImpulseBasedRobot robot : robotList)
       {
          robot.updateCollidableBoundingBoxes();
+         robot.computeJointDamping();
 
          for (SimJointBasics joint : robot.getJointsToConsider())
          {
