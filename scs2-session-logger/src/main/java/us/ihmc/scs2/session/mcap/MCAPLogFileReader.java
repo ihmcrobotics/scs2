@@ -237,6 +237,11 @@ public class MCAPLogFileReader
       return (currentTimestamp.getValue() - getInitialTimestamp()) / 1.0e9;
    }
 
+   public long getCurrentRelativeTimestamp()
+   {
+      return currentTimestamp.getValue() - getInitialTimestamp();
+   }
+
    public void initialize() throws IOException
    {
       chunkManager.loadChunk(initialTimestamp);

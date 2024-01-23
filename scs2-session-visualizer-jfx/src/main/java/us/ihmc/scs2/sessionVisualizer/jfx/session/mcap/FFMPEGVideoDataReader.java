@@ -7,16 +7,16 @@ import org.bytedeco.javacv.FrameGrabber;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class VideoDataReader
+public class FFMPEGVideoDataReader
 {
    private final File videoFile;
    private final FFmpegFrameGrabber frameGrabber;
    private Frame currentFrame = null;
-   private final long maxLengthTimestamp;
+   private final long maxVideoTimestamp;
 
    private final AtomicLong currentTimestamp = new AtomicLong(-1);
 
-   public VideoDataReader(File file)
+   public FFMPEGVideoDataReader(File file)
    {
       videoFile = file;
       frameGrabber = new FFmpegFrameGrabber(file);
@@ -29,7 +29,7 @@ public class VideoDataReader
          throw new RuntimeException(e);
       }
 
-      maxLengthTimestamp = frameGrabber.getLengthInTime();
+      maxVideoTimestamp = frameGrabber.getLengthInTime();
    }
 
    public Frame getCurrentFrame()
@@ -39,13 +39,15 @@ public class VideoDataReader
 
    public long readFrameAtTimestamp(long timestamp)
    {
+      // NOTE: timestamp passed in is in nanoseconds
       if (timestamp != currentTimestamp.get())
       {
-         long clampedTime = Math.min(maxLengthTimestamp, Math.max(0, timestamp));
+         // timestamp / 1000L converts a nanosecond timestamp to the video timestamp in time_base units
+         long clampedTime = Math.min(maxVideoTimestamp, Math.max(0, timestamp / 1000L));
          currentTimestamp.set(clampedTime);
          try
          {
-            frameGrabber.setVideoTimestamp(timestamp);
+            frameGrabber.setVideoTimestamp(clampedTime);
             currentFrame = frameGrabber.grabFrame();
          }
          catch (FrameGrabber.Exception e)
@@ -58,7 +60,7 @@ public class VideoDataReader
 
    public long getVideoLengthInSeconds()
    {
-      return maxLengthTimestamp / 1000000;
+      return maxVideoTimestamp / 1000000;
    }
 
    public void shutdown()
