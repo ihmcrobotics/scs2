@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
@@ -13,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-public class MultiVideoDataReader
+public class FFMPEGMultiVideoDataReader
 {
    static
    {
@@ -21,11 +20,11 @@ public class MultiVideoDataReader
       avutil.av_log_set_level(avutil.AV_LOG_ERROR);
    }
 
-   private final List<VideoDataReader> readers = new ArrayList<>();
+   private final List<FFMPEGVideoDataReader> readers = new ArrayList<>();
    private final BackgroundExecutorManager backgroundExecutorManager;
    private Future<?> currentTask = null;
 
-   public MultiVideoDataReader(File dataDirectory, BackgroundExecutorManager backgroundExecutorManager)
+   public FFMPEGMultiVideoDataReader(File dataDirectory, BackgroundExecutorManager backgroundExecutorManager)
    {
       this.backgroundExecutorManager = backgroundExecutorManager;
       List<Path> videoFiles;
@@ -43,24 +42,24 @@ public class MultiVideoDataReader
          }
          for (int i = 0; i < videoFiles.size(); i++)
          {
-            readers.add(new VideoDataReader(videoFiles.get(i).toFile()));
+            readers.add(new FFMPEGVideoDataReader(videoFiles.get(i).toFile()));
          }
       }
    }
 
-   public void readVideoFrameNow(double time)
+   public void readVideoFrameNow(long timestamp)
    {
       readers.forEach(reader ->
                       {
-                         reader.readFrameAtTimestamp(Math.round(time * 1000000L));
-//                         LogTools.info("Reading frame at {} out of {}\n", time, reader.getVideoLengthInSeconds());
+                         reader.readFrameAtTimestamp(timestamp);
+                         //                          LogTools.info("Reading frame at {} out of {}\n", timestamp / 1000000000.0, reader.getVideoLengthInSeconds());
                       });
    }
 
-   public void readVideoFrameInBackground(double time)
+   public void readVideoFrameInBackground(long timestamp)
    {
       if (currentTask == null || currentTask.isDone())
-         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(time));
+         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(timestamp));
    }
 
    public int getNumberOfVideos()
@@ -68,7 +67,7 @@ public class MultiVideoDataReader
       return readers.size();
    }
 
-   public List<VideoDataReader> getReaders()
+   public List<FFMPEGVideoDataReader> getReaders()
    {
       return readers;
    }
