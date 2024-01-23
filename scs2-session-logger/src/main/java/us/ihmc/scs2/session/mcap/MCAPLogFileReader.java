@@ -102,6 +102,11 @@ public class MCAPLogFileReader
       return chunkManager.getTimestampAtIndex(index);
    }
 
+   public YoLong getCurrentTimestamp()
+   {
+      return currentTimestamp;
+   }
+
    public long getRelativeTimestampAtIndex(int index)
    {
       return chunkManager.getRelativeTimestampAtIndex(index);
@@ -230,6 +235,11 @@ public class MCAPLogFileReader
    public double getCurrentTimeInLog()
    {
       return (currentTimestamp.getValue() - getInitialTimestamp()) / 1.0e9;
+   }
+
+   public long getCurrentRelativeTimestamp()
+   {
+      return currentTimestamp.getValue() - getInitialTimestamp();
    }
 
    public void initialize() throws IOException
