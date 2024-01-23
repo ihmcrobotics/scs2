@@ -42,6 +42,11 @@ public class ImpulseBasedRobot extends RobotExtension implements CollidableHolde
       robotPhysics.resetCalculators();
    }
 
+   public void computeJointDamping()
+   {
+      robotPhysics.computeJointDamping();
+   }
+
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       robotPhysics.doForwardDynamics(gravity);
