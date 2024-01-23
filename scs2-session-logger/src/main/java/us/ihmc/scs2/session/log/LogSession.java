@@ -63,7 +63,8 @@ public class LogSession extends Session
       rootRegistry.addChild(logDataReader.getYoRegistry());
       rootRegistry.addChild(parser.getRootRegistry());
       yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(parser.getSCS1YoGraphics())));
-      yoGraphicDefinitions.addAll(parser.getSCS2YoGraphics());
+      if (parser.getSCS2YoGraphics() != null)
+         yoGraphicDefinitions.addAll(parser.getSCS2YoGraphics());
 
       sessionName = logProperties.getNameAsString();
 
