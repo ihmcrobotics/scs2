@@ -11,7 +11,6 @@ import us.ihmc.scs2.definition.controller.interfaces.Controller;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerDefinition;
 import us.ihmc.scs2.definition.controller.interfaces.ControllerThrottler;
 import us.ihmc.scs2.definition.state.interfaces.JointStateBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimMultiBodySystemBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -154,11 +153,6 @@ public class RobotControllerManager
    public void updateControllers(double time)
    {
       controllerInput.setTime(time);
-
-      for (SimJointBasics joint : input.getJointsToConsider())
-      {
-         joint.setJointTauToZero();
-      }
 
       for (Controller controller : controllers)
       {
