@@ -9,35 +9,24 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.JavaFXFrameConverter;
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader.FrameData;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
-public class VideoViewer
+public class FFMPEGVideoViewer
 {
 
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
@@ -49,12 +38,12 @@ public class VideoViewer
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
    private final JavaFXFrameConverter frameConverter = new JavaFXFrameConverter();
-   private final us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.VideoDataReader reader;
+   private final FFMPEGVideoDataReader reader;
    private final double defaultThumbnailSize;
 
    private final ObjectProperty<Pane> imageViewRootPane = new SimpleObjectProperty<>(this, "imageViewRootPane", null);
 
-   public VideoViewer(Window owner, us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.VideoDataReader reader, double defaultThumbnailSize)
+   public FFMPEGVideoViewer(Window owner, FFMPEGVideoDataReader reader, double defaultThumbnailSize)
    {
       this.reader = reader;
       this.defaultThumbnailSize = defaultThumbnailSize;

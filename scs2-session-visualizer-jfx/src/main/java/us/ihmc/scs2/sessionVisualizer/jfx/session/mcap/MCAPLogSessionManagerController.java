@@ -50,7 +50,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private static final String ROBOT_MODEL_FILE_KEY = "MCAPRobotModelFilePath";
 
    private static final String DEFAULT_MODEL_TEXT_FIELD_TEXT = "Path to model file";
-   private final ObjectProperty<MultiVideoViewer> multiVideoViewerObjectProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
+   private final ObjectProperty<FFMPEGMultiVideoViewer> multiVideoViewerObjectProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
    private final ObjectProperty<MCAPLogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
    private final LongProperty desiredLogDTProperty = new SimpleLongProperty(this, "desiredLogDT", TimeUnit.MILLISECONDS.toNanos(1));
    @FXML
@@ -275,10 +275,10 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       logPositionSlider.setValue(0.0);
       logPositionSlider.setMin(0.0);
       logPositionSlider.setMax(mcapLogFileReader.getNumberOfEntries() - 1);
-      MultiVideoDataReader multiReader = new MultiVideoDataReader(logFile.getParentFile(), backgroundExecutorManager);
-      multiReader.readVideoFrameNow(mcapLogFileReader.getCurrentTimeInLog());
-      mcapLogFileReader.getCurrentTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(mcapLogFileReader.getCurrentTimeInLog()));
-      multiVideoViewerObjectProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
+      FFMPEGMultiVideoDataReader multiReader = new FFMPEGMultiVideoDataReader(logFile.getParentFile(), backgroundExecutorManager);
+      multiReader.readVideoFrameNow(mcapLogFileReader.getCurrentRelativeTimestamp());
+      mcapLogFileReader.getCurrentTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(mcapLogFileReader.getCurrentRelativeTimestamp()));
+      multiVideoViewerObjectProperty.set(new FFMPEGMultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
       boolean logHasVideos = multiReader.getNumberOfVideos() > 0;
       thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
       thumbnailsTitledPane.setExpanded(logHasVideos);
