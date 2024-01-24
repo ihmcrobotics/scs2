@@ -12,6 +12,8 @@ import us.ihmc.yoVariables.variable.YoInteger;
 
 public class YoMatrix implements DMatrix, ReshapeMatrix
 {
+   // TODO: eventually consolidate YoMatrix implementations
+
    private static final long serialVersionUID = 2156411740647948028L;
 
    private final int maxNumberOfRows, maxNumberOfColumns;
@@ -20,6 +22,16 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
    private final YoDouble[][] variables;
 
    public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, YoRegistry registry)
+   {
+      this(name, maxNumberOfRows, maxNumberOfColumns, null, null, registry);
+   }
+
+   public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, YoRegistry registry)
+   {
+      this(name, maxNumberOfRows, maxNumberOfColumns, rowNames, null, registry);
+   }
+
+   public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, String[] columnNames, YoRegistry registry)
    {
       this.maxNumberOfRows = maxNumberOfRows;
       this.maxNumberOfColumns = maxNumberOfColumns;
@@ -36,9 +48,44 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
       {
          for (int column = 0; column < maxNumberOfColumns; column++)
          {
-            variables[row][column] = new YoDouble(name + "_" + row + "_" + column, registry);
+            switch (checkNames(rowNames, columnNames))
+            {
+               case NONE:
+               {
+                  variables[row][column] = new YoDouble(name + "_" + row + "_" + column, registry);  // names are simply the row and column indices
+                  break;
+               }
+               case ROWS:
+               {
+                  if (maxNumberOfColumns > 1)
+                     throw new IllegalArgumentException("The YoMatrix must be a column vector if only row names are provided, else unique names cannot be generated.");
+
+                  variables[row][column] = new YoDouble(name + "_" + rowNames[row], registry);  // names are the row names, no column identifier
+                  break;
+               }
+               case ROWS_AND_COLUMNS:
+               {
+                  variables[row][column] = new YoDouble(name + "_" + rowNames[row] + "_" + columnNames[column], registry);  // names are the row and column names
+                  break;
+               }
+            }
          }
       }
+   }
+
+   private enum NamesProvided
+   {
+      NONE, ROWS, ROWS_AND_COLUMNS
+   }
+
+   private NamesProvided checkNames(String[] rowNames, String[] columnNames)
+   {
+      if (rowNames == null && columnNames == null)
+         return NamesProvided.NONE;
+      else if (rowNames != null && columnNames == null)
+         return NamesProvided.ROWS;
+      else
+         return NamesProvided.ROWS_AND_COLUMNS;
    }
 
    @Override
