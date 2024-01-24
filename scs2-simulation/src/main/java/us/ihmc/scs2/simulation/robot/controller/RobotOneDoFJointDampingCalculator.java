@@ -1,8 +1,5 @@
 package us.ihmc.scs2.simulation.robot.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.ejml.data.DMatrix;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
@@ -10,6 +7,9 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RobotOneDoFJointDampingCalculator
 {
@@ -40,10 +40,10 @@ public class RobotOneDoFJointDampingCalculator
 
    public void compute(DMatrix tauToAppendTo)
    {
-      compute();
-
       for (JointCalculator calculator : jointCalculators)
       {
+         calculator.doControl();
+
          int jointIndex = jointMatrixIndexProvider.getJointDoFIndices(calculator.joint)[0];
          double currentValue = tauToAppendTo.get(jointIndex, 0);
          // Appending this tau to the current value
@@ -71,7 +71,6 @@ public class RobotOneDoFJointDampingCalculator
       {
          double tauDamping = -joint.getDamping() * joint.getQd();
          dampingEffort.set(tauDamping);
-         joint.setTau(joint.getTau() + tauDamping);
       }
    }
 }
