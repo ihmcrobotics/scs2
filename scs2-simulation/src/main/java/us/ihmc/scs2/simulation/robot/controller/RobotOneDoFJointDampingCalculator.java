@@ -38,10 +38,6 @@ public class RobotOneDoFJointDampingCalculator
       }
    }
 
-   /**
-    * TODO: note about appending, implies .zero() must be called somewhere
-    * @param tauToAppendTo
-    */
    public void compute(DMatrix tauToAppendTo)
    {
       compute();
