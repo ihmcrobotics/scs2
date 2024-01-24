@@ -18,7 +18,9 @@ import us.ihmc.scs2.definition.robot.urdf.URDFTools;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
+import us.ihmc.yoVariables.exceptions.NameCollisionException;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
@@ -89,7 +91,22 @@ public class RobotModelLoader
                                 });
       }
 
-      rootRegistry.addChild(robot.getRegistry());
+      try
+      {
+         rootRegistry.addChild(robot.getRegistry());
+      }
+      catch (NameCollisionException e)
+      {
+         YoRegistry logRobotRegistry = rootRegistry.getChild(robot.getName());
+         // If there's no overlap in variable names, we can just add the robot variables to the logRobotRegistry.
+         for (YoVariable variable : new ArrayList<>(robot.getRegistry().getVariables())) // Need to copy the list to avoid concurrent modification exception.
+         {
+            if (logRobotRegistry.getVariable(variable.getName()) == null)
+               logRobotRegistry.addVariable(variable);
+            else
+               throw new NameCollisionException("Cannot add robot to log registry, name collision with variable " + variable.getFullNameString());
+         }
+      }
 
       return () -> jointStateUpdaters.forEach(updater -> updater.run());
    }
