@@ -117,8 +117,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
       for (ContactPointBasedRobot robot : robotList)
       {
-         robot.computeJointDamping();
-         robot.computeJointSoftLimits();
+         robot.computeJointSimulationEffects();
          robot.updateCollidableBoundingBoxes();
       }
 

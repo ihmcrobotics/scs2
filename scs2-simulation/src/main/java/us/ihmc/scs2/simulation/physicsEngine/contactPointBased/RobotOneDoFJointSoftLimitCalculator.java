@@ -3,6 +3,8 @@ package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.ejml.data.DMatrix;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
@@ -15,9 +17,13 @@ public class RobotOneDoFJointSoftLimitCalculator
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
    private final List<JointCalculator> jointCalculators = new ArrayList<>();
+   private final JointMatrixIndexProvider jointMatrixIndexProvider;
+
 
    public RobotOneDoFJointSoftLimitCalculator(RobotInterface robot)
    {
+      jointMatrixIndexProvider = robot.getJointMatrixIndexProvider();
+
       for (SimJointBasics joint : robot.getJointsToConsider())
       {
          if (joint instanceof SimOneDoFJointBasics)
@@ -36,6 +42,23 @@ public class RobotOneDoFJointSoftLimitCalculator
       for (int i = 0; i < jointCalculators.size(); i++)
       {
          jointCalculators.get(i).compute();
+      }
+   }
+
+   /**
+    * TODO: note about appending, implies .zero() must be called somewhere
+    * @param tauToAppendTo
+    */
+   public void compute(DMatrix tauToAppendTo)
+   {
+      compute();
+
+      for (JointCalculator calculator : jointCalculators)
+      {
+         int jointIndex = jointMatrixIndexProvider.getJointDoFIndices(calculator.joint)[0];
+         double currentValue = tauToAppendTo.get(jointIndex, 0);
+         // Appending this tau to the current value
+         tauToAppendTo.set(jointIndex, 0, currentValue + calculator.jointLimitEffort.getDoubleValue());
       }
    }
 
