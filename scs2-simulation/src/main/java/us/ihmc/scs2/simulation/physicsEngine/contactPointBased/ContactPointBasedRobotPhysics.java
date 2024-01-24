@@ -48,10 +48,10 @@ public class ContactPointBasedRobotPhysics
    private final JointMatrixIndexProvider indexProvider;
 
    /** The joint torques from the robot's controller manager, corresponding to joint torques commanded by any controllers. */
-   private final YoMatrix jointsTauController;
+   private final DMatrixRMaj jointsTauController;
 
    /** The joint torques imposed by physics simulation, consisting of damping + soft enforcement of joint limits. */
-   private final YoMatrix jointsTauSimulationEffects;
+   private final YoMatrix jointsTauLowLevelController;
 
    /** The resultant joint torques to be used in the forward dynamics calculation (i.e. the calculation for the result of the simulation). */
    private final YoMatrix jointsTau;
@@ -81,8 +81,8 @@ public class ContactPointBasedRobotPhysics
       int nDoFs = indexProvider.getIndexedJointsInOrder().stream().map(joint -> joint.getDegreesOfFreedom()).reduce(0, Integer::sum);
 
       String[] rowNames = getRowNames(owner, nDoFs);
-      jointsTauController = new YoMatrix("tau_control", nDoFs, 1, rowNames, null, owner.getRegistry());
-      jointsTauSimulationEffects = new YoMatrix("tau_sim", nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTauController = new DMatrixRMaj(nDoFs, 1);
+      jointsTauLowLevelController = new YoMatrix("tau_llc", nDoFs, 1, rowNames, null, owner.getRegistry());
       jointsTau = new YoMatrix("tau_total", nDoFs, 1, rowNames, null, owner.getRegistry());
 
       integrator = new SingleRobotFirstOrderIntegrator();
@@ -104,20 +104,20 @@ public class ContactPointBasedRobotPhysics
       rigidBodyWrenchRegistry.reset();
    }
 
-   public void computeJointSimulationEffects()
+   public void computeJointLowLevelControl()
    {
-      jointsTauSimulationEffects.zero();  // appended to, not overwritten, so it is imperative that it is first zeroed here
+      jointsTauLowLevelController.zero();  // appended to, not overwritten, so it is imperative that it is first zeroed here
       computeJointDamping();
       computeJointSoftLimits();
    }
    private void computeJointDamping()
    {
-      robotOneDoFJointDampingCalculator.compute(jointsTauSimulationEffects);
+      robotOneDoFJointDampingCalculator.compute(jointsTauLowLevelController);
    }
 
    private void computeJointSoftLimits()
    {
-      robotOneDoFJointSoftLimitCalculator.compute(jointsTauSimulationEffects);
+      robotOneDoFJointSoftLimitCalculator.compute(jointsTauLowLevelController);
    }
 
    public void addRigidBodyExternalWrench(RigidBodyReadOnly target, WrenchReadOnly wrenchToAdd)
@@ -140,6 +140,15 @@ public class ContactPointBasedRobotPhysics
       return forwardDynamicsCalculator;
    }
 
+   /**
+    * Compute the forward dynamics of the robot subject to {@code gravity}. All joint torques from controllers and low-level are expected to have been computed.
+    * <p>
+    * NOTE: by the time this method is called, the joint torques from low-level control will have already been computed (see
+    * {@link ContactPointBasedPhysicsEngine#simulate(double, double, Vector3DReadOnly)}), therefore jointsTauLowLevelControl will have been populated.
+    * </p>
+    *
+    * @param gravity the gravitational acceleration to use for the forward dynamics.
+    */
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       forwardDynamicsCalculator.setGravitationalAcceleration(gravity);
@@ -154,8 +163,7 @@ public class ContactPointBasedRobotPhysics
                                                        return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
                                                     });
       getJointTauFromControllers();
-      // NOTE: by the time this method is called, the joint torques from simulation efforts will have been called, and jointsTauSimulationEffects
-      // will have been updated. Therefore, the contributions can be summed.
+      // As the joint torques from low-level control have already been computed, we can now sum them with the joint torques from controllers
       sumJointTauContributions();
       forwardDynamicsCalculator.compute(jointsTau);
    }
@@ -214,7 +222,7 @@ public class ContactPointBasedRobotPhysics
    {
       for (int i = 0; i < jointsTauController.getNumRows(); i++)
       {
-         jointsTau.set(i, 0, jointsTauController.get(i, 0) + jointsTauSimulationEffects.get(i, 0));
+         jointsTau.set(i, 0, jointsTauController.get(i, 0) + jointsTauLowLevelController.get(i, 0));
       }
 
    }
