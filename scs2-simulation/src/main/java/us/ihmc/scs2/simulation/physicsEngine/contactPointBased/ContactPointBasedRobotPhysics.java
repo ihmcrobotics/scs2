@@ -7,6 +7,7 @@ import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
@@ -46,20 +47,14 @@ public class ContactPointBasedRobotPhysics
 
    private final JointMatrixIndexProvider indexProvider;
 
-   /**
-    * The joint torques from the robot's controller manager.
-    */
-   private final YoMatrix tau;
+   /** The joint torques from the robot's controller manager, corresponding to joint torques commanded by any controllers. */
+   private final YoMatrix jointsTauController;
 
-   /**
-    * The joint torques imposed by physics simulation, consisting of damping + soft enforcement of joint limits
-    */
-   private final YoMatrix tauSim;
+   /** The joint torques imposed by physics simulation, consisting of damping + soft enforcement of joint limits. */
+   private final YoMatrix jointsTauSimulationEffects;
 
-   /**
-    * The resultant joint torques to be used in the forward dynamics calculation (i.e. the calculation for the result of the simulation)
-    */
-   private final YoMatrix tauTotal;
+   /** The resultant joint torques to be used in the forward dynamics calculation (i.e. the calculation for the result of the simulation). */
+   private final YoMatrix jointsTau;
 
    private final SingleRobotFirstOrderIntegrator integrator;
 
@@ -85,9 +80,10 @@ public class ContactPointBasedRobotPhysics
       indexProvider = JointMatrixIndexProvider.toIndexProvider(owner.getAllJoints().toArray(new JointBasics[0]));
       int nDoFs = indexProvider.getIndexedJointsInOrder().stream().map(joint -> joint.getDegreesOfFreedom()).reduce(0, Integer::sum);
 
-      tau = new YoMatrix("tau", nDoFs, 1, owner.getRegistry());
-      tauSim = new YoMatrix("tauSim", nDoFs, 1, owner.getRegistry());
-      tauTotal = new YoMatrix("tauTotal", nDoFs, 1, owner.getRegistry());
+      String[] rowNames = getRowNames(owner, nDoFs);
+      jointsTauController = new YoMatrix("tau_control", nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTauSimulationEffects = new YoMatrix("tau_sim", nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTau = new YoMatrix("tau_total", nDoFs, 1, rowNames, null, owner.getRegistry());
 
       integrator = new SingleRobotFirstOrderIntegrator();
 
@@ -108,24 +104,20 @@ public class ContactPointBasedRobotPhysics
       rigidBodyWrenchRegistry.reset();
    }
 
-   // TODO: bad name
    public void computeJointSimulationEffects()
    {
-      tauSim.zero();  // tauSim is appended to, not overwritten, so it is imperative we zero it here
+      jointsTauSimulationEffects.zero();  // appended to, not overwritten, so it is imperative that it is first zeroed here
       computeJointDamping();
       computeJointSoftLimits();
    }
-
    private void computeJointDamping()
    {
-      robotOneDoFJointDampingCalculator.compute(tauSim);
-//      robotOneDoFJointDampingCalculator.compute();  // TODO remove eventually
+      robotOneDoFJointDampingCalculator.compute(jointsTauSimulationEffects);
    }
 
    private void computeJointSoftLimits()
    {
-      robotOneDoFJointSoftLimitCalculator.compute(tauSim);
-//      robotOneDoFJointSoftLimitCalculator.compute();  // TODO remove eventually
+      robotOneDoFJointSoftLimitCalculator.compute(jointsTauSimulationEffects);
    }
 
    public void addRigidBodyExternalWrench(RigidBodyReadOnly target, WrenchReadOnly wrenchToAdd)
@@ -162,9 +154,10 @@ public class ContactPointBasedRobotPhysics
                                                        return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
                                                     });
       getJointTauFromControllers();
-      // TODO note about how by now, joint taus from limits and damping will have been called
+      // NOTE: by the time this method is called, the joint torques from simulation efforts will have been called, and jointsTauSimulationEffects
+      // will have been updated. Therefore, the contributions can be summed.
       sumJointTauContributions();
-      forwardDynamicsCalculator.compute(tauTotal);
+      forwardDynamicsCalculator.compute(jointsTau);
    }
 
    public void writeJointAccelerations()
@@ -212,17 +205,37 @@ public class ContactPointBasedRobotPhysics
          if (jointOutput.hasOutputFor(JointStateType.EFFORT))
          {
             int jointIndex = indexProvider.getJointDoFIndices(joint)[0];
-            jointOutput.getEffort(jointIndex, tau);
+            jointOutput.getEffort(jointIndex, jointsTauController);
          }
       }
    }
 
    private void sumJointTauContributions()
    {
-      for (int i = 0; i < tau.getNumRows(); i++)
+      for (int i = 0; i < jointsTauController.getNumRows(); i++)
       {
-         tauTotal.set(i, 0, tau.get(i, 0) + tauSim.get(i, 0));
+         jointsTau.set(i, 0, jointsTauController.get(i, 0) + jointsTauSimulationEffects.get(i, 0));
       }
 
+   }
+
+   private String[] getRowNames(RobotInterface owner, int nDoFs)
+   {
+      String[] rowNames = new String[nDoFs];
+      int index = 0;
+      for (JointReadOnly joint : owner.getAllJoints())
+      {
+         if (joint.getDegreesOfFreedom() > 1)
+         {
+            for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
+               rowNames[index + i] = joint.getName() + "_" + i;
+         }
+         else
+         {
+            rowNames[index] = joint.getName();
+         }
+         index += joint.getDegreesOfFreedom();
+      }
+      return rowNames;
    }
 }
