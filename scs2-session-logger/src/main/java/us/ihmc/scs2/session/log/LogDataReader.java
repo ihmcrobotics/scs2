@@ -1,14 +1,5 @@
 package us.ihmc.scs2.session.log;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
-import java.nio.channels.FileChannel;
-import java.util.List;
-import java.util.stream.IntStream;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogIndex;
@@ -22,6 +13,15 @@ import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
+import java.nio.channels.FileChannel;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class LogDataReader
 {
@@ -182,9 +182,10 @@ public class LogDataReader
          robotTime.set(Conversions.nanosecondsToSeconds(timestamp.getLongValue() - initialTimestamp));
 
          IntStream.range(0, yoVariables.size()).parallel().forEach(i ->
-         {
-            yoVariables.get(i).setValueFromLongBits(logLongArray.get(logLongArray.position() + i), true);
-         });
+                                                                   {
+                                                                      yoVariables.get(i)
+                                                                                 .setValueFromLongBits(logLongArray.get(logLongArray.position() + i), true);
+                                                                   });
 
          logLongArray.position(logLongArray.position() + yoVariables.size());
 
@@ -251,7 +252,14 @@ public class LogDataReader
          }
          compressedBuffer.flip();
 
-         SnappyUtils.uncompress(compressedBuffer, logLine);
+         try
+         {
+            SnappyUtils.uncompress(compressedBuffer, logLine);
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
          ++index;
 
          return true;
