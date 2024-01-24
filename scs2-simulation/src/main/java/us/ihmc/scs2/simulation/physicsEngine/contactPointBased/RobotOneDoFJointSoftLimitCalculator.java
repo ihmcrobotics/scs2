@@ -1,8 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.ejml.data.DMatrix;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointReadOnly;
@@ -13,12 +10,14 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBa
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RobotOneDoFJointSoftLimitCalculator
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
    private final List<JointCalculator> jointCalculators = new ArrayList<>();
    private final JointMatrixIndexProvider jointMatrixIndexProvider;
-
 
    public RobotOneDoFJointSoftLimitCalculator(RobotInterface robot)
    {
@@ -26,9 +25,8 @@ public class RobotOneDoFJointSoftLimitCalculator
 
       for (SimJointBasics joint : robot.getJointsToConsider())
       {
-         if (joint instanceof SimOneDoFJointBasics)
+         if (joint instanceof SimOneDoFJointBasics oneDoFJoint)
          {
-            SimOneDoFJointBasics oneDoFJoint = (SimOneDoFJointBasics) joint;
             OneDoFJointDefinition jointDefinition = (OneDoFJointDefinition) robot.getRobotDefinition().getJointDefinition(oneDoFJoint.getName());
 
             if (hasPositionLimit(oneDoFJoint) && hasSoftLimitStopGains(jointDefinition))
@@ -47,10 +45,10 @@ public class RobotOneDoFJointSoftLimitCalculator
 
    public void compute(DMatrix tauToAppendTo)
    {
-      compute();
-
       for (JointCalculator calculator : jointCalculators)
       {
+         calculator.compute();
+
          int jointIndex = jointMatrixIndexProvider.getJointDoFIndices(calculator.joint)[0];
          double currentValue = tauToAppendTo.get(jointIndex, 0);
          // Appending this tau to the current value
@@ -76,10 +74,7 @@ public class RobotOneDoFJointSoftLimitCalculator
 
       if (Double.isFinite(kp) && kp > 0.0)
          return true;
-      if (Double.isFinite(kd) && kd > 0.0)
-         return true;
-
-      return false;
+      return Double.isFinite(kd) && kd > 0.0;
    }
 
    public YoRegistry getRegistry()
@@ -124,8 +119,6 @@ public class RobotOneDoFJointSoftLimitCalculator
             tau = Math.min(0.0, kp * (max - q) - kd * qd);
 
          jointLimitEffort.set(tau);
-         joint.setTau(joint.getTau() + tau);
-
       }
    }
 }
