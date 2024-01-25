@@ -104,17 +104,7 @@ public class ContactPointBasedRobotPhysics
    public void computeJointLowLevelControl()
    {
       jointsTauLowLevelController.zero();  // this variable is appended to, not overwritten, so it is imperative that it is first zeroed here
-      computeJointDamping();
-      computeJointSoftLimits();
-   }
-
-   private void computeJointDamping()
-   {
       robotOneDoFJointDampingCalculator.compute(jointsTauLowLevelController);
-   }
-
-   private void computeJointSoftLimits()
-   {
       robotOneDoFJointSoftLimitCalculator.compute(jointsTauLowLevelController);
    }
 

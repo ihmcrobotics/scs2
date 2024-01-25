@@ -157,11 +157,6 @@ public class ImpulseBasedRobotPhysics
    public void computeJointLowLevelControl()
    {
       jointsTauLowLevelController.zero();  // this variable is appended to, not overwritten, so it is imperative that it is first zeroed here
-      robotOneDoFJointDampingCalculator.compute();
-   }
-
-   private void computeJointDamping()
-   {
       robotOneDoFJointDampingCalculator.compute(jointsTauLowLevelController);
    }
 
