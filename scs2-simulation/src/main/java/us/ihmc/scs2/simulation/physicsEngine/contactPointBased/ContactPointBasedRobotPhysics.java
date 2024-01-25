@@ -10,8 +10,6 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
-import us.ihmc.mecano.tools.JointStateType;
-import us.ihmc.scs2.definition.state.interfaces.JointStateBasics;
 import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
@@ -47,9 +45,6 @@ public class ContactPointBasedRobotPhysics
 
    private final JointMatrixIndexProvider indexProvider;
 
-   /** The joint torques from the robot's controller manager, corresponding to joint torques commanded by any controllers. */
-   private final DMatrixRMaj jointsTauController;
-
    /** The joint torques imposed by physics simulation, consisting of damping + soft enforcement of joint limits. */
    private final YoMatrix jointsTauLowLevelController;
 
@@ -81,9 +76,11 @@ public class ContactPointBasedRobotPhysics
       int nDoFs = indexProvider.getIndexedJointsInOrder().stream().map(joint -> joint.getDegreesOfFreedom()).reduce(0, Integer::sum);
 
       String[] rowNames = getRowNames(owner, nDoFs);
-      jointsTauController = new DMatrixRMaj(nDoFs, 1);
-      jointsTauLowLevelController = new YoMatrix("tau_llc", nDoFs, 1, rowNames, null, owner.getRegistry());
-      jointsTau = new YoMatrix("tau_total", nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTauLowLevelController = new YoMatrix("tau_llc", "Joint torque contribution from low-level control",
+                                                 nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTau = new YoMatrix("tau_total",
+                               "Total joint torque, sum of controller contribution and low-level control contribution",
+                               nDoFs, 1, rowNames, null, owner.getRegistry());
 
       integrator = new SingleRobotFirstOrderIntegrator();
 
@@ -106,10 +103,11 @@ public class ContactPointBasedRobotPhysics
 
    public void computeJointLowLevelControl()
    {
-      jointsTauLowLevelController.zero();  // appended to, not overwritten, so it is imperative that it is first zeroed here
+      jointsTauLowLevelController.zero();  // this variable is appended to, not overwritten, so it is imperative that it is first zeroed here
       computeJointDamping();
       computeJointSoftLimits();
    }
+
    private void computeJointDamping()
    {
       robotOneDoFJointDampingCalculator.compute(jointsTauLowLevelController);
@@ -162,7 +160,6 @@ public class ContactPointBasedRobotPhysics
                                                        }
                                                        return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
                                                     });
-      getJointTauFromControllers();
       // As the joint torques from low-level control have already been computed, we can now sum them with the joint torques from controllers
       sumJointTauContributions();
       forwardDynamicsCalculator.compute(jointsTau);
@@ -204,27 +201,21 @@ public class ContactPointBasedRobotPhysics
       return physicsOutput;
    }
 
-   private void getJointTauFromControllers()
+   private void sumJointTauContributions()
    {
       for (JointBasics joint : owner.getJointsToConsider())
       {
-         JointStateBasics jointOutput = owner.getControllerOutput().getJointOutput(joint);
+         int[] jointIndices = indexProvider.getJointDoFIndices(joint);
 
-         if (jointOutput.hasOutputFor(JointStateType.EFFORT))
+         // Pack with joint torques from controller
+         joint.getJointTau(jointIndices[0], jointsTau);
+
+         // Elementwise, add joint torques from low-level control
+         for (int jointIndex : jointIndices)
          {
-            int jointIndex = indexProvider.getJointDoFIndices(joint)[0];
-            jointOutput.getEffort(jointIndex, jointsTauController);
+            jointsTau.set(jointIndex, 0, jointsTau.get(jointIndex, 0) + jointsTauLowLevelController.get(jointIndex, 0));
          }
       }
-   }
-
-   private void sumJointTauContributions()
-   {
-      for (int i = 0; i < jointsTauController.getNumRows(); i++)
-      {
-         jointsTau.set(i, 0, jointsTauController.get(i, 0) + jointsTauLowLevelController.get(i, 0));
-      }
-
    }
 
    private String[] getRowNames(RobotInterface owner, int nDoFs)
