@@ -35,14 +35,6 @@ public class RobotOneDoFJointSoftLimitCalculator
       }
    }
 
-   public void compute()
-   {
-      for (int i = 0; i < jointCalculators.size(); i++)
-      {
-         jointCalculators.get(i).compute();
-      }
-   }
-
    public void compute(DMatrix tauToAppendTo)
    {
       for (JointCalculator calculator : jointCalculators)
