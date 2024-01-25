@@ -7,14 +7,14 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
 import us.ihmc.mecano.algorithms.interfaces.RigidBodyTwistProvider;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.spatial.interfaces.SpatialImpulseReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
+import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.controller.RobotOneDoFJointDampingCalculator;
@@ -55,8 +55,17 @@ public class ImpulseBasedRobotPhysics
    private final YoSingleContactImpulseCalculatorPool selfContactConstraintCalculatorPool;
    private final Map<RigidBodyBasics, YoSingleContactImpulseCalculatorPool> interRobotContactConstraintCalculatorPools = new HashMap<>();
 
-   private final SingleRobotFirstOrderIntegrator integrator;
    private final RobotOneDoFJointDampingCalculator robotOneDoFJointDampingCalculator;
+
+   private final JointMatrixIndexProvider indexProvider;
+
+   /** The joint torques imposed by physics simulation, consisting of damping + soft enforcement of joint limits. */
+   private final YoMatrix jointsTauLowLevelController;
+
+   /** The resultant joint torques to be used in the forward dynamics calculation (i.e. the calculation for the result of the simulation). */
+   private final YoMatrix jointsTau;
+
+   private final SingleRobotFirstOrderIntegrator integrator;
 
    private final RobotPhysicsOutput physicsOutput;
 
@@ -102,6 +111,15 @@ public class ImpulseBasedRobotPhysics
                                                                                      forwardDynamicsCalculator,
                                                                                      selfContactCalculatorRegistry);
 
+      indexProvider = JointMatrixIndexProvider.toIndexProvider(owner.getAllJoints().toArray(new JointBasics[0]));
+      int nDoFs = indexProvider.getIndexedJointsInOrder().stream().map(joint -> joint.getDegreesOfFreedom()).reduce(0, Integer::sum);
+
+      String[] rowNames = getRowNames(owner, nDoFs);
+      jointsTauLowLevelController = new YoMatrix("tau_llc", "Joint torque contribution from low-level control",
+                                                 nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTau = new YoMatrix("tau_total", "Total joint torque, sum of controller contribution and low-level control contribution",
+                               nDoFs, 1, rowNames, null, owner.getRegistry());
+
       integrator = new SingleRobotFirstOrderIntegrator();
 
       physicsOutput = new RobotPhysicsOutput(forwardDynamicsCalculator.getAccelerationProvider(),
@@ -136,9 +154,15 @@ public class ImpulseBasedRobotPhysics
       interRobotContactConstraintCalculatorPools.forEach((rigidBodyBasics, calculators) -> calculators.clear());
    }
 
-   public void computeJointDamping()
+   public void computeJointLowLevelControl()
    {
+      jointsTauLowLevelController.zero();  // this variable is appended to, not overwritten, so it is imperative that it is first zeroed here
       robotOneDoFJointDampingCalculator.compute();
+   }
+
+   private void computeJointDamping()
+   {
+      robotOneDoFJointDampingCalculator.compute(jointsTauLowLevelController);
    }
 
    public void addJointVelocityChange(DMatrixRMaj velocityChange)
@@ -186,7 +210,9 @@ public class ImpulseBasedRobotPhysics
                                                        }
                                                        return simJoint.isPinned() ? JointSourceMode.ACCELERATION_SOURCE : JointSourceMode.EFFORT_SOURCE;
                                                     });
-      forwardDynamicsCalculator.compute();
+      // As the joint torques from low-level control have already been computed, we can now sum them with the joint torques from controllers
+      sumJointTauContributions();
+      forwardDynamicsCalculator.compute(jointsTau);
    }
 
    public void writeJointAccelerations()
@@ -273,5 +299,42 @@ public class ImpulseBasedRobotPhysics
    public RigidBodyTwistProvider getRigidBodyTwistChangeProvider()
    {
       return rigidBodyDeltaTwistProvider;
+   }
+
+   private void sumJointTauContributions()
+   {
+      for (JointBasics joint : owner.getJointsToConsider())
+      {
+         int[] jointIndices = indexProvider.getJointDoFIndices(joint);
+
+         // Pack with joint torques from controller
+         joint.getJointTau(jointIndices[0], jointsTau);
+
+         // Elementwise, add joint torques from low-level control
+         for (int jointIndex : jointIndices)
+         {
+            jointsTau.set(jointIndex, 0, jointsTau.get(jointIndex, 0) + jointsTauLowLevelController.get(jointIndex, 0));
+         }
+      }
+   }
+
+   private String[] getRowNames(RobotInterface owner, int nDoFs)
+   {
+      String[] rowNames = new String[nDoFs];
+      int index = 0;
+      for (JointReadOnly joint : owner.getAllJoints())
+      {
+         if (joint.getDegreesOfFreedom() > 1)
+         {
+            for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
+               rowNames[index + i] = joint.getName() + "_" + i;
+         }
+         else
+         {
+            rowNames[index] = joint.getName();
+         }
+         index += joint.getDegreesOfFreedom();
+      }
+      return rowNames;
    }
 }
