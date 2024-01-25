@@ -30,14 +30,6 @@ public class RobotOneDoFJointDampingCalculator
       }
    }
 
-   public void compute()
-   {
-      for (int i = 0; i < jointCalculators.size(); i++)
-      {
-         jointCalculators.get(i).doControl();
-      }
-   }
-
    public void compute(DMatrix tauToAppendTo)
    {
       for (JointCalculator calculator : jointCalculators)
