@@ -23,15 +23,30 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
 
    public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, YoRegistry registry)
    {
-      this(name, maxNumberOfRows, maxNumberOfColumns, null, null, registry);
+      this(name, null, maxNumberOfRows, maxNumberOfColumns, null, null, registry);
    }
 
    public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, YoRegistry registry)
    {
-      this(name, maxNumberOfRows, maxNumberOfColumns, rowNames, null, registry);
+      this(name, null, maxNumberOfRows, maxNumberOfColumns, rowNames, null, registry);
    }
 
    public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, String[] columnNames, YoRegistry registry)
+   {
+      this(name, null, maxNumberOfRows, maxNumberOfColumns, rowNames, columnNames, registry);
+   }
+
+   public YoMatrix(String name, String description, int maxNumberOfRows, int maxNumberOfColumns, YoRegistry registry)
+   {
+      this(name, description, maxNumberOfRows, maxNumberOfColumns, null, null, registry);
+   }
+
+   public YoMatrix(String name, String description, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, YoRegistry registry)
+   {
+      this(name, description, maxNumberOfRows, maxNumberOfColumns, rowNames, null, registry);
+   }
+
+   public YoMatrix(String name, String description, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, String[] columnNames, YoRegistry registry)
    {
       this.maxNumberOfRows = maxNumberOfRows;
       this.maxNumberOfColumns = maxNumberOfColumns;
@@ -52,7 +67,7 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
             {
                case NONE:
                {
-                  variables[row][column] = new YoDouble(name + "_" + row + "_" + column, registry);  // names are simply the row and column indices
+                  variables[row][column] = new YoDouble(name + "_" + row + "_" + column, description, registry);  // names are simply the row and column indices
                   break;
                }
                case ROWS:
@@ -60,12 +75,12 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
                   if (maxNumberOfColumns > 1)
                      throw new IllegalArgumentException("The YoMatrix must be a column vector if only row names are provided, else unique names cannot be generated.");
 
-                  variables[row][column] = new YoDouble(name + "_" + rowNames[row], registry);  // names are the row names, no column identifier
+                  variables[row][column] = new YoDouble(name + "_" + rowNames[row], description, registry);  // names are the row names, no column identifier
                   break;
                }
                case ROWS_AND_COLUMNS:
                {
-                  variables[row][column] = new YoDouble(name + "_" + rowNames[row] + "_" + columnNames[column], registry);  // names are the row and column names
+                  variables[row][column] = new YoDouble(name + "_" + rowNames[row] + "_" + columnNames[column], description, registry);  // names are the row and column names
                   break;
                }
             }
