@@ -15,6 +15,7 @@ import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
 import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
+import us.ihmc.scs2.simulation.physicsEngine.contactPointBased.ContactPointBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.controller.RobotOneDoFJointDampingCalculator;
@@ -192,6 +193,15 @@ public class ImpulseBasedRobotPhysics
       return forwardDynamicsCalculator;
    }
 
+   /**
+    * Compute the forward dynamics of the robot subject to {@code gravity}. All joint torques from controllers and low-level are expected to have been computed.
+    * <p>
+    * NOTE: by the time this method is called, the joint torques from low-level control will have already been computed (see
+    * {@link ImpulseBasedPhysicsEngine#simulate(double, double, Vector3DReadOnly)}), therefore jointsTauLowLevelControl will have been populated.
+    * </p>
+    *
+    * @param gravity the gravitational acceleration to use for the forward dynamics.
+    */
    public void doForwardDynamics(Vector3DReadOnly gravity)
    {
       forwardDynamicsCalculator.setGravitationalAcceleration(gravity);
