@@ -134,6 +134,23 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
    }
 
    @Override
+   public void set(Matrix original)
+   {
+      if (original instanceof DMatrix)
+      {
+         DMatrix otherMatrix = (DMatrix) original;
+         reshape(otherMatrix.getNumRows(), otherMatrix.getNumRows());
+         for (int row = 0; row < getNumRows(); row++)
+         {
+            for (int col = 0; col < getNumCols(); col++)
+            {
+               set(row, col, otherMatrix.unsafe_get(row, col));
+            }
+         }
+      }
+   }
+
+   @Override
    public void set(int row, int col, double val)
    {
       if (col < 0 || col >= getNumCols() || row < 0 || row >= getNumRows())
@@ -162,23 +179,6 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
    }
 
    @Override
-   public void set(Matrix original)
-   {
-      if (original instanceof DMatrix)
-      {
-         DMatrix otherMatrix = (DMatrix) original;
-         reshape(otherMatrix.getNumRows(), otherMatrix.getNumRows());
-         for (int row = 0; row < getNumRows(); row++)
-         {
-            for (int col = 0; col < getNumCols(); col++)
-            {
-               set(row, col, otherMatrix.unsafe_get(row, col));
-            }
-         }
-      }
-   }
-
-   @Override
    public void zero()
    {
       for (int row = 0; row < getNumRows(); row++)
@@ -198,6 +198,19 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
          for (int col = 0; col < numCols; col++)
          {
             unsafe_set(row, col, Double.NaN);
+         }
+      }
+   }
+
+   public void add(DMatrix otherMatrix)
+   {
+      if (otherMatrix.getNumRows() != getNumRows() || otherMatrix.getNumCols() != getNumCols())
+         throw new IllegalArgumentException("Incompatible matrix sizes.");
+      for (int row = 0; row < getNumRows(); row++)
+      {
+         for (int col = 0; col < getNumCols(); col++)
+         {
+            unsafe_set(row, col, unsafe_get(row, col) + otherMatrix.unsafe_get(row, col));
          }
       }
    }

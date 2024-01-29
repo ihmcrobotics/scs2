@@ -1,15 +1,15 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
+import us.ihmc.mecano.tools.JointStateType;
+import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
@@ -193,19 +193,8 @@ public class ContactPointBasedRobotPhysics
 
    private void sumJointTauContributions()
    {
-      for (JointBasics joint : owner.getJointsToConsider())
-      {
-         int[] jointIndices = indexProvider.getJointDoFIndices(joint);
-
-         // Pack with joint torques from controller
-         joint.getJointTau(jointIndices[0], jointsTau);
-
-         // Elementwise, add joint torques from low-level control
-         for (int jointIndex : jointIndices)
-         {
-            jointsTau.set(jointIndex, 0, jointsTau.get(jointIndex, 0) + jointsTauLowLevelController.get(jointIndex, 0));
-         }
-      }
+      MultiBodySystemTools.extractJointsState(owner.getJointsToConsider(), JointStateType.EFFORT, jointsTau);
+      jointsTau.add(jointsTauLowLevelController);
    }
 
    private String[] getRowNames(RobotInterface owner, int nDoFs)
@@ -214,6 +203,18 @@ public class ContactPointBasedRobotPhysics
       int index = 0;
       for (JointReadOnly joint : owner.getAllJoints())
       {
+         if (joint instanceof OneDoFJointReadOnly)
+         {
+            rowNames[index] = joint.getName();
+         }
+         else if (joint instanceof SphericalJointReadOnly)
+         {
+            rowNames[index] = joint.getName() + "_x";
+            rowNames[index + 1] = joint.getName() + "_y";
+            rowNames[index + 2] = joint.getName() + "_z";
+         }
+         else if (joint instanceof SixDoFJointReadOnly)
+
          if (joint.getDegreesOfFreedom() > 1)
          {
             for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
