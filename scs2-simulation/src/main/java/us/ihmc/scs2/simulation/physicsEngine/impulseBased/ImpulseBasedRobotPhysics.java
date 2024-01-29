@@ -10,6 +10,7 @@ import us.ihmc.mecano.algorithms.interfaces.RigidBodyTwistProvider;
 import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.spatial.interfaces.SpatialImpulseReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
+import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
@@ -308,19 +309,8 @@ public class ImpulseBasedRobotPhysics
 
    private void sumJointTauContributions()
    {
-      for (JointBasics joint : owner.getJointsToConsider())
-      {
-         int[] jointIndices = indexProvider.getJointDoFIndices(joint);
-
-         // Pack with joint torques from controller
-         joint.getJointTau(jointIndices[0], jointsTau);
-
-         // Elementwise, add joint torques from low-level control
-         for (int jointIndex : jointIndices)
-         {
-            jointsTau.set(jointIndex, 0, jointsTau.get(jointIndex, 0) + jointsTauLowLevelController.get(jointIndex, 0));
-         }
-      }
+      MultiBodySystemTools.extractJointsState(owner.getJointsToConsider(), JointStateType.EFFORT, jointsTau);
+      jointsTau.add(jointsTauLowLevelController);
    }
 
    private String[] getRowNames(RobotInterface owner, int nDoFs)
