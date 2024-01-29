@@ -1,12 +1,11 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
 import org.ejml.data.DMatrixRMaj;
-import org.ejml.dense.row.CommonOps_DDRM;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator;
 import us.ihmc.mecano.algorithms.ForwardDynamicsCalculator.JointSourceMode;
-import us.ihmc.mecano.multiBodySystem.interfaces.*;
+import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
@@ -43,8 +42,6 @@ public class ContactPointBasedRobotPhysics
    private final ForwardDynamicsCalculator forwardDynamicsCalculator;
    private RobotJointWrenchCalculator jointWrenchCalculator;
 
-   private final JointMatrixIndexProvider indexProvider;
-
    /** The joint torques imposed by physics simulation, consisting of damping + soft enforcement of joint limits. */
    private final YoMatrix jointsTauLowLevelController;
 
@@ -72,15 +69,14 @@ public class ContactPointBasedRobotPhysics
       FrameShapePosePredictor frameShapePosePredictor = new FrameShapePosePredictor(forwardDynamicsCalculator);
       collidables.forEach(collidable -> collidable.setFrameShapePosePredictor(frameShapePosePredictor));
 
-      indexProvider = JointMatrixIndexProvider.toIndexProvider(owner.getAllJoints().toArray(new JointBasics[0]));
-      int nDoFs = indexProvider.getIndexedJointsInOrder().stream().map(joint -> joint.getDegreesOfFreedom()).reduce(0, Integer::sum);
-
-      String[] rowNames = getRowNames(owner, nDoFs);
-      jointsTauLowLevelController = new YoMatrix("tau_llc", "Joint torque contribution from low-level control",
-                                                 nDoFs, 1, rowNames, null, owner.getRegistry());
-      jointsTau = new YoMatrix("tau_total",
-                               "Total joint torque, sum of controller contribution and low-level control contribution",
-                               nDoFs, 1, rowNames, null, owner.getRegistry());
+      jointsTauLowLevelController = SimMultiBodySystemTools.createYoMatrixForJointsTau("tau_llc",
+                                                                                       "Joint torque contribution from low-level control",
+                                                                                       owner,
+                                                                                       owner.getRegistry());
+      jointsTau = SimMultiBodySystemTools.createYoMatrixForJointsTau("tau_total",
+                                                                     "Total joint torque, sum of controller contribution and low-level control contribution",
+                                                                     owner,
+                                                                     owner.getRegistry());
 
       integrator = new SingleRobotFirstOrderIntegrator();
 
@@ -195,37 +191,5 @@ public class ContactPointBasedRobotPhysics
    {
       MultiBodySystemTools.extractJointsState(owner.getJointsToConsider(), JointStateType.EFFORT, jointsTau);
       jointsTau.add(jointsTauLowLevelController);
-   }
-
-   private String[] getRowNames(RobotInterface owner, int nDoFs)
-   {
-      String[] rowNames = new String[nDoFs];
-      int index = 0;
-      for (JointReadOnly joint : owner.getAllJoints())
-      {
-         if (joint instanceof OneDoFJointReadOnly)
-         {
-            rowNames[index] = joint.getName();
-         }
-         else if (joint instanceof SphericalJointReadOnly)
-         {
-            rowNames[index] = joint.getName() + "_x";
-            rowNames[index + 1] = joint.getName() + "_y";
-            rowNames[index + 2] = joint.getName() + "_z";
-         }
-         else if (joint instanceof SixDoFJointReadOnly)
-
-         if (joint.getDegreesOfFreedom() > 1)
-         {
-            for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
-               rowNames[index + i] = joint.getName() + "_" + i;
-         }
-         else
-         {
-            rowNames[index] = joint.getName();
-         }
-         index += joint.getDegreesOfFreedom();
-      }
-      return rowNames;
    }
 }
