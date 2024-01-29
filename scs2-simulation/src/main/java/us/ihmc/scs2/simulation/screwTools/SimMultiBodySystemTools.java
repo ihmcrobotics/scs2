@@ -12,15 +12,12 @@ import java.util.stream.Stream;
 import org.ejml.data.DMatrix;
 
 import us.ihmc.euclid.tools.EuclidCoreTools;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointReadOnly;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyReadOnly;
+import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.*;
+import us.ihmc.yoVariables.registry.YoRegistry;
 
 /**
  * This class provides a variety of tools to facilitate operations that need to navigate through a
@@ -1205,5 +1202,142 @@ public class SimMultiBodySystemTools
       }
 
       return startIndex;
+   }
+
+   public static YoMatrix createYoMatrixForJointsConfiguration(String name, String description, SimMultiBodySystemReadOnly system, YoRegistry registry)
+   {
+      List<? extends  JointReadOnly> joints = system.getJointMatrixIndexProvider().getIndexedJointsInOrder();
+
+      List<String> rowNames = new ArrayList<>();
+      for (JointReadOnly joint : joints)
+      {
+         if (joint instanceof OneDoFJointReadOnly)
+         {
+            rowNames.add(joint.getName());
+
+         }
+         else if (joint instanceof SphericalJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_qs");
+            rowNames.add(joint.getName() + "_qx");
+            rowNames.add(joint.getName() + "_qy");
+            rowNames.add(joint.getName() + "_qz");
+
+         }
+         else if (joint instanceof PlanarJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_ay");
+            rowNames.add(joint.getName() + "_lx");
+            rowNames.add(joint.getName() + "_lz");
+
+         }
+         else if (joint instanceof SixDoFJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_qs");
+            rowNames.add(joint.getName() + "_qx");
+            rowNames.add(joint.getName() + "_qy");
+            rowNames.add(joint.getName() + "_qz");
+            rowNames.add(joint.getName() + "_lx");
+            rowNames.add(joint.getName() + "_ly");
+            rowNames.add(joint.getName() + "_lz");
+
+         }
+         else  // any other type of joint
+         {
+            // Need to use getConfigurationMatrixSize instead of getDegreesOfFreedom because of possible quaternions
+            if (joint.getConfigurationMatrixSize() > 1)
+            {
+               for (int i = 0; i < joint.getConfigurationMatrixSize(); i++)
+                  rowNames.add(joint.getName() + "_" + i);
+            }
+            else
+            {
+               rowNames.add(joint.getName());
+            }
+         }
+      }
+
+      String[] rowNamesArray = rowNames.toArray(new String[0]);
+      return new YoMatrix(name, description, rowNamesArray.length, 1, rowNamesArray, null, registry);
+   }
+
+   public static YoMatrix createMatrixForJointsVelocity(String name, String description, SimMultiBodySystemReadOnly system, YoRegistry registry)
+   {
+      // Velocity has the same dimensions / joint indices as acceleration
+      return createMatrixForJointsAcceleration(name, description, system, registry);
+   }
+
+   public static YoMatrix createMatrixForJointsAcceleration(String name, String description, SimMultiBodySystemReadOnly system, YoRegistry registry)
+   {
+      // Acceleration has the same dimensions / joint indices as torque
+      return createYoMatrixForJointsTau(name, description, system, registry);
+   }
+
+   public static YoMatrix createYoMatrixForJointsTau(String name, String description, SimMultiBodySystemReadOnly system, YoRegistry registry)
+   {
+      List<? extends  JointReadOnly> joints = system.getJointMatrixIndexProvider().getIndexedJointsInOrder();
+
+      List<String> rowNames = new ArrayList<>();
+      for (JointReadOnly joint : joints)
+      {
+         if (joint instanceof OneDoFJointReadOnly)
+         {
+            rowNames.add(joint.getName());
+
+         }
+         else if (joint instanceof SphericalJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_ax");
+            rowNames.add(joint.getName() + "_ay");
+            rowNames.add(joint.getName() + "_az");
+
+         }
+         else if (joint instanceof PlanarJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_ay");
+            rowNames.add(joint.getName() + "_lx");
+            rowNames.add(joint.getName() + "_lz");
+
+         }
+         else if (joint instanceof SixDoFJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_ax");
+            rowNames.add(joint.getName() + "_ay");
+            rowNames.add(joint.getName() + "_az");
+            rowNames.add(joint.getName() + "_lx");
+            rowNames.add(joint.getName() + "_ly");
+            rowNames.add(joint.getName() + "_lz");
+
+         }
+         else  // any other type of joint
+         {
+            if (joint.getDegreesOfFreedom() > 1)
+            {
+               for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
+                  rowNames.add(joint.getName() + "_" + i);
+            }
+            else
+            {
+               rowNames.add(joint.getName());
+            }
+         }
+      }
+
+      String[] rowNamesArray = rowNames.toArray(new String[0]);
+      return new YoMatrix(name, description, rowNamesArray.length, 1, rowNamesArray, null, registry);
+   }
+
+   public static YoMatrix createMatrixForJointsState(String name, String description, SimMultiBodySystemReadOnly system, SimJointStateType state, YoRegistry registry)
+   {
+      switch(state)
+      {
+         case CONFIGURATION:
+            return createYoMatrixForJointsConfiguration(name, description, system, registry);
+         case VELOCITY, ACCELERATION, EFFORT:
+            // Velocity, acceleration, and effort all have the same dimensions / joint indices
+            return createYoMatrixForJointsTau(name, description, system, registry);
+         default:
+            throw new RuntimeException("Unexpected value for state: " + state);
+      }
    }
 }
