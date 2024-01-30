@@ -69,14 +69,16 @@ public class ContactPointBasedRobotPhysics
       FrameShapePosePredictor frameShapePosePredictor = new FrameShapePosePredictor(forwardDynamicsCalculator);
       collidables.forEach(collidable -> collidable.setFrameShapePosePredictor(frameShapePosePredictor));
 
-      jointsTauLowLevelController = SimMultiBodySystemTools.createYoMatrixForJointsTau("tau_llc",
-                                                                                       "Joint torque contribution from low-level control",
-                                                                                       owner,
-                                                                                       owner.getRegistry());
-      jointsTau = SimMultiBodySystemTools.createYoMatrixForJointsTau("tau_total",
-                                                                     "Total joint torque, sum of controller contribution and low-level control contribution",
-                                                                     owner,
-                                                                     owner.getRegistry());
+      jointsTauLowLevelController = SimMultiBodySystemTools.createYoMatrixForJointsState("tau_llc",
+                                                                                         "Joint torque contribution from low-level control",
+                                                                                         owner.getJointsToConsider(),
+                                                                                         SimJointStateType.EFFORT,
+                                                                                         owner.getRegistry());
+      jointsTau = SimMultiBodySystemTools.createYoMatrixForJointsState("tau_total",
+                                                                       "Total joint torque, sum of controller contribution and low-level control contribution",
+                                                                       owner.getJointsToConsider(),
+                                                                       SimJointStateType.EFFORT,
+                                                                       owner.getRegistry());
 
       integrator = new SingleRobotFirstOrderIntegrator();
 
