@@ -1227,8 +1227,8 @@ public class SimMultiBodySystemTools
          else if (joint instanceof PlanarJointReadOnly)
          {
             rowNames.add(joint.getName() + "_ay");
-            rowNames.add(joint.getName() + "_lx");
-            rowNames.add(joint.getName() + "_lz");
+            rowNames.add(joint.getName() + "_x");
+            rowNames.add(joint.getName() + "_z");
 
          }
          else if (joint instanceof SixDoFJointReadOnly)
@@ -1237,9 +1237,9 @@ public class SimMultiBodySystemTools
             rowNames.add(joint.getName() + "_qx");
             rowNames.add(joint.getName() + "_qy");
             rowNames.add(joint.getName() + "_qz");
-            rowNames.add(joint.getName() + "_lx");
-            rowNames.add(joint.getName() + "_ly");
-            rowNames.add(joint.getName() + "_lz");
+            rowNames.add(joint.getName() + "_x");
+            rowNames.add(joint.getName() + "_y");
+            rowNames.add(joint.getName() + "_z");
 
          }
          else  // any other type of joint
@@ -1295,8 +1295,8 @@ public class SimMultiBodySystemTools
          else if (joint instanceof PlanarJointReadOnly)
          {
             rowNames.add(joint.getName() + "_ay");
-            rowNames.add(joint.getName() + "_lx");
-            rowNames.add(joint.getName() + "_lz");
+            rowNames.add(joint.getName() + "_x");
+            rowNames.add(joint.getName() + "_z");
 
          }
          else if (joint instanceof SixDoFJointReadOnly)
@@ -1304,9 +1304,9 @@ public class SimMultiBodySystemTools
             rowNames.add(joint.getName() + "_ax");
             rowNames.add(joint.getName() + "_ay");
             rowNames.add(joint.getName() + "_az");
-            rowNames.add(joint.getName() + "_lx");
-            rowNames.add(joint.getName() + "_ly");
-            rowNames.add(joint.getName() + "_lz");
+            rowNames.add(joint.getName() + "_x");
+            rowNames.add(joint.getName() + "_y");
+            rowNames.add(joint.getName() + "_z");
 
          }
          else  // any other type of joint
