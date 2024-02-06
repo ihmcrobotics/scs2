@@ -1,6 +1,13 @@
 package us.ihmc.scs2.simulation.screwTools;
 
-import static us.ihmc.mecano.tools.MultiBodySystemTools.filterJoints;
+import org.ejml.data.DMatrix;
+import us.ihmc.euclid.tools.EuclidCoreTools;
+import us.ihmc.mecano.multiBodySystem.interfaces.*;
+import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
+import us.ihmc.mecano.tools.MultiBodySystemTools;
+import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.*;
+import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,18 +16,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.ejml.data.DMatrix;
-
-import us.ihmc.euclid.tools.EuclidCoreTools;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
-import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
-import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
-import us.ihmc.mecano.tools.MultiBodySystemTools;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointReadOnly;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
-import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyReadOnly;
+import static us.ihmc.mecano.tools.MultiBodySystemTools.filterJoints;
 
 /**
  * This class provides a variety of tools to facilitate operations that need to navigate through a
@@ -1205,5 +1201,112 @@ public class SimMultiBodySystemTools
       }
 
       return startIndex;
+   }
+
+   private static YoMatrix createYoMatrixForJointsConfiguration(String prefix, String description, List<? extends JointReadOnly> joints, YoRegistry registry)
+   {
+      List<String> rowNames = new ArrayList<>();
+      for (JointReadOnly joint : joints)
+      {
+         if (joint instanceof OneDoFJointReadOnly)
+         {
+            rowNames.add(joint.getName());
+         }
+         else if (joint instanceof SphericalJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_qs");
+            rowNames.add(joint.getName() + "_qx");
+            rowNames.add(joint.getName() + "_qy");
+            rowNames.add(joint.getName() + "_qz");
+         }
+         else if (joint instanceof PlanarJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_ay");
+            rowNames.add(joint.getName() + "_x");
+            rowNames.add(joint.getName() + "_z");
+         }
+         else if (joint instanceof SixDoFJointReadOnly)
+         {
+            rowNames.add(joint.getName() + "_qs");
+            rowNames.add(joint.getName() + "_qx");
+            rowNames.add(joint.getName() + "_qy");
+            rowNames.add(joint.getName() + "_qz");
+            rowNames.add(joint.getName() + "_x");
+            rowNames.add(joint.getName() + "_y");
+            rowNames.add(joint.getName() + "_z");
+         }
+         else  // any other type of joint
+         {
+            // Need to use getConfigurationMatrixSize instead of getDegreesOfFreedom because of possible quaternions
+            if (joint.getConfigurationMatrixSize() > 1)
+            {
+               for (int i = 0; i < joint.getConfigurationMatrixSize(); i++)
+                  rowNames.add(joint.getName() + "_" + i);
+            }
+            else
+            {
+               rowNames.add(joint.getName());
+            }
+         }
+      }
+
+      String[] rowNamesArray = rowNames.toArray(new String[0]);
+      return new YoMatrix(prefix, description, rowNamesArray.length, 1, rowNamesArray, null, registry);
+   }
+
+   public static YoMatrix createYoMatrixForJointsState(String prefix, String description, List<? extends JointReadOnly> joints, SimJointStateType state, YoRegistry registry)
+   {
+      switch (state)
+      {
+         case CONFIGURATION:
+            return createYoMatrixForJointsConfiguration(prefix, description, joints, registry);
+         case VELOCITY, ACCELERATION, EFFORT:
+            List<String> rowNames = new ArrayList<>();
+            for (JointReadOnly joint : joints)
+            {
+               if (joint instanceof OneDoFJointReadOnly)
+               {
+                  rowNames.add(joint.getName());
+               }
+               else if (joint instanceof SphericalJointReadOnly)
+               {
+                  rowNames.add(joint.getName() + "_ax");
+                  rowNames.add(joint.getName() + "_ay");
+                  rowNames.add(joint.getName() + "_az");
+               }
+               else if (joint instanceof PlanarJointReadOnly)
+               {
+                  rowNames.add(joint.getName() + "_ay");
+                  rowNames.add(joint.getName() + "_x");
+                  rowNames.add(joint.getName() + "_z");
+               }
+               else if (joint instanceof SixDoFJointReadOnly)
+               {
+                  rowNames.add(joint.getName() + "_ax");
+                  rowNames.add(joint.getName() + "_ay");
+                  rowNames.add(joint.getName() + "_az");
+                  rowNames.add(joint.getName() + "_x");
+                  rowNames.add(joint.getName() + "_y");
+                  rowNames.add(joint.getName() + "_z");
+               }
+               else  // any other type of joint
+               {
+                  if (joint.getDegreesOfFreedom() > 1)
+                  {
+                     for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
+                        rowNames.add(joint.getName() + "_" + i);
+                  }
+                  else
+                  {
+                     rowNames.add(joint.getName());
+                  }
+               }
+            }
+
+            String[] rowNamesArray = rowNames.toArray(new String[0]);
+            return new YoMatrix(prefix, description, rowNamesArray.length, 1, rowNamesArray, null, registry);
+         default:
+            throw new RuntimeException("Unexpected value for state: " + state);
+      }
    }
 }

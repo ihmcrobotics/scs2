@@ -12,6 +12,8 @@ import us.ihmc.yoVariables.variable.YoInteger;
 
 public class YoMatrix implements DMatrix, ReshapeMatrix
 {
+   // TODO: eventually consolidate YoMatrix implementations
+
    private static final long serialVersionUID = 2156411740647948028L;
 
    private final int maxNumberOfRows, maxNumberOfColumns;
@@ -20,6 +22,31 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
    private final YoDouble[][] variables;
 
    public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, YoRegistry registry)
+   {
+      this(name, null, maxNumberOfRows, maxNumberOfColumns, null, null, registry);
+   }
+
+   public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, YoRegistry registry)
+   {
+      this(name, null, maxNumberOfRows, maxNumberOfColumns, rowNames, null, registry);
+   }
+
+   public YoMatrix(String name, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, String[] columnNames, YoRegistry registry)
+   {
+      this(name, null, maxNumberOfRows, maxNumberOfColumns, rowNames, columnNames, registry);
+   }
+
+   public YoMatrix(String name, String description, int maxNumberOfRows, int maxNumberOfColumns, YoRegistry registry)
+   {
+      this(name, description, maxNumberOfRows, maxNumberOfColumns, null, null, registry);
+   }
+
+   public YoMatrix(String name, String description, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, YoRegistry registry)
+   {
+      this(name, description, maxNumberOfRows, maxNumberOfColumns, rowNames, null, registry);
+   }
+
+   public YoMatrix(String name, String description, int maxNumberOfRows, int maxNumberOfColumns, String[] rowNames, String[] columnNames, YoRegistry registry)
    {
       this.maxNumberOfRows = maxNumberOfRows;
       this.maxNumberOfColumns = maxNumberOfColumns;
@@ -36,9 +63,44 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
       {
          for (int column = 0; column < maxNumberOfColumns; column++)
          {
-            variables[row][column] = new YoDouble(name + "_" + row + "_" + column, registry);
+            switch (checkNames(rowNames, columnNames))
+            {
+               case NONE:
+               {
+                  variables[row][column] = new YoDouble(name + "_" + row + "_" + column, description, registry);  // names are simply the row and column indices
+                  break;
+               }
+               case ROWS:
+               {
+                  if (maxNumberOfColumns > 1)
+                     throw new IllegalArgumentException("The YoMatrix must be a column vector if only row names are provided, else unique names cannot be generated.");
+
+                  variables[row][column] = new YoDouble(name + "_" + rowNames[row], description, registry);  // names are the row names, no column identifier
+                  break;
+               }
+               case ROWS_AND_COLUMNS:
+               {
+                  variables[row][column] = new YoDouble(name + "_" + rowNames[row] + "_" + columnNames[column], description, registry);  // names are the row and column names
+                  break;
+               }
+            }
          }
       }
+   }
+
+   private enum NamesProvided
+   {
+      NONE, ROWS, ROWS_AND_COLUMNS
+   }
+
+   private NamesProvided checkNames(String[] rowNames, String[] columnNames)
+   {
+      if (rowNames == null && columnNames == null)
+         return NamesProvided.NONE;
+      else if (rowNames != null && columnNames == null)
+         return NamesProvided.ROWS;
+      else
+         return NamesProvided.ROWS_AND_COLUMNS;
    }
 
    @Override
@@ -72,6 +134,23 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
    }
 
    @Override
+   public void set(Matrix original)
+   {
+      if (original instanceof DMatrix)
+      {
+         DMatrix otherMatrix = (DMatrix) original;
+         reshape(otherMatrix.getNumRows(), otherMatrix.getNumRows());
+         for (int row = 0; row < getNumRows(); row++)
+         {
+            for (int col = 0; col < getNumCols(); col++)
+            {
+               set(row, col, otherMatrix.unsafe_get(row, col));
+            }
+         }
+      }
+   }
+
+   @Override
    public void set(int row, int col, double val)
    {
       if (col < 0 || col >= getNumCols() || row < 0 || row >= getNumRows())
@@ -100,23 +179,6 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
    }
 
    @Override
-   public void set(Matrix original)
-   {
-      if (original instanceof DMatrix)
-      {
-         DMatrix otherMatrix = (DMatrix) original;
-         reshape(otherMatrix.getNumRows(), otherMatrix.getNumRows());
-         for (int row = 0; row < getNumRows(); row++)
-         {
-            for (int col = 0; col < getNumCols(); col++)
-            {
-               set(row, col, otherMatrix.unsafe_get(row, col));
-            }
-         }
-      }
-   }
-
-   @Override
    public void zero()
    {
       for (int row = 0; row < getNumRows(); row++)
@@ -136,6 +198,19 @@ public class YoMatrix implements DMatrix, ReshapeMatrix
          for (int col = 0; col < numCols; col++)
          {
             unsafe_set(row, col, Double.NaN);
+         }
+      }
+   }
+
+   public void add(DMatrix otherMatrix)
+   {
+      if (otherMatrix.getNumRows() != getNumRows() || otherMatrix.getNumCols() != getNumCols())
+         throw new IllegalArgumentException("Incompatible matrix sizes.");
+      for (int row = 0; row < getNumRows(); row++)
+      {
+         for (int col = 0; col < getNumCols(); col++)
+         {
+            unsafe_set(row, col, unsafe_get(row, col) + otherMatrix.unsafe_get(row, col));
          }
       }
    }

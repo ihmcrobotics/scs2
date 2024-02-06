@@ -33,14 +33,9 @@ public class ContactPointBasedRobot extends RobotExtension implements Collidable
       robotPhysics.resetCalculators();
    }
 
-   public void computeJointDamping()
+   public void computeJointLowLevelControl()
    {
-      robotPhysics.computeJointDamping();
-   }
-
-   public void computeJointSoftLimits()
-   {
-      robotPhysics.computeJointSoftLimits();
+      robotPhysics.computeJointLowLevelControl();
    }
 
    public void addRigidBodyExternalWrench(RigidBodyReadOnly target, WrenchReadOnly wrenchToAdd)
