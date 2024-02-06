@@ -23,9 +23,7 @@ public class ROS2SchemaParser
     */
    public static MCAPSchema loadSchema(MCAP.Schema mcapSchema)
    {
-      MCAPSchema schema = loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
-      mcapSchema.unloadData();
-      return schema;
+      return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data().array());
    }
 
    /**

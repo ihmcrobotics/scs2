@@ -24,6 +24,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class MCAPLogFileReader
 {
@@ -46,7 +47,9 @@ public class MCAPLogFileReader
    private final File mcapFile;
    private final YoRegistry mcapRegistry;
    private final MCAP mcap;
-   private final MCAPChunkManager chunkManager;
+   private final MCAPBufferedChunk chunkBuffer;
+   private final MCAPMessageManager messageManager;
+   private final MCAPConsoleLogManager consoleLogManager;
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<MCAP.Schema> rawSchemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
@@ -60,7 +63,8 @@ public class MCAPLogFileReader
    private final long desiredLogDT;
    private final long initialTimestamp, finalTimestamp;
 
-   public MCAPLogFileReader(File mcapFile, long desiredLogDT, ReferenceFrame inertialFrame, YoRegistry mcapRegistry) throws IOException
+   public MCAPLogFileReader(File mcapFile, long desiredLogDT, ReferenceFrame inertialFrame, YoRegistry mcapRegistry, YoRegistry internalRegistry)
+         throws IOException
    {
       if (SCS2_MCAP_DEBUG_HOME.toFile().exists())
       {
@@ -71,15 +75,41 @@ public class MCAPLogFileReader
       this.desiredLogDT = desiredLogDT;
       this.mcapRegistry = mcapRegistry;
       mcapRegistry.addChild(propertiesRegistry);
+      long startTime = System.nanoTime();
       FileInputStream mcapFileInputStream = new FileInputStream(mcapFile);
       FileChannel mcapFileChannel = mcapFileInputStream.getChannel();
-      mcap = new MCAP(mcapFileChannel);
-      chunkManager = new MCAPChunkManager(desiredLogDT);
-      chunkManager.loadFromMCAP(mcap);
-      initialTimestamp = chunkManager.firstMessageTimestamp();
-      finalTimestamp = chunkManager.lastMessageTimestamp();
-      frameTransformManager = new MCAPFrameTransformManager(inertialFrame);
+      LogTools.info("Opened file channel in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+      startTime = System.nanoTime();
+      mcap = new MCAP(mcapFileChannel); // On 10GB log file, this takes about 4-5 seconds.
+      LogTools.info("Created MCAP object in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+      startTime = System.nanoTime();
+      chunkBuffer = new MCAPBufferedChunk(mcap, desiredLogDT); // On 10GB log file, this takes about 9 seconds.
+      LogTools.info("Created chunk buffer in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      startTime = System.nanoTime();
+      messageManager = new MCAPMessageManager(mcap, chunkBuffer, desiredLogDT); // On 10GB log file, this takes about 7 seconds.
+      LogTools.info("Created message manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      currentTimestamp.addListener(v -> chunkBuffer.preloadChunks(currentTimestamp.getValue(), TimeUnit.MILLISECONDS.toNanos(500)));
+
+      initialTimestamp = messageManager.firstMessageTimestamp();
+      finalTimestamp = messageManager.lastMessageTimestamp();
+      startTime = System.nanoTime();
+      frameTransformManager = new MCAPFrameTransformManager(inertialFrame); // This is fast.
       mcapRegistry.addChild(frameTransformManager.getRegistry());
+      LogTools.info("Created frame transform manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      startTime = System.nanoTime();
+      loadSchemas(); // On 10GB log file, this takes about 32 seconds.
+      LogTools.info("Loaded schemas in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+      startTime = System.nanoTime();
+      loadChannels(); // This is fast.
+      LogTools.info("Loaded channels in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      startTime = System.nanoTime();
+      // Doing this last to not slow down the loading.
+      consoleLogManager = new MCAPConsoleLogManager(mcap, chunkBuffer, desiredLogDT); // This is fast on the main thread, loading in a separate thread.
+      LogTools.info("Created console log manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
    }
 
    public long getDesiredLogDT()
@@ -99,7 +129,7 @@ public class MCAPLogFileReader
 
    public long getTimestampAtIndex(int index)
    {
-      return chunkManager.getTimestampAtIndex(index);
+      return messageManager.getTimestampAtIndex(index);
    }
 
    public YoLong getCurrentTimestamp()
@@ -109,24 +139,29 @@ public class MCAPLogFileReader
 
    public long getRelativeTimestampAtIndex(int index)
    {
-      return chunkManager.getRelativeTimestampAtIndex(index);
+      return messageManager.getRelativeTimestampAtIndex(index);
    }
 
    public int getCurrentIndex()
    {
-      return chunkManager.getIndexFromTimestamp(currentTimestamp.getValue());
+      return messageManager.getIndexFromTimestamp(currentTimestamp.getValue());
+   }
+
+   public int getIndexFromTimestamp(long timestamp)
+   {
+      return messageManager.getIndexFromTimestamp(timestamp);
    }
 
    public int getNumberOfEntries()
    {
-      return chunkManager.getNumberOfEntries();
+      return messageManager.getNumberOfEntries();
    }
 
-   public void loadSchemas() throws IOException
+   private void loadSchemas() throws IOException
    {
       try
       {
-         frameTransformManager.initialize(mcap);
+         frameTransformManager.initialize(mcap, chunkBuffer);
       }
       catch (Exception e)
       {
@@ -153,17 +188,11 @@ public class MCAPLogFileReader
          try
          {
             if (schema.encoding().equalsIgnoreCase("ros2msg"))
-            {
                schemas.put(schema.id(), ROS2SchemaParser.loadSchema(schema));
-            }
             else if (schema.encoding().equalsIgnoreCase("omgidl"))
-            {
                schemas.put(schema.id(), OMGIDLSchemaParser.loadSchema(schema));
-            }
             else
-            {
                throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding());
-            }
          }
          catch (Exception e)
          {
@@ -171,14 +200,10 @@ public class MCAPLogFileReader
             LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
             throw e;
          }
-         finally
-         {
-            record.unloadBody();
-         }
       }
    }
 
-   public void loadChannels() throws IOException
+   private void loadChannels() throws IOException
    {
       for (MCAP.Record record : mcap.records())
       {
@@ -244,24 +269,14 @@ public class MCAPLogFileReader
 
    public void initialize() throws IOException
    {
-      chunkManager.loadChunk(initialTimestamp);
-      currentChunkStartTimestamp.set(chunkManager.getActiveChunkStartTimestamp());
-      currentChunkEndTimestamp.set(chunkManager.getActiveChunkEndTimestamp());
-      currentTimestamp.set(chunkManager.getActiveChunkStartTimestamp());
+      currentTimestamp.set(initialTimestamp);
       readMessagesAtCurrentTimestamp();
    }
 
    public void setCurrentTimestamp(long timestamp)
    {
       currentTimestamp.set(timestamp);
-      try
-      {
-         chunkManager.loadChunk(timestamp);
-      }
-      catch (IOException e)
-      {
-         throw new RuntimeException(e);
-      }
+      chunkBuffer.requestLoadChunk(timestamp, false);
    }
 
    public YoGraphicDefinition getYoGraphic()
@@ -271,7 +286,7 @@ public class MCAPLogFileReader
 
    public boolean incrementTimestamp()
    {
-      long nextTimestamp = chunkManager.nextMessageTimestamp(currentTimestamp.getValue());
+      long nextTimestamp = messageManager.nextMessageTimestamp(currentTimestamp.getValue());
       if (nextTimestamp == -1)
          return true;
       currentTimestamp.set(nextTimestamp);
@@ -280,14 +295,14 @@ public class MCAPLogFileReader
 
    public void readMessagesAtCurrentTimestamp() throws IOException
    {
-      List<MCAP.Message> messages = chunkManager.loadMessages(currentTimestamp.getValue());
+      List<MCAP.Message> messages = messageManager.loadMessages(currentTimestamp.getValue());
       if (messages == null)
       {
          LogTools.error("No messages at timestamp {}.", currentTimestamp.getValue());
          return;
       }
-      currentChunkStartTimestamp.set(chunkManager.getActiveChunkStartTimestamp());
-      currentChunkEndTimestamp.set(chunkManager.getActiveChunkEndTimestamp());
+      currentChunkStartTimestamp.set(messageManager.getActiveChunkStartTimestamp());
+      currentChunkEndTimestamp.set(messageManager.getActiveChunkEndTimestamp());
 
       for (MCAP.Message message : messages)
       {
@@ -337,7 +352,7 @@ public class MCAPLogFileReader
          debugFile.delete();
       debugFile.createNewFile();
       FileOutputStream os = new FileOutputStream(debugFile);
-      os.write(schema.data());
+      os.getChannel().write(schema.data());
       os.close();
       return debugFile;
    }
@@ -370,7 +385,7 @@ public class MCAPLogFileReader
          debugFile.delete();
       debugFile.createNewFile();
       FileOutputStream os = new FileOutputStream(debugFile);
-      os.write(message.data());
+      os.write(message.messageData());
       os.close();
    }
 
@@ -379,9 +394,14 @@ public class MCAPLogFileReader
       return name.replace(':', '-');
    }
 
-   public MCAPChunkManager getChunkManager()
+   public MCAPMessageManager getMessageManager()
    {
-      return chunkManager;
+      return messageManager;
+   }
+
+   public MCAPConsoleLogManager getConsoleLogManager()
+   {
+      return consoleLogManager;
    }
 
    public File getMcapFile()
