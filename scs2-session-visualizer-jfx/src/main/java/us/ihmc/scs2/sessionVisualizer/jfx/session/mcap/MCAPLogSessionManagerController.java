@@ -10,7 +10,11 @@ import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
@@ -71,10 +75,15 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private TitledPane thumbnailsTitledPane;
    @FXML
    private FlowPane videoThumbnailPane;
+   @FXML
+   private TitledPane consoleOutputTitledPane;
+   @FXML
+   private MCAPConsoleLogOutputPaneController consoleOutputPaneController;
    private Stage stage;
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private BackgroundExecutorManager backgroundExecutorManager;
+
    private File defaultRobotModelFile = null;
 
    private static String getDate(String filename)
@@ -233,6 +242,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       activeSessionProperty.addListener(activeSessionListener);
 
       thumbnailsTitledPane.expandedProperty().addListener((o, oldValue, newValue) -> JavaFXMissingTools.runLater(getClass(), stage::sizeToScene));
+      consoleOutputTitledPane.expandedProperty().addListener((o, oldValue, newValue) -> JavaFXMissingTools.runLater(getClass(), stage::sizeToScene));
 
       openSessionButton.setOnAction(e -> openLogFile());
 
@@ -251,6 +261,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          logPositionSlider.setDisable(m);
       });
 
+      consoleOutputPaneController.initialize(toolkit);
+
       stage.setScene(new Scene(mainPane));
       stage.setTitle("MCAP Log session controls");
       stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
@@ -259,7 +271,6 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          if (!e.isConsumed())
             shutdown();
       });
-      // TODO Auto-generated method stub
    }
 
    private void initializeControls(MCAPLogSession session)
@@ -283,6 +294,10 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
       thumbnailsTitledPane.setExpanded(logHasVideos);
       thumbnailsTitledPane.setDisable(!logHasVideos);
+      // TODO add a listener to check if there are console logs, and if not, disable the console output pane.
+
+      consoleOutputPaneController.startSession(session);
+
       JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
       JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
    }
@@ -295,6 +310,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       endSessionButton.setDisable(true);
       logPositionSlider.setDisable(true);
       multiVideoViewerObjectProperty.set(null);
+      consoleOutputPaneController.stopSession();
    }
 
    public void openLogFile()
@@ -337,8 +353,11 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    @Override
    public void unloadSession()
    {
-      // TODO Auto-generated method stub
-
+      if (activeSessionProperty.get() != null)
+      {
+         activeSessionProperty.get().shutdownSession();
+         activeSessionProperty.set(null);
+      }
    }
 
    @Override
