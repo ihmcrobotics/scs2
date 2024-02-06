@@ -107,7 +107,11 @@ public class CDRDeserializer
    public void finalize(boolean resetBufferPosition)
    {
       if (resetBufferPosition)
+      {
+         if (initialOffset > buffer.limit())
+            buffer.limit(initialLimit);
          buffer.position(initialOffset);
+      }
       buffer.limit(initialLimit);
    }
 

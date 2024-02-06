@@ -1,15 +1,13 @@
 package us.ihmc.scs2.session.mcap;
 
-import com.github.luben.zstd.ZstdDecompressCtx;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
+import us.ihmc.scs2.session.mcap.input.MCAPDataInput.Compression;
 
-import java.io.IOException;
-import java.io.Serial;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,9 +24,9 @@ import java.util.List;
 public class MCAP
 {
    /**
-    * Stream object that this KaitaiStruct-based structure was parsed from.
+    * Stream object that this MCAP was parsed from.
     */
-   protected FileChannel fileChannel;
+   protected MCAPDataInput dataInput;
 
    public enum Opcode
    {
@@ -74,40 +72,38 @@ public class MCAP
       }
    }
 
-   private Magic headerMagic;
-   private ArrayList<Record> records;
-   private Magic footerMagic;
+   private final Magic headerMagic;
+   private final List<Record> records;
+   private final Magic footerMagic;
 
    private Record footer;
 
-   public MCAP(FileChannel fileChannel) throws IOException
+   public MCAP(FileChannel fileChannel)
    {
-      this.fileChannel = fileChannel;
-      _read();
-   }
+      dataInput = MCAPDataInput.wrap(fileChannel);
 
-   public FileChannel getFileChannel()
-   {
-      return fileChannel;
-   }
-
-   private void _read() throws IOException
-   {
       long currentPos = 0;
-      headerMagic = new Magic(fileChannel, currentPos);
-      currentPos += headerMagic.getItemTotalLength();
+      headerMagic = new Magic(dataInput, currentPos);
+      currentPos += headerMagic.getElementLength();
       records = new ArrayList<>();
-      Record lastRecord = null;
+      Record lastRecord;
 
       do
       {
-         lastRecord = new Record(fileChannel, currentPos);
-         currentPos += lastRecord.getItemTotalLength();
+         lastRecord = new Record(dataInput, currentPos);
+         if (lastRecord.getElementLength() < 0)
+            throw new IllegalArgumentException("Invalid record length: " + lastRecord.getElementLength());
+         currentPos += lastRecord.getElementLength();
          records.add(lastRecord);
       }
       while (!(lastRecord.op() == Opcode.FOOTER));
 
-      footerMagic = new Magic(fileChannel, currentPos);
+      footerMagic = new Magic(dataInput, currentPos);
+   }
+
+   public MCAPDataInput getDataInput()
+   {
+      return dataInput;
    }
 
    public Magic headerMagic()
@@ -115,7 +111,7 @@ public class MCAP
       return headerMagic;
    }
 
-   public ArrayList<Record> records()
+   public List<Record> records()
    {
       return records;
    }
@@ -125,82 +121,73 @@ public class MCAP
       return footerMagic;
    }
 
-   public Record footer() throws IOException
+   public Record footer()
    {
       if (footer == null)
       {
-         footer = new Record(fileChannel, computeOffsetFooter(fileChannel));
+         footer = new Record(dataInput, computeOffsetFooter(dataInput));
       }
       return footer;
    }
 
-   public static class Chunk extends KaitaiStruct
+   public static class Chunk implements MCAPElement
    {
-      private LZ4FrameDecoder lz4FrameDecoder;
-      private ZstdDecompressCtx zstdDecompressCtx;
-
+      private final MCAPDataInput dataInput;
       /**
        * Earliest message log_time in the chunk. Zero if the chunk has no messages.
        */
-      private long messageStartTime;
+      private final long messageStartTime;
       /**
        * Latest message log_time in the chunk. Zero if the chunk has no messages.
        */
-      private long messageEndTime;
+      private final long messageEndTime;
       /**
        * Uncompressed size of the records field.
        */
-      private long uncompressedSize;
+      private final long recordsUncompressedLength;
       /**
        * CRC32 checksum of uncompressed records field. A value of zero indicates that CRC validation
        * should not be performed.
        */
-      private long uncompressedCrc32;
+      private final long uncompressedCrc32;
       /**
        * compression algorithm. i.e. zstd, lz4, "". An empty string indicates no compression. Refer to
        * well-known compression formats.
        */
-      private String compression;
+      private final String compression;
       /**
        * Offset position of the records in either in the {@code  ByteBuffer} or {@code FileChannel},
        * depending on how this chunk was created.
        */
-      private long offsetRecords;
+      private final long recordsOffset;
       /**
        * Length of the records in bytes.
        */
-      private long lengthRecords;
+      private final long recordsCompressedLength;
       /**
        * The decompressed records.
        */
-      private Records records;
+      private WeakReference<Records> recordsRef;
 
-      public Chunk(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public Chunk(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public Chunk(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         messageStartTime = checkPositiveLong(dataInput.getLong(), "messageStartTime");
+         messageEndTime = checkPositiveLong(dataInput.getLong(), "messageEndTime");
+         recordsUncompressedLength = checkPositiveLong(dataInput.getLong(), "uncompressedSize");
+         uncompressedCrc32 = dataInput.getUnsignedInt();
+         compression = dataInput.getString();
+         recordsCompressedLength = checkPositiveLong(dataInput.getLong(), "recordsLength");
+         recordsOffset = dataInput.position();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         messageStartTime = buffer.getLong();
-         messageEndTime = buffer.getLong();
-         uncompressedSize = buffer.getLong();
-         uncompressedCrc32 = Integer.toUnsignedLong(buffer.getInt());
-         compression = parseString(buffer);
-         lengthRecords = buffer.getLong();
-         offsetRecords = buffer.position();
-         buffer.position((int) (offsetRecords + lengthRecords)); // Skip the records.
-
-         setComputedLength(3 * Long.BYTES + 2 * Integer.BYTES + compression.length() + Long.BYTES + (int) lengthRecords);
+         return 3 * Long.BYTES + 2 * Integer.BYTES + compression.length() + Long.BYTES + (int) recordsCompressedLength;
       }
 
       public long messageStartTime()
@@ -215,7 +202,7 @@ public class MCAP
 
       public long uncompressedSize()
       {
-         return uncompressedSize;
+         return recordsUncompressedLength;
       }
 
       /**
@@ -232,51 +219,34 @@ public class MCAP
          return compression;
       }
 
-      public long lenRecords()
+      public long recordsLength()
       {
-         return lengthRecords;
+         return recordsCompressedLength;
       }
 
-      public Records records() throws IOException
+      public Records records()
       {
-         if (records == null)
+         Records records = recordsRef == null ? null : recordsRef.get();
+
+         if (records != null)
+            return records;
+
+         if (compression.equalsIgnoreCase(""))
          {
-            if (compression.equalsIgnoreCase(""))
-            {
-               records = new Records(buffer, offsetRecords, (int) lengthRecords);
-            }
-            else if (compression.equalsIgnoreCase("lz4"))
-            {
-               if (lz4FrameDecoder == null)
-                  lz4FrameDecoder = new LZ4FrameDecoder();
-               ByteBuffer decompressedData = ByteBuffer.allocate((int) uncompressedSize);
-               lz4FrameDecoder.decode(buffer, (int) offsetRecords, (int) lengthRecords, decompressedData, 0);
-               records = new Records(decompressedData);
-            }
-            else if (compression.equalsIgnoreCase("zstd"))
-            {
-               if (zstdDecompressCtx == null)
-                  zstdDecompressCtx = new ZstdDecompressCtx();
-               int previousPosition = buffer.position();
-               int previousLimit = buffer.limit();
-               buffer.limit((int) (offsetRecords + lengthRecords));
-               buffer.position((int) offsetRecords);
-               ByteBuffer decompressedData = zstdDecompressCtx.decompress(buffer, (int) uncompressedSize);
-               buffer.position(previousPosition);
-               buffer.limit(previousLimit);
-               records = new Records(decompressedData);
-            }
-            else
-            {
-               throw new UnsupportedOperationException("Unsupported compression algorithm: " + compression);
-            }
+            records = new Records(dataInput, recordsOffset, (int) recordsCompressedLength);
          }
-         return records;
-      }
+         else
+         {
+            ByteBuffer decompressedBuffer = dataInput.getDecompressedByteBuffer(recordsOffset,
+                                                                                (int) recordsCompressedLength,
+                                                                                (int) recordsUncompressedLength,
+                                                                                Compression.fromString(compression),
+                                                                                false);
+            records = new Records(MCAPDataInput.wrap(decompressedBuffer), 0, (int) recordsUncompressedLength);
+         }
 
-      public void unloadRecords()
-      {
-         records = null;
+         recordsRef = new WeakReference<>(records);
+         return records;
       }
 
       @Override
@@ -286,35 +256,28 @@ public class MCAP
          out += "\n\t-messageStartTime = " + messageStartTime;
          out += "\n\t-messageEndTime = " + messageEndTime;
          out += "\n\t-compression = " + compression;
-         out += "\n\t-compressedSize = " + lengthRecords;
-         out += "\n\t-uncompressedSize = " + uncompressedSize;
+         out += "\n\t-recordsCompressedLength = " + recordsCompressedLength;
+         out += "\n\t-recordsUncompressedLength = " + recordsUncompressedLength;
          out += "\n\t-uncompressedCrc32 = " + uncompressedCrc32;
          return out;
       }
    }
 
-   public static class DataEnd extends KaitaiStruct
+   public static class DataEnd implements MCAPElement
    {
-      private long dataSectionCrc32;
+      private final long dataSectionCrc32;
 
-      public DataEnd(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public DataEnd(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
-
-      public DataEnd(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         dataSectionCrc32 = dataInput.getUnsignedInt();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         dataSectionCrc32 = Integer.toUnsignedLong(buffer.getInt());
-         setComputedLength(Integer.BYTES);
+         return Integer.BYTES;
       }
 
       /**
@@ -332,39 +295,36 @@ public class MCAP
       }
    }
 
-   public static class Channel extends KaitaiStruct
+   public static class Channel implements MCAPElement
    {
-      private int id;
-      private int schemaId;
-      private String topic;
-      private String messageEncoding;
-      private List<TupleStrStr> metadata;
+      private final MCAPDataInput dataInput;
+      private final long elementLength;
+      private final int id;
+      private final int schemaId;
+      private final String topic;
+      private final String messageEncoding;
+      private WeakReference<List<TupleStrStr>> metadataRef;
+      private final long metadataOffset;
+      private final long metadataLength;
 
-      public Channel(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public Channel(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
+         this.elementLength = elementLength;
 
-      public Channel(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         id = dataInput.getUnsignedShort();
+         schemaId = dataInput.getUnsignedShort();
+         topic = dataInput.getString();
+         messageEncoding = dataInput.getString();
+         metadataLength = dataInput.getUnsignedInt();
+         metadataOffset = dataInput.position();
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         id = Short.toUnsignedInt(buffer.getShort());
-         schemaId = Short.toUnsignedInt(buffer.getShort());
-         topic = parseString(buffer);
-         messageEncoding = parseString(buffer);
-         int start = buffer.position();
-         metadata = parseList(buffer, TupleStrStr::new);
-         int end = buffer.position();
-         int metadataLength = end - start;
-         setComputedLength(2 * Short.BYTES + 2 * Integer.BYTES + topic.length() + messageEncoding.length() + metadataLength);
+         return elementLength;
       }
 
       public int id()
@@ -389,6 +349,14 @@ public class MCAP
 
       public List<TupleStrStr> metadata()
       {
+         List<TupleStrStr> metadata = metadataRef == null ? null : metadataRef.get();
+
+         if (metadata == null)
+         {
+            metadata = parseList(dataInput, TupleStrStr::new, metadataOffset, metadataLength);
+            metadataRef = new WeakReference<>(metadata);
+         }
+
          return metadata;
       }
 
@@ -400,59 +368,58 @@ public class MCAP
          out += "\n\t-schemaId = " + schemaId;
          out += "\n\t-topic = " + topic;
          out += "\n\t-messageEncoding = " + messageEncoding;
-         out += "\n\t-metadata = [%s]".formatted(metadata.toString());
+         out += "\n\t-metadata = [%s]".formatted(metadata().toString());
          return out;
       }
    }
 
-   public static class MessageIndex extends KaitaiStruct
+   public static class MessageIndex implements MCAPElement
    {
-      private int channelId;
-      private List<MessageIndexEntry> messageIndexEntries;
+      private final MCAPDataInput dataInput;
+      private final long elementLength;
+      private final int channelId;
+      private WeakReference<List<MessageIndexEntry>> messageIndexEntriesRef;
+      private final long messageIndexEntriesOffset;
+      private final long messageIndexEntriesLength;
 
-      public MessageIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public MessageIndex(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
+         this.elementLength = elementLength;
 
-      public MessageIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         channelId = dataInput.getUnsignedShort();
+         messageIndexEntriesLength = dataInput.getUnsignedInt();
+         messageIndexEntriesOffset = dataInput.position();
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         channelId = Short.toUnsignedInt(buffer.getShort());
-         int start = buffer.position();
-         messageIndexEntries = parseList(buffer, MessageIndexEntry::new);
-         int entriesLength = buffer.position() - start;
-         setComputedLength(Short.BYTES + entriesLength);
+         return elementLength;
       }
 
-      public static class MessageIndexEntry implements Sizeable
+      public static class MessageIndexEntry implements MCAPElement
       {
          /**
           * Time at which the message was recorded.
           */
-         private long logTime;
+         private final long logTime;
 
          /**
           * Offset is relative to the start of the uncompressed chunk data.
           */
-         private long offset;
+         private final long offset;
 
-         public MessageIndexEntry(ByteBuffer buffer)
+         public MessageIndexEntry(MCAPDataInput dataInput, long elementPosition)
          {
-            logTime = buffer.getLong();
-            offset = buffer.getLong();
+            dataInput.position(elementPosition);
+            logTime = checkPositiveLong(dataInput.getLong(), "logTime");
+            offset = checkPositiveLong(dataInput.getLong(), "offset");
          }
 
          @Override
-         public int getItemTotalLength()
+         public long getElementLength()
          {
             return 2 * Long.BYTES;
          }
@@ -473,6 +440,7 @@ public class MCAP
             return toString(0);
          }
 
+         @Override
          public String toString(int indent)
          {
             String out = getClass().getSimpleName() + ":";
@@ -487,8 +455,16 @@ public class MCAP
          return channelId;
       }
 
-      public List<MessageIndexEntry> records()
+      public List<MessageIndexEntry> messageIndexEntries()
       {
+         List<MessageIndexEntry> messageIndexEntries = messageIndexEntriesRef == null ? null : messageIndexEntriesRef.get();
+
+         if (messageIndexEntries == null)
+         {
+            messageIndexEntries = parseList(dataInput, MessageIndexEntry::new, messageIndexEntriesOffset, messageIndexEntriesLength);
+            messageIndexEntriesRef = new WeakReference<>(messageIndexEntries);
+         }
+
          return messageIndexEntries;
       }
 
@@ -503,6 +479,7 @@ public class MCAP
       {
          String out = getClass().getSimpleName() + ":";
          out += "\n\t-channelId = " + channelId;
+         List<MessageIndexEntry> messageIndexEntries = messageIndexEntries();
          out += "\n\t-messageIndexEntries = " + (messageIndexEntries == null ?
                "null" :
                "\n" + EuclidCoreIOTools.getCollectionString("\n", messageIndexEntries, e -> e.toString(indent + 1)));
@@ -510,61 +487,60 @@ public class MCAP
       }
    }
 
-   public static class Statistics extends KaitaiStruct
+   public static class Statistics implements MCAPElement
    {
-      private long messageCount;
-      private int schemaCount;
-      private long channelCount;
-      private long attachmentCount;
-      private long metadataCount;
-      private long chunkCount;
-      private long messageStartTime;
-      private long messageEndTime;
-      private List<ChannelMessageCount> channelMessageCounts;
+      private final MCAPDataInput dataInput;
+      private final long elementLength;
+      private final long messageCount;
+      private final int schemaCount;
+      private final long channelCount;
+      private final long attachmentCount;
+      private final long metadataCount;
+      private final long chunkCount;
+      private final long messageStartTime;
+      private final long messageEndTime;
+      private WeakReference<List<ChannelMessageCount>> channelMessageCountsRef;
+      private final long channelMessageCountsOffset;
+      private final long channelMessageCountsLength;
 
-      public Statistics(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public Statistics(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
+         this.elementLength = elementLength;
 
-      public Statistics(FileChannel fileChannel, long _pos, int length) throws IOException
-      {
-         super(fileChannel, _pos, length);
-         _read();
+         dataInput.position(elementPosition);
+         messageCount = checkPositiveLong(dataInput.getLong(), "messageCount");
+         schemaCount = dataInput.getUnsignedShort();
+         channelCount = dataInput.getUnsignedInt();
+         attachmentCount = dataInput.getUnsignedInt();
+         metadataCount = dataInput.getUnsignedInt();
+         chunkCount = dataInput.getUnsignedInt();
+         messageStartTime = checkPositiveLong(dataInput.getLong(), "messageStartTime");
+         messageEndTime = checkPositiveLong(dataInput.getLong(), "messageEndTime");
+         channelMessageCountsLength = dataInput.getUnsignedInt();
+         channelMessageCountsOffset = dataInput.position();
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         messageCount = buffer.getLong();
-         schemaCount = Short.toUnsignedInt(buffer.getShort());
-         channelCount = Integer.toUnsignedLong(buffer.getInt());
-         attachmentCount = Integer.toUnsignedLong(buffer.getInt());
-         metadataCount = Integer.toUnsignedLong(buffer.getInt());
-         chunkCount = Integer.toUnsignedLong(buffer.getInt());
-         messageStartTime = buffer.getLong();
-         messageEndTime = buffer.getLong();
-         int start = buffer.position();
-         channelMessageCounts = parseList(buffer, ChannelMessageCount::new);
-         int channelMessageCountsLength = buffer.position() - start;
-         setComputedLength(3 * Long.BYTES + 5 * Integer.BYTES + Short.BYTES + channelMessageCountsLength);
+         return elementLength;
       }
 
-      public static class ChannelMessageCount implements Sizeable
+      public static class ChannelMessageCount implements MCAPElement
       {
-         private int channelId;
-         private long messageCount;
+         private final int channelId;
+         private final long messageCount;
 
-         public ChannelMessageCount(ByteBuffer buffer)
+         public ChannelMessageCount(MCAPDataInput dataInput, long elementPosition)
          {
-            channelId = Short.toUnsignedInt(buffer.getShort());
-            messageCount = buffer.getLong();
+            dataInput.position(elementPosition);
+            channelId = dataInput.getUnsignedShort();
+            messageCount = dataInput.getLong();
          }
 
          @Override
-         public int getItemTotalLength()
+         public long getElementLength()
          {
             return Short.BYTES + Long.BYTES;
          }
@@ -585,6 +561,7 @@ public class MCAP
             return toString(0);
          }
 
+         @Override
          public String toString(int indent)
          {
             String out = getClass().getSimpleName() + ":";
@@ -636,6 +613,14 @@ public class MCAP
 
       public List<ChannelMessageCount> channelMessageCounts()
       {
+         List<ChannelMessageCount> channelMessageCounts = channelMessageCountsRef == null ? null : channelMessageCountsRef.get();
+
+         if (channelMessageCounts == null)
+         {
+            channelMessageCounts = parseList(dataInput, ChannelMessageCount::new, channelMessageCountsOffset, channelMessageCountsLength);
+            channelMessageCountsRef = new WeakReference<>(channelMessageCounts);
+         }
+
          return channelMessageCounts;
       }
 
@@ -651,68 +636,66 @@ public class MCAP
          out += "\n\t-chunkCount = " + chunkCount;
          out += "\n\t-messageStartTime = " + messageStartTime;
          out += "\n\t-messageEndTime = " + messageEndTime;
-         out += "\n\t-channelMessageCounts = \n" + EuclidCoreIOTools.getCollectionString("\n", channelMessageCounts, e -> e.toString(1));
+         out += "\n\t-channelMessageCounts = \n" + EuclidCoreIOTools.getCollectionString("\n", channelMessageCounts(), e -> e.toString(1));
          return out;
       }
    }
 
-   public static class AttachmentIndex extends KaitaiStruct
+   public static class AttachmentIndex implements MCAPElement
    {
-      private long offsetAttachment;
-      private long lengthAttachment;
-      private long logTime;
-      private long createTime;
-      private long dataSize;
-      private String name;
-      private String mediaType;
+      private final MCAPDataInput dataInput;
+      private final long attachmentOffset;
+      private final long attachmentLength;
+      private final long logTime;
+      private final long createTime;
+      private final long dataSize;
+      private final String name;
+      private final String mediaType;
 
-      private Record attachment;
+      private WeakReference<Record> attachmentRef;
 
-      public AttachmentIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
+      private AttachmentIndex(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public AttachmentIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         attachmentOffset = checkPositiveLong(dataInput.getLong(), "attachmentOffset");
+         attachmentLength = checkPositiveLong(dataInput.getLong(), "attachmentLength");
+         logTime = checkPositiveLong(dataInput.getLong(), "logTime");
+         createTime = checkPositiveLong(dataInput.getLong(), "createTime");
+         dataSize = checkPositiveLong(dataInput.getLong(), "dataSize");
+         name = dataInput.getString();
+         mediaType = dataInput.getString();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         offsetAttachment = buffer.getLong();
-         lengthAttachment = buffer.getLong();
-         logTime = buffer.getLong();
-         createTime = buffer.getLong();
-         dataSize = buffer.getLong();
-         name = parseString(buffer);
-         mediaType = parseString(buffer);
-         setComputedLength(5 * Long.BYTES + 2 * Integer.BYTES + name.length() + mediaType.length());
+         return 5 * Long.BYTES + 2 * Integer.BYTES + name.length() + mediaType.length();
       }
 
-      public Record attachment() throws IOException
+      public Record attachment()
       {
+         Record attachment = attachmentRef == null ? null : attachmentRef.get();
+
          if (attachment == null)
          {
-            // TODO Check if we can use the lenAttachment for verification or something.
-            attachment = new Record(fileChannel, offsetAttachment);
+            attachment = new Record(dataInput, attachmentOffset);
+            attachmentRef = new WeakReference<>(attachment);
          }
 
          return attachment;
       }
 
-      public long offsetAttachment()
+      public long attachmentOffset()
       {
-         return offsetAttachment;
+         return attachmentOffset;
       }
 
-      public long lengthAttachment()
+      public long attachmentLength()
       {
-         return lengthAttachment;
+         return attachmentLength;
       }
 
       public long logTime()
@@ -744,8 +727,8 @@ public class MCAP
       public String toString()
       {
          String out = getClass().getSimpleName() + ":";
-         out += "\n\t-ofsAttachment = " + offsetAttachment;
-         out += "\n\t-lenAttachment = " + lengthAttachment;
+         out += "\n\t-attachmentOffset = " + attachmentOffset;
+         out += "\n\t-attachmentLength = " + attachmentLength;
          out += "\n\t-logTime = " + logTime;
          out += "\n\t-createTime = " + createTime;
          out += "\n\t-dataSize = " + dataSize;
@@ -755,39 +738,33 @@ public class MCAP
       }
    }
 
-   public static class Schema extends KaitaiStruct
+   public static class Schema implements MCAPElement
    {
-      private int id;
-      private String name;
-      private String encoding;
-      private long lengthData;
-      private long offsetData;
-      private byte[] data;
+      private final MCAPDataInput dataInput;
+      private final int id;
+      private final String name;
+      private final String encoding;
+      private final long dataLength;
+      private final long dataOffset;
+      private WeakReference<ByteBuffer> dataRef;
 
-      public Schema(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public Schema(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public Schema(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         id = dataInput.getUnsignedShort();
+         name = dataInput.getString();
+         encoding = dataInput.getString();
+         dataLength = dataInput.getUnsignedInt();
+         dataOffset = dataInput.position();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         id = Short.toUnsignedInt(buffer.getShort());
-         name = parseString(buffer);
-         encoding = parseString(buffer);
-         lengthData = Integer.toUnsignedLong(buffer.getInt());
-         offsetData = buffer.position();
-         buffer.position((int) (offsetData + lengthData)); // Skip the data
-
-         setComputedLength(Short.BYTES + 3 * Integer.BYTES + name.length() + encoding.length() + (int) lengthData);
+         return Short.BYTES + 3 * Integer.BYTES + name.length() + encoding.length() + (int) dataLength;
       }
 
       public int id()
@@ -805,20 +782,16 @@ public class MCAP
          return encoding;
       }
 
-      public byte[] data()
+      public ByteBuffer data()
       {
+         ByteBuffer data = this.dataRef == null ? null : this.dataRef.get();
+
          if (data == null)
          {
-            data = new byte[(int) lengthData];
-            buffer.position((int) offsetData);
-            buffer.get(data);
+            data = dataInput.getByteBuffer(dataOffset, (int) dataLength, false);
+            dataRef = new WeakReference<>(data);
          }
          return data;
-      }
-
-      public void unloadData()
-      {
-         data = null;
       }
 
       @Override
@@ -828,48 +801,46 @@ public class MCAP
          out += "\n\t-id = " + id;
          out += "\n\t-name = " + name;
          out += "\n\t-encoding = " + encoding;
-         out += "\n\t-lengthData = " + lengthData;
-         out += "\n\t-data = " + Arrays.toString(data());
-         unloadData();
+         out += "\n\t-dataLength = " + dataLength;
+         out += "\n\t-data = " + Arrays.toString(data().array());
          return out;
       }
    }
 
-   public static class SummaryOffset extends KaitaiStruct
+   public static class SummaryOffset implements MCAPElement
    {
-      private Opcode groupOpcode;
-      private long offsetGroup;
-      private long lengthGroup;
+      private final MCAPDataInput dataInput;
+      private final Opcode groupOpcode;
+      private final long offsetGroup;
+      private final long lengthGroup;
 
-      private Records group;
+      private WeakReference<Records> groupRef;
 
-      public SummaryOffset(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public SummaryOffset(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public SummaryOffset(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         groupOpcode = Opcode.byId(dataInput.getUnsignedByte());
+         offsetGroup = checkPositiveLong(dataInput.getLong(), "offsetGroup");
+         lengthGroup = checkPositiveLong(dataInput.getLong(), "lengthGroup");
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         groupOpcode = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
-         offsetGroup = buffer.getLong();
-         lengthGroup = buffer.getLong();
-         setComputedLength(Byte.BYTES + 2 * Long.BYTES);
+         return Byte.BYTES + 2 * Long.BYTES;
       }
 
-      public Records group() throws IOException
+      public Records group()
       {
+         Records group = groupRef == null ? null : groupRef.get();
+
          if (group == null)
          {
-            group = new Records(fileChannel, offsetGroup, (int) lengthGroup);
+            group = new Records(dataInput, offsetGroup, (int) lengthGroup);
+            groupRef = new WeakReference<>(group);
          }
          return group;
       }
@@ -900,64 +871,55 @@ public class MCAP
       }
    }
 
-   public static class Attachment extends KaitaiStruct
+   public static class Attachment implements MCAPElement
    {
-      private long logTime;
-      private long createTime;
-      private String name;
-      private String mediaType;
-      private long lengthData;
-      private long offsetData;
-      private byte[] data;
-      private long crc32;
+      private final MCAPDataInput dataInput;
+      private final long logTime;
+      private final long createTime;
+      private final String name;
+      private final String mediaType;
+      private final long lengthData;
+      private final long offsetData;
+      private WeakReference<ByteBuffer> dataRef;
+      private final long crc32;
+      private final long crc32InputStart;
+      private final int crc32InputLength;
+      private WeakReference<ByteBuffer> crc32InputRef;
 
-      public Attachment(ByteBuffer buffer, long _pos, int _length) throws IOException
+      private Attachment(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public Attachment(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         crc32InputStart = elementPosition;
+         logTime = checkPositiveLong(dataInput.getLong(), "logTime");
+         createTime = checkPositiveLong(dataInput.getLong(), "createTime");
+         name = dataInput.getString();
+         mediaType = dataInput.getString();
+         lengthData = checkPositiveLong(dataInput.getLong(), "lengthData");
+         offsetData = dataInput.position();
+         dataInput.skip(lengthData);
+         crc32InputLength = (int) (dataInput.position() - elementPosition);
+         crc32 = dataInput.getUnsignedInt();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         logTime = buffer.getLong();
-         createTime = buffer.getLong();
-         name = parseString(buffer);
-         mediaType = parseString(buffer);
-         lengthData = buffer.getLong();
-         offsetData = buffer.position();
-         buffer.position((int) (offsetData + lengthData));
-         crc32InputEnd = buffer.position();
-         crc32 = Integer.toUnsignedLong(buffer.getInt());
-         setComputedLength(3 * Long.BYTES + 3 * Integer.BYTES + name.length() + mediaType.length() + (int) lengthData);
+         return 3 * Long.BYTES + 3 * Integer.BYTES + name.length() + mediaType.length() + (int) lengthData;
       }
 
-      private int crc32InputEnd;
-
-      public int crc32InputEnd()
+      public ByteBuffer crc32Input()
       {
-         return crc32InputEnd;
-      }
+         ByteBuffer crc32Input = this.crc32InputRef == null ? null : this.crc32InputRef.get();
 
-      private byte[] crc32Input;
-
-      public byte[] crc32Input()
-      {
          if (crc32Input == null)
          {
-            int _pos = buffer.position();
-            buffer.position(0);
-            crc32Input = new byte[crc32InputEnd()];
-            buffer.get(crc32Input);
-            buffer.position(_pos);
+            crc32Input = dataInput.getByteBuffer(crc32InputStart, crc32InputLength, false);
+            crc32InputRef = new WeakReference<>(crc32Input);
          }
+
          return crc32Input;
       }
 
@@ -986,20 +948,21 @@ public class MCAP
          return lengthData;
       }
 
-      public byte[] data()
+      public ByteBuffer data()
       {
+         ByteBuffer data = this.dataRef == null ? null : this.dataRef.get();
+
          if (data == null)
          {
-            data = new byte[(int) lengthData];
-            buffer.position((int) offsetData);
-            buffer.get(data);
+            data = dataInput.getByteBuffer(offsetData, (int) lengthData, false);
+            dataRef = new WeakReference<>(data);
          }
          return data;
       }
 
       public void unloadData()
       {
-         data = null;
+         dataRef = null;
       }
 
       /**
@@ -1026,32 +989,26 @@ public class MCAP
       }
    }
 
-   public static class Metadata extends KaitaiStruct
+   public static class Metadata implements MCAPElement
    {
-      private String name;
-      private List<TupleStrStr> metadata;
+      private final String name;
+      private final List<TupleStrStr> metadata;
+      private final int metadataLength;
 
-      public Metadata(ByteBuffer buffer, long _pos, int _length) throws IOException
+      private Metadata(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
-
-      public Metadata(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         name = dataInput.getString();
+         long start = dataInput.position();
+         metadata = parseList(dataInput, TupleStrStr::new); // TODO Looks into postponing the loading of the metadata.
+         metadataLength = (int) (dataInput.position() - start);
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         name = parseString(buffer);
-         int start = buffer.position();
-         metadata = parseList(buffer, TupleStrStr::new);
-         int metadataLength = buffer.position() - start;
-         setComputedLength(Integer.BYTES + name.length() + metadataLength);
+         return Integer.BYTES + name.length() + metadataLength;
       }
 
       public String name()
@@ -1074,30 +1031,23 @@ public class MCAP
       }
    }
 
-   public static class Header extends KaitaiStruct
+   public static class Header implements MCAPElement
    {
-      private String profile;
-      private String library;
+      private final String profile;
+      private final String library;
 
-      public Header(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public Header(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
-
-      public Header(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         profile = dataInput.getString();
+         library = dataInput.getString();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         profile = parseString(buffer);
-         library = parseString(buffer);
-         setComputedLength(2 * Integer.BYTES + profile.length() + library.length());
+         return 2 * Integer.BYTES + profile.length() + library.length();
       }
 
       public String profile()
@@ -1120,51 +1070,77 @@ public class MCAP
       }
    }
 
-   public static class Message extends KaitaiStruct
+   public static class Message implements MCAPElement
    {
+      private final MCAPDataInput dataInput;
       private int channelId;
       private long sequence;
       private long logTime;
       private long publishTime;
-      private int offsetData;
-      private int lengthData;
-      private byte[] data;
+      private long dataOffset;
+      private int dataLength;
+      private WeakReference<ByteBuffer> messageBufferRef;
+      private WeakReference<byte[]> messageDataRef;
 
       public static Message createSpoofMessageForTesting(int channelId, byte[] data)
       {
-         Message message = new Message();
-         message.channelId = channelId;
-         message.data = data;
-         return message;
+         return new Message()
+         {
+            @Override
+            public int channelId()
+            {
+               return channelId;
+            }
+
+            @Override
+            public long dataOffset()
+            {
+               return 0;
+            }
+
+            @Override
+            public int dataLength()
+            {
+               return data.length;
+            }
+
+            @Override
+            public ByteBuffer messageBuffer()
+            {
+               return ByteBuffer.wrap(data);
+            }
+
+            @Override
+            public byte[] messageData()
+            {
+               return data;
+            }
+         };
       }
 
       private Message()
       {
-         super((FileChannel) null, -1, -1);
+         dataInput = null;
       }
 
-      public Message(ByteBuffer buffer, long _pos, int _length) throws IOException
+      private Message(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public Message(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         channelId = dataInput.getUnsignedShort();
+         sequence = dataInput.getUnsignedInt();
+         logTime = checkPositiveLong(dataInput.getLong(), "logTime");
+         publishTime = checkPositiveLong(dataInput.getLong(), "publishTime");
+         dataOffset = dataInput.position();
+         dataLength = (int) (elementLength - (Short.BYTES + Integer.BYTES + 2 * Long.BYTES));
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         channelId = Short.toUnsignedInt(buffer.getShort());
-         sequence = Integer.toUnsignedLong(buffer.getInt());
-         logTime = buffer.getLong();
-         publishTime = buffer.getLong();
-         offsetData = buffer.position();
-         lengthData = _length - (Short.BYTES + Integer.BYTES + 2 * Long.BYTES);
+         return dataLength + Short.BYTES + Integer.BYTES + 2 * Long.BYTES;
       }
 
       public int channelId()
@@ -1193,9 +1169,9 @@ public class MCAP
        *
        * @return the offset of the data portion of this message.
        */
-      public int offsetData()
+      public long dataOffset()
       {
-         return offsetData;
+         return dataOffset;
       }
 
       /**
@@ -1203,36 +1179,38 @@ public class MCAP
        *
        * @return the length of the data portion of this message.
        */
-      public int lengthData()
+      public int dataLength()
       {
-         return lengthData;
+         return dataLength;
       }
 
       /**
-       * Returns the buffer containing this message, the data AND the header. Use {@link #offsetData()}
-       * and {@link #lengthData()} to get the data portion.
+       * Returns the buffer containing this message, the data AND the header. Use {@link #dataOffset()}
+       * and {@link #dataLength()} to get the data portion.
        *
        * @return the buffer containing this message.
        */
       public ByteBuffer messageBuffer()
       {
-         return buffer;
+         ByteBuffer messageBuffer = messageBufferRef == null ? null : messageBufferRef.get();
+         if (messageBuffer == null)
+         {
+            messageBuffer = dataInput.getByteBuffer(dataOffset, dataLength, false);
+            messageBufferRef = new WeakReference<>(messageBuffer);
+         }
+         return messageBuffer;
       }
 
-      public byte[] data()
+      public byte[] messageData()
       {
-         if (data == null)
+         byte[] messageData = messageDataRef == null ? null : messageDataRef.get();
+
+         if (messageData == null)
          {
-            data = new byte[lengthData];
-            int previousLimit = buffer.limit();
-            int previousPosition = buffer.position();
-            buffer.limit(offsetData + lengthData);
-            buffer.position(offsetData);
-            buffer.get(data);
-            buffer.limit(previousLimit);
-            buffer.position(previousPosition);
+            messageData = dataInput.getBytes(dataOffset, dataLength);
+            messageDataRef = new WeakReference<>(messageData);
          }
-         return data;
+         return messageData;
       }
 
       @Override
@@ -1248,19 +1226,20 @@ public class MCAP
       }
    }
 
-   public static class TupleStrStr implements Sizeable
+   public static class TupleStrStr implements MCAPElement
    {
-      private String key;
-      private String value;
+      private final String key;
+      private final String value;
 
-      public TupleStrStr(ByteBuffer buffer)
+      public TupleStrStr(MCAPDataInput dataInput, long elementPosition)
       {
-         key = parseString(buffer);
-         value = parseString(buffer);
+         dataInput.position(elementPosition);
+         key = dataInput.getString();
+         value = dataInput.getString();
       }
 
       @Override
-      public int getItemTotalLength()
+      public long getElementLength()
       {
          return key.length() + value.length() + 2 * Integer.BYTES;
       }
@@ -1282,53 +1261,51 @@ public class MCAP
       }
    }
 
-   public static class MetadataIndex extends KaitaiStruct
+   public static class MetadataIndex implements MCAPElement
    {
-      private long offsetMetadata;
-      private long lengthMetadata;
-      private String name;
-      private Record metadata;
+      private final MCAPDataInput dataInput;
+      private final long metadataOffset;
+      private final long metadataLength;
+      private final String name;
+      private WeakReference<Record> metadataRef;
 
-      public MetadataIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
+      private MetadataIndex(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public MetadataIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         metadataOffset = checkPositiveLong(dataInput.getLong(), "metadataOffset");
+         metadataLength = checkPositiveLong(dataInput.getLong(), "metadataLength");
+         name = dataInput.getString();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         offsetMetadata = buffer.getLong();
-         lengthMetadata = buffer.getLong();
-         name = parseString(buffer);
-         setComputedLength(2 * Long.BYTES + Integer.BYTES + name.length());
+         return 2 * Long.BYTES + Integer.BYTES + name.length();
       }
 
-      public Record metadata() throws IOException
+      public Record metadata()
       {
+         Record metadata = metadataRef == null ? null : metadataRef.get();
+
          if (metadata == null)
          {
-            // TODO Check if we can use the lenMetadata for verification or something.
-            metadata = new Record(fileChannel, offsetMetadata);
+            metadata = new Record(dataInput, metadataOffset);
+            metadataRef = new WeakReference<>(metadata);
          }
          return metadata;
       }
 
-      public long offsetMetadata()
+      public long metadataOffset()
       {
-         return offsetMetadata;
+         return metadataOffset;
       }
 
-      public long lengthMetadata()
+      public long metadataLength()
       {
-         return lengthMetadata;
+         return metadataLength;
       }
 
       public String name()
@@ -1340,36 +1317,32 @@ public class MCAP
       public String toString()
       {
          String out = getClass().getSimpleName() + ": ";
-         out += "\n\t-offsetMetadata = " + offsetMetadata;
-         out += "\n\t-lengthMetadata = " + lengthMetadata;
+         out += "\n\t-metadataOffset = " + metadataOffset;
+         out += "\n\t-metadataLength = " + metadataLength;
          out += "\n\t-name = " + name;
          return out;
       }
    }
 
-   public static class Magic extends KaitaiStruct
+   public static class Magic implements MCAPElement
    {
       public static final int MAGIC_SIZE = 8;
       public static final byte[] MAGIC_BYTES = {-119, 77, 67, 65, 80, 48, 13, 10};
 
-      private byte[] magic;
+      private final byte[] magic;
 
-      public Magic(FileChannel fileChannel, long _pos) throws IOException
+      public Magic(MCAPDataInput dataInput, long elementPosition)
       {
-         super(fileChannel, _pos, MAGIC_SIZE);
-         _read();
+         dataInput.position(elementPosition);
+         magic = dataInput.getBytes(MAGIC_SIZE);
+         if (!(Arrays.equals(magic, MAGIC_BYTES)))
+            throw new IllegalArgumentException("Invalid magic bytes: " + Arrays.toString(magic) + ". Expected: " + Arrays.toString(MAGIC_BYTES));
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         magic = new byte[MAGIC_SIZE];
-         buffer.get(magic);
-         if (!(Arrays.equals(magic, MAGIC_BYTES)))
-         {
-            throw new ValidationNotEqualError(MAGIC_BYTES, magic, buffer);
-         }
+         return MAGIC_SIZE;
       }
 
       public byte[] magic()
@@ -1394,24 +1367,9 @@ public class MCAP
 
    public static class Records extends ArrayList<Record>
    {
-      public Records(ByteBuffer buffer) throws IOException
+      public Records(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         this(buffer, buffer.remaining());
-      }
-
-      public Records(ByteBuffer buffer, int _length) throws IOException
-      {
-         this(buffer, buffer.position(), _length);
-      }
-
-      public Records(ByteBuffer buffer, long _pos, int _length) throws IOException
-      {
-         parseList(buffer, Record::new, _pos, _length, this);
-      }
-
-      public Records(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         parseList(fileChannel, Record::new, _pos, _length, this);
+         parseList(dataInput, Record::new, elementPosition, elementLength, this);
       }
 
       @Override
@@ -1431,75 +1389,69 @@ public class MCAP
       }
    }
 
-   public static class Footer extends KaitaiStruct
+   public static class Footer implements MCAPElement
    {
-      private long ofsSummarySection;
-      private long ofsSummaryOffsetSection;
-      private long summaryCrc32;
+      private final MCAPDataInput dataInput;
+      private final long ofsSummarySection;
+      private final long ofsSummaryOffsetSection;
+      private final long summaryCrc32;
       private Integer ofsSummaryCrc32Input;
       private Records summaryOffsetSection;
       private Records summarySection;
 
-      public Footer(ByteBuffer buffer, long _pos, int _length) throws IOException
+      public Footer(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public Footer(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         ofsSummarySection = checkPositiveLong(dataInput.getLong(), "ofsSummarySection");
+         ofsSummaryOffsetSection = checkPositiveLong(dataInput.getLong(), "ofsSummaryOffsetSection");
+         summaryCrc32 = dataInput.getUnsignedInt();
+         checkLength(elementLength, getElementLength());
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         ofsSummarySection = buffer.getLong();
-         ofsSummaryOffsetSection = buffer.getLong();
-         summaryCrc32 = Integer.toUnsignedLong(buffer.getInt());
-         setComputedLength(2 * Long.BYTES + Integer.BYTES);
+         return 2 * Long.BYTES + Integer.BYTES;
       }
 
-      public Records summarySection() throws IOException
+      public Records summarySection()
       {
          if (summarySection == null && ofsSummarySection != 0)
          {
-            long length = ((ofsSummaryOffsetSection != 0 ? ofsSummaryOffsetSection : computeOffsetFooter(fileChannel)) - ofsSummarySection);
-            summarySection = new Records(fileChannel, ofsSummarySection, (int) length);
+            long length = ((ofsSummaryOffsetSection != 0 ? ofsSummaryOffsetSection : computeOffsetFooter(dataInput)) - ofsSummarySection);
+            summarySection = new Records(dataInput, ofsSummarySection, (int) length);
          }
          return summarySection;
       }
 
-      public Records summaryOffsetSection() throws IOException
+      public Records summaryOffsetSection()
       {
          if (summaryOffsetSection == null && ofsSummaryOffsetSection != 0)
          {
-            summaryOffsetSection = new Records(fileChannel, ofsSummaryOffsetSection, (int) (computeOffsetFooter(fileChannel) - ofsSummaryOffsetSection));
+            summaryOffsetSection = new Records(dataInput, ofsSummaryOffsetSection, (int) (computeOffsetFooter(dataInput) - ofsSummaryOffsetSection));
          }
          return summaryOffsetSection;
       }
 
-      public Integer ofsSummaryCrc32Input() throws IOException
+      public Integer ofsSummaryCrc32Input()
       {
          if (ofsSummaryCrc32Input == null)
          {
-            ofsSummaryCrc32Input = (int) ((ofsSummarySection() != 0 ? ofsSummarySection() : computeOffsetFooter(fileChannel)));
+            ofsSummaryCrc32Input = (int) ((ofsSummarySection() != 0 ? ofsSummarySection() : computeOffsetFooter(dataInput)));
          }
          return ofsSummaryCrc32Input;
       }
 
       private byte[] summaryCrc32Input;
 
-      public byte[] summaryCrc32Input() throws IOException
+      public byte[] summaryCrc32Input()
       {
          if (summaryCrc32Input == null)
          {
-            ByteBuffer tmpBuffer = ByteBuffer.allocate((int) (fileChannel.size() - ofsSummaryCrc32Input() - 8 - 4));
-            fileChannel.position(ofsSummaryCrc32Input());
-            fileChannel.read(tmpBuffer);
-            summaryCrc32Input = tmpBuffer.array();
+            long length = dataInput.size() - ofsSummaryCrc32Input() - 8 - 4;
+            summaryCrc32Input = dataInput.getBytes(ofsSummaryCrc32Input(), (int) length);
          }
          return summaryCrc32Input;
       }
@@ -1535,111 +1487,31 @@ public class MCAP
       }
    }
 
-   public static class Record extends KaitaiStruct
+   public static class Record implements MCAPElement
    {
       public static final int RECORD_HEADER_LENGTH = 9;
-      private Opcode op;
-      private long lengthBody;
-      private long bodyPos;
-      private Object body;
 
-      public Record(ByteBuffer buffer) throws IOException
+      private final MCAPDataInput dataInput;
+
+      private final Opcode op;
+      private final long bodyLength;
+      private final long bodyOffset;
+      private WeakReference<Object> bodyRef;
+
+      public Record(MCAPDataInput dataInput)
       {
-         this(buffer, buffer.position());
+         this(dataInput, dataInput.position());
       }
 
-      public Record(ByteBuffer buffer, long _pos) throws IOException
+      public Record(MCAPDataInput dataInput, long elementPosition)
       {
-         super(buffer, _pos, -1);
-         _read();
-      }
+         this.dataInput = dataInput;
 
-      public Record(FileChannel fileChannel, long _pos) throws IOException
-      {
-         super(fileChannel, _pos, -1);
-         // We don't want to create the buffer for the whole record, just for the info in the header.
-         createBuffer(RECORD_HEADER_LENGTH);
-         _read();
-      }
-
-      @Override
-      public void _read() throws IOException
-      {
-         _readIntoBuffer();
-         op = Opcode.byId(Byte.toUnsignedInt(buffer.get()));
-         lengthBody = buffer.getLong();
-         if (fileChannel != null)
-            bodyPos = _pos + RECORD_HEADER_LENGTH;
-         else
-            bodyPos = buffer.position();
-         setComputedLength(RECORD_HEADER_LENGTH + (int) lengthBody);
-      }
-
-      public void readBody() throws IOException
-      {
-         if (body != null)
-            return;
-
-         if (op == null)
-         {
-            if (fileChannel != null)
-            {
-               ByteBuffer bb = ByteBuffer.allocate((int) lengthBody);
-               fileChannel.read(bb, bodyPos);
-               body = bb.array();
-            }
-            else
-            {
-               body = new byte[(int) lengthBody];
-               buffer.get((int) bodyPos, (byte[]) body);
-            }
-            return;
-         }
-
-         if (fileChannel != null)
-         {
-            body = switch (op)
-            {
-               case MESSAGE -> new Message(fileChannel, bodyPos, (int) lengthBody);
-               case METADATA_INDEX -> new MetadataIndex(fileChannel, bodyPos, (int) lengthBody);
-               case CHUNK -> new Chunk(fileChannel, bodyPos, (int) lengthBody);
-               case SCHEMA -> new Schema(fileChannel, bodyPos, (int) lengthBody);
-               case CHUNK_INDEX -> new ChunkIndex(fileChannel, bodyPos, (int) lengthBody);
-               case DATA_END -> new DataEnd(fileChannel, bodyPos, (int) lengthBody);
-               case ATTACHMENT_INDEX -> new AttachmentIndex(fileChannel, bodyPos, (int) lengthBody);
-               case STATISTICS -> new Statistics(fileChannel, bodyPos, (int) lengthBody);
-               case MESSAGE_INDEX -> new MessageIndex(fileChannel, bodyPos, (int) lengthBody);
-               case CHANNEL -> new Channel(fileChannel, bodyPos, (int) lengthBody);
-               case METADATA -> new Metadata(fileChannel, bodyPos, (int) lengthBody);
-               case ATTACHMENT -> new Attachment(fileChannel, bodyPos, (int) lengthBody);
-               case HEADER -> new Header(fileChannel, bodyPos, (int) lengthBody);
-               case FOOTER -> new Footer(fileChannel, bodyPos, (int) lengthBody);
-               case SUMMARY_OFFSET -> new SummaryOffset(fileChannel, bodyPos, (int) lengthBody);
-            };
-         }
-         else
-         {
-            body = switch (op)
-            {
-               case MESSAGE -> new Message(buffer, bodyPos, (int) lengthBody);
-               case METADATA_INDEX -> new MetadataIndex(buffer, bodyPos, (int) lengthBody);
-               case CHUNK -> new Chunk(buffer, bodyPos, (int) lengthBody);
-               case SCHEMA -> new Schema(buffer, bodyPos, (int) lengthBody);
-               case CHUNK_INDEX -> new ChunkIndex(buffer, bodyPos, (int) lengthBody);
-               case DATA_END -> new DataEnd(buffer, bodyPos, (int) lengthBody);
-               case ATTACHMENT_INDEX -> new AttachmentIndex(buffer, bodyPos, (int) lengthBody);
-               case STATISTICS -> new Statistics(buffer, bodyPos, (int) lengthBody);
-               case MESSAGE_INDEX -> new MessageIndex(buffer, bodyPos, (int) lengthBody);
-               case CHANNEL -> new Channel(buffer, bodyPos, (int) lengthBody);
-               case METADATA -> new Metadata(buffer, bodyPos, (int) lengthBody);
-               case ATTACHMENT -> new Attachment(buffer, bodyPos, (int) lengthBody);
-               case HEADER -> new Header(buffer, bodyPos, (int) lengthBody);
-               case FOOTER -> new Footer(buffer, bodyPos, (int) lengthBody);
-               case SUMMARY_OFFSET -> new SummaryOffset(buffer, bodyPos, (int) lengthBody);
-            };
-         }
-
-         setComputedLength(RECORD_HEADER_LENGTH + ((KaitaiStruct) body).getItemTotalLength());
+         dataInput.position(elementPosition);
+         op = Opcode.byId(dataInput.getUnsignedByte());
+         bodyLength = checkPositiveLong(dataInput.getLong(), "bodyLength");
+         bodyOffset = dataInput.position();
+         checkLength(getElementLength(), (int) (bodyLength + RECORD_HEADER_LENGTH));
       }
 
       public Opcode op()
@@ -1647,27 +1519,52 @@ public class MCAP
          return op;
       }
 
-      public long lengthBody()
+      public long bodyLength()
       {
-         return lengthBody;
+         return bodyLength;
       }
 
       public Object body()
       {
-         try
+         Object body = bodyRef == null ? null : bodyRef.get();
+
+         if (body == null)
          {
-            readBody();
-            return body;
+            if (op == null)
+            {
+               body = dataInput.getBytes(bodyOffset, (int) bodyLength);
+            }
+            else
+            {
+               body = switch (op)
+               {
+                  case MESSAGE -> new Message(dataInput, bodyOffset, bodyLength);
+                  case METADATA_INDEX -> new MetadataIndex(dataInput, bodyOffset, bodyLength);
+                  case CHUNK -> new Chunk(dataInput, bodyOffset, bodyLength);
+                  case SCHEMA -> new Schema(dataInput, bodyOffset, bodyLength);
+                  case CHUNK_INDEX -> new ChunkIndex(dataInput, bodyOffset, bodyLength);
+                  case DATA_END -> new DataEnd(dataInput, bodyOffset, bodyLength);
+                  case ATTACHMENT_INDEX -> new AttachmentIndex(dataInput, bodyOffset, bodyLength);
+                  case STATISTICS -> new Statistics(dataInput, bodyOffset, bodyLength);
+                  case MESSAGE_INDEX -> new MessageIndex(dataInput, bodyOffset, bodyLength);
+                  case CHANNEL -> new Channel(dataInput, bodyOffset, bodyLength);
+                  case METADATA -> new Metadata(dataInput, bodyOffset, bodyLength);
+                  case ATTACHMENT -> new Attachment(dataInput, bodyOffset, bodyLength);
+                  case HEADER -> new Header(dataInput, bodyOffset, bodyLength);
+                  case FOOTER -> new Footer(dataInput, bodyOffset, bodyLength);
+                  case SUMMARY_OFFSET -> new SummaryOffset(dataInput, bodyOffset, bodyLength);
+               };
+            }
+
+            bodyRef = new WeakReference<>(body);
          }
-         catch (IOException e)
-         {
-            throw new RuntimeException(e);
-         }
+         return body;
       }
 
-      public void unloadBody()
+      @Override
+      public long getElementLength()
       {
-         body = null;
+         return RECORD_HEADER_LENGTH + bodyLength;
       }
 
       @Override
@@ -1681,111 +1578,110 @@ public class MCAP
       {
          String out = getClass().getSimpleName() + ":";
          out += "\n\t-op = " + op;
-         out += "\n\t-lengthBody = " + lengthBody;
-         out += "\n\t-body = " + (body == null ? "null" : "\n" + ((KaitaiStruct) body).toString(indent + 2));
+         out += "\n\t-bodyLength = " + bodyLength;
+         out += "\n\t-bodyOffset = " + bodyOffset;
+         Object body = body();
+         out += "\n\t-body = " + (body == null ? "null" : "\n" + ((MCAPElement) body).toString(indent + 2));
          return indent(out, indent);
       }
    }
 
-   public static class ChunkIndex extends KaitaiStruct
+   public static class ChunkIndex implements MCAPElement
    {
+      private final MCAPDataInput dataInput;
+      private final long elementLength;
       /**
        * Earliest message log_time in the chunk. Zero if the chunk has no messages.
        */
-      private long messageStartTime;
+      private final long messageStartTime;
       /**
        * Latest message log_time in the chunk. Zero if the chunk has no messages.
        */
-      private long messageEndTime;
+      private final long messageEndTime;
       /**
        * Offset to the chunk record from the start of the file.
        */
-      private long ofsChunk;
+      private final long chunkOffset;
       /**
        * Byte length of the chunk record, including opcode and length prefix.
        */
-      private long lenChunk;
+      private final long chunkLength;
+      private final long messageIndexOffsetsOffset;
       /**
        * Total length in bytes of the message index records after the chunk.
        */
-      private long lenMessageIndexOffsets;
+      private final long messageIndexOffsetsLength;
       /**
        * Mapping from channel ID to the offset of the message index record for that channel after the
        * chunk, from the start of the file. An empty map indicates no message indexing is available.
        */
-      private MessageIndexOffsets messageIndexOffsets;
+      private WeakReference<MessageIndexOffsets> messageIndexOffsetsRef;
       /**
        * Total length in bytes of the message index records after the chunk.
        */
-      private long messageIndexLength;
+      private final long messageIndexLength;
       /**
        * The compression used within the chunk. Refer to well-known compression formats. This field should
        * match the the value in the corresponding Chunk record.
        */
-      private String compression;
+      private final String compression;
       /**
        * The size of the chunk records field.
        */
-      private long compressedSize;
+      private final long compressedSize;
       /**
        * The uncompressed size of the chunk records field. This field should match the value in the
        * corresponding Chunk record.
        */
-      private long uncompressedSize;
+      private final long uncompressedSize;
 
-      public ChunkIndex(ByteBuffer buffer, long _pos, int _length) throws IOException
+      private ChunkIndex(MCAPDataInput dataInput, long elementPosition, long elementLength)
       {
-         super(buffer, _pos, _length);
-         _read();
-      }
+         this.dataInput = dataInput;
+         this.elementLength = elementLength;
 
-      public ChunkIndex(FileChannel fileChannel, long _pos, int _length) throws IOException
-      {
-         super(fileChannel, _pos, _length);
-         _read();
+         dataInput.position(elementPosition);
+         messageStartTime = checkPositiveLong(dataInput.getLong(), "messageStartTime");
+         messageEndTime = checkPositiveLong(dataInput.getLong(), "messageEndTime");
+         chunkOffset = checkPositiveLong(dataInput.getLong(), "chunkOffset");
+         chunkLength = checkPositiveLong(dataInput.getLong(), "chunkLength");
+         messageIndexOffsetsLength = dataInput.getUnsignedInt();
+         messageIndexOffsetsOffset = dataInput.position();
+         dataInput.skip(messageIndexOffsetsLength);
+         messageIndexLength = checkPositiveLong(dataInput.getLong(), "messageIndexLength");
+         compression = dataInput.getString();
+         compressedSize = checkPositiveLong(dataInput.getLong(), "compressedSize");
+         uncompressedSize = checkPositiveLong(dataInput.getLong(), "uncompressedSize");
       }
 
       @Override
-      public void _read() throws IOException
+      public long getElementLength()
       {
-         _readIntoBuffer();
-         messageStartTime = buffer.getLong();
-         messageEndTime = buffer.getLong();
-         ofsChunk = buffer.getLong();
-         lenChunk = buffer.getLong();
-         lenMessageIndexOffsets = Integer.toUnsignedLong(buffer.getInt());
-         messageIndexOffsets = new MessageIndexOffsets(buffer, (int) lenMessageIndexOffsets);
-         messageIndexLength = buffer.getLong();
-         compression = parseString(buffer);
-         compressedSize = buffer.getLong();
-         uncompressedSize = buffer.getLong();
-         setComputedLength(7 * Long.BYTES + 2 * Integer.BYTES + messageIndexOffsets.getItemTotalLength() + compression.length());
+         return elementLength;
       }
 
-      public static class MessageIndexOffset extends KaitaiStruct
+      public static class MessageIndexOffset implements MCAPElement
       {
          /**
           * Channel ID.
           */
-         private int channelId;
+         private final int channelId;
          /**
           * Offset of the message index record for that channel after the chunk, from the start of the file.
           */
-         private long offset;
+         private final long offset;
 
-         public MessageIndexOffset(ByteBuffer buffer) throws IOException
+         public MessageIndexOffset(MCAPDataInput dataInput, long elementPosition)
          {
-            super(buffer);
-            _read();
+            dataInput.position(elementPosition);
+            channelId = dataInput.getUnsignedShort();
+            offset = checkPositiveLong(dataInput.getLong(), "offset");
          }
 
          @Override
-         public void _read() throws IOException
+         public long getElementLength()
          {
-            _readIntoBuffer();
-            channelId = Short.toUnsignedInt(buffer.getShort());
-            offset = buffer.getLong();
-            setComputedLength(Short.BYTES + Long.BYTES);
+            return Short.BYTES + Long.BYTES;
          }
 
          public int channelId()
@@ -1814,30 +1710,37 @@ public class MCAP
          }
       }
 
-      public static class MessageIndexOffsets extends KaitaiStruct
+      public static class MessageIndexOffsets implements MCAPElement
       {
-         private List<MessageIndexOffset> entries;
+         private final List<MessageIndexOffset> entries;
+         private final long elementLength;
 
-         public MessageIndexOffsets(ByteBuffer buffer, int _length) throws IOException
+         public MessageIndexOffsets(MCAPDataInput dataInput, long elementPosition, long elementLength)
          {
-            super(buffer, _length);
-            _read();
-         }
+            this.elementLength = elementLength;
 
-         @Override
-         public void _read() throws IOException
-         {
-            _readIntoBuffer();
             entries = new ArrayList<>();
 
-            int remaining = _length;
+            long currentPos = elementPosition;
+            long remaining = elementLength;
 
             while (remaining > 0)
             {
-               MessageIndexOffset entry = new MessageIndexOffset(buffer);
+               MessageIndexOffset entry = new MessageIndexOffset(dataInput, currentPos);
                entries.add(entry);
-               remaining -= entry.getItemTotalLength();
+               currentPos += entry.getElementLength();
+               remaining -= entry.getElementLength();
             }
+
+            if (remaining != 0)
+               throw new IllegalArgumentException(
+                     "Invalid element length. Expected: " + elementLength + ", remaining: " + remaining + ", entries: " + entries.size());
+         }
+
+         @Override
+         public long getElementLength()
+         {
+            return elementLength;
          }
 
          public List<MessageIndexOffset> entries()
@@ -1860,23 +1763,18 @@ public class MCAP
          }
       }
 
-      private Record chunk;
+      private WeakReference<Record> chunkRef;
 
-      public Record chunk() throws IOException
+      public Record chunk()
       {
+         Record chunk = chunkRef == null ? null : chunkRef.get();
+
          if (chunk == null)
          {
-            // TODO Check if we can use the lenChunk for verification or something.
-            chunk = new Record(fileChannel, ofsChunk);
+            chunk = new Record(dataInput, chunkOffset);
+            chunkRef = new WeakReference<>(chunk);
          }
-         return chunk;
-      }
-
-      public void unloadChunk()
-      {
-         if (chunk != null)
-            chunk.unloadBody();
-         chunk = null;
+         return chunkRef.get();
       }
 
       public long messageStartTime()
@@ -1889,23 +1787,31 @@ public class MCAP
          return messageEndTime;
       }
 
-      public long ofsChunk()
+      public long chunkOffset()
       {
-         return ofsChunk;
+         return chunkOffset;
       }
 
-      public long lenChunk()
+      public long chunkLength()
       {
-         return lenChunk;
+         return chunkLength;
       }
 
-      public long lenMessageIndexOffsets()
+      public long messageIndexOffsetsLength()
       {
-         return lenMessageIndexOffsets;
+         return messageIndexOffsetsLength;
       }
 
       public MessageIndexOffsets messageIndexOffsets()
       {
+         MessageIndexOffsets messageIndexOffsets = messageIndexOffsetsRef == null ? null : messageIndexOffsetsRef.get();
+
+         if (messageIndexOffsets == null)
+         {
+            messageIndexOffsets = new MessageIndexOffsets(dataInput, messageIndexOffsetsOffset, messageIndexOffsetsLength);
+            messageIndexOffsetsRef = new WeakReference<>(messageIndexOffsets);
+         }
+
          return messageIndexOffsets;
       }
 
@@ -1941,10 +1847,10 @@ public class MCAP
          String out = getClass().getSimpleName() + ":";
          out += "\n\t-messageStartTime = " + messageStartTime;
          out += "\n\t-messageEndTime = " + messageEndTime;
-         out += "\n\t-ofsChunk = " + ofsChunk;
-         out += "\n\t-lenChunk = " + lenChunk;
-         out += "\n\t-lenMessageIndexOffsets = " + lenMessageIndexOffsets;
-         out += "\n\t-messageIndexOffsets = " + (messageIndexOffsets == null ? "null" : "\n" + messageIndexOffsets.toString(indent + 1));
+         out += "\n\t-chunkOffset = " + chunkOffset;
+         out += "\n\t-chunkLength = " + chunkLength;
+         out += "\n\t-messageIndexOffsetsLength = " + messageIndexOffsetsLength;
+         //         out += "\n\t-messageIndexOffsets = " + (messageIndexOffsets == null ? "null" : "\n" + messageIndexOffsets.toString(indent + 1));
          out += "\n\t-messageIndexLength = " + messageIndexLength;
          out += "\n\t-compression = " + compression;
          out += "\n\t-compressedSize = " + compressedSize;
@@ -1953,222 +1859,41 @@ public class MCAP
       }
    }
 
-   private abstract static class KaitaiStruct implements Sizeable
+   public interface MCAPElement
    {
-      protected final FileChannel fileChannel;
-      protected long _pos;
-      protected int _length;
+      long getElementLength();
 
-      protected ByteBuffer buffer;
-
-      public KaitaiStruct(ByteBuffer buffer)
-      {
-         this(buffer, -1);
-      }
-
-      public KaitaiStruct(ByteBuffer buffer, int _length)
-      {
-         this(buffer, buffer.position(), _length);
-      }
-
-      public KaitaiStruct(ByteBuffer buffer, long _pos, int _length)
-      {
-         this.buffer = buffer;
-         fileChannel = null;
-         this._pos = _pos;
-         this._length = _length;
-         if (buffer != null)
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-      }
-
-      public KaitaiStruct(FileChannel fileChannel, long _pos, int _length)
-      {
-         this.fileChannel = fileChannel;
-         this._pos = _pos;
-         this._length = _length;
-         createBuffer(_length);
-      }
-
-      protected void createBuffer(int _length)
-      {
-         if (_length == -1)
-         {
-            buffer = null;
-         }
-         else
-         {
-            /*
-             * TODO Unclear if it is better to switch to a direct buffer or not.
-             *  While it is faster to read from a direct buffer,
-             *  it is slower to create/destroy it which can be a problem if we are reading a lot of small records.
-             */
-            // TODO Note that the ZSTD decompression requires a direct buffer.
-            buffer = ByteBuffer.allocateDirect(_length);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-         }
-      }
-
-      protected void _readIntoBuffer() throws IOException
-      {
-         if (fileChannel == null)
-         {
-            buffer.position((int) _pos);
-         }
-         else
-         {
-            fileChannel.position(_pos);
-            fileChannel.read(buffer);
-            buffer.flip();
-         }
-      }
-
-      public abstract void _read() throws IOException;
-
-      protected void setComputedLength(int computedLength)
-      {
-         if (_length == -1)
-            _length = computedLength;
-         else if (_length != computedLength)
-            throw new ValidationNotEqualError(computedLength, _length, buffer);
-      }
-
-      @Override
-      public int getItemTotalLength()
-      {
-         if (_length == -1)
-            throw new RuntimeException("Cannot get total length of an item with unknown length.");
-         return _length;
-      }
-
-      public long getPosition()
-      {
-         if (_pos == -1)
-            throw new RuntimeException("Cannot get position of an item with unknown position.");
-         return _pos;
-      }
-
-      @Override
-      public abstract String toString();
-
-      public String toString(int indent)
+      default String toString(int indent)
       {
          return indent(toString(), indent);
       }
    }
 
-   public interface Sizeable
+   public static long computeOffsetFooter(MCAPDataInput dataInput)
    {
-      int getItemTotalLength();
+      return (((((dataInput.size() - 1L) - 8L) - 20L) - 8L));
    }
 
-   public static int computeOffsetFooter(FileChannel fileChannel) throws IOException
+   public static <T extends MCAPElement> List<T> parseList(MCAPDataInput dataInput, MCAPDataReader<T> elementParser)
    {
-      return (int) (((((fileChannel.size() - 1) - 8) - 20) - 8));
+      return parseList(dataInput, elementParser, dataInput.getUnsignedInt());
    }
 
-   /**
-    * Parses a string from the buffer. The length of the string is read from the buffer as a prefixed 32-bit unsigned integer.
-    *
-    * @param buffer the buffer to read from.
-    * @return the string read from the buffer.
-    */
-   public static String parseString(ByteBuffer buffer)
+   public static <T extends MCAPElement> List<T> parseList(MCAPDataInput dataInput, MCAPDataReader<T> elementParser, long length)
    {
-      return parseString(buffer, Integer.toUnsignedLong(buffer.getInt()));
+      return parseList(dataInput, elementParser, dataInput.position(), length);
    }
 
-   /**
-    * Parses a string from the buffer. The length of the string is given as a parameter.
-    *
-    * @param buffer the buffer to read from.
-    * @param length the length in bytes of the string to read.
-    * @return the string read from the buffer.
-    */
-   public static String parseString(ByteBuffer buffer, long length)
+   public static <T extends MCAPElement> List<T> parseList(MCAPDataInput dataInput, MCAPDataReader<T> elementParser, long offset, long length)
    {
-      byte[] bytes = new byte[(int) length];
-      buffer.get(bytes);
-      return new String(bytes, StandardCharsets.UTF_8);
+      return parseList(dataInput, elementParser, offset, length, null);
    }
 
-   /**
-    * Parses a list from the buffer. The length of the list is read from the buffer as a prefixed 32-bit unsigned integer.
-    *
-    * @param buffer        the buffer to read from.
-    * @param elementParser the function to use to parse each element of the list.
-    * @param <T>           the type of the elements in the list.
-    * @return the list read from the buffer.
-    */
-   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser) throws IOException
-   {
-      return parseList(buffer, elementParser, Integer.toUnsignedLong(buffer.getInt()));
-   }
-
-   /**
-    * Parses a list from the buffer. The length of the list is given as a parameter.
-    *
-    * @param buffer        the buffer to read from.
-    * @param elementParser the function to use to parse each element of the list.
-    * @param length        the length in bytes of the list to read.
-    * @param <T>           the type of the elements in the list.
-    * @return the list read from the buffer.
-    */
-   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long length) throws IOException
-   {
-      return parseList(buffer, elementParser, buffer.position(), length);
-   }
-
-   /**
-    * Parses a list from the buffer. The length of the list is given as a parameter.
-    *
-    * @param buffer        the buffer to read from.
-    * @param elementParser the function to use to parse each element of the list.
-    * @param offset        the offset in the buffer to start reading from.
-    * @param length        the length in bytes of the list to read.
-    * @param <T>           the type of the elements in the list.
-    * @return the list read from the buffer.
-    */
-   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long offset, long length) throws IOException
-   {
-      return parseList(buffer, elementParser, offset, length, null);
-   }
-
-   public static <T extends Sizeable> List<T> parseList(ByteBuffer buffer, ByteBufferReader<T> elementParser, long offset, long length, List<T> listToPack)
-         throws IOException
-   {
-      buffer.position((int) offset);
-      int position = buffer.position();
-      long limit = position + length;
-      if (listToPack == null)
-         listToPack = new ArrayList<>();
-
-      while (position < limit)
-      {
-         buffer.position(position);
-         T parsed = elementParser.parse(buffer);
-         listToPack.add(parsed);
-         position += parsed.getItemTotalLength();
-      }
-
-      return listToPack;
-   }
-
-   public interface ByteBufferReader<T extends Sizeable>
-   {
-      T parse(ByteBuffer buffer) throws IOException;
-   }
-
-   public static <T extends Sizeable> List<T> parseList(FileChannel fileChannel, FileChannelReader<T> elementParser, long offset, long length)
-         throws IOException
-   {
-      return parseList(fileChannel, elementParser, offset, length, null);
-   }
-
-   public static <T extends Sizeable> List<T> parseList(FileChannel fileChannel,
-                                                        FileChannelReader<T> elementParser,
-                                                        long offset,
-                                                        long length,
-                                                        List<T> listToPack) throws IOException
+   public static <T extends MCAPElement> List<T> parseList(MCAPDataInput dataInput,
+                                                           MCAPDataReader<T> elementParser,
+                                                           long offset,
+                                                           long length,
+                                                           List<T> listToPack)
    {
       long position = offset;
       long limit = position + length;
@@ -2177,17 +1902,17 @@ public class MCAP
 
       while (position < limit)
       {
-         T parsed = elementParser.parse(fileChannel, position);
+         T parsed = elementParser.parse(dataInput, position);
          listToPack.add(parsed);
-         position += parsed.getItemTotalLength();
+         position += parsed.getElementLength();
       }
 
       return listToPack;
    }
 
-   public interface FileChannelReader<T extends Sizeable>
+   public interface MCAPDataReader<T extends MCAPElement>
    {
-      T parse(FileChannel fileChannel, long position) throws IOException;
+      T parse(MCAPDataInput dataInput, long position);
    }
 
    private static String indent(String stringToIndent, int indent)
@@ -2198,66 +1923,23 @@ public class MCAP
       return indentStr + stringToIndent.replace("\n", "\n" + indentStr);
    }
 
-   /**
-    * Common ancestor for all error originating from Kaitai Struct usage. Stores KSY source path,
-    * pointing to an element supposedly guilty of an error.
-    */
-   public static class KaitaiStructError extends RuntimeException
+   private static int checkPositiveInt(int value, String name)
    {
-      @Serial
-      private static final long serialVersionUID = 3448466497836212719L;
-
-      public KaitaiStructError(String msg)
-      {
-         super(msg);
-      }
+      if (value < 0)
+         throw new IllegalArgumentException(name + " must be positive. Value: " + value);
+      return value;
    }
 
-   /**
-    * Common ancestor for all validation failures. Stores pointer to KaitaiStream IO object which was
-    * involved in an error.
-    */
-   public static class ValidationFailedError extends KaitaiStructError
+   private static long checkPositiveLong(long value, String name)
    {
-      @Serial
-      private static final long serialVersionUID = 4069741066320518907L;
-
-      public ValidationFailedError(String msg, ByteBuffer buffer)
-      {
-         super("at pos " + buffer.position() + ": validation failed: " + msg);
-      }
-
-      protected static String byteArrayToHex(byte[] arr)
-      {
-         StringBuilder sb = new StringBuilder("[");
-         for (int i = 0; i < arr.length; i++)
-         {
-            if (i > 0)
-               sb.append(' ');
-            sb.append(String.format("%02x", arr[i]));
-         }
-         sb.append(']');
-         return sb.toString();
-      }
+      if (value < 0)
+         throw new IllegalArgumentException(name + " must be positive. Value: " + value);
+      return value;
    }
 
-   /**
-    * Signals validation failure: we required "actual" value to be equal to "expected", but it turned
-    * out that it's not.
-    */
-   public static class ValidationNotEqualError extends ValidationFailedError
+   private static void checkLength(long expectedLength, long actualLength)
    {
-      @Serial
-      private static final long serialVersionUID = -6127683772774212751L;
-
-      public ValidationNotEqualError(byte[] expected, byte[] actual, ByteBuffer io)
-      {
-         super("not equal, expected " + byteArrayToHex(expected) + ", but got " + byteArrayToHex(actual), io);
-      }
-
-      public ValidationNotEqualError(Object expected, Object actual, ByteBuffer io)
-      {
-         super("not equal, expected " + expected + ", but got " + actual, io);
-      }
+      if (actualLength != expectedLength)
+         throw new IllegalArgumentException("Unexpected length: expected= " + expectedLength + ", actual= " + actualLength);
    }
 }

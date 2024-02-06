@@ -230,7 +230,7 @@ public class MCAPSchema
    public static String mcapMCAPMessageToString(MCAP.Message message, MCAPSchema schema)
    {
       CDRDeserializer cdr = new CDRDeserializer();
-      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
+      cdr.initialize(message.messageBuffer(), 0, message.dataLength());
 
       String output = mcapMCAPMessageToString(cdr, schema, 0);
 

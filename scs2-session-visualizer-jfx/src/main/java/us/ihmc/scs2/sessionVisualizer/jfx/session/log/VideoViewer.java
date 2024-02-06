@@ -18,7 +18,18 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -62,19 +73,21 @@ public class VideoViewer
       videoView.setPreserveRatio(true);
       thumbnail.setFitWidth(defaultThumbnailSize);
       thumbnail.setOnMouseEntered(e ->
-      {
-         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
-                                                       new KeyValue(thumbnail.fitWidthProperty(),
-                                                                    THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize,
-                                                                    Interpolator.EASE_BOTH)));
-         timeline.playFromStart();
-      });
+                                  {
+                                     Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
+                                                                                   new KeyValue(thumbnail.fitWidthProperty(),
+                                                                                                THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize,
+                                                                                                Interpolator.EASE_BOTH)));
+                                     timeline.playFromStart();
+                                  });
       thumbnail.setOnMouseExited(e ->
-      {
-         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
-                                                       new KeyValue(thumbnail.fitWidthProperty(), defaultThumbnailSize, Interpolator.EASE_BOTH)));
-         timeline.playFromStart();
-      });
+                                 {
+                                    Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
+                                                                                  new KeyValue(thumbnail.fitWidthProperty(),
+                                                                                               defaultThumbnailSize,
+                                                                                               Interpolator.EASE_BOTH)));
+                                    timeline.playFromStart();
+                                 });
 
       thumbnail.addEventHandler(MouseEvent.MOUSE_CLICKED, e ->
       {
@@ -131,16 +144,31 @@ public class VideoViewer
       videoStatisticTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
       Background generalBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
-      Border noRightBorder = new Border(new BorderStroke(Color.BLACK, null, Color.BLACK, Color.BLACK,
-                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID,
-                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
-      Border noLeftBorder = new Border(new BorderStroke(Color.BLACK, Color.BLACK, Color.BLACK, null,
-                                       BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.SOLID, BorderStrokeStyle.NONE,
-                                       CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY));
+      Border noRightBorder = new Border(new BorderStroke(Color.BLACK,
+                                                         null,
+                                                         Color.BLACK,
+                                                         Color.BLACK,
+                                                         BorderStrokeStyle.SOLID,
+                                                         BorderStrokeStyle.NONE,
+                                                         BorderStrokeStyle.SOLID,
+                                                         BorderStrokeStyle.SOLID,
+                                                         CornerRadii.EMPTY,
+                                                         BorderWidths.DEFAULT,
+                                                         Insets.EMPTY));
+      Border noLeftBorder = new Border(new BorderStroke(Color.BLACK,
+                                                        Color.BLACK,
+                                                        Color.BLACK,
+                                                        null,
+                                                        BorderStrokeStyle.SOLID,
+                                                        BorderStrokeStyle.SOLID,
+                                                        BorderStrokeStyle.SOLID,
+                                                        BorderStrokeStyle.NONE,
+                                                        CornerRadii.EMPTY,
+                                                        BorderWidths.DEFAULT,
+                                                        Insets.EMPTY));
 
       Border generalBorder = new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT));
       Insets textInsets = new Insets(0, 2, 0, 2);
-
 
       if (LOGGER_VIDEO_DEBUG)
       {
@@ -149,7 +177,10 @@ public class VideoViewer
          videoStatisticBox.setBackground(generalBackground);
          videoStatisticBox.setBorder(generalBorder);
 
-         VBox videoStatisticLabels = new VBox(new Label("queryRobotTimestamp"), new Label("robotTimestamp"), new Label("cameraCurrentPTS"), new Label("demuxerCurrentPTS"));
+         VBox videoStatisticLabels = new VBox(new Label("queryRobotTimestamp"),
+                                              new Label("robotTimestamp"),
+                                              new Label("cameraCurrentPTS"),
+                                              new Label("demuxerCurrentPTS"));
          videoStatisticLabels.setBackground(generalBackground);
          videoStatisticLabels.setBorder(noRightBorder);
          videoStatisticLabels.setPadding(textInsets);
@@ -178,8 +209,11 @@ public class VideoViewer
             if (image == null)
                return;
             double imageRatio = image.getWidth() / image.getHeight();
-            double paneWidth = getWidth() - getPadding().getTop() - getPadding().getBottom();
-            double paneHeight = getHeight() - getPadding().getLeft() - getPadding().getRight();
+            Rectangle2D imageViewport = imageView.getViewport();
+            if (imageViewport != null)
+               imageRatio = imageViewport.getWidth() / imageViewport.getHeight();
+            double paneWidth = getWidth() - getPadding().getLeft() - getPadding().getRight();
+            double paneHeight = getHeight() - getPadding().getTop() - getPadding().getBottom();
             double width = Math.min(paneWidth, paneHeight * imageRatio);
             double height = width / imageRatio;
 
@@ -216,7 +250,7 @@ public class VideoViewer
 
          if (imageViewRootPane.get() != null)
          {
-            imageViewRootPane.get().setPadding(new Insets(16,16,16,16));
+            imageViewRootPane.get().setPadding(new Insets(16, 16, 16, 16));
 
             if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
             {

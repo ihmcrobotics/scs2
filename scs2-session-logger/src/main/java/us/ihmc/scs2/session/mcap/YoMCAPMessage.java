@@ -148,7 +148,7 @@ public final class YoMCAPMessage
       if (message.channelId() != channelId)
          throw new IllegalArgumentException("Expected channel ID: " + channelId + ", but received: " + message.channelId());
 
-      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
+      cdr.initialize(message.messageBuffer(), 0, message.dataLength());
 
       try
       {
@@ -161,7 +161,7 @@ public final class YoMCAPMessage
       }
       finally
       {
-         cdr.finalize(false);
+         cdr.finalize(true);
       }
    }
 
@@ -298,7 +298,13 @@ public final class YoMCAPMessage
             }
             else
             {
-               int size = cdr.read_sequence((elementIndex, des) -> elementDeserializer.accept(array[elementIndex], des));
+               int size = cdr.read_sequence((elementIndex, des) ->
+                                            {
+                                               if (elementIndex < length)
+                                                  elementDeserializer.accept(array[elementIndex], des);
+                                            });
+               if (size > length)
+                  LogTools.warn("Received array of size: " + size + ", but expected size: " + length + ", registry: " + registry);
                for (int i = size; i < length; i++)
                   elementResetter.accept(array[i]);
             }

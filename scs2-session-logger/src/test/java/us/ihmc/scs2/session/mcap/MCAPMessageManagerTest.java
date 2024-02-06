@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MCAPChunkManagerTest
+public class MCAPMessageManagerTest
 {
 
    public static final int ITERATIONS = 1000;
@@ -25,7 +25,7 @@ public class MCAPChunkManagerTest
 
          long step = TimeUnit.MILLISECONDS.toNanos(random.nextInt(100));
 
-         long roundedValue = MCAPChunkManager.round(rawValue, step);
+         long roundedValue = MCAPMessageManager.round(rawValue, step);
 
          if (step <= 0)
          {

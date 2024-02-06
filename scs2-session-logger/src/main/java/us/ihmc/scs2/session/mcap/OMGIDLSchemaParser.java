@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -15,6 +16,7 @@ import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser.Enum_typeContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,14 +26,19 @@ public class OMGIDLSchemaParser
 {
    public static MCAPSchema loadSchema(MCAP.Schema mcapSchema) throws IOException
    {
-      return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
+      return loadSchema(mcapSchema.name(), mcapSchema.id(), new ByteBufferBackedInputStream(mcapSchema.data()));
    }
 
    public static MCAPSchema loadSchema(String name, int id, byte[] data) throws IOException
    {
+      return loadSchema(name, id, new ByteArrayInputStream(data));
+   }
+
+   public static MCAPSchema loadSchema(String name, int id, InputStream is) throws IOException
+   {
       MCAPSchema schema = new MCAPSchema(name, id, new ArrayList<>(), new HashMap<>());
 
-      CharStream bytesAsChar = CharStreams.fromStream(new ByteArrayInputStream(data));
+      CharStream bytesAsChar = CharStreams.fromStream(is);
 
       IDLLexer lexer = new IDLLexer(bytesAsChar);
       CommonTokenStream tokens = new CommonTokenStream(lexer);

@@ -1,9 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -21,6 +17,10 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
 public class MenuTools
 {
    /**
@@ -31,7 +31,7 @@ public class MenuTools
     * method helps addressing that issue as well as incorporating canceling and validating the edits
     * typed in the text field.
     * </p>
-    * 
+    *
     * @param owner
     * @param textField
     */
@@ -64,7 +64,6 @@ public class MenuTools
                   textField.cancelEdit();
                }
             }
-
          }
 
          if (inputEvent.getEventType() == KeyEvent.KEY_PRESSED)
@@ -120,17 +119,17 @@ public class MenuTools
    @SafeVarargs
    public static <T extends Node> void setupContextMenu(T owner, BiFunction<T, MouseEvent, MenuItem>... menuItemFactories)
    {
-      ObjectProperty<ContextMenu> activeContexMenu = new SimpleObjectProperty<>(owner, "activeContextMenu", null);
+      ObjectProperty<ContextMenu> activeContextMenu = new SimpleObjectProperty<>(owner, "activeContextMenu", null);
 
       owner.addEventHandler(MouseEvent.MOUSE_RELEASED, e ->
       {
          if (e.getButton() != MouseButton.SECONDARY || !e.isStillSincePress())
             return;
 
-         if (activeContexMenu.get() != null)
+         if (activeContextMenu.get() != null)
          {
-            activeContexMenu.get().hide();
-            activeContexMenu.set(null);
+            activeContextMenu.get().hide();
+            activeContextMenu.set(null);
          }
 
          MenuItem[] menuItems = Stream.of(menuItemFactories).map(factory -> factory.apply(owner, e)).filter(item -> item != null).toArray(MenuItem[]::new);
@@ -142,12 +141,12 @@ public class MenuTools
          contextMenu.show(owner, e.getScreenX(), e.getScreenY());
          contextMenu.setAutoFix(true);
          contextMenu.setAutoHide(true);
-         activeContexMenu.set(contextMenu);
+         activeContextMenu.set(contextMenu);
 
          owner.addEventFilter(MouseEvent.MOUSE_PRESSED, e2 ->
          {
             contextMenu.hide();
-            activeContexMenu.set(null);
+            activeContextMenu.set(null);
          });
 
          e.consume();
