@@ -1,10 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.DoubleUnaryOperator;
-import java.util.function.Predicate;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
@@ -12,6 +7,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
@@ -26,6 +22,11 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.Predicate;
 
 /**
  * This class handles the control in position of the camera's focal point.
@@ -88,7 +89,9 @@ public class CameraFocalPointHandler
    public enum TrackingTargetType
    {
       Disabled, Node, YoCoordinates
-   };
+   }
+
+   ;
 
    private final ObjectProperty<TrackingTargetType> targetType = new SimpleObjectProperty<>(this, "", TrackingTargetType.Disabled);
    private final ObjectProperty<Tuple3DProperty> coordinatesTracked = new SimpleObjectProperty<>(this, "coordinatesTracked", null);
@@ -114,53 +117,62 @@ public class CameraFocalPointHandler
       down = EuclidCoreFactories.newNegativeLinkedVector3D(up);
 
       targetType.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == TrackingTargetType.Disabled)
-         {
-            offsetTranslation.set(trackingTranslate);
-            trackingTranslate.setToZero();
-         }
-      });
+                             {
+                                if (newValue == TrackingTargetType.Disabled)
+                                {
+                                   offsetTranslation.set(trackingTranslate);
+                                   trackingTranslate.setToZero();
+                                }
+                             });
 
       nodeTracked.addListener((o, oldValue, newValue) ->
+                              {
+                                 if (oldValue != null)
+                                    oldValue.localToSceneTransformProperty().removeListener(nodeTrackingListener);
+
+                                 if (newValue != null)
+                                 {
+                                    targetType.set(TrackingTargetType.Node);
+                                    // Reset the focus translation whenever the target gets updated
+                                    offsetTranslation.setToZero();
+
+                                    newValue.localToSceneTransformProperty().addListener(nodeTrackingListener);
+                                    nodeTrackingListener.changed(null, null, newValue.getLocalToSceneTransform());
+                                 }
+                                 else if (targetType.get() == TrackingTargetType.Node)
+                                 {
+                                    disableTracking();
+                                 }
+                              });
+
+      coordinatesTracked.addListener(new ChangeListener<>()
       {
-         if (oldValue != null)
-            oldValue.localToSceneTransformProperty().removeListener(nodeTrackingListener);
+         private final ChangeListener<Number> trackingTranslateUpdater = (o, oldValue, newValue) -> trackingTranslate.set(coordinatesTracked.get());
 
-         if (newValue != null)
+         @Override
+         public void changed(ObservableValue<? extends Tuple3DProperty> o, Tuple3DProperty oldValue, Tuple3DProperty newValue)
          {
-            targetType.set(TrackingTargetType.Node);
-            // Reset the focus translation whenever the target gets updated
-            offsetTranslation.setToZero();
+            if (newValue != null)
+            {
+               targetType.set(TrackingTargetType.YoCoordinates);
+               // Reset the focus translation whenever the target gets updated
+               offsetTranslation.setToZero();
+               newValue.xProperty().addListener(trackingTranslateUpdater);
+               newValue.yProperty().addListener(trackingTranslateUpdater);
+               newValue.zProperty().addListener(trackingTranslateUpdater);
+            }
+            else if (targetType.get() == TrackingTargetType.YoCoordinates)
+            {
+               CameraFocalPointHandler.this.disableTracking();
+            }
 
-            newValue.localToSceneTransformProperty().addListener(nodeTrackingListener);
-            nodeTrackingListener.changed(null, null, newValue.getLocalToSceneTransform());
+            if (oldValue != null)
+            {
+               oldValue.xProperty().removeListener(trackingTranslateUpdater);
+               oldValue.yProperty().removeListener(trackingTranslateUpdater);
+               oldValue.zProperty().removeListener(trackingTranslateUpdater);
+            }
          }
-         else if (targetType.get() == TrackingTargetType.Node)
-         {
-            disableTracking();
-         }
-      });
-
-      coordinatesTracked.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue != null)
-         {
-            targetType.set(TrackingTargetType.YoCoordinates);
-            // Reset the focus translation whenever the target gets updated
-            offsetTranslation.setToZero();
-         }
-         else if (targetType.get() == TrackingTargetType.YoCoordinates)
-         {
-            disableTracking();
-         }
-      });
-
-      updateTasks.add(() ->
-      {
-         Tuple3DProperty tuple = coordinatesTracked.get();
-         if (tuple != null && targetType.get() == TrackingTargetType.YoCoordinates)
-            trackingTranslate.set(tuple.toPoint3DInWorld());
       });
 
       focalPointTranslation.xProperty().bind(trackingTranslate.xProperty().add(offsetTranslation.xProperty()));
@@ -180,6 +192,7 @@ public class CameraFocalPointHandler
 
    public void update()
    {
+
       for (int i = 0; i < updateTasks.size(); i++)
       {
          updateTasks.get(i).run();
@@ -421,8 +434,8 @@ public class CameraFocalPointHandler
 
    /**
     * Gets the translation that can be set to change the focal point position.
-    * 
-    * @return
+    *
+    * @return the translation that can be set to change the focal point position.
     */
    public TranslateSCS2 getOffsetTranslation()
    {
