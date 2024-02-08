@@ -28,30 +28,34 @@ public class SessionProperties
     */
    private final long sessionDTNanoseconds;
    /**
-    * The number of times {@link #runTick()} should be called before saving the {@link YoVariable} data
+    * The number of times {@link Session#runTick()} should be called before saving the {@link YoVariable} data
     * into the buffer.
     * <p>
     * A larger value allows to store data over longer period of time.
     * </p>
     */
    private final int bufferRecordTickPeriod;
+   /** The maximum duration in nanoseconds the session is allowed to run for. */
+   private final long runMaxDuration;
 
    public SessionProperties(SessionMode activeMode,
                             boolean runAtRealTimeRate,
                             double playbackRealTimeRate,
                             long sessionDTNanoseconds,
-                            int bufferRecordTickPeriod)
+                            int bufferRecordTickPeriod,
+                            long runMaxDuration)
    {
       this.activeMode = activeMode;
       this.runAtRealTimeRate = runAtRealTimeRate;
       this.playbackRealTimeRate = playbackRealTimeRate;
       this.sessionDTNanoseconds = sessionDTNanoseconds;
       this.bufferRecordTickPeriod = bufferRecordTickPeriod;
+      this.runMaxDuration = runMaxDuration;
    }
 
    /**
     * Gets the current mode the session is running, see {@link SessionMode}.
-    * 
+    *
     * @return the active mode.
     * @see SessionMode
     */
@@ -62,9 +66,9 @@ public class SessionProperties
 
    /**
     * Whether the {@link SessionMode#RUNNING} mode should be capped to run no faster that real-time.
-    * 
+    *
     * @return {@code true} if the running mode is capped to real-time rate, {@code false} if it is
-    *         executes as frequently as possible.
+    *       executes as frequently as possible.
     */
    public boolean isRunAtRealTimeRate()
    {
@@ -73,7 +77,7 @@ public class SessionProperties
 
    /**
     * The speed at which the {@link SessionMode#PLAYBACK} should play back the buffered data.
-    * 
+    *
     * @return the desired real-time factor for playback speed.
     */
    public double getPlaybackRealTimeRate()
@@ -89,7 +93,7 @@ public class SessionProperties
     * <li>when working with a remote session, this corresponds to the period at which the server is
     * streaming data.
     * </ul>
-    * 
+    *
     * @return the session DT in nanoseconds.
     */
    public long getSessionDTNanoseconds()
@@ -98,16 +102,26 @@ public class SessionProperties
    }
 
    /**
-    * Gets the number of times {@link #runTick()} should be called before saving the {@link YoVariable}
+    * Gets the number of times {@link Session#runTick()} should be called before saving the {@link YoVariable}
     * data into the buffer.
     * <p>
     * A larger value allows to store data over longer period of time.
     * </p>
-    * 
+    *
     * @return the period, in number of run ticks, that the data is stored in the buffer.
     */
    public int getBufferRecordTickPeriod()
    {
       return bufferRecordTickPeriod;
+   }
+
+   /**
+    * Gets the maximum duration in nanoseconds the session is allowed to run for.
+    *
+    * @return the maximum duration in nanoseconds.
+    */
+   public long getRunMaxDuration()
+   {
+      return runMaxDuration;
    }
 }

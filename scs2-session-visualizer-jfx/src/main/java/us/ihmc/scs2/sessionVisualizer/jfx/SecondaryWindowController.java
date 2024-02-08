@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -21,6 +20,7 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
@@ -268,7 +268,7 @@ public class SecondaryWindowController implements VisualizerController
          if (controller == null)
             return null;
 
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+         FontIcon exportIcon = new FontIcon();
          exportIcon.getStyleClass().add(("save-icon-view"));
          MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
          menuItem.setOnAction(e ->
@@ -286,7 +286,7 @@ public class SecondaryWindowController implements VisualizerController
    {
       return tabPane ->
       {
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+         FontIcon exportIcon = new FontIcon();
          exportIcon.getStyleClass().add(("save-icon-view"));
          MenuItem menuItem = new MenuItem("Export all tabs...", exportIcon);
          menuItem.setOnAction(e ->
@@ -304,7 +304,7 @@ public class SecondaryWindowController implements VisualizerController
    {
       return tabPane ->
       {
-         FontAwesomeIconView importIcon = new FontAwesomeIconView();
+         FontIcon importIcon = new FontIcon();
          importIcon.getStyleClass().add(("load-icon-view"));
          MenuItem menuItem = new MenuItem("Import tab(s)...", importIcon);
          menuItem.setOnAction(e ->
