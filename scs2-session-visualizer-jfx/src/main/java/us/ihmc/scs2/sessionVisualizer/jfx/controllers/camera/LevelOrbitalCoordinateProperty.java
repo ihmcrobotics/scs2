@@ -1,15 +1,15 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
-import static us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition.YoLevelOrbital;
-import static us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition.YoLevelOrbitalIdentifiers;
-
-import java.util.Objects;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
+
+import java.util.Objects;
+
+import static us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition.YoLevelOrbital;
+import static us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition.YoLevelOrbitalIdentifiers;
 
 public class LevelOrbitalCoordinateProperty extends CompositeProperty
 {
@@ -23,7 +23,7 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
       super(YoLevelOrbital, YoLevelOrbitalIdentifiers, distance, longitude, height);
    }
 
-   public LevelOrbitalCoordinateProperty(ReferenceFrame referenceFrame, double distance, double longitude, double height)
+   public LevelOrbitalCoordinateProperty(ReferenceFrameWrapper referenceFrame, double distance, double longitude, double height)
    {
       super(YoLevelOrbital, YoLevelOrbitalIdentifiers, referenceFrame, distance, longitude, height);
    }
@@ -33,7 +33,7 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
       super(YoLevelOrbital, YoLevelOrbitalIdentifiers, distanceLongitudeHeightProperties);
    }
 
-   public LevelOrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty[] distanceLongitudeHeightProperties)
+   public LevelOrbitalCoordinateProperty(Property<ReferenceFrameWrapper> referenceFrameProperty, DoubleProperty[] distanceLongitudeHeightProperties)
    {
       super(YoLevelOrbital, YoLevelOrbitalIdentifiers, referenceFrameProperty, distanceLongitudeHeightProperties);
    }
@@ -43,10 +43,10 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
       super(YoLevelOrbital, YoLevelOrbitalIdentifiers, distanceProperty, longitudeProperty, heightProperty);
    }
 
-   public LevelOrbitalCoordinateProperty(Property<ReferenceFrame> referenceFrameProperty,
-                                               DoubleProperty distanceProperty,
-                                               DoubleProperty longitudeProperty,
-                                               DoubleProperty heightProperty)
+   public LevelOrbitalCoordinateProperty(Property<ReferenceFrameWrapper> referenceFrameProperty,
+                                         DoubleProperty distanceProperty,
+                                         DoubleProperty longitudeProperty,
+                                         DoubleProperty heightProperty)
    {
       super(YoLevelOrbital, YoLevelOrbitalIdentifiers, referenceFrameProperty, distanceProperty, longitudeProperty, heightProperty);
    }
@@ -92,9 +92,10 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
       setComponentValues(distance, longitude, height);
    }
 
-   public void set(ReferenceFrame referenceFrame, double distance, double longitude, double height)
+   public void set(ReferenceFrameWrapper referenceFrame, double distance, double longitude, double height)
    {
-      set(referenceFrame, distance, longitude, height);
+      setReferenceFrame(referenceFrame);
+      setComponentValues(distance, longitude, height);
    }
 
    public void set(DoubleProperty distanceProperty, DoubleProperty longitudeProperty, DoubleProperty heightProperty)
@@ -102,12 +103,13 @@ public class LevelOrbitalCoordinateProperty extends CompositeProperty
       setComponentValueProperties(distanceProperty, longitudeProperty, heightProperty);
    }
 
-   public void set(Property<ReferenceFrame> referenceFrameProperty,
+   public void set(Property<ReferenceFrameWrapper> referenceFrameProperty,
                    DoubleProperty distanceProperty,
                    DoubleProperty longitudeProperty,
                    DoubleProperty heightProperty)
    {
-      set(referenceFrameProperty, distanceProperty, longitudeProperty, heightProperty);
+      setReferenceFrameProperty(referenceFrameProperty);
+      setComponentValueProperties(distanceProperty, longitudeProperty, heightProperty);
    }
 
    @Override

@@ -18,7 +18,12 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
-import javafx.scene.transform.*;
+import javafx.scene.transform.Affine;
+import javafx.scene.transform.NonInvertibleTransformException;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Transform;
+import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
@@ -31,8 +36,14 @@ import us.ihmc.euclid.matrix.interfaces.RotationMatrixReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
-import us.ihmc.euclid.tuple3D.interfaces.*;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
@@ -476,20 +487,27 @@ public class JavaFXMissingTools
                           jfxTransform.getTz());
    }
 
-   public static void toJavaFX(RigidBodyTransform euclidTransform, javafx.scene.transform.Affine jfxTransform)
+   public static void toJavaFX(RigidBodyTransformReadOnly euclidTransform, javafx.scene.transform.Affine jfxTransform)
    {
-      jfxTransform.setToTransform(euclidTransform.getM00(),
-                                  euclidTransform.getM01(),
-                                  euclidTransform.getM02(),
-                                  euclidTransform.getM03(),
-                                  euclidTransform.getM10(),
-                                  euclidTransform.getM11(),
-                                  euclidTransform.getM12(),
-                                  euclidTransform.getM13(),
-                                  euclidTransform.getM20(),
-                                  euclidTransform.getM21(),
-                                  euclidTransform.getM22(),
-                                  euclidTransform.getM23());
+      if (euclidTransform instanceof RigidBodyTransform matrixTransform)
+      {
+         jfxTransform.setToTransform(matrixTransform.getM00(),
+                                     matrixTransform.getM01(),
+                                     matrixTransform.getM02(),
+                                     matrixTransform.getM03(),
+                                     matrixTransform.getM10(),
+                                     matrixTransform.getM11(),
+                                     matrixTransform.getM12(),
+                                     matrixTransform.getM13(),
+                                     matrixTransform.getM20(),
+                                     matrixTransform.getM21(),
+                                     matrixTransform.getM22(),
+                                     matrixTransform.getM23());
+      }
+      else
+      {
+         toJavaFX(new RigidBodyTransform(euclidTransform), jfxTransform);
+      }
    }
 
    public static javafx.geometry.Point3D toJavaFX(Tuple3DReadOnly euclidInput)

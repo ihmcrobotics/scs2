@@ -4,7 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.transform.Affine;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
@@ -30,7 +30,7 @@ public class YoBoxFX3D extends YoGraphicFX3D
       boxNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
-   public YoBoxFX3D(ReferenceFrame worldFrame)
+   public YoBoxFX3D(ReferenceFrameWrapper worldFrame)
    {
       this();
       position.setReferenceFrame(worldFrame);
