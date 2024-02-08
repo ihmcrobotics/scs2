@@ -1,105 +1,105 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
 <?import de.jensd.fx.glyphs.octicons.OctIconView?>
-<?import java.lang.String?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuItem?>
-
-<Menu text="File" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.FileMenuController">
-   <items>
-      <MenuItem fx:id="takeSnapshotMenuItem" onAction="#requestSnapshot" text="Take snapshot...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="snapshot-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="exportVideoMenuItem" onAction="#requestVideo" text="Export video...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="video-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="loadConfigurationMenuItem" onAction="#loadConfiguration" text="Load configuration...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="load-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="loadDefaultConfigurationMenuItem" onAction="#loadDefaultConfiguration" text="Load default configuration">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="load-default-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="saveConfigurationMenuItem" onAction="#saveConfiguration" text="Save configuration...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="save-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="saveDefaultConfigurationMenuItem" onAction="#saveDefaultConfiguration" text="Save to default configuration">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="save-default-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="exportDataMenuItem" onAction="#exportData" text="Export data...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="export-data-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="importDataMenuItem" onAction="#importData" text="Import data...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="import-data-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem fx:id="closeMenuItem" onAction="#close" text="Close">
-         <graphic>
-            <OctIconView>
-               <styleClass>
-                  <String fx:value="close-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </OctIconView>
-         </graphic>
-      </MenuItem>
-   </items>
-   <graphic>
-      <FontAwesomeIconView glyphName="FILE_ALT" />
-   </graphic>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<Menu text="File" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.FileMenuController">
+    <items>
+        <MenuItem fx:id="takeSnapshotMenuItem" onAction="#requestSnapshot" text="Take snapshot...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="snapshot-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="exportVideoMenuItem" onAction="#requestVideo" text="Export video...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="video-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="loadConfigurationMenuItem" onAction="#loadConfiguration" text="Load configuration...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="load-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="loadDefaultConfigurationMenuItem" onAction="#loadDefaultConfiguration" text="Load default configuration">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="load-default-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="saveConfigurationMenuItem" onAction="#saveConfiguration" text="Save configuration...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="save-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="saveDefaultConfigurationMenuItem" onAction="#saveDefaultConfiguration" text="Save to default configuration">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="save-default-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="exportDataMenuItem" onAction="#exportData" text="Export data...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="export-data-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="importDataMenuItem" onAction="#importData" text="Import data...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="import-data-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem fx:id="closeMenuItem" onAction="#close" text="Close">
+            <graphic>
+                <OctIconView>
+                    <styleClass>
+                        <String fx:value="close-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </OctIconView>
+            </graphic>
+        </MenuItem>
+    </items>
+    <graphic>
+        <FontIcon iconLiteral="fa-file-o"/>
+    </graphic>
 </Menu>

@@ -1,7 +1,5 @@
 package us.ihmc.scs2.session;
 
-import java.awt.image.BufferedImage;
-
 import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.messager.MessagerAPIFactory.Category;
 import us.ihmc.messager.MessagerAPIFactory.CategoryTheme;
@@ -10,6 +8,8 @@ import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.MessagerAPIFactory.TopicTheme;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
+
+import java.awt.image.BufferedImage;
 
 public class SessionMessagerAPI
 {
@@ -33,6 +33,7 @@ public class SessionMessagerAPI
    private static final CategoryTheme Equation = apiFactory.createCategoryTheme("Equation");
 
    private static final TopicTheme RealTimeRate = apiFactory.createTopicTheme("RealTimeRate");
+   private static final TopicTheme MaxDuration = apiFactory.createTopicTheme("MaxDuration");
    private static final TopicTheme Period = apiFactory.createTypedTopicTheme("Period");
    private static final TopicTheme State = apiFactory.createTypedTopicTheme("State");
    private static final TopicTheme Mode = apiFactory.createTypedTopicTheme("Mode");
@@ -48,6 +49,8 @@ public class SessionMessagerAPI
 
    public static final Topic<Boolean> RunAtRealTimeRate = root.child(Session).child(Run).topic(RealTimeRate);
    public static final Topic<Double> PlaybackRealTimeRate = root.child(Session).child(Playback).topic(RealTimeRate);
+
+   public static final Topic<Long> RunMaxDuration = root.child(Session).child(Run).topic(MaxDuration);
 
    public static final Topic<SessionDataExportRequest> SessionDataExportRequest = root.child(Session).child(Export).topic(Data);
    public static final Topic<SessionRobotDefinitionListChange> SessionRobotDefinitionListChangeRequest = root.child(Session)

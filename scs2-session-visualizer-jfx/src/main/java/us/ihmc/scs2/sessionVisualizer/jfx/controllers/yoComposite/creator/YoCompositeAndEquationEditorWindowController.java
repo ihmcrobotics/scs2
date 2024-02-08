@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -10,7 +9,11 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
@@ -23,6 +26,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
@@ -87,7 +91,7 @@ public class YoCompositeAndEquationEditorWindowController
 
       Function<ListView<YoComposite>, MenuItem> newYoVariable = listView ->
       {
-         FontAwesomeIconView addAfterIcon = new FontAwesomeIconView();
+         FontIcon addAfterIcon = new FontIcon();
          addAfterIcon.getStyleClass().add("add-icon-view");
          MenuItem menuItem = new MenuItem("New YoComposite", addAfterIcon);
          menuItem.setOnAction(e -> newYoComposite());
@@ -95,7 +99,7 @@ public class YoCompositeAndEquationEditorWindowController
       };
       Function<ListView<YoComposite>, MenuItem> deleteYoVariable = listView ->
       {
-         FontAwesomeIconView removeIcon = new FontAwesomeIconView();
+         FontIcon removeIcon = new FontIcon();
          removeIcon.getStyleClass().add("remove-icon-view");
          MenuItem menuItem = new MenuItem("Delete YoComposite", removeIcon);
          menuItem.setOnAction(e -> deleteYoComposite(listView.getSelectionModel().getSelectedItem()));

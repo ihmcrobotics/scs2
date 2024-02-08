@@ -1,14 +1,14 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
 
 public class SessionSimpleControlsController implements VisualizerController
 {
@@ -18,7 +18,7 @@ public class SessionSimpleControlsController implements VisualizerController
    @FXML
    private HBox controlsHBox;
    @FXML
-   private FontAwesomeIconView runningIconView, playbackIconView, pauseIconView;
+   private Node runningIconView, playbackIconView, pauseIconView;
 
    public SessionSimpleControlsController()
    {

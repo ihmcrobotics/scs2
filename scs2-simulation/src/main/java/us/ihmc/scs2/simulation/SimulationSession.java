@@ -1,18 +1,5 @@
 package us.ihmc.scs2.simulation;
 
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
@@ -42,6 +29,19 @@ import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor.CameraDefinitionCon
 import us.ihmc.scs2.simulation.robot.sensors.SimCameraSensor.CameraFrameConsumer;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
+
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 public class SimulationSession extends Session
 {
@@ -222,12 +222,12 @@ public class SimulationSession extends Session
                                                                         .get(message.getSensorName());
 
          cameraBroadcastExecutor.execute(() ->
-         {
-            for (CameraFrameConsumer consumer : cameraSensor.getCameraFrameConsumers())
-            {
-               consumer.nextFrame(timestamp, message.getMessageContent());
-            }
-         });
+                                         {
+                                            for (CameraFrameConsumer consumer : cameraSensor.getCameraFrameConsumers())
+                                            {
+                                               consumer.nextFrame(timestamp, message.getMessageContent());
+                                            }
+                                         });
       };
       messager.addTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener);
       cleanupActions.add(() -> messager.removeTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener));
@@ -457,28 +457,17 @@ public class SimulationSession extends Session
          if (getActiveMode() == SessionMode.RUNNING)
             setSessionMode(SessionMode.PAUSE);
 
+         submitRunMaxDuration(duration == Double.POSITIVE_INFINITY ? -1L : (long) (duration * 1.0e9));
+
          SessionModeTransition transition;
 
-         if (duration == Double.POSITIVE_INFINITY)
+         if (terminalConditions.isEmpty())
          {
-            if (terminalConditions.isEmpty())
-            {
-               transition = null;
-            }
-            else
-            {
-               BooleanSupplier terminalCondition = () -> testTerminalConditions() != null;
-               transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
-            }
+            transition = null;
          }
          else
          {
-            double startTime = time.getValue();
-            BooleanSupplier terminalCondition;
-            if (terminalConditions.isEmpty())
-               terminalCondition = () -> time.getValue() - startTime >= duration;
-            else
-               terminalCondition = () -> time.getValue() - startTime >= duration || testTerminalConditions() != null;
+            BooleanSupplier terminalCondition = () -> testTerminalConditions() != null;
             transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
          }
 
@@ -492,18 +481,21 @@ public class SimulationSession extends Session
          if (getActiveMode() == SessionMode.RUNNING)
             setSessionMode(SessionMode.PAUSE);
 
-         BooleanSupplier terminalCondition = new BooleanSupplier()
-         {
-            private int tickCounter = 0;
+         submitRunMaxDuration(numberOfTicks * getSessionDTNanoseconds());
 
-            @Override
-            public boolean getAsBoolean()
-            {
-               tickCounter++;
-               return tickCounter >= numberOfTicks || testTerminalConditions() != null;
-            }
-         };
-         setSessionMode(SessionMode.RUNNING, SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE));
+         SessionModeTransition transition;
+
+         if (terminalConditions.isEmpty())
+         {
+            transition = null;
+         }
+         else
+         {
+            BooleanSupplier terminalCondition = () -> testTerminalConditions() != null;
+            transition = SessionModeTransition.newTransition(terminalCondition, SessionMode.PAUSE);
+         }
+
+         setSessionMode(SessionMode.RUNNING, transition);
       }
 
       /** {@inheritDoc} */
@@ -522,6 +514,8 @@ public class SimulationSession extends Session
          }
 
          SessionMode activeModeInitialValue = getActiveMode();
+         long maxDurationInitialValue = getRunMaxDuration();
+         submitRunMaxDuration(-1L); // Make sure the max duration does not interfere with the number of ticks.
 
          try
          {
@@ -586,6 +580,7 @@ public class SimulationSession extends Session
          {
             // This ensures that the controller is being pause.
             physicsEngine.pause();
+            submitRunMaxDuration(maxDurationInitialValue); // Restore the max duration.
 
             if (sessionStartedInitialValue)
                startSessionThread();

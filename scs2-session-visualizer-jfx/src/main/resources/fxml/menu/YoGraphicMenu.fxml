@@ -1,60 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuItem?>
-
-<Menu text="YoGraphic" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoGraphicMenuController">
-   <items>
-      <CheckMenuItem fx:id="overheadPlotterMenuItem" text="Overhead Plotter" />
-      <MenuItem onAction="#openPlotter2DOptions" text="Plotter options...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="properties-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#loadYoGraphic" text="Load YoGraphic...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="load-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#saveYoGraphic" text="Save YoGraphic...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="save-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#openYoGraphicEditor" text="YoGraphic properties...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="properties-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <CheckMenuItem fx:id="showRobotMenuItem" text="Show Robot" selected="true" />
-      <CheckMenuItem fx:id="enableWireframeRobotModeMenuItem" text="Enable Wireframe Robot Mode" selected="false" />
-      <CheckMenuItem fx:id="showTerrainMenuItem" text="Show Terrain" selected="true" />
-      <CheckMenuItem fx:id="enableWireframeTerrainModeMenuItem" text="Enable Wireframe Terrain Mode" selected="false" />
-   </items>
-   <graphic>
-      <FontAwesomeIconView glyphName="CUBES" />
-   </graphic>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<Menu text="YoGraphic" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoGraphicMenuController">
+    <items>
+        <CheckMenuItem fx:id="overheadPlotterMenuItem" text="Overhead Plotter"/>
+        <MenuItem onAction="#openPlotter2DOptions" text="Plotter options...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="properties-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#loadYoGraphic" text="Load YoGraphic...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="load-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#saveYoGraphic" text="Save YoGraphic...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="save-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#openYoGraphicEditor" text="YoGraphic properties...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="properties-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <CheckMenuItem fx:id="showRobotMenuItem" text="Show Robot" selected="true"/>
+        <CheckMenuItem fx:id="enableWireframeRobotModeMenuItem" text="Enable Wireframe Robot Mode" selected="false"/>
+        <CheckMenuItem fx:id="showTerrainMenuItem" text="Show Terrain" selected="true"/>
+        <CheckMenuItem fx:id="enableWireframeTerrainModeMenuItem" text="Enable Wireframe Terrain Mode" selected="false"/>
+    </items>
+    <graphic>
+        <FontIcon iconLiteral="fa-cubes"/>
+    </graphic>
 </Menu>

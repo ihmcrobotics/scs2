@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
@@ -9,6 +8,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
@@ -35,7 +35,7 @@ public class SessionAdvancedControlsController implements VisualizerController
    @FXML
    private Button previousKeyFrameButton, nextKeyFrameButton;
    @FXML
-   private FontAwesomeIconView runningIconView, playbackIconView, pauseIconView;
+   private Node runningIconView, playbackIconView, pauseIconView;
 
    private Property<YoBufferPropertiesReadOnly> bufferProperties;
 
@@ -62,11 +62,11 @@ public class SessionAdvancedControlsController implements VisualizerController
 
       ReadOnlyObjectProperty<int[]> keyFrameIndicesProperty = toolkit.getKeyFrameManager().keyFrameIndicesProperty();
       keyFrameIndicesProperty.addListener((o, oldValue, newValue) ->
-      {
-         boolean disableKeyFrameButtons = newValue == null || newValue.length == 0;
-         previousKeyFrameButton.setDisable(disableKeyFrameButtons);
-         nextKeyFrameButton.setDisable(disableKeyFrameButtons);
-      });
+                                          {
+                                             boolean disableKeyFrameButtons = newValue == null || newValue.length == 0;
+                                             previousKeyFrameButton.setDisable(disableKeyFrameButtons);
+                                             nextKeyFrameButton.setDisable(disableKeyFrameButtons);
+                                          });
       boolean disableKeyFrameButtons = keyFrameIndicesProperty.get() == null || keyFrameIndicesProperty.get().length == 0;
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
@@ -77,26 +77,26 @@ public class SessionAdvancedControlsController implements VisualizerController
    public static void setupMainControlsActiveMode(Object bean,
                                                   JavaFXMessager messager,
                                                   SessionVisualizerTopics topics,
-                                                  FontAwesomeIconView runningIconView,
-                                                  FontAwesomeIconView playbackIconView,
-                                                  FontAwesomeIconView pauseIconView)
+                                                  Node runningIconView,
+                                                  Node playbackIconView,
+                                                  Node pauseIconView)
    {
       Property<SessionState> sessionCurrentStateProperty = messager.createPropertyInput(topics.getSessionCurrentState(), null);
       Property<SessionMode> sessionCurrentModeProperty = messager.createPropertyInput(topics.getSessionCurrentMode(), null);
 
-      BooleanProperty isRunningActive = new SimpleBooleanProperty(runningIconView, "isRunningActive", false);
-      BooleanProperty isPlaybackActive = new SimpleBooleanProperty(runningIconView, "isPlaybackActive", false);
-      BooleanProperty isPauseActive = new SimpleBooleanProperty(runningIconView, "isPauseActive", false);
+      BooleanProperty isRunningActive = new SimpleBooleanProperty(bean, "isRunningActive", false);
+      BooleanProperty isPlaybackActive = new SimpleBooleanProperty(bean, "isPlaybackActive", false);
+      BooleanProperty isPauseActive = new SimpleBooleanProperty(bean, "isPauseActive", false);
 
       sessionCurrentStateProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == SessionState.INACTIVE)
-         {
-            isRunningActive.set(false);
-            isPlaybackActive.set(false);
-            isPauseActive.set(false);
-         }
-      });
+                                              {
+                                                 if (newValue == SessionState.INACTIVE)
+                                                 {
+                                                    isRunningActive.set(false);
+                                                    isPlaybackActive.set(false);
+                                                    isPauseActive.set(false);
+                                                 }
+                                              });
 
       ChangeListener<SessionMode> listener = (o, oldValue, newValue) ->
       {
@@ -113,7 +113,7 @@ public class SessionAdvancedControlsController implements VisualizerController
       setupActiveMode(isPauseActive, pauseIconView, ACTIVE_MODE, INACTIVE_MODE);
    }
 
-   public static void setupActiveMode(ObservableBooleanValue observableActive, FontAwesomeIconView iconView, String activeStyleClass, String inactiveStyleClass)
+   public static void setupActiveMode(ObservableBooleanValue observableActive, Node iconView, String activeStyleClass, String inactiveStyleClass)
    {
       InvalidationListener listener = observable ->
       {

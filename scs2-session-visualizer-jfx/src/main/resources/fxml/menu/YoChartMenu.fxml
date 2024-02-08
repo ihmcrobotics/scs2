@@ -1,44 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuItem?>
-
-<Menu text="YoChart" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoChartMenuController">
-   <items>
-      <MenuItem onAction="#loadChartGroup" text="Load chart configuration...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="load-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#saveChartGroup" text="Save chart configuration...">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="save-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#newChartWindow" text="New chart window">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="new-chart-window-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-   </items>
-   <graphic>
-      <FontAwesomeIconView glyphName="AREA_CHART" />
-   </graphic>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<Menu text="YoChart" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoChartMenuController">
+    <items>
+        <MenuItem onAction="#loadChartGroup" text="Load chart configuration...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="load-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#saveChartGroup" text="Save chart configuration...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="save-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#newChartWindow" text="New chart window">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="new-chart-window-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+    </items>
+    <graphic>
+        <FontIcon iconLiteral="fa-area-chart"/>
+    </graphic>
 </Menu>

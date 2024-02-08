@@ -1,64 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.jfoenix.controls.JFXButton?>
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
-
-<HBox fx:id="controlsHBox" alignment="CENTER" pickOnBounds="false" spacing="5.0" stylesheets="@../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController">
-   <children>
-      <JFXButton onAction="#startRunning" styleClass="simple-controls-button">
-         <tooltip>
-            <Tooltip text="Start running"/>
-         </tooltip>
-         <graphic>
-            <FontAwesomeIconView fx:id="runningIconView">
-               <styleClass>
-                  <String fx:value="run-icon-view"/>
-                  <String fx:value="simple-controls-icon-view"/>
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </JFXButton>
-      <JFXButton onAction="#startPlayback" styleClass="simple-controls-button">
-         <tooltip>
-            <Tooltip text="Playback"/>
-         </tooltip>
-         <graphic>
-            <FontAwesomeIconView fx:id="playbackIconView">
-               <styleClass>
-                  <String fx:value="playback-icon-view"/>
-                  <String fx:value="simple-controls-icon-view"/>
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </JFXButton>
-      <JFXButton onAction="#pause" styleClass="simple-controls-button">
-         <tooltip>
-            <Tooltip text="Pause simulation"/>
-         </tooltip>
-         <graphic>
-            <FontAwesomeIconView fx:id="pauseIconView">
-               <styleClass>
-                  <String fx:value="pause-icon-view"/>
-                  <String fx:value="simple-controls-icon-view"/>
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </JFXButton>
-      <JFXButton onAction="#openAdvancedControls" styleClass="simple-controls-button">
-         <tooltip>
-            <Tooltip text="Advanced controls"/>
-         </tooltip>
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="show-advanced-controls-icon-view"/>
-                  <String fx:value="simple-controls-icon-view"/>
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </JFXButton>
-   </children>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<HBox fx:id="controlsHBox" alignment="CENTER" pickOnBounds="false" spacing="5.0" stylesheets="@../css/GeneralStylesheet.css"
+      xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController">
+    <children>
+        <JFXButton onAction="#startRunning" styleClass="simple-controls-button">
+            <tooltip>
+                <Tooltip text="Start running"/>
+            </tooltip>
+            <graphic>
+                <FontIcon fx:id="runningIconView">
+                    <styleClass>
+                        <String fx:value="run-icon-view"/>
+                        <String fx:value="simple-controls-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </JFXButton>
+        <JFXButton onAction="#startPlayback" styleClass="simple-controls-button">
+            <tooltip>
+                <Tooltip text="Playback"/>
+            </tooltip>
+            <graphic>
+                <FontIcon fx:id="playbackIconView">
+                    <styleClass>
+                        <String fx:value="playback-icon-view"/>
+                        <String fx:value="simple-controls-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </JFXButton>
+        <JFXButton onAction="#pause" styleClass="simple-controls-button">
+            <tooltip>
+                <Tooltip text="Pause simulation"/>
+            </tooltip>
+            <graphic>
+                <FontIcon fx:id="pauseIconView">
+                    <styleClass>
+                        <String fx:value="pause-icon-view"/>
+                        <String fx:value="simple-controls-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </JFXButton>
+        <JFXButton onAction="#openAdvancedControls" styleClass="simple-controls-button">
+            <tooltip>
+                <Tooltip text="Advanced controls"/>
+            </tooltip>
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="show-advanced-controls-icon-view"/>
+                        <String fx:value="simple-controls-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </JFXButton>
+    </children>
 </HBox>

@@ -1,86 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.jfoenix.controls.JFXButton?>
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-
-<AnchorPane fx:id="mainAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="600.0" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController">
-   <children>
-      <SplitPane dividerPositions="0.29797979797979796" layoutX="225.0" layoutY="99.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <items>
-            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
-               <children>
-                  <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                     <children>
-                        <HBox VBox.vgrow="NEVER">
-                           <children>
-                              <JFXButton fx:id="addPatternButton" onAction="#addPattern" text="Add...">
-                                 <graphic>
-                                    <FontAwesomeIconView styleClass="add-icon-view" />
-                                 </graphic>
-                              </JFXButton>
-                              <JFXButton fx:id="removePatternButton" onAction="#removePattern" text="Remove">
-                                 <graphic>
-                                    <FontAwesomeIconView>
-                                       <styleClass>
-                                          <String fx:value="remove-icon-view" />
-                                          <String fx:value="composite-editor-icon-view" />
-                                       </styleClass>
-                                    </FontAwesomeIconView>
-                                 </graphic>
-                              </JFXButton>
-                           </children>
-                        </HBox>
-                        <ListView fx:id="yoCompositePatternListView" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
-                        <HBox>
-                           <children>
-                              <JFXButton fx:id="exportButton" onAction="#exportYoCompositePatterns" text="Export...">
-                                 <graphic>
-                                    <FontAwesomeIconView>
-                                       <styleClass>
-                                          <String fx:value="save-icon-view" />
-                                          <String fx:value="composite-editor-icon-view" />
-                                       </styleClass>
-                                    </FontAwesomeIconView>
-                                 </graphic>
-                              </JFXButton>
-                              <JFXButton fx:id="importButton" onAction="#importYoCompositePatterns" text="Import...">
-                                 <graphic>
-                                    <FontAwesomeIconView>
-                                       <styleClass>
-                                          <String fx:value="load-icon-view" />
-                                          <String fx:value="composite-editor-icon-view" />
-                                       </styleClass>
-                                    </FontAwesomeIconView>
-                                 </graphic>
-                              </JFXButton>
-                           </children>
-                        </HBox>
-                     </children>
-                  </VBox>
-               </children>
-            </AnchorPane>
-            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
-               <children>
-                  <VBox layoutX="137.0" layoutY="83.0" spacing="10.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
-                     <children>
-                        <AnchorPane fx:id="yoCompositePatternEditorPane" VBox.vgrow="ALWAYS" />
-                        <HBox alignment="CENTER_RIGHT" maxHeight="-Infinity" minHeight="-Infinity" spacing="5.0" VBox.vgrow="NEVER">
-                           <children>
-                              <JFXButton fx:id="saveChangesButton" contentDisplay="TEXT_ONLY" defaultButton="true" onAction="#saveChanges" styleClass="save-changes-button" text="Save" />
-                              <JFXButton fx:id="revertChangesButton" contentDisplay="TEXT_ONLY" onAction="#cancelChanges" styleClass="revert-changes-button" text="Revert" />
-                           </children>
-                        </HBox>
-                     </children>
-                  </VBox>
-               </children>
-            </AnchorPane>
-         </items>
-      </SplitPane>
-   </children>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<AnchorPane fx:id="mainAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="600.0"
+            stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController">
+    <children>
+        <SplitPane dividerPositions="0.29797979797979796" layoutX="225.0" layoutY="99.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <items>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                    <children>
+                        <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <children>
+                                <HBox VBox.vgrow="NEVER">
+                                    <children>
+                                        <JFXButton fx:id="addPatternButton" onAction="#addPattern" text="Add...">
+                                            <graphic>
+                                                <FontIcon styleClass="add-icon-view"/>
+                                            </graphic>
+                                        </JFXButton>
+                                        <JFXButton fx:id="removePatternButton" onAction="#removePattern" text="Remove">
+                                            <graphic>
+                                                <FontIcon>
+                                                    <styleClass>
+                                                        <String fx:value="remove-icon-view"/>
+                                                        <String fx:value="composite-editor-icon-view"/>
+                                                    </styleClass>
+                                                </FontIcon>
+                                            </graphic>
+                                        </JFXButton>
+                                    </children>
+                                </HBox>
+                                <ListView fx:id="yoCompositePatternListView" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS"/>
+                                <HBox>
+                                    <children>
+                                        <JFXButton fx:id="exportButton" onAction="#exportYoCompositePatterns" text="Export...">
+                                            <graphic>
+                                                <FontIcon>
+                                                    <styleClass>
+                                                        <String fx:value="save-icon-view"/>
+                                                        <String fx:value="composite-editor-icon-view"/>
+                                                    </styleClass>
+                                                </FontIcon>
+                                            </graphic>
+                                        </JFXButton>
+                                        <JFXButton fx:id="importButton" onAction="#importYoCompositePatterns" text="Import...">
+                                            <graphic>
+                                                <FontIcon>
+                                                    <styleClass>
+                                                        <String fx:value="load-icon-view"/>
+                                                        <String fx:value="composite-editor-icon-view"/>
+                                                    </styleClass>
+                                                </FontIcon>
+                                            </graphic>
+                                        </JFXButton>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </AnchorPane>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                    <children>
+                        <VBox layoutX="137.0" layoutY="83.0" spacing="10.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0"
+                              AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
+                            <children>
+                                <AnchorPane fx:id="yoCompositePatternEditorPane" VBox.vgrow="ALWAYS"/>
+                                <HBox alignment="CENTER_RIGHT" maxHeight="-Infinity" minHeight="-Infinity" spacing="5.0" VBox.vgrow="NEVER">
+                                    <children>
+                                        <JFXButton fx:id="saveChangesButton" contentDisplay="TEXT_ONLY" defaultButton="true" onAction="#saveChanges"
+                                                   styleClass="save-changes-button" text="Save"/>
+                                        <JFXButton fx:id="revertChangesButton" contentDisplay="TEXT_ONLY" onAction="#cancelChanges"
+                                                   styleClass="revert-changes-button" text="Revert"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </AnchorPane>
+            </items>
+        </SplitPane>
+    </children>
 </AnchorPane>

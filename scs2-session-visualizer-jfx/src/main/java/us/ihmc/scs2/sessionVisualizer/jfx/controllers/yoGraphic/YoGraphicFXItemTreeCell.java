@@ -1,10 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic;
 
-import java.io.InputStream;
-import java.util.List;
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -17,11 +12,15 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+
+import java.io.InputStream;
+import java.util.List;
 
 public class YoGraphicFXItemTreeCell extends CheckBoxTreeCell<YoGraphicFXItem>
 {
@@ -60,7 +59,7 @@ public class YoGraphicFXItemTreeCell extends CheckBoxTreeCell<YoGraphicFXItem>
 
          if (item instanceof YoGroupFX)
          {
-            graphic = new FontAwesomeIconView(FontAwesomeIcon.FOLDER_OPEN_ALT);
+            graphic = new FontIcon("fa-folder-open-o");
          }
          else if (item instanceof YoGraphicFXItem)
          {
