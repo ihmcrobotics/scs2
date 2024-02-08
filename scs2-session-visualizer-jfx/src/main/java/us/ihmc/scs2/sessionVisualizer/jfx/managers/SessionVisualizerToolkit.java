@@ -7,7 +7,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.SubScene;
 import javafx.stage.Stage;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -315,7 +314,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       return yoCompositeSearchManager;
    }
 
-   public ReferenceFrame getWorldFrame()
+   public ReferenceFrameWrapper getWorldFrame()
    {
       return referenceFrameManager.getWorldFrame();
    }

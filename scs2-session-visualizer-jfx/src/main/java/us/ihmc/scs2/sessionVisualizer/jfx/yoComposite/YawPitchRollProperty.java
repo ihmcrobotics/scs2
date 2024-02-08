@@ -1,17 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
-import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.YoYawPitchRoll;
-import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.YoYawPitchRollIdentifiers;
-
-import java.util.Objects;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.referenceFrame.interfaces.FrameYawPitchRollReadOnly;
+import us.ihmc.euclid.yawPitchRoll.interfaces.YawPitchRollReadOnly;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 
-public class YawPitchRollProperty extends Orientation3DProperty implements FrameYawPitchRollReadOnly
+import java.util.Objects;
+
+import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.YoYawPitchRoll;
+import static us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition.YoYawPitchRollIdentifiers;
+
+public class YawPitchRollProperty extends Orientation3DProperty implements YawPitchRollReadOnly
 {
    public YawPitchRollProperty()
    {
@@ -23,7 +23,7 @@ public class YawPitchRollProperty extends Orientation3DProperty implements Frame
       super(YoYawPitchRoll, YoYawPitchRollIdentifiers, yaw, pitch, roll);
    }
 
-   public YawPitchRollProperty(ReferenceFrame referenceFrame, double yaw, double pitch, double roll)
+   public YawPitchRollProperty(ReferenceFrameWrapper referenceFrame, double yaw, double pitch, double roll)
    {
       super(YoYawPitchRoll, YoYawPitchRollIdentifiers, referenceFrame, yaw, pitch, roll);
    }
@@ -33,7 +33,7 @@ public class YawPitchRollProperty extends Orientation3DProperty implements Frame
       super(YoYawPitchRoll, YoYawPitchRollIdentifiers, yawPitchRollProperties);
    }
 
-   public YawPitchRollProperty(Property<ReferenceFrame> referenceFrame, DoubleProperty[] yawPitchRollProperties)
+   public YawPitchRollProperty(Property<ReferenceFrameWrapper> referenceFrame, DoubleProperty[] yawPitchRollProperties)
    {
       super(YoYawPitchRoll, YoYawPitchRollIdentifiers, referenceFrame, yawPitchRollProperties);
    }
@@ -43,8 +43,10 @@ public class YawPitchRollProperty extends Orientation3DProperty implements Frame
       super(YoYawPitchRoll, YoYawPitchRollIdentifiers, yawProperty, pitchProperty, rollProperty);
    }
 
-   public YawPitchRollProperty(DoubleProperty yawProperty, DoubleProperty pitchProperty, DoubleProperty rollProperty,
-                                     Property<ReferenceFrame> referenceFrameProperty)
+   public YawPitchRollProperty(Property<ReferenceFrameWrapper> referenceFrameProperty,
+                               DoubleProperty yawProperty,
+                               DoubleProperty pitchProperty,
+                               DoubleProperty rollProperty)
    {
       super(YoYawPitchRoll, YoYawPitchRollIdentifiers, referenceFrameProperty, yawProperty, pitchProperty, rollProperty);
    }
@@ -90,19 +92,9 @@ public class YawPitchRollProperty extends Orientation3DProperty implements Frame
       setComponentValues(yaw, pitch, roll);
    }
 
-   public void set(ReferenceFrame referenceFrame, double yaw, double pitch, double roll)
-   {
-      set(referenceFrame, yaw, pitch, roll);
-   }
-
    public void set(DoubleProperty yawProperty, DoubleProperty pitchProperty, DoubleProperty rollProperty)
    {
       setComponentValueProperties(yawProperty, pitchProperty, rollProperty);
-   }
-
-   public void set(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty yawProperty, DoubleProperty pitchProperty, DoubleProperty rollProperty)
-   {
-      set(referenceFrameProperty, yawProperty, pitchProperty, rollProperty);
    }
 
    @Override

@@ -1,20 +1,20 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
-import static us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition.YoTuple2D;
-import static us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition.YoTuple2DIdentifiers;
-
-import java.util.Objects;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import us.ihmc.euclid.interfaces.EuclidGeometry;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.referenceFrame.interfaces.FrameTuple2DReadOnly;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.Vector2D;
+import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 
-public class Tuple2DProperty extends CompositeProperty implements FrameTuple2DReadOnly
+import java.util.Objects;
+
+import static us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition.YoTuple2D;
+import static us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition.YoTuple2DIdentifiers;
+
+public class Tuple2DProperty extends CompositeProperty implements Tuple2DReadOnly
 {
    public Tuple2DProperty()
    {
@@ -26,7 +26,7 @@ public class Tuple2DProperty extends CompositeProperty implements FrameTuple2DRe
       super(YoTuple2D, YoTuple2DIdentifiers, x, y);
    }
 
-   public Tuple2DProperty(ReferenceFrame referenceFrame, double x, double y)
+   public Tuple2DProperty(ReferenceFrameWrapper referenceFrame, double x, double y)
    {
       super(YoTuple2D, YoTuple2DIdentifiers, referenceFrame, x, y);
    }
@@ -36,7 +36,7 @@ public class Tuple2DProperty extends CompositeProperty implements FrameTuple2DRe
       super(YoTuple2D, YoTuple2DIdentifiers, xyProperties);
    }
 
-   public Tuple2DProperty(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty[] xyProperties)
+   public Tuple2DProperty(Property<ReferenceFrameWrapper> referenceFrameProperty, DoubleProperty[] xyProperties)
    {
       super(YoTuple2D, YoTuple2DIdentifiers, referenceFrameProperty, xyProperties);
    }
@@ -46,7 +46,7 @@ public class Tuple2DProperty extends CompositeProperty implements FrameTuple2DRe
       super(YoTuple2D, YoTuple2DIdentifiers, xProperty, yProperty);
    }
 
-   public Tuple2DProperty(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty xProperty, DoubleProperty yProperty)
+   public Tuple2DProperty(Property<ReferenceFrameWrapper> referenceFrameProperty, DoubleProperty xProperty, DoubleProperty yProperty)
    {
       super(YoTuple2D, YoTuple2DIdentifiers, referenceFrameProperty, xProperty, yProperty);
    }
@@ -82,9 +82,10 @@ public class Tuple2DProperty extends CompositeProperty implements FrameTuple2DRe
       setComponentValues(x, y);
    }
 
-   public void set(ReferenceFrame referenceFrame, double x, double y)
+   public void set(ReferenceFrameWrapper referenceFrame, double x, double y)
    {
-      set(referenceFrame, x, y);
+      setReferenceFrame(referenceFrame);
+      setComponentValues(x, y);
    }
 
    public void set(DoubleProperty xProperty, DoubleProperty yProperty)
@@ -92,9 +93,10 @@ public class Tuple2DProperty extends CompositeProperty implements FrameTuple2DRe
       setComponentValueProperties(xProperty, yProperty);
    }
 
-   public void set(Property<ReferenceFrame> referenceFrameProperty, DoubleProperty xProperty, DoubleProperty yProperty)
+   public void set(Property<ReferenceFrameWrapper> referenceFrameProperty, DoubleProperty xProperty, DoubleProperty yProperty)
    {
-      set(referenceFrameProperty, xProperty, yProperty);
+      setReferenceFrameProperty(referenceFrameProperty);
+      setComponentValueProperties(xProperty, yProperty);
    }
 
    @Override
