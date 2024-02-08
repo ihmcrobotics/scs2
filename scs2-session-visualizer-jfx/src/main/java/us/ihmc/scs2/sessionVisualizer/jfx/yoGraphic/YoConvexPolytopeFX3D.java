@@ -1,8 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -12,17 +9,20 @@ import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
 import us.ihmc.euclid.geometry.interfaces.Vertex3DSupplier;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.SimpleColorFX;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class YoConvexPolytopeFX3D extends YoGraphicFX3D
 {
@@ -48,7 +48,7 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
       polytopeNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
-   public YoConvexPolytopeFX3D(ReferenceFrame worldFrame)
+   public YoConvexPolytopeFX3D(ReferenceFrameWrapper worldFrame)
    {
       this();
       position.setReferenceFrame(worldFrame);
@@ -153,7 +153,8 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
 
       List<Point3DReadOnly> vertices = newDataLocal.vertices;
 
-      newMesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(TriangleMesh3DFactories.ConvexPolytope(new ConvexPolytope3D(Vertex3DSupplier.asVertex3DSupplier(vertices))));
+      newMesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(TriangleMesh3DFactories.ConvexPolytope(new ConvexPolytope3D(Vertex3DSupplier.asVertex3DSupplier(
+            vertices))));
       oldData = newDataLocal;
    }
 

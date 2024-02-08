@@ -1,8 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoRobot;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -34,6 +31,9 @@ import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+
 public class YoRobotFX
 {
    private final Group rootNode = new Group();
@@ -61,7 +61,7 @@ public class YoRobotFX
       LogTools.info("Loading robot: " + robotDefinition.getName());
 
       YoRegistry rootRegistry = new YoRegistry(SimulationSession.ROOT_REGISTRY_NAME);
-      Robot robot = new Robot(robotDefinition, referenceFrameManager.getWorldFrame(), false);
+      Robot robot = new Robot(robotDefinition, referenceFrameManager.getWorldFrame().getReferenceFrame(), false);
       robotRegistry = robot.getRegistry();
       rootRegistry.addChild(robotRegistry);
       rootBody = robot.getRootBody();
@@ -104,12 +104,12 @@ public class YoRobotFX
    {
       robotLinkedYoRegistry = yoManager.newLinkedYoRegistry(robotRegistry);
       robotRegistry.getVariables().forEach(var ->
-      {
-         if (var.getName().startsWith("q_"))
-         { // Only link the YoVariables for the joint angles and root joint configuration.
-            robotLinkedYoRegistry.linkYoVariable(var, this);
-         }
-      });
+                                           {
+                                              if (var.getName().startsWith("q_"))
+                                              { // Only link the YoVariables for the joint angles and root joint configuration.
+                                                 robotLinkedYoRegistry.linkYoVariable(var, this);
+                                              }
+                                           });
 
       for (SimRigidBodyBasics rigidBody : rootBody.subtreeIterable())
       {

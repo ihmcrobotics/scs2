@@ -1,8 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Group;
@@ -11,10 +8,13 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class YoPointFX3D extends YoGraphicFX3D
 {
@@ -35,7 +35,7 @@ public class YoPointFX3D extends YoGraphicFX3D
       pointNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
-   public YoPointFX3D(ReferenceFrame worldFrame)
+   public YoPointFX3D(ReferenceFrameWrapper worldFrame)
    {
       this();
       position.setReferenceFrame(worldFrame);

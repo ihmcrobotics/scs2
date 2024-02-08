@@ -15,10 +15,10 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.axisAngle.AxisAngle;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.definition.visual.TriangleMesh3DBuilder;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Orientation3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
@@ -53,7 +53,7 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
       coordinateSystemNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
-   public YoCoordinateSystemFX3D(ReferenceFrame worldFrame)
+   public YoCoordinateSystemFX3D(ReferenceFrameWrapper worldFrame)
    {
       this();
       position.setReferenceFrame(worldFrame);
