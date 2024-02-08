@@ -1,9 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
 import javafx.beans.Observable;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -22,7 +26,11 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
-import javafx.scene.input.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -471,7 +479,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
       List<YoVariable> yoVariables = new ArrayList<>(controller.getPlottedVariables());
 
-      FontAwesomeIconView chartMoveIcon = controller.getChartMoveIcon();
+      Node chartMoveIcon = controller.getChartMoveIcon();
       Dragboard dragBoard = chartMoveIcon.startDragAndDrop(TransferMode.MOVE);
       SnapshotParameters params = new SnapshotParameters();
       params.setTransform(new Scale(0.5, 0.5));

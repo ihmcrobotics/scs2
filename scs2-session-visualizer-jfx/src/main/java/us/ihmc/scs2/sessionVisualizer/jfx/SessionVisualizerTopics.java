@@ -8,9 +8,21 @@ import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoSlider.*;
-import us.ihmc.scs2.session.*;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
+import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionDataExportRequest;
+import us.ihmc.scs2.session.SessionDataFilterParameters;
+import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
+import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
+import us.ihmc.scs2.session.SessionState;
+import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -101,6 +113,7 @@ public class SessionVisualizerTopics
    private Topic<Double> playbackRealTimeRate;
    private Topic<Integer> bufferRecordTickPeriod;
    private Topic<Integer> initializeBufferRecordTickPeriod;
+   private Topic<Long> runMaxDuration;
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
@@ -197,6 +210,7 @@ public class SessionVisualizerTopics
       playbackRealTimeRate = SessionMessagerAPI.PlaybackRealTimeRate;
       bufferRecordTickPeriod = SessionMessagerAPI.BufferRecordTickPeriod;
       initializeBufferRecordTickPeriod = SessionMessagerAPI.InitializeBufferRecordTickPeriod;
+      runMaxDuration = SessionMessagerAPI.RunMaxDuration;
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
@@ -535,6 +549,11 @@ public class SessionVisualizerTopics
    public Topic<Integer> getInitializeBufferRecordTickPeriod()
    {
       return initializeBufferRecordTickPeriod;
+   }
+
+   public Topic<Long> getRunMaxDuration()
+   {
+      return runMaxDuration;
    }
 
    public Topic<SessionDataExportRequest> getSessionDataExportRequest()

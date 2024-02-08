@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -24,6 +23,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
@@ -348,7 +348,7 @@ public class YoMultiSliderboardWindowController
 
    private MenuItem exportTabMenuItem(Supplier<Tab> selectedTab)
    {
-      FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+      FontIcon exportIcon = new FontIcon();
       exportIcon.getStyleClass().add("save-icon-view");
       MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
 
@@ -369,7 +369,7 @@ public class YoMultiSliderboardWindowController
    {
       return tabPane ->
       {
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+         FontIcon exportIcon = new FontIcon();
          exportIcon.getStyleClass().add("save-icon-view");
          MenuItem menuItem = new MenuItem("Export all tabs...", exportIcon);
 
@@ -400,7 +400,7 @@ public class YoMultiSliderboardWindowController
 
    private MenuItem importTabMenuItem(Supplier<Tab> selectedTab)
    {
-      FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+      FontIcon exportIcon = new FontIcon();
       exportIcon.getStyleClass().add("load-icon-view");
       MenuItem menuItem = new MenuItem("Import tab(s)...", exportIcon);
       menuItem.setOnAction(e ->
