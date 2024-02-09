@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  checks: write
   contents: read
 
 jobs:
@@ -16,39 +17,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Setup JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-      id: setup-gradle
-      with:
-        gradle-version: 8.5
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        id: setup-gradle
+        with:
+          gradle-version: 8.5
 
-    - name: Gradle test for scs2-definition
-      run: gradle scs2-definition:test
-    - name: Gradle test for scs2-shared-memory
-      run: gradle scs2-shared-memory:test
-    - name: Gradle test for scs2-symbolic
-      run: gradle scs2-symbolic:test
-    - name: Gradle test for scs2-session
-      run: gradle scs2-session:test
-    - name: Gradle test for scs2-session-logger
-      run: gradle scs2-session-logger:test
-    - name: Gradle test for scs2-session-visualizer
-      run: gradle scs2-session-visualizer:test
-    - name: Gradle test for scs2-session-visualizer-jfx
-      run: gradle scs2-session-visualizer-jfx:test
-    - name: Gradle test for scs2-simulation
-      run: gradle scs2-simulation:test
-    - name: Gradle test for scs2-bullet-simulation
-      run: gradle scs2-bullet-simulation:test
-    - name: Gradle test for scs2-examples
-      run: gradle scs2-examples:test
-    - name: Gradle test for scs2-simulation-construction-set
-      run: gradle scs2-simulation-construction-set:test
+      - name: Gradle test for scs2-definition
+        run: cd scs2-definition && gradle test && cd ..
+      - name: Gradle test for scs2-shared-memory
+        run: cd scs2-shared-memory && gradle test && cd ..
+      - name: Gradle test for scs2-symbolic
+        run: cd scs2-symbolic && gradle test && cd ..
+      - name: Gradle test for scs2-session
+        run: cd scs2-session && gradle test && cd ..
+      - name: Gradle test for scs2-session-logger
+        run: cd scs2-session-logger && gradle test && cd ..
+      - name: Gradle test for scs2-session-visualizer
+        run: cd scs2-session-visualizer && gradle test && cd ..
+      - name: Gradle test for scs2-session-visualizer-jfx
+        run: cd scs2-session-visualizer-jfx && gradle test && cd ..
+      - name: Gradle test for scs2-simulation
+        run: cd scs2-simulation && gradle test && cd ..
+      - name: Gradle test for scs2-bullet-simulation
+        run: cd scs2-bullet-simulation && gradle test && cd ..
+      - name: Gradle test for scs2-examples
+        run: cd scs2-examples && gradle test && cd ..
+      - name: Gradle test for scs2-simulation-construction-set
+        run: cd scs2-simulation-construction-set && gradle test && cd ..
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          detailed_summary: true
