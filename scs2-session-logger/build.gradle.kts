@@ -1,5 +1,6 @@
 plugins {
    id("us.ihmc.ihmc-build")
+   id("us.ihmc.ihmc-ci") version "8.3"
 }
 
 ihmc {
@@ -21,5 +22,4 @@ mainDependencies {
 }
 
 testDependencies {
-   api("org.junit.jupiter:junit-jupiter-api:5.10.1")
 }
