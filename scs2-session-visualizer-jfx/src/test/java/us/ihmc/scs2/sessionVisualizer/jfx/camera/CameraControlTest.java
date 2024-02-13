@@ -1,9 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.camera;
 
-import org.junit.jupiter.api.Test;
-
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.transform.Transform;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.testfx.api.FxToolkit;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.tools.EuclidCoreTestTools;
 import us.ihmc.euclid.tuple3D.Point3D;
@@ -11,13 +12,20 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.PerspectiveCameraController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
 
+import java.util.concurrent.TimeoutException;
+
 public class CameraControlTest
 {
    private static final double EPSILON = 1.0e-12;
 
+   @Tag("javafx-headless")
    @Test
-   public void testCameraControls()
+   public void testCameraControls() throws TimeoutException
    {
+      if (!FxToolkit.isFXApplicationThreadRunning())
+         FxToolkit.registerPrimaryStage();
+      //      FxToolkit.setupFixture(testToRun);
+      //      JavaFXInit.initJavaFX();
       PerspectiveCamera camera = new PerspectiveCamera();
       camera = new PerspectiveCamera(true);
       camera.setNearClip(0.05);
@@ -99,5 +107,4 @@ public class CameraControlTest
       Transform cameraTransform = camera.getLocalToSceneTransform();
       return new Vector3D(cameraTransform.getMxx(), cameraTransform.getMyx(), cameraTransform.getMzx());
    }
-
 }
