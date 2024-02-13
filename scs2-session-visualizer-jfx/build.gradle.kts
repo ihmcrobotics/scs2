@@ -66,6 +66,18 @@ mainDependencies {
 
 testDependencies {
    api("org.apache.commons:commons-math:2.2")
+   api("org.testfx:openjfx-monocle:17.0.10")
+   api("org.testfx:testfx-core:4.0.18")
+
+}
+
+categories.configure("javafx-headless")
+{
+   jvmArguments += "-Dtestfx.headless=true"
+   jvmArguments += "-Dtestfx.robot=glass"
+   jvmArguments += "-Djava.awt.headless=true"
+   jvmArguments += "-Dprism.order=sw"
+   jvmArguments += "-Dprism.verbose=true"
 }
 
 val sessionVisualizerExecutableName = "SCS2SessionVisualizer"

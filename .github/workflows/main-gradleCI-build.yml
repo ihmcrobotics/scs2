@@ -1,0 +1,25 @@
+name: CI - main build
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+  workflow_dispatch:
+
+permissions:
+  checks: write
+  contents: read
+
+jobs:
+  test-fast:
+    uses: ./.github/workflows/gradleCI-base.yml
+    with:
+      test-category: 'fast'
+      setup-javafx-headless: false
+
+  test-javafx-headless:
+    uses: ./.github/workflows/gradleCI-base.yml
+    with:
+      test-category: 'javafx-headless'
+      setup-javafx-headless: true
