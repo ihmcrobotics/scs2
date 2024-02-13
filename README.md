@@ -1,15 +1,7 @@
 # ![SCS2](logo/SCS2.png)
 
 ![scs2](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition/badge.svg?style=plastic)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/bullet-simulation-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/definition-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/examples-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/session-logger-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/session-visualizer-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/session-visualizer-jfx-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/shared-memory-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/simulation-gradleCI.yml/badge.svg)
-![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/symbolic-gradleCI.yml/badge.svg)
+![buildstatus](https://github.com/ihmcrobotics/simulation-construction-set-2/actions/workflows/main-gradleCI-build.yml/badge.svg)
 
 # Install standalone application on Ubuntu 22.04 (Recommended)
 

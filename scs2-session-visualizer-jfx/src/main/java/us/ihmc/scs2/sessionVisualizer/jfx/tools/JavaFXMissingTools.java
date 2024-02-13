@@ -47,6 +47,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
@@ -188,7 +189,19 @@ public class JavaFXMissingTools
 
    public static void runLater(Class<?> caller, Runnable task)
    {
-      Platform.runLater(task::run);
+      if (caller != null && Objects.equals("ResourceLoadingTest", caller.getSimpleName()))
+         System.out.println("ResourceLoadingTest: Platform.runLater() start");
+      try
+      {
+         Platform.runLater(task);
+      }
+      catch (IllegalStateException e)
+      {
+         System.err.println("Exception in Platform.runLater()");
+         e.printStackTrace();
+      }
+      if (caller != null && Objects.equals("ResourceLoadingTest", caller.getSimpleName()))
+         System.out.println("ResourceLoadingTest: Platform.runLater() end");
    }
 
    public static void runLaterIfNeeded(Class<?> caller, Runnable runnable)
