@@ -87,4 +87,10 @@ public abstract class YoVariableBuffer<T extends YoVariable>
    public abstract double[] getAsDoubleBuffer();
 
    public abstract void dispose();
+
+   @Override
+   public String toString()
+   {
+      return "%s [yoVariable=%s, properties=%s]".formatted(getClass().getSimpleName(), yoVariable, properties);
+   }
 }
