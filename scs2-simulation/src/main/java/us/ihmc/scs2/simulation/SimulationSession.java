@@ -581,6 +581,7 @@ public class SimulationSession extends Session
             // This ensures that the controller is being pause.
             physicsEngine.pause();
             submitRunMaxDuration(maxDurationInitialValue); // Restore the max duration.
+            requestBufferListenerForceUpdate();
 
             if (sessionStartedInitialValue)
                startSessionThread();
