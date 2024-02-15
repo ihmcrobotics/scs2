@@ -132,6 +132,7 @@ public class SessionVisualizerTopics
    private Topic<Integer> yoBufferCurrentSizeRequest;
    private Topic<Integer> yoBufferInitializeSize;
    private Topic<YoBufferPropertiesReadOnly> yoBufferCurrentProperties;
+   private Topic<Boolean> yoBufferForceListenerUpdate;
    private Topic<SensorMessage<CameraSensorDefinition>> cameraSensorDefinitionData;
    private Topic<SensorMessage<BufferedImage>> cameraSensorFrame;
 
@@ -231,6 +232,7 @@ public class SessionVisualizerTopics
       yoBufferCurrentSizeRequest = YoSharedBufferMessagerAPI.CurrentBufferSizeRequest;
       yoBufferInitializeSize = YoSharedBufferMessagerAPI.InitializeBufferSize;
       yoBufferCurrentProperties = YoSharedBufferMessagerAPI.CurrentBufferProperties;
+      yoBufferForceListenerUpdate = YoSharedBufferMessagerAPI.ForceListenerUpdate;
 
       cameraSensorDefinitionData = SessionMessagerAPI.Sensors.CameraSensorDefinitionData;
       cameraSensorFrame = SessionMessagerAPI.Sensors.CameraSensorFrame;
@@ -639,6 +641,11 @@ public class SessionVisualizerTopics
    public Topic<YoBufferPropertiesReadOnly> getYoBufferCurrentProperties()
    {
       return yoBufferCurrentProperties;
+   }
+
+   public Topic<Boolean> getYoBufferForceListenerUpdate()
+   {
+      return yoBufferForceListenerUpdate;
    }
 
    public Topic<SensorMessage<CameraSensorDefinition>> getCameraSensorDefinitionData()

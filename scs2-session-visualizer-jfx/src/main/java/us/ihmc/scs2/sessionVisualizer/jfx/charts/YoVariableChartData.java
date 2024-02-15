@@ -1,13 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.charts;
 
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.TopicListener;
@@ -25,6 +17,14 @@ import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 public class YoVariableChartData
 {
@@ -52,6 +52,7 @@ public class YoVariableChartData
 
    private final TopicListener<CropBufferRequest> cropRequestListener = m -> requestEntireBuffer.set(true);
    private final TopicListener<FillBufferRequest> fillRequestListener = m -> requestEntireBuffer.set(true);
+   private final TopicListener<Boolean> forceListenerUpdateListener = m -> requestEntireBuffer.set(true);
    private final TopicListener<YoBufferPropertiesReadOnly> propertiesListener;
 
    private final Messager messager;
@@ -108,6 +109,7 @@ public class YoVariableChartData
 
       messager.addTopicListener(topics.getYoBufferCropRequest(), cropRequestListener);
       messager.addTopicListener(topics.getYoBufferFillRequest(), fillRequestListener);
+      messager.addTopicListener(topics.getYoBufferForceListenerUpdate(), forceListenerUpdateListener);
       messager.addTopicListener(topics.getYoBufferCurrentProperties(), propertiesListener);
    }
 
@@ -172,13 +174,11 @@ public class YoVariableChartData
       if (!hasChartData.get() && !updateBounds)
          return;
 
-      @SuppressWarnings("rawtypes")
-      BufferSample rawData = rawDataProperty.get();
+      @SuppressWarnings("rawtypes") BufferSample rawData = rawDataProperty.get();
       if (rawData == null || rawData.getSampleLength() == 0)
          return;
 
-      @SuppressWarnings("unchecked")
-      BufferSample<double[]> newBufferSample = bufferConverterFunction.apply(rawData);
+      @SuppressWarnings("unchecked") BufferSample<double[]> newBufferSample = bufferConverterFunction.apply(rawData);
       if (lastDataSet != null && newBufferSample.getBufferProperties().getSize() != lastDataSet.size)
          lastDataSet = null;
 
