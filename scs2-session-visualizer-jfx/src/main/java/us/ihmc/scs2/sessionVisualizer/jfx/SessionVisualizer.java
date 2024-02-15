@@ -484,6 +484,12 @@ public class SessionVisualizer
       }
 
       @Override
+      public void requestChartsForceUpdate()
+      {
+         submitMessage(getTopics().getYoBufferForceListenerUpdate(), true);
+      }
+
+      @Override
       public void clearAllSliderboards()
       {
          submitMessage(getTopics().getYoMultiSliderboardClearAll(), true);

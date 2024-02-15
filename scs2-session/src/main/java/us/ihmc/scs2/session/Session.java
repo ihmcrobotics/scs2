@@ -339,6 +339,7 @@ public abstract class Session
    private final List<SessionModeChangeListener> preSessionModeChangeListeners = new ArrayList<>();
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
    private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
+   private final List<Runnable> bufferListenerForceUpdateListeners = new ArrayList<>();
    private final List<Runnable> shutdownListeners = new ArrayList<>();
 
    // For exception handling
@@ -1293,6 +1294,17 @@ public abstract class Session
       {
          pendingBufferOutPointIndexRequest.submit(bufferOutPointIndexRequest);
          processBufferRequests(true);
+      }
+   }
+
+   /**
+    * Notifies all the listeners depending on buffer data that a change has occurred and they should update.
+    */
+   public void requestBufferListenerForceUpdate()
+   {
+      for (Runnable listener : bufferListenerForceUpdateListeners)
+      {
+         listener.run();
       }
    }
 
@@ -2446,12 +2458,16 @@ public abstract class Session
          messager.addTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
          messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
 
+         bufferListenerForceUpdateListeners.add(() ->
+                                                {
+                                                   if (messager.isMessagerOpen())
+                                                      messager.submitMessage(YoSharedBufferMessagerAPI.ForceListenerUpdate, true);
+                                                });
+
          addRobotDefinitionListChangeListener(change ->
                                               {
                                                  if (messager.isMessagerOpen())
-                                                 {
                                                     messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
-                                                 }
                                               });
 
          messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);

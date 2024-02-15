@@ -1,19 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_TYPE;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.function.Predicate;
-
-import javax.xml.bind.JAXBException;
-
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
@@ -54,6 +40,19 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.function.Predicate;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_NAME;
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoMultiSliderboardWindowController.DEFAULT_SLIDERBOARD_TYPE;
+
 public interface SessionVisualizerControls
 {
 
@@ -67,8 +66,8 @@ public interface SessionVisualizerControls
     * @param latitude  controls the look up/down angle while keeping the focal point unchanged.
     * @param longitude controls the look left/right angle while keeping the focal point unchanged.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void setCameraOrientation(double latitude, double longitude);
 
@@ -78,8 +77,8 @@ public interface SessionVisualizerControls
     * @param position the new camera position. Not modified.
     * @see #setCameraPosition(double, double, double)
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void setCameraPosition(Point3DReadOnly position)
    {
@@ -97,8 +96,8 @@ public interface SessionVisualizerControls
     * @param y the new y-coordinate for the camera position.
     * @param z the new z-coordinate for the camera position.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void setCameraPosition(double x, double y, double z);
 
@@ -122,8 +121,8 @@ public interface SessionVisualizerControls
     * @param position the new focal position. Not modified.
     * @see #setCameraFocalPosition(double, double, double)
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void setCameraFocalPosition(Point3DReadOnly position)
    {
@@ -141,8 +140,8 @@ public interface SessionVisualizerControls
     * @param y the new y-coordinate for the focal point.
     * @param z the new z-coordinate for the focal point.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void setCameraFocalPosition(double x, double y, double z);
 
@@ -155,8 +154,8 @@ public interface SessionVisualizerControls
     *
     * @param distanceFromFocus the new distance between the camera and the focal point.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void setCameraZoom(double distanceFromFocus);
 
@@ -166,8 +165,8 @@ public interface SessionVisualizerControls
     * @param robotName     the name of the robot to track.
     * @param rigidBodyName the name of the body to track.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void requestCameraRigidBodyTracking(String robotName, String rigidBodyName);
 
@@ -176,8 +175,8 @@ public interface SessionVisualizerControls
     *
     * @param coordinatesToTrack the coordinates to track.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraFocalPositionTracking(YoFrameTuple3D coordinatesToTrack)
    {
@@ -195,8 +194,8 @@ public interface SessionVisualizerControls
     * @param zCoordinateToTrack the z coordinate to track.
     * @param referenceFrame     the reference frame in which the coordinates are expressed.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraFocalPositionTracking(YoDouble xCoordinateToTrack,
                                                    YoDouble yCoordinateToTrack,
@@ -221,8 +220,8 @@ public interface SessionVisualizerControls
     * @param referenceFrameName     the name of the reference frame in which the coordinates are
     *                               expressed. If {@code null}, world frame is used.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraFocalPositionTracking(String xCoordinateNameToTrack,
                                                    String yCoordinateNameToTrack,
@@ -237,13 +236,14 @@ public interface SessionVisualizerControls
     *
     * @param coordinatesToTrack the coordinates to track.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void requestCameraFocalPositionTracking(YoTuple3DDefinition coordinatesToTrack);
 
    // Camera coordinates control:
    // Cartesian control:
+
    /**
     * Requests the camera to follow the given cartesian coordinates expressed in world.
     * <p>
@@ -254,8 +254,8 @@ public interface SessionVisualizerControls
     *
     * @param cameraCoordinates the cartesian coordinates of the camera.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraPositionTracking(YoTuple3D cameraCoordinates)
    {
@@ -274,8 +274,8 @@ public interface SessionVisualizerControls
     * @param yCameraCoordinate the y coordinate of the camera.
     * @param zCameraCoordinate the z coordinate of the camera.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraPositionTracking(YoDouble xCameraCoordinate, YoDouble yCameraCoordinate, YoDouble zCameraCoordinate)
    {
@@ -299,8 +299,8 @@ public interface SessionVisualizerControls
     * @param zCameraCoordinateName the name (fullname or short name) of the {@code YoVariable} for the
     *                              z coordinate of the camera. Can be a double value.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraPositionTracking(String xCameraCoordinateName, String yCameraCoordinateName, String zCameraCoordinateName)
    {
@@ -317,8 +317,8 @@ public interface SessionVisualizerControls
     *
     * @param cameraCoordinates the cartesian coordinates of the camera.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void requestCameraPositionTracking(YoTuple3DDefinition cameraCoordinates);
 
@@ -344,8 +344,8 @@ public interface SessionVisualizerControls
     *                                  at <i>pi</i>/2 the camera is above the focal point looking
     *                                  downward.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraOrbitTracking(YoDouble distanceCameraCoordinate, YoDouble longitudeCameraCoordinate, YoDouble latitudeCameraCoordinate)
    {
@@ -379,8 +379,8 @@ public interface SessionVisualizerControls
     *                                      is under the focal point looking upward, at <i>pi</i>/2 the
     *                                      camera is above the focal point looking downward.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraOrbitTracking(String distanceCameraCoordinateName, String longitudeCameraCoordinateName, String latitudeCameraCoordinateName)
    {
@@ -397,8 +397,8 @@ public interface SessionVisualizerControls
     *
     * @param cameraCoordinates the camera's coordinates.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void requestCameraOrbitTracking(YoOrbitalCoordinateDefinition cameraCoordinates);
 
@@ -422,8 +422,8 @@ public interface SessionVisualizerControls
     * @param heightCameraCoordinate    the z coordinate of the camera. Controls the height of the
     *                                  camera.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraLevelOrbitTracking(YoDouble distanceCameraCoordinate, YoDouble longitudeCameraCoordinate, YoDouble heightCameraCoordinate)
    {
@@ -455,8 +455,8 @@ public interface SessionVisualizerControls
     *                                      for the height coordinate of the camera. Can be a double
     *                                      value.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    default void requestCameraLevelOrbitTracking(String distanceCameraCoordinateName, String longitudeCameraCoordinateName, String heightCameraCoordinateName)
    {
@@ -476,8 +476,8 @@ public interface SessionVisualizerControls
     *
     * @param cameraCoordinates the camera's coordinates.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
-    *      controls: 3D viewport navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/3D-viewport-navigation">GUI
+    *       controls: 3D viewport navigation</a>
     */
    void requestCameraLevelOrbitTracking(YoLevelOrbitalCoordinateDefinition cameraCoordinates);
 
@@ -488,8 +488,8 @@ public interface SessionVisualizerControls
     *
     * @param show whether the plotter 2D should be visible or not.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
-    *      controls: 2D plotter navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *       controls: 2D plotter navigation</a>
     */
    void showOverheadPlotter2D(boolean show);
 
@@ -498,8 +498,8 @@ public interface SessionVisualizerControls
     *
     * @param position the position to track.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
-    *      controls: 2D plotter navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *       controls: 2D plotter navigation</a>
     */
    default void requestPlotter2DCoordinateTracking(YoFrameTuple2D position)
    {
@@ -513,8 +513,8 @@ public interface SessionVisualizerControls
     * @param frameName the name of the reference frame in which the coordinates are expressed. If
     *                  {@code null}, world frame is used.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
-    *      controls: 2D plotter navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *       controls: 2D plotter navigation</a>
     */
    default void requestPlotter2DCoordinateTracking(YoTuple2D position, String frameName)
    {
@@ -529,8 +529,8 @@ public interface SessionVisualizerControls
     * @param frameName the name of the reference frame in which the coordinates are expressed. If
     *                  {@code null}, world frame is used.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
-    *      controls: 2D plotter navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *       controls: 2D plotter navigation</a>
     */
    default void requestPlotter2DCoordinateTracking(YoDouble xVariable, YoDouble yVariable, String frameName)
    {
@@ -547,8 +547,8 @@ public interface SessionVisualizerControls
     * @param frameName     the name of the reference frame in which the coordinates are expressed. If
     *                      {@code null}, world frame is used.
     * @see <a href=
-    *      "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
-    *      controls: 2D plotter navigation</a>
+    *       "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/2D-plotter-navigation">GUI
+    *       controls: 2D plotter navigation</a>
     */
    void requestPlotter2DCoordinateTracking(String xVariableName, String yVariableName, String frameName);
 
@@ -647,7 +647,7 @@ public interface SessionVisualizerControls
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
-    *      controls: YoGraphic</a>
+    *       controls: YoGraphic</a>
     */
    void addYoGraphic(YoGraphicDefinition yoGraphicDefinition);
 
@@ -658,7 +658,7 @@ public interface SessionVisualizerControls
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
-    *      controls: YoGraphic</a>
+    *       controls: YoGraphic</a>
     */
    default void addYoGraphics(Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
@@ -677,7 +677,7 @@ public interface SessionVisualizerControls
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
-    *      controls: YoGraphic</a>
+    *       controls: YoGraphic</a>
     */
    default void addYoGraphic(String namespace, YoGraphicDefinition yoGraphicDefinition)
    {
@@ -706,7 +706,7 @@ public interface SessionVisualizerControls
     * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
-    *      controls: YoGraphic</a>
+    *       controls: YoGraphic</a>
     */
    default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
@@ -734,7 +734,7 @@ public interface SessionVisualizerControls
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
-    *      controls: Side pane</a>
+    *       controls: Side pane</a>
     */
    default void addYoEntry(String variableName)
    {
@@ -747,7 +747,7 @@ public interface SessionVisualizerControls
     * @param variableNames the name of the variables to add. The variables will be looked up using
     *                      {@link YoRegistry#findVariable(String)}.
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
-    *      controls: Side pane</a>
+    *       controls: Side pane</a>
     */
    default void addYoEntry(Collection<String> variableNames)
    {
@@ -762,7 +762,7 @@ public interface SessionVisualizerControls
     * @param variableName the name of the variable to add. The variable will be looked up using
     *                     {@link YoRegistry#findVariable(String)}.
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
-    *      controls: Side pane</a>
+    *       controls: Side pane</a>
     */
    default void addYoEntry(String groupName, String variableName)
    {
@@ -773,13 +773,18 @@ public interface SessionVisualizerControls
     * Adds variable entries to the entry tab named {@code groupName}. The tab will be created if it
     * doesn't exist yet.
     *
-    * @param groupName    the name of the tab.
-    * @param variableName the name of the variables to add. The variables will be looked up using
-    *                     {@link YoRegistry#findVariable(String)}.
+    * @param groupName     the name of the tab.
+    * @param variableNames the name of the variables to add. The variables will be looked up using
+    *                      {@link YoRegistry#findVariable(String)}.
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/Side-pane"GUI
-    *      controls: Side pane</a>
+    *       controls: Side pane</a>
     */
    void addYoEntry(String groupName, Collection<String> variableNames);
+
+   /**
+    * Request the visualizer to perform a force update of the charts.
+    */
+   void requestChartsForceUpdate();
 
    /**
     * Loads a sliderboard configuration from an input stream and overrides the current configuration.
@@ -1234,7 +1239,7 @@ public interface SessionVisualizerControls
     *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
-    *         variable doesn't match, or there is no active session.
+    *       variable doesn't match, or there is no active session.
     */
    YoDoubleProperty newYoDoubleProperty(String variableName);
 
@@ -1254,7 +1259,7 @@ public interface SessionVisualizerControls
     *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
-    *         variable doesn't match, or there is no active session.
+    *       variable doesn't match, or there is no active session.
     */
    YoIntegerProperty newYoIntegerProperty(String variableName);
 
@@ -1274,7 +1279,7 @@ public interface SessionVisualizerControls
     *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
-    *         variable doesn't match, or there is no active session.
+    *       variable doesn't match, or there is no active session.
     */
    YoLongProperty newYoLongProperty(String variableName);
 
@@ -1294,7 +1299,7 @@ public interface SessionVisualizerControls
     *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
-    *         variable doesn't match, or there is no active session.
+    *       variable doesn't match, or there is no active session.
     */
    YoBooleanProperty newYoBooleanProperty(String variableName);
 
@@ -1314,7 +1319,7 @@ public interface SessionVisualizerControls
     *
     * @param variableName the name of the variable to create the property for.
     * @return the new property or {@code null} if the variable could not be found, the type of the
-    *         variable doesn't match, or there is no active session.
+    *       variable doesn't match, or there is no active session.
     */
    <E extends Enum<E>> YoEnumAsStringProperty<E> newYoEnumProperty(String variableName);
 
