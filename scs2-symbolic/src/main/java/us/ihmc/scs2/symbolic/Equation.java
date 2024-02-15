@@ -1,5 +1,6 @@
 package us.ihmc.scs2.symbolic;
 
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationInputDefinition;
@@ -31,6 +32,8 @@ public class Equation
     * The result of this equation.
     */
    private EquationInput result;
+
+   private boolean warnOnMissingInputs = true;
 
    public static Equation fromDefinition(YoEquationDefinition equationDefinition)
    {
@@ -126,6 +129,9 @@ public class Equation
    {
       checkBuildStatus();
 
+      if (!isBuilt())
+         return null;
+
       operations.forEach(equationOperation -> equationOperation.updateValue(time));
       operations.forEach(equationOperation -> equationOperation.updatePreviousValue());
 
@@ -141,6 +147,9 @@ public class Equation
          return;
 
       checkBuildStatus();
+
+      if (!isBuilt())
+         return;
 
       builder.getAliasManager().setHistoryUpdate(true);
       operations.forEach(EquationOperation::reset);
@@ -168,6 +177,9 @@ public class Equation
    {
       checkBuildStatus();
 
+      if (!isBuilt())
+         return;
+
       for (EquationOperation<?> operation : operations)
       {
          operation.reset();
@@ -181,8 +193,13 @@ public class Equation
 
       if (!isBuilt())
       {
-         throw new RuntimeException(
-               "Failed to build the equation: " + builder.getEquationString() + ", missing inputs: " + builder.getAliasManager().getMissingInputs());
+         if (warnOnMissingInputs)
+            LogTools.error("Failed to build the equation: {}, missing inputs: {}.", builder.getEquationString(), builder.getAliasManager().getMissingInputs());
+         warnOnMissingInputs = false;
+      }
+      else
+      {
+         warnOnMissingInputs = true;
       }
    }
 
