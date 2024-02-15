@@ -1,5 +1,3 @@
-# __IMPORTANT NOTE: READ-ONLY REPO, SCS2 GOT MOVED TO GITHUB: https://github.com/ihmcrobotics/simulation-construction-set-2 __
-
 # ![SCS2](logo/SCS2.png)
 
 ![scs2](https://maven-badges.herokuapp.com/maven-central/us.ihmc/scs2-definition/badge.svg?style=plastic)
