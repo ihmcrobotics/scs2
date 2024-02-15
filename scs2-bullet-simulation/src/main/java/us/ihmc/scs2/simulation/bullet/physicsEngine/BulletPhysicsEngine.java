@@ -1,9 +1,5 @@
 package us.ihmc.scs2.simulation.bullet.physicsEngine;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
@@ -28,6 +24,11 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 public class BulletPhysicsEngine implements PhysicsEngine
 {
    private final BulletMultiBodyDynamicsWorld bulletMultiBodyDynamicsWorld;
@@ -38,21 +39,26 @@ public class BulletPhysicsEngine implements PhysicsEngine
 
    private final YoRegistry rootRegistry;
    private final YoRegistry physicsEngineRegistry = new YoRegistry(getClass().getSimpleName());
-   private final YoDouble runTickExpectedTimeRate = new YoDouble("runTickExpectedTimeRate", physicsEngineRegistry);
-   private final YoTimer runBulletPhysicsEngineSimulateTimer = new YoTimer("runBulletPhysicsEngineSimulateTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer runBulletStepSimulateTimer = new YoTimer("runBulletStepSimulateTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer runControllerManagerTimer = new YoTimer("runControllerManagerTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer runPullStateFromBullet = new YoTimer("runPullStateFromBulletTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer runPushStateToBulletTimer = new YoTimer("runPushStateToBullet", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer runUpdateFramesSensorsTimer = new YoTimer("runUpdateFramesSensorsTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoDouble bulletPhysicsEngineRealTimeRate = new YoDouble("bulletPhysicsEngineRealTimeRate", physicsEngineRegistry);
+   private final YoRegistry physicsEngineStatisticsRegistry = new YoRegistry("physicsEngineStatistics");
+   private final YoDouble runTickExpectedTimeRate = new YoDouble("runTickExpectedTimeRate", physicsEngineStatisticsRegistry);
+   private final YoTimer runBulletPhysicsEngineSimulateTimer = new YoTimer("runBulletPhysicsEngineSimulateTimer",
+                                                                           TimeUnit.MILLISECONDS,
+                                                                           physicsEngineStatisticsRegistry);
+   private final YoTimer runBulletStepSimulateTimer = new YoTimer("runBulletStepSimulateTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer runControllerManagerTimer = new YoTimer("runControllerManagerTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer runPullStateFromBullet = new YoTimer("runPullStateFromBulletTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer runPushStateToBulletTimer = new YoTimer("runPushStateToBullet", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer runUpdateFramesSensorsTimer = new YoTimer("runUpdateFramesSensorsTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoDouble bulletPhysicsEngineRealTimeRate = new YoDouble("bulletPhysicsEngineRealTimeRate", physicsEngineStatisticsRegistry);
    private final ArrayList<YoPoint3D> contactPoints = new ArrayList<>();
+
    {
       for (int i = 0; i < 100; i++)
       {
          contactPoints.add(new YoPoint3D("contactPoint" + i, physicsEngineRegistry));
       }
    }
+
    private final YoBulletMultiBodyParameters globalMultiBodyParameters;
    private final YoBulletMultiBodyJointParameters globalMultiBodyJointParameters;
    private final YoBulletContactSolverInfoParameters globalContactSolverInfoParameters;
@@ -64,6 +70,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
+
+      physicsEngineRegistry.addChild(physicsEngineStatisticsRegistry);
 
       globalMultiBodyParameters = new YoBulletMultiBodyParameters("globalMultiBody", physicsEngineRegistry);
       globalMultiBodyJointParameters = new YoBulletMultiBodyJointParameters("globalMultiBodyJoint", physicsEngineRegistry);
@@ -97,7 +105,7 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       if (!hasBeenInitialized)
       {
-         initialize(gravity);         
+         initialize(gravity);
          return;
       }
 
@@ -125,6 +133,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
       runControllerManagerTimer.start();
       for (BulletRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
@@ -165,11 +175,6 @@ public class BulletPhysicsEngine implements PhysicsEngine
       runPullStateFromBullet.stop();
 
       runUpdateFramesSensorsTimer.start();
-      for (BulletRobot robot : robotList)
-      {
-         robot.updateFrames();
-         robot.updateSensors();
-      }
       runUpdateFramesSensorsTimer.stop();
       runBulletPhysicsEngineSimulateTimer.stop();
       bulletPhysicsEngineRealTimeRate.set(runTickExpectedTimeRate.getValue() / runBulletPhysicsEngineSimulateTimer.getTimer().getValue());
@@ -180,6 +185,8 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       for (BulletRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.getControllerManager().pauseControllers();
       }
    }
@@ -312,5 +319,4 @@ public class BulletPhysicsEngine implements PhysicsEngine
    {
       return globalContactSolverInfoParameters;
    }
-
 }

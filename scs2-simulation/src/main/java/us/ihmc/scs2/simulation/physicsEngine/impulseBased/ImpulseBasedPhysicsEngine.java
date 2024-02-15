@@ -29,7 +29,12 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -77,8 +82,9 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    private final YoBoolean hasGlobalConstraintParameters;
    private final YoConstraintParameters globalConstraintParameters;
 
-   private final YoTimer physicsEngineTotalTimer = new YoTimer("physicsEngineTotalTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoDouble physicsEngineRealTimeRate = new YoDouble("physicsEngineRealTimeRate", physicsEngineRegistry);
+   private final YoRegistry physicsEngineStatisticsRegistry = new YoRegistry("physicsEngineStatistics");
+   private final YoTimer physicsEngineTotalTimer = new YoTimer("physicsEngineTotalTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoDouble physicsEngineRealTimeRate = new YoDouble("physicsEngineRealTimeRate", physicsEngineStatisticsRegistry);
 
    private boolean estimateJointWrenches = false;
    private boolean hasBeenInitialized = false;
@@ -89,6 +95,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       this.rootRegistry = rootRegistry;
       this.inertialFrame = inertialFrame;
+
+      physicsEngineRegistry.addChild(physicsEngineStatisticsRegistry);
 
       collisionDetectionPlugin = new SimpleCollisionDetection(inertialFrame);
 
@@ -175,11 +183,13 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       hasBeenInitialized = true;
    }
 
-   private final YoTimer initialPhaseTimer = new YoTimer("initialPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer detectCollisionsTimer = new YoTimer("detectCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer configureCollisionHandlersTimer = new YoTimer("configureCollisionHandlersTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer handleCollisionsTimer = new YoTimer("handleCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer finalPhaseTimer = new YoTimer("finalPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer initialPhaseTimer = new YoTimer("initialPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer detectCollisionsTimer = new YoTimer("detectCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer configureCollisionHandlersTimer = new YoTimer("configureCollisionHandlersTimer",
+                                                                       TimeUnit.MILLISECONDS,
+                                                                       physicsEngineStatisticsRegistry);
+   private final YoTimer handleCollisionsTimer = new YoTimer("handleCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer finalPhaseTimer = new YoTimer("finalPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
 
    private final Wrench tempWrench = new Wrench();
 
@@ -197,6 +207,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
 
       for (ImpulseBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.resetCalculators();
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
@@ -295,8 +307,6 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
          robot.writeJointDeltaVelocities();
          robot.computeJointWrenches(dt);
          robot.integrateState(dt);
-         robot.updateFrames();
-         robot.updateSensors();
       }
 
       finalPhaseTimer.stop();
@@ -309,6 +319,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       for (ImpulseBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.getControllerManager().pauseControllers();
       }
    }

@@ -108,6 +108,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
       for (ContactPointBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.resetCalculators();
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
@@ -171,8 +173,6 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
                                       });
 
          robot.integrateState(dt);
-         robot.updateFrames();
-         robot.updateSensors();
       }
    }
 
@@ -181,6 +181,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    {
       for (ContactPointBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.getControllerManager().pauseControllers();
       }
    }
