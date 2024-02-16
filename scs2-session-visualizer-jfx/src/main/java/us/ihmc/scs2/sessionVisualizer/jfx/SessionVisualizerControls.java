@@ -698,6 +698,15 @@ public interface SessionVisualizerControls
    }
 
    /**
+    * @deprecated Use {@link #addYoGraphics(String, Collection)} instead.
+    */
+   @Deprecated
+   default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
+   {
+      addYoGraphics(namespace, yoGraphicDefinitions);
+   }
+
+   /**
     * Adds dynamic graphics to the 3D scene.
     *
     * @param namespace            the desired namespace for the new graphics. The separator used is
@@ -708,7 +717,7 @@ public interface SessionVisualizerControls
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *       controls: YoGraphic</a>
     */
-   default void addYoGraphic(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
+   default void addYoGraphics(String namespace, Collection<? extends YoGraphicDefinition> yoGraphicDefinitions)
    {
       String[] subNames = namespace.split(YoGraphicDefinition.SEPARATOR);
       if (subNames == null || subNames.length == 0)
