@@ -1,15 +1,14 @@
 package us.ihmc.scs2.definition.visual;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.util.Random;
-
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
-
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.scs2.definition.DefinitionRandomTools;
+
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ColorDefinitionTest
 {
@@ -53,7 +52,7 @@ public class ColorDefinitionTest
       Random random = new Random();
       ColorDefinition expectedColor = new ColorDefinition();
       ColorDefinition actualColor;
-      int argb, rgb, rgba;
+      int argb, rgb, rgba, abgr;
 
       for (int i = 0; i < ITERATIONS; i++)
       {
@@ -92,6 +91,14 @@ public class ColorDefinitionTest
 
          rgba = ColorDefinitions.toRGBA(rDouble, gDouble, bDouble, aDouble);
          actualColor = ColorDefinitions.rgba(rgba);
+         assertEquals(expectedColor, actualColor);
+
+         abgr = ColorDefinitions.toABGR(rInt, gInt, bInt, aInt);
+         actualColor = ColorDefinitions.abgr(abgr);
+         assertEquals(expectedColor, actualColor);
+
+         abgr = ColorDefinitions.toABGR(rDouble, gDouble, bDouble, aDouble);
+         actualColor = ColorDefinitions.abgr(abgr);
          assertEquals(expectedColor, actualColor);
 
          double[] hsba = expectedColor.toHSBADoubleArray();
@@ -750,8 +757,7 @@ public class ColorDefinitionTest
                                        double actualHue,
                                        double actualSaturation,
                                        double actualBrightness,
-                                       double epsilon)
-         throws AssertionFailedError
+                                       double epsilon) throws AssertionFailedError
    {
       boolean equals = EuclidCoreTools.epsilonEquals(expectedHue, actualHue, epsilon);
       equals &= EuclidCoreTools.epsilonEquals(expectedSaturation, actualSaturation, epsilon);
@@ -806,8 +812,7 @@ public class ColorDefinitionTest
                                         double actualSaturation,
                                         double actualBrightness,
                                         double actualAlpha,
-                                        double epsilon)
-         throws AssertionFailedError
+                                        double epsilon) throws AssertionFailedError
    {
       boolean equals = EuclidCoreTools.epsilonEquals(expectedHue, actualHue, epsilon);
       equals &= EuclidCoreTools.epsilonEquals(expectedSaturation, actualSaturation, epsilon);
@@ -844,8 +849,7 @@ public class ColorDefinitionTest
                                        double actualHue,
                                        double actualSaturation,
                                        double actualLightness,
-                                       double epsilon)
-         throws AssertionFailedError
+                                       double epsilon) throws AssertionFailedError
    {
       boolean equals = EuclidCoreTools.epsilonEquals(expectedHue, actualHue, epsilon);
       equals &= EuclidCoreTools.epsilonEquals(expectedSaturation, actualSaturation, epsilon);
@@ -892,8 +896,7 @@ public class ColorDefinitionTest
                                         double actualSaturation,
                                         double actualLightness,
                                         double actualAlpha,
-                                        double epsilon)
-         throws AssertionFailedError
+                                        double epsilon) throws AssertionFailedError
    {
       boolean equals = EuclidCoreTools.epsilonEquals(expectedHue, actualHue, epsilon);
       equals &= EuclidCoreTools.epsilonEquals(expectedSaturation, actualSaturation, epsilon);
@@ -930,8 +933,7 @@ public class ColorDefinitionTest
                                       double actualRed,
                                       double actualGreen,
                                       double actualBlue,
-                                      double epsilon)
-         throws AssertionFailedError
+                                      double epsilon) throws AssertionFailedError
    {
       boolean equals = EuclidCoreTools.epsilonEquals(expectedRed, actualRed, epsilon);
       equals &= EuclidCoreTools.epsilonEquals(expectedGreen, actualGreen, epsilon);
@@ -981,8 +983,7 @@ public class ColorDefinitionTest
                                        double actualGreen,
                                        double actualBlue,
                                        double actualAlpha,
-                                       double epsilon)
-         throws AssertionFailedError
+                                       double epsilon) throws AssertionFailedError
    {
       boolean equals = EuclidCoreTools.epsilonEquals(expectedRed, actualRed, epsilon);
       equals &= EuclidCoreTools.epsilonEquals(expectedGreen, actualGreen, epsilon);
@@ -1057,8 +1058,7 @@ public class ColorDefinitionTest
                                        int actualRed,
                                        int actualGreen,
                                        int actualBlue,
-                                       int actualAlpha)
-         throws AssertionFailedError
+                                       int actualAlpha) throws AssertionFailedError
    {
       boolean equals = expectedRed == actualRed;
       equals &= expectedGreen == actualGreen;

@@ -1,17 +1,16 @@
 package us.ihmc.scs2.definition.visual;
 
-import java.util.Arrays;
+import us.ihmc.euclid.tools.EuclidCoreTools;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
-
-import us.ihmc.euclid.tools.EuclidCoreTools;
+import java.util.Arrays;
 
 /**
  * {@code ColorDefinition} represents a color defined as (red, green, blue, alpha) and is backed by
  * {@code double}s all defined in the range [0.0-1.0]. The alpha value is typically used to
  * represent the opacity.
- * 
+ *
  * @author Sylvain Bertrand
  * @see ColorDefinitions
  */
@@ -30,7 +29,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Copy constructor.
-    * 
+    *
     * @param other the other color to copy. Not modified.
     */
    public ColorDefinition(ColorDefinition other)
@@ -40,7 +39,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new color initialized from RGB components and opaque.
-    * 
+    *
     * @param red   red component in range [0-255].
     * @param green green component in range [0-255].
     * @param blue  blue component in range [0-255].
@@ -52,7 +51,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new color initialized from RGB components.
-    * 
+    *
     * @param red   red component in range [0-255].
     * @param green green component in range [0-255].
     * @param blue  blue component in range [0-255].
@@ -69,7 +68,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new color initialized from RGB components.
-    * 
+    *
     * @param red   red component in range [0.0-255].
     * @param green green component in range [0-255].
     * @param blue  blue component in range [0-255].
@@ -85,7 +84,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new color initialized from RGB components and opaque.
-    * 
+    *
     * @param red   red component in range [0.0-1.0].
     * @param green green component in range [0.0-1.0].
     * @param blue  blue component in range [0.0-1.0].
@@ -97,7 +96,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new color initialized from RGB components.
-    * 
+    *
     * @param red   red component in range [0.0-1.0].
     * @param green green component in range [0.0-1.0].
     * @param blue  blue component in range [0.0-1.0].
@@ -114,7 +113,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the red component for this color.
-    * 
+    *
     * @param red red component in range [0.0-255].
     */
    public void setRed(int red)
@@ -124,7 +123,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the red component for this color.
-    * 
+    *
     * @param red red component in range [0.0-1.0].
     */
    @XmlAttribute
@@ -140,7 +139,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the green component for this color.
-    * 
+    *
     * @param green green component in range [0.0-255].
     */
    public void setGreen(int green)
@@ -150,7 +149,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the green component for this color.
-    * 
+    *
     * @param green green component in range [0.0-1.0].
     */
    @XmlAttribute
@@ -166,7 +165,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the blue component for this color.
-    * 
+    *
     * @param blue blue component in range [0.0-255].
     */
    public void setBlue(int blue)
@@ -176,7 +175,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the blue component for this color.
-    * 
+    *
     * @param blue blue component in range [0.0-1.0].
     */
    @XmlAttribute
@@ -192,7 +191,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the alpha component for this color.
-    * 
+    *
     * @param alpha alpha component in range [0-255], 0 being fully transparent and 255 fully opaque.
     */
    public void setAlpha(int alpha)
@@ -202,7 +201,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Sets the alpha component for this color.
-    * 
+    *
     * @param alpha alpha component in range [0.0-1.0], 0.0 being fully transparent and 1.0 fully
     *              opaque.
     */
@@ -219,7 +218,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the red component.
-    * 
+    *
     * @return the value for the red component in range [0.0-1.0].
     */
    public double getRed()
@@ -229,7 +228,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the red component.
-    * 
+    *
     * @return the value for the red component in range [0-255].
     */
    public int getRedAsInteger()
@@ -239,7 +238,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the green component.
-    * 
+    *
     * @return the value for the green component in range [0.0-1.0].
     */
    public double getGreen()
@@ -249,7 +248,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the green component.
-    * 
+    *
     * @return the value for the green component in range [0-255].
     */
    public int getGreenAsInteger()
@@ -259,7 +258,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the blue component.
-    * 
+    *
     * @return the value for the blue component in range [0.0-1.0].
     */
    public double getBlue()
@@ -269,7 +268,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the blue component.
-    * 
+    *
     * @return the value for the blue component in range [0-255].
     */
    public int getBlueAsInteger()
@@ -280,7 +279,7 @@ public class ColorDefinition extends PaintDefinition
    /**
     * Returns whether this color is completely opaque, i.e. {@code alpha = 1}, or transparent, i.e.
     * {@code alpha < 1}.
-    * 
+    *
     * @return {@code true} if this color is opaque, {@code false} otherwise.
     */
    public boolean isOpaque()
@@ -290,9 +289,9 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the alpha component.
-    * 
+    *
     * @return the value for the alpha component in range [0.0-1.0], 0.0 being fully transparent and 1.0
-    *         fully opaque.
+    *       fully opaque.
     */
    public double getAlpha()
    {
@@ -301,9 +300,9 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value for the alpha component.
-    * 
+    *
     * @return the value for the alpha component in range [0-255], 0 being fully transparent and 255
-    *         fully opaque.
+    *       fully opaque.
     */
    public int getAlphaAsInteger()
    {
@@ -312,11 +311,11 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the hue component using the HSV/HSB representation for this color.
-    * 
+    *
     * @return the hue component in range [0-360].
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public double getHue()
    {
@@ -340,11 +339,11 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the saturation component using the HSV/HSB representation for this color.
-    * 
+    *
     * @return the saturation component in range [0.0-1.0].
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public double getSaturation()
    {
@@ -357,11 +356,11 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Returns the value/brightness component using the HSV/HSB representation for this color.
-    * 
+    *
     * @return the value/brightness component in range [0.0-1.0].
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public double getBrightness()
    {
@@ -370,7 +369,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Convenience method for inverting all three color components. Note that the alpha is unchanged.
-    * 
+    *
     * @return the new inverted color.
     */
    public ColorDefinition invert()
@@ -383,7 +382,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Computes and returns a new color that is brighter than {@code this}.
-    * 
+    *
     * @return the new brighter color.
     */
    public ColorDefinition brighter()
@@ -393,7 +392,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Computes and returns a new color that is darker than {@code this}.
-    * 
+    *
     * @return the new darker color.
     */
    public ColorDefinition darker()
@@ -403,7 +402,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Computes and returns a new color that is more saturated than {@code this}.
-    * 
+    *
     * @return the new color more saturated.
     */
    public ColorDefinition saturate()
@@ -413,7 +412,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Computes and returns a new color that is less saturated than {@code this}.
-    * 
+    *
     * @return the new color less saturated.
     */
    public ColorDefinition desaturate()
@@ -424,7 +423,7 @@ public class ColorDefinition extends PaintDefinition
    /**
     * Convenience method for creating a new color based on {@code this} with modifiers applied in the
     * HSB domain.
-    * 
+    *
     * @param hueOffset       angle shift to add to the hue. The hue is defined in [0.0-360.0].
     * @param saturationScale scale factor to apply to the saturation. The saturation is defined in
     *                        [0.0-1.0]
@@ -466,7 +465,7 @@ public class ColorDefinition extends PaintDefinition
     * <li>Bits [0-7] are used to store blue.
     * </ul>
     * </p>
-    * 
+    *
     * @return the RGB value representing this color.
     */
    public int toRGB()
@@ -485,7 +484,7 @@ public class ColorDefinition extends PaintDefinition
     * <li>Bits [0-7] are used to store blue.
     * </ul>
     * </p>
-    * 
+    *
     * @return the ARGB value representing this color.
     */
    public int toARGB()
@@ -504,7 +503,7 @@ public class ColorDefinition extends PaintDefinition
     * <li>Bits [0-7] are used to store alpha.
     * </ul>
     * </p>
-    * 
+    *
     * @return the RGBA value representing this color.
     */
    public int toRGBA()
@@ -513,11 +512,30 @@ public class ColorDefinition extends PaintDefinition
    }
 
    /**
+    * Returns the ABGR, "#AABBGGRR", value representing this color.
+    * <p>
+    * The components are stored as follows:
+    * <ul>
+    * <li>Bits [24-31] are used to store alpha,
+    * <li>Bits [16-23] are used to store blue,
+    * <li>Bits [8-15] are used to store green,
+    * <li>Bits [0-7] are used to store red.
+    * </ul>
+    * </p>
+    *
+    * @return the ABGR value representing this color.
+    */
+   public int toABGR()
+   {
+      return ColorDefinitions.toABGR(red, green, blue, alpha);
+   }
+
+   /**
     * Returns the three components red, green, and blue in order as an array.
     * <p>
     * Each component is expressed in the range [0.0-1.0].
     * </p>
-    * 
+    *
     * @return the three components red, green, and blue in order as an array.
     */
    public double[] toRGBDoubleArray()
@@ -530,7 +548,7 @@ public class ColorDefinition extends PaintDefinition
     * <p>
     * Each component is expressed in the range [0-255].
     * </p>
-    * 
+    *
     * @return the three components red, green, and blue in order as an array.
     */
    public int[] toRGBIntArray()
@@ -543,7 +561,7 @@ public class ColorDefinition extends PaintDefinition
     * <p>
     * Each component is expressed in the range [0.0-1.0].
     * </p>
-    * 
+    *
     * @return the three components red, green, blue, and alpha in order as an array.
     */
    public double[] toRGBADoubleArray()
@@ -556,7 +574,7 @@ public class ColorDefinition extends PaintDefinition
     * <p>
     * Each component is expressed in the range [0-255].
     * </p>
-    * 
+    *
     * @return the three components red, green, blue, and alpha in order as an array.
     */
    public int[] toRGBAIntArray()
@@ -571,11 +589,11 @@ public class ColorDefinition extends PaintDefinition
     * The hue is expressed in the range [0-360] while the saturation and brightness are expressed in
     * the range [0.0-1.0].
     * </p>
-    * 
+    *
     * @return the three components hue, saturation, and brightness in order as an array.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public double[] toHSBDoubleArray()
    {
@@ -589,11 +607,11 @@ public class ColorDefinition extends PaintDefinition
     * The hue is expressed in the range [0-360] while the saturation, brightness, and alpha are
     * expressed in the range [0.0-1.0].
     * </p>
-    * 
+    *
     * @return the four components hue, saturation, brightness, and alpha in order as an array.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public double[] toHSBADoubleArray()
    {
@@ -607,11 +625,11 @@ public class ColorDefinition extends PaintDefinition
     * The hue is expressed in the range [0-360] while the saturation and lightness are expressed in the
     * range [0.0-1.0].
     * </p>
-    * 
+    *
     * @return the three components hue, saturation, lightness in order as an array.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     */
    public double[] toHSLDoubleArray()
    {
@@ -625,11 +643,11 @@ public class ColorDefinition extends PaintDefinition
     * The hue is expressed in the range [0-360] while the saturation, lightness, and alpha are
     * expressed in the range [0.0-1.0].
     * </p>
-    * 
+    *
     * @return the four components hue, saturation, lightness, and alpha in order as an array.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     */
    public double[] toHSLADoubleArray()
    {
@@ -707,7 +725,7 @@ public class ColorDefinition extends PaintDefinition
     * <li>Bits [0-7] are used for blue.
     * </ul>
     * </p>
-    * 
+    *
     * @param rgb the combined RGB value.
     * @return the new color.
     */
@@ -727,7 +745,7 @@ public class ColorDefinition extends PaintDefinition
     * <li>Bits [0-7] are used for blue.
     * </ul>
     * </p>
-    * 
+    *
     * @param argb the combined ARGB value.
     * @return the new color.
     */
@@ -747,7 +765,7 @@ public class ColorDefinition extends PaintDefinition
     * <li>Bits [0-7] are used for alpha.
     * </ul>
     * </p>
-    * 
+    *
     * @param rgba the combined RGBA value.
     * @return the new color.
     */
@@ -762,7 +780,7 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as red, green, and blue and expressed in the range
     * [0-255].
     * </p>
-    * 
+    *
     * @param rgb the array containing the RGB components.
     * @return the new color.
     */
@@ -777,7 +795,7 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as red, green, and blue and expressed in the range
     * [0.0-1.0].
     * </p>
-    * 
+    *
     * @param rgb the array containing the RGB components.
     * @return the new color.
     */
@@ -792,7 +810,7 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as red, green, blue, and alpha and expressed in the
     * range [0-255].
     * </p>
-    * 
+    *
     * @param rgba the array containing the RGBA components.
     * @return the new color.
     */
@@ -807,7 +825,7 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as red, green, blue, and alpha and expressed in the
     * range [0.0-1.0].
     * </p>
-    * 
+    *
     * @param rgba the array containing the RGBA components.
     * @return the new color.
     */
@@ -822,12 +840,12 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as hue [0-360], saturation [0.0-1.0], and
     * brightness/value [0.0-1.0].
     * </p>
-    * 
+    *
     * @param hsb the array containing the HSB/HSV components.
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public static ColorDefinition hsb(double[] hsb)
    {
@@ -836,14 +854,14 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new opaque color from the given HSB/HSV values.
-    * 
+    *
     * @param hue        the hue component in range [0-360].
     * @param saturation the saturation component in range [0.0-1.0].
     * @param brightness the brightness/value component in range [0.0-1.0].
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public static ColorDefinition hsb(double hue, double saturation, double brightness)
    {
@@ -856,12 +874,12 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as hue [0-360], saturation [0.0-1.0], brightness/value
     * [0.0-1.0], and alpha [0.0-1.0].
     * </p>
-    * 
+    *
     * @param hsba the array containing the HSBA/HSVA components.
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public static ColorDefinition hsba(double[] hsba)
    {
@@ -870,7 +888,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new opaque color from the given HSBA/HSVA values.
-    * 
+    *
     * @param hue        the hue component in range [0-360].
     * @param saturation the saturation component in range [0.0-1.0].
     * @param brightness the brightness/value component in range [0.0-1.0].
@@ -878,8 +896,8 @@ public class ColorDefinition extends PaintDefinition
     *                   opaque.
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public static ColorDefinition hsba(double hue, double saturation, double brightness, double alpha)
    {
@@ -892,12 +910,12 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as hue [0-360], saturation [0.0-1.0], and lightness
     * [0.0-1.0].
     * </p>
-    * 
+    *
     * @param hsl the array containing the HSL components.
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     */
    public static ColorDefinition hsl(double[] hsl)
    {
@@ -906,14 +924,14 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new opaque color from the given HSL values.
-    * 
+    *
     * @param hue        the hue component in range [0-360].
     * @param saturation the saturation component in range [0.0-1.0].
     * @param lightness  the lightness component in range [0.0-1.0].
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     */
    public static ColorDefinition hsl(double hue, double saturation, double lightness)
    {
@@ -926,12 +944,12 @@ public class ColorDefinition extends PaintDefinition
     * The components are assumed to be ordered as hue [0-360], saturation [0.0-1.0], lightness
     * [0.0-1.0], and alpha [0.0-1.0].
     * </p>
-    * 
+    *
     * @param hsla the array containing the HSLA components.
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     */
    public static ColorDefinition hsla(double[] hsla)
    {
@@ -940,7 +958,7 @@ public class ColorDefinition extends PaintDefinition
 
    /**
     * Creates a new opaque color from the given HSLA values.
-    * 
+    *
     * @param hue        the hue component in range [0-360].
     * @param saturation the saturation component in range [0.0-1.0].
     * @param lightness  the lightness component in range [0.0-1.0].
@@ -948,8 +966,8 @@ public class ColorDefinition extends PaintDefinition
     *                   opaque.
     * @return the new color.
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     */
    public static ColorDefinition hsla(double hue, double saturation, double lightness, double alpha)
    {
@@ -1013,17 +1031,17 @@ public class ColorDefinition extends PaintDefinition
     * Finally, the given string can also be the name of one of the 147 CSS named colors such as
     * "AliceBlue".
     * </p>
-    * 
+    *
     * @param webColor the string representing the color to parse.
     * @return the new color.
     * @see <a href="http://www.colors.commutercreative.com/grid/">147 CSS Named Colors</a>
     * @see <a href= "https://en.wikipedia.org/wiki/Web_colors">Web colors</a>
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSL_color_solid_cylinder_saturation_gray.png">HSL
+    *       representation</a>
     * @see <a href=
-    *      "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
-    *      representation</a>
+    *       "https://en.wikipedia.org/wiki/HSL_and_HSV#/media/File:HSV_color_solid_cylinder_saturation_gray.png">HSB/HSV
+    *       representation</a>
     */
    public static ColorDefinition parse(String webColor)
    {
