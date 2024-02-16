@@ -1,19 +1,20 @@
 package us.ihmc.scs2.symbolic;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.StringTokenizer;
-
 import org.junit.jupiter.api.Test;
-
+import us.ihmc.euclid.tools.EuclidCoreRandomTools;
+import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.symbolic.EquationBuilder.EquationBuilderException;
 import us.ihmc.scs2.symbolic.EquationInput.DoubleInput;
+import us.ihmc.scs2.symbolic.EquationInput.DoubleVariable;
 import us.ihmc.scs2.symbolic.EquationInput.InputType;
 import us.ihmc.scs2.symbolic.EquationInput.IntegerInput;
 import us.ihmc.scs2.symbolic.parser.EquationParseError;
 import us.ihmc.scs2.symbolic.parser.EquationParser;
+
+import java.util.Random;
+import java.util.StringTokenizer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EquationParserTest
 {
@@ -95,6 +96,33 @@ public class EquationParserTest
       equation = Equation.parse("x = 4 * 4 / 4 - 2 + 3 - 3 + 2", parser2);
       equation.compute(time);
       assertEquals(4, ((IntegerInput) equation.getResult()).getValue());
+   }
+
+   @Test
+   public void testComputeYawFromQuaternion()
+   {
+      String eqString = "yaw = atan2(2.0 * (qx * qy + qz * qs), 1.0 - 2.0 * (qy * qy + qz * qz))";
+      EquationParser parser = new EquationParser();
+      parser.getAliasManager().addAlias("yaw", InputType.DOUBLE);
+      DoubleVariable qx = (DoubleVariable) parser.getAliasManager().addAlias("qx", InputType.DOUBLE).input();
+      DoubleVariable qy = (DoubleVariable) parser.getAliasManager().addAlias("qy", InputType.DOUBLE).input();
+      DoubleVariable qz = (DoubleVariable) parser.getAliasManager().addAlias("qz", InputType.DOUBLE).input();
+      DoubleVariable qs = (DoubleVariable) parser.getAliasManager().addAlias("qs", InputType.DOUBLE).input();
+      Equation equation = Equation.parse(eqString, parser);
+
+      Random random = new Random(234);
+
+      for (int i = 0; i < 1000; i++)
+      {
+         Quaternion quaternion = EuclidCoreRandomTools.nextQuaternion(random);
+         qx.setValue(0, quaternion.getX());
+         qy.setValue(0, quaternion.getY());
+         qz.setValue(0, quaternion.getZ());
+         qs.setValue(0, quaternion.getS());
+         equation.compute(0.0);
+         double yaw = ((DoubleInput) equation.getResult()).getValue();
+         assertEquals(quaternion.getYaw(), yaw, 1.0e-10, "Iteration: " + i);
+      }
    }
 
    public static void main(String[] args)
