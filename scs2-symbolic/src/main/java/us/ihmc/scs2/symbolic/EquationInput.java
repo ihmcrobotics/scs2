@@ -281,6 +281,12 @@ public interface EquationInput
       {
          return new EquationInputDefinition(Double.toString(value), true);
       }
+
+      @Override
+      public String toString()
+      {
+         return Double.toString(value);
+      }
    }
 
    class SimpleDoubleVariable implements DoubleVariable
@@ -355,6 +361,12 @@ public interface EquationInput
       {
          return new EquationInputDefinition(Double.toString(value), false);
       }
+
+      @Override
+      public String toString()
+      {
+         return Double.toString(value);
+      }
    }
 
    class SimpleIntegerConstant implements IntegerConstant
@@ -376,6 +388,12 @@ public interface EquationInput
       public EquationInputDefinition toInputDefinition()
       {
          return new EquationInputDefinition(Integer.toString(value), true);
+      }
+
+      @Override
+      public String toString()
+      {
+         return Integer.toString(value);
       }
    }
 
@@ -450,6 +468,12 @@ public interface EquationInput
       public EquationInputDefinition toInputDefinition()
       {
          return new EquationInputDefinition(Integer.toString(value), false);
+      }
+
+      @Override
+      public String toString()
+      {
+         return Integer.toString(value);
       }
    }
 }

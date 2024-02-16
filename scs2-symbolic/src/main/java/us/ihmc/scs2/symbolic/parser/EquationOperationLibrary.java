@@ -10,7 +10,13 @@ import us.ihmc.scs2.symbolic.parser.EquationOperation.IntegerEquationOperation;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class EquationOperationLibrary
@@ -155,6 +161,12 @@ public class EquationOperationLibrary
             for (int i = 0; i < getNumberOfInputs(); i++)
                derivative += getInput(i).getValueDot();
          }
+
+         @Override
+         public String toString()
+         {
+            return "(%s + %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static final class AddIntegerOperation extends IntegerEquationOperation
@@ -178,6 +190,12 @@ public class EquationOperationLibrary
             derivative = 0;
             for (int i = 0; i < getNumberOfInputs(); i++)
                derivative += getInput(i).getValueDot();
+         }
+
+         @Override
+         public String toString()
+         {
+            return "(%s + %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -219,6 +237,12 @@ public class EquationOperationLibrary
          {
             derivative = A.getValueDot() - B.getValueDot();
          }
+
+         @Override
+         public String toString()
+         {
+            return "(%s - %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static final class SubtractIntegerOperation extends IntegerEquationOperation
@@ -242,6 +266,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = A.getValueDot() - B.getValueDot();
+         }
+
+         @Override
+         public String toString()
+         {
+            return "(%s - %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -288,6 +318,12 @@ public class EquationOperationLibrary
                derivative += product;
             }
          }
+
+         @Override
+         public String toString()
+         {
+            return "(%s * %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static final class MultiplyIntegerOperation extends IntegerEquationOperation
@@ -320,6 +356,12 @@ public class EquationOperationLibrary
                }
                derivative += product;
             }
+         }
+
+         @Override
+         public String toString()
+         {
+            return "(%s * %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -360,6 +402,12 @@ public class EquationOperationLibrary
          {
             derivative = (A.getValueDot() * B.getValueAsDouble() - A.getValueAsDouble() * B.getValueDot()) / (B.getValueAsDouble() * B.getValueAsDouble());
          }
+
+         @Override
+         public String toString()
+         {
+            return "(%s / %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static final class DivideIntegerOperation extends IntegerEquationOperation
@@ -383,6 +431,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = (A.getValueDot() * B.getValueAsInteger() - A.getValueAsInteger() * B.getValueDot()) / (B.getValueAsInteger() * B.getValueAsInteger());
+         }
+
+         @Override
+         public String toString()
+         {
+            return "(%s / %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -422,6 +476,12 @@ public class EquationOperationLibrary
          derivative = Math.pow(A.getValueAsDouble(), B.getValueAsDouble()) * (B.getValueAsDouble() * A.getValueDot() / A.getValueAsDouble()
                                                                               + Math.log(A.getValueAsDouble()) * B.getValueDot());
       }
+
+      @Override
+      public String toString()
+      {
+         return "(%s ^ %s)".formatted(getInput(0), getInput(1));
+      }
    }
 
    public static class AbsoluteOperation
@@ -458,6 +518,12 @@ public class EquationOperationLibrary
          {
             derivative = A.getValueDot() * Math.signum(A.getValueAsDouble());
          }
+
+         @Override
+         public String toString()
+         {
+            return "|%s|".formatted(getInput(0));
+         }
       }
 
       static class AbsoluteIntegerOperation extends IntegerEquationOperation
@@ -480,6 +546,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = A.getValueDot() * Math.signum(A.getValueAsInteger());
+         }
+
+         @Override
+         public String toString()
+         {
+            return "|%s|".formatted(getInput(0));
          }
       }
    }
@@ -516,6 +588,12 @@ public class EquationOperationLibrary
       {
          derivative = A.getValueDot() * Math.cos(A.getValueAsDouble());
       }
+
+      @Override
+      public String toString()
+      {
+         return "sin(%s)".formatted(getInput(0));
+      }
    }
 
    public static class CosineDoubleOperation extends DoubleEquationOperation
@@ -549,6 +627,12 @@ public class EquationOperationLibrary
       protected void computeDerivative(double time)
       {
          derivative = -A.getValueDot() * Math.sin(A.getValueAsDouble());
+      }
+
+      @Override
+      public String toString()
+      {
+         return "cos(%s)".formatted(getInput(0));
       }
    }
 
@@ -584,6 +668,12 @@ public class EquationOperationLibrary
       {
          derivative = A.getValueDot() / Math.cos(A.getValueAsDouble()) / Math.cos(A.getValueAsDouble());
       }
+
+      @Override
+      public String toString()
+      {
+         return "tan(%s)".formatted(getInput(0));
+      }
    }
 
    public static class ArcSineDoubleOperation extends DoubleEquationOperation
@@ -617,6 +707,12 @@ public class EquationOperationLibrary
       protected void computeDerivative(double time)
       {
          derivative = A.getValueDot() / Math.sqrt(1.0 - A.getValueAsDouble() * A.getValueAsDouble());
+      }
+
+      @Override
+      public String toString()
+      {
+         return "asin(%s)".formatted(getInput(0));
       }
    }
 
@@ -652,6 +748,12 @@ public class EquationOperationLibrary
       {
          derivative = -A.getValueDot() / Math.sqrt(1.0 - A.getValueAsDouble() * A.getValueAsDouble());
       }
+
+      @Override
+      public String toString()
+      {
+         return "acos(%s)".formatted(getInput(0));
+      }
    }
 
    public static class ArcTangentDoubleOperation extends DoubleEquationOperation
@@ -685,6 +787,12 @@ public class EquationOperationLibrary
       protected void computeDerivative(double time)
       {
          derivative = A.getValueDot() / (1.0 + A.getValueAsDouble() * A.getValueAsDouble());
+      }
+
+      @Override
+      public String toString()
+      {
+         return "atan(%s)".formatted(getInput(0));
       }
    }
 
@@ -723,6 +831,12 @@ public class EquationOperationLibrary
          derivative = (A.getValueDot() * B.getValueAsDouble() - A.getValueAsDouble() * B.getValueDot()) / (A.getValueAsDouble() * A.getValueAsDouble()
                                                                                                            + B.getValueAsDouble() * B.getValueAsDouble());
       }
+
+      @Override
+      public String toString()
+      {
+         return "atan2(%s, %s)".formatted(getInput(0), getInput(1));
+      }
    }
 
    public static class ExponentialDoubleOperation extends DoubleEquationOperation
@@ -756,6 +870,12 @@ public class EquationOperationLibrary
       protected void computeDerivative(double time)
       {
          derivative = A.getValueDot() * Math.exp(A.getValueAsDouble());
+      }
+
+      @Override
+      public String toString()
+      {
+         return "exp(%s)".formatted(getInput(0));
       }
    }
 
@@ -791,6 +911,12 @@ public class EquationOperationLibrary
       {
          derivative = A.getValueDot() / A.getValueAsDouble();
       }
+
+      @Override
+      public String toString()
+      {
+         return "log(%s)".formatted(getInput(0));
+      }
    }
 
    public static class LogarithmBase10DoubleOperation extends DoubleEquationOperation
@@ -825,6 +951,12 @@ public class EquationOperationLibrary
       {
          derivative = A.getValueDot() / A.getValueAsDouble() / Math.log(10.0);
       }
+
+      @Override
+      public String toString()
+      {
+         return "log10(%s)".formatted(getInput(0));
+      }
    }
 
    public static class SquareRootDoubleOperation extends DoubleEquationOperation
@@ -858,6 +990,12 @@ public class EquationOperationLibrary
       protected void computeDerivative(double time)
       {
          derivative = A.getValueDot() / 2.0 / Math.sqrt(A.getValueAsDouble());
+      }
+
+      @Override
+      public String toString()
+      {
+         return "sqrt(%s)".formatted(getInput(0));
       }
    }
 
@@ -897,6 +1035,12 @@ public class EquationOperationLibrary
          {
             derivative = A.getValueAsDouble() > B.getValueAsDouble() ? A.getValueDot() : B.getValueDot();
          }
+
+         @Override
+         public String toString()
+         {
+            return "max(%s, %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static class MaxIntegerOperation extends IntegerEquationOperation
@@ -920,6 +1064,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = A.getValueAsInteger() > B.getValueAsInteger() ? A.getValueDot() : B.getValueDot();
+         }
+
+         @Override
+         public String toString()
+         {
+            return "max(%s, %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -960,6 +1110,12 @@ public class EquationOperationLibrary
          {
             derivative = A.getValueAsDouble() < B.getValueAsDouble() ? A.getValueDot() : B.getValueDot();
          }
+
+         @Override
+         public String toString()
+         {
+            return "min(%s, %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static class MinIntegerOperation extends IntegerEquationOperation
@@ -983,6 +1139,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = A.getValueAsInteger() < B.getValueAsInteger() ? A.getValueDot() : B.getValueDot();
+         }
+
+         @Override
+         public String toString()
+         {
+            return "min(%s, %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -1021,6 +1183,12 @@ public class EquationOperationLibrary
          {
             derivative = 0.0;
          }
+
+         @Override
+         public String toString()
+         {
+            return "sign(%s)".formatted(getInput(0));
+         }
       }
 
       static class SignIntegerOperation extends IntegerEquationOperation
@@ -1043,6 +1211,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = 0;
+         }
+
+         @Override
+         public String toString()
+         {
+            return "sign(%s)".formatted(getInput(0));
          }
       }
    }
@@ -1083,6 +1257,12 @@ public class EquationOperationLibrary
          {
             derivative = A.getValueDot() % B.getValueAsDouble();
          }
+
+         @Override
+         public String toString()
+         {
+            return "(%s %% %s)".formatted(getInput(0), getInput(1));
+         }
       }
 
       static class ModuloIntegerOperation extends IntegerEquationOperation
@@ -1106,6 +1286,12 @@ public class EquationOperationLibrary
          protected void computeDerivative(double time)
          {
             derivative = A.getValueDot() % B.getValueAsInteger();
+         }
+
+         @Override
+         public String toString()
+         {
+            return "(%s %% %s)".formatted(getInput(0), getInput(1));
          }
       }
    }
@@ -1144,6 +1330,12 @@ public class EquationOperationLibrary
             derivative = 0.0;
          else
             derivative = (value - previousValue) / (time - previousTime);
+      }
+
+      @Override
+      public String toString()
+      {
+         return "diff(%s)".formatted(getInput(0));
       }
    }
 
@@ -1191,6 +1383,12 @@ public class EquationOperationLibrary
          else
             derivative = (value - previousValue) / (time - previousTime);
       }
+
+      @Override
+      public String toString()
+      {
+         return "lpf(%s, %s)".formatted(getInput(0), getInput(1));
+      }
    }
 
    public static class AssignmentOperation
@@ -1232,6 +1430,12 @@ public class EquationOperationLibrary
             derivative = B.getValueDot();
             // TODO See if we can also set the derivative of A, although I don't see where it'd be used for now.
          }
+
+         @Override
+         public String toString()
+         {
+            return "%s = %s".formatted(getInput(0), getInput(1));
+         }
       }
 
       private static class AssignmentIntegerOperation extends IntegerEquationOperation
@@ -1258,6 +1462,12 @@ public class EquationOperationLibrary
          {
             derivative = B.getValueDot();
             // TODO See if we can also set the derivative of A, although I don't see where it'd be used for now.
+         }
+
+         @Override
+         public String toString()
+         {
+            return "%s = %s".formatted(getInput(0), getInput(1));
          }
       }
    }
