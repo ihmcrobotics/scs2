@@ -94,6 +94,9 @@ public class ReferenceFrameSearchField extends PropertySearchField<Property<Refe
 
       ReferenceFrameWrapper frame = findReferenceFrame(text);
 
+      if (frame == null)
+         return null;
+
       String uniqueName = frame.getUniqueShortName();
       if (uniqueName != null && uniqueName.equals(text))
          return null;
