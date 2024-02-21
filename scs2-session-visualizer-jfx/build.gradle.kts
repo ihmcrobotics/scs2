@@ -85,8 +85,26 @@ ihmc.jarWithLibFolder()
 tasks.getByPath("installDist").dependsOn("compositeJar")
 app.entrypoint(sessionVisualizerExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer", listOf("-Djdk.gtk.version=2", "-Dprism.vsync=false"))
 
-tasks.create("buildDebianPackage") {
+/**
+ * This task is used to compile the project and filter out any dependency not required for Linux.
+ */
+tasks.create("installDistLinux") {
    dependsOn("installDist")
+
+   doLast() {
+      fileTree("${project.projectDir}/build/install/scs2-session-visualizer-jfx/lib").matching {
+         include("*-win.jar")
+         include("*-android-*")
+         include("*-windows-*")
+         include("*-ios-*")
+         include("*-macosx-*")
+         include("*-osx-*")
+      }.forEach(File::delete)
+   }
+}
+
+tasks.create("buildDebianPackage") {
+   dependsOn("installDistLinux")
 
    doLast {
       val deploymentFolder = "${project.projectDir}/deployment"
