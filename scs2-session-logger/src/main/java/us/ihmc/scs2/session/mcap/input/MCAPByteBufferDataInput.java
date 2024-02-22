@@ -84,7 +84,6 @@ public class MCAPByteBufferDataInput implements MCAPDataInput
    @Override
    public ByteBuffer getDecompressedByteBuffer(long offset, int compressedLength, int uncompressedLength, Compression compression, boolean direct)
    {
-      ByteBuffer compressedBuffer = getByteBuffer(offset, compressedLength, false);
       ByteBuffer decompressedBuffer;
 
       if (compression == Compression.LZ4)
@@ -101,7 +100,7 @@ public class MCAPByteBufferDataInput implements MCAPDataInput
             int previousLimit = buffer.limit();
             buffer.limit((int) (offset + compressedLength));
             buffer.position((int) offset);
-            decompressedBuffer = zstdDecompressCtx.decompress(compressedBuffer, uncompressedLength);
+            decompressedBuffer = zstdDecompressCtx.decompress(buffer, uncompressedLength);
             buffer.position(previousPosition);
             buffer.limit(previousLimit);
          }

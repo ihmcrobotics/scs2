@@ -298,7 +298,7 @@ public class MCAPLogFileReader
       List<MCAP.Message> messages = messageManager.loadMessages(currentTimestamp.getValue());
       if (messages == null)
       {
-         LogTools.error("No messages at timestamp {}.", currentTimestamp.getValue());
+         LogTools.warn("No messages at timestamp {}.", currentTimestamp.getValue());
          return;
       }
       currentChunkStartTimestamp.set(messageManager.getActiveChunkStartTimestamp());
