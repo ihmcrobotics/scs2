@@ -2,6 +2,13 @@ package us.ihmc.scs2.session.mcap;
 
 import gnu.trove.list.array.TLongArrayList;
 import us.ihmc.scs2.session.mcap.MCAPBufferedChunk.ChunkBundle;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.ChunkIndex;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.MessageIndex;
+import us.ihmc.scs2.session.mcap.specs.records.MessageIndexEntry;
+import us.ihmc.scs2.session.mcap.specs.records.Opcode;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,7 +28,7 @@ public class MCAPMessageManager
    /**
     * All the chunk indices of the MCAP file.
     */
-   private final List<MCAP.ChunkIndex> mcapChunkIndices = new ArrayList<>();
+   private final List<ChunkIndex> mcapChunkIndices = new ArrayList<>();
    private final MCAPBufferedChunk chunkBuffer;
    private ChunkBundle currentChunkBundle = null;
    private final long desiredLogDT;
@@ -73,16 +80,16 @@ public class MCAPMessageManager
     */
    public void loadFromMCAP(MCAP mcap)
    {
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
-         if (record.op() == MCAP.Opcode.CHUNK_INDEX)
+         if (record.op() == Opcode.CHUNK_INDEX)
          {
-            mcapChunkIndices.add((MCAP.ChunkIndex) record.body());
+            mcapChunkIndices.add((ChunkIndex) record.body());
          }
-         else if (record.op() == MCAP.Opcode.MESSAGE_INDEX)
+         else if (record.op() == Opcode.MESSAGE_INDEX)
          {
-            MCAP.MessageIndex messageIndex = (MCAP.MessageIndex) record.body();
-            for (MCAP.MessageIndex.MessageIndexEntry mcapEntry : messageIndex.messageIndexEntries())
+            MessageIndex messageIndex = (MessageIndex) record.body();
+            for (MessageIndexEntry mcapEntry : messageIndex.messageIndexEntries())
             {
                long timestamp = round(mcapEntry.logTime(), desiredLogDT);
                if (allMessageTimestamps.isEmpty() || timestamp > allMessageTimestamps.get(allMessageTimestamps.size() - 1))
@@ -166,7 +173,7 @@ public class MCAPMessageManager
    /**
     * @return retrieves the messages at the given instant.
     */
-   public List<MCAP.Message> loadMessages(long timestamp) throws IOException
+   public List<Message> loadMessages(long timestamp) throws IOException
    {
       if (currentChunkBundle == null || timestamp < currentChunkBundle.startTime() || timestamp > currentChunkBundle.endTime())
       {

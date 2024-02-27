@@ -9,11 +9,15 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
-import us.ihmc.scs2.session.mcap.MCAP.Message;
-import us.ihmc.scs2.session.mcap.MCAP.Opcode;
-import us.ihmc.scs2.session.mcap.MCAP.Record;
 import us.ihmc.scs2.session.mcap.MCAPBufferedChunk.ChunkBundle;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.Channel;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Opcode;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.euclid.YoPose3D;
 import us.ihmc.yoVariables.euclid.YoQuaternion;
@@ -63,7 +67,7 @@ public class MCAPFrameTransformManager
    private final Set<String> unattachedRootNames = new LinkedHashSet<>();
 
    private final YoGraphicGroupDefinition yoGraphicGroupDefinition = new YoGraphicGroupDefinition("FoxgloveFrameTransforms");
-   private MCAP.Schema mcapSchema;
+   private Schema mcapSchema;
 
    public MCAPFrameTransformManager(ReferenceFrame inertialFrame)
    {
@@ -72,12 +76,12 @@ public class MCAPFrameTransformManager
 
    public void initialize(MCAP mcap, MCAPBufferedChunk chunkBuffer) throws IOException
    {
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
          if (record.op() != Opcode.SCHEMA)
             continue;
 
-         mcapSchema = (MCAP.Schema) record.body();
+         mcapSchema = (Schema) record.body();
          if (mcapSchema.name().equalsIgnoreCase("foxglove::FrameTransform"))
          {
             if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
@@ -121,11 +125,11 @@ public class MCAPFrameTransformManager
       }
 
       TIntObjectHashMap<String> channelIdToTopicMap = new TIntObjectHashMap<>();
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
          if (record.op() == Opcode.CHANNEL)
          {
-            MCAP.Channel channel = (MCAP.Channel) record.body();
+            Channel channel = (Channel) record.body();
             if (channel.schemaId() == foxgloveFrameTransformSchema.getId())
             {
                channelIdToTopicMap.put(channel.id(), channel.topic());
@@ -200,7 +204,7 @@ public class MCAPFrameTransformManager
       }
    }
 
-   private void processRecord(MCAP.Record record, TIntObjectHashMap<String> channelIdToTopicMap, Map<String, BasicTransformInfo> allTransforms)
+   private void processRecord(Record record, TIntObjectHashMap<String> channelIdToTopicMap, Map<String, BasicTransformInfo> allTransforms)
    {
       Message message = (Message) record.body();
       String topic = channelIdToTopicMap.get(message.channelId());
@@ -377,7 +381,7 @@ public class MCAPFrameTransformManager
       return foxgloveFrameTransformSchema != null;
    }
 
-   public MCAP.Schema getMCAPSchema()
+   public Schema getMCAPSchema()
    {
       return mcapSchema;
    }

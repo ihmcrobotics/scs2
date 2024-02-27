@@ -415,6 +415,6 @@ public class MCAPLogSession extends Session
 
    public File getMCAPFile()
    {
-      return mcapLogFileReader.getMcapFile();
+      return mcapLogFileReader.getMCAPFile();
    }
 }

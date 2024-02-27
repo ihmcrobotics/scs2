@@ -13,6 +13,7 @@ import us.ihmc.scs2.session.mcap.omgidl_parser.IDLLexer;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser.Enum_typeContext;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,7 +25,7 @@ import java.util.Objects;
 
 public class OMGIDLSchemaParser
 {
-   public static MCAPSchema loadSchema(MCAP.Schema mcapSchema) throws IOException
+   public static MCAPSchema loadSchema(Schema mcapSchema) throws IOException
    {
       return loadSchema(mcapSchema.name(), mcapSchema.id(), new ByteBufferBackedInputStream(mcapSchema.data()));
    }

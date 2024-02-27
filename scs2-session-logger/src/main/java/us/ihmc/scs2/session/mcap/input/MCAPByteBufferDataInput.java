@@ -1,7 +1,8 @@
 package us.ihmc.scs2.session.mcap.input;
 
 import com.github.luben.zstd.ZstdDecompressCtx;
-import us.ihmc.scs2.session.mcap.LZ4FrameDecoder;
+import us.ihmc.scs2.session.mcap.encoding.LZ4FrameDecoder;
+import us.ihmc.scs2.session.mcap.specs.records.Compression;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -77,6 +78,8 @@ public class MCAPByteBufferDataInput implements MCAPDataInput
    {
       ByteBuffer out = direct ? ByteBuffer.allocateDirect(length) : ByteBuffer.allocate(length);
       out.put(0, buffer, (int) offset, length);
+      out.position(0);
+      out.limit(length);
       out.order(ByteOrder.LITTLE_ENDIAN);
       return out;
    }
