@@ -2,6 +2,8 @@ package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -143,7 +145,7 @@ public final class YoMCAPMessage
       return channelId;
    }
 
-   public void readMessage(MCAP.Message message)
+   public void readMessage(Message message)
    {
       if (message.channelId() != channelId)
          throw new IllegalArgumentException("Expected channel ID: " + channelId + ", but received: " + message.channelId());

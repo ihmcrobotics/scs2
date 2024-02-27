@@ -1,4 +1,4 @@
-package us.ihmc.scs2.session.mcap;
+package us.ihmc.scs2.session.mcap.encoding;
 
 import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
@@ -7,7 +7,6 @@ import net.jpountz.xxhash.StreamingXXHash32;
 import net.jpountz.xxhash.XXHash32;
 import net.jpountz.xxhash.XXHashFactory;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -36,7 +35,6 @@ public class LZ4FrameDecoder
                                             8 + // Content Size
                                             1; // HC
    static final int INTEGER_BYTES = Integer.SIZE >>> 3; // or Integer.BYTES in Java 1.8
-   static final int LONG_BYTES = Long.SIZE >>> 3; // or Long.BYTES in Java 1.8
    static final int LZ4_FRAME_INCOMPRESSIBLE_MASK = 0x80000000;
 
    private final LZ4SafeDecompressor decompressor;
@@ -53,11 +51,10 @@ public class LZ4FrameDecoder
    private FrameInfo frameInfo = null;
 
    /**
-    * Creates a new {@link InputStream} that will decompress data using fastest instances of
+    * Creates a new decoder that will decompress data using fastest instances of
     * {@link LZ4SafeDecompressor} and {@link XXHash32}. This instance will decompress all concatenated
     * frames in their sequential order.
     *
-    * @throws IOException if an I/O error occurs
     * @see LZ4Factory#fastestInstance()
     * @see XXHashFactory#fastestInstance()
     */
@@ -67,11 +64,10 @@ public class LZ4FrameDecoder
    }
 
    /**
-    * Creates a new {@link InputStream} that will decompress data using the LZ4 algorithm.
+    * Creates a new decoder that will decompress data using the LZ4 algorithm.
     *
     * @param decompressor the decompressor to use
     * @param checksum     the hash function to use
-    * @throws IOException if an I/O error occurs
     */
    public LZ4FrameDecoder(LZ4SafeDecompressor decompressor, XXHash32 checksum)
    {
@@ -367,7 +363,7 @@ public class LZ4FrameDecoder
 
    public static class FLG
    {
-      private static final int DEFAULT_VERSION = 1;
+      public static final int DEFAULT_VERSION = 1;
 
       private final BitSet bitSet;
       private final int version;
@@ -453,7 +449,7 @@ public class LZ4FrameDecoder
 
       private final BLOCKSIZE blockSizeValue;
 
-      private BD(BLOCKSIZE blockSizeValue)
+      public BD(BLOCKSIZE blockSizeValue)
       {
          this.blockSizeValue = blockSizeValue;
       }
