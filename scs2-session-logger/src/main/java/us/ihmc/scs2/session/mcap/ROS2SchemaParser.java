@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,12 +17,12 @@ public class ROS2SchemaParser
    public static final String SUB_SCHEMA_PREFIX = "MSG: fastdds/";
 
    /**
-    * Loads a schema from the given {@link MCAP.Schema}.
+    * Loads a schema from the given {@link Schema}.
     *
     * @param mcapSchema the schema to load.
     * @return the loaded schema.
     */
-   public static MCAPSchema loadSchema(MCAP.Schema mcapSchema)
+   public static MCAPSchema loadSchema(Schema mcapSchema)
    {
       return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data().array());
    }

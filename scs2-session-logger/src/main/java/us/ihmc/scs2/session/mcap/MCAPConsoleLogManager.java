@@ -1,12 +1,14 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.session.mcap.MCAP.Channel;
-import us.ihmc.scs2.session.mcap.MCAP.Message;
-import us.ihmc.scs2.session.mcap.MCAP.Opcode;
-import us.ihmc.scs2.session.mcap.MCAP.Record;
-import us.ihmc.scs2.session.mcap.MCAP.Schema;
 import us.ihmc.scs2.session.mcap.MCAPBufferedChunk.ChunkBundle;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.Channel;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
+import us.ihmc.scs2.session.mcap.specs.records.Opcode;
 import us.ihmc.scs2.simulation.SpyList;
 
 import java.io.IOException;

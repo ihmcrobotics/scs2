@@ -81,7 +81,7 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private ToggleButton enableVariableFilterToggleButton;
    @FXML
-   private ComboBox<OutputFormat> outputFormatComboxBox;
+   private ComboBox<OutputFormat> outputFormatComboBox;
    @FXML
    private JFXTrimSlider logPositionSlider;
    @FXML
@@ -222,7 +222,7 @@ public class LogSessionManagerController implements SessionControlsController
       startTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       endTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       resetTrimsButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
-      outputFormatComboxBox.disableProperty().bind(showTrimsButton.selectedProperty().not());
+      outputFormatComboBox.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropAndExportButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropProgressMonitorPane.getChildren().addListener((ListChangeListener<Node>) c ->
       {
@@ -241,26 +241,26 @@ public class LogSessionManagerController implements SessionControlsController
                                       activeSessionProperty.set(null);
                                    });
 
-      outputFormatComboxBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
-      outputFormatComboxBox.getSelectionModel().select(OutputFormat.Default);
+      outputFormatComboBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
+      outputFormatComboBox.getSelectionModel().select(OutputFormat.Default);
       enableVariableFilterToggleButton.setDisable(true); // Only available if export format is MATLAB/CSV for now.
 
-      outputFormatComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-                                                                                   {
-                                                                                      if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
-                                                                                      {
-                                                                                         enableVariableFilterToggleButton.setSelected(false);
-                                                                                         enableVariableFilterToggleButton.setDisable(true);
-                                                                                      }
-                                                                                      else
-                                                                                      {
-                                                                                         enableVariableFilterToggleButton.setDisable(false);
-                                                                                      }
-                                                                                   });
+      outputFormatComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+                                                                                  {
+                                                                                     if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
+                                                                                     {
+                                                                                        enableVariableFilterToggleButton.setSelected(false);
+                                                                                        enableVariableFilterToggleButton.setDisable(true);
+                                                                                     }
+                                                                                     else
+                                                                                     {
+                                                                                        enableVariableFilterToggleButton.setDisable(false);
+                                                                                     }
+                                                                                  });
 
       showTrimsButton.selectedProperty().addListener((o, oldValue, newValue) ->
                                                      {
-                                                        if (newValue && outputFormatComboxBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
+                                                        if (newValue && outputFormatComboBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
                                                         {
                                                            enableVariableFilterToggleButton.setDisable(false);
                                                         }
@@ -438,7 +438,7 @@ public class LogSessionManagerController implements SessionControlsController
 
       File destination;
 
-      OutputFormat outputFormat = outputFormatComboxBox.getSelectionModel().getSelectedItem();
+      OutputFormat outputFormat = outputFormatComboBox.getSelectionModel().getSelectedItem();
       switch (outputFormat)
       {
          case MATLAB:

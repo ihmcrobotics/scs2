@@ -2,7 +2,7 @@ package us.ihmc.scs2.session.mcap.input;
 
 import com.github.luben.zstd.ZstdCompressCtx;
 import org.junit.jupiter.api.Test;
-import us.ihmc.scs2.session.mcap.input.MCAPDataInput.Compression;
+import us.ihmc.scs2.session.mcap.specs.records.Compression;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

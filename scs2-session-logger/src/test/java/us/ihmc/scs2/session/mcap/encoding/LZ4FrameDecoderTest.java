@@ -1,12 +1,9 @@
-package us.ihmc.scs2.session.mcap;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Scanner;
-
-import org.junit.jupiter.api.Test;
+package us.ihmc.scs2.session.mcap.encoding;
 
 import gnu.trove.list.array.TByteArrayList;
+import org.junit.jupiter.api.Test;
+
+import java.util.Scanner;
 
 public class LZ4FrameDecoderTest
 {

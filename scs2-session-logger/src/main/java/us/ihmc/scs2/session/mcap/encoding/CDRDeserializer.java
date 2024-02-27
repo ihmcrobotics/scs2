@@ -1,4 +1,4 @@
-package us.ihmc.scs2.session.mcap;
+package us.ihmc.scs2.session.mcap.encoding;
 
 import us.ihmc.idl.CDR;
 import us.ihmc.log.LogTools;

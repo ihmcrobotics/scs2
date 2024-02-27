@@ -7,7 +7,14 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.SessionIOTools;
-import us.ihmc.scs2.session.mcap.MCAP.Schema;
+import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.Channel;
+import us.ihmc.scs2.session.mcap.specs.records.Chunk;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Opcode;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoNamespace;
@@ -28,8 +35,8 @@ import java.util.concurrent.TimeUnit;
 
 public class MCAPLogFileReader
 {
-   private static final Set<String> SCHEMA_TO_IGNORE = Set.of("foxglove::Grid", "foxglove::SceneUpdate", "foxglove::FrameTransforms", "HandDeviceHealth");
-   private static final Path SCS2_MCAP_DEBUG_HOME = SessionIOTools.SCS2_HOME.resolve("mcap-debug");
+   public static final Set<String> SCHEMA_TO_IGNORE = Set.of("foxglove::Grid", "foxglove::SceneUpdate", "foxglove::FrameTransforms", "HandDeviceHealth");
+   public static final Path SCS2_MCAP_DEBUG_HOME = SessionIOTools.SCS2_HOME.resolve("mcap-debug");
 
    static
    {
@@ -51,7 +58,7 @@ public class MCAPLogFileReader
    private final MCAPMessageManager messageManager;
    private final MCAPConsoleLogManager consoleLogManager;
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
-   private final TIntObjectHashMap<MCAP.Schema> rawSchemas = new TIntObjectHashMap<>();
+   private final TIntObjectHashMap<Schema> rawSchemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
    private final MCAPFrameTransformManager frameTransformManager;
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
@@ -165,17 +172,17 @@ public class MCAPLogFileReader
       }
       catch (Exception e)
       {
-         MCAP.Schema schema = frameTransformManager.getMCAPSchema();
+         Schema schema = frameTransformManager.getMCAPSchema();
          File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
          LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
          throw e;
       }
 
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
-         if (record.op() != MCAP.Opcode.SCHEMA)
+         if (record.op() != Opcode.SCHEMA)
             continue;
-         MCAP.Schema schema = (MCAP.Schema) record.body();
+         Schema schema = (Schema) record.body();
 
          rawSchemas.put(schema.id(), schema);
 
@@ -205,11 +212,11 @@ public class MCAPLogFileReader
 
    private void loadChannels() throws IOException
    {
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
-         if (record.op() != MCAP.Opcode.CHANNEL)
+         if (record.op() != Opcode.CHANNEL)
             continue;
-         MCAP.Channel channel = (MCAP.Channel) record.body();
+         Channel channel = (Channel) record.body();
          if (frameTransformManager.hasMCAPFrameTransforms() && channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
 
@@ -295,7 +302,7 @@ public class MCAPLogFileReader
 
    public void readMessagesAtCurrentTimestamp() throws IOException
    {
-      List<MCAP.Message> messages = messageManager.loadMessages(currentTimestamp.getValue());
+      List<Message> messages = messageManager.loadMessages(currentTimestamp.getValue());
       if (messages == null)
       {
          LogTools.warn("No messages at timestamp {}.", currentTimestamp.getValue());
@@ -304,7 +311,7 @@ public class MCAPLogFileReader
       currentChunkStartTimestamp.set(messageManager.getActiveChunkStartTimestamp());
       currentChunkEndTimestamp.set(messageManager.getActiveChunkEndTimestamp());
 
-      for (MCAP.Message message : messages)
+      for (Message message : messages)
       {
          try
          {
@@ -340,7 +347,7 @@ public class MCAPLogFileReader
       frameTransformManager.update();
    }
 
-   public File exportSchemaToFile(Path path, MCAP.Schema schema, Exception e) throws IOException
+   public static File exportSchemaToFile(Path path, Schema schema, Exception e) throws IOException
    {
       String filename;
       if (e != null)
@@ -357,7 +364,7 @@ public class MCAPLogFileReader
       return debugFile;
    }
 
-   private static void exportChannelToFile(Path path, MCAP.Channel channel, MCAPSchema schema, Exception e) throws IOException
+   public static void exportChannelToFile(Path path, Channel channel, MCAPSchema schema, Exception e) throws IOException
    {
       File debugFile;
       if (e != null)
@@ -372,7 +379,7 @@ public class MCAPLogFileReader
       pw.close();
    }
 
-   private static void exportMessageDataToFile(Path path, MCAP.Message message, MCAPSchema schema, Exception e) throws IOException
+   public static void exportMessageDataToFile(Path path, Message message, MCAPSchema schema, Exception e) throws IOException
    {
       File debugFile;
       String prefix = "messageData-timestamp-%d-schema-%s";
@@ -387,6 +394,22 @@ public class MCAPLogFileReader
       FileOutputStream os = new FileOutputStream(debugFile);
       os.write(message.messageData());
       os.close();
+   }
+
+   public static void exportChunkToFile(Path path, Chunk chunk, Exception e) throws IOException
+   {
+      File debugFile;
+      if (e != null)
+         debugFile = path.resolve("chunk-%d-%s.txt".formatted(chunk.messageStartTime(), e.getClass().getSimpleName())).toFile();
+      else
+         debugFile = path.resolve("chunk-%d.txt".formatted(chunk.messageStartTime())).toFile();
+      if (debugFile.exists())
+         debugFile.delete();
+      debugFile.createNewFile();
+      FileOutputStream os = new FileOutputStream(debugFile);
+      MCAPDataOutput dataOutput = MCAPDataOutput.wrap(os.getChannel());
+      chunk.write(dataOutput);
+      dataOutput.close();
    }
 
    private static String cleanupName(String name)
@@ -404,7 +427,12 @@ public class MCAPLogFileReader
       return consoleLogManager;
    }
 
-   public File getMcapFile()
+   public MCAP getMCAP()
+   {
+      return mcap;
+   }
+
+   public File getMCAPFile()
    {
       return mcapFile;
    }

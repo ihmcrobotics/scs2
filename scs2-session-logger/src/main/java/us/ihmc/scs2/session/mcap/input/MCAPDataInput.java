@@ -1,25 +1,12 @@
 package us.ihmc.scs2.session.mcap.input;
 
+import us.ihmc.scs2.session.mcap.specs.records.Compression;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 public interface MCAPDataInput
 {
-   enum Compression
-   {
-      NONE, LZ4, ZSTD;
-
-      public static Compression fromString(String name)
-      {
-         return switch (name.trim().toLowerCase())
-         {
-            case "none", "" -> NONE;
-            case "lz4" -> LZ4;
-            case "zstd" -> ZSTD;
-            default -> throw new IllegalArgumentException("Unsupported compression: " + name);
-         };
-      }
-   }
 
    void position(long position);
 

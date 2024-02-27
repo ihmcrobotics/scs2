@@ -1,7 +1,9 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.scs2.session.mcap.MCAP.Schema;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -227,7 +229,7 @@ public class MCAPSchema
       return indent(out, indent);
    }
 
-   public static String mcapMCAPMessageToString(MCAP.Message message, MCAPSchema schema)
+   public static String mcapMCAPMessageToString(Message message, MCAPSchema schema)
    {
       CDRDeserializer cdr = new CDRDeserializer();
       cdr.initialize(message.messageBuffer(), 0, message.dataLength());
