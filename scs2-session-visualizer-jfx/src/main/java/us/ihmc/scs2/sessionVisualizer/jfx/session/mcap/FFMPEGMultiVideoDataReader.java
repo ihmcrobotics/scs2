@@ -52,7 +52,6 @@ public class FFMPEGMultiVideoDataReader
       readers.forEach(reader ->
                       {
                          reader.readFrameAtTimestamp(timestamp);
-                         //                          LogTools.info("Reading frame at {} out of {}\n", timestamp / 1000000000.0, reader.getVideoLengthInSeconds());
                       });
    }
 

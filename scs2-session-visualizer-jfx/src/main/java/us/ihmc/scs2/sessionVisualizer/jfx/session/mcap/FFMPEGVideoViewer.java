@@ -9,17 +9,22 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Spinner;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.JavaFXFrameConverter;
 import us.ihmc.log.LogTools;
@@ -32,7 +37,8 @@ public class FFMPEGVideoViewer
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private final ImageView thumbnail = new ImageView();
-   private final StackPane thumbnailContainer = new StackPane(thumbnail);
+   private final Spinner<Double> offsetSpinner = new Spinner<>(-1.0e7, 1.0e7, 0.0, 0.001);
+   private final StackPane thumbnailContainer = new StackPane(thumbnail, offsetSpinner);
    private final ImageView videoView = new ImageView();
 
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
@@ -47,23 +53,44 @@ public class FFMPEGVideoViewer
    {
       this.reader = reader;
       this.defaultThumbnailSize = defaultThumbnailSize;
+
+      StackPane.setAlignment(offsetSpinner, Pos.BOTTOM_CENTER);
+      StackPane.setMargin(offsetSpinner, new Insets(0.0, 0.0, 5.0, 0.0));
+      offsetSpinner.setEditable(true);
+      offsetSpinner.getValueFactory().setConverter(new StringConverter<Double>()
+      {
+         @Override
+         public String toString(Double object)
+         {
+            return object.toString() + "s";
+         }
+
+         @Override
+         public Double fromString(String string)
+         {
+            return Double.valueOf(string.replaceAll("s", "").trim());
+         }
+      });
+
       thumbnail.setPreserveRatio(true);
       videoView.setPreserveRatio(true);
       thumbnail.setFitWidth(defaultThumbnailSize);
       thumbnail.setOnMouseEntered(e ->
-      {
-         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
-                                                       new KeyValue(thumbnail.fitWidthProperty(),
-                                                                    THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize,
-                                                                    Interpolator.EASE_BOTH)));
-         timeline.playFromStart();
-      });
+                                  {
+                                     Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
+                                                                                   new KeyValue(thumbnail.fitWidthProperty(),
+                                                                                                THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize,
+                                                                                                Interpolator.EASE_BOTH)));
+                                     timeline.playFromStart();
+                                  });
       thumbnail.setOnMouseExited(e ->
-      {
-         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
-                                                       new KeyValue(thumbnail.fitWidthProperty(), defaultThumbnailSize, Interpolator.EASE_BOTH)));
-         timeline.playFromStart();
-      });
+                                 {
+                                    Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.1),
+                                                                                  new KeyValue(thumbnail.fitWidthProperty(),
+                                                                                               defaultThumbnailSize,
+                                                                                               Interpolator.EASE_BOTH)));
+                                    timeline.playFromStart();
+                                 });
 
       thumbnail.addEventHandler(MouseEvent.MOUSE_CLICKED, e ->
       {
@@ -89,7 +116,7 @@ public class FFMPEGVideoViewer
 
             videoWindowProperty.set(stage);
             stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
-            stage.setTitle(reader.toString());
+            stage.setTitle(this.reader.toString());
             owner.setOnHiding(e2 -> stage.close());
             Scene scene = new Scene(anchorPane);
             stage.setScene(scene);
@@ -110,6 +137,12 @@ public class FFMPEGVideoViewer
          stage.toFront();
          stage.show();
       });
+
+      offsetSpinner.valueProperty().addListener((observable, oldValue, newValue) ->
+                                                {
+                                                   this.reader.setPlaybackOffset(Math.round(newValue * 1000000000.0));
+                                                   this.reader.readCurrentFrame();
+                                                });
    }
 
    private static Pane createImageViewPane(ImageView imageView)
@@ -147,7 +180,8 @@ public class FFMPEGVideoViewer
       try
       {
          currentImage = this.frameConverter.convert(currentFrame);
-      } catch (RuntimeException e)
+      }
+      catch (RuntimeException e)
       {
          LogTools.error("Frame has {} image channels", currentFrame.imageChannels);
       }
@@ -166,7 +200,7 @@ public class FFMPEGVideoViewer
 
          if (imageViewRootPane.get() != null)
          {
-            imageViewRootPane.get().setPadding(new Insets(16,16,16,16));
+            imageViewRootPane.get().setPadding(new Insets(16, 16, 16, 16));
          }
       }
    }
