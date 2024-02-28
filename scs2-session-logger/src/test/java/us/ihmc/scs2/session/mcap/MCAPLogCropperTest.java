@@ -11,6 +11,7 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 import us.ihmc.scs2.session.mcap.specs.records.Chunk;
 import us.ihmc.scs2.session.mcap.specs.records.ChunkIndex;
+import us.ihmc.scs2.session.mcap.specs.records.DataEnd;
 import us.ihmc.scs2.session.mcap.specs.records.Footer;
 import us.ihmc.scs2.session.mcap.specs.records.Magic;
 import us.ihmc.scs2.session.mcap.specs.records.Message;
@@ -134,16 +135,18 @@ public class MCAPLogCropperTest
       assertAttachmentsEqual(originalMCAP.records(), croppedMCAP.records());
       assertMetadatasEqual(originalMCAP.records(), croppedMCAP.records());
 
+      validateDataEnd(originalMCAP);
       validateChunkIndices(originalMCAP);
       validateMessageIndices(originalMCAP.records());
       validateFooter(originalMCAP);
 
+      validateDataEnd(croppedMCAP);
       validateChunkIndices(croppedMCAP);
       validateMessageIndices(croppedMCAP.records());
       validateFooter(croppedMCAP);
    }
 
-   private void assertChunksEqual(List<Record> expectedRecords, List<Record> actualRecords)
+   public static void assertChunksEqual(List<Record> expectedRecords, List<Record> actualRecords)
    {
       List<Chunk> expectedChunks = expectedRecords.stream().filter(r -> r.op() == Opcode.CHUNK).map(r -> (Chunk) r.body()).toList();
       List<Chunk> actualChunks = actualRecords.stream().filter(r -> r.op() == Opcode.CHUNK).map(r -> (Chunk) r.body()).toList();
@@ -162,13 +165,13 @@ public class MCAPLogCropperTest
          assertEquals(expectedChunk.messageStartTime(), actualChunk.messageStartTime(), "Chunk " + i + " has different start time");
          assertEquals(expectedChunk.messageEndTime(), actualChunk.messageEndTime(), "Chunk " + i + " has different end time");
          assertEquals(expectedChunk.recordsUncompressedLength(), actualChunk.recordsUncompressedLength(), "Chunk " + i + " has different uncompressed length");
-         assertEquals(expectedChunk.uncompressedCRC32(), actualChunk.uncompressedCRC32(), "Chunk " + i + " has different uncompressed CRC32");
          assertEquals(expectedChunk.compression(), actualChunk.compression(), "Chunk " + i + " has different compression");
          assertEquals(expectedChunk.records(), actualChunk.records(), "Chunk " + i + " has different records");
+         assertEquals(expectedChunk.uncompressedCRC32(), actualChunk.uncompressedCRC32(), "Chunk " + i + " has different uncompressed CRC32");
       }
    }
 
-   private void assertSchemasEqual(List<Record> expectedRecords, List<Record> actualRecords)
+   public static void assertSchemasEqual(List<Record> expectedRecords, List<Record> actualRecords)
    {
       List<Schema> expectedSchemas = expectedRecords.stream().filter(r -> r.op() == Opcode.SCHEMA).map(r -> (Schema) r.body()).toList();
       List<Schema> actualSchemas = actualRecords.stream().filter(r -> r.op() == Opcode.SCHEMA).map(r -> (Schema) r.body()).toList();
@@ -188,7 +191,7 @@ public class MCAPLogCropperTest
       }
    }
 
-   private void assertChannelsEqual(List<Record> expectedRecords, List<Record> actualRecords)
+   public static void assertChannelsEqual(List<Record> expectedRecords, List<Record> actualRecords)
    {
       List<Record> expectedChannels = expectedRecords.stream().filter(r -> r.op() == Opcode.CHANNEL).toList();
       List<Record> actualChannels = actualRecords.stream().filter(r -> r.op() == Opcode.CHANNEL).toList();
@@ -204,7 +207,7 @@ public class MCAPLogCropperTest
       }
    }
 
-   private void assertAttachmentsEqual(List<Record> expectedRecords, List<Record> actualRecords)
+   public static void assertAttachmentsEqual(List<Record> expectedRecords, List<Record> actualRecords)
    {
       List<Record> expectedAttachments = expectedRecords.stream().filter(r -> r.op() == Opcode.ATTACHMENT).toList();
       List<Record> actualAttachments = actualRecords.stream().filter(r -> r.op() == Opcode.ATTACHMENT).toList();
@@ -220,7 +223,7 @@ public class MCAPLogCropperTest
       }
    }
 
-   private void assertMetadatasEqual(List<Record> expectedRecords, List<Record> actualRecords)
+   public static void assertMetadatasEqual(List<Record> expectedRecords, List<Record> actualRecords)
    {
       List<Record> expectedMetadatas = expectedRecords.stream().filter(r -> r.op() == Opcode.METADATA).toList();
       List<Record> actualMetadatas = actualRecords.stream().filter(r -> r.op() == Opcode.METADATA).toList();
@@ -236,7 +239,23 @@ public class MCAPLogCropperTest
       }
    }
 
-   private void validateChunkIndices(MCAP mcap)
+   public static void validateDataEnd(MCAP mcap)
+   {
+      List<Record> dataEnds = mcap.records().stream().filter(r -> r.op() == Opcode.DATA_END).toList();
+      assertEquals(1, dataEnds.size(), "Expected one data end, but found " + dataEnds.size());
+
+      Record dataEndRecord = dataEnds.get(0);
+      long dataSectionCRC32 = ((DataEnd) dataEndRecord.body()).dataSectionCRC32();
+      if (dataSectionCRC32 != 0)
+      {
+         MCAPCRC32Helper crc32 = new MCAPCRC32Helper();
+         crc32.addBytes(Magic.MAGIC_BYTES);
+         mcap.records().stream().takeWhile(r -> r.op() != Opcode.DATA_END).forEach(r -> r.updateCRC(crc32));
+         assertEquals(crc32.getValue(), dataSectionCRC32, "Data end has different CRC32");
+      }
+   }
+
+   public static void validateChunkIndices(MCAP mcap)
    {
       List<Record> chunkIndices = mcap.records().stream().filter(r -> r.op() == Opcode.CHUNK_INDEX).toList();
       if (chunkIndices.isEmpty())
@@ -278,7 +297,7 @@ public class MCAPLogCropperTest
       }
    }
 
-   private void validateMessageIndices(List<Record> records)
+   public static void validateMessageIndices(List<Record> records)
    {
       List<MessageIndex> messageIndices = records.stream().filter(r -> r.op() == Opcode.MESSAGE_INDEX).map(r -> (MessageIndex) r.body()).toList();
       if (messageIndices.isEmpty())
@@ -312,7 +331,7 @@ public class MCAPLogCropperTest
       }
    }
 
-   private void validateFooter(MCAP mcap)
+   public static void validateFooter(MCAP mcap)
    {
       List<Record> footerRecords = mcap.records().stream().filter(r -> r.op() == Opcode.FOOTER).toList();
       assertEquals(1, footerRecords.size(), "Expected one footer, but found " + footerRecords.size());
@@ -367,7 +386,7 @@ public class MCAPLogCropperTest
       }
    }
 
-   private static File getDemoMCAPFile() throws IOException
+   public static File getDemoMCAPFile() throws IOException
    {
       File demoMCAPFile;
       // Check if the demo file is already downloaded, allowing for faster local testing

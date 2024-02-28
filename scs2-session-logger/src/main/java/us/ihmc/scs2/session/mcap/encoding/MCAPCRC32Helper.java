@@ -16,81 +16,92 @@ public class MCAPCRC32Helper
    {
    }
 
-   public void reset()
+   public MCAPCRC32Helper reset()
    {
       crc32.reset();
+      return this;
    }
 
-   public void addLong(long value)
+   public MCAPCRC32Helper addLong(long value)
    {
       buffer.clear();
       buffer.putLong(value);
       buffer.flip();
-      addByteBuffer(buffer);
+      return addByteBuffer(buffer);
    }
 
-   public void addInt(int value)
+   public MCAPCRC32Helper addInt(int value)
    {
       buffer.clear();
       buffer.putInt(value);
       buffer.flip();
-      addByteBuffer(buffer);
+      return addByteBuffer(buffer);
    }
 
-   public void addUnsignedInt(long value)
+   public MCAPCRC32Helper addUnsignedInt(long value)
    {
-      addInt((int) value);
+      return addInt((int) value);
    }
 
-   public void addShort(short value)
+   public MCAPCRC32Helper addShort(short value)
    {
       buffer.clear();
       buffer.putShort(value);
       buffer.flip();
-      addByteBuffer(buffer);
+      return addByteBuffer(buffer);
    }
 
-   public void addUnsignedShort(int value)
+   public MCAPCRC32Helper addUnsignedShort(int value)
    {
-      addShort((short) value);
+      return addShort((short) value);
    }
 
-   public void addByte(byte value)
+   public MCAPCRC32Helper addByte(byte value)
    {
       crc32.update(value);
+      return this;
    }
 
-   public void addUnsignedByte(int value)
+   public MCAPCRC32Helper addUnsignedByte(int value)
    {
-      addByte((byte) value);
+      return addByte((byte) value);
    }
 
-   public void addBytes(byte[] bytes)
+   public MCAPCRC32Helper addBytes(byte[] bytes)
    {
       crc32.update(bytes);
+      return this;
    }
 
-   public void addBytes(byte[] bytes, int offset, int length)
+   public MCAPCRC32Helper addBytes(byte[] bytes, int offset, int length)
    {
       crc32.update(bytes, offset, length);
+      return this;
    }
 
-   public void addByteBuffer(ByteBuffer byteBuffer)
+   public MCAPCRC32Helper addByteBuffer(ByteBuffer byteBuffer)
    {
       crc32.update(byteBuffer);
+      return this;
    }
 
-   public void addString(String value)
+   public MCAPCRC32Helper addString(String value)
    {
       byte[] bytes = value.getBytes();
       addUnsignedInt(bytes.length);
-      addBytes(bytes);
+      return addBytes(bytes);
    }
 
-   public <T extends MCAPElement> void addCollection(Collection<T> collection)
+   public <T extends MCAPElement> MCAPCRC32Helper addCollection(Collection<T> collection)
    {
       addUnsignedInt(collection.stream().mapToLong(MCAPElement::getElementLength).sum());
+      return addHeadlessCollection(collection);
+   }
+
+   public <T extends MCAPElement> MCAPCRC32Helper addHeadlessCollection(Collection<T> collection)
+   {
       collection.forEach(element -> element.updateCRC(this));
+      return this;
    }
 
    public long getValue()

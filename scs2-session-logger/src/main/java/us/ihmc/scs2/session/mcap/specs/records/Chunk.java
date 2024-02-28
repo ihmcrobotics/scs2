@@ -132,8 +132,6 @@ public interface Chunk extends MCAPElement
          return null;
 
       MutableChunk croppedChunk = new MutableChunk();
-      croppedChunk.setMessageStartTime(croppedStartTime);
-      croppedChunk.setMessageEndTime(croppedEndTime);
       croppedChunk.setRecords(croppedRecords);
       croppedChunk.setCompression(compression());
 

@@ -61,7 +61,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
 {
    private static final double THUMBNAIL_WIDTH = 200.0;
 
-   private static final String LOG_FILE_KEY = "MCAPLogFilePath";
+   public static final String LOG_FILE_KEY = "MCAPLogFilePath";
    private static final String ROBOT_MODEL_FILE_KEY = "MCAPRobotModelFilePath";
 
    private static final String DEFAULT_MODEL_TEXT_FIELD_TEXT = "Path to model file";
