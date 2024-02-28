@@ -10,6 +10,7 @@ import javafx.scene.layout.Region;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import org.apache.commons.lang3.SystemUtils;
 import us.ihmc.commons.nio.FileTools;
@@ -435,7 +436,19 @@ public class SessionVisualizerIOTools
       FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       if (hasExtension && !SystemUtils.IS_OS_WINDOWS)
          fileChooser.setInitialFileName(extensions.get(0));
+
+      boolean usePhantomStage = owner == null;
+      if (usePhantomStage)
+      {
+         owner = getPhantomStage();
+      }
+
       File result = fileChooser.showSaveDialog(owner);
+
+      if (usePhantomStage)
+      {
+         getPhantomStage().hide();
+      }
 
       if (result == null)
          return null;
@@ -512,10 +525,38 @@ public class SessionVisualizerIOTools
    public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
       FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
+
+      boolean usePhantomStage = owner == null;
+      if (usePhantomStage)
+      {
+         owner = getPhantomStage();
+         getPhantomStage().show();
+      }
+
       File result = fileChooser.showOpenDialog(owner);
       if (result != null)
          setDefaultFilePath(pathKey, result);
+
       return result;
+   }
+
+   private static Stage phantomStage = null;
+
+   private static Stage getPhantomStage()
+   {
+      if (phantomStage == null)
+      {
+         Stage stage = new Stage();
+         addSCSIconToWindow(stage);
+         stage.initStyle(StageStyle.UNDECORATED);
+         stage.setX(stage.getX() - 0.5 * stage.getWidth());
+         stage.setY(stage.getY() - 0.5 * stage.getHeight());
+         stage.setWidth(0);
+         stage.setHeight(0);
+         stage.show();
+         phantomStage = stage;
+      }
+      return phantomStage;
    }
 
    private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter, String pathKey)

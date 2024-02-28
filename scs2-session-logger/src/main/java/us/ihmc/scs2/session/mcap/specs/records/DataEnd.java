@@ -21,9 +21,9 @@ public class DataEnd implements MCAPElement
       MCAP.checkLength(elementLength, getElementLength());
    }
 
-   public DataEnd(long dataSectionCrc32)
+   public DataEnd(long dataSectionCRC32)
    {
-      this.dataSectionCRC32 = dataSectionCrc32;
+      this.dataSectionCRC32 = dataSectionCRC32;
    }
 
    @Override

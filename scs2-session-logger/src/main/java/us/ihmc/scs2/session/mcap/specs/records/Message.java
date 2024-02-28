@@ -83,8 +83,6 @@ public interface Message extends MCAPElement
             return false;
          if (publishTime() != other.publishTime())
             return false;
-         if (dataOffset() != other.dataOffset())
-            return false;
          if (dataLength() != other.dataLength())
             return false;
          return Objects.equals(messageBuffer(), other.messageBuffer());

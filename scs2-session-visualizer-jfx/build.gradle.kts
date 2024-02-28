@@ -62,6 +62,9 @@ mainDependencies {
    // Dependencies for checking the version
    api("com.squareup.okhttp3:okhttp:4.12.0")
    api("com.google.code.gson:gson:2.10.1")
+
+   api("me.tongfei:progressbar:0.10.0")
+   api("commons-cli:commons-cli:1.6.0")
 }
 
 testDependencies {
@@ -81,9 +84,11 @@ categories.configure("javafx-headless")
 }
 
 val sessionVisualizerExecutableName = "SCS2SessionVisualizer"
+val mcapRepackAppExecutableName = "MCAPRepackApplication"
 ihmc.jarWithLibFolder()
 tasks.getByPath("installDist").dependsOn("compositeJar")
 app.entrypoint(sessionVisualizerExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer", listOf("-Djdk.gtk.version=2", "-Dprism.vsync=false"))
+app.entrypoint(mcapRepackAppExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPRepackApplication", listOf("-Djdk.gtk.version=2", "-Dprism.vsync=false"))
 
 /**
  * This task is used to compile the project and filter out any dependency not required for Linux.
@@ -126,22 +131,11 @@ tasks.create("buildDebianPackage") {
       }
 
       fileTree("$sourceFolder/bin").matching {
-         exclude(sessionVisualizerExecutableName)
+         exclude(sessionVisualizerExecutableName, mcapRepackAppExecutableName)
       }.forEach(File::delete)
 
-      val launchScriptFile = File("$sourceFolder/bin/$sessionVisualizerExecutableName")
-      var originalScript = launchScriptFile.readText()
-      originalScript = originalScript.replaceFirst(
-            "#!/bin/sh", """
-         #!/bin/bash
-         # This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
-         export __GL_SYNC_TO_VBLANK=0
-         
-      """.trimIndent()
-      )
-
-      launchScriptFile.delete()
-      launchScriptFile.writeText(originalScript)
+      addVSyncLinuxHackForJavaFXApp(sourceFolder, sessionVisualizerExecutableName)
+      addVSyncLinuxHackForJavaFXApp(sourceFolder, mcapRepackAppExecutableName)
 
       File("$baseFolder/DEBIAN").mkdirs()
       LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
@@ -165,13 +159,14 @@ tasks.create("buildDebianPackage") {
          #!/bin/bash
          # Without this, the desktop file does not appear in the system menu.
          sudo desktop-file-install /usr/share/applications/scs2-${ihmc.version}-visualizer.desktop
-         echo "-----------------------------------------------------------------------------------------"
-         echo "---------------------------- Installation Notes: ----------------------------------------"
+         echo "-----------------------------------------------------------------------------------------------------------------------"
+         echo "----------------------------------------------- Installation Notes: ---------------------------------------------------"
          echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
          echo "   export PATH=\${'$'}PATH:/opt/scs2-${ihmc.version}/bin/"
-         echo "Then try to run the command '$sessionVisualizerExecutableName'"
-         echo "-----------------------------------------------------------------------------------------"
-         echo "-----------------------------------------------------------------------------------------"
+         echo "Then run the command '$sessionVisualizerExecutableName' to start the SCS2 Session Visualizer."
+         echo "You can also run '$mcapRepackAppExecutableName' to start the MCAP Repack Application to help with corrupted MCAP files."
+         echo "-----------------------------------------------------------------------------------------------------------------------"
+         echo "-----------------------------------------------------------------------------------------------------------------------"
          """.trimIndent()
       )
 
@@ -199,9 +194,29 @@ tasks.create("buildDebianPackage") {
             commandLine("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName")
          }
          exec {
+            commandLine("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName")
+         }
+         exec {
             workingDir(File(debianFolder))
             commandLine("dpkg", "--build", "scs2-${ihmc.version}")
          }
       }
    }
+}
+
+fun addVSyncLinuxHackForJavaFXApp(sourceFolder: String, javafxappname: String)
+{
+   val launchScriptFile = File("$sourceFolder/bin/$javafxappname")
+   var originalScript = launchScriptFile.readText()
+   originalScript = originalScript.replaceFirst(
+         "#!/bin/sh", """
+         #!/bin/bash
+         # This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
+         export __GL_SYNC_TO_VBLANK=0
+         
+      """.trimIndent()
+   )
+
+   launchScriptFile.delete()
+   launchScriptFile.writeText(originalScript)
 }

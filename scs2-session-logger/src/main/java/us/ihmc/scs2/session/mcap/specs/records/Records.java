@@ -6,26 +6,33 @@ import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.indent;
 
 /**
  * @see <a href="https://mcap.dev/spec#records">MCAP Records</a>
  */
-public class Records extends ArrayList<Record>
+public class Records extends AbstractList<Record>
 {
+   private final List<Record> records = new ArrayList<>();
+   private long messageStartTime = 0L;
+   private long messageEndTime = 0L;
+   private long crc32 = 0L;
+
    public Records()
    {
    }
 
    public Records(Collection<? extends Record> collection)
    {
-      super(collection);
+      addAll(collection);
    }
 
    public static Records load(MCAPDataInput dataInput, long elementPosition, long elementLength)
@@ -35,20 +42,130 @@ public class Records extends ArrayList<Record>
       return records;
    }
 
-   public MCAPCRC32Helper updateCRC(MCAPCRC32Helper crc32)
+   public void sortByTimestamp()
    {
-      if (crc32 == null)
-         crc32 = new MCAPCRC32Helper();
+      records.sort(Comparator.comparingLong(r ->
+                                            {// schemas, then channels, and then messages in chronological order.
+                                               if (r.op() == Opcode.MESSAGE)
+                                                  return ((Message) r.body()).logTime();
+                                               else if (r.op() == Opcode.ATTACHMENT)
+                                                  return ((Attachment) r.body()).logTime();
+                                               else if (r.op() == Opcode.CHANNEL)
+                                                  return Long.MIN_VALUE + 1;
+                                               else if (r.op() == Opcode.SCHEMA)
+                                                  return Long.MIN_VALUE;
+                                               else
+                                                  return 0;
+                                            }));
+      updateInfo();
+   }
 
-      for (Record record : this)
-         record.updateCRC(crc32);
+   public boolean containsMessages()
+   {
+      return records.stream().anyMatch(r -> r.op() == Opcode.MESSAGE);
+   }
 
+   @Override
+   public boolean add(Record record)
+   {
+      records.add(record);
+      updateInfo();
+      return true;
+   }
+
+   @Override
+   public void add(int index, Record element)
+   {
+      records.add(index, element);
+      updateInfo();
+   }
+
+   @Override
+   public boolean addAll(Collection<? extends Record> c)
+   {
+      records.addAll(c);
+      updateInfo();
+      return true;
+   }
+
+   @Override
+   public boolean addAll(int index, Collection<? extends Record> c)
+   {
+      records.addAll(index, c);
+      updateInfo();
+      return true;
+   }
+
+   @Override
+   public Record set(int index, Record element)
+   {
+      Record old = records.set(index, element);
+      updateInfo();
+      return old;
+   }
+
+   @Override
+   public Record remove(int index)
+   {
+      Record old = records.remove(index);
+      updateInfo();
+      return old;
+   }
+
+   @Override
+   protected void removeRange(int fromIndex, int toIndex)
+   {
+      records.subList(fromIndex, toIndex).clear();
+      updateInfo();
+   }
+
+   @Override
+   public Record get(int index)
+   {
+      return records.get(index);
+   }
+
+   public int indexOf(Predicate<Record> predicate)
+   {
+      for (int i = 0; i < records.size(); i++)
+      {
+         if (predicate.test(records.get(i)))
+            return i;
+      }
+      return -1;
+   }
+
+   @Override
+   public int size()
+   {
+      return records.size();
+   }
+
+   private void updateInfo()
+   {
+      messageStartTime = stream().filter(r -> r.op() == Opcode.MESSAGE).mapToLong(r -> ((Message) r.body()).logTime()).min().orElse(0);
+      messageEndTime = stream().filter(r -> r.op() == Opcode.MESSAGE).mapToLong(r -> ((Message) r.body()).logTime()).max().orElse(0);
+      crc32 = new MCAPCRC32Helper().addHeadlessCollection(records).getValue();
+   }
+
+   public long getMessageStartTime()
+   {
+      return messageStartTime;
+   }
+
+   public long getMessageEndTime()
+   {
+      return messageEndTime;
+   }
+
+   public long getCRC32()
+   {
       return crc32;
    }
 
    public Records crop(long startTimestamp, long endTimestamp)
    {
-      Records croppedRecords = new Records();
+      List<Record> croppedRecords = new ArrayList<>();
 
       for (Record record : this)
       {
@@ -82,7 +199,7 @@ public class Records extends ArrayList<Record>
                throw new IllegalArgumentException("Unexpected value: " + record.op());
          }
       }
-      return croppedRecords;
+      return new Records(croppedRecords);
    }
 
    public long getElementLength()
