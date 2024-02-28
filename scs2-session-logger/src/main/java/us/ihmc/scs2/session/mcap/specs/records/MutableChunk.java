@@ -91,25 +91,28 @@ public class MutableChunk implements Chunk
 
          ByteBuffer uncompressedBuffer = getRecordsUncompressedBuffer(compression == Compression.ZSTD);
 
-         recordsCompressedData = switch (compression)
+         // Eclipse seems to be struggling to compile the following when formulated as a switch-yield statement.
+         if (compression == Compression.NONE)
          {
-            case NONE:
+            recordsCompressedData = uncompressedBuffer;
+         }
+         else if (compression == Compression.LZ4)
+         {
+            LZ4FrameEncoder lz4FrameEncoder = new LZ4FrameEncoder();
+            recordsCompressedData = lz4FrameEncoder.encode(uncompressedBuffer, null);
+         }
+         else if (compression == Compression.ZSTD)
+         {
+            try (ZstdCompressCtx zstdCompressCtx = new ZstdCompressCtx())
             {
-               yield uncompressedBuffer;
+               recordsCompressedData = zstdCompressCtx.compress(uncompressedBuffer);
             }
-            case LZ4:
-            {
-               LZ4FrameEncoder lz4FrameEncoder = new LZ4FrameEncoder();
-               yield lz4FrameEncoder.encode(uncompressedBuffer, null);
-            }
-            case ZSTD:
-            {
-               try (ZstdCompressCtx zstdCompressCtx = new ZstdCompressCtx())
-               {
-                  yield zstdCompressCtx.compress(uncompressedBuffer);
-               }
-            }
-         };
+         }
+         else
+         {
+            throw new UnsupportedOperationException("Unsupported compression: " + compression);
+         }
+
          recordsCompressedData.order(ByteOrder.LITTLE_ENDIAN);
       }
 
