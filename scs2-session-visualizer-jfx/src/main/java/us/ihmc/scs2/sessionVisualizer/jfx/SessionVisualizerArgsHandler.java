@@ -1,6 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import com.martiansoftware.jsap.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.io.FilenameUtils;
 import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.session.Session;
@@ -25,44 +29,40 @@ public class SessionVisualizerArgsHandler
     */
    public boolean parseArgs(String[] args) throws Exception
    {
-      String logFileOption = "logFileName";
-      String desiredDTOption = "desiredDT";
-      String defaultRobotFileOption = "defaultRobotFileName";
-      SimpleJSAP jsap = new SimpleJSAP("SCS2 Session Visualizer",
-                                       "Visualizes a robot log file, or live data from a compatible source.",
-                                       new Parameter[] {new FlaggedOption(logFileOption,
-                                                                          JSAP.STRING_PARSER,
-                                                                          null,
-                                                                          JSAP.NOT_REQUIRED,
-                                                                          'l',
-                                                                          "log",
-                                                                          "Log file to load, can either be a SCS2 log file or a MCAP log file."),
-                                                        new FlaggedOption(desiredDTOption,
-                                                                          JSAP.DOUBLE_PARSER,
-                                                                          "0.001",
-                                                                          JSAP.NOT_REQUIRED,
-                                                                          't',
-                                                                          "dt",
-                                                                          "If possible, the desired DT in seconds to use for the session visualizer. Default value is 1 millisecond."),
-                                                        new FlaggedOption(defaultRobotFileOption,
-                                                                          JSAP.STRING_PARSER,
-                                                                          null,
-                                                                          JSAP.NOT_REQUIRED,
-                                                                          'r',
-                                                                          "robot",
-                                                                          "Default robot file to load in case the log file does not contain any robot definition. Can be either a URDF or SDF file.")});
-      JSAPResult config = jsap.parse(args);
+      Options options = new Options();
+      options.addOption("l", "log", true, "Log file to load, can either be a SCS2 log file or a MCAP log file.");
+      options.addOption("t", "dt", true, "If possible, the desired DT in seconds to use for the session visualizer. Default value is 1 millisecond.");
+      options.addOption("r",
+                        "robot",
+                        true,
+                        "Default robot file to load in case the log file does not contain any robot definition. Can be either a URDF or SDF file.");
+      options.addOption("h", "help", false, "Print this message.");
 
-      if (jsap.messagePrinted())
+      CommandLineParser parser = new DefaultParser();
+      String logFileName;
+      long desiredDT;
+      String defaultRobotFileName;
+      try
       {
-         System.out.println(jsap.getUsage());
-         System.out.println(jsap.getHelp());
+         CommandLine line = parser.parse(options, args);
+
+         if (line.hasOption("help"))
+         {
+            String header = "SCS2 SessionVisualizer Application: This application is used to visualize log files.";
+            String footer = "Please report issues at https://github.com/ihmcrobotics/simulation-construction-set-2/issues.";
+            new HelpFormatter().printHelp("SCS2 - SessionVisualizer", header, options, footer, true);
+            return false;
+         }
+
+         logFileName = line.getOptionValue("log");
+         desiredDT = (long) (1.0e9 * Double.parseDouble(line.getOptionValue("dt", "0.001")));
+         defaultRobotFileName = line.getOptionValue("robot");
+      }
+      catch (Exception e)
+      {
+         System.err.println("Parsing failed, use option -h to see usage. Reason: " + e.getMessage());
          return false;
       }
-
-      String logFileName = config.getString(logFileOption);
-      long desiredDT = (long) (1.0e9 * config.getDouble(desiredDTOption));
-      String defaultRobotFileName = config.getString(defaultRobotFileOption);
 
       if (logFileName != null)
       {

@@ -3,25 +3,17 @@ package us.ihmc.scs2.session.mcap;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 import us.ihmc.scs2.session.mcap.specs.records.Attachment;
-import us.ihmc.scs2.session.mcap.specs.records.Channel;
 import us.ihmc.scs2.session.mcap.specs.records.Chunk;
-import us.ihmc.scs2.session.mcap.specs.records.Footer;
+import us.ihmc.scs2.session.mcap.specs.records.DataEnd;
+import us.ihmc.scs2.session.mcap.specs.records.MCAPSummaryBuilder;
 import us.ihmc.scs2.session.mcap.specs.records.Magic;
-import us.ihmc.scs2.session.mcap.specs.records.Message;
 import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
-import us.ihmc.scs2.session.mcap.specs.records.MutableStatistics;
-import us.ihmc.scs2.session.mcap.specs.records.Opcode;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
-import us.ihmc.scs2.session.mcap.specs.records.Schema;
-import us.ihmc.scs2.session.mcap.specs.records.SummaryOffset;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class MCAPLogCropper
 {
@@ -64,13 +56,7 @@ public class MCAPLogCropper
       // Some chunks may not have any message left after cropping, so we'll move the schemas and channels to the next chunk when that happens.
       List<Record> recordsForNextChunk = null;
 
-      // Creating groups in the following order. There will be right after DATA_END
-      Map<Integer, Record> schemas = new LinkedHashMap<>(); // Schemas in a map to avoid duplicates
-      Map<String, Record> channels = new LinkedHashMap<>(); // Channels in a map to avoid duplicates
-      List<Record> chunkIndices = new ArrayList<>();
-      List<Record> attachmentIndices = new ArrayList<>();
-      List<Record> metadataIndices = new ArrayList<>();
-      MutableStatistics statistics = new MutableStatistics();
+      MCAPSummaryBuilder summaryBuilder = new MCAPSummaryBuilder();
 
       for (Record record : mcap.records())
       {
@@ -92,86 +78,13 @@ public class MCAPLogCropper
             }
             case DATA_END: // TODO The CRC32 should probably be recalculated
             {
-               record.write(dataOutput);
-               // Now we can write the groups
-               long summarySectionOffset = dataOutput.position();
-               long schemaOffset = dataOutput.position();
-               List<Record> schemaList = new ArrayList<>(schemas.values());
-               schemaList.forEach(r -> r.write(dataOutput));
-               long channelOffset = dataOutput.position();
-               List<Record> channelList = new ArrayList<>(channels.values());
-               channelList.forEach(r -> r.write(dataOutput));
-               long chunkIndexOffset = dataOutput.position();
-               chunkIndices.forEach(r -> r.write(dataOutput));
-               long attachmentIndexOffset = dataOutput.position();
-               attachmentIndices.forEach(r -> r.write(dataOutput));
-               long metadataIndexOffset = dataOutput.position();
-               metadataIndices.forEach(r -> r.write(dataOutput));
-               long statisticsOffset = dataOutput.position();
-               MutableRecord statisticsRecord = new MutableRecord(statistics);
-               statisticsRecord.write(dataOutput);
-
-               List<Record> summarySectionRecords = new ArrayList<>();
-               summarySectionRecords.addAll(schemaList);
-               summarySectionRecords.addAll(channelList);
-               summarySectionRecords.addAll(chunkIndices);
-               summarySectionRecords.addAll(attachmentIndices);
-               summarySectionRecords.addAll(metadataIndices);
-               summarySectionRecords.add(statisticsRecord);
-
-               List<Record> summaryOffsetSectionRecords = new ArrayList<>();
-               if (!schemas.isEmpty())
-               {
-                  MutableRecord summaryOffset = new MutableRecord(new SummaryOffset(schemaOffset, schemaList));
-                  summaryOffsetSectionRecords.add(summaryOffset);
-                  summaryOffset.write(dataOutput);
-               }
-               if (!channels.isEmpty())
-               {
-                  MutableRecord summaryOffset = new MutableRecord(new SummaryOffset(channelOffset, channelList));
-                  summaryOffsetSectionRecords.add(summaryOffset);
-                  summaryOffset.write(dataOutput);
-               }
-               if (!chunkIndices.isEmpty())
-               {
-                  MutableRecord summaryOffset = new MutableRecord(new SummaryOffset(chunkIndexOffset, chunkIndices));
-                  summaryOffsetSectionRecords.add(summaryOffset);
-                  summaryOffset.write(dataOutput);
-               }
-               if (!attachmentIndices.isEmpty())
-               {
-                  MutableRecord summaryOffset = new MutableRecord(new SummaryOffset(attachmentIndexOffset, attachmentIndices));
-                  summaryOffsetSectionRecords.add(summaryOffset);
-                  summaryOffset.write(dataOutput);
-               }
-               if (!metadataIndices.isEmpty())
-               {
-                  MutableRecord summaryOffset = new MutableRecord(new SummaryOffset(metadataIndexOffset, metadataIndices));
-                  summaryOffsetSectionRecords.add(summaryOffset);
-                  summaryOffset.write(dataOutput);
-               }
-               {
-                  MutableRecord summaryOffset = new MutableRecord(new SummaryOffset(statisticsOffset, Collections.singletonList(statisticsRecord)));
-                  summaryOffsetSectionRecords.add(summaryOffset);
-                  summaryOffset.write(dataOutput);
-               }
-
-               MutableRecord footer = new MutableRecord(new Footer(summarySectionOffset, summarySectionRecords, summaryOffsetSectionRecords));
-               footer.write(dataOutput);
+               new MutableRecord(new DataEnd(0)).write(dataOutput);
+               summaryBuilder.writeSummary(dataOutput);
                break;
             }
-            case SCHEMA:
+            case SCHEMA, CHANNEL:
             {
-               Schema schema = record.body();
-               if (schemas.put(schema.id(), record) == null)
-                  statistics.incrementCount(Opcode.SCHEMA);
-               break;
-            }
-            case CHANNEL:
-            {
-               Channel channel = record.body();
-               if (channels.put(channel.topic(), record) == null)
-                  statistics.incrementCount(Opcode.CHANNEL);
+               summaryBuilder.update(record);
                break;
             }
             case CHUNK:
@@ -191,7 +104,7 @@ public class MCAPLogCropper
 
                MutableRecord croppedChunkRecord = new MutableRecord(croppedChunk);
 
-               if (croppedChunk.records().stream().noneMatch(r -> r.op() == Opcode.MESSAGE))
+               if (!croppedChunk.records().containsMessages())
                {
                   if (recordsForNextChunk != null)
                      recordsForNextChunk.addAll(croppedChunk.records());
@@ -206,38 +119,10 @@ public class MCAPLogCropper
                   recordsForNextChunk = null;
                }
 
-               for (Record insideCroppedChunkRecord : croppedChunk.records())
-               {
-                  switch (insideCroppedChunkRecord.op())
-                  {
-                     case MESSAGE:
-                     {
-                        statistics.incrementCount(insideCroppedChunkRecord.op());
-                        statistics.incrementChannelMessageCount(((Message) insideCroppedChunkRecord.body()).channelId());
-                        break;
-                     }
-                     case SCHEMA:
-                     {
-                        Schema schema = insideCroppedChunkRecord.body();
-                        if (schemas.put(schema.id(), insideCroppedChunkRecord) == null)
-                           statistics.incrementCount(Opcode.SCHEMA);
-                        break;
-                     }
-                     case CHANNEL:
-                     {
-                        Channel channel = insideCroppedChunkRecord.body();
-                        if (channels.put(channel.topic(), insideCroppedChunkRecord) == null)
-                           statistics.incrementCount(Opcode.CHANNEL);
-                        break;
-                     }
-                  }
-               }
-
                List<MutableRecord> croppedMessageIndexRecords = croppedChunk.records().generateMessageIndexList().stream().map(MutableRecord::new).toList();
-               chunkIndices.add(croppedChunkRecord.generateChunkIndexRecord(chunkOffset, croppedMessageIndexRecords));
-               // Update statistics
-               statistics.incrementChunkCount();
-               statistics.updateMessageTimes(croppedChunk.messageStartTime(), croppedChunk.messageEndTime());
+               summaryBuilder.update(croppedChunkRecord);
+               summaryBuilder.update(croppedChunkRecord.generateChunkIndexRecord(chunkOffset, croppedMessageIndexRecords));
+
                croppedChunkRecord.write(dataOutput, true);
                croppedMessageIndexRecords.forEach(r -> r.write(dataOutput, true));
                break;
@@ -249,8 +134,8 @@ public class MCAPLogCropper
                {
                   long attachmentOffset = dataOutput.position();
                   record.write(dataOutput, true);
-                  attachmentIndices.add(record.generateAttachmentIndexRecord(attachmentOffset));
-                  statistics.incrementCount(record.op());
+                  summaryBuilder.update(record);
+                  summaryBuilder.update(record.generateAttachmentIndexRecord(attachmentOffset));
                }
                break;
             }
@@ -258,13 +143,14 @@ public class MCAPLogCropper
             {
                long metadataOffset = dataOutput.position();
                record.write(dataOutput, true);
-               metadataIndices.add(record.generateMetadataIndexRecord(metadataOffset));
-               statistics.incrementCount(record.op());
+               summaryBuilder.update(record);
+               summaryBuilder.update(record.generateMetadataIndexRecord(metadataOffset));
+               break;
             }
-            break;
          }
       }
-      dataOutput.putBytes(Magic.MAGIC_BYTES); // footer magic
+
+      dataOutput.putBytes(Magic.MAGIC_BYTES);
       dataOutput.close();
    }
 }

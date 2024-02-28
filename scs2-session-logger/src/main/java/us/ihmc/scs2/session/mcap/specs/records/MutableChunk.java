@@ -8,48 +8,37 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collection;
 import java.util.Objects;
 
 public class MutableChunk implements Chunk
 {
-   private long messageStartTime;
-   private long messageEndTime;
    private Compression compression = Compression.LZ4;
 
    private Records records;
-   private long recordsCRC32 = -1L;
+   private long lastRecordsCRC32 = -1L;
    private ByteBuffer recordsCompressedData;
-
-   public void setMessageStartTime(long messageStartTime)
-   {
-      this.messageStartTime = messageStartTime;
-   }
-
-   public void setMessageEndTime(long messageEndTime)
-   {
-      this.messageEndTime = messageEndTime;
-   }
 
    public void setCompression(Compression compression)
    {
       this.compression = compression;
    }
 
-   public void setRecords(Records records)
+   public void setRecords(Collection<? extends Record> records)
    {
-      this.records = records;
+      this.records = new Records(records);
    }
 
    @Override
    public long messageStartTime()
    {
-      return messageStartTime;
+      return records.getMessageStartTime();
    }
 
    @Override
    public long messageEndTime()
    {
-      return messageEndTime;
+      return records.getMessageEndTime();
    }
 
    @Override
@@ -61,7 +50,7 @@ public class MutableChunk implements Chunk
    @Override
    public long uncompressedCRC32()
    {
-      return records == null ? 0 : records.updateCRC(null).getValue();
+      return records.getCRC32();
    }
 
    @Override
@@ -94,9 +83,9 @@ public class MutableChunk implements Chunk
    {
       long newRecordsCRC32 = uncompressedCRC32();
 
-      if (recordsCompressedData == null || recordsCRC32 != newRecordsCRC32)
+      if (recordsCompressedData == null || lastRecordsCRC32 != newRecordsCRC32)
       {
-         recordsCRC32 = newRecordsCRC32;
+         lastRecordsCRC32 = newRecordsCRC32;
          Objects.requireNonNull(compression, "The compression has not been set yet.");
          Objects.requireNonNull(records, "The records have not been set yet.");
 
@@ -139,10 +128,10 @@ public class MutableChunk implements Chunk
    @Override
    public void write(MCAPDataOutput dataOutput)
    {
-      dataOutput.putLong(messageStartTime);
-      dataOutput.putLong(messageEndTime);
-      dataOutput.putLong(records.getElementLength());
-      dataOutput.putUnsignedInt(records.updateCRC(null).getValue());
+      dataOutput.putLong(messageStartTime());
+      dataOutput.putLong(messageEndTime());
+      dataOutput.putLong(recordsUncompressedLength());
+      dataOutput.putUnsignedInt(uncompressedCRC32());
       dataOutput.putString(compression.getName());
       ByteBuffer recordsCompressedBuffer = getRecordsCompressedBuffer();
       dataOutput.putLong(recordsCompressedBuffer.remaining());
@@ -154,10 +143,10 @@ public class MutableChunk implements Chunk
    {
       if (crc32 == null)
          crc32 = new MCAPCRC32Helper();
-      crc32.addLong(messageStartTime);
-      crc32.addLong(messageEndTime);
-      crc32.addLong(records.getElementLength());
-      crc32.addUnsignedInt(records.updateCRC(null).getValue());
+      crc32.addLong(messageStartTime());
+      crc32.addLong(messageEndTime());
+      crc32.addLong(recordsUncompressedLength());
+      crc32.addUnsignedInt(uncompressedCRC32());
       crc32.addString(compression.getName());
       ByteBuffer recordsCompressedBuffer = getRecordsCompressedBuffer();
       crc32.addLong(recordsCompressedBuffer.remaining());
