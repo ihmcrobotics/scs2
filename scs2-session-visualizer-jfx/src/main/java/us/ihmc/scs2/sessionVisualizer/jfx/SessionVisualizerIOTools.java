@@ -445,11 +445,6 @@ public class SessionVisualizerIOTools
 
       File result = fileChooser.showSaveDialog(owner);
 
-      if (usePhantomStage)
-      {
-         getPhantomStage().hide();
-      }
-
       if (result == null)
          return null;
 
