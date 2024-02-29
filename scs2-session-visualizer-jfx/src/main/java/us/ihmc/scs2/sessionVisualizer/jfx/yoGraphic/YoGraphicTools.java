@@ -1690,6 +1690,8 @@ public class YoGraphicTools
       }
       else if (baseColor instanceof SimpleColorFX simpleColor)
       {
+         if (simpleColor.get() == null)
+            return null;
          double red = simpleColor.getRed();
          double green = simpleColor.getGreen();
          double blue = simpleColor.getBlue();
