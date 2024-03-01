@@ -37,9 +37,9 @@ public class Records extends AbstractList<Record>
 
    public static Records load(MCAPDataInput dataInput, long elementPosition, long elementLength)
    {
-      Records records = new Records();
+      List<Record> records = new ArrayList<>();
       MCAP.parseList(dataInput, RecordDataInputBacked::new, elementPosition, elementLength, records);
-      return records;
+      return new Records(records);
    }
 
    public void sortByTimestamp()
