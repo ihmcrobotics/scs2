@@ -6,6 +6,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
@@ -94,7 +95,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private final ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
    private Property<YoNameDisplay> userDesiredDisplayProperty;
-   private final BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
+   private final Property<YoNameDisplay> nameDisplayProperty = new SimpleObjectProperty<>(this, "nameDisplayProperty", YoNameDisplay.SHORT_NAME);
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -162,14 +163,14 @@ public class YoChartGroupPanelController implements VisualizerController
       });
       userDesiredDisplayProperty.addListener((o, oldValue, newValue) ->
                                              {
-                                                if (newValue == YoNameDisplay.UNIQUE_NAME)
-                                                   useUniqueNames.set(true);
-                                                else
+                                                if (newValue == YoNameDisplay.SHORT_NAME)
                                                    updateAutoUniqueNameDisplay();
+                                                else
+                                                   nameDisplayProperty.setValue(newValue);
                                              });
 
-      if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
-         useUniqueNames.set(true);
+      if (userDesiredDisplayProperty.getValue() != YoNameDisplay.SHORT_NAME)
+         nameDisplayProperty.setValue(userDesiredDisplayProperty.getValue());
 
       SetChangeListener<YoVariable> plottedVariableChangeListener = change ->
       {
@@ -188,12 +189,12 @@ public class YoChartGroupPanelController implements VisualizerController
                                      case ADD:
                                         gridPane.add(chart.getMainPane(), c.toCol(), c.toRow());
                                         chart.getPlottedVariables().addListener(plottedVariableChangeListener);
-                                        chart.useUniqueNamesProperty().bind(useUniqueNames);
+                                        chart.nameDisplayPropertyProperty().bind(nameDisplayProperty);
                                         break;
                                      case REMOVE:
                                         gridPane.getChildren().remove(chart.getMainPane());
                                         chart.getPlottedVariables().removeListener(plottedVariableChangeListener);
-                                        chart.useUniqueNamesProperty().unbind();
+                                        chart.nameDisplayPropertyProperty().unbind();
                                         break;
                                      case MOVE:
                                         GridPane.setConstraints(chart.getMainPane(), c.toCol(), c.toRow());
@@ -225,15 +226,15 @@ public class YoChartGroupPanelController implements VisualizerController
                                          value -> JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> automatedChartGroupName.set(value)));
       }
 
-      if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
+      if (userDesiredDisplayProperty.getValue() != YoNameDisplay.SHORT_NAME)
       {
-         useUniqueNames.set(true);
+         nameDisplayProperty.setValue(userDesiredDisplayProperty.getValue());
       }
       else
       {
          List<? extends YoVariable> distinctVariables = plottedVariableList.stream().distinct().toList();
          long distinctNameCount = distinctVariables.stream().map(YoVariable::getName).distinct().count();
-         useUniqueNames.set(distinctNameCount < distinctVariables.size());
+         nameDisplayProperty.setValue(distinctNameCount < distinctVariables.size() ? YoNameDisplay.UNIQUE_SHORT_NAME : YoNameDisplay.SHORT_NAME);
       }
    }
 

@@ -5,5 +5,5 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
  */
 public enum YoNameDisplay
 {
-   SHORT_NAME, UNIQUE_NAME, FULL_NAME;
+   SHORT_NAME, UNIQUE_NAME, UNIQUE_SHORT_NAME, FULL_NAME;
 }
