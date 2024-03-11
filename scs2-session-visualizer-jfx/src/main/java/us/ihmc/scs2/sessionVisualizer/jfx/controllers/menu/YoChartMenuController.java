@@ -27,6 +27,18 @@ public class YoChartMenuController implements VisualizerController
    }
 
    @FXML
+   public void showChartYAxis()
+   {
+      messager.submitMessage(topics.getYoChartShowYAxis(), new Pair<>(owner, true));
+   }
+
+   @FXML
+   public void hideChartYAxis()
+   {
+      messager.submitMessage(topics.getYoChartShowYAxis(), new Pair<>(owner, false));
+   }
+
+   @FXML
    public void loadChartGroup()
    {
       File result = SessionVisualizerIOTools.yoChartConfigurationOpenFileDialog(owner);
