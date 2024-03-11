@@ -645,6 +645,75 @@ public class YoCompositeTools
       return nameObjectHolderList.stream().collect(Collectors.toMap(NamedObjectHolder::getOriginalObject, NamedObjectHolder::getUniqueName));
    }
 
+   public static <T> Map<T, String> computeUniqueShortNames(Collection<T> nameObjectCollection,
+                                                            Function<T, String> nameFunction,
+                                                            Function<T, String> uniqueNameFunction)
+   {
+      Map<String, T> uniqueNameToNamedObjectMap = nameObjectCollection.stream().collect(Collectors.toMap(uniqueNameFunction, Function.identity()));
+
+      Map<String, List<String>> shortNameToUniqueNamesMap = new HashMap<>();
+      Map<T, String> result = new HashMap<>();
+
+      for (Entry<String, T> entry : uniqueNameToNamedObjectMap.entrySet())
+      {
+         String uniqueName = entry.getKey();
+         T namedObject = entry.getValue();
+         String name = nameFunction.apply(namedObject);
+         shortNameToUniqueNamesMap.computeIfAbsent(name, k -> new ArrayList<>()).add(uniqueName);
+      }
+
+      for (Entry<String, List<String>> entry : shortNameToUniqueNamesMap.entrySet())
+      {
+         // Now we try to find the shortest unique name
+         List<String> uniqueNames = entry.getValue();
+         String shortName = entry.getKey();
+
+         List<String> uniqueShortNames = new ArrayList<>();
+         // First naive attempt
+         boolean isNaiveApproachSuccessful = true;
+
+         for (String uniqueName : uniqueNames)
+         {
+            int firstSeparatorIndex = uniqueName.indexOf(".");
+            int lastSeparatorIndex = uniqueName.lastIndexOf(".");
+
+            String uniqueShortName;
+            if (firstSeparatorIndex != lastSeparatorIndex)
+               uniqueShortName = uniqueName.substring(0, firstSeparatorIndex) + "..." + uniqueName.substring(lastSeparatorIndex + 1);
+            else
+               uniqueShortName = uniqueName;
+
+            if (uniqueShortNames.contains(uniqueShortName))
+            {
+               // The naive approach fails.
+               isNaiveApproachSuccessful = false;
+               break;
+            }
+            else
+            {
+               uniqueShortNames.add(uniqueShortName);
+            }
+         }
+
+         if (isNaiveApproachSuccessful)
+         {
+            for (int i = 0; i < uniqueNames.size(); i++)
+            {
+               result.put(uniqueNameToNamedObjectMap.get(uniqueNames.get(i)), uniqueShortNames.get(i));
+            }
+         }
+         else
+         {
+            // For now, we'll just fall back to using the unique name
+            for (String uniqueName : uniqueNames)
+            {
+               result.put(uniqueNameToNamedObjectMap.get(uniqueName), uniqueName);
+            }
+         }
+      }
+      return result;
+   }
+
    private static class NamedObjectHolder<T>
    {
       private String name;
