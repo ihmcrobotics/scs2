@@ -206,6 +206,16 @@
     -fx-icon-code: "fa-share-square-o";
 }
 
+.show-icon-view {
+    -fx-fill: black;
+    -fx-icon-code: "fa-eye";
+}
+
+.hide-icon-view {
+    -fx-fill: black;
+    -fx-icon-code: "fa-eye-slash";
+}
+
 .refresh-composite-icon-view {
     -fx-fill: -default-pale-pink;
     -glyph-name: REFRESH;

@@ -51,7 +51,7 @@ public class SessionVisualizerMessagerAPI
    private static final TopicTheme Recordable = apiFactory.createTypedTopicTheme("Recordable");
    private static final TopicTheme Request = apiFactory.createTopicTheme("Request");
    private static final TypedTopicTheme<Integer> Size = apiFactory.createTypedTopicTheme("Size");
-   private static final TypedTopicTheme<Boolean> Show = apiFactory.createTypedTopicTheme("Show");
+   private static final TopicTheme Show = apiFactory.createTypedTopicTheme("Show");
    private static final TopicTheme Load = apiFactory.createTopicTheme("load");
    private static final TopicTheme Save = apiFactory.createTopicTheme("save");
    private static final TopicTheme Close = apiFactory.createTopicTheme("close");
@@ -149,6 +149,7 @@ public class SessionVisualizerMessagerAPI
       private static final CategoryTheme In = apiFactory.createCategoryTheme("In");
       private static final CategoryTheme Out = apiFactory.createCategoryTheme("Out");
       private static final CategoryTheme Shift = apiFactory.createCategoryTheme("Shift");
+      private static final CategoryTheme YAxis = apiFactory.createCategoryTheme("YAxis");
 
       private static final TopicTheme Factor = apiFactory.createTopicTheme("Factor");
 
@@ -156,6 +157,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<Window, Boolean>> YoChartRequestZoomIn = APIRoot.child(YoChart).child(Zoom).child(In).topic(Request);
       public static final Topic<Pair<Window, Boolean>> YoChartRequestZoomOut = APIRoot.child(YoChart).child(Zoom).child(Out).topic(Request);
       public static final Topic<Pair<Window, Integer>> YoChartRequestShift = APIRoot.child(YoChart).child(Shift).topic(Request);
+      public static final Topic<Pair<Window, Boolean>> YoChartShowYAxis = APIRoot.child(YoChart).child(YAxis).topic(Show);
       public static final Topic<Pair<Window, File>> YoChartGroupSaveConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Save);
       public static final Topic<Pair<Window, File>> YoChartGroupLoadConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Load);
    }
