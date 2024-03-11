@@ -1,38 +1,8 @@
 package us.ihmc.scs2.definition.robot.urdf;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.sax.SAXSource;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
@@ -53,31 +23,26 @@ import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.robot.*;
+import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
+import us.ihmc.scs2.definition.robot.FixedJointDefinition;
+import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
+import us.ihmc.scs2.definition.robot.JointDefinition;
+import us.ihmc.scs2.definition.robot.LidarSensorDefinition;
+import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
+import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
+import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteTwinsJointDefinition;
+import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.SensorDefinition;
+import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFAxis;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFBox;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFCollision;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFColor;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFCylinder;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFDynamics;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFFilenameHolder;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFGazebo;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFGeometry;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFInertia;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFInertial;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFItem;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint;
+import us.ihmc.scs2.definition.robot.urdf.items.*;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint.URDFJointType;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFLimit;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFLink;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFLinkReference;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFMass;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFMaterial;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFMesh;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFOrigin;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFClip;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFSensorImage;
@@ -93,14 +58,39 @@ import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFHorizontalScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFVerticalScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFSensorType;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFSphere;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFTexture;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFVisual;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * This class gathers tools for parsing a URDF file and for converting a parsed {@code URDFModel}
@@ -263,6 +253,9 @@ public class URDFTools
          if (!parserProperties.parseSensors)
             urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
 
+         if (parserProperties.handleImplicitJointDefinitions)
+            handleImplicitJointDefinitions(urdfModel);
+
          return urdfModel;
       }
       finally
@@ -274,6 +267,176 @@ public class URDFTools
          catch (IOException e)
          {
             LogTools.error(e.getMessage());
+         }
+      }
+   }
+
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Handles implicit and/or incomplete joint definitions in the given URDF model.
+    * </p>
+    *
+    * @param urdfModel the model to handle implicit joint definitions.
+    */
+   public static void handleImplicitJointDefinitions(URDFModel urdfModel)
+   {
+      {// Search for revolute twins joints that are not complete.
+         List<URDFJoint> urdfRevoluteTwinsJoints = urdfModel.getJoints()
+                                                            .stream()
+                                                            .filter(urdfJoint -> URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute_twins)
+                                                            .toList();
+
+         for (URDFJoint urdfRevoluteTwinsJoint : urdfRevoluteTwinsJoints)
+         {
+            if (urdfRevoluteTwinsJoint.getSubJoints() == null)
+            {
+               URDFLinkReference parent = urdfRevoluteTwinsJoint.getParent();
+               URDFLinkReference child = urdfRevoluteTwinsJoint.getChild();
+
+               URDFJoint jointA = urdfModel.getJoints()
+                                           .stream()
+                                           .filter(urdfJoint -> URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute)
+                                           .filter(urdfJoint -> urdfJoint.getParent().equals(parent))
+                                           .findFirst()
+                                           .orElse(null);
+               URDFJoint jointB = urdfModel.getJoints()
+                                           .stream()
+                                           .filter(urdfJoint -> URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute)
+                                           .filter(urdfJoint -> urdfJoint.getChild().equals(child))
+                                           .findFirst()
+                                           .orElse(null);
+               if (jointA == null || jointB == null)
+               {
+                  LogTools.error("Could not find the two joints defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName());
+                  continue;
+               }
+
+               if (!Objects.equals(jointA.getChild(), jointB.getParent()))
+               {
+                  LogTools.error("The two joints defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName() + " are not compatible.");
+                  continue;
+               }
+
+               URDFLink urdfLinkAB = urdfModel.getLinks()
+                                              .stream()
+                                              .filter(urdfLink -> Objects.equals(urdfLink.getName(), jointA.getChild().getLink()))
+                                              .findFirst()
+                                              .orElse(null);
+               if (urdfLinkAB == null)
+               {
+                  LogTools.error("Could not find the link defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName());
+                  continue;
+               }
+
+               int actuatedJointIndex = -1;
+               if (jointA.getMimic() != null)
+                  actuatedJointIndex = 1;
+               else if (jointB.getMimic() != null)
+                  actuatedJointIndex = 0;
+
+               if (actuatedJointIndex == -1)
+               {
+                  LogTools.error("Could not find the actuated joint defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName());
+                  continue;
+               }
+
+               urdfRevoluteTwinsJoint.setSubJoints(new ArrayList<>());
+               urdfRevoluteTwinsJoint.getSubJoints().add(jointA);
+               urdfRevoluteTwinsJoint.getSubJoints().add(jointB);
+               urdfRevoluteTwinsJoint.setSubLinks(new ArrayList<>());
+               urdfRevoluteTwinsJoint.getSubLinks().add(urdfLinkAB);
+               urdfRevoluteTwinsJoint.setActuatedJointIndex(String.valueOf(actuatedJointIndex));
+
+               urdfModel.getJoints().removeAll(urdfRevoluteTwinsJoint.getSubJoints());
+               urdfModel.getLinks().removeAll(urdfRevoluteTwinsJoint.getSubLinks());
+            }
+         }
+      }
+
+      { // Search for joints with a mimic tag and see if we can create revolute twins instead
+         List<URDFJoint> urdfConstrainedJoints = urdfModel.getJoints()
+                                                          .stream()
+                                                          .filter(urdfJoint -> Objects.nonNull(urdfJoint.getMimic())
+                                                                               && URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute)
+                                                          .toList();
+
+         for (URDFJoint urdfConstrainedJoint : urdfConstrainedJoints)
+         {
+            String actuatedJointName = urdfConstrainedJoint.getMimic().getJoint();
+            URDFJoint urdfActuatedJoint = urdfModel.getJoints()
+                                                   .stream()
+                                                   .filter(urdfJoint -> urdfJoint.getName().equals(actuatedJointName))
+                                                   .findFirst()
+                                                   .orElse(null);
+            if (urdfActuatedJoint == null)
+            {
+               LogTools.error("Could not find actuated joint: " + actuatedJointName);
+               continue;
+            }
+
+            if (URDFJointType.parse(urdfActuatedJoint.getType()) != URDFJointType.revolute)
+               continue;
+
+            // First, verify that the two joints are compatible to be converted into a revolute twins
+            if (urdfConstrainedJoint.getAxis() == null || urdfActuatedJoint.getAxis() == null)
+               continue;
+
+            Vector3D constrainedAxis = parseAxis(urdfConstrainedJoint.getAxis(), null);
+            Vector3D actuatedAxis = parseAxis(urdfActuatedJoint.getAxis(), null);
+
+            if (!constrainedAxis.epsilonEquals(actuatedAxis, 1e-5))
+               continue;
+
+            URDFJoint jointA = null;
+            URDFJoint jointB = null;
+            URDFLink linkAB = null;
+            int actuatedJointIndex = -1;
+
+            if (Objects.equals(urdfConstrainedJoint.getChild(), urdfActuatedJoint.getParent()))
+            {
+               jointA = urdfConstrainedJoint;
+               jointB = urdfActuatedJoint;
+               linkAB = urdfModel.getLinks()
+                                 .stream()
+                                 .filter(urdfLink -> Objects.equals(urdfLink.getName(), urdfConstrainedJoint.getChild().getLink()))
+                                 .findFirst()
+                                 .orElse(null);
+               actuatedJointIndex = 1;
+            }
+
+            if (Objects.equals(urdfConstrainedJoint.getParent(), urdfActuatedJoint.getChild()))
+            {
+               jointA = urdfActuatedJoint;
+               jointB = urdfConstrainedJoint;
+               linkAB = urdfModel.getLinks()
+                                 .stream()
+                                 .filter(urdfLink -> Objects.equals(urdfLink.getName(), urdfConstrainedJoint.getParent().getLink()))
+                                 .findFirst()
+                                 .orElse(null);
+               actuatedJointIndex = 0;
+            }
+
+            if (jointA == null || linkAB == null)
+               continue;
+
+            // Now, we can convert the two joints into a revolute twins
+            URDFJoint revoluteTwinsJoint = new URDFJoint();
+            // TODO would be nice to have a way to set the name of the joint
+            revoluteTwinsJoint.setName(jointA.getName() + "_" + jointB.getName());
+            revoluteTwinsJoint.setType(URDFJointType.revolute_twins.toString());
+            revoluteTwinsJoint.setAxis(jointA.getAxis());
+            revoluteTwinsJoint.setParent(jointA.getParent());
+            revoluteTwinsJoint.setChild(jointB.getChild());
+            revoluteTwinsJoint.setActuatedJointIndex(String.valueOf(actuatedJointIndex));
+            revoluteTwinsJoint.setSubJoints(new ArrayList<>());
+            revoluteTwinsJoint.getSubJoints().add(jointA);
+            revoluteTwinsJoint.getSubJoints().add(jointB);
+            revoluteTwinsJoint.setSubLinks(new ArrayList<>());
+            revoluteTwinsJoint.getSubLinks().add(linkAB);
+            urdfModel.getJoints().set(urdfModel.getJoints().indexOf(jointA), revoluteTwinsJoint);
+            urdfModel.getJoints().remove(jointB);
+            urdfModel.getLinks().remove(linkAB);
          }
       }
    }
@@ -901,8 +1064,9 @@ public class URDFTools
       double constraintRatio = parseDouble(constrainedJoint.getMimic().getMultiplier(), Double.NaN);
       double constraintOffset = parseDouble(constrainedJoint.getMimic().getOffset(), Double.NaN);
 
-      definition.setJointNameA(urdfJointA.getName());
-      definition.setJointNameB(urdfJointB.getName());
+      definition.setJointA(toRevoluteJointDefinition(urdfJointA, false, parserProperties));
+      definition.setJointB(toRevoluteJointDefinition(urdfJointB, false, parserProperties));
+
       definition.setBodyAB(toRigidBodyDefinition(urdfLinkAB, parserProperties));
       definition.setTransformAToPredecessor(parseRigidBodyTransform(urdfJointA.getOrigin(), parserProperties));
       definition.setTransformBToA(parseRigidBodyTransform(urdfJointB.getOrigin(), parserProperties));
@@ -2251,6 +2415,7 @@ public class URDFTools
       private boolean parseSensors = true;
       private boolean simplifyKinematics = true;
       private boolean transformToZUp = true;
+      private boolean handleImplicitJointDefinitions = true;
 
       /**
        * Sets whether XML namespaces should be ignored.
@@ -2376,6 +2541,23 @@ public class URDFTools
       public void setTransformToZUp(boolean transformToZUp)
       {
          this.transformToZUp = transformToZUp;
+      }
+
+      /**
+       * Specifies whether implicit joint definitions should be handled.
+       * <p>
+       * Currently, this feature covers:
+       * <ul>
+       *    <li>Detect when two joints are connected to the same link and one is constrained to the other with a mimic tag. The two joints will then be merged into one {@link RevoluteTwinsJointDefinition}.
+       * </ul>
+       * </p>
+       *
+       * @param handleImplicitJointDefinitions {@code true} [default value] handles implicit joint
+       *                                       definitions, {@code false} do nothing.
+       */
+      public void setHandleImplicitJointDefinitions(boolean handleImplicitJointDefinitions)
+      {
+         this.handleImplicitJointDefinitions = handleImplicitJointDefinitions;
       }
    }
 
