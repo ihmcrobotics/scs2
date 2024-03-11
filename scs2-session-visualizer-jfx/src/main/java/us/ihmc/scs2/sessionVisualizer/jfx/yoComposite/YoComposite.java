@@ -1,11 +1,11 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
+import us.ihmc.yoVariables.registry.YoNamespace;
+import us.ihmc.yoVariables.variable.YoVariable;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import us.ihmc.yoVariables.registry.YoNamespace;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoComposite implements Comparable<YoComposite>
 {
@@ -15,6 +15,7 @@ public class YoComposite implements Comparable<YoComposite>
    private final List<YoVariable> yoComponents;
 
    private String uniqueName;
+   private String uniqueShortName;
 
    public YoComposite(YoCompositePattern pattern, YoVariable yoVariable)
    {
@@ -49,6 +50,11 @@ public class YoComposite implements Comparable<YoComposite>
       return uniqueName;
    }
 
+   public String getUniqueShortName()
+   {
+      return uniqueShortName;
+   }
+
    public String getFullname()
    {
       return namespace.toString() + "." + name;
@@ -76,6 +82,10 @@ public class YoComposite implements Comparable<YoComposite>
       Map<YoComposite, String> yoCompositeToUniqueNameMap = YoCompositeTools.computeUniqueNames(yoComposites,
                                                                                                 yoComposite -> yoComposite.getNamespace().getSubNames(),
                                                                                                 YoComposite::getName);
-      yoCompositeToUniqueNameMap.entrySet().forEach(e -> e.getKey().uniqueName = e.getValue());
+      yoCompositeToUniqueNameMap.forEach((yoComposite, uniqueName) -> yoComposite.uniqueName = uniqueName);
+      Map<YoComposite, String> yoCompositeToUniqueShortNameMap = YoCompositeTools.computeUniqueShortNames(yoComposites,
+                                                                                                          YoComposite::getName,
+                                                                                                          YoComposite::getUniqueName);
+      yoCompositeToUniqueShortNameMap.forEach((yoComposite, uniqueShortName) -> yoComposite.uniqueShortName = uniqueShortName);
    }
 }
