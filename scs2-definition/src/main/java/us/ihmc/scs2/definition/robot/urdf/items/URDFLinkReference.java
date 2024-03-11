@@ -1,9 +1,9 @@
 package us.ihmc.scs2.definition.robot.urdf.items;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import java.util.Collections;
 import java.util.List;
-
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.Objects;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/joint"> ROS Specification joint.</a>
@@ -41,5 +41,22 @@ public class URDFLinkReference implements URDFItem
    public List<URDFFilenameHolder> getFilenameHolders()
    {
       return Collections.emptyList();
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      if (object == this)
+      {
+         return true;
+      }
+      else if (object instanceof URDFLinkReference other)
+      {
+         return Objects.equals(link, other.link);
+      }
+      else
+      {
+         return false;
+      }
    }
 }

@@ -45,11 +45,7 @@
       <parent link="bodyAB"/>
       <child link="endEffectorLink"/>
       <limit effort="190" lower="-1.1" upper="0.4141" velocity="5.89"/>
-      <mimic>
-        <joint>jointA</joint>
-        <multiplier>1.25</multiplier>
-        <offset>0</offset>
-      </mimic>
+      <mimic joint="jointA" multiplier="1.25" offset="0"/>
     </sub_joint>
     <sub_link name="bodyAB">
       <inertial>
