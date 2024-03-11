@@ -53,7 +53,7 @@ public final class YoMCAPMessage
 
          boolean isArrayOrVector = field.isArray() || field.isVector();
 
-         Consumer<CDRDeserializer> deserializer = null;
+         Consumer<CDRDeserializer> deserializer;
          if (!isArrayOrVector)
             deserializer = createYoVariable(field, messageRegistry);
          else
@@ -235,11 +235,11 @@ public final class YoMCAPMessage
       return null;
    }
 
+   @SuppressWarnings("rawtypes")
    private static Consumer<CDRDeserializer> createYoEnumArray(MCAPSchemaField field, MCAPSchema enumSchema, YoRegistry registry)
    {
       int maxLength = field.getMaxLength();
       String fieldName = field.getName();
-      String fieldType = field.getType();
 
       if (field.isVector() == field.isArray())
          throw new IllegalArgumentException("Field is neither a vector nor an array: " + field + ", registry: " + registry);
@@ -261,6 +261,7 @@ public final class YoMCAPMessage
     * Creates an array of {@code YoVariable}s which can be used to parse a ROS2 field that is either an
     * array or a vector.
     *
+    * @param <T>                 the type of the {@code YoVariable}.
     * @param variableType        the type of the {@code YoVariable} to be created.
     * @param elementBuilder      the function used to create a new {@code YoVariable}.
     * @param elementDeserializer the function used to deserialize a ROS2 message and update the
@@ -270,9 +271,9 @@ public final class YoMCAPMessage
     * @param isFixedSize         whether the array is fixed size or not.
     * @param length              the length of the array.
     * @param registry            the registry in which the {@code YoVariable}s are to be added.
-    * @param <T>                 the type of the {@code YoVariable}.
     * @return the parsing function.
     */
+   @SuppressWarnings("unchecked")
    private static <T> Consumer<CDRDeserializer> createFieldArray(Class<T> variableType,
                                                                  BiFunction<String, YoRegistry, T> elementBuilder,
                                                                  BiConsumer<T, CDRDeserializer> elementDeserializer,
@@ -282,33 +283,49 @@ public final class YoMCAPMessage
                                                                  int length,
                                                                  YoRegistry registry)
    {
-      @SuppressWarnings("unchecked") T[] array = (T[]) Array.newInstance(variableType, length);
-      for (int i = 0; i < length; i++)
-         array[i] = elementBuilder.apply(name + "[" + i + "]", registry);
+      T[] array;
+      if (variableType == null)
+      { // Probably dealing with String type
+         array = null;
+      }
+      else
+      {
+         array = (T[]) Array.newInstance(variableType, length);
+
+         for (int i = 0; i < length; i++)
+            array[i] = elementBuilder.apply(name + "[" + i + "]", registry);
+      }
+
       return cdr ->
       {
          if (cdr == null)
          {
-            for (int i = 0; i < length; i++)
-               elementResetter.accept(array[i]);
+            if (array != null && elementResetter != null)
+            {
+               for (int i = 0; i < length; i++)
+                  elementResetter.accept(array[i]);
+            }
          }
          else
          {
             if (isFixedSize)
             {
-               cdr.read_array((elementIndex, des) -> elementDeserializer.accept(array[elementIndex], des), length);
+               cdr.read_array((elementIndex, des) -> elementDeserializer.accept(array == null ? null : array[elementIndex], des), length);
             }
             else
             {
                int size = cdr.read_sequence((elementIndex, des) ->
                                             {
                                                if (elementIndex < length)
-                                                  elementDeserializer.accept(array[elementIndex], des);
+                                                  elementDeserializer.accept(array == null ? null : array[elementIndex], des);
                                             });
                if (size > length)
                   LogTools.warn("Received array of size: " + size + ", but expected size: " + length + ", registry: " + registry);
-               for (int i = size; i < length; i++)
-                  elementResetter.accept(array[i]);
+               if (array != null && elementResetter != null)
+               {
+                  for (int i = size; i < length; i++)
+                     elementResetter.accept(array[i]);
+               }
             }
          }
       };
@@ -316,6 +333,7 @@ public final class YoMCAPMessage
 
    public static final Map<String, YoConversionToolbox<?>> conversionMap;
 
+   @SuppressWarnings("rawtypes")
    private static YoConversionToolbox<YoEnum> createYoEnumConversionToolbox(MCAPSchema enumSchema)
    {
       return new YoConversionToolbox<>("enum",
