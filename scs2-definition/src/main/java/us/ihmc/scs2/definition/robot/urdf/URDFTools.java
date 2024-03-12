@@ -271,6 +271,9 @@ public class URDFTools
                urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
             }
 
+            if (parserProperties.handleImplicitJointDefinitions)
+               handleImplicitJointDefinitions(urdfModel);
+
             // Merge the current URDFModel with the combined URDFModel
             combinedURDFModel = mergeURDFModels(combinedURDFModel, urdfModel);
          }
