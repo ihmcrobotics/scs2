@@ -1,9 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera;
 
-import java.util.function.DoubleSupplier;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -37,9 +33,18 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.camera.CameraFocalPointHandler.FocalPointKeyEventHandler;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.InputAccessor;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.DoubleSupplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.tools.InputAccessor.InputAccessDoc.MOUSE;
 
 /**
  * This class provides a simple controller for a JavaFX {@link PerspectiveCamera}. The control is
@@ -56,7 +61,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
  *
  * @author Sylvain Bertrand
  */
-public class PerspectiveCameraController extends ObservedAnimationTimer implements EventHandler<Event>
+public class PerspectiveCameraController extends ObservedAnimationTimer implements EventHandler<Event>, InputAccessor
 {
    private static final boolean FOCUS_POINT_SHOW = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.camera.focuspoint.show",
                                                                                                             "SCS2_GUI_CAMERA_FOCUS_SHOW",
@@ -103,21 +108,22 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
          throw new RuntimeException("The vectors up and forward must be orthogonal. Received: up = " + up + ", forward = " + forward);
 
       orbitHandler = new CameraOrbitHandler(up, forward);
-      orbitHandler.fastModifierPredicateProperty().set(event -> event.isShiftDown());
       orbitalRotationEventHandler = orbitHandler.createMouseEventHandler(sceneWidthProperty, sceneHeightProperty);
       zoomEventHandler = orbitHandler.createScrollEventHandler();
       orbitHandler.minDistanceProperty().set(1.10 * camera.getNearClip());
       orbitHandler.maxDistanceProperty().set(0.90 * camera.getFarClip());
 
       focalPointHandler = new CameraFocalPointHandler(up);
-      focalPointHandler.fastModifierPredicateProperty().set(event -> event.isShiftDown());
       focalPointHandler.setCameraOrientation(orbitHandler.getCameraPose());
       translationEventHandler = focalPointHandler.createKeyEventHandler();
 
       focalPointHandler.setTranslationRateModifier(translationRate ->
-      {
-         return Math.min(translationRate * Math.pow(orbitHandler.distanceProperty().get(), zoomToTranslationPow.get()), minTranslationOffset.get());
-      });
+                                                   {
+                                                      return Math.min(
+                                                            translationRate * Math.pow(orbitHandler.distanceProperty().get(), zoomToTranslationPow.get()),
+                                                            minTranslationOffset.get());
+                                                   });
+      setupCameraRotationHandler(MouseButton.SECONDARY, () -> 0.003);
 
       setCameraPosition(-2.0, 0.7, 1.0);
 
@@ -127,55 +133,57 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       orbitHandler.createCameraWorldCoordinates(focalPointTranslation.xProperty(), focalPointTranslation.yProperty(), focalPointTranslation.zProperty());
 
       cameraPositionCoordinatesToTrack.addListener((o, oldValue, newValue) ->
-      {
-         CameraBindingsHelper.removeCameraPositionBindings(oldValue, orbitHandler);
-         if (cameraControlMode().getValue() == CameraControlMode.Position)
-            CameraBindingsHelper.addCameraPositionBindings(newValue, orbitHandler);
-      });
+                                                   {
+                                                      CameraBindingsHelper.removeCameraPositionBindings(oldValue, orbitHandler);
+                                                      if (cameraControlMode().getValue() == CameraControlMode.Position)
+                                                         CameraBindingsHelper.addCameraPositionBindings(newValue, orbitHandler);
+                                                   });
       cameraOrbitalCoordinatesToTrack.addListener((o, oldValue, newValue) ->
-      {
-         CameraBindingsHelper.removeCameraOrbitalBindings(oldValue, orbitHandler);
-         if (cameraControlMode().getValue() == CameraControlMode.Orbital)
-            CameraBindingsHelper.addCameraOrbitalBindings(newValue, orbitHandler);
-      });
+                                                  {
+                                                     CameraBindingsHelper.removeCameraOrbitalBindings(oldValue, orbitHandler);
+                                                     if (cameraControlMode().getValue() == CameraControlMode.Orbital)
+                                                        CameraBindingsHelper.addCameraOrbitalBindings(newValue, orbitHandler);
+                                                  });
       cameraLevelOrbitalCoordinatesToTrack.addListener((o, oldValue, newValue) ->
-      {
-         CameraBindingsHelper.removeCameraLevelOrbitalBindings(oldValue, orbitHandler);
-         if (cameraControlMode().getValue() == CameraControlMode.LevelOrbital)
-            CameraBindingsHelper.addCameraLevelOrbitalBindings(newValue, orbitHandler);
-      });
+                                                       {
+                                                          CameraBindingsHelper.removeCameraLevelOrbitalBindings(oldValue, orbitHandler);
+                                                          if (cameraControlMode().getValue() == CameraControlMode.LevelOrbital)
+                                                             CameraBindingsHelper.addCameraLevelOrbitalBindings(newValue, orbitHandler);
+                                                       });
       cameraControlMode().addListener((o, oldValue, newValue) ->
-      {
-         switch (oldValue)
-         {
-            case Position:
-               CameraBindingsHelper.removeCameraPositionBindings(cameraPositionCoordinatesToTrack.getValue(), orbitHandler);
-               break;
-            case Orbital:
-               CameraBindingsHelper.removeCameraOrbitalBindings(cameraOrbitalCoordinatesToTrack.getValue(), orbitHandler);
-               break;
-            case LevelOrbital:
-               CameraBindingsHelper.removeCameraLevelOrbitalBindings(cameraLevelOrbitalCoordinatesToTrack.getValue(), orbitHandler);
-               break;
-            default:
-               throw new IllegalArgumentException("Unexpected value: " + oldValue);
-         }
+                                      {
+                                         switch (oldValue)
+                                         {
+                                            case Position:
+                                               CameraBindingsHelper.removeCameraPositionBindings(cameraPositionCoordinatesToTrack.getValue(), orbitHandler);
+                                               break;
+                                            case Orbital:
+                                               CameraBindingsHelper.removeCameraOrbitalBindings(cameraOrbitalCoordinatesToTrack.getValue(), orbitHandler);
+                                               break;
+                                            case LevelOrbital:
+                                               CameraBindingsHelper.removeCameraLevelOrbitalBindings(cameraLevelOrbitalCoordinatesToTrack.getValue(),
+                                                                                                     orbitHandler);
+                                               break;
+                                            default:
+                                               throw new IllegalArgumentException("Unexpected value: " + oldValue);
+                                         }
 
-         switch (newValue)
-         {
-            case Position:
-               CameraBindingsHelper.addCameraPositionBindings(cameraPositionCoordinatesToTrack.getValue(), orbitHandler);
-               break;
-            case Orbital:
-               CameraBindingsHelper.addCameraOrbitalBindings(cameraOrbitalCoordinatesToTrack.getValue(), orbitHandler);
-               break;
-            case LevelOrbital:
-               CameraBindingsHelper.addCameraLevelOrbitalBindings(cameraLevelOrbitalCoordinatesToTrack.getValue(), orbitHandler);
-               break;
-            default:
-               throw new IllegalArgumentException("Unexpected value: " + newValue);
-         }
-      });
+                                         switch (newValue)
+                                         {
+                                            case Position:
+                                               CameraBindingsHelper.addCameraPositionBindings(cameraPositionCoordinatesToTrack.getValue(), orbitHandler);
+                                               break;
+                                            case Orbital:
+                                               CameraBindingsHelper.addCameraOrbitalBindings(cameraOrbitalCoordinatesToTrack.getValue(), orbitHandler);
+                                               break;
+                                            case LevelOrbital:
+                                               CameraBindingsHelper.addCameraLevelOrbitalBindings(cameraLevelOrbitalCoordinatesToTrack.getValue(),
+                                                                                                  orbitHandler);
+                                               break;
+                                            default:
+                                               throw new IllegalArgumentException("Unexpected value: " + newValue);
+                                         }
+                                      });
 
       if (FOCUS_POINT_SHOW)
       {
@@ -186,16 +194,14 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
          focalPointViz.setMaterial(material);
          focalPointViz.getTransforms().add(focalPointTranslation);
          orbitHandler.distanceProperty().addListener((o, oldValue, newValue) ->
-         {
-            focalPointViz.setRadius(FOCUS_POINT_SIZE * newValue.doubleValue());
-         });
+                                                     {
+                                                        focalPointViz.setRadius(FOCUS_POINT_SIZE * newValue.doubleValue());
+                                                     });
       }
       else
       {
          focalPointViz = null;
       }
-
-      setupCameraRotationHandler();
    }
 
    @Override
@@ -263,7 +269,7 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
     * {@code translateCamera = false}.
     * </ul>
     * </p>
-    * 
+    *
     * @param desiredFocalPoint the new focus location.
     * @param translateCamera   whether to translate or rotate the camera when updating the focus point.
     */
@@ -284,7 +290,7 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
     * {@code translateCamera = false}.
     * </ul>
     * </p>
-    * 
+    *
     * @param x               the x-coordinate of the new focus location.
     * @param y               the y-coordinate of the new focus location.
     * @param z               the z-coordinate of the new focus location.
@@ -313,7 +319,6 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       {
          Vector3DReadOnly focalPointShift = orbitHandler.setRotation(longitude, latitude, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
-
       }
       else
       {
@@ -327,7 +332,6 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       {
          Vector3DReadOnly focalPointShift = orbitHandler.setOrbit(distance, longitude, latitude, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
-
       }
       else
       {
@@ -342,7 +346,6 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
          height -= focalPointHandler.getTranslation().getZ();
          Vector3DReadOnly focalPointShift = orbitHandler.setLevelOrbit(distance, longitude, height, roll, true);
          focalPointHandler.translateWorldFrame(focalPointShift);
-
       }
       else
       {
@@ -387,10 +390,8 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
       if (event instanceof KeyEvent)
          translationEventHandler.handle((KeyEvent) event);
 
-      if (event instanceof MouseEvent)
+      if (event instanceof MouseEvent mouseEvent)
       {
-         MouseEvent mouseEvent = (MouseEvent) event;
-
          if (rayBasedFocusTranslation != null)
             rayBasedFocusTranslation.handle(mouseEvent);
 
@@ -415,18 +416,18 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
    public void enableShiftClickFocusTranslation(Function<MouseEvent, PickResult> nodePickingFunction)
    {
       setupRayBasedFocusTranslation(event ->
-      {
-         if (!event.isShiftDown())
-            return false;
-         if (event.getButton() != MouseButton.PRIMARY)
-            return false;
-         if (!event.isStillSincePress())
-            return false;
-         if (event.getEventType() != MouseEvent.MOUSE_CLICKED)
-            return false;
+                                    {
+                                       if (!event.isShiftDown())
+                                          return false;
+                                       if (event.getButton() != MouseButton.PRIMARY)
+                                          return false;
+                                       if (!event.isStillSincePress())
+                                          return false;
+                                       if (event.getEventType() != MouseEvent.MOUSE_CLICKED)
+                                          return false;
 
-         return true;
-      }, nodePickingFunction);
+                                       return true;
+                                    }, nodePickingFunction);
    }
 
    public void setupRayBasedFocusTranslation(Predicate<MouseEvent> condition)
@@ -485,19 +486,9 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
 
    private EventHandler<MouseEvent> cameraRotationEventHandler;
 
-   public void setupCameraRotationHandler()
-   {
-      setupCameraRotationHandler(MouseButton.SECONDARY);
-   }
-
-   public void setupCameraRotationHandler(MouseButton mouseButton)
-   {
-      setupCameraRotationHandler(mouseButton, () -> 0.003);
-   }
-
    public void setupCameraRotationHandler(MouseButton mouseButton, DoubleSupplier modifier)
    {
-      cameraRotationEventHandler = new EventHandler<MouseEvent>()
+      cameraRotationEventHandler = new EventHandler<>()
       {
          private final Point2D oldMouseLocation = new Point2D();
 
@@ -576,5 +567,16 @@ public class PerspectiveCameraController extends ObservedAnimationTimer implemen
    public Property<LevelOrbitalCoordinateProperty> cameraLevelOrbitalCoordinatesToTrackProperty()
    {
       return cameraLevelOrbitalCoordinatesToTrack;
+   }
+
+   @Override
+   public List<InputAccessDoc> getAvailableInputAccesses()
+   {
+      List<InputAccessDoc> list = new ArrayList<>();
+      list.addAll(focalPointHandler.getAvailableInputAccesses());
+      list.addAll(orbitHandler.getAvailableInputAccesses());
+      list.add(new InputAccessDoc("Camera", MOUSE, "Secondary", "Rotate the camera about itself."));
+      list.add(new InputAccessDoc("Camera", MOUSE, List.of("Shift", "Primary"), "Translate focus point to the graphic at the clicked location (if any)."));
+      return list;
    }
 }

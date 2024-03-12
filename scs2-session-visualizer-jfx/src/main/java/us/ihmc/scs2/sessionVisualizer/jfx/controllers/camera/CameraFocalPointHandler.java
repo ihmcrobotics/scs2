@@ -19,6 +19,7 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.InputAccessor;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TranslateSCS2;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -26,14 +27,15 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Predicate;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.tools.InputAccessor.InputAccessDoc.KEYBOARD;
 
 /**
  * This class handles the control in position of the camera's focal point.
  * <p>
  * The focal point can be controlled:
  * <ul>
- * <li>Pressing keyboards keys (ASDW) to translate in the world's horizontal plane (independent of
+ * <li>Pressing keyboards keys (WASD) to translate in the world's horizontal plane (independent of
  * the camera's pitch angle).
  * <li>Setting directly the location of the focal point.
  * <li>Tracking a node or coordinates.
@@ -42,7 +44,7 @@ import java.util.function.Predicate;
  *
  * @author Sylvain Bertrand
  */
-public class CameraFocalPointHandler
+public class CameraFocalPointHandler implements InputAccessor
 {
    /** The current translation of the focal point. */
    private final TranslateSCS2 focalPointTranslation = new TranslateSCS2();
@@ -57,15 +59,14 @@ public class CameraFocalPointHandler
     */
    private final BooleanProperty keepTranslationLeveled = new SimpleBooleanProperty(this, "keepTranslationLeveled", true);
    /**
-    * Condition to trigger the use of the fast modifier to make the camera translate faster when using
-    * the keyboard.
+    * Key to trigger the use of the slow modifier to make the camera translate slower when using the keyboard.
     */
-   private final ObjectProperty<Predicate<KeyEvent>> fastModifierPredicate = new SimpleObjectProperty<>(this, "fastModifierPredicate", null);
+   private final ObjectProperty<KeyCode> slowModifierKey = new SimpleObjectProperty<>(this, "slowModifierKey", KeyCode.SHIFT);
    /** Slow camera translation modifier when using the keyboard. */
    private final DoubleProperty slowModifier = new SimpleDoubleProperty(this, "slowModifier", 0.0075);
    /**
-    * Fast camera translation modifier when using the keyboard. It is triggered when the condition held
-    * in {@link #fastModifierPredicate} is fulfilled.
+    * Fast camera translation modifier when using the keyboard.
+    * It is triggered when the modifier key {@link #slowModifierKey} is pressed.
     */
    private final DoubleProperty fastModifier = new SimpleDoubleProperty(this, "fastModifier", 0.0125);
    private DoubleUnaryOperator translationRateModifier;
@@ -90,8 +91,6 @@ public class CameraFocalPointHandler
    {
       Disabled, Node, YoCoordinates
    }
-
-   ;
 
    private final ObjectProperty<TrackingTargetType> targetType = new SimpleObjectProperty<>(this, "", TrackingTargetType.Disabled);
    private final ObjectProperty<Tuple3DProperty> coordinatesTracked = new SimpleObjectProperty<>(this, "coordinatesTracked", null);
@@ -207,7 +206,7 @@ public class CameraFocalPointHandler
    public FocalPointKeyEventHandler createKeyEventHandler()
    {
       FocalPointKeyEventHandler keyEventHandler = new FocalPointKeyEventHandler();
-      updateTasks.add(() -> keyEventHandler.update());
+      updateTasks.add(keyEventHandler::update);
       return keyEventHandler;
    }
 
@@ -226,7 +225,7 @@ public class CameraFocalPointHandler
       public void handle(KeyEvent event)
       {
          double modifier;
-         if (fastModifierPredicate.get() == null || !fastModifierPredicate.get().test(event))
+         if (slowModifierKey.get() == JavaFXMissingTools.getModifierKey(event))
             modifier = slowModifier.get();
          else
             modifier = fastModifier.get();
@@ -447,9 +446,9 @@ public class CameraFocalPointHandler
       return keepTranslationLeveled;
    }
 
-   public final ObjectProperty<Predicate<KeyEvent>> fastModifierPredicateProperty()
+   public final ObjectProperty<KeyCode> slowModifierKeyProperty()
    {
-      return fastModifierPredicate;
+      return slowModifierKey;
    }
 
    public final DoubleProperty slowModifierProperty()
@@ -510,5 +509,18 @@ public class CameraFocalPointHandler
    public ObjectProperty<Node> nodeToTrackProperty()
    {
       return nodeTracked;
+   }
+
+   @Override
+   public List<InputAccessDoc> getAvailableInputAccesses()
+   {
+      String guiElement = "Camera";
+      return List.of(new InputAccessDoc(guiElement, KEYBOARD, forwardKey.get().getName(), "Move the camera forward."),
+                     new InputAccessDoc(guiElement, KEYBOARD, backwardKey.get().getName(), "Move the camera backward."),
+                     new InputAccessDoc(guiElement, KEYBOARD, leftKey.get().getName(), "Move the camera to the left."),
+                     new InputAccessDoc(guiElement, KEYBOARD, rightKey.get().getName(), "Move the camera to the right."),
+                     new InputAccessDoc(guiElement, KEYBOARD, upKey.get().getName(), "Move the camera upward."),
+                     new InputAccessDoc(guiElement, KEYBOARD, downKey.get().getName(), "Move the camera downward."),
+                     new InputAccessDoc(guiElement, KEYBOARD, slowModifierKey.get().getName(), "Slow down the camera translation."));
    }
 }

@@ -13,6 +13,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -692,5 +695,35 @@ public class JavaFXMissingTools
          ((Shape3D) start).setDrawMode(drawMode);
       if (start instanceof Group)
          ((Group) start).getChildren().forEach(c -> setDrawModeRecursive(c, drawMode));
+   }
+
+   public static KeyCode getModifierKey(KeyEvent event)
+   {
+      if (event.isControlDown())
+         return KeyCode.CONTROL;
+      if (event.isShiftDown())
+         return KeyCode.SHIFT;
+      if (event.isAltDown())
+         return KeyCode.ALT;
+      if (event.isMetaDown())
+         return KeyCode.META;
+      if (event.isShortcutDown())
+         return KeyCode.SHORTCUT;
+      return null;
+   }
+
+   public static KeyCode getModifierKey(MouseEvent event)
+   {
+      if (event.isControlDown())
+         return KeyCode.CONTROL;
+      if (event.isShiftDown())
+         return KeyCode.SHIFT;
+      if (event.isAltDown())
+         return KeyCode.ALT;
+      if (event.isMetaDown())
+         return KeyCode.META;
+      if (event.isShortcutDown())
+         return KeyCode.SHORTCUT;
+      return null;
    }
 }
