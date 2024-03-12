@@ -321,8 +321,6 @@ public class URDFTools
       {
          mergedLinks.addAll(additionalModel.getLinks());
       }
-
-      // You may want to handle duplicate link names or other conflicts here
       mergedModel.setLinks(mergedLinks);
 
       // Merge joints
@@ -335,10 +333,7 @@ public class URDFTools
       {
          mergedJoints.addAll(additionalModel.getJoints());
       }
-      // You may want to handle duplicate joint names or other conflicts here
       mergedModel.setJoints(mergedJoints);
-
-      // Merge sensors or other components as needed
 
       // Merge Gazebos
       List<URDFGazebo> mergedGazebos = new ArrayList<>();
@@ -350,7 +345,6 @@ public class URDFTools
       {
          mergedGazebos.addAll(additionalModel.getGazebos());
       }
-      // You may want to handle duplicate joint names or other conflicts here
       mergedModel.setGazebos(mergedGazebos);
 
       return mergedModel;
