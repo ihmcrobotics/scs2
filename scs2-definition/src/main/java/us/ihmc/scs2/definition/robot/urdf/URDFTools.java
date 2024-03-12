@@ -337,6 +337,19 @@ public class URDFTools
 
       // Merge sensors or other components as needed
 
+      // Merge Gazebos
+      List<URDFGazebo> mergedGazebos = new ArrayList<>();
+      if (baseModel.getJoints() != null)
+      {
+         mergedGazebos.addAll(baseModel.getGazebos());
+      }
+      if (additionalModel.getJoints() != null)
+      {
+         mergedGazebos.addAll(additionalModel.getGazebos());
+      }
+      // You may want to handle duplicate joint names or other conflicts here
+      mergedModel.setGazebos(mergedGazebos);
+
       return mergedModel;
    }
 
