@@ -41,7 +41,7 @@ public class SimpleCrossFourBarRobotTest
       parserProperties.setAutoGenerateCollisionName(false);
       parserProperties.setAutoGenerateVisualName(false);
       parserProperties.setTransformToZUp(false);
-      URDFModel originalURDFModel = URDFTools.loadURDFModel(inputStream, Collections.emptyList(), null, parserProperties);
+      URDFModel originalURDFModel = URDFTools.loadURDFModel(Collections.singletonList(inputStream), Collections.emptyList(), null, parserProperties);
       RobotDefinition originalRobotDefinition = URDFTools.toRobotDefinition(originalURDFModel, parserProperties);
       originalRobotDefinition.newInstance(ReferenceFrame.getWorldFrame());
 
@@ -52,7 +52,7 @@ public class SimpleCrossFourBarRobotTest
 
       //      System.out.println(new String(byteArrayOutputStream.toByteArray()));
 
-      URDFModel copyURDFModel = URDFTools.loadURDFModel(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
+      URDFModel copyURDFModel = URDFTools.loadURDFModel(Collections.singletonList(new ByteArrayInputStream(byteArrayOutputStream.toByteArray())),
                                                         Collections.emptyList(),
                                                         null,
                                                         parserProperties);
