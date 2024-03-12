@@ -339,11 +339,11 @@ public class URDFTools
 
       // Merge Gazebos
       List<URDFGazebo> mergedGazebos = new ArrayList<>();
-      if (baseModel.getJoints() != null)
+      if (baseModel.getGazebos() != null)
       {
          mergedGazebos.addAll(baseModel.getGazebos());
       }
-      if (additionalModel.getJoints() != null)
+      if (additionalModel.getGazebos() != null)
       {
          mergedGazebos.addAll(additionalModel.getGazebos());
       }
