@@ -300,7 +300,10 @@ public class URDFTools
    {
       // Create a new URDFModel to hold the merged components
       URDFModel mergedModel = new URDFModel();
-
+      // Set to keep track of unique links and joints already added
+      List<String> mergedLinkNames = new ArrayList<>();
+      List<String> mergedJointNames = new ArrayList<>();
+      List<String> mergedGazeboNames = new ArrayList<>();
       // Set name
       if (baseModel.getName() == null)
       {
@@ -316,36 +319,81 @@ public class URDFTools
       if (baseModel.getLinks() != null)
       {
          mergedLinks.addAll(baseModel.getLinks());
+         for (URDFLink link : baseModel.getLinks())
+         {
+            mergedLinkNames.add(link.getName());
+         }
       }
       if (additionalModel.getLinks() != null)
       {
-         mergedLinks.addAll(additionalModel.getLinks());
+         for (URDFLink link : additionalModel.getLinks())
+         {
+            if (!mergedLinkNames.contains(link.getName()))
+            {
+               mergedLinks.add(link);
+               mergedLinkNames.add(link.getName());
+            }
+            else
+            {
+               LogTools.warn("URDF link ({}) has already been added", link.getName());
+            }
+         }
       }
-      mergedModel.setLinks(mergedLinks);
+      mergedModel.setLinks(new ArrayList<>(mergedLinks));
 
       // Merge joints
       List<URDFJoint> mergedJoints = new ArrayList<>();
       if (baseModel.getJoints() != null)
       {
          mergedJoints.addAll(baseModel.getJoints());
+         for (URDFJoint joint : baseModel.getJoints())
+         {
+            mergedJointNames.add(joint.getName());
+         }
       }
       if (additionalModel.getJoints() != null)
       {
-         mergedJoints.addAll(additionalModel.getJoints());
+         for (URDFJoint joint : additionalModel.getJoints())
+         {
+            if (!mergedJointNames.contains(joint.getName()))
+            {
+               mergedJoints.add(joint);
+               mergedJointNames.add(joint.getName());
+            }
+            else
+            {
+               LogTools.warn("URDF Joint ({}) has already been added", joint.getName());
+            }
+         }
       }
-      mergedModel.setJoints(mergedJoints);
+      mergedModel.setJoints(new ArrayList<>(mergedJoints));
 
       // Merge Gazebos
       List<URDFGazebo> mergedGazebos = new ArrayList<>();
       if (baseModel.getGazebos() != null)
       {
          mergedGazebos.addAll(baseModel.getGazebos());
+         for (URDFGazebo gazebo : baseModel.getGazebos())
+         {
+            mergedGazeboNames.add(gazebo.getReference());
+         }
       }
       if (additionalModel.getGazebos() != null)
       {
-         mergedGazebos.addAll(additionalModel.getGazebos());
+         for (URDFGazebo gazebo : additionalModel.getGazebos())
+         {
+            if (!mergedGazeboNames.contains(gazebo.getReference()))
+            {
+               mergedGazebos.add(gazebo);
+               mergedGazeboNames.add(gazebo.getReference());
+            }
+            else
+            {
+               LogTools.warn("URDF gazebo ({}) has already been added", gazebo.getReference());
+            }
+         }
       }
-      mergedModel.setGazebos(mergedGazebos);
+      mergedModel.setGazebos(new ArrayList<>(mergedGazebos));
 
       return mergedModel;
    }
