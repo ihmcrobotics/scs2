@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="arm" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="limbB" xmlns:xacro="http://ros.org/wiki/xacro">
 
     <joint name="jointA" type="revolute">
         <axis xyz="0 1 0"/>

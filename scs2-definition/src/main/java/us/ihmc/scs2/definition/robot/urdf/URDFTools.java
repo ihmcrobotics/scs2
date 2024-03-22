@@ -300,11 +300,11 @@ public class URDFTools
    {
       // Create a new URDFModel to hold the merged components
       URDFModel mergedModel = new URDFModel();
-      // Set to keep track of unique links and joints already added
       List<String> mergedLinkNames = new ArrayList<>();
       List<String> mergedJointNames = new ArrayList<>();
       List<String> mergedGazeboNames = new ArrayList<>();
-      // Set name
+
+      // Set name of merged urdf
       if (baseModel.getName() == null)
       {
          mergedModel.setName(additionalModel.getName());
@@ -314,7 +314,7 @@ public class URDFTools
          mergedModel.setName(baseModel.getName());
       }
 
-      // Merge links
+      // Merge links that haven't already been added
       List<URDFLink> mergedLinks = new ArrayList<>();
       if (baseModel.getLinks() != null)
       {
@@ -335,13 +335,13 @@ public class URDFTools
             }
             else
             {
-               LogTools.warn("URDF link ({}) has already been added", link.getName());
+               LogTools.warn("Link ({}) has already been added to urdf, skipping link", link.getName());
             }
          }
       }
       mergedModel.setLinks(new ArrayList<>(mergedLinks));
 
-      // Merge joints
+      // Merge joints that haven't already been added
       List<URDFJoint> mergedJoints = new ArrayList<>();
       if (baseModel.getJoints() != null)
       {
@@ -362,13 +362,13 @@ public class URDFTools
             }
             else
             {
-               LogTools.warn("URDF Joint ({}) has already been added", joint.getName());
+               LogTools.warn("Joint ({}) has already been added to urdf, skipping joint", joint.getName());
             }
          }
       }
       mergedModel.setJoints(new ArrayList<>(mergedJoints));
 
-      // Merge Gazebos
+      // Merge Gazebos that haven't already been added
       List<URDFGazebo> mergedGazebos = new ArrayList<>();
       if (baseModel.getGazebos() != null)
       {
@@ -389,7 +389,7 @@ public class URDFTools
             }
             else
             {
-               LogTools.warn("URDF gazebo ({}) has already been added", gazebo.getReference());
+               LogTools.warn("Gazebo ({}) has already been added to urdf, skipping gazebo", gazebo.getReference());
             }
          }
       }
