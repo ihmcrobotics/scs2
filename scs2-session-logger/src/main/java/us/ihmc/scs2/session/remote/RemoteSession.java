@@ -65,7 +65,7 @@ public class RemoteSession extends Session
       RobotDefinition robotDefinition = RobotModelLoader.loadModel(handshake.getModelName(),
                                                                    handshake.getModelLoaderClass(),
                                                                    handshake.getResourceDirectories(),
-                                                                   handshake.getModel(),
+                                                                   handshake.getModels(),
                                                                    handshake.getResourceZip());
       if (robotDefinition != null)
       {
