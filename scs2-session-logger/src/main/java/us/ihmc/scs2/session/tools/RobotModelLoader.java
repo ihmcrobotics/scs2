@@ -229,13 +229,13 @@ public class RobotModelLoader
 
          ByteArrayInputStream inputStream;
 
-         // The length is as expected
+         // The length is as expected which means we have metadata and should read a specific length
          if (models.length >= length)
          {
             inputStream = new ByteArrayInputStream(models,(int) index, (int) length);
          }
          else
-         {
+         {  // This accounts for a model with no metadata, then we just read the stream without anything else
             inputStream = new ByteArrayInputStream(models);
             inputStreams = new ArrayList<>();
          }
