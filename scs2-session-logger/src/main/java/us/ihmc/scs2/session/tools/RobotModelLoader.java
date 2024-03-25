@@ -226,7 +226,20 @@ public class RobotModelLoader
 
          // Move index and read data for current
          index += 4;
-         ByteArrayInputStream inputStream = new ByteArrayInputStream(models,(int) index, (int) length);
+
+         ByteArrayInputStream inputStream;
+
+         // The length is as expected
+         if (models.length >= length)
+         {
+            inputStream = new ByteArrayInputStream(models,(int) index, (int) length);
+         }
+         else
+         {
+            inputStream = new ByteArrayInputStream(models);
+            inputStreams = new ArrayList<>();
+         }
+
          index += length;
 
          inputStreams.add(inputStream);
