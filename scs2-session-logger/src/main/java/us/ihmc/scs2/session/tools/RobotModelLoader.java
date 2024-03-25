@@ -26,16 +26,14 @@ import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -200,11 +198,41 @@ public class RobotModelLoader
    private static RobotDefinition loadURDFModel(String[] resourceDirectories, byte[] model, long modelHashCode, ClassLoader resourceClassLoader)
          throws JAXBException
    {
-      URDFModel urdfModel = URDFTools.loadURDFModel(new ByteArrayInputStream(model), Arrays.asList(resourceDirectories), resourceClassLoader);
+      Collection<InputStream> inputStreams = unpackModels(model);
+      URDFModel urdfModel = URDFTools.loadURDFModel(inputStreams, Arrays.asList(resourceDirectories), resourceClassLoader);
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel);
       robotDefinition.setResourceClassLoader(resourceClassLoader);
       cachedImportedModels.put(modelHashCode, robotDefinition);
       return robotDefinition;
+   }
+
+   /**
+    * Returns the InputStreams to their original format before being sent over the network
+    * @param models the combined byte array that holds all the InputStream's data
+    * @return the Collection of InputStream's in their original format
+    */
+   private static Collection<InputStream> unpackModels(byte[] models)
+   {
+      Collection<InputStream> inputStreams = new ArrayList<>();
+      long index = 0;
+
+      while(index < models.length)
+      {
+         // Reads the first 4 bytes to determine the length of the current InputStream
+         long length = ((long) (models[(int) index] & 0xFF) << 24) |
+                       ((long) (models[(int) index + 1] & 0xFF) << 16) |
+                       ((long) (models[(int) index + 2] & 0xFF) << 8) |
+                       (models[(int) index + 3] & 0xFF);
+
+         // Move index and read data for current
+         index += 4;
+         ByteArrayInputStream inputStream = new ByteArrayInputStream(models,(int) index, (int) length);
+         index += length;
+
+         inputStreams.add(inputStream);
+      }
+
+      return inputStreams;
    }
 
    private static ClassLoader unpackResources(String modelName, byte[] resourceZip)
