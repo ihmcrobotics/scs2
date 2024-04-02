@@ -40,7 +40,7 @@ public class ComposedURDFLoadingTest
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
       // We only expect 3 because we don't keep any duplicates within the files
       assertEquals(3, robotDefinition.getAllJoints().size());
-      // The root model is the one that doesn't have any links in another file, all parents are in the same file
+      // The root model is the one that ends up as the final parent
       assertEquals("rootModel", robotDefinition.getName());
    }
 
@@ -54,7 +54,7 @@ public class ComposedURDFLoadingTest
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
       // We only expect 3 because we don't keep any duplicates within the files
       assertEquals(3, robotDefinition.getAllJoints().size());
-      // The root model is the one that doesn't have any links in another file, all parents are in the same file
+      // The root model is the one that ends up as the final parent
       assertEquals("rootModel", robotDefinition.getName());
    }
 

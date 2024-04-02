@@ -288,11 +288,6 @@ public class URDFTools
             if (parserProperties.handleImplicitJointDefinitions)
                handleImplicitJointDefinitions(urdfModel);
 
-            // Check for the root model to set the name properly
-            if (combinedURDFModel.getName() == null && isRootModel(urdfModel))
-            {
-               combinedURDFModel.setName(urdfModel.getName());
-            }
             // Merge the current URDFModel with the combined URDFModel
             combinedURDFModel = mergeURDFModels(combinedURDFModel, urdfModel);
          }
@@ -316,47 +311,56 @@ public class URDFTools
    }
 
    /**
-    * Checks if the given model is the root model by seeing if any parent links of the defined joints are
-    * not contained within the same file
-    * @param model URDF model with joint and links to be checked
-    * @return whether the model is the root, so we can use the name from it
+    * Determine the parent model and child model, return a merged model that contains the parent model and all parts of the child model
+    * that aren't contained within the parent model. The name is taken from the parent model
+    * @param model1 URDF model with joint and links to be checked
+    * @param model2 URDF model with joints and links to be checked
+    * @return the merged model that contains all the joints, links, gazebos, and correct name from the models
     */
-   private static boolean isRootModel(URDFModel model)
+   private static URDFModel mergeURDFModels(URDFModel model1, URDFModel model2)
    {
-      List<String> parentLinksOfJoints = new ArrayList<>();
-
-      // Get a list of the parent links from all the joints in the model
-      for (URDFJoint joint : model.getJoints())
+      // Check the edge cases where a model might not have anything
+      if (model1.getLinks() == null && model1.getJoints() == null)
       {
-         parentLinksOfJoints.add(joint.getParent().getLink());
+         return model2;
+      }
+      else if (model2.getLinks() == null && model2.getJoints() == null)
+      {
+         return model1;
       }
 
-      // Get all the links defined in the model
-      List<String> linksFromModel = new ArrayList<>();
-      for ( URDFLink link : model.getLinks())
+      // Get all names of links in model1
+      List<String> model1LinkNames = new ArrayList<>();
+      if (model1.getLinks() != null)
       {
-         linksFromModel.add(link.getName());
-      }
-
-      // Check that all parent links from joints are in the current model
-      for (String parentLinkOfJoint : parentLinksOfJoints)
-      {
-         if (!linksFromModel.contains(parentLinkOfJoint))
+         for (URDFLink link : model1.getLinks())
          {
-            return false; // Parent link is not in this file, must not be root
+            model1LinkNames.add(link.getName());
          }
       }
 
-      return true; // All parent links are in this file, must be root
+      if (model2.getJoints() != null)
+      {
+         for (URDFJoint joint : model2.getJoints())
+         {
+            if (model1LinkNames.contains(joint.getParent().getLink()))
+            {  // Check if the model1 has any links that are referenced in model2, that would make it the parent
+               return mergeChildIntoParentModel(model1, model2);
+            }
+         }
+      }
+
+      // If the model1 doesn't contain any links that are in the model2, we define the model2 to be the parent
+      return mergeChildIntoParentModel(model2, model1);
    }
 
    /**
-    * Merge both models into the same model by adding the joints links, and gazebos to one URDFModel
-    * @param baseModel the URDF file that will be added to the merged model
-    * @param additionalModel the URDF file that will be added to the merged model
-    * @return the merged model that contained components of both the base and additional model, skipping duplicates
+    * Merge the child model into the parent model. Any duplicates that are found will be ignored in the child model
+    * @param parentModel the URDF file that will be added to the merged model
+    * @param childModel the URDF file that will be added to the merged model
+    * @return the merged model that contained components of both the parent and child model, skipping duplicates
     */
-   private static URDFModel mergeURDFModels(URDFModel baseModel, URDFModel additionalModel)
+   private static URDFModel mergeChildIntoParentModel(URDFModel parentModel, URDFModel childModel)
    {
       // Create a new URDFModel to hold the merged components
       URDFModel mergedModel = new URDFModel();
@@ -364,25 +368,21 @@ public class URDFTools
       List<String> mergedJointNames = new ArrayList<>();
       List<String> mergedGazeboNames = new ArrayList<>();
 
-      // Set the name of the merged model
-      if (baseModel.getName() != null)
-      {
-         mergedModel.setName(baseModel.getName());
-      }
+      mergedModel.setName(parentModel.getName());
 
-      // Merge links that haven't already been added
+      // Start with the parent links, we ignore duplicate links from the child model
       List<URDFLink> mergedLinks = new ArrayList<>();
-      if (baseModel.getLinks() != null)
+      if (parentModel.getLinks() != null)
       {
-         mergedLinks.addAll(baseModel.getLinks());
-         for (URDFLink link : baseModel.getLinks())
+         mergedLinks.addAll(parentModel.getLinks());
+         for (URDFLink link : parentModel.getLinks())
          {
             mergedLinkNames.add(link.getName());
          }
       }
-      if (additionalModel.getLinks() != null)
+      if (childModel.getLinks() != null)
       {
-         for (URDFLink link : additionalModel.getLinks())
+         for (URDFLink link : childModel.getLinks())
          {
             if (!mergedLinkNames.contains(link.getName()))
             {
@@ -395,21 +395,21 @@ public class URDFTools
             }
          }
       }
-      mergedModel.setLinks(new ArrayList<>(mergedLinks));
+      mergedModel.setLinks(mergedLinks);
 
-      // Merge joints that haven't already been added
+      // Start with the parent joints, we ignore duplicate joints from the child model
       List<URDFJoint> mergedJoints = new ArrayList<>();
-      if (baseModel.getJoints() != null)
+      if (parentModel.getJoints() != null)
       {
-         mergedJoints.addAll(baseModel.getJoints());
-         for (URDFJoint joint : baseModel.getJoints())
+         mergedJoints.addAll(parentModel.getJoints());
+         for (URDFJoint joint : parentModel.getJoints())
          {
             mergedJointNames.add(joint.getName());
          }
       }
-      if (additionalModel.getJoints() != null)
+      if (childModel.getJoints() != null)
       {
-         for (URDFJoint joint : additionalModel.getJoints())
+         for (URDFJoint joint : childModel.getJoints())
          {
             if (!mergedJointNames.contains(joint.getName()))
             {
@@ -422,21 +422,21 @@ public class URDFTools
             }
          }
       }
-      mergedModel.setJoints(new ArrayList<>(mergedJoints));
+      mergedModel.setJoints(mergedJoints);
 
-      // Merge Gazebos that haven't already been added
+      // Start with the parent gazebos, we ignore duplicate gazebos from the child model
       List<URDFGazebo> mergedGazebos = new ArrayList<>();
-      if (baseModel.getGazebos() != null)
+      if (parentModel.getGazebos() != null)
       {
-         mergedGazebos.addAll(baseModel.getGazebos());
-         for (URDFGazebo gazebo : baseModel.getGazebos())
+         mergedGazebos.addAll(parentModel.getGazebos());
+         for (URDFGazebo gazebo : parentModel.getGazebos())
          {
             mergedGazeboNames.add(gazebo.getReference());
          }
       }
-      if (additionalModel.getGazebos() != null)
+      if (childModel.getGazebos() != null)
       {
-         for (URDFGazebo gazebo : additionalModel.getGazebos())
+         for (URDFGazebo gazebo : childModel.getGazebos())
          {
             if (!mergedGazeboNames.contains(gazebo.getReference()))
             {
@@ -449,7 +449,7 @@ public class URDFTools
             }
          }
       }
-      mergedModel.setGazebos(new ArrayList<>(mergedGazebos));
+      mergedModel.setGazebos(mergedGazebos);
 
       return mergedModel;
    }
