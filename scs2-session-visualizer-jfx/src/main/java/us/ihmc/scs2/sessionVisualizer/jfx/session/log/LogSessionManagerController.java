@@ -556,12 +556,6 @@ public class LogSessionManagerController implements SessionControlsController
    {
       enableVariableFilterToggleButton.setSelected(false);
       variableFilterControllerProperty.set(null);
-
-      if (activeSessionProperty.get() != null)
-      {
-         activeSessionProperty.get().shutdownSession();
-         activeSessionProperty.set(null);
-      }
    }
 
    @Override
