@@ -26,7 +26,6 @@ import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -198,54 +197,11 @@ public class RobotModelLoader
    private static RobotDefinition loadURDFModel(String[] resourceDirectories, byte[] model, long modelHashCode, ClassLoader resourceClassLoader)
          throws JAXBException
    {
-      Collection<InputStream> inputStreams = unpackModels(model);
-      URDFModel urdfModel = URDFTools.loadURDFModel(inputStreams, Arrays.asList(resourceDirectories), resourceClassLoader);
+      URDFModel urdfModel = URDFTools.loadURDFModel(new ByteArrayInputStream(model), Arrays.asList(resourceDirectories), resourceClassLoader);
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel);
       robotDefinition.setResourceClassLoader(resourceClassLoader);
       cachedImportedModels.put(modelHashCode, robotDefinition);
       return robotDefinition;
-   }
-
-   /**
-    * Returns the InputStreams to their original format before being sent over the network
-    * @param models the combined byte array that holds all the InputStream's data
-    * @return the Collection of InputStream's in their original format
-    */
-   private static Collection<InputStream> unpackModels(byte[] models)
-   {
-      Collection<InputStream> inputStreams = new ArrayList<>();
-      long index = 0;
-
-      while(index < models.length)
-      {
-         // Reads the first 4 bytes to determine the length of the current InputStream
-         long length = ((long) (models[(int) index] & 0xFF) << 24) |
-                       ((long) (models[(int) index + 1] & 0xFF) << 16) |
-                       ((long) (models[(int) index + 2] & 0xFF) << 8) |
-                       (models[(int) index + 3] & 0xFF);
-
-         // Move index and read data for current
-         index += 4;
-
-         ByteArrayInputStream inputStream;
-
-         // The length is as expected which means we have metadata and should read a specific length
-         if (models.length >= length)
-         {
-            inputStream = new ByteArrayInputStream(models,(int) index, (int) length);
-         }
-         else
-         {  // This accounts for a model with no metadata, then we just read the stream without anything else
-            inputStream = new ByteArrayInputStream(models);
-            inputStreams = new ArrayList<>();
-         }
-
-         index += length;
-
-         inputStreams.add(inputStream);
-      }
-
-      return inputStreams;
    }
 
    private static ClassLoader unpackResources(String modelName, byte[] resourceZip)
