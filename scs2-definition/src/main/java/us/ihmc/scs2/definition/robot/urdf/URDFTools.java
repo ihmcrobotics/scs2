@@ -193,15 +193,29 @@ public class URDFTools
       return loadURDFModel(Collections.singletonList(inputStream), resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
    }
 
-   public static URDFModel loadURDFModel(Collection<InputStream> inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    *
+    * @param inputStreams         the input streams to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @return the model.
+    */
+   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
-      return loadURDFModel(inputStream, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
+      return loadURDFModel(inputStreams, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
    }
 
    /**
     * Parse a {@link URDFModel} from the given input stream.
     *
-    * @param inputStreams         the stream to be loaded.
+    * @param inputStreams         the input streams to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
     * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
