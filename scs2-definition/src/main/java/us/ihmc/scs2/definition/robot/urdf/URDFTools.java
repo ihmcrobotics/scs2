@@ -288,6 +288,11 @@ public class URDFTools
             if (parserProperties.handleImplicitJointDefinitions)
                handleImplicitJointDefinitions(urdfModel);
 
+            // Check for the root model to set the name properly
+            if (combinedURDFModel.getName() == null && isRootModel(urdfModel))
+            {
+               combinedURDFModel.setName(urdfModel.getName());
+            }
             // Merge the current URDFModel with the combined URDFModel
             combinedURDFModel = mergeURDFModels(combinedURDFModel, urdfModel);
          }
@@ -310,6 +315,47 @@ public class URDFTools
       return combinedURDFModel;
    }
 
+   /**
+    * Checks if the given model is the root model by seeing if any parent links of the defined joints are
+    * not contained within the same file
+    * @param model URDF model with joint and links to be checked
+    * @return whether the model is the root, so we can use the name from it
+    */
+   private static boolean isRootModel(URDFModel model)
+   {
+      List<String> parentLinksOfJoints = new ArrayList<>();
+
+      // Get a list of the parent links from all the joints in the model
+      for (URDFJoint joint : model.getJoints())
+      {
+         parentLinksOfJoints.add(joint.getParent().getLink());
+      }
+
+      // Get all the links defined in the model
+      List<String> linksFromModel = new ArrayList<>();
+      for ( URDFLink link : model.getLinks())
+      {
+         linksFromModel.add(link.getName());
+      }
+
+      // Check that all parent links from joints are in the current model
+      for (String parentLinkOfJoint : parentLinksOfJoints)
+      {
+         if (!linksFromModel.contains(parentLinkOfJoint))
+         {
+            return false; // Parent link is not in this file, must not be root
+         }
+      }
+
+      return true; // All parent links are in this file, must be root
+   }
+
+   /**
+    * Merge both models into the same model by adding the joints links, and gazebos to one URDFModel
+    * @param baseModel the URDF file that will be added to the merged model
+    * @param additionalModel the URDF file that will be added to the merged model
+    * @return the merged model that contained components of both the base and additional model, skipping duplicates
+    */
    private static URDFModel mergeURDFModels(URDFModel baseModel, URDFModel additionalModel)
    {
       // Create a new URDFModel to hold the merged components
@@ -318,12 +364,8 @@ public class URDFTools
       List<String> mergedJointNames = new ArrayList<>();
       List<String> mergedGazeboNames = new ArrayList<>();
 
-      // Set name of merged urdf
-      if (baseModel.getName() == null)
-      {
-         mergedModel.setName(additionalModel.getName());
-      }
-      else
+      // Set the name of the merged model
+      if (baseModel.getName() != null)
       {
          mergedModel.setName(baseModel.getName());
       }
