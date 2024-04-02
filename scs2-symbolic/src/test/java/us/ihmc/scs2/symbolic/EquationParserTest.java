@@ -125,6 +125,36 @@ public class EquationParserTest
       }
    }
 
+   @Test
+   public void testSum()
+   {
+      String eqString = "a = ( b + c ) / 20 + ( d + e ) * 0.32 + f";
+      EquationParser parser = new EquationParser();
+      parser.getAliasManager().addAlias("a", InputType.DOUBLE);
+      DoubleVariable b = (DoubleVariable) parser.getAliasManager().addAlias("b", InputType.DOUBLE).input();
+      DoubleVariable c = (DoubleVariable) parser.getAliasManager().addAlias("c", InputType.DOUBLE).input();
+      DoubleVariable d = (DoubleVariable) parser.getAliasManager().addAlias("d", InputType.DOUBLE).input();
+      DoubleVariable e = (DoubleVariable) parser.getAliasManager().addAlias("e", InputType.DOUBLE).input();
+      DoubleVariable f = (DoubleVariable) parser.getAliasManager().addAlias("f", InputType.DOUBLE).input();
+      Equation equation = Equation.parse(eqString, parser);
+
+      Random random = new Random(234);
+
+      for (int i = 0; i < 1000; i++)
+      {
+         b.setValue(0, random.nextDouble());
+         c.setValue(0, random.nextDouble());
+         d.setValue(0, random.nextDouble());
+         e.setValue(0, random.nextDouble());
+         f.setValue(0, random.nextDouble());
+
+         equation.compute(0.0);
+         double aActual = ((DoubleInput) equation.getResult()).getValue();
+         double aExpected = (b.getValue() + c.getValue()) / 20.0 + (d.getValue() + e.getValue()) * 0.32 + f.getValue();
+         assertEquals(aExpected, aActual, 1.0e-10, "Iteration: " + i);
+      }
+   }
+
    public static void main(String[] args)
    {
       StringTokenizer st = new StringTokenizer("x = 2.0*a+b");
