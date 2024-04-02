@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="torso">
+<robot name="rootModel">
     <link name="baseLink">
         <visual>
             <geometry>
