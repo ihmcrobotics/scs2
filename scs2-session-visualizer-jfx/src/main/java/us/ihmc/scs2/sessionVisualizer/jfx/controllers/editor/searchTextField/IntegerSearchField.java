@@ -66,7 +66,7 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
    {
       YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
       YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromFullname(text);
-      return yoComposite == null ? null : yoComposite.getUniqueName();
+      return yoComposite == null ? null : yoComposite.getUniqueShortName();
    }
 
    @Override
