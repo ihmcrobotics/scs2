@@ -246,7 +246,7 @@ public class YoCompositeEditorPaneController
       if (yoCompositeTextField != null)
          yoCompositeTextField.setInput(input);
       else
-         componentSearchTextFields[0].setText(input.getUniqueName());
+         componentSearchTextFields[0].setText(input.getUniqueShortName());
    }
 
    public void setInput(CompositeProperty input)

@@ -31,7 +31,6 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
-import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
@@ -69,20 +68,19 @@ public class YoCompositeAndEquationEditorWindowController
    private VBox equationEditorContainer;
 
    private final Property<YoNameDisplay> yoVariableNameDisplay = new SimpleObjectProperty<>(this, "yoVariableNameDisplay", YoNameDisplay.SHORT_NAME);
-   private YoRegistry userRegistry;
 
    private Stage window;
    private SessionVisualizerToolkit toolkit;
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
+   private YoManager yoManager;
 
    public void initialize(SessionVisualizerToolkit toolkit)
    {
       this.toolkit = toolkit;
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
-      YoManager yoManager = toolkit.getYoManager();
-      userRegistry = yoManager.getUserRegistry();
+      yoManager = toolkit.getYoManager();
 
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
 
@@ -178,6 +176,7 @@ public class YoCompositeAndEquationEditorWindowController
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.YO_COMPOSITE_CREATOR_DIALOG_URL);
          loader.load();
          YoCompositeCreatorDialogController yoCompositeCreatorDialogController = loader.getController();
+         YoRegistry userRegistry = yoManager.getUserRegistry();
          YoComposite yoComposite = yoCompositeCreatorDialogController.showAndWait(window, userRegistry);
          if (yoComposite != null)
          {
@@ -194,6 +193,9 @@ public class YoCompositeAndEquationEditorWindowController
    {
       if (selectedComposite == null)
          return;
+
+      yoCompositeListView.getItems().remove(selectedComposite);
+
       for (YoVariable yoVariable : selectedComposite.getYoComponents())
       {
          yoVariable.destroy();
@@ -203,6 +205,7 @@ public class YoCompositeAndEquationEditorWindowController
    private void refreshYoCompositeListView()
    {
       yoCompositeListView.getItems().clear();
+      YoRegistry userRegistry = yoManager.getUserRegistry();
       userRegistry.getVariables()
                   .forEach(yoVariable -> yoCompositeListView.getItems().add(new YoComposite(YoCompositeSearchManager.yoVariablePattern, yoVariable)));
    }
@@ -286,14 +289,8 @@ public class YoCompositeAndEquationEditorWindowController
 
    public void closeAndDispose()
    {
-   }
-
-   public void startSession(Session session)
-   {
-   }
-
-   public void stopSession()
-   {
+      window.close();
+      yoEquationEditorListView.getItems().clear();
    }
 
    @FXML
@@ -343,6 +340,7 @@ public class YoCompositeAndEquationEditorWindowController
          YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
          if (yoEquationListDefinition == null)
             return;
+         YoRegistry userRegistry = yoManager.getUserRegistry();
          for (YoEquationDefinition yoEquationDefinition : yoEquationListDefinition.getYoEquations())
          {
             YoEquationManager.ensureUserAliasesExist(yoEquationDefinition, userRegistry);

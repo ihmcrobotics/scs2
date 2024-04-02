@@ -117,6 +117,12 @@ public class SecondaryWindowManager implements Manager
          yoGraphicEditor.setValue(null);
       }
 
+      if (yoCompositeCreator.getValue() != null)
+      {
+         yoCompositeCreator.getValue().closeAndDispose();
+         yoCompositeCreator.setValue(null);
+      }
+
       sliderboardManager.stopSession();
 
       if (yoRegistryStatistics.getValue() != null)
