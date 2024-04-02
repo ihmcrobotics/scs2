@@ -158,7 +158,7 @@ public abstract class PropertySearchField<T extends Property<?>>
       if (yoComposites != null)
       {
          success = true;
-         textField.setText(yoComposites.get(0).getUniqueName());
+         textField.setText(yoComposites.get(0).getUniqueShortName());
       }
       event.setDropCompleted(success);
       event.consume();

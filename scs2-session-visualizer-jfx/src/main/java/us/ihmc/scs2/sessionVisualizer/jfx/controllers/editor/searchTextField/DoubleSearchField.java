@@ -55,7 +55,9 @@ public class DoubleSearchField extends PropertySearchField<DoubleProperty>
    {
       YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
       YoComposite yoComposite = yoVariableCollection.getYoCompositeFromFullname(text);
-      return yoComposite == null ? null : yoComposite.getUniqueName();
+      if (yoComposite == null)
+         yoComposite = yoVariableCollection.getYoCompositeFromUniqueName(text);
+      return yoComposite == null ? null : yoComposite.getUniqueShortName();
    }
 
    @Override
@@ -69,13 +71,13 @@ public class DoubleSearchField extends PropertySearchField<DoubleProperty>
             return null;
 
          YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
-         Collection<String> uniqueNameCollection = yoVariableCollection.uniqueNameCollection();
+         Collection<String> uniqueShortNameCollection = yoVariableCollection.uniqueShortNameCollection();
 
          if (userText.isEmpty())
-            return uniqueNameCollection;
+            return uniqueShortNameCollection;
 
          String userTextLowerCase = userText.toLowerCase();
-         return uniqueNameCollection.stream().filter(v -> v.toLowerCase().contains(userTextLowerCase)).collect(Collectors.toList());
+         return uniqueShortNameCollection.stream().filter(v -> v.toLowerCase().contains(userTextLowerCase)).collect(Collectors.toList());
       };
    }
 

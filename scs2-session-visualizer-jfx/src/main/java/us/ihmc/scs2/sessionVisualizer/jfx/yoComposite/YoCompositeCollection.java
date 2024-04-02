@@ -72,6 +72,11 @@ public class YoCompositeCollection
       return uniqueNameToYoComposite.keySet();
    }
 
+   public Collection<String> uniqueShortNameCollection()
+   {
+      return uniqueShortNameToYoComposite.keySet();
+   }
+
    public Collection<String> fullnameCollection()
    {
       return fullnameToYoComposite.keySet();

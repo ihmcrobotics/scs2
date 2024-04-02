@@ -1,17 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
-
 import javafx.scene.control.TextField;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+import org.controlsfx.control.textfield.TextFields;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
@@ -19,6 +15,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class YoCompositeSearchField
 {
@@ -48,9 +47,9 @@ public class YoCompositeSearchField
 
    public void setInput(YoComposite input)
    {
-      if (yoCompositeCollection.getYoCompositeFromUniqueName(input.getUniqueName()) != null)
+      if (yoCompositeCollection.getYoCompositeFromUniqueName(input.getUniqueShortName()) != null)
       {
-         textField.setText(input.getUniqueName());
+         textField.setText(input.getUniqueShortName());
          setIndividualComponentFields(input);
       }
    }
@@ -77,15 +76,19 @@ public class YoCompositeSearchField
 
       if (compositeName != null)
       { // It is a composite, so it should in the collection so we can retrieve the unique name.
-         String uniqueName = yoCompositeCollection.getYoComposites().stream().filter(composite -> composite.getYoComponents().contains(components.get(0)))
-                                                  .findFirst().get().getUniqueName();
+         String uniqueName = yoCompositeCollection.getYoComposites()
+                                                  .stream()
+                                                  .filter(composite -> composite.getYoComponents().contains(components.get(0)))
+                                                  .findFirst()
+                                                  .get()
+                                                  .getUniqueShortName();
          textField.setText(uniqueName);
       }
    }
 
    public void setupAutoCompletion()
    {
-      autoCompletionBinding = TextFields.bindAutoCompletion(textField, yoCompositeCollection.uniqueNameCollection());
+      autoCompletionBinding = TextFields.bindAutoCompletion(textField, yoCompositeCollection.uniqueShortNameCollection());
       autoCompletionBinding.prefWidthProperty().bind(textField.widthProperty());
       textField.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
@@ -145,7 +148,7 @@ public class YoCompositeSearchField
       if (yoComposites != null)
       {
          success = true;
-         textField.setText(yoComposites.get(0).getUniqueName());
+         textField.setText(yoComposites.get(0).getUniqueShortName());
          setIndividualComponentFields(yoComposites.get(0));
       }
       event.setDropCompleted(success);
