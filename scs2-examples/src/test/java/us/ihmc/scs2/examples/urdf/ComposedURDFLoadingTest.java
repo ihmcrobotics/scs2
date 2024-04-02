@@ -14,7 +14,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Class that tests the ability to load a urdf that is split up in multiple files, this may be don't because the urdf
+ * Class that tests the ability to load an URDF that is split up in multiple files, this may happen because the urdf
  * is rather large or has parts that are often replaced.
  */
 public class ComposedURDFLoadingTest
@@ -33,25 +33,29 @@ public class ComposedURDFLoadingTest
    @Test
    public void loadURDFFromTwoFiles() throws JAXBException
    {
-      String[] urdfFiles = {"urdf/torso.urdf", "urdf/limbA.urdf"};
+      String[] urdfFiles = {"urdf/limbA.urdf", "urdf/torso.urdf"};
       URDFModel urdfModel = getURDFModel(urdfFiles);
 
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
       // We only expect 3 because we don't keep any duplicates within the files
       assertEquals(3, robotDefinition.getAllJoints().size());
+      // The root model is the one that doesn't have any links in another file, all parents are in the same file
+      assertEquals("rootModel", robotDefinition.getName());
    }
 
    @Test
    public void loadURDFFromThreeFiles() throws JAXBException
    {
-      String[] urdfFiles = {"urdf/torso.urdf", "urdf/limbA.urdf", "urdf/limbB.urdf"};
+      String[] urdfFiles = {"urdf/limbA.urdf", "urdf/torso.urdf", "urdf/limbB.urdf"};
       URDFModel urdfModel = getURDFModel(urdfFiles);
 
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
       // We only expect 3 because we don't keep any duplicates within the files
       assertEquals(3, robotDefinition.getAllJoints().size());
+      // The root model is the one that doesn't have any links in another file, all parents are in the same file
+      assertEquals("rootModel", robotDefinition.getName());
    }
 
    private static URDFModel getURDFModel(String[] urdfFilenames) throws JAXBException
