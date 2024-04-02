@@ -196,7 +196,7 @@ public class EquationParser
          int leftIndex = leftIndices.remove(leftIndices.size() - 1);
 
          // remember the element before so the new one can be inserted afterward.
-         EquationToken beforeLeft = unprocessedTokenStack.get(leftIndex - 1);
+         EquationToken beforeLeft = leftIndex > 0 ? unprocessedTokenStack.get(leftIndex - 1) : null;
 
          // Sublist with parentheses
          List<EquationToken> sublist = unprocessedTokenStack.subList(leftIndex, i + 1);
