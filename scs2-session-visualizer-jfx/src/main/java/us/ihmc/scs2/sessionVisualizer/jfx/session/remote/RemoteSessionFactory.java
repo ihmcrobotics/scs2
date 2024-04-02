@@ -20,7 +20,9 @@ public class RemoteSessionFactory implements SimpleYoVariablesUpdatedListener
    }
 
    @Override
-   public void start(YoVariableClientInterface yoVariableClientInterface, LogHandshake handshake, YoVariableHandshakeParser handshakeParser,
+   public void start(YoVariableClientInterface yoVariableClientInterface,
+                     LogHandshake handshake,
+                     YoVariableHandshakeParser handshakeParser,
                      DebugRegistry debugRegistry)
    {
       activeSessionProperty.set(new RemoteSession(yoVariableClientInterface, handshake, handshakeParser, debugRegistry));
@@ -56,7 +58,8 @@ public class RemoteSessionFactory implements SimpleYoVariablesUpdatedListener
 
       if (activeSession != null)
       {
-         activeSession.shutdownSession();
+         // FIXME Session management is a mess, shouldn't be the responsibility of the factory
+         //         activeSession.shutdownSession();
          activeSessionProperty.set(null);
       }
    }
