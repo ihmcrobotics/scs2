@@ -58,6 +58,20 @@ public class ComposedURDFLoadingTest
       assertEquals("rootModel", robotDefinition.getName());
    }
 
+   @Test
+   public void loadURDFWithCorrectName() throws JAXBException
+   {
+      String[] urdfFiles = {"urdf/torsoParent.urdf", "urdf/torsoChild.urdf"};
+      URDFModel urdfModel = getURDFModel(urdfFiles);
+
+      URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
+      RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
+      // We only expect 3 because we don't keep any duplicates within the files
+      assertEquals(2, robotDefinition.getAllJoints().size());
+      // The root model is the one that ends up as the final parent
+      assertEquals("rootModelparent", robotDefinition.getName());
+   }
+
    private static URDFModel getURDFModel(String[] urdfFilenames) throws JAXBException
    {
       Collection<InputStream> inputStreams = new ArrayList<>();
