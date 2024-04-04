@@ -331,6 +331,8 @@ public class URDFTools
 
       // Get all names of links in model1
       List<String> model1LinkNames = new ArrayList<>();
+      List<String> model2LinkNames = new ArrayList<>();
+
       if (model1.getLinks() != null)
       {
          for (URDFLink link : model1.getLinks())
@@ -339,18 +341,47 @@ public class URDFTools
          }
       }
 
+      if (model2.getLinks() != null)
+      {
+         for (URDFLink link : model2.getLinks())
+         {
+            model2LinkNames.add(link.getName());
+         }
+      }
+
       if (model2.getJoints() != null)
       {
          for (URDFJoint joint : model2.getJoints())
          {
+            // Check if the model1 has any links that are referenced in model2, that could make it the parent
             if (model1LinkNames.contains(joint.getParent().getLink()))
-            {  // Check if the model1 has any links that are referenced in model2, that would make it the parent
+            {
+               return mergeChildIntoParentModel(model1, model2);
+            }
+            if (model1LinkNames.contains(joint.getChild().getLink()))
+            {
+               return mergeChildIntoParentModel(model2, model1);
+            }
+         }
+      }
+
+      if (model1.getJoints() != null)
+      {
+         for (URDFJoint joint : model1.getJoints())
+         {
+            // Check if the model1 has any links that are referenced in model2, that could make it the parent
+            if (model2LinkNames.contains(joint.getParent().getLink()))
+            {
+               return mergeChildIntoParentModel(model2, model1);
+            }
+            if (model2LinkNames.contains(joint.getChild().getLink()))
+            {
                return mergeChildIntoParentModel(model1, model2);
             }
          }
       }
 
-      // If the model1 doesn't contain any links that are in the model2, we define the model2 to be the parent
+      // If the model1 doesn't have any links that are in the model2, we define the model2 to be the parent
       return mergeChildIntoParentModel(model2, model1);
    }
 
