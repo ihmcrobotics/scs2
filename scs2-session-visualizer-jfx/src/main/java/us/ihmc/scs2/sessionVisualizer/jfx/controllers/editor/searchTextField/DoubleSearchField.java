@@ -18,6 +18,7 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class DoubleSearchField extends PropertySearchField<DoubleProperty>
@@ -42,22 +43,34 @@ public class DoubleSearchField extends PropertySearchField<DoubleProperty>
    {
       if (text == null || text.isEmpty())
          return false;
+      if (CompositePropertyTools.isParsableAsDouble(text))
+         return true;
+      else
+         return findYoComposite(text) != null;
+   }
 
+   private YoComposite findYoComposite(String name)
+   {
       YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
-      YoComposite yoComposite = yoVariableCollection.getYoCompositeFromUniqueName(text);
-      if (yoComposite == null)
-         yoComposite = yoVariableCollection.getYoCompositeFromFullname(text);
-      return yoComposite != null || CompositePropertyTools.isParsableAsDouble(text);
+      YoComposite yoComposite = yoVariableCollection.getYoCompositeFromFullname(name);
+      if (yoComposite != null)
+         return yoComposite;
+      else
+         return yoVariableCollection.getYoCompositeFromUniqueName(name);
    }
 
    @Override
    protected String simplifyText(String text)
    {
-      YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
-      YoComposite yoComposite = yoVariableCollection.getYoCompositeFromFullname(text);
+      if (CompositePropertyTools.isParsableAsDouble(text))
+         return null;
+
+      YoComposite yoComposite = findYoComposite(text);
+
       if (yoComposite == null)
-         yoComposite = yoVariableCollection.getYoCompositeFromUniqueName(text);
-      return yoComposite == null ? null : yoComposite.getUniqueShortName();
+         return null;
+      else
+         return !Objects.equals(yoComposite.getUniqueShortName(), text) ? yoComposite.getUniqueShortName() : null;
    }
 
    @Override
