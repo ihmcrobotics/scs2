@@ -50,7 +50,7 @@ public abstract class PropertySearchField<T extends Property<?>>
                                                  return;
 
                                               String simplifiedText = simplifyText(newValue);
-                                              if (simplifiedText != null)
+                                              if (simplifiedText != null && !simplifiedText.equals(newValue))
                                               {
                                                  textField.setText(simplifiedText);
                                                  return;
@@ -71,6 +71,16 @@ public abstract class PropertySearchField<T extends Property<?>>
 
    protected abstract boolean isTextValid(String text);
 
+   /**
+    * Simplify the text to be displayed in the text field.
+    * <p>
+    * This method is useful to simplify the text displayed in the text field when the user types.
+    * It is expected to return {@code null} if the text is already in a simplified form.
+    * </p>
+    *
+    * @param text the text to simplify.
+    * @return the simplified text, or {@code null} if the text is already in a simplified form.
+    */
    protected abstract String simplifyText(String text);
 
    protected abstract Callback<ISuggestionRequest, Collection<String>> createSuggestions();
