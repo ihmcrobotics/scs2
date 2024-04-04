@@ -18,6 +18,7 @@ import us.ihmc.yoVariables.variable.YoInteger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class IntegerSearchField extends PropertySearchField<IntegerProperty>
@@ -53,20 +54,34 @@ public class IntegerSearchField extends PropertySearchField<IntegerProperty>
    {
       if (text == null || text.isEmpty())
          return isInputOptional;
+      if (CompositePropertyTools.isParsableAsInteger(text))
+         return true;
+      else
+         return findYoComposite(text) != null;
+   }
 
+   private YoComposite findYoComposite(String name)
+   {
       YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
-      YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromUniqueName(text);
-      if (yoComposite == null)
-         yoComposite = yoIntegerCollection.getYoCompositeFromFullname(text); // TODO Happens when loading file, needs to update TextField to use unique name.
-      return yoComposite != null || CompositePropertyTools.isParsableAsInteger(text);
+      YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromFullname(name);
+      if (yoComposite != null)
+         return yoComposite;
+      else
+         return yoIntegerCollection.getYoCompositeFromUniqueName(name);
    }
 
    @Override
    protected String simplifyText(String text)
    {
-      YoCompositeCollection yoIntegerCollection = searchManager.getYoIntegerCollection();
-      YoComposite yoComposite = yoIntegerCollection.getYoCompositeFromFullname(text);
-      return yoComposite == null ? null : yoComposite.getUniqueShortName();
+      if (CompositePropertyTools.isParsableAsInteger(text))
+         return null;
+
+      YoComposite yoComposite = findYoComposite(text);
+
+      if (yoComposite == null)
+         return null;
+      else
+         return !Objects.equals(yoComposite.getUniqueShortName(), text) ? yoComposite.getUniqueShortName() : null;
    }
 
    @Override
