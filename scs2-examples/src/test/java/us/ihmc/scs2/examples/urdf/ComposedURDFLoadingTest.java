@@ -27,32 +27,33 @@ public class ComposedURDFLoadingTest
 
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
+      // We expect three because a rootJointDefinition joint is added, and the revolute_twins joint's get combined into one joint, and we don't keep duplicates
       assertEquals(3, robotDefinition.getAllJoints().size());
    }
 
    @Test
-   public void loadURDFFromTwoFiles() throws JAXBException
+   public void loadURDFFromTwoFilesWithDuplicates() throws JAXBException
    {
       String[] urdfFiles = {"urdf/limbA.urdf", "urdf/torso.urdf"};
       URDFModel urdfModel = getURDFModel(urdfFiles);
 
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
-      // We only expect 3 because we don't keep any duplicates within the files
+      // We expect three because a rootJointDefinition joint is added, and the revolute_twins joint's get combined into one joint, and we don't keep duplicates
       assertEquals(3, robotDefinition.getAllJoints().size());
       // The root model is the one that ends up as the final parent
       assertEquals("rootModel", robotDefinition.getName());
    }
 
    @Test
-   public void loadURDFFromThreeFiles() throws JAXBException
+   public void loadURDFFromThreeFilesWithDuplicates() throws JAXBException
    {
       String[] urdfFiles = {"urdf/limbA.urdf", "urdf/torso.urdf", "urdf/limbB.urdf"};
       URDFModel urdfModel = getURDFModel(urdfFiles);
 
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
-      // We only expect 3 because we don't keep any duplicates within the files
+      // We expect three because a rootJointDefinition joint is added, and the revolute_twins joint's get combined into one joint, and we don't keep duplicates
       assertEquals(3, robotDefinition.getAllJoints().size());
       // The root model is the one that ends up as the final parent
       assertEquals("rootModel", robotDefinition.getName());
@@ -61,15 +62,16 @@ public class ComposedURDFLoadingTest
    @Test
    public void loadURDFWithCorrectName() throws JAXBException
    {
+      // A joint here has a child link in the other file, making it the parent
       String[] urdfFiles = {"urdf/torsoParent.urdf", "urdf/torsoChild.urdf"};
       URDFModel urdfModel = getURDFModel(urdfFiles);
 
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       RobotDefinition robotDefinition = URDFTools.toRobotDefinition(urdfModel, parserProperties);
-      // We only expect 3 because we don't keep any duplicates within the files
-      assertEquals(2, robotDefinition.getAllJoints().size());
+      // We expect three because a rootJointDefinition joint is added, and the revolute_twins joint's get combined into one joint, and we don't keep duplicates
+      assertEquals(3, robotDefinition.getAllJoints().size());
       // The root model is the one that ends up as the final parent
-      assertEquals("rootModelparent", robotDefinition.getName());
+      assertEquals("rootModelParent", robotDefinition.getName());
    }
 
    private static URDFModel getURDFModel(String[] urdfFilenames) throws JAXBException
