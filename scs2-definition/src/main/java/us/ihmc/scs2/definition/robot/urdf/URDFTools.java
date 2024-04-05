@@ -353,7 +353,7 @@ public class URDFTools
       {
          for (URDFJoint joint : model2.getJoints())
          {
-            // Check if the model1 has any links that are referenced in model2, that could make it the parent
+            // Check if the model1 has any links that are referenced in model2
             if (model1LinkNames.contains(joint.getParent().getLink()))
             {
                return mergeChildIntoParentModel(model1, model2);
@@ -369,7 +369,7 @@ public class URDFTools
       {
          for (URDFJoint joint : model1.getJoints())
          {
-            // Check if the model1 has any links that are referenced in model2, that could make it the parent
+            // Check if the model2 has any links that are referenced in model1
             if (model2LinkNames.contains(joint.getParent().getLink()))
             {
                return mergeChildIntoParentModel(model2, model1);
