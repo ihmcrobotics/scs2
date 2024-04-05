@@ -368,8 +368,8 @@ public class URDFTools
          }
       }
 
-      URDFModel parentModel = new URDFModel();
-      URDFModel childModel = new URDFModel();
+      URDFModel parentModel = null;
+      URDFModel childModel = null;
 
       if (model2.getJoints() != null)
       {
