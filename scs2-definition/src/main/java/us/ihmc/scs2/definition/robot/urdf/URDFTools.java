@@ -190,7 +190,26 @@ public class URDFTools
     */
    public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
    {
-      return loadURDFModel(Collections.singletonList(inputStream), resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
+      return loadURDFModel(inputStream, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
+   }
+
+   /**
+    * @param inputStream         the input streams to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @param parserProperties    provides additional properties related to how the parsing show be
+    *                            done.
+    * @return the model.
+    */
+   public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader, URDFParserProperties parserProperties) throws JAXBException
+   {
+      return loadURDFModel(Collections.singletonList(inputStream), resourceDirectories, resourceClassLoader, parserProperties);
    }
 
    /**
@@ -349,18 +368,30 @@ public class URDFTools
          }
       }
 
+      URDFModel parentModel = new URDFModel();
+      URDFModel childModel = new URDFModel();
+      boolean parentFound = false;
+
       if (model2.getJoints() != null)
       {
          for (URDFJoint joint : model2.getJoints())
          {
+            // Skip rest of joints if parent has been found
+            if (parentFound)
+               continue;
+
             // Check if the model1 has any links that are referenced in model2
             if (model1LinkNames.contains(joint.getParent().getLink()))
             {
-               return mergeChildIntoParentModel(model1, model2);
+               parentModel = model1;
+               childModel = model2;
+               parentFound = true;
             }
-            if (model1LinkNames.contains(joint.getChild().getLink()))
+            else if (model1LinkNames.contains(joint.getChild().getLink()))
             {
-               return mergeChildIntoParentModel(model2, model1);
+               parentModel = model2;
+               childModel = model1;
+               parentFound = true;
             }
          }
       }
@@ -369,30 +400,27 @@ public class URDFTools
       {
          for (URDFJoint joint : model1.getJoints())
          {
+
+            // Skip rest of joints if parent has been found
+            if (parentFound)
+               continue;
+
             // Check if the model2 has any links that are referenced in model1
             if (model2LinkNames.contains(joint.getParent().getLink()))
             {
-               return mergeChildIntoParentModel(model2, model1);
+               parentModel = model2;
+               childModel = model1;
+               parentFound = true;
             }
-            if (model2LinkNames.contains(joint.getChild().getLink()))
+            else if (model2LinkNames.contains(joint.getChild().getLink()))
             {
-               return mergeChildIntoParentModel(model1, model2);
+               parentModel = model1;
+               childModel = model2;
+               parentFound = true;
             }
          }
       }
 
-      // If the model1 doesn't have any links that are in the model2, we define the model2 to be the parent
-      return mergeChildIntoParentModel(model2, model1);
-   }
-
-   /**
-    * Merge the child model into the parent model. Any duplicates that are found will be ignored in the child model
-    * @param parentModel the URDF file that will be added to the merged model
-    * @param childModel the URDF file that will be added to the merged model
-    * @return the merged model that contained components of both the parent and child model, skipping duplicates
-    */
-   private static URDFModel mergeChildIntoParentModel(URDFModel parentModel, URDFModel childModel)
-   {
       // Create a new URDFModel to hold the merged components
       URDFModel mergedModel = new URDFModel();
       List<String> mergedLinkNames = new ArrayList<>();
