@@ -370,28 +370,21 @@ public class URDFTools
 
       URDFModel parentModel = new URDFModel();
       URDFModel childModel = new URDFModel();
-      boolean parentFound = false;
 
       if (model2.getJoints() != null)
       {
          for (URDFJoint joint : model2.getJoints())
          {
-            // Skip rest of joints if parent has been found
-            if (parentFound)
-               continue;
-
             // Check if the model1 has any links that are referenced in model2
             if (model1LinkNames.contains(joint.getParent().getLink()))
             {
                parentModel = model1;
                childModel = model2;
-               parentFound = true;
             }
             else if (model1LinkNames.contains(joint.getChild().getLink()))
             {
                parentModel = model2;
                childModel = model1;
-               parentFound = true;
             }
          }
       }
@@ -400,23 +393,16 @@ public class URDFTools
       {
          for (URDFJoint joint : model1.getJoints())
          {
-
-            // Skip rest of joints if parent has been found
-            if (parentFound)
-               continue;
-
             // Check if the model2 has any links that are referenced in model1
             if (model2LinkNames.contains(joint.getParent().getLink()))
             {
                parentModel = model2;
                childModel = model1;
-               parentFound = true;
             }
             else if (model2LinkNames.contains(joint.getChild().getLink()))
             {
                parentModel = model1;
                childModel = model2;
-               parentFound = true;
             }
          }
       }
