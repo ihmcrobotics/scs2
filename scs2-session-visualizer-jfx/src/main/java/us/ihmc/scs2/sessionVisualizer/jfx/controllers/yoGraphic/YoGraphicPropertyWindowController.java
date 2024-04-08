@@ -561,7 +561,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
          YoGraphicFXItem yoGraphicFXItem = selectedItem.getValue();
 
          if (yoGraphicFXItem instanceof YoGraphicFX)
-            group = ((YoGraphicFX) yoGraphicFXItem).parentGroupProperty().get();
+            group = yoGraphicFXItem.parentGroupProperty().get();
          else if (yoGraphicFXItem instanceof YoGroupFX)
             group = ((YoGroupFX) yoGraphicFXItem);
          else

@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.List;
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicPointcloud2DDefinition} is a template for creating multiple 2D points and which
@@ -27,7 +26,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicPointcloud3D")
@@ -95,6 +94,26 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
     */
    public YoGraphicPointcloud2DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicPointcloud2DDefinition(YoGraphicPointcloud2DDefinition other)
+   {
+      super(other);
+      points = other.points != null ? other.points.stream().map(YoTuple2DDefinition::copy).toList() : null;
+      numberOfPoints = other.numberOfPoints;
+      size = other.size;
+      graphicName = other.graphicName;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerListField("points", this::getPoints, this::setPoints, "p", Object::toString, YoTuple2DDefinition::parse);
       registerStringField("numberOfPoints", this::getNumberOfPoints, this::setNumberOfPoints);
       registerStringField("size", this::getSize, this::setSize);
@@ -103,8 +122,8 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
 
    /**
     * Sets the positions for the points.
-    * 
-    * @param position the position for the point.
+    *
+    * @param points the position for the point.
     */
    @XmlElement
    public void setPoints(List<YoTuple2DDefinition> points)
@@ -118,7 +137,7 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
     * <p>
     * This field can be backed with a {@code YoVariable} by giving the variable name/fullname.
     * </p>
-    * 
+    *
     * @param numberOfPoints the number of points to render.
     */
    @XmlElement
@@ -132,7 +151,7 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param size the size of the graphic.
     */
    public void setSize(double size)
@@ -146,7 +165,7 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
     * Using this method allows to back the size with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param size the size of the graphic.
     */
    @XmlElement
@@ -195,7 +214,7 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
     * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/square_cross_icon.png"
     * width=100px/>
     * </ul>
-    * 
+    *
     * @param graphicName the name of the graphic to use.
     */
    @XmlElement
@@ -222,6 +241,12 @@ public class YoGraphicPointcloud2DDefinition extends YoGraphic2DDefinition
    public String getGraphicName()
    {
       return graphicName;
+   }
+
+   @Override
+   public YoGraphicPointcloud2DDefinition copy()
+   {
+      return new YoGraphicPointcloud2DDefinition(this);
    }
 
    @Override

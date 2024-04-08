@@ -4,6 +4,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Rotate;
@@ -38,6 +39,12 @@ public class YoConeFX3D extends YoGraphicFX3D
 
    public YoConeFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      coneNode.setDrawMode(newValue);
+                                   });
       coneNode.setMaterial(material);
       coneNode.getTransforms().addAll(translate, rotate);
       coneNode.idProperty().bind(nameProperty());

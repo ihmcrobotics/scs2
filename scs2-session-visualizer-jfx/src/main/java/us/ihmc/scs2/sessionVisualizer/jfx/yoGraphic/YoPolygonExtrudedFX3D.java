@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
@@ -46,6 +47,12 @@ public class YoPolygonExtrudedFX3D extends YoGraphicFX3D
 
    public YoPolygonExtrudedFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      polygonNode.setDrawMode(newValue);
+                                   });
       polygonNode.setMaterial(material);
       polygonNode.getTransforms().add(affine);
       polygonNode.idProperty().bind(nameProperty());

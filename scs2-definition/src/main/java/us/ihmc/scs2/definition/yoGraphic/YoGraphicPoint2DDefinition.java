@@ -1,11 +1,10 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicPoint2DDefinition} is a template for creating 2D point and which components can
@@ -26,7 +25,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicPoint2D")
@@ -89,6 +88,25 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
     */
    public YoGraphicPoint2DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicPoint2DDefinition(YoGraphicPoint2DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      size = other.size;
+      graphicName = other.graphicName;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple2DField("position", this::getPosition, this::setPosition);
       registerStringField("size", this::getSize, this::setSize);
       registerStringField("graphicName", this::getGraphicName, this::setGraphicName);
@@ -96,7 +114,7 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
 
    /**
     * Sets the position for the point.
-    * 
+    *
     * @param position the position for the point.
     */
    @XmlElement
@@ -110,7 +128,7 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param size the size of the graphic.
     */
    public void setSize(double size)
@@ -124,7 +142,7 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
     * Using this method allows to back the size with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param size the size of the graphic.
     */
    @XmlElement
@@ -173,7 +191,7 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
     * "https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/images/YoGraphicJavadoc/YoPointFX2DGraphics/square_cross_icon.png"
     * width=100px/>
     * </ul>
-    * 
+    *
     * @param graphicName the name of the graphic to use.
     */
    @XmlElement
@@ -195,6 +213,12 @@ public class YoGraphicPoint2DDefinition extends YoGraphic2DDefinition
    public String getGraphicName()
    {
       return graphicName;
+   }
+
+   @Override
+   public YoGraphicPoint2DDefinition copy()
+   {
+      return new YoGraphicPoint2DDefinition(this);
    }
 
    @Override

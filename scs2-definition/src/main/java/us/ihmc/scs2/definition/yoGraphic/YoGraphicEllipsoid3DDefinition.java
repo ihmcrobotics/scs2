@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicEllipsoid3DDefinition} is a template for creating 3D ellipsoid and which
@@ -23,7 +22,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicEllipsoid3D")
@@ -45,6 +44,25 @@ public class YoGraphicEllipsoid3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicEllipsoid3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicEllipsoid3DDefinition(YoGraphicEllipsoid3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      orientation = other.orientation == null ? null : other.orientation.copy();
+      radii = other.radii == null ? null : other.radii.copy();
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerTuple3DField("radii", this::getRadii, this::setRadii);
@@ -52,7 +70,7 @@ public class YoGraphicEllipsoid3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position of the center of the ellipsoid.
-    * 
+    *
     * @param position the position of the center of the ellipsoid.
     */
    @XmlElement
@@ -63,7 +81,7 @@ public class YoGraphicEllipsoid3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the orientation of the ellipsoid.
-    * 
+    *
     * @param orientation the orientation of the ellipsoid.
     */
    @XmlElement
@@ -74,7 +92,7 @@ public class YoGraphicEllipsoid3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the radii of the ellipsoid.
-    * 
+    *
     * @param radii the radii of the ellipsoid.
     */
    @XmlElement
@@ -96,6 +114,12 @@ public class YoGraphicEllipsoid3DDefinition extends YoGraphic3DDefinition
    public YoTuple3DDefinition getRadii()
    {
       return radii;
+   }
+
+   @Override
+   public YoGraphicEllipsoid3DDefinition copy()
+   {
+      return new YoGraphicEllipsoid3DDefinition(this);
    }
 
    @Override

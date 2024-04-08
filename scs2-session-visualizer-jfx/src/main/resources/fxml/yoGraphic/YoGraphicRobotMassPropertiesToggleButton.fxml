@@ -3,13 +3,23 @@
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
 
-<ToggleButton contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" stylesheets="@../../css/GeneralStylesheet.css" text="Robot Mass Properties" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<ToggleButton contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" stylesheets="@../../css/GeneralStylesheet.css" text="Robot Mass Properties" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <graphic>
-      <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-         <image>
-            <Image url="@../../icons/yoGraphic/YoRobotCollisions.png" />
-         </image>
-      </ImageView>
+      <AnchorPane>
+         <children>
+            <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <image>
+                  <Image url="@../../icons/yoGraphic/YoRobotCollisions.png" />
+               </image>
+            </ImageView>
+            <ImageView cache="true" fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <image>
+                  <Image url="@../../icons/yoGraphic/WeightIcon.png" />
+               </image>
+            </ImageView>
+         </children>
+      </AnchorPane>
    </graphic>
 </ToggleButton>

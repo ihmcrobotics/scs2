@@ -1,11 +1,10 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicCone3DDefinition} is a template for creating 3D cone and which components can
@@ -22,7 +21,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicCone3D")
@@ -46,6 +45,26 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicCone3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicCone3DDefinition(YoGraphicCone3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      axis = other.axis == null ? null : other.axis.copy();
+      height = other.height;
+      radius = other.radius;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerTuple3DField("axis", this::getAxis, this::setAxis);
       registerStringField("height", this::getHeight, this::setHeight);
@@ -54,7 +73,7 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position of the base center of the cone.
-    * 
+    *
     * @param position the position of the base center of the cone.
     */
    @XmlElement
@@ -65,7 +84,7 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the axis of the cone.
-    * 
+    *
     * @param axis the axis of the cone.
     */
    @XmlElement
@@ -76,7 +95,7 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the height of the cone to a constant value.
-    * 
+    *
     * @param height the height of the cone.
     */
    public void setHeight(double height)
@@ -87,7 +106,7 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the height of the cone. It can be backed by a {@code YoVariable} by setting it to the
     * variable's name/fullname.
-    * 
+    *
     * @param height the height of the cone.
     */
    @XmlElement
@@ -98,7 +117,7 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the radius of the cone to a constant value.
-    * 
+    *
     * @param radius the radius of the cone.
     */
 
@@ -110,8 +129,8 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the radius of the cone. It can be backed by a {@code YoVariable} by setting it to the
     * variable's name/fullname.
-    * 
-    * @param cength the radius of the cone.
+    *
+    * @param radius the radius of the cone.
     */
    @XmlElement
    public void setRadius(String radius)
@@ -137,6 +156,12 @@ public class YoGraphicCone3DDefinition extends YoGraphic3DDefinition
    public String getRadius()
    {
       return radius;
+   }
+
+   @Override
+   public YoGraphicCone3DDefinition copy()
+   {
+      return new YoGraphicCone3DDefinition(this);
    }
 
    @Override

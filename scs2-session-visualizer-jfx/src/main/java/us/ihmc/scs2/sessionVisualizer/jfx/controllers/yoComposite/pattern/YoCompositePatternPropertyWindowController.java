@@ -1,17 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.addAfterMenuItemFactory;
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.addBeforeMenuItemFactory;
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.removeMenuItemFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -45,6 +33,16 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.*;
 
 public class YoCompositePatternPropertyWindowController
 {
@@ -86,12 +84,12 @@ public class YoCompositePatternPropertyWindowController
 
          {
             cellValueProperty.addListener((o, oldValue, newValue) ->
-            {
-               if (newValue == null)
-                  setText(null);
-               else
-                  setText(newValue.getName());
-            });
+                                          {
+                                             if (newValue == null)
+                                                setText(null);
+                                             else
+                                                setText(newValue.getName());
+                                          });
          }
 
          @Override
@@ -110,7 +108,8 @@ public class YoCompositePatternPropertyWindowController
             }
          }
       });
-      yoCompositePatternListView.getSelectionModel().selectedItemProperty()
+      yoCompositePatternListView.getSelectionModel()
+                                .selectedItemProperty()
                                 .addListener((o, oldValue, newValue) -> processListSelectionUpdate(oldValue, newValue));
 
       window = new Stage(StageStyle.UTILITY);
@@ -133,7 +132,7 @@ public class YoCompositePatternPropertyWindowController
 
       yoCompositePatternListView.getItems().clear();
       for (YoCompositePatternDefinition yoCompositePattern : customYoCompositePatterns)
-         yoCompositePatternListView.getItems().add(new SimpleObjectProperty<YoCompositePatternDefinition>(yoCompositePattern));
+         yoCompositePatternListView.getItems().add(new SimpleObjectProperty<>(yoCompositePattern));
 
       yoCompositeSearchManager.customYoCompositePatterns().addListener((SetChangeListener<YoCompositePattern>) change ->
       {
@@ -143,29 +142,30 @@ public class YoCompositePatternPropertyWindowController
             removePattern(change.getElementRemoved());
       });
       MenuTools.setupContextMenu(yoCompositePatternListView,
-                                        addBeforeMenuItemFactory(this::newEmptyPattern),
-                                        addAfterMenuItemFactory(this::newEmptyPattern),
-                                        removeMenuItemFactory(false));
+                                 addBeforeMenuItemFactory(this::newEmptyPattern),
+                                 addAfterMenuItemFactory(this::newEmptyPattern),
+                                 removeMenuItemFactory(false));
 
       saveChangesButton.setDisable(true);
       revertChangesButton.setDisable(true);
 
       activeEditor.addListener((observable, oldValue, newValue) ->
-      {
-         saveChangesButton.disableProperty().unbind();
-         revertChangesButton.disableProperty().unbind();
+                               {
+                                  saveChangesButton.disableProperty().unbind();
+                                  revertChangesButton.disableProperty().unbind();
 
-         if (newValue == null)
-         {
-            saveChangesButton.setDisable(true);
-            revertChangesButton.setDisable(true);
-         }
-         else
-         {
-            saveChangesButton.disableProperty().bind(newValue.hasChangesPendingProperty().and(newValue.inputsValidityProperty()).not());
-            revertChangesButton.disableProperty().bind(newValue.hasChangesPendingProperty().not());
-         }
-      });
+                                  if (newValue == null)
+                                  {
+                                     saveChangesButton.setDisable(true);
+                                     revertChangesButton.setDisable(true);
+                                  }
+                                  else
+                                  {
+                                     saveChangesButton.disableProperty()
+                                                      .bind(newValue.hasChangesPendingProperty().and(newValue.inputsValidityProperty()).not());
+                                     revertChangesButton.disableProperty().bind(newValue.hasChangesPendingProperty().not());
+                                  }
+                               });
 
       yoCompositePatternEditorPane.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
@@ -246,8 +246,11 @@ public class YoCompositePatternPropertyWindowController
       if (controller != null)
       {
          Pane editorPane = controller.getMainPane();
-         controller.setNameOfOtherPatterns(yoCompositePatternListView.getItems().stream().filter(item -> item != newSelectedValue)
-                                                                     .map(item -> item.get().getName()).collect(Collectors.toList()));
+         controller.setNameOfOtherPatterns(yoCompositePatternListView.getItems()
+                                                                     .stream()
+                                                                     .filter(item -> item != newSelectedValue)
+                                                                     .map(item -> item.get().getName())
+                                                                     .collect(Collectors.toList()));
          activeEditor.set(controller);
          yoCompositePatternEditorPane.getChildren().add(editorPane);
          AnchorPane.setLeftAnchor(editorPane, 0.0);
@@ -335,8 +338,10 @@ public class YoCompositePatternPropertyWindowController
 
       if (allowUpdate)
       {
-         Optional<ObjectProperty<YoCompositePatternDefinition>> matchingPattern = yoCompositePatternListView.getItems().stream()
-                                                                                                            .filter(item -> item.get().getName()
+         Optional<ObjectProperty<YoCompositePatternDefinition>> matchingPattern = yoCompositePatternListView.getItems()
+                                                                                                            .stream()
+                                                                                                            .filter(item -> item.get()
+                                                                                                                                .getName()
                                                                                                                                 .equals(pattern.getName()))
                                                                                                             .findFirst();
          if (matchingPattern.isPresent())
@@ -392,7 +397,8 @@ public class YoCompositePatternPropertyWindowController
       if (shouldCancelAction(null))
          return;
 
-      Optional<ObjectProperty<YoCompositePatternDefinition>> firstPattern = yoCompositePatternListView.getItems().stream()
+      Optional<ObjectProperty<YoCompositePatternDefinition>> firstPattern = yoCompositePatternListView.getItems()
+                                                                                                      .stream()
                                                                                                       .filter(p -> p.get().getName().equals(patternName))
                                                                                                       .findFirst();
 

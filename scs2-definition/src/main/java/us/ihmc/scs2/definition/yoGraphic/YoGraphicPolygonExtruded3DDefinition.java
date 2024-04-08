@@ -1,14 +1,13 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.List;
-import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicPolygonExtruded3DDefinition} is a template for creating 2D polygon that is
@@ -25,7 +24,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicPolygonExtruded3D")
@@ -51,16 +50,37 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicPolygonExtruded3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicPolygonExtruded3DDefinition(YoGraphicPolygonExtruded3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      orientation = other.orientation == null ? null : other.orientation.copy();
+      vertices = other.vertices == null ? null : other.vertices.stream().map(YoTuple2DDefinition::copy).toList();
+      numberOfVertices = other.numberOfVertices;
+      thickness = other.thickness;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
-      registerStringField("numberOfVectices", this::getNumberOfVertices, this::setNumberOfVertices);
+      registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
       registerStringField("thickness", this::getThickness, this::setThickness);
    }
 
    /**
     * Sets the position for the base of the extruded polygon.
-    * 
+    *
     * @param position the position for the extruded polygon.
     */
    @XmlElement
@@ -71,7 +91,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the orientation for the extruded polygon.
-    * 
+    *
     * @param orientation the orientation for the extruded polygon.
     */
    @XmlElement
@@ -82,7 +102,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the vertices for the extruded polygon.
-    * 
+    *
     * @param vertices the vertices for the extruded polygon.
     */
    @XmlElement
@@ -93,7 +113,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the number of vertices to use from the vertices list to build the extruded polygon.
-    * 
+    *
     * @param numberOfVertices the number of vertices to use.
     */
    public void setNumberOfVertices(int numberOfVertices)
@@ -107,7 +127,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the number of vertices with a {@code YoVariable} by giving the
     * variable name/fullname.
     * </p>
-    * 
+    *
     * @param numberOfVertices the number of vertices to use.
     */
    @XmlElement
@@ -118,7 +138,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the extrusion thickness to a constant value.
-    * 
+    *
     * @param thickness the extrusion thickness.
     */
    public void setThickness(double thickness)
@@ -129,7 +149,7 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the extrusion thickness. Can be backed by a {@code YoVarable} by giving the variable's
     * name/fullname.
-    * 
+    *
     * @param thickness the extrusion thickness.
     */
    @XmlElement
@@ -161,6 +181,12 @@ public class YoGraphicPolygonExtruded3DDefinition extends YoGraphic3DDefinition
    public String getThickness()
    {
       return thickness;
+   }
+
+   @Override
+   public YoGraphicPolygonExtruded3DDefinition copy()
+   {
+      return new YoGraphicPolygonExtruded3DDefinition(this);
    }
 
    @Override

@@ -31,6 +31,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -519,7 +520,12 @@ public class SessionVisualizerIOTools
 
    public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
-      FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
+      return showOpenDialog(owner, title, Collections.singletonList(extensionFilter), pathKey);
+   }
+
+   public static File showOpenDialog(Window owner, String title, Collection<ExtensionFilter> extensionFilters, String pathKey)
+   {
+      FileChooser fileChooser = fileChooser(title, extensionFilters, pathKey);
 
       boolean usePhantomStage = owner == null;
       if (usePhantomStage)
@@ -556,10 +562,15 @@ public class SessionVisualizerIOTools
 
    private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter, String pathKey)
    {
+      return fileChooser(title, Collections.singletonList(extensionFilter), pathKey);
+   }
+
+   private static FileChooser fileChooser(String title, Collection<ExtensionFilter> extensionFilters, String pathKey)
+   {
       FileChooser fileChooser = new FileChooser();
       fileChooser.setTitle(title);
       fileChooser.setInitialDirectory(getDefaultFilePath(pathKey));
-      fileChooser.getExtensionFilters().add(extensionFilter);
+      fileChooser.getExtensionFilters().addAll(extensionFilters);
       return fileChooser;
    }
 

@@ -6,6 +6,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -40,6 +41,13 @@ public class YoArrowFX3D extends YoGraphicFX3D
 
    public YoArrowFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      body.setDrawMode(newValue);
+                                      head.setDrawMode(newValue);
+                                   });
       body.setMaterial(material);
       head.setMaterial(material);
       body.idProperty().bind(nameProperty().concat(" (body)"));

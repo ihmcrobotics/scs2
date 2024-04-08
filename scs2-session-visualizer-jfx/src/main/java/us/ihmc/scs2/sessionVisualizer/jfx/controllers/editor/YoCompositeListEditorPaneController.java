@@ -1,18 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.addAfterMenuItemFactory;
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.addBeforeMenuItemFactory;
-import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.removeMenuItemFactory;
-
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 import javafx.animation.AnimationTimer;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
@@ -48,8 +35,8 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -70,6 +57,18 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
+import us.ihmc.yoVariables.exceptions.IllegalOperationException;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.tools.ListViewTools.*;
 
 public class YoCompositeListEditorPaneController
 {
@@ -86,6 +85,8 @@ public class YoCompositeListEditorPaneController
    private Button addCompositeButton;
    @FXML
    private ListView<YoCompositeEditorPaneController> listView;
+   @FXML
+   private HBox numberOfCompositesSectionPane;
    @FXML
    private Label numberOfCompositesLabel;
    @FXML
@@ -110,6 +111,13 @@ public class YoCompositeListEditorPaneController
    private YoCompositeCollection yoCompositeCollection;
    private boolean setupReferenceFrameFields;
 
+   /**
+    * This is used to generate the composite name for each composite in the list.
+    */
+   private IntFunction<String> elementNameProvider;
+
+   private boolean fixedLengthModeEnabled = false;
+
    public void initialize(SessionVisualizerToolkit toolkit, YoCompositeCollection yoCompositeCollection, boolean setupReferenceFrameFields)
    {
       this.toolkit = toolkit;
@@ -127,15 +135,12 @@ public class YoCompositeListEditorPaneController
 
       if (yoCompositeCollection != null)
       {
-         yoCompositeSearchManager.requestSearchListOfYoComposites(yoCompositeCollection.getPattern(),
-                                                                  (Consumer<Map<String, List<YoComposite>>>) compositeListMap ->
-                                                                  {
-                                                                     YoCompositeListSearchField yoCompositeListTextField = new YoCompositeListSearchField(compositeListMap,
-                                                                                                                                                      compositeListSearchTextField);
-                                                                     yoCompositeListTextField.setupAutoCompletion();
-                                                                     yoCompositeListTextField.compositeListProperty()
-                                                                                             .addListener((o, oldValue, newValue) -> setComposites(newValue));
-                                                                  });
+         yoCompositeSearchManager.requestSearchListOfYoComposites(yoCompositeCollection.getPattern(), compositeListMap ->
+         {
+            YoCompositeListSearchField yoCompositeListTextField = new YoCompositeListSearchField(compositeListMap, compositeListSearchTextField);
+            yoCompositeListTextField.setupAutoCompletion();
+            yoCompositeListTextField.compositeListProperty().addListener((o, oldValue, newValue) -> setComposites(newValue));
+         });
       }
 
       if (!setupReferenceFrameFields)
@@ -149,38 +154,89 @@ public class YoCompositeListEditorPaneController
          yoReferenceFrameTextField = new ReferenceFrameSearchField(referenceFrameSearchTextField, referenceFrameManager);
          yoReferenceFrameTextField.setupAutoCompletion();
          yoReferenceFrameTextField.supplierProperty().addListener((o, oldValue, newValue) ->
-         {
-            if (newValue == null)
-               return;
+                                                                  {
+                                                                     if (newValue == null)
+                                                                        return;
 
-            listView.getItems().forEach(controller -> controller.setReferenceFrame(newValue.getValue()));
-         });
+                                                                     listView.getItems()
+                                                                             .forEach(controller -> controller.setReferenceFrame(newValue.getValue()));
+                                                                  });
       }
 
       yoNumberOfCompositesTextField.setupAutoCompletion();
 
       compositesNameProperty.addListener((observable, oldValue, newValue) ->
-      {
-         if (newValue == null || newValue.isEmpty())
-         {
-            compositesNameProperty.set(oldValue);
-            return;
-         }
-         numberOfCompositesLabel.setText(YoGraphicFXControllerTools.replaceAndMatchCase(numberOfCompositesLabel.getText(), oldValue, newValue));
-      });
+                                         {
+                                            if (newValue == null || newValue.isEmpty())
+                                            {
+                                               compositesNameProperty.set(oldValue);
+                                               return;
+                                            }
+                                            numberOfCompositesLabel.setText(YoGraphicFXControllerTools.replaceAndMatchCase(numberOfCompositesLabel.getText(),
+                                                                                                                           oldValue,
+                                                                                                                           newValue));
+                                         });
       compositeNameProperty.addListener((observable, oldValue, newValue) ->
-      {
-         if (newValue == null || newValue.isEmpty())
-         {
-            compositeNameProperty.set(oldValue);
-            return;
-         }
-         compositeListLabel.setText(YoGraphicFXControllerTools.replaceAndMatchCase(compositeListLabel.getText(), oldValue, newValue));
-      });
+                                        {
+                                           if (newValue == null || newValue.isEmpty())
+                                           {
+                                              compositeNameProperty.set(oldValue);
+                                              return;
+                                           }
+                                           compositeListLabel.setText(YoGraphicFXControllerTools.replaceAndMatchCase(compositeListLabel.getText(),
+                                                                                                                     oldValue,
+                                                                                                                     newValue));
+                                        });
 
       inputsValidityProperty = compositesValidityProperty.and(yoNumberOfCompositesTextField.getValidityProperty());
 
       yoNumberOfCompositesTextField.supplierProperty().addListener((o, oldValue, newValue) -> numberOfCompositesProperty.set(newValue));
+   }
+
+   public void setElementNameProvider(IntFunction<String> elementNameProvider)
+   {
+      this.elementNameProvider = elementNameProvider;
+   }
+
+   public void initializeFixedLength(SessionVisualizerToolkit toolkit,
+                                     YoCompositeCollection yoCompositeCollection,
+                                     boolean setupReferenceFrameFields,
+                                     int numberOfElements,
+                                     IntFunction<String> elementNameProvider)
+   {
+      initialize(toolkit, yoCompositeCollection, setupReferenceFrameFields);
+      setElementNameProvider(elementNameProvider);
+
+      addCompositeButton.setVisible(false);
+
+      while (listView.getItems().size() < numberOfElements)
+         listView.getItems().add(newYoCompositeEditor());
+
+      mainPane.getChildren().remove(numberOfCompositesSectionPane);
+      numberOfCompositesProperty.set(new SimpleIntegerProperty(numberOfElements));
+      inputsValidityProperty = compositesValidityProperty; // Ignore the size field validity
+
+      fixedLengthModeEnabled = true;
+   }
+
+   public void setNumberOfElements(int numberOfElements)
+   {
+      if (!fixedLengthModeEnabled)
+         throw new IllegalOperationException("This method is only available when the fixed length mode is enabled.");
+      if (numberOfElements < 0)
+         throw new IllegalArgumentException("The number of elements must be greater than or equal to zero.");
+      if (numberOfElements == numberOfCompositesProperty.get().get())
+         return;
+
+      ObservableList<YoCompositeEditorPaneController> listViewItems = listView.getItems();
+
+      while (listViewItems.size() < numberOfElements)
+         listViewItems.add(newYoCompositeEditor());
+
+      while (listViewItems.size() > numberOfElements)
+         listViewItems.remove(listViewItems.size() - 1);
+
+      numberOfCompositesProperty.get().set(numberOfElements);
    }
 
    private void setupListViewControls()
@@ -206,9 +262,9 @@ public class YoCompositeListEditorPaneController
 
       listView.setOnDragDetected(this::handleDragDetected);
       MenuTools.setupContextMenu(listView,
-                                        addBeforeMenuItemFactory(this::newYoCompositeEditor),
-                                        addAfterMenuItemFactory(this::newYoCompositeEditor),
-                                        removeMenuItemFactory(false));
+                                 addBeforeMenuItemFactory(this::newYoCompositeEditor),
+                                 addAfterMenuItemFactory(this::newYoCompositeEditor),
+                                 removeMenuItemFactory(false));
 
       listView.getItems().addListener((ListChangeListener<YoCompositeEditorPaneController>) change ->
       {
@@ -221,11 +277,11 @@ public class YoCompositeListEditorPaneController
             newCompositeList.add(compositeSupplierProperty.get());
 
             compositeSupplierProperty.addListener((o, oldValue, newValue) ->
-            {
-               List<DoubleProperty[]> listUpdated = new ArrayList<>(compositeListProperty.get());
-               listUpdated.set(compositeIndex, newValue);
-               compositeListProperty.set(listUpdated);
-            });
+                                                  {
+                                                     List<DoubleProperty[]> listUpdated = new ArrayList<>(compositeListProperty.get());
+                                                     listUpdated.set(compositeIndex, newValue);
+                                                     compositeListProperty.set(listUpdated);
+                                                  });
          }
 
          compositeListProperty.set(newCompositeList);
@@ -236,9 +292,8 @@ public class YoCompositeListEditorPaneController
    public void addComposite()
    {
       YoCompositeEditorPaneController newCompositeEditor = newYoCompositeEditor();
-      newCompositeEditor.setCompositeName(compositeNameProperty.get());
-      if (setupReferenceFrameFields && yoReferenceFrameTextField.getSupplier() != null)
-         newCompositeEditor.setReferenceFrame(yoReferenceFrameTextField.getSupplier().getValue());
+      if (newCompositeEditor == null)
+         return;
       listView.getItems().add(newCompositeEditor);
       // FIXME This doesn't seem reliable, also should force the ListView to scroll down the item is guaranteed to be visible.
       JavaFXMissingTools.runLater(getClass(), () -> newCompositeEditor.getSearchYoCompositeTextField().requestFocus());
@@ -252,6 +307,9 @@ public class YoCompositeListEditorPaneController
          loader.load();
          YoCompositeEditorPaneController editor = loader.getController();
          editor.initialize(toolkit, yoCompositeCollection, setupReferenceFrameFields);
+         editor.setCompositeName(compositeNameProperty.get());
+         if (setupReferenceFrameFields && yoReferenceFrameTextField.getSupplier() != null)
+            editor.setReferenceFrame(yoReferenceFrameTextField.getSupplier().getValue());
          return editor;
       }
       catch (IOException e)
@@ -348,13 +406,20 @@ public class YoCompositeListEditorPaneController
 
    public void setCompositeName(String compositeName)
    {
-      setCompositeName(compositeName, null);
+      setCompositeName(compositeName, (String) null);
    }
 
    public void setCompositeName(String compositeName, String compositesName)
    {
       this.compositeNameProperty.set(compositeName);
       this.compositesNameProperty.set(compositesName == null ? compositeName + "s" : compositesName);
+   }
+
+   public void setCompositeName(String compositeName, IntFunction<String> elementNameProvider)
+   {
+      this.compositeNameProperty.set(compositeName);
+      this.compositesNameProperty.set(compositeName + "s");
+      this.elementNameProvider = elementNameProvider;
    }
 
    public ObservableBooleanValue inputsValidityProperty()
@@ -522,7 +587,10 @@ public class YoCompositeListEditorPaneController
          }
          else
          {
-            item.setCompositeName(compositeNameProperty.get() + " " + getIndex());
+            if (elementNameProvider != null)
+               item.setCompositeName(elementNameProvider.apply(getIndex()));
+            else
+               item.setCompositeName(compositeNameProperty.get() + " " + getIndex());
             Pane mainPane = item.getMainPane();
             setGraphic(mainPane);
             setContentDisplay(ContentDisplay.BOTTOM);
@@ -625,9 +693,9 @@ public class YoCompositeListEditorPaneController
          listView.getItems().removeAll(itemsToMove);
          listView.getSelectionModel().clearSelection();
 
-         AnchorPane[] panes = itemsToMove.stream().map(YoCompositeEditorPaneController::getMainPane).toArray(AnchorPane[]::new);
-         int height = (int) Stream.of(panes).mapToDouble(AnchorPane::getHeight).sum();
-         int width = (int) Stream.of(panes).mapToDouble(AnchorPane::getWidth).max().getAsDouble();
+         GridPane[] panes = itemsToMove.stream().map(YoCompositeEditorPaneController::getMainPane).toArray(GridPane[]::new);
+         int height = (int) Stream.of(panes).mapToDouble(GridPane::getHeight).sum();
+         int width = (int) Stream.of(panes).mapToDouble(GridPane::getWidth).max().getAsDouble();
          VBox vBox = new VBox(panes);
          vBox.resize(width, height);
          WritableImage image = new WritableImage(width, height);

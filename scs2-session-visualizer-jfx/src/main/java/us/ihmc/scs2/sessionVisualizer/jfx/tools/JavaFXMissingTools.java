@@ -16,6 +16,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Material;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Affine;
@@ -628,9 +629,8 @@ public class JavaFXMissingTools
             z_out = z_in;
          }
       }
-      else if (transform instanceof Scale)
+      else if (transform instanceof Scale scale)
       {
-         Scale scale = ((Scale) transform);
          x_out = x_in / scale.getX();
          y_out = y_in / scale.getY();
          z_out = z_in / scale.getZ();
@@ -692,5 +692,13 @@ public class JavaFXMissingTools
          ((Shape3D) start).setDrawMode(drawMode);
       if (start instanceof Group)
          ((Group) start).getChildren().forEach(c -> setDrawModeRecursive(c, drawMode));
+   }
+
+   public static void setMaterialRecursive(Node start, Material material)
+   {
+      if (start instanceof Shape3D)
+         ((Shape3D) start).setMaterial(material);
+      if (start instanceof Group)
+         ((Group) start).getChildren().forEach(c -> setMaterialRecursive(c, material));
    }
 }

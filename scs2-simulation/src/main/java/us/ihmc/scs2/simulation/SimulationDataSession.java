@@ -1,20 +1,5 @@
 package us.ihmc.scs2.simulation;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBException;
-
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.SessionInformationDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -28,6 +13,20 @@ import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.robot.Robot;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class SimulationDataSession extends Session
 {
@@ -69,7 +68,7 @@ public class SimulationDataSession extends Session
       if (sessionInfo.getGraphicFileName() != null)
       {
          File graphicFile = new File(dataDirectory, sessionInfo.getGraphicFileName());
-         yoGraphicDefinitions.addAll(DefinitionIOTools.loadYoGraphicListDefinition(new FileInputStream(graphicFile)).getYoGraphics());
+         yoGraphicDefinitions.addAll(DefinitionIOTools.loadYoGraphicListDefinition(graphicFile).getYoGraphics());
       }
 
       if (sessionInfo.getRegistryFileName() != null)

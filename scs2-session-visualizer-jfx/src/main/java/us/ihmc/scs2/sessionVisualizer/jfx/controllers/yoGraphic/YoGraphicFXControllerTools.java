@@ -346,10 +346,13 @@ public class YoGraphicFXControllerTools
       if (indexOf == -1)
          return original;
 
-      if (Character.isUpperCase(original.charAt(indexOf)))
-         replacement = Character.toUpperCase(replacement.charAt(0)) + replacement.substring(1);
-      else
-         replacement = Character.toLowerCase(replacement.charAt(0)) + replacement.substring(1);
+      if (Character.isAlphabetic(original.charAt(indexOf)))
+      {
+         if (Character.isUpperCase(original.charAt(indexOf)))
+            replacement = Character.toUpperCase(replacement.charAt(0)) + replacement.substring(1);
+         else
+            replacement = Character.toLowerCase(replacement.charAt(0)) + replacement.substring(1);
+      }
 
       return original.replaceAll("(?i)" + search, replacement);
    }

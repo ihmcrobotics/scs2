@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXCheckBox?>
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXRadioButton?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="mainPane" styleClass="graphic-editor-vbox" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.graphic3D.YoGhostRobotFXEditorController">
+    <children>
+        <Label text="Robot model:" />
+        <GridPane styleClass="graphic-editor-gridpane">
+            <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" />
+                <ColumnConstraints hgrow="ALWAYS" />
+                <ColumnConstraints hgrow="SOMETIMES" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints vgrow="SOMETIMES" />
+                <RowConstraints vgrow="SOMETIMES" />
+            </rowConstraints>
+            <children>
+                <JFXRadioButton fx:id="robotModelFromSessionRadioButton" text="From Session:" />
+                <JFXRadioButton fx:id="robotModelFromFileRadioButton" text="From File:" GridPane.rowIndex="1" />
+                <JFXComboBox fx:id="sessionRobotModelsComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.columnSpan="2" />
+                <JFXTextField fx:id="loadedRobotModelFileTextField" editable="false" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <JFXButton fx:id="browseRobotModelsButton" styleClass="graphic-editor-new-button" text="Browse" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            </children>
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </padding>
+        </GridPane>
+        <Separator prefWidth="200.0" />
+        <fx:include fx:id="rootJointPositionEditor" source="../../editor/YoCompositeEditorPane.fxml" />
+        <fx:include fx:id="rootJointOrientationEditor" source="../../editor/YoCompositeEditorPane.fxml" />
+        <Separator prefWidth="200.0" />
+      <Label fx:id="oneDoFJointsPlaceholderLabel" text="PLACHOLDER FOR 1-DOF JOINTS" visible="false" />
+        <Separator prefWidth="200.0" />
+        <JFXCheckBox fx:id="enableColorCheckBox" text="Enable color" />
+        <fx:include fx:id="styleEditor" source="../editor/YoGraphic3DStyleEditorPane.fxml" />
+        <Separator prefWidth="200.0" />
+        <fx:include fx:id="nameEditor" source="../editor/YoGraphicNameEditorPane.fxml" />
+    </children>
+    <padding>
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+    </padding>
+</VBox>

@@ -1,11 +1,10 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlElement;
-
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
+
+import javax.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 /**
  * Base class representing a template used to create a single 2D yoGraphic.
@@ -22,7 +21,7 @@ import us.ihmc.scs2.definition.visual.PaintDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
@@ -36,6 +35,26 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
 
    public YoGraphic2DDefinition()
    {
+      super();
+   }
+
+   /**
+    * Creates a new 2D yoGraphic definition.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphic2DDefinition(YoGraphic2DDefinition other)
+   {
+      super(other);
+      fillColor = other.fillColor == null ? null : other.fillColor.copy();
+      strokeColor = other.strokeColor == null ? null : other.strokeColor.copy();
+      strokeWidth = other.strokeWidth;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerPaintField("fillColor", this::getFillColor, this::setFillColor);
       registerPaintField("strokeColor", this::getStrokeColor, this::setStrokeColor);
       registerStringField("strokeWidth", this::getStrokeWidth, this::setStrokeWidth);
@@ -47,7 +66,7 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
     * See {@link ColorDefinition} for setting the color to a constant value, or other implementations
     * of {@link PaintDefinition} notably for colors backed by {@code YoVariable}s.
     * </p>
-    * 
+    *
     * @param fillColor the color to fill the shape with.
     */
    @XmlElement(name = "fillColorNew")
@@ -62,7 +81,7 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
     * See {@link ColorDefinition} for setting the color to a constant value, or other implementations
     * of {@link PaintDefinition} notably for colors backed by {@code YoVariable}s.
     * </p>
-    * 
+    *
     * @param strokeColor the stroke color.
     */
    @XmlElement(name = "strokeColorNew")
@@ -73,7 +92,7 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
 
    /**
     * Sets a constant value the width of the stroke.
-    * 
+    *
     * @param strokeWidth the stroke width.
     */
    public final void setStrokeWidth(double strokeWidth)
@@ -84,7 +103,7 @@ public abstract class YoGraphic2DDefinition extends YoGraphicDefinition
    /**
     * Sets the width of the stroke, can be backed by a {@code YoVariable} by providing the
     * name/fullname, or a constant.
-    * 
+    *
     * @param strokeWidth the stroke width.
     */
    @XmlElement

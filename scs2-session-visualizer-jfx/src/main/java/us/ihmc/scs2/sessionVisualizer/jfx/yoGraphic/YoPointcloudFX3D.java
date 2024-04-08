@@ -1,9 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -14,13 +10,19 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class YoPointcloudFX3D extends YoGraphicFX3D
 {
@@ -40,6 +42,12 @@ public class YoPointcloudFX3D extends YoGraphicFX3D
 
    public YoPointcloudFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      JavaFXMissingTools.setDrawModeRecursive(pointcloudNode, newValue);
+                                   });
       numberOfPointsProperty.addListener((observable, oldValue, newValue) -> refreshGraphicsProperty.set(true));
       pointcloudNode.idProperty().bind(nameProperty());
       pointcloudNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
@@ -116,9 +124,11 @@ public class YoPointcloudFX3D extends YoGraphicFX3D
 
          List<Shape3D> shapes = YoGraphicTools.extractShape3Ds(Arrays.asList(nodes));
 
+         DrawMode drawMode = getDrawMode() == null ? DrawMode.FILL : getDrawMode();
          for (Shape3D shape : shapes)
          {
             shape.setMaterial(material);
+            shape.setDrawMode(drawMode);
             // The importer may have added transforms, we want to be before these.
             shape.getTransforms().addAll(0, Arrays.asList(translate, scale));
             shape.idProperty().bind(nameProperty().concat(" (").concat(Integer.toString(i)).concat(")"));

@@ -9,6 +9,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
@@ -48,6 +49,12 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
 
    public YoPolynomialFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      JavaFXMissingTools.setDrawModeRecursive(polynomialNode, newValue);
+                                   });
       polynomialNode.getTransforms().add(affine);
       polynomialNode.idProperty().bind(nameProperty());
       polynomialNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
@@ -149,11 +156,13 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
                             .toArray(Mesh[]::new);
 
       MeshView[] meshViews = new MeshView[meshes.length];
+      DrawMode drawMode = getDrawMode() == null ? DrawMode.FILL : getDrawMode();
 
       for (int i = 0; i < meshes.length; i++)
       {
          meshViews[i] = new MeshView(meshes[i]);
          meshViews[i].setMaterial(material);
+         meshViews[i].setDrawMode(drawMode);
          meshViews[i].idProperty().bind(nameProperty().concat(" (").concat(Integer.toString(i)).concat(")"));
       }
 

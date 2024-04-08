@@ -299,6 +299,17 @@ public class CompositePropertyTools
       return definition;
    }
 
+   public static YoTuple3DDefinition toYoTuple3DDefinition(DoubleProperty[] properties)
+   {
+      if (properties == null || properties.length != 3)
+         return null;
+      YoTuple3DDefinition definition = new YoTuple3DDefinition();
+      definition.setX(toDoublePropertyName(properties[0]));
+      definition.setY(toDoublePropertyName(properties[1]));
+      definition.setZ(toDoublePropertyName(properties[2]));
+      return definition;
+   }
+
    public static YoOrientation3DDefinition toYoOrientation3DDefinition(CompositeProperty property)
    {
       if (property == null)
@@ -320,6 +331,22 @@ public class CompositePropertyTools
       definition.setS(toDoublePropertyName(property.componentValueProperties()[3]));
       definition.setReferenceFrame(toReferenceFramePropertyName(property.referenceFrameProperty()));
       return definition;
+   }
+
+   public static YoQuaternionDefinition toYoQuaternionDefinition(DoubleProperty[] properties)
+   {
+      if (properties == null || properties.length != 4)
+         return null;
+      YoQuaternionDefinition definition = new YoQuaternionDefinition();
+      definition.setX(toDoublePropertyName(properties[0]));
+      definition.setY(toDoublePropertyName(properties[1]));
+      definition.setZ(toDoublePropertyName(properties[2]));
+      definition.setS(toDoublePropertyName(properties[3]));
+      return definition;
+   }
+
+   {
+
    }
 
    public static YoYawPitchRollDefinition toYoYawPitchRollDefinition(CompositeProperty property)
