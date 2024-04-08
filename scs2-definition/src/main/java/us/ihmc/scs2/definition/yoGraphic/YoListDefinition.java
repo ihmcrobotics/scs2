@@ -1,17 +1,16 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 /**
  * A {@code YoListDefinition} is a template to build a list which elements can be
  * {@code YoVariable}s and size can be controlled by a {@code YoVariable}.
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoList")
@@ -34,7 +33,7 @@ public class YoListDefinition
 
    /**
     * Creates a new list and initializes its elements.
-    * 
+    *
     * @param elements the initial list of elements.
     */
    public YoListDefinition(List<String> elements)
@@ -44,7 +43,7 @@ public class YoListDefinition
 
    /**
     * Creates a new list and initializes its elements and size variable.
-    * 
+    *
     * @param elements the initial list of elements.
     * @param size     the size of the active part of the list.
     */
@@ -56,7 +55,7 @@ public class YoListDefinition
 
    /**
     * Sets the list elements.
-    * 
+    *
     * @param elements the elements.
     */
    @XmlElement
@@ -68,7 +67,7 @@ public class YoListDefinition
    /**
     * Adds an element to the list, can be a constant or a {@code YoVariable} by giving its
     * name/fullname.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(String element)
@@ -80,7 +79,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding an element representing a constant value.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(double element)
@@ -90,7 +89,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding an element representing a constant value.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(float element)
@@ -100,7 +99,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding an element representing a constant value.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(boolean element)
@@ -110,7 +109,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding an element representing a constant value.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(int element)
@@ -120,7 +119,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding an element representing a constant value.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(long element)
@@ -130,7 +129,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding an element representing a constant value.
-    * 
+    *
     * @param element the new element.
     */
    public void addElement(byte element)
@@ -146,7 +145,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding a elements representing constant values.
-    * 
+    *
     * @param elements the new elements.
     */
    public void setElements(float[] elements)
@@ -157,7 +156,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding a elements representing constant values.
-    * 
+    *
     * @param elements the new elements.
     */
    public void setElements(boolean[] elements)
@@ -168,7 +167,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding a elements representing constant values.
-    * 
+    *
     * @param elements the new elements.
     */
    public void setElements(int[] elements)
@@ -179,7 +178,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding a elements representing constant values.
-    * 
+    *
     * @param elements the new elements.
     */
    public void setElements(long[] elements)
@@ -190,7 +189,7 @@ public class YoListDefinition
 
    /**
     * Convenience method for adding a elements representing constant values.
-    * 
+    *
     * @param elements the new elements.
     */
    public void setElements(byte[] elements)
@@ -202,7 +201,7 @@ public class YoListDefinition
    /**
     * Sets the variable for tracking the active part of the list, can be {@code null} for using all
     * elements, a constant value, or a {@code YoVaribale} by giving its name/fullname.
-    * 
+    *
     * @param size the size of the active part of the list.
     */
    @XmlElement
@@ -213,7 +212,7 @@ public class YoListDefinition
 
    /**
     * Sets the size of the list to a constant value.
-    * 
+    *
     * @param size the size of the active part of the list.
     */
    public void setSize(int size)
@@ -260,6 +259,11 @@ public class YoListDefinition
    public String toString()
    {
       return "YoList(elements=" + elements + ", size=" + size + ")";
+   }
+
+   public YoListDefinition copy()
+   {
+      return new YoListDefinition(elements == null ? null : new ArrayList<>(elements), size);
    }
 
    public static YoListDefinition parse(String value)

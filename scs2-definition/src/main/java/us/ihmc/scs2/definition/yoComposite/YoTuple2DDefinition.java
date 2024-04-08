@@ -1,10 +1,10 @@
 package us.ihmc.scs2.definition.yoComposite;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * A {@link YoTuple2DDefinition} represents a template for creating a tuple 2D which components can
@@ -164,6 +164,16 @@ public class YoTuple2DDefinition extends YoCompositeDefinition
    public String[] getComponentValues()
    {
       return new String[] {x, y};
+   }
+
+   /**
+    * Creates a copy of this tuple 2D definition.
+    *
+    * @return the copy.
+    */
+   public YoTuple2DDefinition copy()
+   {
+      return new YoTuple2DDefinition(x, y, referenceFrame);
    }
 
    /**

@@ -35,7 +35,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -71,6 +73,8 @@ public class YoCompositeEditorPaneController
    private ReferenceFrameManager referenceFrameManager;
 
    private ReferenceFrameSearchField yoReferenceFrameTextField;
+
+   private final List<Runnable> cleanupTasks = new ArrayList<>();
 
    public void initialize(SessionVisualizerToolkit toolkit, YoCompositeCollection yoCompositeCollection, boolean setupReferenceFrameFields)
    {
@@ -239,6 +243,20 @@ public class YoCompositeEditorPaneController
    public void setCompositeName(String compositeName)
    {
       compositeNameProperty.set(compositeName);
+   }
+
+   public void clearInput()
+   {
+      for (int i = 0; i < numberOfComponents; i++)
+      {
+         componentSearchTextFields[i].setText("0.0");
+      }
+      if (yoCompositeTextField != null)
+         yoCompositeTextField.initializeFieldFromComponents();
+      if (referenceFrameSearchTextField != null)
+      {
+         referenceFrameSearchTextField.setText(referenceFrameManager.getWorldFrame().getName());
+      }
    }
 
    public void setInput(YoComposite input)

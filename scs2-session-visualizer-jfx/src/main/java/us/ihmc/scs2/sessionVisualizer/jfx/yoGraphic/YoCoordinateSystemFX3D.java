@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Material;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -48,6 +49,12 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
 
    public YoCoordinateSystemFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      JavaFXMissingTools.setDrawModeRecursive(coordinateSystemNode, newValue);
+                                   });
       coordinateSystemNode.getTransforms().add(affine);
       coordinateSystemNode.idProperty().bind(nameProperty());
       coordinateSystemNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
@@ -160,10 +167,10 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
       }
 
       oldData = newDataLocal;
-      newNodes = createCoordinateSystem(newDataLocal, material, nameProperty());
+      newNodes = createCoordinateSystem(newDataLocal, material, nameProperty(), getDrawMode() == null ? DrawMode.FILL : getDrawMode());
    }
 
-   static Node[] createCoordinateSystem(CoordinateSystemData data, Material material, ReadOnlyStringProperty nameProperty)
+   static Node[] createCoordinateSystem(CoordinateSystemData data, Material material, ReadOnlyStringProperty nameProperty, DrawMode drawMode)
    {
       Node[] nodes = new Node[6];
 
@@ -173,6 +180,7 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
       {
          Cylinder body = new Cylinder(data.bodyRadius, data.bodyLength);
          body.setMaterial(material);
+         body.setDrawMode(drawMode);
          body.idProperty().bind(nameProperty.concat(" (").concat(Axis3D.values[axis].name()).concat("-body)"));
 
          if (axisBodyRotates[axis] != null)
@@ -185,6 +193,7 @@ public class YoCoordinateSystemFX3D extends YoGraphicFX3D
          meshBuilder.addCone(data.headLength, data.headRadius, headPosition, axisHeadOrientations[axis]);
          MeshView head = new MeshView(JavaFXVisualTools.toTriangleMesh(meshBuilder.generateTriangleMesh3D()));
          head.setMaterial(new PhongMaterial(axisColors[axis]));
+         head.setDrawMode(drawMode);
          head.idProperty().bind(nameProperty.concat(" (").concat(Axis3D.values[axis].name()).concat("-head)"));
 
          nodes[2 * axis] = body;

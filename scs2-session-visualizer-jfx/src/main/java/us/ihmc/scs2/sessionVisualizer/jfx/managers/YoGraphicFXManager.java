@@ -1,29 +1,27 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import javafx.application.Platform;
 import javafx.scene.Node;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
-import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXResourceManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class YoGraphicFXManager extends ObservedAnimationTimer implements Manager
 {
@@ -139,12 +137,12 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       return true;
    }
 
-   private void loadYoGraphicFromFile(File file, SynchronizeHint hint)
+   private void loadYoGraphicFromFile(File yoGraphicFile, SynchronizeHint hint)
    {
-      LogTools.info("Loading file: " + file);
+      LogTools.info("Loading file: " + yoGraphicFile);
       try
       {
-         YoGraphicListDefinition yoGraphicListDefinition = XMLTools.loadYoGraphicListDefinition(new FileInputStream(file));
+         YoGraphicListDefinition yoGraphicListDefinition = DefinitionIOTools.loadYoGraphicListDefinition(yoGraphicFile);
          setupYoGraphics(yoGraphicListDefinition, root, hint);
       }
       catch (Exception e)
@@ -221,19 +219,20 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       });
    }
 
-   public void saveYoGraphicToFile(File file)
+   public void saveYoGraphicToFile(File definitionFile)
    {
       if (!Platform.isFxApplicationThread())
          throw new IllegalStateException("Save must only be used from the FX Application Thread");
 
-      LogTools.info("Saving file: " + file);
+      LogTools.info("Saving file: " + definitionFile);
       try
       {
          YoGraphicListDefinition yoGraphicListDefinition = YoGraphicTools.toYoGraphicListDefinition(root.getItemChildren()
                                                                                                         .stream()
                                                                                                         .filter(item -> item != sessionRoot)
                                                                                                         .collect(Collectors.toList()));
-         XMLTools.saveYoGraphicListDefinition(new FileOutputStream(file), yoGraphicListDefinition);
+         File resourceDirectory = new File(definitionFile.getParentFile(), "yoGraphicResources");
+         DefinitionIOTools.saveYoGraphicListDefinitionAndResources(definitionFile, yoGraphicListDefinition, resourceDirectory);
       }
       catch (Exception e)
       {

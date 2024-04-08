@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import java.lang.String?>
-<VBox fx:id="mainPane" minHeight="800.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1"
+<VBox fx:id="mainPane" minHeight="800.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1"
       xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicItemCreatorDialogController">
     <children>
         <Accordion fx:id="accordion" VBox.vgrow="ALWAYS">
@@ -275,6 +275,24 @@
                                               styleClass="graphic-editor-preview-button" text="Group">
                                     <graphic>
                                         <FontIcon iconLiteral="fa-object-group" iconSize="80"/>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoAddRobotFXToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" stylesheets="@../../css/GeneralStylesheet.css" text="Add Robot"
+                                              GridPane.columnIndex="1">
+                                    <graphic>
+                                        <AnchorPane>
+                                            <children>
+                                                <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                           styleClass="graphic-editor-preview-icon" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                    <image>
+                                                        <Image url="@../../icons/yoGraphic/YoRobotCollisions.png"/>
+                                                    </image>
+                                                </ImageView>
+                                                <FontIcon iconColor="#16bf4c" iconLiteral="fa-plus" iconSize="36" AnchorPane.bottomAnchor="0.0"
+                                                          AnchorPane.rightAnchor="0.0"/>
+                                            </children>
+                                        </AnchorPane>
                                     </graphic>
                                 </ToggleButton>
                             </children>

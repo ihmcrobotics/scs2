@@ -5,6 +5,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
@@ -42,6 +43,12 @@ public class YoConvexPolytopeFX3D extends YoGraphicFX3D
 
    public YoConvexPolytopeFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      polytopeNode.setDrawMode(newValue);
+                                   });
       polytopeNode.setMaterial(material);
       polytopeNode.getTransforms().add(affine);
       polytopeNode.idProperty().bind(nameProperty());

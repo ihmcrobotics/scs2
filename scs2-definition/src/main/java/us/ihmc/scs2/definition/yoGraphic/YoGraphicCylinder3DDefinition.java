@@ -1,11 +1,10 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicCylinder3DDefinition} is a template for creating 3D cylinder and which
@@ -22,7 +21,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicCylinder3D")
@@ -46,6 +45,26 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicCylinder3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicCylinder3DDefinition(YoGraphicCylinder3DDefinition other)
+   {
+      super(other);
+      center = other.center == null ? null : other.center.copy();
+      axis = other.axis == null ? null : other.axis.copy();
+      length = other.length;
+      radius = other.radius;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("center", this::getCenter, this::setCenter);
       registerTuple3DField("axis", this::getAxis, this::setAxis);
       registerStringField("length", this::getLength, this::setLength);
@@ -54,7 +73,7 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position of the center of the cylinder.
-    * 
+    *
     * @param center the position of the center of the cylinder.
     */
    @XmlElement
@@ -65,7 +84,7 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the axis of the cylinder.
-    * 
+    *
     * @param axis the axis of the cylinder.
     */
    @XmlElement
@@ -76,7 +95,7 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the length of the cylinder to a constant value.
-    * 
+    *
     * @param length the length of the cylinder.
     */
    public void setLength(double length)
@@ -87,7 +106,7 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the length of the cylinder. It can be backed by a {@code YoVariable} by setting it to the
     * variable's name/fullname.
-    * 
+    *
     * @param length the length of the cylinder.
     */
    @XmlElement
@@ -98,7 +117,7 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the radius of the cylinder to a constant value.
-    * 
+    *
     * @param radius the radius of the cylinder.
     */
    public void setRadius(double radius)
@@ -109,8 +128,8 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the radius of the cylinder. It can be backed by a {@code YoVariable} by setting it to the
     * variable's name/fullname.
-    * 
-    * @param cength the radius of the cylinderF.
+    *
+    * @param radius the radius of the cylinderF.
     */
    @XmlElement
    public void setRadius(String radius)
@@ -136,6 +155,12 @@ public class YoGraphicCylinder3DDefinition extends YoGraphic3DDefinition
    public String getRadius()
    {
       return radius;
+   }
+
+   @Override
+   public YoGraphicCylinder3DDefinition copy()
+   {
+      return new YoGraphicCylinder3DDefinition(this);
    }
 
    @Override

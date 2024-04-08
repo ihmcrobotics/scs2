@@ -1,14 +1,13 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.List;
-import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import us.ihmc.euclid.shape.convexPolytope.ConvexPolytope3D;
 import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicConvexPolytope3DDefinition} is a template for creating 3D convex polytope and
@@ -25,7 +24,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicConvexPolytope3D")
@@ -52,6 +51,26 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicConvexPolytope3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicConvexPolytope3DDefinition(YoGraphicConvexPolytope3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      orientation = other.orientation == null ? null : other.orientation.copy();
+      vertices = other.vertices == null ? null : other.vertices.stream().map(YoTuple3DDefinition::copy).toList();
+      numberOfVertices = other.numberOfVertices;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple3DDefinition::parse);
@@ -60,7 +79,7 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position for the polytope.
-    * 
+    *
     * @param position the position for the polytope.
     */
    @XmlElement
@@ -71,7 +90,7 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the orientation for the polytope.
-    * 
+    *
     * @param orientation the orientation for the polytope.
     */
    @XmlElement
@@ -83,7 +102,7 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the vertices for the polytope. No particular ordering is required, {@link ConvexPolytope3D}
     * is used to guarantee the resulting shape is a convex polytope.
-    * 
+    *
     * @param vertices the vertices for the polytope.
     */
    @XmlElement
@@ -98,7 +117,7 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the number of vertices with a {@code YoVariable} by giving the
     * variable name/fullname.
     * </p>
-    * 
+    *
     * @param numberOfVertices the number of vertices to use.
     */
    @XmlElement
@@ -125,6 +144,12 @@ public class YoGraphicConvexPolytope3DDefinition extends YoGraphic3DDefinition
    public String getNumberOfVertices()
    {
       return numberOfVertices;
+   }
+
+   @Override
+   public YoGraphicConvexPolytope3DDefinition copy()
+   {
+      return new YoGraphicConvexPolytope3DDefinition(this);
    }
 
    @Override

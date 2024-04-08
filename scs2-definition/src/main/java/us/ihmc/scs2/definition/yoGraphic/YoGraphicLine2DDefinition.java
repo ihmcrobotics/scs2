@@ -1,11 +1,10 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicLine2DDefinition} is a template for creating 2D line and which components can
@@ -26,7 +25,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicLine2D")
@@ -48,6 +47,25 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
     */
    public YoGraphicLine2DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicLine2DDefinition(YoGraphicLine2DDefinition other)
+   {
+      super(other);
+      origin = other.origin == null ? null : other.origin.copy();
+      direction = other.direction == null ? null : other.direction.copy();
+      destination = other.destination == null ? null : other.destination.copy();
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple2DField("origin", this::getOrigin, this::setOrigin);
       registerTuple2DField("direction", this::getDirection, this::setDirection);
       registerTuple2DField("destination", this::getDestination, this::setDestination);
@@ -55,7 +73,7 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
 
    /**
     * Sets the line origin.
-    * 
+    *
     * @param origin the position of the line origin.
     */
    @XmlElement
@@ -69,7 +87,7 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
     * <p>
     * The length of the line is set to the direction's magnitude.
     * </p>
-    * 
+    *
     * @param direction the vector for the line direction, or {@code null} if the destination is to be
     *                  used instead.
     */
@@ -81,7 +99,7 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
 
    /**
     * Sets the line destination.
-    * 
+    *
     * @param destination the position for the line destination, or {@code null} if the direction is to
     *                    be used instead.
     */
@@ -104,6 +122,12 @@ public class YoGraphicLine2DDefinition extends YoGraphic2DDefinition
    public YoTuple2DDefinition getDestination()
    {
       return destination;
+   }
+
+   @Override
+   public YoGraphicLine2DDefinition copy()
+   {
+      return new YoGraphicLine2DDefinition(this);
    }
 
    @Override

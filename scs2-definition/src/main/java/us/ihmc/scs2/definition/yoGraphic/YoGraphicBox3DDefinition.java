@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicBox3DDefinition} is a template for creating 3D box and which components can be
@@ -23,7 +22,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicBox3D")
@@ -45,6 +44,25 @@ public class YoGraphicBox3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicBox3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicBox3DDefinition(YoGraphicBox3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      orientation = other.orientation == null ? null : other.orientation.copy();
+      size = other.size == null ? null : other.size.copy();
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerTuple3DField("size", this::getSize, this::setSize);
@@ -52,7 +70,7 @@ public class YoGraphicBox3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position of the center of the box.
-    * 
+    *
     * @param position the position of the center of the box.
     */
    @XmlElement
@@ -63,7 +81,7 @@ public class YoGraphicBox3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the orientation of the box.
-    * 
+    *
     * @param orientation the orientation of the box.
     */
    @XmlElement
@@ -74,7 +92,7 @@ public class YoGraphicBox3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the size of the box.
-    * 
+    *
     * @param size the size of the box.
     */
    @XmlElement
@@ -96,6 +114,12 @@ public class YoGraphicBox3DDefinition extends YoGraphic3DDefinition
    public YoTuple3DDefinition getSize()
    {
       return size;
+   }
+
+   @Override
+   public YoGraphicBox3DDefinition copy()
+   {
+      return new YoGraphicBox3DDefinition(this);
    }
 
    @Override

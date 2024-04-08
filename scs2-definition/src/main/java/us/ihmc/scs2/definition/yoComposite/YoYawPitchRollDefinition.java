@@ -1,10 +1,10 @@
 package us.ihmc.scs2.definition.yoComposite;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * A {@link YoYawPitchRollDefinition} represents a template for creating a yaw-pitch-roll which
@@ -196,6 +196,12 @@ public class YoYawPitchRollDefinition extends YoOrientation3DDefinition
    public String[] getComponentValues()
    {
       return new String[] {yaw, pitch, roll};
+   }
+
+   @Override
+   public YoYawPitchRollDefinition copy()
+   {
+      return new YoYawPitchRollDefinition(yaw, pitch, roll, referenceFrame);
    }
 
    /**
