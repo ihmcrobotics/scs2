@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<robot name="child">
+    <link name="head">
+        <visual>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <material>
+                <color rgba="0.2 0.7 0.9 1"/>
+            </material>
+            <origin rpy="0 0 0" xyz="0.1 0 0.3"/>
+        </visual>
+    </link>
+    <joint name="jointA" type="revolute">
+        <axis xyz="1 0 0"/>
+        <origin rpy="0 0 0" xyz="0.1 0 0.3"/>
+        <parent link="head"/>
+        <child link="ear"/>
+        <limit effort="190" lower="-1.1" upper="0.4141" velocity="5.89"/>
+    </joint>
+    <link name="ear">
+        <visual>
+            <geometry>
+                <sphere radius="0.05"/>
+            </geometry>
+            <material>
+                <color rgba="0.1 0.2 0.3 1"/>
+            </material>
+            <origin rpy="0 0 0 " xyz="0.1 0 0.3"/>
+        </visual>
+    </link>
+</robot>

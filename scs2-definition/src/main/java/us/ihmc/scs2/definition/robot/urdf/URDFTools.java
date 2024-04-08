@@ -166,7 +166,7 @@ public class URDFTools
       try
       {
          // Internally, the unmarshaller does "new BufferedInputStream(new FileInputStream(urdfFile)" (see AbstractUnmarshallerImpl), no need to have 2 distinct implementations.
-         return loadURDFModel(new BufferedInputStream(new FileInputStream(urdfFile)), resourceDirectories, null, parserProperties);
+         return loadURDFModel(Collections.singletonList(new BufferedInputStream(new FileInputStream(urdfFile))), resourceDirectories, null, parserProperties);
       }
       catch (FileNotFoundException e)
       {
@@ -194,9 +194,7 @@ public class URDFTools
    }
 
    /**
-    * Parse a {@link URDFModel} from the given input stream.
-    *
-    * @param inputStream         the stream to be loaded.
+    * @param inputStream         the input streams to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
     * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
@@ -209,66 +207,296 @@ public class URDFTools
     *                            done.
     * @return the model.
     */
-   public static URDFModel loadURDFModel(InputStream inputStream,
+   public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader, URDFParserProperties parserProperties) throws JAXBException
+   {
+      return loadURDFModel(Collections.singletonList(inputStream), resourceDirectories, resourceClassLoader, parserProperties);
+   }
+
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    *
+    * @param inputStreams         the input streams to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @return the model.
+    */
+   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
+   {
+      return loadURDFModel(inputStreams, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
+   }
+
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    *
+    * @param inputStreams         the input streams to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @param parserProperties    provides additional properties related to how the parsing show be
+    *                            done.
+    * @return the model.
+    */
+   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams,
                                          Collection<String> resourceDirectories,
                                          ClassLoader resourceClassLoader,
                                          URDFParserProperties parserProperties) throws JAXBException
    {
+      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
+      JAXBContext context = JAXBContext.newInstance(URDFModel.class);
+      Unmarshaller um = context.createUnmarshaller();
+
+      URDFModel combinedURDFModel = new URDFModel();
+
       try
       {
-         Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
-         URDFModel urdfModel;
-         JAXBContext context = JAXBContext.newInstance(URDFModel.class);
-         Unmarshaller um = context.createUnmarshaller();
-
-         if (!parserProperties.ignoreNamespace)
+         for (InputStream inputStream : inputStreams)
          {
-            urdfModel = (URDFModel) um.unmarshal(inputStream);
-         }
-         else
-         {
-            InputSource is = new InputSource(inputStream);
-            SAXParserFactory sax = SAXParserFactory.newInstance();
-            sax.setNamespaceAware(false);
-            XMLReader reader;
-
-            try
+            URDFModel urdfModel;
+            if (!parserProperties.ignoreNamespace)
             {
-               reader = sax.newSAXParser().getXMLReader();
+               urdfModel = (URDFModel) um.unmarshal(inputStream);
             }
-            catch (SAXException | ParserConfigurationException e)
+            else
             {
-               throw new JAXBException(e);
+               InputSource is = new InputSource(inputStream);
+               SAXParserFactory sax = SAXParserFactory.newInstance();
+               sax.setNamespaceAware(false);
+
+               XMLReader reader;
+               try
+               {
+                  reader = sax.newSAXParser().getXMLReader();
+               }
+               catch (ParserConfigurationException | SAXException e)
+               {
+                  throw new JAXBException(e);
+               }
+
+               SAXSource source = new SAXSource(reader, is);
+               urdfModel = (URDFModel) um.unmarshal(source);
             }
 
-            SAXSource source = new SAXSource(reader, is);
-            urdfModel = (URDFModel) um.unmarshal(source);
+            resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
+
+            if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
+            {
+               urdfModel.getLinks().removeIf(link -> parserProperties.linksToIgnore.contains(link.getName()));
+            }
+
+            if (!parserProperties.jointsToIgnore.isEmpty() && urdfModel.getJoints() != null)
+            {
+               urdfModel.getJoints().removeIf(joint -> parserProperties.jointsToIgnore.contains(joint.getName()));
+            }
+
+            if (!parserProperties.parseSensors && urdfModel.getGazebos() != null)
+            {
+               urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
+            }
+
+            if (parserProperties.handleImplicitJointDefinitions)
+               handleImplicitJointDefinitions(urdfModel);
+
+            // Merge the current URDFModel with the combined URDFModel
+            combinedURDFModel = mergeURDFModels(combinedURDFModel, urdfModel);
          }
-         resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
-
-         if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
-            urdfModel.getLinks().removeIf(urdfLink -> parserProperties.linksToIgnore.contains(urdfLink.getName()));
-         if (!parserProperties.jointsToIgnore.isEmpty() && urdfModel.getJoints() != null)
-            urdfModel.getJoints().removeIf(urdfJoint -> parserProperties.jointsToIgnore.contains(urdfJoint.getName()));
-         if (!parserProperties.parseSensors)
-            urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
-
-         if (parserProperties.handleImplicitJointDefinitions)
-            handleImplicitJointDefinitions(urdfModel);
-
-         return urdfModel;
       }
       finally
       {
-         try
+         for (InputStream inputStream : inputStreams)
          {
-            inputStream.close();
-         }
-         catch (IOException e)
-         {
-            LogTools.error(e.getMessage());
+            try
+            {
+               inputStream.close();
+            }
+            catch (IOException e)
+            {
+               LogTools.error(e.getMessage());
+            }
          }
       }
+
+      return combinedURDFModel;
+   }
+
+   /**
+    * Determine the parent model and child model, return a merged model that contains the parent model and all parts of the child model
+    * that aren't contained within the parent model. The name is taken from the parent model
+    * @param model1 URDF model with joint and links to be checked
+    * @param model2 URDF model with joints and links to be checked
+    * @return the merged model that contains all the joints, links, gazebos, and correct name from the models
+    */
+   private static URDFModel mergeURDFModels(URDFModel model1, URDFModel model2)
+   {
+      // Check the edge cases where a model might not have anything
+      if (model1.getLinks() == null && model1.getJoints() == null)
+      {
+         return model2;
+      }
+      else if (model2.getLinks() == null && model2.getJoints() == null)
+      {
+         return model1;
+      }
+
+      // Get all names of links in model1
+      List<String> model1LinkNames = new ArrayList<>();
+      List<String> model2LinkNames = new ArrayList<>();
+
+      if (model1.getLinks() != null)
+      {
+         for (URDFLink link : model1.getLinks())
+         {
+            model1LinkNames.add(link.getName());
+         }
+      }
+
+      if (model2.getLinks() != null)
+      {
+         for (URDFLink link : model2.getLinks())
+         {
+            model2LinkNames.add(link.getName());
+         }
+      }
+
+      URDFModel parentModel = null;
+      URDFModel childModel = null;
+
+      if (model2.getJoints() != null)
+      {
+         for (URDFJoint joint : model2.getJoints())
+         {
+            // Check if the model1 has any links that are referenced in model2
+            if (model1LinkNames.contains(joint.getParent().getLink()))
+            {
+               parentModel = model1;
+               childModel = model2;
+            }
+            else if (model1LinkNames.contains(joint.getChild().getLink()))
+            {
+               parentModel = model2;
+               childModel = model1;
+            }
+         }
+      }
+
+      if (model1.getJoints() != null)
+      {
+         for (URDFJoint joint : model1.getJoints())
+         {
+            // Check if the model2 has any links that are referenced in model1
+            if (model2LinkNames.contains(joint.getParent().getLink()))
+            {
+               parentModel = model2;
+               childModel = model1;
+            }
+            else if (model2LinkNames.contains(joint.getChild().getLink()))
+            {
+               parentModel = model1;
+               childModel = model2;
+            }
+         }
+      }
+
+      // Create a new URDFModel to hold the merged components
+      URDFModel mergedModel = new URDFModel();
+      List<String> mergedLinkNames = new ArrayList<>();
+      List<String> mergedJointNames = new ArrayList<>();
+      List<String> mergedGazeboNames = new ArrayList<>();
+
+      mergedModel.setName(parentModel.getName());
+
+      // Start with the parent links, we ignore duplicate links from the child model
+      List<URDFLink> mergedLinks = new ArrayList<>();
+      if (parentModel.getLinks() != null)
+      {
+         mergedLinks.addAll(parentModel.getLinks());
+         for (URDFLink link : parentModel.getLinks())
+         {
+            mergedLinkNames.add(link.getName());
+         }
+      }
+      if (childModel.getLinks() != null)
+      {
+         for (URDFLink link : childModel.getLinks())
+         {
+            if (!mergedLinkNames.contains(link.getName()))
+            {
+               mergedLinks.add(link);
+               mergedLinkNames.add(link.getName());
+            }
+            else
+            {
+               LogTools.warn("Link ({}) has already been added to urdf, skipping link", link.getName());
+            }
+         }
+      }
+      mergedModel.setLinks(mergedLinks);
+
+      // Start with the parent joints, we ignore duplicate joints from the child model
+      List<URDFJoint> mergedJoints = new ArrayList<>();
+      if (parentModel.getJoints() != null)
+      {
+         mergedJoints.addAll(parentModel.getJoints());
+         for (URDFJoint joint : parentModel.getJoints())
+         {
+            mergedJointNames.add(joint.getName());
+         }
+      }
+      if (childModel.getJoints() != null)
+      {
+         for (URDFJoint joint : childModel.getJoints())
+         {
+            if (!mergedJointNames.contains(joint.getName()))
+            {
+               mergedJoints.add(joint);
+               mergedJointNames.add(joint.getName());
+            }
+            else
+            {
+               LogTools.warn("Joint ({}) has already been added to urdf, skipping joint", joint.getName());
+            }
+         }
+      }
+      mergedModel.setJoints(mergedJoints);
+
+      // Start with the parent gazebos, we ignore duplicate gazebos from the child model
+      List<URDFGazebo> mergedGazebos = new ArrayList<>();
+      if (parentModel.getGazebos() != null)
+      {
+         mergedGazebos.addAll(parentModel.getGazebos());
+         for (URDFGazebo gazebo : parentModel.getGazebos())
+         {
+            mergedGazeboNames.add(gazebo.getReference());
+         }
+      }
+      if (childModel.getGazebos() != null)
+      {
+         for (URDFGazebo gazebo : childModel.getGazebos())
+         {
+            if (!mergedGazeboNames.contains(gazebo.getReference()))
+            {
+               mergedGazebos.add(gazebo);
+               mergedGazeboNames.add(gazebo.getReference());
+            }
+            else
+            {
+               LogTools.warn("Gazebo ({}) has already been added to urdf, skipping gazebo", gazebo.getReference());
+            }
+         }
+      }
+      mergedModel.setGazebos(mergedGazebos);
+
+      return mergedModel;
    }
 
    /**
@@ -2398,7 +2626,7 @@ public class URDFTools
    /**
     * This class provides extra properties for tweaking operations when parsing a URDF file. It is used
     * in both
-    * {@link URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)} and
+    * {@link URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)} and
     * {@link URDFTools#toRobotDefinition(URDFModel, URDFParserProperties)}.
     *
     * @author Sylvain Bertrand
@@ -2425,7 +2653,7 @@ public class URDFTools
        * </p>
        *
        * @param ignoreNamespace {@code true} to ignore namespaces. Recommended value {@code false}.
-       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       * @see URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)
        */
       public void setIgnoreNamespace(boolean ignoreNamespace)
       {
@@ -2439,7 +2667,7 @@ public class URDFTools
        * URDF files.
        *
        * @param nameOfJointToIgnore the name of a joint to be ignored when parsing the URDF file.
-       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       * @see URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)
        */
       public void addJointToIgnore(String nameOfJointToIgnore)
       {
@@ -2453,7 +2681,7 @@ public class URDFTools
        * URDF files.
        *
        * @param nameOfLinkToIgnore the name of a link to be ignored when parsing the URDF file.
-       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       * @see URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)
        */
       public void addLinkToIgnore(String nameOfLinkToIgnore)
       {
