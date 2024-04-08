@@ -1,12 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.xml;
 
-import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.configuration.SCSGuiConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationListDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoCompositePatternListDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoVariableGroupDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
@@ -40,11 +38,6 @@ public class XMLTools
    public static List<YoCompositePattern> loadYoCompositePatterns(InputStream inputStream) throws JAXBException, IOException
    {
       return YoCompositeTools.toYoCompositePatterns(loadYoCompositePatternListDefinition(inputStream));
-   }
-
-   public static YoGraphicListDefinition loadYoGraphicListDefinition(InputStream inputStream) throws JAXBException, IOException
-   {
-      return DefinitionIOTools.loadYoGraphicListDefinition(inputStream);
    }
 
    public static YoCompositePatternListDefinition loadYoCompositePatternListDefinition(InputStream inputStream) throws JAXBException, IOException
@@ -158,11 +151,6 @@ public class XMLTools
       {
          outputStream.close();
       }
-   }
-
-   public static void saveYoGraphicListDefinition(OutputStream outputStream, YoGraphicListDefinition definition) throws JAXBException, IOException
-   {
-      DefinitionIOTools.saveYoGraphicListDefinition(outputStream, definition);
    }
 
    public static void saveYoCompositePatterns(OutputStream outputStream, List<YoCompositePattern> yoCompositePatterns) throws JAXBException, IOException

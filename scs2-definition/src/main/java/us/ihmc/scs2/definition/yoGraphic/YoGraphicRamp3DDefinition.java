@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import java.util.Objects;
 
 @XmlRootElement(name = "YoGraphicRamp3D")
 public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
@@ -27,6 +26,25 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicRamp3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicRamp3DDefinition(YoGraphicRamp3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      orientation = other.orientation == null ? null : other.orientation.copy();
+      size = other.size == null ? null : other.size.copy();
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerTuple3DField("size", this::getSize, this::setSize);
@@ -34,7 +52,7 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position of the center of the ramp.
-    * 
+    *
     * @param position the position of the center of the ramp.
     */
    @XmlElement
@@ -45,7 +63,7 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the orientation of the ramp.
-    * 
+    *
     * @param orientation the orientation of the ramp.
     */
    @XmlElement
@@ -56,7 +74,7 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the size of the ramp.
-    * 
+    *
     * @param size the size of the ramp.
     */
    @XmlElement
@@ -78,6 +96,12 @@ public class YoGraphicRamp3DDefinition extends YoGraphic3DDefinition
    public YoTuple3DDefinition getSize()
    {
       return size;
+   }
+
+   @Override
+   public YoGraphicRamp3DDefinition copy()
+   {
+      return new YoGraphicRamp3DDefinition(this);
    }
 
    @Override

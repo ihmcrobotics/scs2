@@ -1,10 +1,9 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 
 import javax.xml.bind.annotation.XmlElement;
-
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicPolynomial3DDefinition} is a template for creating 3D polynomial and which
@@ -21,7 +20,7 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
@@ -63,6 +62,31 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicPolynomial3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicPolynomial3DDefinition(YoGraphicPolynomial3DDefinition other)
+   {
+      super(other);
+      coefficientsX = other.coefficientsX == null ? null : other.coefficientsX.copy();
+      coefficientsY = other.coefficientsY == null ? null : other.coefficientsY.copy();
+      coefficientsZ = other.coefficientsZ == null ? null : other.coefficientsZ.copy();
+      referenceFrame = other.referenceFrame;
+      startTime = other.startTime;
+      endTime = other.endTime;
+      size = other.size;
+      timeResolution = other.timeResolution;
+      numberOfDivisions = other.numberOfDivisions;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerYoListField("coefficientsX", this::getCoefficientsX, this::setCoefficientsX);
       registerYoListField("coefficientsY", this::getCoefficientsY, this::setCoefficientsY);
       registerYoListField("coefficientsZ", this::getCoefficientsZ, this::setCoefficientsZ);
@@ -77,7 +101,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the coefficients for the polynomial on the x-axis. The coefficients are ordered from low to
     * high order.
-    * 
+    *
     * @param coefficientsX the x-axis polynomial's coefficients.
     */
    @XmlElement(name = "coefficientsX")
@@ -89,7 +113,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the coefficients for the polynomial on the y-axis. The coefficients are ordered from low to
     * high order.
-    * 
+    *
     * @param coefficientsY the y-axis polynomial's coefficients.
     */
    @XmlElement(name = "coefficientsY")
@@ -101,7 +125,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the coefficients for the polynomial on the z-axis. The coefficients are ordered from low to
     * high order.
-    * 
+    *
     * @param coefficientsZ the z-axis polynomial's coefficients.
     */
    @XmlElement(name = "coefficientsZ")
@@ -128,7 +152,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param startTime the initial time.
     */
    public void setStartTime(double startTime)
@@ -143,7 +167,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the start time with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param startTime the initial time.
     */
    @XmlElement
@@ -158,7 +182,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param endTime the final time.
     */
    public void setEndTime(double endTime)
@@ -173,7 +197,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the end time with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param endTime the final time.
     */
    @XmlElement
@@ -187,7 +211,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param size the size of the graphic.
     */
    public void setSize(double size)
@@ -201,7 +225,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the size with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param size the size of the graphic.
     */
    @XmlElement
@@ -215,7 +239,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param timeResolution the time resolution.
     */
    public void setTimeResolution(int timeResolution)
@@ -229,7 +253,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the resoluation with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param timeResolution the time resolution.
     */
    @XmlElement
@@ -243,7 +267,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * <p>
     * Using this method sets it to a constant value.
     * </p>
-    * 
+    *
     * @param numberOfDivisions the number of radial divisions.
     */
    public void setNumberOfDivisions(int numberOfDivisions)
@@ -257,7 +281,7 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
     * Using this method allows to back the resoluation with a {@code YoVariable} by giving the variable
     * name/fullname.
     * </p>
-    * 
+    *
     * @param numberOfDivisions the number of radial divisions.
     */
    @XmlElement
@@ -309,6 +333,12 @@ public class YoGraphicPolynomial3DDefinition extends YoGraphic3DDefinition
    public String getNumberOfDivisions()
    {
       return numberOfDivisions;
+   }
+
+   @Override
+   public YoGraphicPolynomial3DDefinition copy()
+   {
+      return new YoGraphicPolynomial3DDefinition(this);
    }
 
    @Override

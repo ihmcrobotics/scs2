@@ -4,6 +4,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
@@ -39,6 +40,12 @@ public class YoSTPBoxFX3D extends YoGraphicFX3D
 
    public YoSTPBoxFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      boxNode.setDrawMode(newValue);
+                                   });
       boxNode.setMaterial(material);
       boxNode.getTransforms().add(affine);
       boxNode.idProperty().bind(nameProperty());

@@ -61,7 +61,7 @@ public class YoGraphicFXItemTreeCell extends CheckBoxTreeCell<YoGraphicFXItem>
          {
             graphic = new FontIcon("fa-folder-open-o");
          }
-         else if (item instanceof YoGraphicFXItem)
+         else
          {
             boolean is2D = item instanceof YoGraphicFX2D;
             Label iconLabel = new Label(is2D ? "2D" : "3D");

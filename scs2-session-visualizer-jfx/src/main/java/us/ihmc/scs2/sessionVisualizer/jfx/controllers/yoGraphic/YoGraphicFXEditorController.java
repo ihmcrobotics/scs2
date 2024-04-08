@@ -140,7 +140,8 @@ public abstract class YoGraphicFXEditorController<G extends YoGraphicFX> impleme
       editor.initialize(toolkit, yoCompositeSearchManager.getCollectionFromType(compositeType), setupReferenceFrame);
       editor.setCompositeName(entryName);
       inputsValidityProperty = Bindings.and(inputsValidityProperty, editor.inputsValidityProperty());
-      editor.bindYoCompositeDoubleProperty(propertyToBind);
+      if (propertyToBind != null)
+         editor.bindYoCompositeDoubleProperty(propertyToBind);
       editor.addInputNotification(() -> updateHasChangesPendingProperty(null, null, null));
    }
 

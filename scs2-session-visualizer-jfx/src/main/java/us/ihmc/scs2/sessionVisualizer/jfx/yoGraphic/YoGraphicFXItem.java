@@ -44,7 +44,7 @@ public interface YoGraphicFXItem
    default YoGroupFX getRootGroup()
    {
       if (this instanceof YoGroupFX)
-         return ((YoGroupFX) this).getRootGroup();
+         return this.getRootGroup();
       else if (getParentGroup() == null)
          return null;
       else

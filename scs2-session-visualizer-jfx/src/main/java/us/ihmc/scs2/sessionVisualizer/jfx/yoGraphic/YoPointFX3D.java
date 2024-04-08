@@ -5,12 +5,14 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 import java.util.Arrays;
@@ -29,6 +31,12 @@ public class YoPointFX3D extends YoGraphicFX3D
 
    public YoPointFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      JavaFXMissingTools.setDrawModeRecursive(pointNode, newValue);
+                                   });
       pointNode.getTransforms().addAll(translate, scale);
       setGraphicResource(YoGraphicFXResourceManager.DEFAULT_POINT3D_GRAPHIC_RESOURCE);
       pointNode.idProperty().bind(nameProperty());
@@ -53,9 +61,12 @@ public class YoPointFX3D extends YoGraphicFX3D
 
       List<Shape3D> shapes = YoGraphicTools.extractShape3Ds(Arrays.asList(nodes));
 
+      DrawMode drawMode = getDrawMode() == null ? DrawMode.FILL : getDrawMode();
+
       for (Shape3D shape : shapes)
       {
          shape.setMaterial(material);
+         shape.setDrawMode(drawMode);
          shape.idProperty().bind(nameProperty());
       }
 

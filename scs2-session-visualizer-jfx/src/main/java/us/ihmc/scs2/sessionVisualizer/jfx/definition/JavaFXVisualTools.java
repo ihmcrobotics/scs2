@@ -1,5 +1,51 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.definition;
 
+import com.interactivemesh.jfx.importer.FilePath;
+import com.interactivemesh.jfx.importer.ImportException;
+import com.interactivemesh.jfx.importer.ModelImporter;
+import com.interactivemesh.jfx.importer.col.ColAsset;
+import com.interactivemesh.jfx.importer.col.ColImportOption;
+import com.interactivemesh.jfx.importer.col.ColModelImporter;
+import com.interactivemesh.jfx.importer.obj.ObjImportOption;
+import com.interactivemesh.jfx.importer.obj.ObjModelImporter;
+import com.interactivemesh.jfx.importer.stl.StlMeshImporter;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Material;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Box;
+import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.Mesh;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
+import javafx.scene.shape.TriangleMesh;
+import javafx.scene.transform.Affine;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Transform;
+import javafx.scene.transform.Translate;
+import org.apache.commons.io.FilenameUtils;
+import us.ihmc.euclid.tools.EuclidCoreTools;
+import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.AffineTransformDefinition;
+import us.ihmc.scs2.definition.geometry.Box3DDefinition;
+import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
+import us.ihmc.scs2.definition.geometry.GeometryDefinition;
+import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
+import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
+import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.MaterialDefinition;
+import us.ihmc.scs2.definition.visual.TextureDefinition;
+import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
+import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -20,54 +66,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.apache.commons.io.FilenameUtils;
-
-import com.interactivemesh.jfx.importer.FilePath;
-import com.interactivemesh.jfx.importer.ImportException;
-import com.interactivemesh.jfx.importer.ModelImporter;
-import com.interactivemesh.jfx.importer.col.ColAsset;
-import com.interactivemesh.jfx.importer.col.ColImportOption;
-import com.interactivemesh.jfx.importer.col.ColModelImporter;
-import com.interactivemesh.jfx.importer.obj.ObjImportOption;
-import com.interactivemesh.jfx.importer.obj.ObjModelImporter;
-import com.interactivemesh.jfx.importer.stl.StlMeshImporter;
-
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Material;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
-import javafx.scene.shape.Cylinder;
-import javafx.scene.shape.Mesh;
-import javafx.scene.shape.MeshView;
-import javafx.scene.shape.Shape3D;
-import javafx.scene.shape.Sphere;
-import javafx.scene.shape.TriangleMesh;
-import javafx.scene.transform.Affine;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Scale;
-import javafx.scene.transform.Transform;
-import javafx.scene.transform.Translate;
-import us.ihmc.euclid.tools.EuclidCoreTools;
-import us.ihmc.euclid.tuple3D.Vector3D;
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.AffineTransformDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.definition.visual.ColorDefinition;
-import us.ihmc.scs2.definition.visual.MaterialDefinition;
-import us.ihmc.scs2.definition.visual.TextureDefinition;
-import us.ihmc.scs2.definition.visual.TriangleMesh3DFactories;
-import us.ihmc.scs2.definition.visual.VisualDefinition;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class JavaFXVisualTools
 {
@@ -267,6 +265,7 @@ public class JavaFXVisualTools
          return DEFAULT_MESH_VIEWS;
 
       String filename = geometryDefinition.getFileName();
+      filename = filename.replace("\\", "/");
 
       if (resourceClassLoader == null)
          resourceClassLoader = JavaFXVisualTools.class.getClassLoader();

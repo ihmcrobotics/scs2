@@ -66,7 +66,10 @@ public class YoCompositeSearchField
          YoComposite yoVariableAsComposite = yoVariableCollection.getYoCompositeFromUniqueName(componentTextFields[i].getText());
 
          if (yoVariableAsComposite == null || !yoVariableAsComposite.getPattern().getType().equals(YoCompositeTools.YO_VARIABLE))
+         {
+            textField.setText("");
             return;
+         }
 
          components.add(yoVariableAsComposite.getYoComponents().get(0));
       }
@@ -83,6 +86,10 @@ public class YoCompositeSearchField
                                                   .get()
                                                   .getUniqueShortName();
          textField.setText(uniqueName);
+      }
+      else
+      {
+         textField.setText("");
       }
    }
 

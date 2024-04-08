@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Scale;
@@ -28,6 +29,12 @@ public class YoRampFX3D extends YoGraphicFX3D
 
    public YoRampFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      rampNode.setDrawMode(newValue);
+                                   });
       rampNode.setMaterial(material);
       rampNode.getTransforms().addAll(affine, scale);
       rampNode.idProperty().bind(nameProperty());
