@@ -64,7 +64,7 @@ public class YoGroupFX implements YoGraphicFXItem
       }
       else
       {
-         Objects.requireNonNull(name);
+         Objects.requireNonNull(name, "The name of a YoGroupFX cannot be null.");
          nameProperty.set(name);
 
          parentGroupProperty = new SimpleObjectProperty<>(this, "parent", null);

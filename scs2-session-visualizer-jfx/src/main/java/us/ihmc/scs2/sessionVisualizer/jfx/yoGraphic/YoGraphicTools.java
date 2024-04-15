@@ -342,6 +342,7 @@ public class YoGraphicTools
                                        YoGraphicGroupDefinition definition)
    {
       definition.unwrapLists();
+      Objects.requireNonNull(definition.getName(), "The name of a " + YoGraphicGroupDefinition.class.getSimpleName() + " cannot be null.");
       YoGroupFX yoGroupFX = new YoGroupFX(definition.getName());
       yoGroupFX.setVisible(definition.isVisible());
       if (definition.getChildren() != null)

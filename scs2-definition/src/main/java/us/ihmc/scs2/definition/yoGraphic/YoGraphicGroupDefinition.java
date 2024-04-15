@@ -25,7 +25,13 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
    /** The list of children the group contains. */
    private List<YoGraphicDefinition> children;
 
-   /** Creates a new empty group. */
+   /**
+    * Creates a new empty group.
+    * <p>
+    * This constructor is meant for XML parser, to create an empty group prefer using {@link YoGraphicGroupDefinition(String)} or
+    * make sure to set the name later when using this constructor.
+    * </p>
+    */
    public YoGraphicGroupDefinition()
    {
    }
