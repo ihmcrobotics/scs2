@@ -27,7 +27,7 @@ public class OMGIDLSchemaParser
 {
    public static MCAPSchema loadSchema(Schema mcapSchema) throws IOException
    {
-      return loadSchema(mcapSchema.name(), mcapSchema.id(), new ByteBufferBackedInputStream(mcapSchema.data()));
+      return loadSchema(mcapSchema.name(), mcapSchema.id(), new ByteBufferBackedInputStream(mcapSchema.dataBuffer()));
    }
 
    public static MCAPSchema loadSchema(String name, int id, byte[] data) throws IOException

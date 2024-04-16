@@ -54,7 +54,7 @@ public class SchemaDataInputBacked implements Schema
    }
 
    @Override
-   public ByteBuffer data()
+   public ByteBuffer dataBuffer()
    {
       ByteBuffer data = this.dataRef == null ? null : this.dataRef.get();
 

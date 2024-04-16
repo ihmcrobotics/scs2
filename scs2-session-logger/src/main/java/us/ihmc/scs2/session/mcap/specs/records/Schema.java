@@ -37,7 +37,12 @@ public interface Schema extends MCAPElement
 
    long dataLength();
 
-   ByteBuffer data();
+   default byte[] dataArray()
+   {
+      return null;
+   }
+
+   ByteBuffer dataBuffer();
 
    @Override
    default void write(MCAPDataOutput dataOutput)
@@ -46,7 +51,10 @@ public interface Schema extends MCAPElement
       dataOutput.putString(name());
       dataOutput.putString(encoding());
       dataOutput.putUnsignedInt(dataLength());
-      dataOutput.putByteBuffer(data());
+      if (dataArray() != null)
+         dataOutput.putBytes(dataArray());
+      else if (dataBuffer() != null)
+         dataOutput.putByteBuffer(dataBuffer());
    }
 
    @Override
@@ -58,7 +66,10 @@ public interface Schema extends MCAPElement
       crc32.addString(name());
       crc32.addString(encoding());
       crc32.addUnsignedInt(dataLength());
-      crc32.addByteBuffer(data());
+      if (dataArray() != null)
+         crc32.addBytes(dataArray());
+      else if (dataBuffer() != null)
+         crc32.addByteBuffer(dataBuffer());
       return crc32;
    }
 
@@ -70,7 +81,7 @@ public interface Schema extends MCAPElement
       out += "\n\t-name = " + name();
       out += "\n\t-encoding = " + encoding();
       out += "\n\t-dataLength = " + dataLength();
-      out += "\n\t-data = " + Arrays.toString(data().array());
+      out += "\n\t-data = " + Arrays.toString(dataArray() != null ? dataArray() : dataBuffer().array());
       return MCAPElement.indent(out, indent);
    }
 
@@ -90,7 +101,10 @@ public interface Schema extends MCAPElement
             return false;
          if (dataLength() != other.dataLength())
             return false;
-         return Arrays.equals(data().array(), other.data().array());
+         if (dataArray() != null && other.dataArray() != null)
+            return Arrays.equals(dataArray(), other.dataArray());
+         else
+            return Arrays.equals(dataBuffer().array(), other.dataBuffer().array());
       }
 
       return false;

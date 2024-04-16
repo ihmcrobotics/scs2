@@ -359,7 +359,7 @@ public class MCAPLogFileReader
          debugFile.delete();
       debugFile.createNewFile();
       FileOutputStream os = new FileOutputStream(debugFile);
-      os.getChannel().write(schema.data());
+      os.getChannel().write(schema.dataBuffer());
       os.close();
       return debugFile;
    }
