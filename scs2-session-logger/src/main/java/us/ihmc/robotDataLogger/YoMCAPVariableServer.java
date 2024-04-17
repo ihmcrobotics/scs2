@@ -1,34 +1,30 @@
 package us.ihmc.robotDataLogger;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.concurrent.ConcurrentRingBuffer;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
-import us.ihmc.robotDataLogger.dataBuffers.RegistrySendBufferBuilder;
-import us.ihmc.robotDataLogger.handshake.SummaryProvider;
-import us.ihmc.robotDataLogger.handshake.YoVariableHandShakeBuilder;
-import us.ihmc.robotDataLogger.interfaces.BufferListenerInterface;
-import us.ihmc.robotDataLogger.interfaces.DataProducer;
 import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
 import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.server.DataServerServerContent;
-import us.ihmc.robotDataLogger.websocket.server.WebsocketDataProducer;
+import us.ihmc.robotDataLogger.websocket.server.MCAPWebsocketDataProducer;
+import us.ihmc.robotDataLogger.websocket.server.dataBuffers.MCAPRegistrySendBufferBuilder;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedListener
 {
    private static final int CHANGED_BUFFER_CAPACITY = 128;
 
+   private final MCAPBuilder mcapBuilder = new MCAPBuilder();
    private final double dt;
 
    private final String name;
@@ -38,25 +34,20 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
    private String rootRegistryName = "main";
 
    private YoRegistry mainRegistry = null;
-   private final ArrayList<RegistrySendBufferBuilder> registeredBuffers = new ArrayList<>();
+   private final List<MCAPRegistrySendBufferBuilder> registeredBuffers = new ArrayList<>();
 
-   private final ArrayList<RegistryHolder> registryHolders = new ArrayList<>();
+   private final List<RegistryHolder> registryHolders = new ArrayList<>();
 
    // State
    private boolean started = false;
    private boolean stopped = false;
 
    // Servers
-   private final DataProducer dataProducer;
-   private YoVariableHandShakeBuilder handshakeBuilder;
+   private final MCAPWebsocketDataProducer dataProducer;
 
    private volatile long latestTimestamp;
 
-   private final SummaryProvider summaryProvider = new SummaryProvider();
-
    private final LogWatcher logWatcher = new LogWatcher();
-
-   private BufferListenerInterface bufferListener = null;
 
    public YoMCAPVariableServer(String mainClazz, LogModelProvider logModelProvider, DataServerSettings dataServerSettings, double dt)
    {
@@ -65,29 +56,12 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
       this.logModelProvider = logModelProvider;
       this.dataServerSettings = dataServerSettings;
 
-      dataProducer = new WebsocketDataProducer(this, logWatcher, dataServerSettings);
+      dataProducer = new MCAPWebsocketDataProducer(this, logWatcher, dataServerSettings);
    }
 
    public void setRootRegistryName(String name)
    {
       rootRegistryName = name;
-   }
-
-   /**
-    * Add a listener for new buffer data
-    *
-    * This could be used to implement, for example, a in-memory logger
-    *
-    * @param bufferListener
-    */
-   public synchronized void addBufferListener(BufferListenerInterface bufferListener)
-   {
-      if (started)
-      {
-         throw new RuntimeException("Server already started");
-      }
-
-      this.bufferListener = bufferListener;
    }
 
    public synchronized void start()
@@ -102,32 +76,18 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
          throw new RuntimeException("Cannot restart a YoVariable server");
       }
 
-      handshakeBuilder = new YoVariableHandShakeBuilder(rootRegistryName, dt);
-      handshakeBuilder.setFrames(ReferenceFrame.getWorldFrame());
-      handshakeBuilder.setSummaryProvider(summaryProvider);
-
-      for (int i = 0; i < registeredBuffers.size(); i++)
-      {
-         RegistrySendBufferBuilder builder = registeredBuffers.get(i);
-         handshakeBuilder.addRegistryBuffer(builder);
-      }
-
       try
       {
-         if (bufferListener != null)
-         {
-            bufferListener.allocateBuffers(registeredBuffers.size());
-         }
          for (int i = 0; i < registeredBuffers.size(); i++)
          {
-            RegistrySendBufferBuilder builder = registeredBuffers.get(i);
+            MCAPRegistrySendBufferBuilder builder = registeredBuffers.get(i);
             YoRegistry registry = builder.getYoRegistry();
 
             try
             {
                ConcurrentRingBuffer<VariableChangedMessage> variableChangeData = new ConcurrentRingBuffer<>(new VariableChangedMessage.Builder(),
                                                                                                             CHANGED_BUFFER_CAPACITY);
-               RegistryPublisher publisher = dataProducer.createRegistryPublisher(builder, bufferListener);
+               RegistryPublisher publisher = dataProducer.createRegistryPublisher(builder);
 
                registryHolders.add(new RegistryHolder(registry, publisher, variableChangeData));
 
@@ -139,13 +99,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
             }
          }
 
-         DataServerServerContent content = new DataServerServerContent(name, handshakeBuilder.getHandShake(), logModelProvider, dataServerSettings);
-
-         if (bufferListener != null)
-         {
-            bufferListener.setContent(content);
-            bufferListener.start();
-         }
+         DataServerServerContent content = new DataServerServerContent(name, new Handshake(), logModelProvider, dataServerSettings);
 
          dataProducer.setDataServerContent(content);
          dataProducer.announce();
@@ -185,11 +139,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
             registryHolders.get(i).publisher.stop();
          }
          dataProducer.remove();
-
-         if (bufferListener != null)
-         {
-            bufferListener.close();
-         }
       }
    }
 
@@ -255,7 +204,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
          throw new RuntimeException("Main registry is not set. Set main registry first");
       }
 
-      registeredBuffers.add(new RegistrySendBufferBuilder(registry, scs1YoGraphics, scs2YoGraphics));
+      registeredBuffers.add(new MCAPRegistrySendBufferBuilder(mcapBuilder, registry, Collections.emptyList(), scs1YoGraphics, scs2YoGraphics));
    }
 
    @Override
@@ -268,14 +217,14 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
       {
          throw new RuntimeException("Main registry is already set");
       }
-      registeredBuffers.add(new RegistrySendBufferBuilder(registry, jointsToPublish, scs1YoGraphics, scs2YoGraphics));
+      registeredBuffers.add(new MCAPRegistrySendBufferBuilder(mcapBuilder, registry, jointsToPublish, scs1YoGraphics, scs2YoGraphics));
       mainRegistry = registry;
    }
 
    private YoVariable findVariableInRegistries(String variableName)
    {
 
-      for (RegistrySendBufferBuilder buffer : registeredBuffers)
+      for (MCAPRegistrySendBufferBuilder buffer : registeredBuffers)
       {
          YoRegistry registry = buffer.getYoRegistry();
          YoVariable ret = registry.findVariable(variableName);
@@ -285,35 +234,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
          }
       }
       return null;
-   }
-
-   public void createSummary(YoVariable isWalkingVariable)
-   {
-      createSummary(isWalkingVariable.getFullNameString());
-   }
-
-   public void createSummary(String summaryTriggerVariable)
-   {
-      if (findVariableInRegistries(summaryTriggerVariable) == null)
-      {
-         throw new RuntimeException("Variable " + summaryTriggerVariable + " is not registered with the logger");
-      }
-      summaryProvider.setSummarize(true);
-      summaryProvider.setSummaryTriggerVariable(summaryTriggerVariable);
-   }
-
-   public void addSummarizedVariable(String variable)
-   {
-      if (findVariableInRegistries(variable) == null)
-      {
-         throw new RuntimeException("Variable " + variable + " is not registered with the logger");
-      }
-      summaryProvider.addSummarizedVariable(variable);
-   }
-
-   public void addSummarizedVariable(YoVariable variable)
-   {
-      summaryProvider.addSummarizedVariable(variable);
    }
 
    @Override
@@ -330,22 +250,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
    @Override
    public void changeVariable(int id, double newValue)
    {
-      VariableChangedMessage message;
-      ImmutablePair<YoVariable, YoRegistry> variableAndRootRegistry = handshakeBuilder.getVariablesAndRootRegistries().get(id);
-
-      RegistryHolder holder = getRegistryHolder(variableAndRootRegistry.getRight());
-      ConcurrentRingBuffer<VariableChangedMessage> buffer = holder.variableChangeData;
-      while ((message = buffer.next()) == null)
-      {
-         ThreadTools.sleep(1);
-      }
-
-      if (message != null)
-      {
-         message.setVariable(variableAndRootRegistry.getLeft());
-         message.setVal(newValue);
-         buffer.commit();
-      }
+      // FIXME
    }
 
    private class RegistryHolder

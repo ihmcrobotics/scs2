@@ -39,7 +39,7 @@ public class MCAPBuilder
    private final TIntObjectHashMap<Record> channelRecords = new TIntObjectHashMap<>();
    private final Map<YoVariable, Record> variableChannelRecordMap = new LinkedHashMap<>();
 
-   private MCAPBuilder()
+   public MCAPBuilder()
    {
       for (Class<? extends YoVariable> variableType : Arrays.asList(YoBoolean.class, YoDouble.class, YoLong.class, YoInteger.class, YoEnum.class))
       {
@@ -156,6 +156,10 @@ public class MCAPBuilder
       MutableChannel channel = getOrCreateChannel(variable);
       message.setChannelId(channel.id());
 
+      if (message.messageData() == null)
+      {
+         message.setMessageData(new byte[8]);
+      }
       ByteBuffer messageBuffer = message.messageBuffer();
       messageBuffer.clear();
       if (variable instanceof YoBoolean yoBoolean)

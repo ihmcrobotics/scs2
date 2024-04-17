@@ -1,6 +1,5 @@
 package us.ihmc.robotDataLogger.websocket.server.dataBuffers;
 
-import us.ihmc.robotDataLogger.dataBuffers.RegistryBuffer;
 import us.ihmc.scs2.session.mcap.output.MCAPByteBufferDataOutput;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.scs2.session.mcap.specs.records.MutableChunk;
@@ -16,8 +15,13 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.nio.ByteBuffer;
 
-public class MCAPRegistrySendBuffer extends RegistryBuffer
+public class MCAPRegistrySendBuffer
 {
+   private int registryID;
+   private long timestamp;
+   private long transmitTime;
+   private int numberOfVariables;
+   private long sequenceID = 0;
    private final MCAPBuilder mcapBuilder;
    private final MCAPByteBufferDataOutput dataOutput;
    private final YoVariable[] variables;
@@ -36,9 +40,9 @@ public class MCAPRegistrySendBuffer extends RegistryBuffer
       this.registryID = registryID;
    }
 
-   public void update(long timestamp, long uid)
+   public void update(long timestamp, long sequenceID)
    {
-      this.uid = uid;
+      this.sequenceID = sequenceID;
       this.timestamp = timestamp;
       transmitTime = System.nanoTime();
       this.numberOfVariables = variables.length;
@@ -72,8 +76,11 @@ public class MCAPRegistrySendBuffer extends RegistryBuffer
       for (YoVariable variable : variables)
       {
          MutableMessage message = new MutableMessage();
-         message.setMessageData(new byte[8]);
          mcapBuilder.packVariableMessage(variable, message);
+         message.setPublishTime(timestamp);
+         message.setLogTime(timestamp);
+         message.setSequence(sequenceID);
+
          chunk.records().add(new MutableRecord(message));
       }
    }
@@ -81,5 +88,15 @@ public class MCAPRegistrySendBuffer extends RegistryBuffer
    public ByteBuffer getBuffer()
    {
       return dataOutput.getBuffer();
+   }
+
+   public long getTimestamp()
+   {
+      return timestamp;
+   }
+
+   public long getSequenceID()
+   {
+      return sequenceID;
    }
 }

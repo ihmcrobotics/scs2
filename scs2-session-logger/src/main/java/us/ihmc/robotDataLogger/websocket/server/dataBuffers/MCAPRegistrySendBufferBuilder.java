@@ -8,7 +8,6 @@ import us.ihmc.robotDataLogger.jointState.JointHolderFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +18,6 @@ public class MCAPRegistrySendBufferBuilder implements us.ihmc.concurrent.Builder
    private final YoRegistry registry;
    private final List<? extends JointBasics> jointsToPublish;
 
-   private final List<YoVariable> variables = new ArrayList<>();
    private final List<JointHolder> jointHolders = new ArrayList<>();
 
    private final LoggerDebugRegistry loggerDebugRegistry;
@@ -47,11 +45,6 @@ public class MCAPRegistrySendBufferBuilder implements us.ihmc.concurrent.Builder
    public YoRegistry getYoRegistry()
    {
       return registry;
-   }
-
-   public List<YoVariable> getVariables()
-   {
-      return variables;
    }
 
    public void build(int registryID)
@@ -91,22 +84,12 @@ public class MCAPRegistrySendBufferBuilder implements us.ihmc.concurrent.Builder
          throw new RuntimeException("RegistrySendBufferBuilder.build() not called");
       }
 
-      if (variables.size() == 0)
-      {
-         throw new RuntimeException("Variables not populated");
-      }
-
-      return new MCAPRegistrySendBuffer(mcapBuilder, registryID, variables, jointHolders);
+      return new MCAPRegistrySendBuffer(mcapBuilder, registryID, registry);
    }
 
    public int getNumberOfJointStates()
    {
       return getNumberOfJointStates(jointHolders);
-   }
-
-   public int getNumberOfVariables()
-   {
-      return variables.size();
    }
 
    public static int getNumberOfJointStates(List<JointHolder> jointHolders)

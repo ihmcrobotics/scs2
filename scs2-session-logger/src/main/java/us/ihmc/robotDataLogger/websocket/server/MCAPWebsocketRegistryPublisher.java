@@ -3,13 +3,10 @@ package us.ihmc.robotDataLogger.websocket.server;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.ScheduledFuture;
 import us.ihmc.concurrent.ConcurrentRingBuffer;
-import us.ihmc.pubsub.common.SerializedPayload;
-import us.ihmc.robotDataLogger.dataBuffers.CustomLogDataPublisherType;
 import us.ihmc.robotDataLogger.dataBuffers.LoggerDebugRegistry;
-import us.ihmc.robotDataLogger.dataBuffers.RegistrySendBuffer;
-import us.ihmc.robotDataLogger.dataBuffers.RegistrySendBufferBuilder;
-import us.ihmc.robotDataLogger.interfaces.BufferListenerInterface;
 import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
+import us.ihmc.robotDataLogger.websocket.server.dataBuffers.MCAPRegistrySendBuffer;
+import us.ihmc.robotDataLogger.websocket.server.dataBuffers.MCAPRegistrySendBufferBuilder;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,32 +20,24 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
 {
    private static final int BUFFER_CAPACITY = 128;
 
-   private long uid = 0;
-   private final ConcurrentRingBuffer<RegistrySendBuffer> ringBuffer;
+   private long sequenceID = 0;
+   private final ConcurrentRingBuffer<MCAPRegistrySendBuffer> ringBuffer;
 
-   private final WebsocketDataBroadcaster broadcaster;
+   private final MCAPWebsocketDataBroadcaster broadcaster;
    private final LoggerDebugRegistry loggerDebugRegistry;
 
    private final EventLoopGroup eventLoopGroup;
 
    private final VariableUpdateThread variableUpdateThread = new VariableUpdateThread();
 
-   private final CustomLogDataPublisherType publisherType;
-   private final SerializedPayload serializedPayload;
-
    private ScheduledFuture<?> scheduledFuture;
-
-   private final int numberOfVariables;
 
    private final int bufferID;
 
-   private final BufferListenerInterface bufferListener;
-
    public MCAPWebsocketRegistryPublisher(EventLoopGroup workerGroup,
-                                         RegistrySendBufferBuilder builder,
-                                         WebsocketDataBroadcaster broadcaster,
-                                         int bufferID,
-                                         BufferListenerInterface bufferListener)
+                                         MCAPRegistrySendBufferBuilder builder,
+                                         MCAPWebsocketDataBroadcaster broadcaster,
+                                         int bufferID)
    {
       this.broadcaster = broadcaster;
 
@@ -56,25 +45,8 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
       eventLoopGroup = workerGroup;
 
       loggerDebugRegistry = builder.getLoggerDebugRegistry();
-      numberOfVariables = builder.getNumberOfVariables();
 
       this.bufferID = bufferID;
-
-      publisherType = new CustomLogDataPublisherType(builder.getNumberOfVariables(), builder.getNumberOfJointStates());
-
-      serializedPayload = new SerializedPayload(publisherType.getMaximumTypeSize());
-
-      this.bufferListener = bufferListener;
-
-      if (bufferListener != null)
-      {
-         bufferListener.addBuffer(bufferID, builder);
-      }
-   }
-
-   public int getMaximumBufferSize()
-   {
-      return publisherType.getMaximumTypeSize();
    }
 
    /**
@@ -104,10 +76,10 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
    @Override
    public void update(long timestamp)
    {
-      RegistrySendBuffer buffer = ringBuffer.next();
+      MCAPRegistrySendBuffer buffer = ringBuffer.next();
       if (buffer != null)
       {
-         buffer.updateBufferFromVariables(timestamp, uid);
+         buffer.update(timestamp, sequenceID);
          ringBuffer.commit();
       }
       else
@@ -115,12 +87,12 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
          loggerDebugRegistry.circularBufferFull();
       }
 
-      uid++;
+      sequenceID++;
    }
 
    private class VariableUpdateThread implements Runnable
    {
-      private long previousUid = -1;
+      private long previousSequenceID = -1;
 
       private VariableUpdateThread()
       {
@@ -134,36 +106,18 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
          {
             while (ringBuffer.poll())
             {
-               RegistrySendBuffer buffer;
+               MCAPRegistrySendBuffer buffer;
 
                if ((buffer = ringBuffer.read()) != null)
                {
-                  serializedPayload.getData().clear();
-                  publisherType.serialize(buffer, serializedPayload);
-                  broadcaster.write(bufferID, buffer.getTimestamp(), serializedPayload.getData());
+                  broadcaster.write(bufferID, buffer.getTimestamp(), buffer.getBuffer());
 
-                  if (previousUid != -1)
-                  {
-                     if (buffer.getUid() != previousUid + 1)
-                     {
-                        loggerDebugRegistry.lostTickInCircularBuffer();
-                     }
-                  }
-                  previousUid = buffer.getUid();
+                  if (previousSequenceID != -1 && buffer.getSequenceID() != previousSequenceID + 1)
+                     loggerDebugRegistry.lostTickInCircularBuffer();
 
-                  if (bufferListener != null)
-                  {
-                     bufferListener.updateBuffer(bufferID, buffer);
-                  }
+                  previousSequenceID = buffer.getSequenceID();
                }
 
-               if (bufferListener != null)
-               {
-                  while ((buffer = ringBuffer.read()) != null)
-                  {
-                     bufferListener.updateBuffer(bufferID, buffer);
-                  }
-               }
                ringBuffer.flush();
             }
          }
