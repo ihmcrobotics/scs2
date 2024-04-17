@@ -5,8 +5,8 @@ import io.netty.util.concurrent.ScheduledFuture;
 import us.ihmc.concurrent.ConcurrentRingBuffer;
 import us.ihmc.robotDataLogger.dataBuffers.LoggerDebugRegistry;
 import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
-import us.ihmc.robotDataLogger.websocket.server.dataBuffers.MCAPRegistrySendBuffer;
-import us.ihmc.robotDataLogger.websocket.server.dataBuffers.MCAPRegistrySendBufferBuilder;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBuffer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
 
 import java.util.concurrent.TimeUnit;
 

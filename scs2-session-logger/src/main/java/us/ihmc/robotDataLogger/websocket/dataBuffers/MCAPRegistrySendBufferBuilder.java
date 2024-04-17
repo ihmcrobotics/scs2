@@ -1,4 +1,4 @@
-package us.ihmc.robotDataLogger.websocket.server.dataBuffers;
+package us.ihmc.robotDataLogger.websocket.dataBuffers;
 
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;

@@ -1,4 +1,4 @@
-package us.ihmc.robotDataLogger.websocket.server.dataBuffers;
+package us.ihmc.robotDataLogger.websocket.dataBuffers;
 
 import us.ihmc.scs2.session.mcap.output.MCAPByteBufferDataOutput;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;

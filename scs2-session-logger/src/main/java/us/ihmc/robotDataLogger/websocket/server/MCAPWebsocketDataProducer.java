@@ -13,7 +13,7 @@ import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
 import us.ihmc.robotDataLogger.util.NettyUtils;
-import us.ihmc.robotDataLogger.websocket.server.dataBuffers.MCAPRegistrySendBufferBuilder;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
 import us.ihmc.robotDataLogger.websocket.server.discovery.DataServerLocationBroadcastSender;
 
 import java.io.IOException;
