@@ -88,7 +88,7 @@ public class MutableChunk implements Chunk
          lastRecordsCRC32 = newRecordsCRC32;
          Objects.requireNonNull(compression, "The compression has not been set yet.");
          Objects.requireNonNull(records, "The records have not been set yet.");
-
+         
          ByteBuffer uncompressedBuffer = getRecordsUncompressedBuffer(compression == Compression.ZSTD);
 
          // Eclipse seems to be struggling to compile the following when formulated as a switch-yield statement.

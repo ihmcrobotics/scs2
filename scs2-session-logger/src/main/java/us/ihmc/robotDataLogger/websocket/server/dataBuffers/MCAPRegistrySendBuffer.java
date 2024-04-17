@@ -1,11 +1,17 @@
 package us.ihmc.robotDataLogger.websocket.server.dataBuffers;
 
 import us.ihmc.robotDataLogger.dataBuffers.RegistryBuffer;
-import us.ihmc.robotDataLogger.jointState.JointHolder;
 import us.ihmc.scs2.session.mcap.output.MCAPByteBufferDataOutput;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
-import us.ihmc.scs2.session.mcap.specs.records.Record;
+import us.ihmc.scs2.session.mcap.specs.records.MutableChunk;
+import us.ihmc.scs2.session.mcap.specs.records.MutableMessage;
+import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.nio.ByteBuffer;
@@ -15,6 +21,9 @@ public class MCAPRegistrySendBuffer extends RegistryBuffer
    private final MCAPBuilder mcapBuilder;
    private final MCAPByteBufferDataOutput dataOutput;
    private final YoVariable[] variables;
+
+   private final MutableChunk chunk = new MutableChunk();
+   private final MutableRecord chunkRecord = new MutableRecord(chunk);
 
    protected MCAPRegistrySendBuffer(MCAPBuilder mcapBuilder, int registryID, YoRegistry registry)
    {
@@ -27,65 +36,46 @@ public class MCAPRegistrySendBuffer extends RegistryBuffer
       this.registryID = registryID;
    }
 
-   public void initializeSchemas()
-   {
-      ByteBuffer dataOutputBuffer = dataOutput.getBuffer();
-      dataOutputBuffer.clear();
-      for (YoVariable variable : variables)
-      {
-         Record variableSchemaRecord = mcapBuilder.getVariableSchemaRecord(variable.getClass());
-         variableSchemaRecord.write(dataOutput);
-      }
-      dataOutputBuffer.flip();
-      dataOutputBuffer.clear();
-      dataOutputBuffer.limit(dataOutputBuffer.limit() * 8);
-   }
-
-   public void initializeChannels()
-   {
-      ByteBuffer dataOutputBuffer = dataOutput.getBuffer();
-      dataOutputBuffer.clear();
-      for (YoVariable variable : variables)
-      {
-         Record variableChannelRecord = mcapBuilder.getOrCreateVariableChannelRecord(variable);
-         variableChannelRecord.write(dataOutput);
-      }
-      dataOutputBuffer.flip();
-      dataOutputBuffer.clear();
-      dataOutputBuffer.limit(dataOutputBuffer.limit() * 8);
-   }
-
-   /**
-    * Pack the internal buffer with data from the variables
-    *
-    * @param timestamp
-    * @param uid
-    */
-   public void updateBufferFromVariables(long timestamp, long uid)
+   public void update(long timestamp, long uid)
    {
       this.uid = uid;
       this.timestamp = timestamp;
       transmitTime = System.nanoTime();
       this.numberOfVariables = variables.length;
-      data.clear();
-      for (int i = 0; i < numberOfVariables; i++)
+      addSchemas();
+      addChannels();
+      addMessages(timestamp);
+      dataOutput.getBuffer().clear();
+      chunkRecord.write(dataOutput);
+      dataOutput.getBuffer().flip();
+   }
+
+   private void addSchemas()
+   {
+      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoBoolean.class));
+      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoDouble.class));
+      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoInteger.class));
+      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoLong.class));
+      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoEnum.class));
+   }
+
+   public void addChannels()
+   {
+      for (YoVariable variable : variables)
       {
-         data.put(variables[i].getValueAsLongBits());
-      }
-      data.flip();
-      dataOutpu.clear();
-      dataOutpu.limit(data.limit() * 8);
-      int jointOffset = 0;
-      for (JointHolder jointHolder : jointHolders)
-      {
-         jointHolder.get(jointStates, jointOffset);
-         jointOffset += jointHolder.getNumberOfStateVariables();
+         chunk.records().add(mcapBuilder.getOrCreateVariableChannelRecord(variable));
       }
    }
 
-   public double[] getJointStates()
+   private void addMessages(long timestamp)
    {
-      return jointStates;
+      for (YoVariable variable : variables)
+      {
+         MutableMessage message = new MutableMessage();
+         message.setMessageData(new byte[8]);
+         mcapBuilder.packVariableMessage(variable, message);
+         chunk.records().add(new MutableRecord(message));
+      }
    }
 
    public ByteBuffer getBuffer()

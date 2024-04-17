@@ -39,8 +39,6 @@ public class MCAPBuilder
    private final TIntObjectHashMap<Record> channelRecords = new TIntObjectHashMap<>();
    private final Map<YoVariable, Record> variableChannelRecordMap = new LinkedHashMap<>();
 
-   private final TI
-
    private MCAPBuilder()
    {
       for (Class<? extends YoVariable> variableType : Arrays.asList(YoBoolean.class, YoDouble.class, YoLong.class, YoInteger.class, YoEnum.class))
@@ -151,5 +149,28 @@ public class MCAPBuilder
       channels.put(channel.id(), channel);
       channelRecords.put(channel.id(), new MutableRecord(channel));
       return channel;
+   }
+
+   public void packVariableMessage(YoVariable variable, MutableMessage message)
+   {
+      MutableChannel channel = getOrCreateChannel(variable);
+      message.setChannelId(channel.id());
+
+      ByteBuffer messageBuffer = message.messageBuffer();
+      messageBuffer.clear();
+      if (variable instanceof YoBoolean yoBoolean)
+         messageBuffer.put((byte) (yoBoolean.getBooleanValue() ? 1 : 0));
+      else if (variable instanceof YoDouble yoDouble)
+         messageBuffer.putDouble(yoDouble.getDoubleValue());
+      else if (variable instanceof YoLong yoLong)
+         messageBuffer.putLong(yoLong.getLongValue());
+      else if (variable instanceof YoInteger yoInteger)
+         messageBuffer.putInt(yoInteger.getIntegerValue());
+      else if (variable instanceof YoEnum<?> yoEnum)
+         messageBuffer.put((byte) yoEnum.getOrdinal());
+      else
+         throw new IllegalArgumentException("Unsupported variable type: " + variable.getClass().getSimpleName());
+      messageBuffer.flip();
+      message.setDataLength(messageBuffer.remaining());
    }
 }

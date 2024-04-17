@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class MutableMessage implements Message
 {
@@ -11,6 +12,11 @@ public class MutableMessage implements Message
    private long dataOffset;
    private int dataLength;
    private byte[] messageData;
+   private ByteBuffer messageDataBuffer;
+
+   public MutableMessage()
+   {
+   }
 
    public MutableMessage(int channelId, byte[] data)
    {
@@ -94,7 +100,9 @@ public class MutableMessage implements Message
    @Override
    public ByteBuffer messageBuffer()
    {
-      return ByteBuffer.wrap(messageData);
+      if (messageDataBuffer == null || messageDataBuffer.array() != messageData)
+         messageDataBuffer = ByteBuffer.wrap(messageData).order(ByteOrder.LITTLE_ENDIAN);
+      return messageDataBuffer;
    }
 
    public void setMessageData(byte[] messageData)
