@@ -12,6 +12,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -20,10 +21,13 @@ import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryReceiveBuffer;
-import us.ihmc.scs2.session.mcap.input.MCAPNettyByteBufDataInput;
+import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
+
+import java.nio.ByteBuffer;
 
 public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHandler<Object>
 {
+   private final WebSocketClientHandshaker handshaker;
    private final MCAPRegistryConsumer consumer;
 
    private final int timestampPort;
@@ -34,8 +38,9 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
 
    private volatile boolean waitingForPong = false;
 
-   public MCAPWebSocketDataServerClientHandler(int timestampPort, MCAPRegistryConsumer consumer)
+   public MCAPWebSocketDataServerClientHandler(WebSocketClientHandshaker handshaker, int timestampPort, MCAPRegistryConsumer consumer)
    {
+      this.handshaker = handshaker;
       this.consumer = consumer;
       this.timestampPort = timestampPort;
    }
@@ -52,17 +57,23 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
    }
 
    @Override
+   public void channelActive(ChannelHandlerContext context)
+   {
+      handshaker.handshake(context.channel());
+   }
+
+   @Override
    public void channelRead0(ChannelHandlerContext context, Object message) throws Exception
    {
       Channel channel = context.channel();
-      //      if (!handshaker.isHandshakeComplete())
-      //      {
-      //         handshaker.finishHandshake(channel, (FullHttpResponse) message);
-      //         yoVariableClient.connected();
-      //         handshakeFuture.setSuccess();
-      //
-      //         return;
-      //      }
+      if (!handshaker.isHandshakeComplete())
+      {
+         handshaker.finishHandshake(channel, (FullHttpResponse) message);
+         //         yoVariableClient.connected();
+         handshakeFuture.setSuccess();
+
+         return;
+      }
 
       if (message instanceof FullHttpResponse response)
       {
@@ -86,7 +97,10 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
       }
       else if (frame instanceof BinaryWebSocketFrame)
       {
-         MCAPRegistryReceiveBuffer buffer = new MCAPRegistryReceiveBuffer(System.nanoTime(), new MCAPNettyByteBufDataInput(frame.content()));
+         ByteBuffer byteBuffer = ByteBuffer.allocate(frame.content().readableBytes());
+         frame.content().readBytes(byteBuffer);
+         byteBuffer.flip();
+         MCAPRegistryReceiveBuffer buffer = new MCAPRegistryReceiveBuffer(System.nanoTime(), MCAPDataInput.wrap(byteBuffer));
          consumer.onNewDataMessage(buffer);
 
          if (!sendConfiguration)

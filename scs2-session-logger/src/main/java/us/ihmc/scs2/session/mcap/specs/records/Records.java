@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.indent;
@@ -68,7 +69,7 @@ public class Records extends AbstractList<Record>
    @Override
    public boolean add(Record record)
    {
-      records.add(record);
+      records.add(Objects.requireNonNull(record));
       updateInfo();
       return true;
    }
@@ -76,7 +77,7 @@ public class Records extends AbstractList<Record>
    @Override
    public void add(int index, Record element)
    {
-      records.add(index, element);
+      records.add(index, Objects.requireNonNull(element));
       updateInfo();
    }
 

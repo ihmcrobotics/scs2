@@ -1,6 +1,7 @@
 package us.ihmc.robotDataLogger.websocket;
 
 import org.junit.jupiter.api.Test;
+import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.robotDataLogger.YoMCAPVariableClient;
@@ -13,6 +14,7 @@ import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoEnum;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.util.Random;
 
@@ -28,7 +30,29 @@ public class YoMCAPServerClientTest
       server.setMainRegistry(registry, null);
       server.start();
 
+      new Thread(new Runnable()
+      {
+         private long initialTimestamp;
+         private long timestamp;
+
+         @Override
+         public void run()
+         {
+            if (initialTimestamp == 0)
+               initialTimestamp = System.nanoTime();
+            while (true)
+            {
+               randomize(random, registry);
+               timestamp = System.nanoTime() - initialTimestamp;
+               server.update(timestamp);
+               ThreadTools.sleep(1);
+            }
+         }
+      }).start();
+
       YoMCAPVariableClient client = new YoMCAPVariableClient();
+      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
+      client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
       client.setConnectionStateListener(new ConnectionStateListener()
       {
          @Override
@@ -44,6 +68,8 @@ public class YoMCAPServerClientTest
          }
       });
       client.start("localhost", dataServerSettings.getPort());
+
+      ThreadTools.sleepForever();
    }
 
    public static YoRegistry newRegistry(Random random)
@@ -60,5 +86,26 @@ public class YoMCAPServerClientTest
       YoEnum<Axis3D> testEnum = new YoEnum<>("testEnum", registry, Axis3D.class);
       testEnum.set(random.nextBoolean() ? Axis3D.X : Axis3D.Y);
       return registry;
+   }
+
+   private static void randomize(Random random, YoRegistry start)
+   {
+      for (int i = 0; i < start.getVariables().size(); i++)
+      {
+         YoVariable yoVariable = start.getVariables().get(i);
+
+         if (yoVariable instanceof YoBoolean yoBoolean)
+            yoBoolean.set(random.nextBoolean());
+         else if (yoVariable instanceof YoDouble yoDouble)
+            yoDouble.set(EuclidCoreRandomTools.nextDouble(random, 0.0, 100.0));
+         else if (yoVariable instanceof YoInteger yoInteger)
+            yoInteger.set(random.nextInt());
+         else if (yoVariable instanceof YoLong yoLong)
+            yoLong.set(random.nextLong());
+         else if (yoVariable instanceof YoEnum<?> yoEnum)
+            yoEnum.set(random.nextInt(yoEnum.getEnumSize()));
+         else
+            throw new RuntimeException("Unknown type: " + yoVariable.getClass().getSimpleName());
+      }
    }
 }

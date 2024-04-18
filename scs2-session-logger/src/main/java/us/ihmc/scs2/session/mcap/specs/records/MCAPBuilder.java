@@ -114,8 +114,8 @@ public class MCAPBuilder
 
    public Record getOrCreateVariableChannelRecord(YoVariable variable)
    {
-      getOrCreateChannel(variable);
-      return variableChannelRecordMap.get(variable);
+      MutableChannel channel = getOrCreateChannel(variable);
+      return channelRecords.get(channel.id());
    }
 
    private MutableChannel getOrCreateChannel(YoVariable variable)

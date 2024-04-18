@@ -25,7 +25,7 @@ public class RecordDataInputBacked implements Record
       op = Opcode.byId(dataInput.getUnsignedByte());
       bodyLength = MCAP.checkPositiveLong(dataInput.getLong(), "bodyLength");
       bodyOffset = dataInput.position();
-      MCAP.checkLength(getElementLength(), (int) (bodyLength + RECORD_HEADER_LENGTH));
+      MCAP.checkLength(getElementLength(), bodyLength + RECORD_HEADER_LENGTH);
    }
 
    @Override
@@ -89,8 +89,8 @@ public class RecordDataInputBacked implements Record
                case METADATA -> new Metadata(dataInput, bodyOffset, bodyLength);
                case ATTACHMENT -> Attachment.load(dataInput, bodyOffset, bodyLength);
                case HEADER -> new Header(dataInput, bodyOffset, bodyLength);
-               case FOOTER -> (Footer) new Footer(dataInput, bodyOffset, bodyLength);
-               case SUMMARY_OFFSET -> (SummaryOffset) new SummaryOffset(dataInput, bodyOffset, bodyLength);
+               case FOOTER -> new Footer(dataInput, bodyOffset, bodyLength);
+               case SUMMARY_OFFSET -> new SummaryOffset(dataInput, bodyOffset, bodyLength);
             };
          }
 

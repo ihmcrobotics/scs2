@@ -1,6 +1,7 @@
 package us.ihmc.robotDataLogger.websocket.dataBuffers;
 
 import us.ihmc.scs2.session.mcap.output.MCAPByteBufferDataOutput;
+import us.ihmc.scs2.session.mcap.specs.records.Compression;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.scs2.session.mcap.specs.records.MutableChunk;
 import us.ihmc.scs2.session.mcap.specs.records.MutableMessage;
@@ -14,10 +15,11 @@ import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 public class MCAPRegistrySendBuffer
 {
-   private int registryID;
+   private final int registryID;
    private long timestamp;
    private long transmitTime;
    private int numberOfVariables;
@@ -46,10 +48,12 @@ public class MCAPRegistrySendBuffer
       this.timestamp = timestamp;
       transmitTime = System.nanoTime();
       this.numberOfVariables = variables.length;
+      chunk.setRecords(new ArrayList<>());
       addSchemas();
       addChannels();
       addMessages(timestamp);
       dataOutput.getBuffer().clear();
+      chunk.setCompression(Compression.NONE);
       chunkRecord.write(dataOutput);
       dataOutput.getBuffer().flip();
    }

@@ -81,6 +81,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
          for (int i = 0; i < registeredBuffers.size(); i++)
          {
             MCAPRegistrySendBufferBuilder builder = registeredBuffers.get(i);
+            builder.build(i);
             YoRegistry registry = builder.getYoRegistry();
 
             try

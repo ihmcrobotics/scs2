@@ -8,10 +8,12 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import us.ihmc.pubsub.common.SerializedPayload;
@@ -31,6 +33,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeUnit;
+
+import static io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory.newHandshaker;
 
 public class MCAPWebsocketDataServerClient
 {
@@ -68,7 +72,13 @@ public class MCAPWebsocketDataServerClient
       udpTimestampClient = new UDPTimestampClient(timestampListener);
       udpTimestampClient.start();
 
-      MCAPWebSocketDataServerClientHandler handler = new MCAPWebSocketDataServerClientHandler(udpTimestampClient.getPort(), consumer);
+      MCAPWebSocketDataServerClientHandler handler = new MCAPWebSocketDataServerClientHandler(newHandshaker(uri,
+                                                                                                            WebSocketVersion.V13,
+                                                                                                            null,
+                                                                                                            true,
+                                                                                                            new DefaultHttpHeaders()),
+                                                                                              udpTimestampClient.getPort(),
+                                                                                              consumer);
 
       Bootstrap b = new Bootstrap();
       b.group(group).channel(NettyUtils.getSocketChannelClass()).handler(new ChannelInitializer<SocketChannel>()
