@@ -35,8 +35,8 @@ public interface Channel extends MCAPElement
    @Override
    default void write(MCAPDataOutput dataOutput)
    {
-      dataOutput.putInt(id());
-      dataOutput.putInt(schemaId());
+      dataOutput.putUnsignedShort(id());
+      dataOutput.putUnsignedShort(schemaId());
       dataOutput.putString(topic());
       dataOutput.putString(messageEncoding());
       dataOutput.putCollection(metadata());
@@ -47,8 +47,8 @@ public interface Channel extends MCAPElement
    {
       if (crc32 == null)
          crc32 = new MCAPCRC32Helper();
-      crc32.addInt(id());
-      crc32.addInt(schemaId());
+      crc32.addUnsignedShort(id());
+      crc32.addUnsignedShort(schemaId());
       crc32.addString(topic());
       crc32.addString(messageEncoding());
       crc32.addCollection(metadata());

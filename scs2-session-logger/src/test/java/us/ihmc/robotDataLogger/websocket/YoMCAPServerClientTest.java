@@ -33,17 +33,16 @@ public class YoMCAPServerClientTest
       new Thread(new Runnable()
       {
          private long initialTimestamp;
-         private long timestamp;
 
          @Override
          public void run()
          {
             if (initialTimestamp == 0)
                initialTimestamp = System.nanoTime();
-            while (true)
+            for (int i = 0; i < 5000; i++)
             {
                randomize(random, registry);
-               timestamp = System.nanoTime() - initialTimestamp;
+               long timestamp = System.nanoTime() - initialTimestamp;
                server.update(timestamp);
                ThreadTools.sleep(1);
             }
@@ -51,7 +50,7 @@ public class YoMCAPServerClientTest
       }).start();
 
       YoMCAPVariableClient client = new YoMCAPVariableClient();
-      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
+      //      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
       client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
       client.setConnectionStateListener(new ConnectionStateListener()
       {

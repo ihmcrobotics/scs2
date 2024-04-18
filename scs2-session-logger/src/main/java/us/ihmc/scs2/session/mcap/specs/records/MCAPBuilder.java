@@ -1,6 +1,7 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
+import us.ihmc.scs2.session.mcap.encoding.CDRSerializer;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -38,6 +39,8 @@ public class MCAPBuilder
 
    private final TIntObjectHashMap<Record> channelRecords = new TIntObjectHashMap<>();
    private final Map<YoVariable, Record> variableChannelRecordMap = new LinkedHashMap<>();
+
+   private final CDRSerializer cdrSerializer = new CDRSerializer();
 
    public MCAPBuilder()
    {
@@ -158,20 +161,22 @@ public class MCAPBuilder
 
       if (message.messageData() == null)
       {
-         message.setMessageData(new byte[8]);
+         message.setMessageData(new byte[12]);
       }
       ByteBuffer messageBuffer = message.messageBuffer();
       messageBuffer.clear();
+      messageBuffer.order(ByteOrder.LITTLE_ENDIAN);
+      cdrSerializer.initialize(messageBuffer);
       if (variable instanceof YoBoolean yoBoolean)
-         messageBuffer.put((byte) (yoBoolean.getBooleanValue() ? 1 : 0));
+         cdrSerializer.write_byte((byte) (yoBoolean.getBooleanValue() ? 1 : 0));
       else if (variable instanceof YoDouble yoDouble)
-         messageBuffer.putDouble(yoDouble.getDoubleValue());
+         cdrSerializer.write_float64(yoDouble.getDoubleValue());
       else if (variable instanceof YoLong yoLong)
-         messageBuffer.putLong(yoLong.getLongValue());
+         cdrSerializer.write_int64(yoLong.getLongValue());
       else if (variable instanceof YoInteger yoInteger)
-         messageBuffer.putInt(yoInteger.getIntegerValue());
+         cdrSerializer.write_int32(yoInteger.getIntegerValue());
       else if (variable instanceof YoEnum<?> yoEnum)
-         messageBuffer.put((byte) yoEnum.getOrdinal());
+         cdrSerializer.write_byte((byte) yoEnum.getOrdinal());
       else
          throw new IllegalArgumentException("Unsupported variable type: " + variable.getClass().getSimpleName());
       messageBuffer.flip();

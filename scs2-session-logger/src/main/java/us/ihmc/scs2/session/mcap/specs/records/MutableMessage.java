@@ -1,5 +1,8 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
+import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
+import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -70,17 +73,6 @@ public class MutableMessage implements Message
    }
 
    @Override
-   public long dataOffset()
-   {
-      return dataOffset;
-   }
-
-   public void setDataOffset(long dataOffset)
-   {
-      this.dataOffset = dataOffset;
-   }
-
-   @Override
    public int dataLength()
    {
       return dataLength;
@@ -108,6 +100,29 @@ public class MutableMessage implements Message
    public void setMessageData(byte[] messageData)
    {
       this.messageData = messageData;
+   }
+
+   @Override
+   public void write(MCAPDataOutput dataOutput)
+   {
+      dataOutput.putUnsignedShort(channelId());
+      dataOutput.putUnsignedInt(sequence());
+      dataOutput.putLong(logTime());
+      dataOutput.putLong(publishTime());
+      dataOutput.putBytes(messageData(), 0, dataLength());
+   }
+
+   @Override
+   public MCAPCRC32Helper updateCRC(MCAPCRC32Helper crc32)
+   {
+      if (crc32 == null)
+         crc32 = new MCAPCRC32Helper();
+      crc32.addUnsignedShort(channelId());
+      crc32.addUnsignedInt(sequence());
+      crc32.addLong(logTime());
+      crc32.addLong(publishTime());
+      crc32.addBytes(messageData(), 0, dataLength());
+      return crc32;
    }
 
    @Override

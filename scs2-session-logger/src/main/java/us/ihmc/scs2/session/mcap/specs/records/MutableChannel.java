@@ -85,4 +85,16 @@ public class MutableChannel implements Channel
             // Metadata
             + metadataLength;
    }
+
+   @Override
+   public String toString()
+   {
+      return toString(0);
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      return object instanceof Channel other && Channel.super.equals(other);
+   }
 }

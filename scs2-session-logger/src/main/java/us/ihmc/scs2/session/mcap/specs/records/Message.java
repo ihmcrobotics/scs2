@@ -28,8 +28,6 @@ public interface Message extends MCAPElement
 
    long publishTime();
 
-   long dataOffset();
-
    int dataLength();
 
    ByteBuffer messageBuffer();
@@ -43,7 +41,6 @@ public interface Message extends MCAPElement
       dataOutput.putUnsignedInt(sequence());
       dataOutput.putLong(logTime());
       dataOutput.putLong(publishTime());
-      dataOutput.putUnsignedInt(dataLength());
       dataOutput.putByteBuffer(messageBuffer());
    }
 
@@ -56,7 +53,6 @@ public interface Message extends MCAPElement
       crc32.addUnsignedInt(sequence());
       crc32.addLong(logTime());
       crc32.addLong(publishTime());
-      crc32.addUnsignedInt(dataLength());
       crc32.addByteBuffer(messageBuffer());
       return crc32;
    }
@@ -65,6 +61,18 @@ public interface Message extends MCAPElement
    default long getElementLength()
    {
       return dataLength() + Short.BYTES + Integer.BYTES + 2 * Long.BYTES;
+   }
+
+   @Override
+   default String toString(int indent)
+   {
+      String out = getClass().getSimpleName() + ": ";
+      out += "\n\t-channelId = " + channelId();
+      out += "\n\t-sequence = " + sequence();
+      out += "\n\t-logTime = " + logTime();
+      out += "\n\t-publishTime = " + publishTime();
+      //         out += "\n\t-data = " + Arrays.toString(messageData());
+      return MCAPElement.indent(out, indent);
    }
 
    @Override

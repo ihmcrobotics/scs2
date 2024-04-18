@@ -12,7 +12,7 @@ import java.nio.ByteOrder;
  */
 public class CDRDeserializer
 {
-   private static final int encapsulation_size = 4;
+   static final int encapsulation_size = 4;
    private ByteBuffer buffer;
    private int initialOffset;
    private int initialLimit;
@@ -48,7 +48,7 @@ public class CDRDeserializer
       SEQUENCE(-1, -1);
 
       private final int bytes;
-      private final int byteBoundary;
+      final int byteBoundary;
 
       Type(int bytes, int byteBoundary)
       {

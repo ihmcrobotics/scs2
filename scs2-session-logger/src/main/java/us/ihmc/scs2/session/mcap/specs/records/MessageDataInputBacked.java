@@ -57,18 +57,6 @@ class MessageDataInputBacked implements Message
    }
 
    /**
-    * Returns the offset of the data portion of this message in the buffer returned by
-    * {@link #messageBuffer()}.
-    *
-    * @return the offset of the data portion of this message.
-    */
-   @Override
-   public long dataOffset()
-   {
-      return dataOffset;
-   }
-
-   /**
     * Returns the length of the data portion of this message.
     *
     * @return the length of the data portion of this message.
@@ -80,8 +68,7 @@ class MessageDataInputBacked implements Message
    }
 
    /**
-    * Returns the buffer containing this message, the data AND the header. Use {@link #dataOffset()}
-    * and {@link #dataLength()} to get the data portion.
+    * Returns the buffer containing this message, the data AND the header.
     *
     * @return the buffer containing this message.
     */
@@ -113,13 +100,7 @@ class MessageDataInputBacked implements Message
    @Override
    public String toString()
    {
-      String out = getClass().getSimpleName() + ": ";
-      out += "\n\t-channelId = " + channelId;
-      out += "\n\t-sequence = " + sequence;
-      out += "\n\t-logTime = " + logTime;
-      out += "\n\t-publishTime = " + publishTime;
-      //         out += "\n\t-data = " + data;
-      return out;
+      return toString(0);
    }
 
    @Override
