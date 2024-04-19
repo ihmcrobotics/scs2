@@ -4,20 +4,19 @@ import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
-import java.util.List;
 import java.util.Objects;
 
 public interface Metadata extends MCAPElement
 {
    String name();
 
-   List<StringPair> metadata();
+   MetadataMap metadata();
 
    @Override
    default void write(MCAPDataOutput dataOutput)
    {
       dataOutput.putString(name());
-      dataOutput.putCollection(metadata());
+      metadata().write(dataOutput);
    }
 
    @Override
@@ -26,7 +25,7 @@ public interface Metadata extends MCAPElement
       if (crc32 == null)
          crc32 = new MCAPCRC32Helper();
       crc32.addString(name());
-      crc32.addCollection(metadata());
+      metadata().updateCRC(crc32);
       return crc32;
    }
 
@@ -35,7 +34,7 @@ public interface Metadata extends MCAPElement
    {
       String out = getClass().getSimpleName() + ": ";
       out += "\n\t-name = " + name();
-      out += "\n\t-metadata = " + EuclidCoreIOTools.getCollectionString(", ", metadata(), StringPair::key);
+      out += "\n\t-metadata = " + EuclidCoreIOTools.getCollectionString(", ", metadata().keySet());
       return MCAPElement.indent(out, indent);
    }
 

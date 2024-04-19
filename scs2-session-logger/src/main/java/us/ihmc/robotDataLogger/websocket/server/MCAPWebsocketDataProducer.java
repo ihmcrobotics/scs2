@@ -40,7 +40,7 @@ public class MCAPWebsocketDataProducer
 
    private DataServerLocationBroadcastSender broadcastSender;
 
-   private final MCAPDataServerServerContent dataServerContent;
+   private MCAPDataServerServerContent dataServerContent;
 
    // TODO Figure out how to either determine the max buffer size or remove it.
    private final int maximumBufferSize = 200000;
@@ -49,16 +49,12 @@ public class MCAPWebsocketDataProducer
 
    private int nextBufferID = 0;
 
-   public MCAPWebsocketDataProducer(VariableChangedListener variableChangedListener,
-                                    LogAliveListener logAliveListener,
-                                    DataServerSettings dataServerSettings,
-                                    MCAPDataServerServerContent dataServerContent)
+   public MCAPWebsocketDataProducer(VariableChangedListener variableChangedListener, LogAliveListener logAliveListener, DataServerSettings dataServerSettings)
    {
       this.variableChangedListener = variableChangedListener;
       this.logAliveListener = logAliveListener;
       port = dataServerSettings.getPort();
       autoDiscoverable = dataServerSettings.isAutoDiscoverable();
-      this.dataServerContent = dataServerContent;
    }
 
    public void remove()
@@ -89,6 +85,11 @@ public class MCAPWebsocketDataProducer
             e.printStackTrace();
          }
       }
+   }
+
+   public void setDataServerContent(MCAPDataServerServerContent dataServerServerContent)
+   {
+      this.dataServerContent = dataServerServerContent;
    }
 
    public void announce() throws IOException

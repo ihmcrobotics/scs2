@@ -36,6 +36,14 @@ public class Footer implements MCAPElement
    private Records summarySection;
    private Records summaryOffsetSection;
 
+   public Footer()
+   {
+      this.dataInput = null;
+      this.summarySectionOffset = 0;
+      this.summaryOffsetSectionOffset = 0;
+      this.summaryCRC32 = 0;
+   }
+
    public Footer(MCAPDataInput dataInput, long elementPosition, long elementLength)
    {
       this.dataInput = dataInput;

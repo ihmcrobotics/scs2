@@ -6,6 +6,8 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
 import java.util.Objects;
 
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
+
 public class StringPair implements MCAPElement
 {
    private final String key;
@@ -27,7 +29,7 @@ public class StringPair implements MCAPElement
    @Override
    public long getElementLength()
    {
-      return key.length() + value.length() + 2 * Integer.BYTES;
+      return stringLength(key) + stringLength(value);
    }
 
    public String key()

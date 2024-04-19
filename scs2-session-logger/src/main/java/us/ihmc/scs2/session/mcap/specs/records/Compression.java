@@ -5,15 +5,15 @@ public enum Compression
    NONE(""), LZ4("lz4"), ZSTD("zstd");
 
    private final String name;
-   private final int length;
+   private final long length;
 
    Compression(String name)
    {
       this.name = name;
-      length = name.getBytes().length + Integer.BYTES;
+      length = MCAPElement.stringLength(name);
    }
 
-   public int getLength()
+   public long getLength()
    {
       return length;
    }

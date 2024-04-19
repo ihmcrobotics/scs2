@@ -7,6 +7,8 @@ import us.ihmc.scs2.session.mcap.specs.MCAP;
 
 import java.util.Objects;
 
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
+
 /**
  * Header is the first record in an MCAP file.
  *
@@ -34,7 +36,7 @@ public class Header implements MCAPElement
    @Override
    public long getElementLength()
    {
-      return 2 * Integer.BYTES + profile.length() + library.length();
+      return stringLength(profile) + stringLength(library);
    }
 
    public String profile()

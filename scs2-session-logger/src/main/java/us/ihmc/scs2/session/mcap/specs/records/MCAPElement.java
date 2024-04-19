@@ -25,4 +25,9 @@ public interface MCAPElement
    }
 
    boolean equals(MCAPElement mcapElement);
+
+   static long stringLength(String string)
+   {
+      return Integer.BYTES + string.length();
+   }
 }

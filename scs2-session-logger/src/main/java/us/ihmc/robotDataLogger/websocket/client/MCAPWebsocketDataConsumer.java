@@ -3,25 +3,26 @@ package us.ihmc.robotDataLogger.websocket.client;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.CharsetUtil;
 import us.ihmc.idl.serializers.extra.JSONSerializer;
-import us.ihmc.robotDataLogger.Announcement;
 import us.ihmc.robotDataLogger.Handshake;
 import us.ihmc.robotDataLogger.HandshakePubSubType;
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.websocket.HTTPDataServerPaths;
-import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
+import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPRecordConsumer;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class MCAPWebsocketDataConsumer
 {
    private final Object lock = new Object();
-   private HTTPDataServerConnection connection;
+   private HTTPMCAPDataServerConnection connection;
 
    private MCAPWebsocketDataServerClient session;
    private boolean closed = false;
@@ -32,7 +33,7 @@ public class MCAPWebsocketDataConsumer
    private MCAPRecordConsumer recordConsumer;
    private ConnectionStateListener connectionStateListener;
 
-   public MCAPWebsocketDataConsumer(HTTPDataServerConnection initialConnection, int timeoutInMs)
+   public MCAPWebsocketDataConsumer(HTTPMCAPDataServerConnection initialConnection, int timeoutInMs)
    {
       connection = initialConnection;
       this.timeoutInMs = timeoutInMs;
@@ -175,12 +176,13 @@ public class MCAPWebsocketDataConsumer
          try
          {
             HTTPDataServerDescription oldDescription = connection.getTarget();
-            HTTPDataServerConnection newConnection = HTTPDataServerConnection.connect(oldDescription.getHost(), oldDescription.getPort());
+            HTTPMCAPDataServerConnection newConnection = HTTPMCAPDataServerConnection.connect(oldDescription.getHost(), oldDescription.getPort());
             newConnection.close();
 
-            Announcement announcement = newConnection.getAnnouncement();
-            Announcement oldAnnouncement = connection.getAnnouncement();
-            if (announcement.getReconnectKeyAsString().equals(oldAnnouncement.getReconnectKeyAsString()))
+            MCAP mcapStarter = newConnection.getMCAPStarter();
+            MCAP oldMCAPStarter = connection.getMCAPStarter();
+
+            if (Objects.equals(mcapStarter.dataEnd(), oldMCAPStarter.dataEnd()))
             {
                connection = newConnection;
                session = new MCAPWebsocketDataServerClient(connection, timestampListener, recordConsumer, connectionStateListener, timeoutInMs);

@@ -45,7 +45,7 @@ public class MCAPLogCropperTest
    public void testSimpleCloningMCAP() throws IOException
    {
       File demoMCAPFile = getDemoMCAPFile();
-      MCAP originalMCAP = new MCAP(new FileInputStream(demoMCAPFile).getChannel());
+      MCAP originalMCAP = MCAP.load(new FileInputStream(demoMCAPFile).getChannel());
       File clonedDemoMCAPFile = createTempMCAPFile("clonedDemo");
       MCAPDataOutput dataOutput = MCAPDataOutput.wrap(new FileOutputStream(clonedDemoMCAPFile).getChannel());
       dataOutput.putBytes(Magic.MAGIC_BYTES); // header magic
@@ -54,7 +54,7 @@ public class MCAPLogCropperTest
       dataOutput.close();
 
       // Let's compare the original and the cloned files by loading them into memory and comparing their content
-      MCAP clonedMCAP = new MCAP(new FileInputStream(clonedDemoMCAPFile).getChannel());
+      MCAP clonedMCAP = MCAP.load(new FileInputStream(clonedDemoMCAPFile).getChannel());
 
       if (originalMCAP.records().size() != clonedMCAP.records().size())
       {
@@ -114,7 +114,7 @@ public class MCAPLogCropperTest
    {
       File demoMCAPFile = getDemoMCAPFile();
 
-      MCAP originalMCAP = new MCAP(new FileInputStream(demoMCAPFile).getChannel());
+      MCAP originalMCAP = MCAP.load(new FileInputStream(demoMCAPFile).getChannel());
       MCAPLogFileReader.exportChunkToFile(MCAPLogFileReader.SCS2_MCAP_DEBUG_HOME, ((Chunk) originalMCAP.records().get(1).body()), null);
       MCAPLogCropper mcapLogCropper = new MCAPLogCropper(originalMCAP);
       mcapLogCropper.setStartTimestamp(0);
@@ -124,7 +124,7 @@ public class MCAPLogCropperTest
       mcapLogCropper.crop(new FileOutputStream(croppedDemoMCAPFile));
 
       // Let's compare the original and the cropped files by loading them into memory and comparing their content
-      MCAP croppedMCAP = new MCAP(new FileInputStream(croppedDemoMCAPFile).getChannel());
+      MCAP croppedMCAP = MCAP.load(new FileInputStream(croppedDemoMCAPFile).getChannel());
 
       // The cropped MCAP is slightly different:
       // - The ZSTD compression gives slightly different sizes, which in turn offsets the records

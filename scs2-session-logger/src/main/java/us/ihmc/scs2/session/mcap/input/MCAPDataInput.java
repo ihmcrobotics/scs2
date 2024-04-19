@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap.input;
 
+import io.netty.buffer.ByteBuf;
 import us.ihmc.scs2.session.mcap.specs.records.Compression;
 
 import java.nio.ByteBuffer;
@@ -70,5 +71,10 @@ public interface MCAPDataInput
    static MCAPDataInput wrap(ByteBuffer buffer)
    {
       return new MCAPByteBufferDataInput(buffer);
+   }
+
+   static MCAPDataInput wrap(ByteBuf buffer)
+   {
+      return new MCAPNettyByteBufDataInput(buffer);
    }
 }

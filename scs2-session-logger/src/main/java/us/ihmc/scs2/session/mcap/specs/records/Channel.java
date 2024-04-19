@@ -4,7 +4,6 @@ import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -30,7 +29,7 @@ public interface Channel extends MCAPElement
 
    String messageEncoding();
 
-   List<StringPair> metadata();
+   MetadataMap metadata();
 
    @Override
    default void write(MCAPDataOutput dataOutput)
@@ -39,7 +38,7 @@ public interface Channel extends MCAPElement
       dataOutput.putUnsignedShort(schemaId());
       dataOutput.putString(topic());
       dataOutput.putString(messageEncoding());
-      dataOutput.putCollection(metadata());
+      metadata().write(dataOutput);
    }
 
    @Override
@@ -51,7 +50,7 @@ public interface Channel extends MCAPElement
       crc32.addUnsignedShort(schemaId());
       crc32.addString(topic());
       crc32.addString(messageEncoding());
-      crc32.addCollection(metadata());
+      metadata().updateCRC(crc32);
       return crc32;
    }
 

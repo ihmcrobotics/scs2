@@ -21,9 +21,9 @@ import us.ihmc.robotDataLogger.VariableChangeRequest;
 import us.ihmc.robotDataLogger.VariableChangeRequestPubSubType;
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.NettyUtils;
-import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerConnection;
-import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerConnection.DisconnectPromise;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
+import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
+import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection.DisconnectPromise;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer;
@@ -49,7 +49,7 @@ public class MCAPWebsocketDataServerClient
    private final DisconnectPromise disconnectPromise;
    private final UDPTimestampClient udpTimestampClient;
 
-   public MCAPWebsocketDataServerClient(HTTPDataServerConnection connection,
+   public MCAPWebsocketDataServerClient(HTTPMCAPDataServerConnection connection,
                                         TimestampListener timestampListener,
                                         MCAPRecordConsumer mcapRecordConsumer,
                                         ConnectionStateListener connectionStateListener,

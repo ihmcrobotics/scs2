@@ -163,7 +163,7 @@ public enum Opcode
          return ATTACHMENT_INDEX;
       if (Statistics.class.isAssignableFrom(bodyType))
          return STATISTICS;
-      if (MetadataDataInputBacked.class.isAssignableFrom(bodyType))
+      if (Metadata.class.isAssignableFrom(bodyType))
          return METADATA;
       if (MetadataIndex.class.isAssignableFrom(bodyType))
          return METADATA_INDEX;

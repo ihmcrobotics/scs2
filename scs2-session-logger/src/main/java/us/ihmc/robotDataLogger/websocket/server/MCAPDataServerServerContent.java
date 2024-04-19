@@ -1,20 +1,28 @@
 package us.ihmc.robotDataLogger.websocket.server;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
 import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
+import us.ihmc.scs2.session.mcap.output.MCAPNettyByteBufDataOutput;
 import us.ihmc.scs2.session.mcap.specs.records.Attachment;
 import us.ihmc.scs2.session.mcap.specs.records.Chunk;
 import us.ihmc.scs2.session.mcap.specs.records.Compression;
+import us.ihmc.scs2.session.mcap.specs.records.DataEnd;
+import us.ihmc.scs2.session.mcap.specs.records.Footer;
+import us.ihmc.scs2.session.mcap.specs.records.Header;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
+import us.ihmc.scs2.session.mcap.specs.records.MCAPElement;
+import us.ihmc.scs2.session.mcap.specs.records.Magic;
 import us.ihmc.scs2.session.mcap.specs.records.Metadata;
+import us.ihmc.scs2.session.mcap.specs.records.MetadataMap;
 import us.ihmc.scs2.session.mcap.specs.records.MutableAttachment;
 import us.ihmc.scs2.session.mcap.specs.records.MutableChunk;
 import us.ihmc.scs2.session.mcap.specs.records.MutableMetadata;
 import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
-import us.ihmc.scs2.session.mcap.specs.records.StringPair;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoEnum;
@@ -29,11 +37,16 @@ import java.util.List;
 
 public class MCAPDataServerServerContent
 {
-   private final Record announcementMetadataRecord;
-   private final Record modelAttachmentRecord;
-   private final Record resourcesAttachmentRecord;
-   private final Record variableSchemasRecord;
-   private final Record variableChannelsRecord;
+   // TODO Extract out of here
+   public static final String MCAP_PROFILE = "us.ihmc.mcap-starter";
+   public static final String MCAP_LIBRARY = "version 1.0";
+
+   public static final String MCAP_STARTER = "/mcap_starter.mcap";
+   public static final String ROBOT_MODEL_RESOURCES = "/robot_model_resources.zip";
+   public static final String ANNOUNCEMENT_METADATA_NAME = "announcement";
+
+   private final ByteBuf mcapStarterBuffer;
+   private final ByteBuf robotModelResourcesBuffer;
 
    public MCAPDataServerServerContent(String name,
                                       MCAPBuilder mcapBuilder,
@@ -41,17 +54,39 @@ public class MCAPDataServerServerContent
                                       DataServerSettings dataServerSettings,
                                       List<MCAPRegistrySendBufferBuilder> registeredBuffers)
    {
+      Attachment modelAttachment = createModel(logModelProvider);
 
-      announcementMetadataRecord = new MutableRecord(createAnnouncement(name, dataServerSettings.isLogSession()));
-      modelAttachmentRecord = new MutableRecord(createModel(logModelProvider));
-      resourcesAttachmentRecord = new MutableRecord(createResources(logModelProvider));
-      variableSchemasRecord = new MutableRecord(createVariableSchemas(mcapBuilder));
-      variableChannelsRecord = new MutableRecord(createVariableChannels());
+      Record variableChannelsRecord = new MutableRecord(createVariableChannels());
       for (MCAPRegistrySendBufferBuilder buffer : registeredBuffers)
       {
          MutableChunk chunk = variableChannelsRecord.body();
          addVariableChannels(mcapBuilder, buffer.getYoRegistry().collectSubtreeVariables(), chunk);
       }
+
+      List<MCAPElement> mcap = new ArrayList<>();
+      mcap.add(Magic.INSTANCE);
+      mcap.add(new MutableRecord(new Header(MCAP_PROFILE, MCAP_LIBRARY)));
+      mcap.add(new MutableRecord(createAnnouncement(name, dataServerSettings.isLogSession())));
+      //      mcap.add(new MutableRecord(createVariableSchemas(mcapBuilder)));
+      //      mcap.add(variableChannelsRecord);
+      //      if (modelAttachment != null)
+      //         mcap.add(new MutableRecord(modelAttachment));
+      MCAPCRC32Helper crc32Helper = new MCAPCRC32Helper();
+      //      mcap.forEach(element -> element.updateCRC(crc32Helper));
+      mcap.add(new MutableRecord(new DataEnd(crc32Helper.getValue())));
+      mcap.add(new MutableRecord(new Footer()));
+      mcap.add(Magic.INSTANCE);
+      MCAPNettyByteBufDataOutput output = new MCAPNettyByteBufDataOutput(false);
+      for (MCAPElement element : mcap)
+      {
+         element.write(output);
+      }
+      mcapStarterBuffer = output.getBuffer();
+
+      if (logModelProvider != null && logModelProvider.getResourceZip() != null)
+         robotModelResourcesBuffer = Unpooled.wrappedBuffer(logModelProvider.getResourceZip());
+      else
+         robotModelResourcesBuffer = null;
    }
 
    private static Chunk createVariableSchemas(MCAPBuilder mcapBuilder)
@@ -86,17 +121,21 @@ public class MCAPDataServerServerContent
 
    private static Metadata createAnnouncement(String name, boolean logSession)
    {
+      MutableMetadata metadata = new MutableMetadata();
+      metadata.setName(ANNOUNCEMENT_METADATA_NAME);
+      MetadataMap metadataMap = new MetadataMap();
+      metadataMap.put("name", name);
+      metadataMap.put("logSession", Boolean.toString(logSession));
+      metadataMap.put("hostName", getHostName());
+      metadata.setMetadata(metadataMap);
+      return metadata;
+   }
+
+   private static String getHostName()
+   {
       try
       {
-         MutableMetadata metadata = new MutableMetadata();
-         metadata.setName("announcement");
-         List<StringPair> metadataList = new ArrayList<>();
-         metadataList.add(new StringPair("name", name));
-         metadataList.add(new StringPair("logSession", Boolean.toString(logSession)));
-         metadataList.add(new StringPair("hostName", InetAddress.getLocalHost().getHostName()));
-         metadataList.add(new StringPair("sessionKey", "n/a")); // FIXME the key should be computed from the set of variables.
-         metadata.setMetadata(metadataList);
-         return metadata;
+         return InetAddress.getLocalHost().getHostName();
       }
       catch (UnknownHostException e)
       {
@@ -106,6 +145,9 @@ public class MCAPDataServerServerContent
 
    private static Attachment createModel(LogModelProvider logModelProvider)
    {
+      if (logModelProvider == null || logModelProvider.getModel() == null || logModelProvider.getModel().length == 0)
+         return null;
+
       MutableAttachment attachment = new MutableAttachment();
       attachment.setName(logModelProvider.getModelName());
       if (logModelProvider.getLoader() == null || logModelProvider.getLoader().getSimpleName().toLowerCase().contains("urdf"))
@@ -115,19 +157,6 @@ public class MCAPDataServerServerContent
 
       attachment.setDataLength(logModelProvider.getModel().length);
       attachment.setData(logModelProvider.getModel());
-
-      computeAttachmentCRC32(attachment);
-
-      return attachment;
-   }
-
-   private static Attachment createResources(LogModelProvider logModelProvider)
-   {
-      MutableAttachment attachment = new MutableAttachment();
-      attachment.setName(logModelProvider.getModelName() + "-resources.zip");
-      attachment.setMediaType("application/zip");
-      attachment.setDataLength(logModelProvider.getResourceZip().length);
-      attachment.setData(logModelProvider.getResourceZip());
 
       computeAttachmentCRC32(attachment);
 
@@ -144,5 +173,15 @@ public class MCAPDataServerServerContent
       crc32Helper.addLong(attachment.dataLength());
       crc32Helper.addBytes(attachment.data());
       attachment.setCRC32(crc32Helper.getValue());
+   }
+
+   public ByteBuf getMCAPStarterBuffer()
+   {
+      return mcapStarterBuffer.retainedDuplicate();
+   }
+
+   public ByteBuf getRobotModelResourcesBuffer()
+   {
+      return robotModelResourcesBuffer == null ? null : robotModelResourcesBuffer.retainedDuplicate();
    }
 }

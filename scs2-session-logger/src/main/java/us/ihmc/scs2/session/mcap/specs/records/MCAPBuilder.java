@@ -15,9 +15,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -128,14 +126,14 @@ public class MCAPBuilder
       {
          String topic = variable.getFullNameString().replace(YoTools.NAMESPACE_SEPERATOR, '/');
          int schemaID = variableSchemas.get(variable.getClass()).id();
-         channel = nextChannel(topic, schemaID, "cdr", Collections.emptyList());
+         channel = nextChannel(topic, schemaID, "cdr", new MetadataMap());
          variableChannels.put(variable, channel);
       }
 
       return channel;
    }
 
-   private MutableChannel nextChannel(String topic, int schemaID, String messageEncoding, List<StringPair> metadata)
+   private MutableChannel nextChannel(String topic, int schemaID, String messageEncoding, MetadataMap metadata)
    {
       MutableChannel channel = nextChannel();
       channel.setTopic(topic);

@@ -9,7 +9,7 @@ import java.util.Collection;
 public interface MCAPDataOutput
 {
    long position();
-   
+
    void putLong(long value);
 
    void putInt(int value);
@@ -42,9 +42,9 @@ public interface MCAPDataOutput
 
    default void putString(String string)
    {
-      byte[] bytes = string.getBytes();
-      putUnsignedInt(bytes.length);
-      putBytes(bytes);
+      putUnsignedInt(string.length());
+      for (int i = 0; i < string.length(); i++)
+         putByte((byte) string.charAt(i));
    }
 
    void putByteBuffer(ByteBuffer byteBuffer);

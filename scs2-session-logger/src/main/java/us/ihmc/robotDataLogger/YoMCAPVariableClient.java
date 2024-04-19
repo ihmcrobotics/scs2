@@ -3,10 +3,13 @@ package us.ihmc.robotDataLogger;
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.DaemonThreadFactory;
 import us.ihmc.robotDataLogger.websocket.client.MCAPWebsocketDataConsumer;
-import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerConnection;
+import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.Metadata;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.io.IOException;
@@ -63,7 +66,7 @@ public class YoMCAPVariableClient
    {
       try
       {
-         HTTPDataServerConnection connection = HTTPDataServerConnection.connect(host, port);
+         HTTPMCAPDataServerConnection connection = HTTPMCAPDataServerConnection.connect(host, port);
          start(DEFAULT_TIMEOUT, connection);
       }
       catch (IOException e)
@@ -81,17 +84,17 @@ public class YoMCAPVariableClient
     * @param connection An existing HTTPDataServerConnection
     * @throws IOException
     */
-   public synchronized void start(int timeout, HTTPDataServerConnection connection) throws IOException
+   public synchronized void start(int timeout, HTTPMCAPDataServerConnection connection) throws IOException
    {
       if (dataConsumer != null)
       {
          throw new RuntimeException("Client already started");
       }
 
-      Announcement announcement = connection.getAnnouncement();
+      MCAP mcapStarter = connection.getMCAPStarter();
 
       dataConsumer = new MCAPWebsocketDataConsumer(connection, timeout);
-      serverName = announcement.getNameAsString();
+      serverName = ((Metadata) mcapStarter.findMetadata(MCAPDataServerServerContent.ANNOUNCEMENT_METADATA_NAME).get(0).body()).metadata().get("name");
       connectToSession();
    }
 

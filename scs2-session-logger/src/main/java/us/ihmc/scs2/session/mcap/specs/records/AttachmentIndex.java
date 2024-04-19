@@ -6,6 +6,8 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
 import java.util.Objects;
 
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
+
 /**
  * An Attachment Index record contains the location of an attachment in the file.
  * An Attachment Index record exists for every Attachment record in the file.
@@ -22,7 +24,7 @@ public interface AttachmentIndex extends MCAPElement
    @Override
    default long getElementLength()
    {
-      return 5 * Long.BYTES + 2 * Integer.BYTES + name().length() + mediaType().length();
+      return 5 * Long.BYTES + stringLength(name()) + stringLength(mediaType());
    }
 
    Record attachment();

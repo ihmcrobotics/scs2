@@ -172,7 +172,7 @@ public class MCAPRepackApplication
       try (FileInputStream fileInputStream = new FileInputStream(inputFile); FileOutputStream outputStream = new FileOutputStream(outputFile))
       {
          ProgressConsumer progressConsumer = newSimpleProgressConsumer();
-         repacker.repack(new MCAP(fileInputStream.getChannel()), minDuration, maxDuration, outputStream, progressConsumer);
+         repacker.repack(MCAP.load(fileInputStream.getChannel()), minDuration, maxDuration, outputStream, progressConsumer);
       }
       catch (Exception e)
       {

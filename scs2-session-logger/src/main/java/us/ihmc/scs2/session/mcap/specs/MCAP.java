@@ -5,6 +5,7 @@ import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.specs.records.Footer;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPElement;
 import us.ihmc.scs2.session.mcap.specs.records.Magic;
+import us.ihmc.scs2.session.mcap.specs.records.Metadata;
 import us.ihmc.scs2.session.mcap.specs.records.Opcode;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 import us.ihmc.scs2.session.mcap.specs.records.RecordDataInputBacked;
@@ -12,6 +13,7 @@ import us.ihmc.scs2.session.mcap.specs.records.RecordDataInputBacked;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * MCAP is a modular container format and logging library for pub/sub messages with arbitrary
@@ -29,29 +31,40 @@ public class MCAP
     */
    protected MCAPDataInput dataInput;
 
-   private final List<Record> records;
+   private List<Record> records;
 
    private Record footer;
 
-   public MCAP(FileChannel fileChannel)
+   private MCAP()
    {
-      dataInput = MCAPDataInput.wrap(fileChannel);
+
+   }
+
+   public static MCAP load(FileChannel fileChannel)
+   {
+      return load(MCAPDataInput.wrap(fileChannel));
+   }
+
+   public static MCAP load(MCAPDataInput dataInput)
+   {
+      MCAP mcap = new MCAP();
+      mcap.dataInput = dataInput;
 
       long currentPos = 0;
-      Magic.readMagic(dataInput, currentPos);
-      currentPos += Magic.getElementLength();
-      records = new ArrayList<>();
+      Magic.readMagic(mcap.dataInput, currentPos);
+      currentPos += Magic.MAGIC_SIZE;
+      mcap.records = new ArrayList<>();
       Record lastRecord;
 
       try
       {
          do
          {
-            lastRecord = new RecordDataInputBacked(dataInput, currentPos);
+            lastRecord = new RecordDataInputBacked(mcap.dataInput, currentPos);
             if (lastRecord.getElementLength() < 0)
                throw new IllegalArgumentException("Invalid record length: " + lastRecord.getElementLength());
             currentPos += lastRecord.getElementLength();
-            records.add(lastRecord);
+            mcap.records.add(lastRecord);
          }
          while (!(lastRecord.op() == Opcode.FOOTER));
       }
@@ -59,9 +72,8 @@ public class MCAP
       {
          try
          {
-
             LogTools.info("Loaded records:\n");
-            for (Record record : records)
+            for (Record record : mcap.records)
             {
                System.out.println(record);
             }
@@ -73,7 +85,8 @@ public class MCAP
          throw e;
       }
 
-      Magic.readMagic(dataInput, currentPos);
+      Magic.readMagic(mcap.dataInput, currentPos);
+      return mcap;
    }
 
    public MCAPDataInput getDataInput()
@@ -86,6 +99,21 @@ public class MCAP
       return records;
    }
 
+   public Record header()
+   {
+      return records.get(0);
+   }
+
+   public Record dataEnd()
+   {
+      for (int i = records().size() - 1; i >= 0; i--)
+      {
+         if (records.get(i).op() == Opcode.DATA_END)
+            return records.get(i);
+      }
+      return null;
+   }
+
    public Record footer()
    {
       if (footer == null)
@@ -93,6 +121,22 @@ public class MCAP
          footer = new RecordDataInputBacked(dataInput, Footer.computeOffsetFooter(dataInput));
       }
       return footer;
+   }
+
+   public List<Record> findMetadata(String name)
+   {
+      List<Record> result = new ArrayList<>();
+      for (Record record : records)
+      {
+         if (record.op() != Opcode.METADATA)
+            continue;
+
+         Metadata metadata = record.body();
+
+         if (name == null || Objects.equals(metadata.name(), name))
+            result.add(record);
+      }
+      return result;
    }
 
    public static <T extends MCAPElement> List<T> parseList(MCAPDataInput dataInput, MCAPDataReader<T> elementParser)

@@ -87,7 +87,7 @@ public class MCAPLogFileReader
       FileChannel mcapFileChannel = mcapFileInputStream.getChannel();
       LogTools.info("Opened file channel in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
       startTime = System.nanoTime();
-      mcap = new MCAP(mcapFileChannel); // On 10GB log file, this takes about 4-5 seconds.
+      mcap = MCAP.load(mcapFileChannel); // On 10GB log file, this takes about 4-5 seconds.
       LogTools.info("Created MCAP object in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
       startTime = System.nanoTime();
       chunkBuffer = new MCAPBufferedChunk(mcap, desiredLogDT); // On 10GB log file, this takes about 9 seconds.

@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
+
 /**
  * A Schema record defines an individual schema.
  * Schema records are uniquely identified within a file by their schema ID.
@@ -26,7 +28,7 @@ public interface Schema extends MCAPElement
    @Override
    default long getElementLength()
    {
-      return Short.BYTES + 3 * Integer.BYTES + name().length() + encoding().length() + (int) dataLength();
+      return Short.BYTES + Integer.BYTES + stringLength(name()) + stringLength(encoding()) + (int) dataLength();
    }
 
    int id();

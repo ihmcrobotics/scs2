@@ -1,10 +1,8 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
-import us.ihmc.scs2.session.mcap.specs.MCAP;
 
 import java.lang.ref.WeakReference;
-import java.util.List;
 
 class ChannelDataInputBacked implements Channel
 {
@@ -14,9 +12,8 @@ class ChannelDataInputBacked implements Channel
    private final int schemaId;
    private final String topic;
    private final String messageEncoding;
-   private WeakReference<List<StringPair>> metadataRef;
+   private WeakReference<MetadataMap> metadataRef;
    private final long metadataOffset;
-   private final long metadataLength;
 
    public ChannelDataInputBacked(MCAPDataInput dataInput, long elementPosition, long elementLength)
    {
@@ -28,7 +25,6 @@ class ChannelDataInputBacked implements Channel
       schemaId = dataInput.getUnsignedShort();
       topic = dataInput.getString();
       messageEncoding = dataInput.getString();
-      metadataLength = dataInput.getUnsignedInt();
       metadataOffset = dataInput.position();
    }
 
@@ -63,13 +59,13 @@ class ChannelDataInputBacked implements Channel
    }
 
    @Override
-   public List<StringPair> metadata()
+   public MetadataMap metadata()
    {
-      List<StringPair> metadata = metadataRef == null ? null : metadataRef.get();
+      MetadataMap metadata = metadataRef == null ? null : metadataRef.get();
 
       if (metadata == null)
       {
-         metadata = MCAP.parseList(dataInput, StringPair::new, metadataOffset, metadataLength);
+         metadata = new MetadataMap(dataInput, metadataOffset);
          metadataRef = new WeakReference<>(metadata);
       }
 

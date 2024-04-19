@@ -1,14 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.remote;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.function.Function;
-
 import com.jfoenix.controls.JFXTreeTableColumn;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -54,6 +48,11 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeTableViewTools;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.Function;
 
 public class RemoteSessionManagerController implements SessionControlsController
 {
@@ -122,32 +121,35 @@ public class RemoteSessionManagerController implements SessionControlsController
       createStaticHostButton.setDisable(true);
 
       staticHostTextField.textProperty().addListener((o, oldValue, newValue) ->
-      {
-         createStaticHostButton.setDisable(isEmpty(newValue) || isEmpty(staticPortTextField.getText()));
-      });
+                                                     {
+                                                        createStaticHostButton.setDisable(isEmpty(newValue) || isEmpty(staticPortTextField.getText()));
+                                                     });
       staticPortTextField.textProperty().addListener((o, oldValue, newValue) ->
-      {
-         createStaticHostButton.setDisable(isEmpty(newValue) || isEmpty(staticPortTextField.getText()));
-      });
+                                                     {
+                                                        createStaticHostButton.setDisable(isEmpty(newValue) || isEmpty(staticPortTextField.getText()));
+                                                     });
 
       createStaticHostButton.setOnAction(e ->
-      {
-         staticDescriptionProperty.set(new HTTPDataServerDescription(staticHostTextField.getText(), Integer.parseInt(staticPortTextField.getText()), null, true));
-      });
+                                         {
+                                            staticDescriptionProperty.set(new HTTPDataServerDescription(staticHostTextField.getText(),
+                                                                                                        Integer.parseInt(staticPortTextField.getText()),
+                                                                                                        null,
+                                                                                                        true));
+                                         });
 
       staticDescriptionProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == null)
-         {
-            staticHostTextField.setText(null);
-            portFormatter.setValue(DEFAULT_PORT);
-         }
-         else
-         {
-            staticHostTextField.setText(newValue.getHost());
-            portFormatter.setValue(newValue.getPort());
-         }
-      });
+                                            {
+                                               if (newValue == null)
+                                               {
+                                                  staticHostTextField.setText(null);
+                                                  portFormatter.setValue(DEFAULT_PORT);
+                                               }
+                                               else
+                                               {
+                                                  staticHostTextField.setText(newValue.getHost());
+                                                  portFormatter.setValue(newValue.getPort());
+                                               }
+                                            });
 
       rootSession.getChildren().addListener(new ListChangeListener<TreeItem<SessionInfo>>()
       {
@@ -167,19 +169,19 @@ public class RemoteSessionManagerController implements SessionControlsController
       discoveryClient = new DataServerDiscoveryClient((FunctionalDataServerDiscoveryListener) connection -> updateConnection(connection), true);
 
       staticDescriptionProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (newValue != null && newValue.getHost() != null)
-         {
-            LogTools.info("Adding description");
-            addDescription(newValue);
-            staticDescriptionProperty.set(null);
-         }
-      });
+                                            {
+                                               if (newValue != null && newValue.getHost() != null)
+                                               {
+                                                  LogTools.info("Adding description");
+                                                  addDescription(newValue);
+                                                  staticDescriptionProperty.set(null);
+                                               }
+                                            });
 
       MenuTools.setupContextMenu(sessionTreeTableView,
-                                        TreeTableViewTools.removeMenuItemFactory(false,
-                                                                                 sessionInfo -> registeredStaticDescriptions.contains(sessionInfo.getDescription()),
-                                                                                 sessionInfo -> registeredStaticDescriptions.remove(sessionInfo.getDescription())));
+                                 TreeTableViewTools.removeMenuItemFactory(false,
+                                                                          sessionInfo -> registeredStaticDescriptions.contains(sessionInfo.getDescription()),
+                                                                          sessionInfo -> registeredStaticDescriptions.remove(sessionInfo.getDescription())));
 
       startSessionButton.setDisable(true);
       endSessionButton.disableProperty().bind(sessionInProgressProperty.not());
@@ -189,26 +191,27 @@ public class RemoteSessionManagerController implements SessionControlsController
       sessionInProgressProperty.addListener((o, oldValue, newValue) -> startSessionButton.setDisable(newValue));
 
       loadingSpinner.disabledProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue)
-            startSessionButton.setDisable(true);
-      });
+                                                    {
+                                                       if (newValue)
+                                                          startSessionButton.setDisable(true);
+                                                    });
 
       sessionTreeTableView.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == null)
-         {
-            startSessionButton.setDisable(true);
-         }
-         else
-         {
-            HTTPDataServerConnection connection = newValue.getValue().getConnection();
-            if (connection == null)
-               startSessionButton.setDisable(true);
-            else
-               startSessionButton.setDisable(!connection.isConnected());
-         }
-      });
+                                                                                  {
+                                                                                     if (newValue == null)
+                                                                                     {
+                                                                                        startSessionButton.setDisable(true);
+                                                                                     }
+                                                                                     else
+                                                                                     {
+                                                                                        HTTPDataServerConnection connection = newValue.getValue()
+                                                                                                                                      .getConnection();
+                                                                                        if (connection == null)
+                                                                                           startSessionButton.setDisable(true);
+                                                                                        else
+                                                                                           startSessionButton.setDisable(!connection.isConnected());
+                                                                                     }
+                                                                                  });
 
       StaticHostListLoader.load().forEach(this::addDescription);
       registeredStaticDescriptions.addListener((ListChangeListener<HTTPDataServerDescription>) c ->
@@ -226,16 +229,16 @@ public class RemoteSessionManagerController implements SessionControlsController
 
       startSessionButton.setOnAction(e -> startSession());
       sessionTreeTableView.setOnMouseClicked(e ->
-      {
-         if (e.getClickCount() != 2)
-            return;
-         startSession();
-      });
+                                             {
+                                                if (e.getClickCount() != 2)
+                                                   return;
+                                                startSession();
+                                             });
 
       endSessionButton.setOnAction(e ->
-      {
-         stopSession();
-      });
+                                   {
+                                      stopSession();
+                                   });
 
       try
       {
@@ -328,17 +331,17 @@ public class RemoteSessionManagerController implements SessionControlsController
       sessionInProgressProperty.set(true);
 
       backgroundExecutorManager.executeInBackground(() ->
-      {
-         try
-         {
-            client.start(DEFAULT_TIMEOUT, selectedItem.getValue().getConnection());
-         }
-         catch (Throwable e)
-         {
-            e.printStackTrace();
-            JavaFXMissingTools.runLater(getClass(), () -> unloadSession());
-         }
-      });
+                                                    {
+                                                       try
+                                                       {
+                                                          client.start(DEFAULT_TIMEOUT, selectedItem.getValue().getConnection());
+                                                       }
+                                                       catch (Throwable e)
+                                                       {
+                                                          e.printStackTrace();
+                                                          JavaFXMissingTools.runLater(getClass(), () -> unloadSession());
+                                                       }
+                                                    });
    }
 
    @Override
@@ -417,10 +420,10 @@ public class RemoteSessionManagerController implements SessionControlsController
    }
 
    private TreeTableColumn<SessionInfo, String> createColumn(String name,
-                                                                double prefWidth,
-                                                                double minWidth,
-                                                                double maxWidth,
-                                                                Function<SessionInfo, StringProperty> fieldProvider)
+                                                             double prefWidth,
+                                                             double minWidth,
+                                                             double maxWidth,
+                                                             Function<SessionInfo, StringProperty> fieldProvider)
    {
       TreeTableColumn<SessionInfo, String> column = new JFXTreeTableColumn<>(name);
       column.setPrefWidth(prefWidth);
@@ -443,14 +446,14 @@ public class RemoteSessionManagerController implements SessionControlsController
       public SessionInfo()
       {
          descriptionProperty.addListener((o, oldValue, newValue) ->
-         {
-            if (newValue != null)
-            {
-               host.set(newValue.getHost());
-               port.set(Integer.toString(newValue.getPort()));
-               updateConnection(connectionProperty.get());
-            }
-         });
+                                         {
+                                            if (newValue != null)
+                                            {
+                                               host.set(newValue.getHost());
+                                               port.set(Integer.toString(newValue.getPort()));
+                                               updateConnection(connectionProperty.get());
+                                            }
+                                         });
 
          connectionProperty.addListener((o, oldValue, newValue) -> updateConnection(newValue));
       }

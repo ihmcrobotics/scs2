@@ -1,11 +1,11 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
-import java.util.List;
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
 
 public class MutableMetadata implements Metadata
 {
    private String name;
-   private List<StringPair> metadata;
+   private MetadataMap metadata;
 
    public MutableMetadata()
    {
@@ -23,12 +23,12 @@ public class MutableMetadata implements Metadata
    }
 
    @Override
-   public List<StringPair> metadata()
+   public MetadataMap metadata()
    {
       return metadata;
    }
 
-   public void setMetadata(List<StringPair> metadata)
+   public void setMetadata(MetadataMap metadata)
    {
       this.metadata = metadata;
    }
@@ -36,11 +36,7 @@ public class MutableMetadata implements Metadata
    @Override
    public long getElementLength()
    {
-      long elementLength = Integer.BYTES + name.length();
-      elementLength += Integer.BYTES;
-      for (int i = 0; i < metadata.size(); i++)
-         elementLength += metadata.get(i).getElementLength();
-      return elementLength;
+      return stringLength(name) + metadata.getElementLength();
    }
 
    @Override

@@ -6,6 +6,8 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
 import java.util.Objects;
 
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
+
 /**
  * Attachment records contain auxiliary artifacts such as text, core dumps, calibration data, or other arbitrary data.
  * Attachment records must not appear within a chunk.
@@ -22,7 +24,7 @@ public interface Attachment extends MCAPElement
    @Override
    default long getElementLength()
    {
-      return 3 * Long.BYTES + 3 * Integer.BYTES + name().length() + mediaType().length() + (int) dataLength();
+      return 3 * Long.BYTES + Integer.BYTES + stringLength(name()) + stringLength(mediaType()) + (int) dataLength();
    }
 
    /** Time at which the attachment was recorded. */

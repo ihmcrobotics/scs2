@@ -75,7 +75,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
 
       try
       {
-         MCAPDataServerServerContent content = new MCAPDataServerServerContent(name, mcapBuilder, logModelProvider, dataServerSettings, registeredBuffers);
          dataProducer = new MCAPWebsocketDataProducer(this, logWatcher, dataServerSettings);
 
          for (int i = 0; i < registeredBuffers.size(); i++)
@@ -100,7 +99,12 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
             }
          }
 
-         dataProducer.setDataServerContent(content);
+         MCAPDataServerServerContent serverContent = new MCAPDataServerServerContent(name,
+                                                                                     mcapBuilder,
+                                                                                     logModelProvider,
+                                                                                     dataServerSettings,
+                                                                                     registeredBuffers);
+         dataProducer.setDataServerContent(serverContent);
          dataProducer.announce();
       }
       catch (IOException e)

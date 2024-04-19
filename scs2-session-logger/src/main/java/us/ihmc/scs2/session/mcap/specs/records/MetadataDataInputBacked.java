@@ -3,7 +3,7 @@ package us.ihmc.scs2.session.mcap.specs.records;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 
-import java.util.List;
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
 
 /**
  * A metadata record contains arbitrary user data in key-value pairs.
@@ -13,7 +13,7 @@ import java.util.List;
 public class MetadataDataInputBacked implements Metadata
 {
    private final String name;
-   private final List<StringPair> metadata;
+   private final MetadataMap metadata;
    private final int metadataLength;
 
    MetadataDataInputBacked(MCAPDataInput dataInput, long elementPosition, long elementLength)
@@ -21,7 +21,7 @@ public class MetadataDataInputBacked implements Metadata
       dataInput.position(elementPosition);
       name = dataInput.getString();
       long start = dataInput.position();
-      metadata = MCAP.parseList(dataInput, StringPair::new); // TODO Looks into postponing the loading of the metadata.
+      metadata = new MetadataMap(dataInput, start);
       metadataLength = (int) (dataInput.position() - start);
       MCAP.checkLength(elementLength, getElementLength());
    }
@@ -29,7 +29,7 @@ public class MetadataDataInputBacked implements Metadata
    @Override
    public long getElementLength()
    {
-      return Integer.BYTES + name.length() + metadataLength;
+      return stringLength(name) + metadataLength;
    }
 
    @Override
@@ -39,7 +39,7 @@ public class MetadataDataInputBacked implements Metadata
    }
 
    @Override
-   public List<StringPair> metadata()
+   public MetadataMap metadata()
    {
       return metadata;
    }

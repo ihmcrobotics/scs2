@@ -1,14 +1,12 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
-import java.util.List;
-
 public class MutableChannel implements Channel
 {
    private int id;
    private int schemaId;
    private String topic;
    private String messageEncoding;
-   private List<StringPair> metadata;
+   private MetadataMap metadata;
 
    @Override
    public int id()
@@ -55,12 +53,12 @@ public class MutableChannel implements Channel
    }
 
    @Override
-   public List<StringPair> metadata()
+   public MetadataMap metadata()
    {
       return metadata;
    }
 
-   public void setMetadata(List<StringPair> metadata)
+   public void setMetadata(MetadataMap metadata)
    {
       this.metadata = metadata;
    }
@@ -68,11 +66,6 @@ public class MutableChannel implements Channel
    @Override
    public long getElementLength()
    {
-      int metadataLength = Integer.BYTES;
-      for (int i = 0; i < metadata.size(); i++)
-      {
-         metadataLength += Integer.BYTES + metadata.get(i).key().length() + Integer.BYTES + metadata.get(i).value().length();
-      }
       return
             // Id
             Short.BYTES
@@ -83,7 +76,7 @@ public class MutableChannel implements Channel
             // Message Encoding
             + Integer.BYTES + messageEncoding.length()
             // Metadata
-            + metadataLength;
+            + metadata.getElementLength();
    }
 
    @Override

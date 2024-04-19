@@ -12,25 +12,20 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.util.CharsetUtil;
-import us.ihmc.robotDataLogger.websocket.HTTPDataServerPaths;
 
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-/**
- * Implementation of the HTTP server providing static resources
- *
- * @author Jesper Smith
- */
-class HTTPMCAPDataServerDescriptionServer extends SimpleChannelInboundHandler<FullHttpRequest>
+public class HTTPMCAPDataServerDescriptionServer extends SimpleChannelInboundHandler<FullHttpRequest>
 {
 
-   private final MCAPDataServerServerContent logServerContent;
+   private final MCAPDataServerServerContent serverContent;
 
-   public HTTPMCAPDataServerDescriptionServer(MCAPDataServerServerContent logServerContent)
+   public HTTPMCAPDataServerDescriptionServer(MCAPDataServerServerContent serverContent)
    {
-      this.logServerContent = logServerContent;
+
+      this.serverContent = serverContent;
    }
 
    @Override
@@ -50,31 +45,12 @@ class HTTPMCAPDataServerDescriptionServer extends SimpleChannelInboundHandler<Fu
          return;
       }
 
-      // Send the index page
-      if ("/".equals(req.uri()) || HTTPDataServerPaths.index.equals(req.uri()))
-      {
-         sendContent(ctx, req, logServerContent.getIndex(), logServerContent.getIndexContentType());
-      }
-      else if (HTTPDataServerPaths.announcement.equals(req.uri()))
-      {
-         sendContent(ctx, req, logServerContent.getAnnouncement(), logServerContent.getAnnouncementContentType());
-      }
-      else if (HTTPDataServerPaths.handshake.equals(req.uri()))
-      {
-         sendContent(ctx, req, logServerContent.getHandshake(), logServerContent.getHandshakeContentType());
-      }
-      else if (logServerContent.hasModel() && HTTPDataServerPaths.model.equals(req.uri()))
-      {
-         sendContent(ctx, req, logServerContent.getModel(), logServerContent.getModelContentType());
-      }
-      else if (logServerContent.hasResourceZip() && HTTPDataServerPaths.resources.equals(req.uri()))
-      {
-         sendContent(ctx, req, logServerContent.getResourceZip(), logServerContent.getResourceZipContentType());
-      }
+      if (MCAPDataServerServerContent.MCAP_STARTER.equals(req.uri()))
+         sendContent(ctx, req, serverContent.getMCAPStarterBuffer(), "application/mcap");
+      else if (serverContent.getRobotModelResourcesBuffer() != null && MCAPDataServerServerContent.ROBOT_MODEL_RESOURCES.equals(req.uri()))
+         sendContent(ctx, req, serverContent.getRobotModelResourcesBuffer(), "application/zip");
       else
-      {
          sendHttpResponse(ctx, req, new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND));
-      }
    }
 
    private static void sendContent(ChannelHandlerContext ctx, FullHttpRequest req, ByteBuf content, String contentType)

@@ -5,6 +5,8 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
 import java.util.Objects;
 
+import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
+
 /**
  * A metadata index record contains the location of a metadata record within the file.
  *
@@ -15,7 +17,7 @@ public interface MetadataIndex extends MCAPElement
    @Override
    default long getElementLength()
    {
-      return 2 * Long.BYTES + Integer.BYTES + name().length();
+      return 2 * Long.BYTES + stringLength(name());
    }
 
    Record metadata();
