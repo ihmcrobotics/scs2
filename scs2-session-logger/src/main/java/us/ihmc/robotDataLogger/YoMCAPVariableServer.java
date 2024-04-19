@@ -42,8 +42,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
    private boolean started = false;
    private boolean stopped = false;
 
-   // Servers
-   private final MCAPWebsocketDataProducer dataProducer;
+   private MCAPWebsocketDataProducer dataProducer;
 
    private volatile long latestTimestamp;
 
@@ -55,8 +54,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
       this.name = mainClazz;
       this.logModelProvider = logModelProvider;
       this.dataServerSettings = dataServerSettings;
-
-      dataProducer = new MCAPWebsocketDataProducer(this, logWatcher, dataServerSettings);
    }
 
    public void setRootRegistryName(String name)
@@ -78,6 +75,9 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
 
       try
       {
+         MCAPDataServerServerContent content = new MCAPDataServerServerContent(name, mcapBuilder, logModelProvider, dataServerSettings, registeredBuffers);
+         dataProducer = new MCAPWebsocketDataProducer(this, logWatcher, dataServerSettings);
+
          for (int i = 0; i < registeredBuffers.size(); i++)
          {
             MCAPRegistrySendBufferBuilder builder = registeredBuffers.get(i);
@@ -99,8 +99,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
                throw new RuntimeException(e);
             }
          }
-
-         MCAPDataServerServerContent content = new MCAPDataServerServerContent(name, mcapBuilder, logModelProvider, dataServerSettings, registeredBuffers);
 
          dataProducer.setDataServerContent(content);
          dataProducer.announce();

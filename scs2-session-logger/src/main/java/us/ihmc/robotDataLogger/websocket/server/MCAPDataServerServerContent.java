@@ -46,7 +46,12 @@ public class MCAPDataServerServerContent
       modelAttachmentRecord = new MutableRecord(createModel(logModelProvider));
       resourcesAttachmentRecord = new MutableRecord(createResources(logModelProvider));
       variableSchemasRecord = new MutableRecord(createVariableSchemas(mcapBuilder));
-      variableChannelsRecord = new MutableRecord(createVariableChannels(mcapBuilder, variables));
+      variableChannelsRecord = new MutableRecord(createVariableChannels());
+      for (MCAPRegistrySendBufferBuilder buffer : registeredBuffers)
+      {
+         MutableChunk chunk = variableChannelsRecord.body();
+         addVariableChannels(mcapBuilder, buffer.getYoRegistry().collectSubtreeVariables(), chunk);
+      }
    }
 
    private static Chunk createVariableSchemas(MCAPBuilder mcapBuilder)
@@ -63,12 +68,11 @@ public class MCAPDataServerServerContent
       return chunk;
    }
 
-   private static Chunk createVariableChannels(MCAPBuilder mcapBuilder, List<YoVariable> variables)
+   private static Chunk createVariableChannels()
    {
       MutableChunk chunk = new MutableChunk();
       chunk.setRecords(new ArrayList<>());
       chunk.setCompression(Compression.NONE);
-      addVariableChannels(mcapBuilder, variables, chunk);
       return chunk;
    }
 

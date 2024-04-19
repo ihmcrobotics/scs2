@@ -18,14 +18,14 @@ class MCAPWebsocketDataServerInitializer extends ChannelInitializer<SocketChanne
 {
    private static final String WEBSOCKET_PATH = "/websocket";
 
-   private final DataServerServerContent logServerContent;
+   private final MCAPDataServerServerContent logServerContent;
    private final MCAPWebsocketDataBroadcaster broadcaster;
    private final VariableChangedListener variableChangedListener;
    private final LogAliveListener logAliveListener;
    private final int dataSize;
    private final int numberOfRegistryBuffers;
 
-   public MCAPWebsocketDataServerInitializer(DataServerServerContent logServerContent,
+   public MCAPWebsocketDataServerInitializer(MCAPDataServerServerContent logServerContent,
                                              MCAPWebsocketDataBroadcaster broadcaster,
                                              VariableChangedListener variableChangedListener,
                                              LogAliveListener logAliveListener,
@@ -49,7 +49,7 @@ class MCAPWebsocketDataServerInitializer extends ChannelInitializer<SocketChanne
       pipeline.addLast(new HttpServerCodec());
       pipeline.addLast(new HttpObjectAggregator(65536));
       pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
-      pipeline.addLast(new HTTPDataServerDescriptionServer(logServerContent));
+      pipeline.addLast(new HTTPMCAPDataServerDescriptionServer(logServerContent));
       pipeline.addLast(new MCAPWebsocketDataServerFrameHandler(broadcaster, dataSize, numberOfRegistryBuffers, variableChangedListener, logAliveListener));
    }
 }
