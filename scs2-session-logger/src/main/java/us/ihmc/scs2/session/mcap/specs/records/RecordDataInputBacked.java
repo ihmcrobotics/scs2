@@ -86,7 +86,7 @@ public class RecordDataInputBacked implements Record
                case STATISTICS -> Statistics.load(dataInput, bodyOffset, bodyLength);
                case MESSAGE_INDEX -> new MessageIndexDataInputBacked(dataInput, bodyOffset, bodyLength);
                case CHANNEL -> Channel.load(dataInput, bodyOffset, bodyLength);
-               case METADATA -> new Metadata(dataInput, bodyOffset, bodyLength);
+               case METADATA -> new MetadataDataInputBacked(dataInput, bodyOffset, bodyLength);
                case ATTACHMENT -> Attachment.load(dataInput, bodyOffset, bodyLength);
                case HEADER -> new Header(dataInput, bodyOffset, bodyLength);
                case FOOTER -> new Footer(dataInput, bodyOffset, bodyLength);

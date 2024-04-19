@@ -4,7 +4,6 @@ import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
@@ -20,7 +19,11 @@ public interface Attachment extends MCAPElement
       return new AttachmentDataInputBacked(dataInput, elementPosition, elementLength);
    }
 
-   ByteBuffer crc32Input();
+   @Override
+   default long getElementLength()
+   {
+      return 3 * Long.BYTES + 3 * Integer.BYTES + name().length() + mediaType().length() + (int) dataLength();
+   }
 
    /** Time at which the attachment was recorded. */
    long logTime();
@@ -34,11 +37,11 @@ public interface Attachment extends MCAPElement
    /** <a href="https://en.wikipedia.org/wiki/Media_type">Media type</a> of the attachment (e.g "text/plain"). */
    String mediaType();
 
-   /** Size in bytes of the attachment data. */
+   /** Size in bytes of the attachment data. Typically equal to {@code this.data().length}. */
    long dataLength();
 
    /** Attachment data. */
-   ByteBuffer data();
+   byte[] data();
 
    /**
     * CRC-32 checksum of the preceding fields in the record.
@@ -54,7 +57,7 @@ public interface Attachment extends MCAPElement
       dataOutput.putString(name());
       dataOutput.putString(mediaType());
       dataOutput.putLong(dataLength());
-      dataOutput.putByteBuffer(data());
+      dataOutput.putBytes(data());
       dataOutput.putUnsignedInt(crc32());
    }
 
@@ -68,7 +71,7 @@ public interface Attachment extends MCAPElement
       crc32.addString(name());
       crc32.addString(mediaType());
       crc32.addLong(dataLength());
-      crc32.addByteBuffer(data());
+      crc32.addBytes(data());
       crc32.addUnsignedInt(crc32());
       return crc32;
    }

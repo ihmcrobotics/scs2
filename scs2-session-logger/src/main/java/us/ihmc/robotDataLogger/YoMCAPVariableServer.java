@@ -8,7 +8,7 @@ import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
 import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
-import us.ihmc.robotDataLogger.websocket.server.DataServerServerContent;
+import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.robotDataLogger.websocket.server.MCAPWebsocketDataProducer;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
@@ -100,7 +100,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
             }
          }
 
-         DataServerServerContent content = new DataServerServerContent(name, new Handshake(), logModelProvider, dataServerSettings);
+         MCAPDataServerServerContent content = new MCAPDataServerServerContent(name, mcapBuilder, logModelProvider, dataServerSettings, registeredBuffers);
 
          dataProducer.setDataServerContent(content);
          dataProducer.announce();

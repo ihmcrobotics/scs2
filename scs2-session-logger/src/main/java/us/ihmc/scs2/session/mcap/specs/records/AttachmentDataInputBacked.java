@@ -15,7 +15,7 @@ class AttachmentDataInputBacked implements Attachment
    private final String mediaType;
    private final long dataLength;
    private final long dataOffset;
-   private WeakReference<ByteBuffer> dataRef;
+   private WeakReference<byte[]> dataRef;
    private final long crc32;
    private final long crc32InputStart;
    private final int crc32InputLength;
@@ -39,13 +39,9 @@ class AttachmentDataInputBacked implements Attachment
       MCAP.checkLength(elementLength, getElementLength());
    }
 
-   @Override
-   public long getElementLength()
-   {
-      return 3 * Long.BYTES + 3 * Integer.BYTES + name.length() + mediaType.length() + (int) dataLength;
-   }
-
-   @Override
+   /**
+    * Retrieves the bytes to use for recomputing the CRC32.
+    */
    public ByteBuffer crc32Input()
    {
       ByteBuffer crc32Input = this.crc32InputRef == null ? null : this.crc32InputRef.get();
@@ -95,13 +91,13 @@ class AttachmentDataInputBacked implements Attachment
    }
 
    @Override
-   public ByteBuffer data()
+   public byte[] data()
    {
-      ByteBuffer data = this.dataRef == null ? null : this.dataRef.get();
+      byte[] data = this.dataRef == null ? null : this.dataRef.get();
 
       if (data == null)
       {
-         data = dataInput.getByteBuffer(dataOffset, (int) dataLength, false);
+         data = dataInput.getBytes(dataOffset, (int) dataLength);
          dataRef = new WeakReference<>(data);
       }
       return data;

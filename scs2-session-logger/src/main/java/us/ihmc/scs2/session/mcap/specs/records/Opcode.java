@@ -89,7 +89,7 @@ public enum Opcode
    /**
     * A metadata record contains arbitrary user data in key-value pairs.
     *
-    * @see Metadata
+    * @see MetadataDataInputBacked
     */
    METADATA(12),
    /**
@@ -163,7 +163,7 @@ public enum Opcode
          return ATTACHMENT_INDEX;
       if (Statistics.class.isAssignableFrom(bodyType))
          return STATISTICS;
-      if (Metadata.class.isAssignableFrom(bodyType))
+      if (MetadataDataInputBacked.class.isAssignableFrom(bodyType))
          return METADATA;
       if (MetadataIndex.class.isAssignableFrom(bodyType))
          return METADATA_INDEX;
