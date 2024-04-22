@@ -22,7 +22,9 @@ import java.util.stream.Collectors;
 @XmlRootElement(name = "YoGraphicGroup")
 public class YoGraphicGroupDefinition extends YoGraphicDefinition
 {
-   /** The list of children the group contains. */
+   /**
+    * The list of children the group contains.
+    */
    private List<YoGraphicDefinition> children;
 
    /**
@@ -208,7 +210,8 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
                   if (subGroup.getName().equals(otherSubGroup.getName()))
                   {
                      children.remove(j);
-                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                     if (otherSubGroup.getChildren() != null)
+                        subGroup.getChildren().addAll(otherSubGroup.getChildren());
                   }
                }
             }
