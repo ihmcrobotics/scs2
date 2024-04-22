@@ -2,10 +2,7 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * A {@code YoGraphicListDefinition} is convenience class that allows to gather several
@@ -17,7 +14,9 @@ import java.util.List;
 @XmlRootElement(name = "YoGraphicList")
 public class YoGraphicListDefinition extends YoGraphicDefinition
 {
-   /** The internal list of yoGraphics. */
+   /**
+    * The internal list of yoGraphics.
+    */
    private List<YoGraphicDefinition> yoGraphics = new ArrayList<>();
 
    /**
@@ -56,7 +55,7 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
    {
       super(other);
       if (other.yoGraphics != null)
-         yoGraphics = other.yoGraphics.stream().map(YoGraphicDefinition::copy).toList();
+         yoGraphics = other.yoGraphics.stream().filter(Objects::nonNull).map(YoGraphicDefinition::copy).toList();
    }
 
    @Override
@@ -158,7 +157,8 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
                   if (subGroup.getName().equals(otherSubGroup.getName()))
                   {
                      yoGraphics.remove(j);
-                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                     if (otherSubGroup.getChildren() != null)
+                        subGroup.getChildren().addAll(otherSubGroup.getChildren());
                   }
                }
             }
