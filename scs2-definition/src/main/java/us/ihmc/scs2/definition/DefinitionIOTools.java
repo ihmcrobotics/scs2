@@ -244,16 +244,22 @@ public class DefinitionIOTools
       }
       else if (yoGraphicDefinition instanceof YoGraphicGroupDefinition yoGraphicGroupDefinition)
       {
-         for (YoGraphicDefinition child : yoGraphicGroupDefinition.getChildren())
+         if (yoGraphicGroupDefinition.getChildren() != null)
          {
-            setResourcesClassLoaderRecursive(file, child);
+            for (YoGraphicDefinition child : yoGraphicGroupDefinition.getChildren())
+            {
+               setResourcesClassLoaderRecursive(file, child);
+            }
          }
       }
       else if (yoGraphicDefinition instanceof YoGraphicListDefinition yoGraphicListDefinition)
       {
-         for (YoGraphicDefinition child : yoGraphicListDefinition.getYoGraphics())
+         if (yoGraphicListDefinition.getYoGraphics() != null)
          {
-            setResourcesClassLoaderRecursive(file, child);
+            for (YoGraphicDefinition child : yoGraphicListDefinition.getYoGraphics())
+            {
+               setResourcesClassLoaderRecursive(file, child);
+            }
          }
       }
    }
@@ -324,16 +330,22 @@ public class DefinitionIOTools
       }
       else if (start instanceof YoGraphicGroupDefinition yoGraphicGroupDefinition)
       {
-         for (YoGraphicDefinition child : yoGraphicGroupDefinition.getChildren())
+         if (yoGraphicGroupDefinition.getChildren() != null)
          {
-            processYoGraphicResources(yoGraphicFile, child, resourcesDirectory);
+            for (YoGraphicDefinition child : yoGraphicGroupDefinition.getChildren())
+            {
+               processYoGraphicResources(yoGraphicFile, child, resourcesDirectory);
+            }
          }
       }
       else if (start instanceof YoGraphicListDefinition yoGraphicListDefinition)
       {
-         for (YoGraphicDefinition child : yoGraphicListDefinition.getYoGraphics())
+         if (yoGraphicListDefinition.getYoGraphics() != null)
          {
-            processYoGraphicResources(yoGraphicFile, child, resourcesDirectory);
+            for (YoGraphicDefinition child : yoGraphicListDefinition.getYoGraphics())
+            {
+               processYoGraphicResources(yoGraphicFile, child, resourcesDirectory);
+            }
          }
       }
    }
@@ -578,20 +590,29 @@ public class DefinitionIOTools
    private static void processResources(File baseFile, RigidBodyDefinition rigidBody, File resourceDirectory, ClassLoader defaultClassLoader)
          throws IOException, URISyntaxException
    {
-      for (VisualDefinition visualDefinition : rigidBody.getVisualDefinitions())
+      if (rigidBody.getVisualDefinitions() != null)
       {
-         processResources(baseFile, visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
-         processResources(baseFile, visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         for (VisualDefinition visualDefinition : rigidBody.getVisualDefinitions())
+         {
+            processResources(baseFile, visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+            processResources(baseFile, visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
 
-      for (CollisionShapeDefinition collisionShapeDefinition : rigidBody.getCollisionShapeDefinitions())
+      if (rigidBody.getCollisionShapeDefinitions() != null)
       {
-         processResources(baseFile, collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         for (CollisionShapeDefinition collisionShapeDefinition : rigidBody.getCollisionShapeDefinitions())
+         {
+            processResources(baseFile, collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
 
-      for (JointDefinition jointDefinition : rigidBody.getChildrenJoints())
+      if (rigidBody.getChildrenJoints() != null)
       {
-         processResources(baseFile, jointDefinition.getSuccessor(), resourceDirectory, defaultClassLoader);
+         for (JointDefinition jointDefinition : rigidBody.getChildrenJoints())
+         {
+            processResources(baseFile, jointDefinition.getSuccessor(), resourceDirectory, defaultClassLoader);
+         }
       }
    }
 
@@ -611,15 +632,21 @@ public class DefinitionIOTools
    {
       TerrainObjectDefinition copy = new TerrainObjectDefinition(terrainObjectDefinition);
 
-      for (VisualDefinition visualDefinition : copy.getVisualDefinitions())
+      if (copy.getVisualDefinitions() != null)
       {
-         processResources(terrainObjectFile, visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
-         processResources(terrainObjectFile, visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         for (VisualDefinition visualDefinition : copy.getVisualDefinitions())
+         {
+            processResources(terrainObjectFile, visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+            processResources(terrainObjectFile, visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
 
-      for (CollisionShapeDefinition collisionShapeDefinition : copy.getCollisionShapeDefinitions())
+      if (copy.getCollisionShapeDefinitions() != null)
       {
-         processResources(terrainObjectFile, collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         for (CollisionShapeDefinition collisionShapeDefinition : copy.getCollisionShapeDefinitions())
+         {
+            processResources(terrainObjectFile, collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
    }
 
