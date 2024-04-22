@@ -171,16 +171,9 @@ public class HTTPMCAPDataServerConnection
       connectFuture.addListener((f) ->
                                 {
                                    if (f.isSuccess())
-                                   {
                                       connected(((ChannelFuture) f.sync()).channel());
-                                   }
                                    else
-                                   {
-                                      group.shutdownGracefully().addListener(e ->
-                                                                             {
-                                                                                listener.connectionRefused(target);
-                                                                             });
-                                   }
+                                      group.shutdownGracefully().addListener(e -> listener.connectionRefused(target));
                                 });
    }
 
@@ -303,7 +296,7 @@ public class HTTPMCAPDataServerConnection
       {
          if (msg instanceof HttpResponse || msg instanceof HttpContent)
          {
-            if (requestFuture == null || requestFuture.isDone())
+            if (requestFuture == null || (requestFuture.isDone() && !requestFuture.isCompletedExceptionally()))
             {
                throw new IOException("HTTP response received without matching request");
             }

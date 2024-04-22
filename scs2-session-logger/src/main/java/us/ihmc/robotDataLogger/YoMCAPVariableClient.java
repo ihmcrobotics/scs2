@@ -6,10 +6,13 @@ import us.ihmc.robotDataLogger.websocket.client.MCAPWebsocketDataConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
 import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.Attachment;
 import us.ihmc.scs2.session.mcap.specs.records.Metadata;
+import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.io.IOException;
@@ -34,7 +37,8 @@ public class YoMCAPVariableClient
 
    // Callbacks
    private TimestampListener timestampListener;
-   private MCAPRecordConsumer recordConsumer;
+   private MCAPConsumer starterMCAPConsumer;
+   private MCAPSingleRecordConsumer recordConsumer;
    private ConnectionStateListener connectionStateListener;
 
    public YoMCAPVariableClient()
@@ -46,7 +50,12 @@ public class YoMCAPVariableClient
       this.timestampListener = timestampListener;
    }
 
-   public void setRecordConsumer(MCAPRecordConsumer recordConsumer)
+   public void setStarterMCAPConsumer(MCAPConsumer starterMCAPConsumer)
+   {
+      this.starterMCAPConsumer = starterMCAPConsumer;
+   }
+
+   public void setRecordConsumer(MCAPSingleRecordConsumer recordConsumer)
    {
       this.recordConsumer = recordConsumer;
    }
@@ -95,19 +104,17 @@ public class YoMCAPVariableClient
 
       dataConsumer = new MCAPWebsocketDataConsumer(connection, timeout);
       serverName = ((Metadata) mcapStarter.findMetadata(MCAPDataServerServerContent.ANNOUNCEMENT_METADATA_NAME).get(0).body()).metadata().get("name");
-      connectToSession();
-   }
 
-   void connectToSession() throws IOException
-   {
       if (dataConsumer.isSessionActive())
-      {
          throw new RuntimeException("Client already connected");
-      }
       if (dataConsumer.isClosed())
-      {
          throw new RuntimeException("Client has closed completely");
-      }
+
+      int insertionPoint = mcapStarter.records().indexOf(mcapStarter.dataEnd());
+      Attachment resourceAttachment = dataConsumer.getResourceAttachment();
+      if (resourceAttachment != null)
+         mcapStarter.records().add(insertionPoint, new MutableRecord(resourceAttachment));
+      receivedStarterMCAP(mcapStarter);
       dataConsumer.startSession(this::receivedTimestamp, this::receivedRecord, new ConnectionStateListener()
       {
          @Override
@@ -156,6 +163,14 @@ public class YoMCAPVariableClient
       if (timestampListener != null)
       {
          timestampListener.receivedTimestampOnly(timestamp);
+      }
+   }
+
+   private void receivedStarterMCAP(MCAP mcap)
+   {
+      if (starterMCAPConsumer != null)
+      {
+         starterMCAPConsumer.accept(mcap);
       }
    }
 

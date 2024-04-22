@@ -27,7 +27,7 @@ import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConn
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
 
 import java.io.IOException;
 import java.net.URI;
@@ -51,7 +51,7 @@ public class MCAPWebsocketDataServerClient
 
    public MCAPWebsocketDataServerClient(HTTPMCAPDataServerConnection connection,
                                         TimestampListener timestampListener,
-                                        MCAPRecordConsumer mcapRecordConsumer,
+                                        MCAPSingleRecordConsumer mcapSingleRecordConsumer,
                                         ConnectionStateListener connectionStateListener,
                                         int timeoutInMs) throws IOException
    {
@@ -68,7 +68,7 @@ public class MCAPWebsocketDataServerClient
          throw new IOException(e);
       }
 
-      consumer = new MCAPRegistryConsumer(mcapRecordConsumer, connectionStateListener);
+      consumer = new MCAPRegistryConsumer(mcapSingleRecordConsumer, connectionStateListener);
       udpTimestampClient = new UDPTimestampClient(timestampListener);
       udpTimestampClient.start();
 

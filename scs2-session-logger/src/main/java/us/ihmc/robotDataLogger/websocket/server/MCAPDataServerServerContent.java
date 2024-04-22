@@ -1,7 +1,6 @@
 package us.ihmc.robotDataLogger.websocket.server;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
@@ -44,6 +43,8 @@ public class MCAPDataServerServerContent
    public static final String MCAP_STARTER = "/mcap_starter.mcap";
    public static final String ROBOT_MODEL_RESOURCES = "/robot_model_resources.zip";
    public static final String ANNOUNCEMENT_METADATA_NAME = "announcement";
+   public static final String MODEL_URDF = "model/urdf";
+   public static final String MODEL_SDF = "model/sdf";
 
    private final ByteBuf mcapStarterBuffer;
    private final ByteBuf robotModelResourcesBuffer;
@@ -67,12 +68,12 @@ public class MCAPDataServerServerContent
       mcap.add(Magic.INSTANCE);
       mcap.add(new MutableRecord(new Header(MCAP_PROFILE, MCAP_LIBRARY)));
       mcap.add(new MutableRecord(createAnnouncement(name, dataServerSettings.isLogSession())));
-      //      mcap.add(new MutableRecord(createVariableSchemas(mcapBuilder)));
-      //      mcap.add(variableChannelsRecord);
-      //      if (modelAttachment != null)
-      //         mcap.add(new MutableRecord(modelAttachment));
+      mcap.add(new MutableRecord(createVariableSchemas(mcapBuilder)));
+      mcap.add(variableChannelsRecord);
+      if (modelAttachment != null)
+         mcap.add(new MutableRecord(modelAttachment));
       MCAPCRC32Helper crc32Helper = new MCAPCRC32Helper();
-      //      mcap.forEach(element -> element.updateCRC(crc32Helper));
+      mcap.forEach(element -> element.updateCRC(crc32Helper));
       mcap.add(new MutableRecord(new DataEnd(crc32Helper.getValue())));
       mcap.add(new MutableRecord(new Footer()));
       mcap.add(Magic.INSTANCE);
@@ -83,10 +84,19 @@ public class MCAPDataServerServerContent
       }
       mcapStarterBuffer = output.getBuffer();
 
-      if (logModelProvider != null && logModelProvider.getResourceZip() != null)
-         robotModelResourcesBuffer = Unpooled.wrappedBuffer(logModelProvider.getResourceZip());
+      // Separate resources as they can be quite large
+      Attachment resourcesAttachment = createResources(logModelProvider);
+
+      if (resourcesAttachment != null)
+      {
+         MCAPNettyByteBufDataOutput resourcesOutput = new MCAPNettyByteBufDataOutput(false);
+         resourcesAttachment.write(resourcesOutput);
+         robotModelResourcesBuffer = resourcesOutput.getBuffer();
+      }
       else
+      {
          robotModelResourcesBuffer = null;
+      }
    }
 
    private static Chunk createVariableSchemas(MCAPBuilder mcapBuilder)
@@ -151,28 +161,30 @@ public class MCAPDataServerServerContent
       MutableAttachment attachment = new MutableAttachment();
       attachment.setName(logModelProvider.getModelName());
       if (logModelProvider.getLoader() == null || logModelProvider.getLoader().getSimpleName().toLowerCase().contains("urdf"))
-         attachment.setMediaType("model/urdf");
+         attachment.setMediaType(MODEL_URDF);
       else
-         attachment.setMediaType("model/sdf");
+         attachment.setMediaType(MODEL_SDF);
 
       attachment.setDataLength(logModelProvider.getModel().length);
       attachment.setData(logModelProvider.getModel());
-
-      computeAttachmentCRC32(attachment);
+      attachment.setCRC32(attachment.updateCRC(null).getValue());
 
       return attachment;
    }
 
-   private static void computeAttachmentCRC32(MutableAttachment attachment)
+   private static Attachment createResources(LogModelProvider logModelProvider)
    {
-      MCAPCRC32Helper crc32Helper = new MCAPCRC32Helper();
-      crc32Helper.addLong(attachment.logTime());
-      crc32Helper.addLong(attachment.createTime());
-      crc32Helper.addString(attachment.name());
-      crc32Helper.addString(attachment.mediaType());
-      crc32Helper.addLong(attachment.dataLength());
-      crc32Helper.addBytes(attachment.data());
-      attachment.setCRC32(crc32Helper.getValue());
+      if (logModelProvider == null || logModelProvider.getResourceZip() == null || logModelProvider.getResourceZip().length == 0)
+         return null;
+
+      MutableAttachment attachment = new MutableAttachment();
+      attachment.setName(logModelProvider.getModelName() + "-resources.zip");
+      attachment.setMediaType("application/zip");
+      attachment.setDataLength(logModelProvider.getResourceZip().length);
+      attachment.setData(logModelProvider.getResourceZip());
+      attachment.setCRC32(attachment.updateCRC(null).getValue());
+
+      return attachment;
    }
 
    public ByteBuf getMCAPStarterBuffer()

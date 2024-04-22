@@ -2,7 +2,11 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicListDefinition} is convenience class that allows to gather several

@@ -4,6 +4,7 @@ import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
@@ -87,7 +88,7 @@ public interface Attachment extends MCAPElement
       out += "\n\t-name = " + name();
       out += "\n\t-mediaType = " + mediaType();
       out += "\n\t-dataLength = " + dataLength();
-      out += "\n\t-data = " + data();
+      out += "\n\t-data = " + Arrays.toString(data());
       out += "\n\t-crc32 = " + crc32();
       return MCAPElement.indent(out, indent);
    }
@@ -110,7 +111,7 @@ public interface Attachment extends MCAPElement
             return false;
          if (dataLength() != other.dataLength())
             return false;
-         if (!data().equals(other.data()))
+         if (!Arrays.equals(data(), other.data()))
             return false;
          return crc32() == other.crc32();
       }

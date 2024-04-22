@@ -51,7 +51,8 @@ public class YoMCAPServerClientTest
 
       YoMCAPVariableClient client = new YoMCAPVariableClient();
       //      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
-      client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
+      client.setStarterMCAPConsumer((mcap) -> System.out.println("Received starter MCAP: " + mcap));
+      //      client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
       client.setConnectionStateListener(new ConnectionStateListener()
       {
          @Override

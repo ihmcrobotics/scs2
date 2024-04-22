@@ -15,6 +15,15 @@ public interface MCAPElement
 
    void write(MCAPDataOutput dataOutput);
 
+   /**
+    * Update the CRC32 with the data of this element.
+    * <p>
+    * Note that this method only the given {@code crc32}, it does not modify this element.
+    * </p>
+    *
+    * @param crc32 the CRC32 to update.
+    * @return the updated CRC32 or a new instance of {@code MCAPCRC32Helper} if {@code crc32} is {@code null}.
+    */
    MCAPCRC32Helper updateCRC(MCAPCRC32Helper crc32);
 
    long getElementLength();

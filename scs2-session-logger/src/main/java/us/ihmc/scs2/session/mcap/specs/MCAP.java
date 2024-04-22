@@ -139,6 +139,12 @@ public class MCAP
       return result;
    }
 
+   @Override
+   public String toString()
+   {
+      return getClass().getSimpleName() + ":\n" + records;
+   }
+
    public static <T extends MCAPElement> List<T> parseList(MCAPDataInput dataInput, MCAPDataReader<T> elementParser)
    {
       return parseList(dataInput, elementParser, dataInput.getUnsignedInt());
