@@ -75,7 +75,6 @@ public interface Attachment extends MCAPElement
       crc32.addString(mediaType());
       crc32.addLong(dataLength());
       crc32.addBytes(data());
-      crc32.addUnsignedInt(crc32());
       return crc32;
    }
 

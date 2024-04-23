@@ -12,7 +12,7 @@ import us.ihmc.scs2.session.mcap.specs.MCAP;
  */
 public class DataEnd implements MCAPElement
 {
-   private final long dataSectionCRC32;
+   private long dataSectionCRC32;
 
    public DataEnd(MCAPDataInput dataInput, long elementPosition, long elementLength)
    {
@@ -22,6 +22,11 @@ public class DataEnd implements MCAPElement
    }
 
    public DataEnd(long dataSectionCRC32)
+   {
+      this.dataSectionCRC32 = dataSectionCRC32;
+   }
+
+   public void setDataSectionCRC32(long dataSectionCRC32)
    {
       this.dataSectionCRC32 = dataSectionCRC32;
    }

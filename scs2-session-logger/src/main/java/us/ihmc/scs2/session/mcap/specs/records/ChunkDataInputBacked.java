@@ -1,8 +1,6 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
-import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
-import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 
 import java.lang.ref.WeakReference;
@@ -56,8 +54,8 @@ public class ChunkDataInputBacked implements Chunk
       this.elementLength = elementLength;
 
       dataInput.position(elementPosition);
-      messageStartTime = MCAP.checkPositiveLong(dataInput.getLong(), "messageStartTime");
-      messageEndTime = MCAP.checkPositiveLong(dataInput.getLong(), "messageEndTime");
+      messageStartTime = dataInput.getLong();
+      messageEndTime = dataInput.getLong();
       recordsUncompressedLength = MCAP.checkPositiveLong(dataInput.getLong(), "recordsUncompressedLength");
       uncompressedCRC32 = dataInput.getUnsignedInt();
       compression = Compression.fromString(dataInput.getString());
@@ -160,33 +158,6 @@ public class ChunkDataInputBacked implements Chunk
 
       recordsRef = new WeakReference<>(records);
       return records;
-   }
-
-   @Override
-   public void write(MCAPDataOutput dataOutput)
-   {
-      dataOutput.putLong(messageStartTime);
-      dataOutput.putLong(messageEndTime);
-      dataOutput.putLong(recordsUncompressedLength);
-      dataOutput.putUnsignedInt(uncompressedCRC32);
-      dataOutput.putString(compression.getName());
-      dataOutput.putLong(recordsCompressedLength);
-      dataOutput.putByteBuffer(dataInput.getByteBuffer(recordsOffset, (int) recordsCompressedLength, false));
-   }
-
-   @Override
-   public MCAPCRC32Helper updateCRC(MCAPCRC32Helper crc32)
-   {
-      if (crc32 == null)
-         crc32 = new MCAPCRC32Helper();
-      crc32.addLong(messageStartTime);
-      crc32.addLong(messageEndTime);
-      crc32.addLong(recordsUncompressedLength);
-      crc32.addUnsignedInt(uncompressedCRC32);
-      crc32.addString(compression.getName());
-      crc32.addLong(recordsCompressedLength);
-      crc32.addByteBuffer(dataInput.getByteBuffer(recordsOffset, (int) recordsCompressedLength, false));
-      return crc32;
    }
 
    @Override

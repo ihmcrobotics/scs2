@@ -28,8 +28,8 @@ public class ChunkIndexDataInputBacked implements ChunkIndex
       this.elementLength = elementLength;
 
       dataInput.position(elementPosition);
-      messageStartTime = MCAP.checkPositiveLong(dataInput.getLong(), "messageStartTime");
-      messageEndTime = MCAP.checkPositiveLong(dataInput.getLong(), "messageEndTime");
+      messageStartTime = dataInput.getLong();
+      messageEndTime = dataInput.getLong();
       chunkOffset = MCAP.checkPositiveLong(dataInput.getLong(), "chunkOffset");
       chunkLength = MCAP.checkPositiveLong(dataInput.getLong(), "chunkLength");
       messageIndexOffsetsLength = dataInput.getUnsignedInt();

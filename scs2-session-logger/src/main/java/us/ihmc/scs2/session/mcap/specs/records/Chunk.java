@@ -2,7 +2,9 @@ package us.ihmc.scs2.session.mcap.specs.records;
 
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
+import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -66,6 +68,12 @@ public interface Chunk extends MCAPElement
    default ByteBuffer getRecordsCompressedBuffer()
    {
       return getRecordsCompressedBuffer(false);
+   }
+
+   @Override
+   default long getElementLength()
+   {
+      return 4 * Long.BYTES + Integer.BYTES + compression().getLength() + recordsCompressedLength();
    }
 
    ByteBuffer getRecordsCompressedBuffer(boolean directBuffer);
@@ -136,5 +144,34 @@ public interface Chunk extends MCAPElement
       croppedChunk.setCompression(compression());
 
       return croppedChunk;
+   }
+
+   @Override
+   default void write(MCAPDataOutput dataOutput)
+   {
+      dataOutput.putLong(messageStartTime());
+      dataOutput.putLong(messageEndTime());
+      dataOutput.putLong(recordsUncompressedLength());
+      dataOutput.putUnsignedInt(uncompressedCRC32());
+      dataOutput.putString(compression().getName());
+      ByteBuffer recordsCompressedBuffer = getRecordsCompressedBuffer();
+      dataOutput.putLong(recordsCompressedBuffer.remaining());
+      dataOutput.putByteBuffer(recordsCompressedBuffer);
+   }
+
+   @Override
+   default MCAPCRC32Helper updateCRC(MCAPCRC32Helper crc32)
+   {
+      if (crc32 == null)
+         crc32 = new MCAPCRC32Helper();
+      crc32.addLong(messageStartTime());
+      crc32.addLong(messageEndTime());
+      crc32.addLong(recordsUncompressedLength());
+      crc32.addUnsignedInt(uncompressedCRC32());
+      crc32.addString(compression().getName());
+      ByteBuffer recordsCompressedBuffer = getRecordsCompressedBuffer();
+      crc32.addLong(recordsCompressedBuffer.remaining());
+      crc32.addByteBuffer(recordsCompressedBuffer);
+      return crc32;
    }
 }

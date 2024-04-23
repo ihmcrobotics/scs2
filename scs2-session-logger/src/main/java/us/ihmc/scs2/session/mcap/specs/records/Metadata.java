@@ -13,6 +13,12 @@ public interface Metadata extends MCAPElement
    MetadataMap metadata();
 
    @Override
+   default long getElementLength()
+   {
+      return MCAPElement.stringLength(name()) + metadata().getElementLength();
+   }
+
+   @Override
    default void write(MCAPDataOutput dataOutput)
    {
       dataOutput.putString(name());

@@ -1,7 +1,5 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
-import static us.ihmc.scs2.session.mcap.specs.records.MCAPElement.stringLength;
-
 public class MutableMetadata implements Metadata
 {
    private String name;
@@ -31,12 +29,6 @@ public class MutableMetadata implements Metadata
    public void setMetadata(MetadataMap metadata)
    {
       this.metadata = metadata;
-   }
-
-   @Override
-   public long getElementLength()
-   {
-      return stringLength(name) + metadata.getElementLength();
    }
 
    @Override

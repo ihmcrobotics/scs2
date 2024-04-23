@@ -1,7 +1,7 @@
 package us.ihmc.robotDataLogger.websocket.dataBuffers;
 
 import us.ihmc.commons.thread.ThreadTools;
-import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.util.concurrent.PriorityBlockingQueue;
@@ -81,7 +81,7 @@ public class MCAPRegistryConsumer extends Thread
 
    public interface MCAPConsumer
    {
-      void accept(MCAP newMCAP);
+      void accept(WebsocketMCAPStarter newMCAP);
    }
 
    public interface MCAPSingleRecordConsumer

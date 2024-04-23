@@ -28,7 +28,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import us.ihmc.robotDataLogger.util.NettyUtils;
 import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
-import us.ihmc.scs2.session.mcap.specs.MCAP;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +41,7 @@ public class HTTPMCAPDataServerConnection
    private final EventLoopGroup group = NettyUtils.createEventGroundLoop();
    private final HTTPDataServerDescription target;
    private final HTTPDataServerConnectionListener listener;
-   private MCAP mcapStarter;
+   private WebsocketMCAPStarter mcapStarter;
 
    private Channel channel;
 
@@ -182,7 +181,15 @@ public class HTTPMCAPDataServerConnection
       this.channel = channel;
       requestResource(MCAPDataServerServerContent.MCAP_STARTER, buffer ->
       {
-         mcapStarter = MCAP.load(MCAPDataInput.wrap(buffer));
+         try
+         {
+            mcapStarter = new WebsocketMCAPStarter(MCAPDataInput.wrap(buffer));
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+            throw e;
+         }
          listener.connected(this);
       });
    }
@@ -265,7 +272,7 @@ public class HTTPMCAPDataServerConnection
       return target;
    }
 
-   public MCAP getMCAPStarter()
+   public WebsocketMCAPStarter getMCAPStarter()
    {
       return mcapStarter;
    }

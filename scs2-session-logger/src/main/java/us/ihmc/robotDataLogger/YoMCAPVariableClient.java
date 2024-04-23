@@ -4,16 +4,12 @@ import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.DaemonThreadFactory;
 import us.ihmc.robotDataLogger.websocket.client.MCAPWebsocketDataConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
+import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPConsumer;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
-import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
-import us.ihmc.scs2.session.mcap.specs.MCAP;
-import us.ihmc.scs2.session.mcap.specs.records.Attachment;
-import us.ihmc.scs2.session.mcap.specs.records.Metadata;
-import us.ihmc.scs2.session.mcap.specs.records.MetadataMap;
-import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
+import us.ihmc.robotDataLogger.websocket.server.WebsocketAnnouncementMetadata;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.io.IOException;
@@ -101,18 +97,15 @@ public class YoMCAPVariableClient
          throw new RuntimeException("Client already started");
       }
 
-      MCAP mcapStarter = connection.getMCAPStarter();
+      WebsocketMCAPStarter mcapStarter = connection.getMCAPStarter();
 
       dataConsumer = new MCAPWebsocketDataConsumer(connection, timeout);
-      MetadataMap announcementMetadata = ((Metadata) mcapStarter.findMetadata(MCAPDataServerServerContent.ANNOUNCEMENT_METADATA_NAME).get(0).body()).metadata();
-      serverName = announcementMetadata.get("name");
+      WebsocketAnnouncementMetadata announcementMetadata = mcapStarter.announcementMetadata();
+      serverName = announcementMetadata.getServerName();
 
-      if (Boolean.parseBoolean(announcementMetadata.get("hasResources")))
-      {
-         int insertionPoint = mcapStarter.records().indexOf(mcapStarter.dataEnd());
-         Attachment resourceAttachment = dataConsumer.getResourceAttachment();
-         mcapStarter.records().add(insertionPoint, new MutableRecord(resourceAttachment));
-      }
+      if (announcementMetadata.hasResources())
+         mcapStarter.setResourcesAttachment(dataConsumer.getResourceAttachment());
+
       receivedStarterMCAP(mcapStarter);
 
       if (dataConsumer.isSessionActive())
@@ -171,7 +164,7 @@ public class YoMCAPVariableClient
       }
    }
 
-   private void receivedStarterMCAP(MCAP mcap)
+   private void receivedStarterMCAP(WebsocketMCAPStarter mcap)
    {
       if (starterMCAPConsumer != null)
       {
