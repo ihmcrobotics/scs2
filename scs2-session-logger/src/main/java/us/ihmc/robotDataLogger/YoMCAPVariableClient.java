@@ -12,6 +12,7 @@ import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 import us.ihmc.scs2.session.mcap.specs.records.Attachment;
 import us.ihmc.scs2.session.mcap.specs.records.Metadata;
+import us.ihmc.scs2.session.mcap.specs.records.MetadataMap;
 import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 
@@ -103,18 +104,22 @@ public class YoMCAPVariableClient
       MCAP mcapStarter = connection.getMCAPStarter();
 
       dataConsumer = new MCAPWebsocketDataConsumer(connection, timeout);
-      serverName = ((Metadata) mcapStarter.findMetadata(MCAPDataServerServerContent.ANNOUNCEMENT_METADATA_NAME).get(0).body()).metadata().get("name");
+      MetadataMap announcementMetadata = ((Metadata) mcapStarter.findMetadata(MCAPDataServerServerContent.ANNOUNCEMENT_METADATA_NAME).get(0).body()).metadata();
+      serverName = announcementMetadata.get("name");
+
+      if (Boolean.parseBoolean(announcementMetadata.get("hasResources")))
+      {
+         int insertionPoint = mcapStarter.records().indexOf(mcapStarter.dataEnd());
+         Attachment resourceAttachment = dataConsumer.getResourceAttachment();
+         mcapStarter.records().add(insertionPoint, new MutableRecord(resourceAttachment));
+      }
+      receivedStarterMCAP(mcapStarter);
 
       if (dataConsumer.isSessionActive())
          throw new RuntimeException("Client already connected");
       if (dataConsumer.isClosed())
          throw new RuntimeException("Client has closed completely");
 
-      int insertionPoint = mcapStarter.records().indexOf(mcapStarter.dataEnd());
-      Attachment resourceAttachment = dataConsumer.getResourceAttachment();
-      if (resourceAttachment != null)
-         mcapStarter.records().add(insertionPoint, new MutableRecord(resourceAttachment));
-      receivedStarterMCAP(mcapStarter);
       dataConsumer.startSession(this::receivedTimestamp, this::receivedRecord, new ConnectionStateListener()
       {
          @Override

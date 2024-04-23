@@ -67,7 +67,7 @@ public class MCAPDataServerServerContent
       List<MCAPElement> mcap = new ArrayList<>();
       mcap.add(Magic.INSTANCE);
       mcap.add(new MutableRecord(new Header(MCAP_PROFILE, MCAP_LIBRARY)));
-      mcap.add(new MutableRecord(createAnnouncement(name, dataServerSettings.isLogSession())));
+      mcap.add(new MutableRecord(createAnnouncement(name, logModelProvider, dataServerSettings.isLogSession())));
       mcap.add(new MutableRecord(createVariableSchemas(mcapBuilder)));
       mcap.add(variableChannelsRecord);
       if (modelAttachment != null)
@@ -129,7 +129,7 @@ public class MCAPDataServerServerContent
       }
    }
 
-   private static Metadata createAnnouncement(String name, boolean logSession)
+   private static Metadata createAnnouncement(String name, LogModelProvider logModelProvider, boolean logSession)
    {
       MutableMetadata metadata = new MutableMetadata();
       metadata.setName(ANNOUNCEMENT_METADATA_NAME);
@@ -137,6 +137,10 @@ public class MCAPDataServerServerContent
       metadataMap.put("name", name);
       metadataMap.put("logSession", Boolean.toString(logSession));
       metadataMap.put("hostName", getHostName());
+      boolean hasRobotModel = logModelProvider != null && logModelProvider.getModel() != null && logModelProvider.getModel().length > 0;
+      metadataMap.put("hasRobotModel", Boolean.toString(hasRobotModel));
+      boolean hasResources = logModelProvider != null && logModelProvider.getResourceZip() != null && logModelProvider.getResourceZip().length > 0;
+      metadataMap.put("hasResources", Boolean.toString(hasResources));
       metadata.setMetadata(metadataMap);
       return metadata;
    }

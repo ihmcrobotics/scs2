@@ -76,7 +76,7 @@ public class HTTPMCAPDataServerConnection
        *
        * @param target
        */
-      public void connectionRefused(HTTPDataServerDescription target);
+      void connectionRefused(HTTPDataServerDescription target);
 
       /**
        * The channel is closed and all threads have shut down.
@@ -294,22 +294,18 @@ public class HTTPMCAPDataServerConnection
       @Override
       protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception
       {
-         if (msg instanceof HttpResponse || msg instanceof HttpContent)
+         if (!(msg instanceof HttpResponse) && !(msg instanceof HttpContent))
+            return;
+
+         if (requestFuture == null || requestFuture.isDone())
          {
-            if (requestFuture == null || (requestFuture.isDone() && !requestFuture.isCompletedExceptionally()))
-            {
-               throw new IOException("HTTP response received without matching request");
-            }
+            throw new IOException("HTTP response received without matching request: " + msg.getClass().getSimpleName() + " " + msg);
+         }
 
-            if (msg instanceof HttpResponse response)
+         if (msg instanceof HttpResponse response)
+         {
+            if (response.status() == HttpResponseStatus.OK)
             {
-               if (response.status() != HttpResponseStatus.OK)
-               {
-                  requestFuture.completeExceptionally(new IOException("Invalid response received " + response.status()));
-                  ctx.close();
-                  return;
-               }
-
                int contentLength = response.headers().getInt("content-length", 0);
                if (contentLength <= 0)
                {
@@ -320,25 +316,44 @@ public class HTTPMCAPDataServerConnection
 
                requestedBuffer = Unpooled.buffer(contentLength);
             }
-            if (msg instanceof HttpContent content)
+            else if (response.status() == HttpResponseStatus.NO_CONTENT)
             {
+               requestedBuffer = null;
+            }
+            else
+            {
+               requestFuture.completeExceptionally(new IOException("Invalid response received " + response.status()));
+               ctx.close();
+               return;
+            }
+         }
 
-               if (requestedBuffer.isWritable(content.content().readableBytes()))
+         if (msg instanceof HttpContent content)
+         {
+            if (requestedBuffer == null)
+            {
+               if (content.content().readableBytes() != 0)
                {
-                  requestedBuffer.writeBytes(content.content());
-               }
-               else
-               {
-                  requestFuture.completeExceptionally(new IOException("Content-length exceeds allocated space"));
+                  requestFuture.completeExceptionally(new IOException("Expected empty content"));
                   ctx.close();
                   return;
                }
+            }
+            else if (requestedBuffer.isWritable(content.content().readableBytes()))
+            {
+               requestedBuffer.writeBytes(content.content());
+            }
+            else
+            {
+               requestFuture.completeExceptionally(new IOException("Content-length exceeds allocated space"));
+               ctx.close();
+               return;
+            }
 
-               if (content instanceof LastHttpContent)
-               {
-                  requestFuture.complete(requestedBuffer);
-                  requestedBuffer = null;
-               }
+            if (content instanceof LastHttpContent)
+            {
+               requestFuture.complete(requestedBuffer);
+               requestedBuffer = null;
             }
          }
       }
@@ -363,36 +378,5 @@ public class HTTPMCAPDataServerConnection
          cause.printStackTrace();
          ctx.close();
       }
-   }
-
-   public static void main(String[] args)
-   {
-      new HTTPMCAPDataServerConnection(new HTTPDataServerDescription("127.0.0.1", 8008, null, false), new HTTPDataServerConnectionListener()
-      {
-
-         @Override
-         public void disconnected(HTTPMCAPDataServerConnection connection)
-         {
-            System.out.println("Disconnected");
-         }
-
-         @Override
-         public void connectionRefused(HTTPDataServerDescription target)
-         {
-            System.out.println("Connection refused");
-         }
-
-         @Override
-         public void connected(HTTPMCAPDataServerConnection connection)
-         {
-            System.out.println("Connected");
-         }
-
-         @Override
-         public void closed(HTTPMCAPDataServerConnection httpDataServerConnection)
-         {
-            System.out.println("Connection closed");
-         }
-      });
    }
 }

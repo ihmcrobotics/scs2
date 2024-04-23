@@ -47,7 +47,7 @@ public class HTTPMCAPDataServerDescriptionServer extends SimpleChannelInboundHan
 
       if (MCAPDataServerServerContent.MCAP_STARTER.equals(req.uri()))
          sendContent(ctx, req, serverContent.getMCAPStarterBuffer(), "application/mcap");
-      else if (serverContent.getRobotModelResourcesBuffer() != null && MCAPDataServerServerContent.ROBOT_MODEL_RESOURCES.equals(req.uri()))
+      else if (MCAPDataServerServerContent.ROBOT_MODEL_RESOURCES.equals(req.uri()))
          sendContent(ctx, req, serverContent.getRobotModelResourcesBuffer(), "application/zip");
       else
          sendHttpResponse(ctx, req, new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND));
@@ -55,17 +55,27 @@ public class HTTPMCAPDataServerDescriptionServer extends SimpleChannelInboundHan
 
    private static void sendContent(ChannelHandlerContext ctx, FullHttpRequest req, ByteBuf content, String contentType)
    {
-      FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+      FullHttpResponse res;
+      if (content != null)
+      {
+         res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+         HttpUtil.setContentLength(res, content.readableBytes());
+      }
+      else
+      {
+         res = new DefaultFullHttpResponse(HTTP_1_1, NO_CONTENT);
+         HttpUtil.setContentLength(res, 0);
+      }
 
       res.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
-      HttpUtil.setContentLength(res, content.readableBytes());
       sendHttpResponse(ctx, req, res);
    }
 
    private static void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest req, FullHttpResponse res)
    {
-      // Generate an error page if response getStatus code is not OK (200).
-      if (res.status().code() != 200)
+      // Generate an error page if response getStatus code is not OK (200) nor NO_CONTENT (204).
+      boolean isNotOKNorNoContent = res.status().code() != OK.code() && res.status().code() != NO_CONTENT.code();
+      if (isNotOKNorNoContent)
       {
          ByteBuf buf = Unpooled.copiedBuffer(res.status().toString(), CharsetUtil.UTF_8);
          res.content().writeBytes(buf);
@@ -75,7 +85,7 @@ public class HTTPMCAPDataServerDescriptionServer extends SimpleChannelInboundHan
 
       // Send the response and close the connection if necessary.
       ChannelFuture f = ctx.channel().writeAndFlush(res);
-      if (!HttpUtil.isKeepAlive(req) || res.status().code() != 200)
+      if (!HttpUtil.isKeepAlive(req) || isNotOKNorNoContent)
       {
          f.addListener(ChannelFutureListener.CLOSE);
       }
