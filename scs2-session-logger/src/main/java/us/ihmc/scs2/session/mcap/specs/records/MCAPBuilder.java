@@ -174,7 +174,7 @@ public class MCAPBuilder
       else if (variable instanceof YoInteger yoInteger)
          cdrSerializer.write_int32(yoInteger.getIntegerValue());
       else if (variable instanceof YoEnum<?> yoEnum)
-         cdrSerializer.write_byte((byte) yoEnum.getOrdinal());
+         cdrSerializer.write_uint8(yoEnum.getOrdinal());
       else
          throw new IllegalArgumentException("Unsupported variable type: " + variable.getClass().getSimpleName());
       messageBuffer.flip();

@@ -19,6 +19,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryReceiveBuffer;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
@@ -31,6 +32,7 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
    private final MCAPRegistryConsumer consumer;
 
    private final int timestampPort;
+   private final ConnectionStateListener connectionStateListener;
 
    private ChannelPromise handshakeFuture;
 
@@ -38,11 +40,15 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
 
    private volatile boolean waitingForPong = false;
 
-   public MCAPWebSocketDataServerClientHandler(WebSocketClientHandshaker handshaker, int timestampPort, MCAPRegistryConsumer consumer)
+   public MCAPWebSocketDataServerClientHandler(WebSocketClientHandshaker handshaker,
+                                               int timestampPort,
+                                               MCAPRegistryConsumer consumer,
+                                               ConnectionStateListener connectionStateListener)
    {
       this.handshaker = handshaker;
       this.consumer = consumer;
       this.timestampPort = timestampPort;
+      this.connectionStateListener = connectionStateListener;
    }
 
    public ChannelFuture handshakeFuture()
@@ -69,7 +75,7 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
       if (!handshaker.isHandshakeComplete())
       {
          handshaker.finishHandshake(channel, (FullHttpResponse) message);
-         //         yoVariableClient.connected();
+         connectionStateListener.connected();
          handshakeFuture.setSuccess();
 
          return;

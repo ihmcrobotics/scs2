@@ -1,10 +1,13 @@
 package us.ihmc.robotDataLogger.websocket.server;
 
+import gnu.trove.map.hash.TIntObjectHashMap;
 import us.ihmc.scs2.session.mcap.output.MCAPByteBufferDataOutput;
+import us.ihmc.scs2.session.mcap.specs.records.Channel;
 import us.ihmc.scs2.session.mcap.specs.records.Chunk;
 import us.ihmc.scs2.session.mcap.specs.records.Compression;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.scs2.session.mcap.specs.records.Opcode;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
 import us.ihmc.scs2.session.mcap.specs.records.Records;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -18,6 +21,7 @@ public class WebsocketChannelStarterChunk implements Chunk
    public static final Compression COMPRESSION = Compression.NONE;
 
    private Records records;
+   private final TIntObjectHashMap<Channel> channels = new TIntObjectHashMap<>();
    private MCAPBuilder mcapBuilder;
 
    public WebsocketChannelStarterChunk()
@@ -65,10 +69,22 @@ public class WebsocketChannelStarterChunk implements Chunk
 
          WebsocketChannelStarterChunk channelStarterChunk = new WebsocketChannelStarterChunk();
          channelStarterChunk.records = chunk.records();
+         channelStarterChunk.updateChannelIDMap();
          return channelStarterChunk;
       }
 
       return null;
+   }
+
+   private void updateChannelIDMap()
+   {
+      channels.clear();
+      for (Record record : records)
+      {
+         assert record.op() == Opcode.CHANNEL;
+         Channel channel = record.body();
+         channels.put(channel.id(), channel);
+      }
    }
 
    @Override
@@ -120,6 +136,11 @@ public class WebsocketChannelStarterChunk implements Chunk
       records.forEach(element -> element.write(recordsOutput));
       recordsOutput.close();
       return recordsOutput.getBuffer();
+   }
+
+   public Channel getChannel(int channelID)
+   {
+      return channels.get(channelID);
    }
 
    @Override

@@ -78,7 +78,8 @@ public class MCAPWebsocketDataServerClient
                                                                                                             true,
                                                                                                             new DefaultHttpHeaders()),
                                                                                               udpTimestampClient.getPort(),
-                                                                                              consumer);
+                                                                                              consumer,
+                                                                                              connectionStateListener);
 
       Bootstrap b = new Bootstrap();
       b.group(group).channel(NettyUtils.getSocketChannelClass()).handler(new ChannelInitializer<SocketChannel>()

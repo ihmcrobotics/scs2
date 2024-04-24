@@ -7,11 +7,6 @@ import us.ihmc.scs2.session.mcap.specs.records.MutableChunk;
 import us.ihmc.scs2.session.mcap.specs.records.MutableMessage;
 import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoBoolean;
-import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoEnum;
-import us.ihmc.yoVariables.variable.YoInteger;
-import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.nio.ByteBuffer;
@@ -49,30 +44,11 @@ public class MCAPRegistrySendBuffer
       transmitTime = System.nanoTime();
       this.numberOfVariables = variables.length;
       chunk.setRecords(new ArrayList<>());
-      addSchemas();
-      addChannels();
       addMessages(timestamp);
       dataOutput.getBuffer().clear();
       chunk.setCompression(Compression.NONE);
       chunkRecord.write(dataOutput);
       dataOutput.getBuffer().flip();
-   }
-
-   private void addSchemas()
-   {
-      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoBoolean.class));
-      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoDouble.class));
-      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoInteger.class));
-      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoLong.class));
-      chunk.records().add(mcapBuilder.getVariableSchemaRecord(YoEnum.class));
-   }
-
-   public void addChannels()
-   {
-      for (YoVariable variable : variables)
-      {
-         chunk.records().add(mcapBuilder.getOrCreateVariableChannelRecord(variable));
-      }
    }
 
    private void addMessages(long timestamp)

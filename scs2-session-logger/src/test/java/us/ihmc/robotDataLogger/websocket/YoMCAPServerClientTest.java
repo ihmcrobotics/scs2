@@ -1,6 +1,7 @@
 package us.ihmc.robotDataLogger.websocket;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.junit.jupiter.api.Test;
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.euclid.Axis3D;
@@ -10,7 +11,14 @@ import us.ihmc.robotDataLogger.YoMCAPVariableServer;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.records.Channel;
+import us.ihmc.scs2.session.mcap.specs.records.Chunk;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Opcode;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoEnum;
@@ -18,14 +26,18 @@ import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class YoMCAPServerClientTest
 {
    @Test
-   public void testSimpleEndToEnd()
+   public void testSimpleEndToEnd() throws InterruptedException
    {
       Random random = new Random(1234);
       YoRegistry registry = newRegistry(random);
@@ -34,7 +46,9 @@ public class YoMCAPServerClientTest
       server.setMainRegistry(registry, null);
       server.start();
 
-      new Thread(new Runnable()
+      AtomicLong lastTimestamp = new AtomicLong(-1);
+
+      Thread testPublisherThread = new Thread(new Runnable()
       {
          private long initialTimestamp;
 
@@ -43,40 +57,131 @@ public class YoMCAPServerClientTest
          {
             if (initialTimestamp == 0)
                initialTimestamp = System.nanoTime();
-            for (int i = 0; i < 500; i++)
+
+            long timestamp = -1;
+            int iterations = 30;
+            // Wait for the client to connect
+            ThreadTools.sleep(500);
+
+            for (int i = 0; i < iterations; i++)
             {
                randomize(random, registry);
-               long timestamp = System.nanoTime() - initialTimestamp;
+               timestamp = System.nanoTime() - initialTimestamp;
+
+               if (i == iterations - 1)
+                  lastTimestamp.set(timestamp);
+
                server.update(timestamp);
                ThreadTools.sleep(10);
             }
-         }
-      }).start();
 
+            System.out.println("Last timestamp: " + lastTimestamp.longValue() + " stopping server");
+            server.close();
+         }
+      });
+      testPublisherThread.start();
+
+      MutableObject<WebsocketMCAPStarter> mcapStarterMutableObject = new MutableObject<>();
+      List<Chunk> chunks = new ArrayList<>();
       MutableBoolean connected = new MutableBoolean(false);
       MutableBoolean connectionClosed = new MutableBoolean(false);
 
       YoMCAPVariableClient client = new YoMCAPVariableClient();
       //      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
-      client.setStarterMCAPConsumer(YoMCAPServerClientTest::checkMCAPStarter);
-      client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
+      client.setStarterMCAPConsumer(mcapStarter ->
+                                    {
+                                       assertEquals(registry.getNumberOfVariablesDeep(), mcapStarter.channelStarterChunk().records().size());
+                                       checkMCAPStarter(mcapStarter);
+                                       mcapStarterMutableObject.setValue(mcapStarter);
+                                    });
+      client.setRecordConsumer(((timestamp, newRecord) ->
+      {
+         Chunk messageChunk = newRecord.body();
+         chunks.add(messageChunk);
+         System.out.println("Timestamp: " + timestamp + " Record timestamp: " + messageChunk.messageEndTime());
+      }));
       client.setConnectionStateListener(new ConnectionStateListener()
       {
          @Override
          public void connected()
          {
-            System.out.println("Connected");
+            connected.setTrue();
          }
 
          @Override
          public void connectionClosed()
          {
-            System.out.println("Connection closed");
+            connectionClosed.setTrue();
          }
       });
       client.start("localhost", dataServerSettings.getPort());
 
-      ThreadTools.sleepForever();
+      testPublisherThread.join();
+
+      System.out.println("Publisher stopped");
+
+      long timeout = System.currentTimeMillis() + 1000;
+
+      while (client.isConnected())
+      {
+         if (System.currentTimeMillis() > timeout)
+         {
+            fail("Client did not disconnect");
+         }
+         ThreadTools.sleep(100);
+      }
+      assertTrue(connected.booleanValue());
+      assertTrue(connectionClosed.booleanValue());
+
+      assertEquals(30, chunks.size());
+      assertEquals(lastTimestamp.longValue(), chunks.get(chunks.size() - 1).messageEndTime());
+
+      WebsocketMCAPStarter mcapStarter = mcapStarterMutableObject.getValue();
+      Chunk lastChunk = chunks.get(chunks.size() - 1);
+
+      for (Record record : lastChunk.records())
+      {
+         assertEquals(Opcode.MESSAGE, record.op());
+         assertTrue(Message.class.isAssignableFrom(record.body().getClass()));
+         Message message = record.body();
+         assertEquals(lastChunk.messageStartTime(), message.publishTime());
+         int channelId = message.channelId();
+         Channel channel = mcapStarter.channelStarterChunk().getChannel(channelId);
+         assertNotNull(channel);
+         assertEquals("cdr", channel.messageEncoding());
+         String variableNamespace = channel.topic().replaceAll("/", YoTools.NAMESPACE_SEPERATOR_STRING);
+         YoVariable yoVariable = registry.findVariable(variableNamespace);
+         assertNotNull(yoVariable);
+
+         ByteBuffer messageDataBuffer = message.messageBuffer();
+         CDRDeserializer deserializer = new CDRDeserializer();
+         deserializer.initialize(messageDataBuffer);
+
+         if (yoVariable instanceof YoBoolean yoBoolean)
+         {
+            assertEquals(yoBoolean.getValue(), deserializer.read_bool());
+         }
+         else if (yoVariable instanceof YoDouble yoDouble)
+         {
+            assertEquals(yoDouble.getValue(), deserializer.read_float64());
+         }
+         else if (yoVariable instanceof YoInteger yoInteger)
+         {
+            assertEquals(yoInteger.getValue(), deserializer.read_int32());
+         }
+         else if (yoVariable instanceof YoLong yoLong)
+         {
+            assertEquals(yoLong.getValue(), deserializer.read_int64());
+         }
+         else if (yoVariable instanceof YoEnum<?> yoEnum)
+         {
+            assertEquals(yoEnum.getOrdinal(), deserializer.read_uint8());
+         }
+         else
+         {
+            throw new RuntimeException("Unknown type: " + yoVariable.getClass().getSimpleName());
+         }
+      }
    }
 
    public static YoRegistry newRegistry(Random random)
