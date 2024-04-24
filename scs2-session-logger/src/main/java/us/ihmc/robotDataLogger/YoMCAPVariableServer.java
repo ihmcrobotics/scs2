@@ -31,8 +31,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
    private final LogModelProvider logModelProvider;
    private final DataServerSettings dataServerSettings;
 
-   private String rootRegistryName = "main";
-
    private YoRegistry mainRegistry = null;
    private final List<MCAPRegistrySendBufferBuilder> registeredBuffers = new ArrayList<>();
 
@@ -54,11 +52,6 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
       this.name = mainClazz;
       this.logModelProvider = logModelProvider;
       this.dataServerSettings = dataServerSettings;
-   }
-
-   public void setRootRegistryName(String name)
-   {
-      rootRegistryName = name;
    }
 
    public synchronized void start()

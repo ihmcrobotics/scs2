@@ -1,5 +1,6 @@
 package us.ihmc.robotDataLogger.websocket;
 
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.jupiter.api.Test;
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.euclid.Axis3D;
@@ -7,6 +8,7 @@ import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.robotDataLogger.YoMCAPVariableClient;
 import us.ihmc.robotDataLogger.YoMCAPVariableServer;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
+import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -17,6 +19,8 @@ import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class YoMCAPServerClientTest
 {
@@ -39,20 +43,23 @@ public class YoMCAPServerClientTest
          {
             if (initialTimestamp == 0)
                initialTimestamp = System.nanoTime();
-            for (int i = 0; i < 5000; i++)
+            for (int i = 0; i < 500; i++)
             {
                randomize(random, registry);
                long timestamp = System.nanoTime() - initialTimestamp;
                server.update(timestamp);
-               ThreadTools.sleep(1);
+               ThreadTools.sleep(10);
             }
          }
       }).start();
 
+      MutableBoolean connected = new MutableBoolean(false);
+      MutableBoolean connectionClosed = new MutableBoolean(false);
+
       YoMCAPVariableClient client = new YoMCAPVariableClient();
       //      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
-      client.setStarterMCAPConsumer((mcap) -> System.out.println("Received starter MCAP: " + mcap));
-      //      client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
+      client.setStarterMCAPConsumer(YoMCAPServerClientTest::checkMCAPStarter);
+      client.setRecordConsumer(((timestamp, newRecord) -> System.out.println("Timestamp: " + timestamp + " Record: " + newRecord)));
       client.setConnectionStateListener(new ConnectionStateListener()
       {
          @Override
@@ -107,5 +114,187 @@ public class YoMCAPServerClientTest
          else
             throw new RuntimeException("Unknown type: " + yoVariable.getClass().getSimpleName());
       }
+   }
+
+   /**
+    * This test is used to verify that the MCAP starter is correctly parsed.
+    * <p>
+    * This is more like a simple regression test.
+    * </p>
+    */
+   private static void checkMCAPStarter(WebsocketMCAPStarter mcapStarter)
+   {
+      String expected = """
+            WebsocketMCAPStarter{
+            header=
+            	Header: 
+            		-profile = us.ihmc.mcap-starter
+            		-library = version 1.0,
+            announcementMetadata=
+            	WebsocketAnnouncementMetadata: 
+            		-name = announcement
+            		-metadata = serverName, serverVersion, isLoggingSession, hostName, port, hasRobotModel, hasResources,
+            schemaStarterChunk=
+            	WebsocketSchemaStarterChunk:
+            		-messageStartTime = -11
+            		-messageEndTime = -10
+            		-compression = NONE
+            		-recordsUncompressedLength = 350
+            		-uncompressedCrc32 = 1234736452
+            		-records =  
+            			RecordDataInputBacked:
+            				-op = SCHEMA
+            				-bodyLength = 44
+            				-bodyOffset = 339
+            				-body = 
+            							SchemaDataInputBacked:
+            								-id = 0
+            								-name = YoBoolean
+            								-encoding = ros2msg
+            								-dataLength = 14
+            								-data = [10, 0, 0, 0, 98, 111, 111, 108, 32, 118, 97, 108, 117, 101]
+            			RecordDataInputBacked:
+            				-op = SCHEMA
+            				-bodyLength = 46
+            				-bodyOffset = 392
+            				-body = 
+            							SchemaDataInputBacked:
+            								-id = 1
+            								-name = YoDouble
+            								-encoding = ros2msg
+            								-dataLength = 17
+            								-data = [13, 0, 0, 0, 102, 108, 111, 97, 116, 54, 52, 32, 118, 97, 108, 117, 101]
+            			RecordDataInputBacked:
+            				-op = SCHEMA
+            				-bodyLength = 45
+            				-bodyOffset = 447
+            				-body = 
+            							SchemaDataInputBacked:
+            								-id = 3
+            								-name = YoInteger
+            								-encoding = ros2msg
+            								-dataLength = 15
+            								-data = [11, 0, 0, 0, 105, 110, 116, 51, 50, 32, 118, 97, 108, 117, 101]
+            			RecordDataInputBacked:
+            				-op = SCHEMA
+            				-bodyLength = 42
+            				-bodyOffset = 501
+            				-body = 
+            							SchemaDataInputBacked:
+            								-id = 2
+            								-name = YoLong
+            								-encoding = ros2msg
+            								-dataLength = 15
+            								-data = [11, 0, 0, 0, 105, 110, 116, 54, 52, 32, 118, 97, 108, 117, 101]
+            			RecordDataInputBacked:
+            				-op = SCHEMA
+            				-bodyLength = 128
+            				-bodyOffset = 552
+            				-body = 
+            							SchemaDataInputBacked:
+            								-id = 4
+            								-name = YoEnum
+            								-encoding = ros2msg
+            								-dataLength = 101
+            								-data = [97, 0, 0, 0, 117, 105, 110, 116, 56, 32, 118, 97, 108, 117, 101, 13, 10, 35, 32, 84, 79, 68, 79, 32, 84, 104, 101, 32, 99, 111, 110, 115, 116, 97, 110, 116, 115, 32, 115, 104, 111, 117, 108, 100, 110, 39, 116, 32, 104, 97, 118, 101, 32, 116, 111, 32, 98, 101, 32, 112, 117, 98, 108, 105, 115, 104, 101, 100, 32, 97, 108, 108, 32, 116, 104, 101, 32, 116, 105, 109, 101, 13, 10, 115, 116, 114, 105, 110, 103, 91, 93, 32, 99, 111, 110, 115, 116, 97, 110, 116, 115],
+            channelStarterChunk=
+            	WebsocketChannelStarterChunk:
+            		-messageStartTime = -21
+            		-messageEndTime = -20
+            		-compression = NONE
+            		-recordsUncompressedLength = 417
+            		-uncompressedCrc32 = 1156307734
+            		-records = 
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 42
+            				-bodyOffset = 738
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 0
+            								-schemaId = 1
+            								-topic = testRegistry/testDouble
+            								-messageEncoding = cdr
+            								-metadata = [{}]
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 43
+            				-bodyOffset = 789
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 1
+            								-schemaId = 0
+            								-topic = testRegistry/testBoolean
+            								-messageEncoding = cdr
+            								-metadata = [{}]
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 43
+            				-bodyOffset = 841
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 2
+            								-schemaId = 3
+            								-topic = testRegistry/testInteger
+            								-messageEncoding = cdr
+            								-metadata = [{}]
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 40
+            				-bodyOffset = 893
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 3
+            								-schemaId = 2
+            								-topic = testRegistry/testLong
+            								-messageEncoding = cdr
+            								-metadata = [{}]
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 40
+            				-bodyOffset = 942
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 4
+            								-schemaId = 4
+            								-topic = testRegistry/testEnum
+            								-messageEncoding = cdr
+            								-metadata = [{}]
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 70
+            				-bodyOffset = 991
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 5
+            								-schemaId = 3
+            								-topic = testRegistry/LoggerDebugRegistry/FullCircularBuffer
+            								-messageEncoding = cdr
+            								-metadata = [{}]
+            			RecordDataInputBacked:
+            				-op = CHANNEL
+            				-bodyLength = 76
+            				-bodyOffset = 1070
+            				-body = 
+            							ChannelDataInputBacked:
+            								-id = 6
+            								-schemaId = 3
+            								-topic = testRegistry/LoggerDebugRegistry/lostTickInCircularBuffer
+            								-messageEncoding = cdr
+            								-metadata = [{}],
+            robotModelAttachment=
+            null,
+            resourcesAttachment=
+            null,
+            dataEnd=
+            	DataEnd:
+            		-dataSectionCrc32 = 0,
+            footer=
+            	Footer:
+            		-ofsSummarySection = 0
+            		-ofsSummaryOffsetSection = 0
+            		-summaryCrc32 = 0
+            }""".replaceAll(" ", "");
+      assertEquals(expected, mcapStarter.toString().replaceAll(" ", ""));
    }
 }
