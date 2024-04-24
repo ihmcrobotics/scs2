@@ -4,12 +4,12 @@ import us.ihmc.concurrent.ConcurrentRingBuffer;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
-import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
-import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
 import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
+import us.ihmc.robotDataLogger.websocket.server.MCAPMessageListener;
 import us.ihmc.robotDataLogger.websocket.server.MCAPWebsocketDataProducer;
+import us.ihmc.robotDataLogger.websocket.server.MCAPWebsocketRegistryPublisher;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedListener
+public class YoMCAPVariableServer implements RobotVisualizer
 {
    private static final int CHANGED_BUFFER_CAPACITY = 128;
 
    private final MCAPBuilder mcapBuilder = new MCAPBuilder();
+   private final MCAPMessageListener variableChangedMessageProcessor;
    private final double dt;
 
    private final String name;
@@ -68,7 +69,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
 
       try
       {
-         dataProducer = new MCAPWebsocketDataProducer(this, logWatcher, dataServerSettings);
+         dataProducer = new MCAPWebsocketDataProducer(variableChangedMessageProcessor, logWatcher, dataServerSettings);
 
          for (int i = 0; i < registeredBuffers.size(); i++)
          {
@@ -80,7 +81,7 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
             {
                ConcurrentRingBuffer<VariableChangedMessage> variableChangeData = new ConcurrentRingBuffer<>(new VariableChangedMessage.Builder(),
                                                                                                             CHANGED_BUFFER_CAPACITY);
-               RegistryPublisher publisher = dataProducer.createRegistryPublisher(builder);
+               MCAPWebsocketRegistryPublisher publisher = dataProducer.createRegistryPublisher(builder);
 
                registryHolders.add(new RegistryHolder(registry, publisher, variableChangeData));
 
@@ -243,19 +244,13 @@ public class YoMCAPVariableServer implements RobotVisualizer, VariableChangedLis
       return logWatcher.isLogging();
    }
 
-   @Override
-   public void changeVariable(int id, double newValue)
-   {
-      // FIXME
-   }
-
-   private class RegistryHolder
+   private static class RegistryHolder
    {
       private final YoRegistry registry;
-      private final RegistryPublisher publisher;
+      private final MCAPWebsocketRegistryPublisher publisher;
       private final ConcurrentRingBuffer<VariableChangedMessage> variableChangeData;
 
-      public RegistryHolder(YoRegistry registry, RegistryPublisher publisher, ConcurrentRingBuffer<VariableChangedMessage> variableChangeData)
+      public RegistryHolder(YoRegistry registry, MCAPWebsocketRegistryPublisher publisher, ConcurrentRingBuffer<VariableChangedMessage> variableChangeData)
       {
          this.registry = registry;
          this.publisher = publisher;

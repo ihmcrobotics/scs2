@@ -13,12 +13,9 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 import us.ihmc.commons.Conversions;
-import us.ihmc.pubsub.common.SerializedPayload;
-import us.ihmc.robotDataLogger.VariableChangeRequest;
-import us.ihmc.robotDataLogger.VariableChangeRequestPubSubType;
-import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMessage;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -36,7 +33,7 @@ class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<We
    private static final int TEXT_POOL_SIZE = 128;
 
    private final MCAPWebsocketDataBroadcaster broadcaster;
-   private final VariableChangedListener variableChangedListener;
+   private final MCAPMessageListener variableChangedMessageListener;
    private final LogAliveListener logAliveListener;
    private final int dataSize;
 
@@ -47,9 +44,7 @@ class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<We
    private VoidChannelPromise channelPromise = null;
    private RecyclingByteBufAllocator alloc = null;
 
-   private final VariableChangeRequestPubSubType variableChangeRequestType = new VariableChangeRequestPubSubType();
-   private final SerializedPayload variableChangeRequestPayload = new SerializedPayload(variableChangeRequestType.getTypeSize());
-   private final VariableChangeRequest request = new VariableChangeRequest();
+   private final WebsocketMessage request = new WebsocketMessage(1024);
 
    private final UDPTimestampServer udpTimestampServer;
 
@@ -60,12 +55,12 @@ class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<We
    public MCAPWebsocketDataServerFrameHandler(MCAPWebsocketDataBroadcaster broadcaster,
                                               int dataSize,
                                               int numberOfRegistryBuffers,
-                                              VariableChangedListener variableChangedListener,
+                                              MCAPMessageListener variableChangedMessageListener,
                                               LogAliveListener logAliveListener) throws IOException
    {
       this.broadcaster = broadcaster;
       this.dataSize = dataSize;
-      this.variableChangedListener = variableChangedListener;
+      this.variableChangedMessageListener = variableChangedMessageListener;
       this.logAliveListener = logAliveListener;
       udpTimestampServer = new UDPTimestampServer();
 
@@ -152,12 +147,8 @@ class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<We
          }
          else if (frame instanceof BinaryWebSocketFrame)
          {
-            variableChangeRequestPayload.getData().clear();
-            variableChangeRequestPayload.getData().limit(frame.content().readableBytes());
-            frame.content().readBytes(variableChangeRequestPayload.getData());
-            variableChangeRequestPayload.getData().flip();
-            variableChangeRequestType.deserialize(variableChangeRequestPayload, request);
-            variableChangedListener.changeVariable(request.getVariableID(), request.getRequestedValue());
+            request.initialize(frame.content());
+            variableChangedMessageListener.onMessage(request);
          }
          else if (frame instanceof PingWebSocketFrame)
          {

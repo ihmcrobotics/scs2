@@ -4,7 +4,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.ScheduledFuture;
 import us.ihmc.concurrent.ConcurrentRingBuffer;
 import us.ihmc.robotDataLogger.dataBuffers.LoggerDebugRegistry;
-import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBuffer;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
 
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Jesper Smith
  */
-class MCAPWebsocketRegistryPublisher implements RegistryPublisher
+public class MCAPWebsocketRegistryPublisher
 {
    private static final int BUFFER_CAPACITY = 128;
 
@@ -52,13 +51,11 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
    /**
     * Starts the registry publisher and schedules it on the main eventLoopGroup
     */
-   @Override
    public void start()
    {
       scheduledFuture = eventLoopGroup.scheduleAtFixedRate(variableUpdateThread, 0, 1, TimeUnit.MILLISECONDS);
    }
 
-   @Override
    public void stop()
    {
       scheduledFuture.cancel(false);
@@ -73,7 +70,6 @@ class MCAPWebsocketRegistryPublisher implements RegistryPublisher
       }
    }
 
-   @Override
    public void update(long timestamp)
    {
       MCAPRegistrySendBuffer buffer = ringBuffer.next();

@@ -1,7 +1,7 @@
 package us.ihmc.robotDataLogger.websocket.dataBuffers;
 
 import us.ihmc.commons.thread.ThreadTools;
-import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.util.concurrent.PriorityBlockingQueue;

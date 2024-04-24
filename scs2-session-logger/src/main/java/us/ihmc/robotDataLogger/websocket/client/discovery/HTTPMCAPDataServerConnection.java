@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import us.ihmc.robotDataLogger.util.NettyUtils;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 

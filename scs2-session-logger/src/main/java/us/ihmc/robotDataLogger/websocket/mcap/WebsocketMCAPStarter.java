@@ -1,4 +1,4 @@
-package us.ihmc.robotDataLogger.websocket.client.discovery;
+package us.ihmc.robotDataLogger.websocket.mcap;
 
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;

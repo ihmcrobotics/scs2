@@ -3,9 +3,9 @@ package us.ihmc.robotDataLogger.websocket.server;
 import io.netty.buffer.ByteBuf;
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
-import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
-import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketResourcesAttachment;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistrySendBufferBuilder;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketResourcesAttachment;
 import us.ihmc.scs2.session.mcap.output.MCAPNettyByteBufDataOutput;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 

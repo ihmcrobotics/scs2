@@ -1,30 +1,42 @@
-package us.ihmc.scs2.session.mcap.specs.records;
+package us.ihmc.robotDataLogger.websocket.mcap;
 
+import io.netty.buffer.ByteBuf;
 import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.MutableMessage;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-public class MutableMessage implements Message
+/**
+ * Same as {@link MutableMessage} but dedicated for the websocket implementation.
+ */
+public class WebsocketMessage implements Message
 {
    private int channelId;
    private long sequence;
    private long logTime;
    private long publishTime;
    private int dataLength;
-   private byte[] messageData;
-   private ByteBuffer messageDataBuffer;
+   private final byte[] messageData;
+   private final ByteBuffer messageDataBuffer;
 
-   public MutableMessage()
+   public WebsocketMessage(int capacity)
    {
+      messageData = new byte[capacity];
+      messageDataBuffer = ByteBuffer.wrap(messageData);
    }
 
-   public MutableMessage(int channelId, byte[] data)
+   public void initialize(ByteBuf source)
    {
-      this.channelId = channelId;
-      this.messageData = data;
-      this.dataLength = data.length;
+      channelId = source.readUnsignedShortLE();
+      sequence = source.readUnsignedIntLE();
+      logTime = source.readLongLE();
+      publishTime = source.readLongLE();
+      dataLength = source.readableBytes();
+      messageDataBuffer.clear();
+      source.readBytes(messageDataBuffer);
+      messageDataBuffer.flip();
    }
 
    @Override
@@ -91,14 +103,7 @@ public class MutableMessage implements Message
    @Override
    public ByteBuffer messageBuffer()
    {
-      if (messageDataBuffer == null || messageDataBuffer.array() != messageData)
-         messageDataBuffer = ByteBuffer.wrap(messageData).order(ByteOrder.LITTLE_ENDIAN);
       return messageDataBuffer;
-   }
-
-   public void setMessageData(byte[] messageData)
-   {
-      this.messageData = messageData;
    }
 
    @Override

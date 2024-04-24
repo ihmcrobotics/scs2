@@ -24,6 +24,7 @@ import java.util.Objects;
  */
 public class MCAPBuilder
 {
+   public static final String MESSAGE_ENCODING = "cdr";
    private int nextSchemaID = 0;
    private final TIntObjectHashMap<MutableSchema> schemas = new TIntObjectHashMap<>();
    private final Map<Class<? extends YoVariable>, MutableSchema> variableSchemas = new LinkedHashMap<>();
@@ -33,6 +34,7 @@ public class MCAPBuilder
 
    private int nextChannelID = 0;
    private final TIntObjectHashMap<MutableChannel> channels = new TIntObjectHashMap<>();
+   private final TIntObjectHashMap<YoVariable> channelIDToYoVariableMap = new TIntObjectHashMap<>();
    private final Map<YoVariable, MutableChannel> variableChannels = new LinkedHashMap<>();
 
    private final TIntObjectHashMap<Record> channelRecords = new TIntObjectHashMap<>();
@@ -126,8 +128,9 @@ public class MCAPBuilder
       {
          String topic = variable.getFullNameString().replace(YoTools.NAMESPACE_SEPERATOR, '/');
          int schemaID = variableSchemas.get(variable.getClass()).id();
-         channel = nextChannel(topic, schemaID, "cdr", new MetadataMap());
+         channel = nextChannel(topic, schemaID, MESSAGE_ENCODING, new MetadataMap());
          variableChannels.put(variable, channel);
+         channelIDToYoVariableMap.put(channel.id(), variable);
       }
 
       return channel;

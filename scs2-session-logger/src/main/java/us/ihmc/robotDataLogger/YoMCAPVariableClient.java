@@ -4,11 +4,11 @@ import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.DaemonThreadFactory;
 import us.ihmc.robotDataLogger.websocket.client.MCAPWebsocketDataConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
-import us.ihmc.robotDataLogger.websocket.client.discovery.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPConsumer;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.server.WebsocketAnnouncementMetadata;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 

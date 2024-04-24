@@ -6,7 +6,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
 
 /**
@@ -20,14 +19,14 @@ class MCAPWebsocketDataServerInitializer extends ChannelInitializer<SocketChanne
 
    private final MCAPDataServerServerContent logServerContent;
    private final MCAPWebsocketDataBroadcaster broadcaster;
-   private final VariableChangedListener variableChangedListener;
+   private final MCAPMessageListener variableChangedMessageListener;
    private final LogAliveListener logAliveListener;
    private final int dataSize;
    private final int numberOfRegistryBuffers;
 
    public MCAPWebsocketDataServerInitializer(MCAPDataServerServerContent logServerContent,
                                              MCAPWebsocketDataBroadcaster broadcaster,
-                                             VariableChangedListener variableChangedListener,
+                                             MCAPMessageListener variableChangedMessageListener,
                                              LogAliveListener logAliveListener,
                                              int dataSize,
                                              int numberOfRegistryBuffers)
@@ -35,7 +34,7 @@ class MCAPWebsocketDataServerInitializer extends ChannelInitializer<SocketChanne
       this.logServerContent = logServerContent;
       this.broadcaster = broadcaster;
       this.dataSize = dataSize;
-      this.variableChangedListener = variableChangedListener;
+      this.variableChangedMessageListener = variableChangedMessageListener;
       this.logAliveListener = logAliveListener;
       this.numberOfRegistryBuffers = numberOfRegistryBuffers;
    }
@@ -50,6 +49,10 @@ class MCAPWebsocketDataServerInitializer extends ChannelInitializer<SocketChanne
       pipeline.addLast(new HttpObjectAggregator(65536));
       pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
       pipeline.addLast(new HTTPMCAPDataServerDescriptionServer(logServerContent));
-      pipeline.addLast(new MCAPWebsocketDataServerFrameHandler(broadcaster, dataSize, numberOfRegistryBuffers, variableChangedListener, logAliveListener));
+      pipeline.addLast(new MCAPWebsocketDataServerFrameHandler(broadcaster,
+                                                               dataSize,
+                                                               numberOfRegistryBuffers,
+                                                               variableChangedMessageListener,
+                                                               logAliveListener));
    }
 }

@@ -20,7 +20,7 @@ import java.util.concurrent.locks.LockSupport;
  *
  * @author Jesper Smith
  */
-class MCAPWebsocketDataBroadcaster implements ChannelFutureListener
+public class MCAPWebsocketDataBroadcaster implements ChannelFutureListener
 {
    /**
     * How much time the timestamp publishing thread should wait between successive polling for a new

@@ -8,8 +8,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
-import us.ihmc.robotDataLogger.interfaces.RegistryPublisher;
-import us.ihmc.robotDataLogger.listeners.VariableChangedListener;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
 import us.ihmc.robotDataLogger.util.NettyUtils;
@@ -21,7 +19,7 @@ import java.io.IOException;
 public class MCAPWebsocketDataProducer
 {
    private final MCAPWebsocketDataBroadcaster broadcaster = new MCAPWebsocketDataBroadcaster();
-   private final VariableChangedListener variableChangedListener;
+   private final MCAPMessageListener variableChangedMessageListener;
    private final LogAliveListener logAliveListener;
 
    private final int port;
@@ -49,9 +47,11 @@ public class MCAPWebsocketDataProducer
 
    private int nextBufferID = 0;
 
-   public MCAPWebsocketDataProducer(VariableChangedListener variableChangedListener, LogAliveListener logAliveListener, DataServerSettings dataServerSettings)
+   public MCAPWebsocketDataProducer(MCAPMessageListener variableChangedMessageListener,
+                                    LogAliveListener logAliveListener,
+                                    DataServerSettings dataServerSettings)
    {
-      this.variableChangedListener = variableChangedListener;
+      this.variableChangedMessageListener = variableChangedMessageListener;
       this.logAliveListener = logAliveListener;
       port = dataServerSettings.getPort();
       autoDiscoverable = dataServerSettings.isAutoDiscoverable();
@@ -111,7 +111,7 @@ public class MCAPWebsocketDataProducer
                            .handler(new LoggingHandler(LogLevel.INFO))
                            .childHandler(new MCAPWebsocketDataServerInitializer(dataServerContent,
                                                                                 broadcaster,
-                                                                                variableChangedListener,
+                                                                                variableChangedMessageListener,
                                                                                 logAliveListener,
                                                                                 maximumBufferSize,
                                                                                 numberOfRegistryBuffers));
@@ -140,10 +140,8 @@ public class MCAPWebsocketDataProducer
       broadcaster.publishTimestamp(timestamp);
    }
 
-   public RegistryPublisher createRegistryPublisher(MCAPRegistrySendBufferBuilder builder) throws IOException
+   public MCAPWebsocketRegistryPublisher createRegistryPublisher(MCAPRegistrySendBufferBuilder builder) throws IOException
    {
-      MCAPWebsocketRegistryPublisher websocketRegistryPublisher = new MCAPWebsocketRegistryPublisher(workerGroup, builder, broadcaster, nextBufferID);
-      nextBufferID++;
-      return websocketRegistryPublisher;
+      return new MCAPWebsocketRegistryPublisher(workerGroup, builder, broadcaster, nextBufferID++);
    }
 }
