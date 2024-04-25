@@ -1,7 +1,10 @@
 package us.ihmc.robotDataLogger;
 
+import org.apache.commons.lang3.tuple.Pair;
+import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.concurrent.ConcurrentRingBuffer;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.multicastLogDataProtocol.modelLoaders.LogModelProvider;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
@@ -11,8 +14,16 @@ import us.ihmc.robotDataLogger.websocket.server.MCAPMessageListener;
 import us.ihmc.robotDataLogger.websocket.server.MCAPWebsocketDataProducer;
 import us.ihmc.robotDataLogger.websocket.server.MCAPWebsocketRegistryPublisher;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.tools.YoTools;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.IOException;
@@ -26,6 +37,7 @@ public class YoMCAPVariableServer implements RobotVisualizer
 
    private final MCAPBuilder mcapBuilder = new MCAPBuilder();
    private final MCAPMessageListener variableChangedMessageProcessor;
+   private final List<Pair<YoVariable, RegistryHolder>> channelIDToVariable = new ArrayList<>();
    private final double dt;
 
    private final String name;
@@ -53,6 +65,78 @@ public class YoMCAPVariableServer implements RobotVisualizer
       this.name = mainClazz;
       this.logModelProvider = logModelProvider;
       this.dataServerSettings = dataServerSettings;
+
+      mcapBuilder.setChannelCreationListener(channel ->
+                                             {
+                                                String variableName = channel.topic().replace("/", YoTools.NAMESPACE_SEPERATOR_STRING);
+                                                YoVariable variable = findVariableInRegistries(variableName);
+                                                if (variable == null)
+                                                {
+                                                   LogTools.warn("Variable " + variableName + " not found in registries");
+                                                   return;
+                                                }
+
+                                                RegistryHolder registryHolder = getRegistryHolder(variable.getRegistry());
+                                                channelIDToVariable.add(Pair.of(variable, registryHolder));
+                                             });
+
+      variableChangedMessageProcessor = new MCAPMessageListener()
+      {
+         private final CDRDeserializer cdrDeserializer = new CDRDeserializer();
+
+         @Override
+         public void onMessage(Message message)
+         {
+            int channelId = message.channelId();
+            Pair<YoVariable, RegistryHolder> variableRegistryPair = channelIDToVariable.get(channelId);
+            YoVariable variable = variableRegistryPair.getLeft();
+            RegistryHolder registryHolder = variableRegistryPair.getRight();
+            YoVariableChangeData yoVariableChangeData;
+            ConcurrentRingBuffer<YoVariableChangeData> buffer = registryHolder.changeBuffer;
+
+            while ((yoVariableChangeData = buffer.next()) == null)
+            {
+               ThreadTools.sleep(1);
+            }
+
+            if (yoVariableChangeData != null)
+            {
+               yoVariableChangeData.variable = variable;
+               cdrDeserializer.initialize(message.messageBuffer(), 0, message.dataLength());
+
+               if (variable instanceof YoBoolean)
+               {
+                  boolean value = cdrDeserializer.read_bool();
+                  yoVariableChangeData.valueAsLongBits = value ? 1 : 0;
+               }
+               else if (variable instanceof YoDouble)
+               {
+                  double value = cdrDeserializer.read_float64();
+                  yoVariableChangeData.valueAsLongBits = Double.doubleToLongBits(value);
+               }
+               else if (variable instanceof YoInteger)
+               {
+                  int value = cdrDeserializer.read_int32();
+                  yoVariableChangeData.valueAsLongBits = value;
+               }
+               else if (variable instanceof YoLong)
+               {
+                  long value = cdrDeserializer.read_int64();
+                  yoVariableChangeData.valueAsLongBits = value;
+               }
+               else if (variable instanceof YoEnum)
+               {
+                  int value = cdrDeserializer.read_uint8();
+                  yoVariableChangeData.valueAsLongBits = value;
+               }
+               else
+               {
+                  throw new RuntimeException("Unsupported variable type " + variable.getClass().getSimpleName());
+               }
+               buffer.commit();
+            }
+         }
+      };
    }
 
    public synchronized void start()
@@ -79,8 +163,7 @@ public class YoMCAPVariableServer implements RobotVisualizer
 
             try
             {
-               ConcurrentRingBuffer<VariableChangedMessage> variableChangeData = new ConcurrentRingBuffer<>(new VariableChangedMessage.Builder(),
-                                                                                                            CHANGED_BUFFER_CAPACITY);
+               ConcurrentRingBuffer<YoVariableChangeData> variableChangeData = new ConcurrentRingBuffer<>(YoVariableChangeData::new, CHANGED_BUFFER_CAPACITY);
                MCAPWebsocketRegistryPublisher publisher = dataProducer.createRegistryPublisher(builder);
 
                registryHolders.add(new RegistryHolder(registry, publisher, variableChangeData));
@@ -181,14 +264,12 @@ public class YoMCAPVariableServer implements RobotVisualizer
 
    private void updateChangedVariables(RegistryHolder rootRegistry)
    {
-      ConcurrentRingBuffer<VariableChangedMessage> buffer = rootRegistry.variableChangeData;
+      ConcurrentRingBuffer<YoVariableChangeData> buffer = rootRegistry.changeBuffer;
       buffer.poll();
-      VariableChangedMessage msg;
+      YoVariableChangeData yoVariableChangeData;
 
-      while ((msg = buffer.read()) != null)
-      {
-         msg.getVariable().setValueFromDouble(msg.getVal());
-      }
+      while ((yoVariableChangeData = buffer.read()) != null)
+         yoVariableChangeData.applyChange();
 
       buffer.flush();
    }
@@ -224,11 +305,9 @@ public class YoMCAPVariableServer implements RobotVisualizer
       for (MCAPRegistrySendBufferBuilder buffer : registeredBuffers)
       {
          YoRegistry registry = buffer.getYoRegistry();
-         YoVariable ret = registry.findVariable(variableName);
-         if (ret != null)
-         {
-            return ret;
-         }
+         YoVariable candidate = registry.findVariable(variableName);
+         if (candidate != null)
+            return candidate;
       }
       return null;
    }
@@ -244,17 +323,18 @@ public class YoMCAPVariableServer implements RobotVisualizer
       return logWatcher.isLogging();
    }
 
-   private static class RegistryHolder
+   private record RegistryHolder(YoRegistry registry, MCAPWebsocketRegistryPublisher publisher, ConcurrentRingBuffer<YoVariableChangeData> changeBuffer)
    {
-      private final YoRegistry registry;
-      private final MCAPWebsocketRegistryPublisher publisher;
-      private final ConcurrentRingBuffer<VariableChangedMessage> variableChangeData;
+   }
 
-      public RegistryHolder(YoRegistry registry, MCAPWebsocketRegistryPublisher publisher, ConcurrentRingBuffer<VariableChangedMessage> variableChangeData)
+   private static class YoVariableChangeData
+   {
+      private YoVariable variable;
+      private long valueAsLongBits;
+
+      private void applyChange()
       {
-         this.registry = registry;
-         this.publisher = publisher;
-         this.variableChangeData = variableChangeData;
+         variable.setValueFromLongBits(valueAsLongBits);
       }
    }
 }

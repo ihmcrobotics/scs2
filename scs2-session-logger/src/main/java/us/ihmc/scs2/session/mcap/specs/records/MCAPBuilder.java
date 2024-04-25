@@ -1,6 +1,5 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
 import us.ihmc.scs2.session.mcap.encoding.CDRSerializer;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -14,10 +13,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * The plan for this class is gather the tools for building MCAP data here.
@@ -25,31 +27,30 @@ import java.util.Objects;
 public class MCAPBuilder
 {
    public static final String MESSAGE_ENCODING = "cdr";
-   private int nextSchemaID = 0;
-   private final TIntObjectHashMap<MutableSchema> schemas = new TIntObjectHashMap<>();
-   private final Map<Class<? extends YoVariable>, MutableSchema> variableSchemas = new LinkedHashMap<>();
+   private final List<SchemaInfoPackage> schemas = new ArrayList<>();
+   private final Map<Class<? extends YoVariable>, SchemaInfoPackage> variableToSchemaMap = new LinkedHashMap<>();
 
-   private final TIntObjectHashMap<Record> schemaRecords = new TIntObjectHashMap<>();
-   private final Map<Class<? extends YoVariable>, Record> variableSchemaRecordMap = new LinkedHashMap<>();
-
-   private int nextChannelID = 0;
-   private final TIntObjectHashMap<MutableChannel> channels = new TIntObjectHashMap<>();
-   private final TIntObjectHashMap<YoVariable> channelIDToYoVariableMap = new TIntObjectHashMap<>();
-   private final Map<YoVariable, MutableChannel> variableChannels = new LinkedHashMap<>();
-
-   private final TIntObjectHashMap<Record> channelRecords = new TIntObjectHashMap<>();
-   private final Map<YoVariable, Record> variableChannelRecordMap = new LinkedHashMap<>();
+   private final List<ChannelInfoPackage> channels = new ArrayList<>();
+   private final Map<YoVariable, ChannelInfoPackage> variableToChannelMap = new LinkedHashMap<>();
 
    private final CDRSerializer cdrSerializer = new CDRSerializer();
+   private Consumer<Channel> newChannelListener;
 
    public MCAPBuilder()
    {
       for (Class<? extends YoVariable> variableType : Arrays.asList(YoBoolean.class, YoDouble.class, YoLong.class, YoInteger.class, YoEnum.class))
       {
-         MutableSchema newSchema = nextSchema(variableType.getSimpleName(), "ros2msg", loadYoVariableSchemaBytesFromFile(variableType));
-         variableSchemas.put(variableType, newSchema);
-         variableSchemaRecordMap.put(variableType, schemaRecords.get(newSchema.id()));
+         MutableSchema newSchema = nextSchema(variableType.getSimpleName(), schemas.size(), "ros2msg", loadYoVariableSchemaBytesFromFile(variableType));
+         SchemaInfoPackage schemaInfoPackage = new SchemaInfoPackage(newSchema);
+         schemas.add(schemaInfoPackage);
+         variableToSchemaMap.put(variableType, schemaInfoPackage);
       }
+   }
+
+   public void setChannelCreationListener(Consumer<Channel> newChannelListener)
+   {
+
+      this.newChannelListener = newChannelListener;
    }
 
    /**
@@ -82,63 +83,59 @@ public class MCAPBuilder
       }
    }
 
-   private MutableSchema nextSchema(String name, String encoding, byte[] data)
+   private static MutableSchema nextSchema(String name, int schemaID, String encoding, byte[] data)
    {
-      MutableSchema schema = nextSchema();
+      MutableSchema schema = new MutableSchema();
+      schema.setId(schemaID);
       schema.setName(name);
       schema.setEncoding(encoding);
       schema.setData(data);
       return schema;
    }
 
-   private MutableSchema nextSchema()
+   public Schema getSchema(int id)
    {
-      MutableSchema schema = new MutableSchema();
-      schema.setId(nextSchemaID++);
-      schemas.put(schema.id(), schema);
-      schemaRecords.put(schema.id(), new MutableRecord(schema));
-      return schema;
-   }
-
-   public MutableSchema getSchema(int id)
-   {
-      return schemas.get(id);
+      return schemas.get(id).schema;
    }
 
    public Record getSchemaRecord(int id)
    {
-      return schemaRecords.get(id);
+      return schemas.get(id).schemaRecord;
    }
 
    public Record getVariableSchemaRecord(Class<? extends YoVariable> variableType)
    {
-      return variableSchemaRecordMap.get(variableType);
+      return variableToSchemaMap.get(variableType).schemaRecord;
    }
 
    public Record getOrCreateVariableChannelRecord(YoVariable variable)
    {
-      MutableChannel channel = getOrCreateChannel(variable);
-      return channelRecords.get(channel.id());
+      return getOrCreateChannel(variable).channelRecord;
    }
 
-   private MutableChannel getOrCreateChannel(YoVariable variable)
+   private ChannelInfoPackage getOrCreateChannel(YoVariable variable)
    {
-      MutableChannel channel = variableChannels.get(variable);
-      if (channel == null)
+      ChannelInfoPackage channelInfoPackage = variableToChannelMap.get(variable);
+      if (channelInfoPackage == null)
       {
          String topic = variable.getFullNameString().replace(YoTools.NAMESPACE_SEPERATOR, '/');
-         int schemaID = variableSchemas.get(variable.getClass()).id();
-         channel = nextChannel(topic, schemaID, MESSAGE_ENCODING, new MetadataMap());
-         variableChannels.put(variable, channel);
-         channelIDToYoVariableMap.put(channel.id(), variable);
+         int schemaID = variableToSchemaMap.get(variable.getClass()).schema.id();
+         Channel channel = nextChannel(topic, schemaID, channels.size(), MESSAGE_ENCODING, new MetadataMap());
+         channelInfoPackage = new ChannelInfoPackage(channel, variable, variableToSchemaMap.get(variable.getClass()).schema);
+         channels.add(channelInfoPackage);
+         variableToChannelMap.put(variable, channelInfoPackage);
+
+         if (newChannelListener != null)
+            newChannelListener.accept(channel);
       }
 
-      return channel;
+      return channelInfoPackage;
    }
 
-   private MutableChannel nextChannel(String topic, int schemaID, String messageEncoding, MetadataMap metadata)
+   private static MutableChannel nextChannel(String topic, int schemaID, int channelID, String messageEncoding, MetadataMap metadata)
    {
-      MutableChannel channel = nextChannel();
+      MutableChannel channel = new MutableChannel();
+      channel.setId(channelID);
       channel.setTopic(topic);
       channel.setSchemaId(schemaID);
       channel.setMessageEncoding(messageEncoding);
@@ -146,19 +143,10 @@ public class MCAPBuilder
       return channel;
    }
 
-   private MutableChannel nextChannel()
-   {
-      MutableChannel channel = new MutableChannel();
-      channel.setId(nextChannelID++);
-      channels.put(channel.id(), channel);
-      channelRecords.put(channel.id(), new MutableRecord(channel));
-      return channel;
-   }
-
    public void packVariableMessage(YoVariable variable, MutableMessage message)
    {
-      MutableChannel channel = getOrCreateChannel(variable);
-      message.setChannelId(channel.id());
+      ChannelInfoPackage channel = getOrCreateChannel(variable);
+      message.setChannelId(channel.channel.id());
 
       if (message.messageData() == null)
       {
@@ -182,5 +170,34 @@ public class MCAPBuilder
          throw new IllegalArgumentException("Unsupported variable type: " + variable.getClass().getSimpleName());
       messageBuffer.flip();
       message.setDataLength(messageBuffer.remaining());
+   }
+
+   private static class SchemaInfoPackage
+   {
+      private final MutableSchema schema;
+      private final Record schemaRecord;
+
+      public SchemaInfoPackage(MutableSchema schema)
+      {
+         this.schema = schema;
+         this.schemaRecord = new MutableRecord(schema);
+      }
+   }
+
+   private static class ChannelInfoPackage
+   {
+      private final Channel channel;
+      private final YoVariable variable;
+      private final Schema schema;
+
+      private final Record channelRecord;
+
+      public ChannelInfoPackage(Channel channel, YoVariable variable, MutableSchema schema)
+      {
+         this.channel = channel;
+         this.variable = variable;
+         this.schema = schema;
+         this.channelRecord = new MutableRecord(channel);
+      }
    }
 }
