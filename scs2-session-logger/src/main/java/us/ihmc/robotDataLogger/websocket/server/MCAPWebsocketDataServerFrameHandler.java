@@ -15,7 +15,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.Han
 import us.ihmc.commons.Conversions;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
-import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMessage;
+import us.ihmc.robotDataLogger.websocket.mcap.WebsocketRecord;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
  *
  * @author Jesper Smith
  */
-class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame>
+public class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame>
 {
    private static final int BINARY_POOL_SIZE = 12;
    private static final int TEXT_POOL_SIZE = 128;
@@ -44,7 +44,7 @@ class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<We
    private VoidChannelPromise channelPromise = null;
    private RecyclingByteBufAllocator alloc = null;
 
-   private final WebsocketMessage request = new WebsocketMessage(1024);
+   private final WebsocketRecord request = new WebsocketRecord(1024);
 
    private final UDPTimestampServer udpTimestampServer;
 
@@ -148,7 +148,7 @@ class MCAPWebsocketDataServerFrameHandler extends SimpleChannelInboundHandler<We
          else if (frame instanceof BinaryWebSocketFrame)
          {
             request.initialize(frame.content());
-            variableChangedMessageListener.onMessage(request);
+            variableChangedMessageListener.onMessage(request.body());
          }
          else if (frame instanceof PingWebSocketFrame)
          {

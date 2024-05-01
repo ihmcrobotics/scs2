@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.tools.EuclidCoreRandomTools;
-import us.ihmc.robotDataLogger.YoMCAPVariableClient;
+import us.ihmc.robotDataLogger.MCAPVariableClient;
 import us.ihmc.robotDataLogger.YoMCAPVariableServer;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
@@ -86,7 +86,7 @@ public class YoMCAPServerClientTest
       MutableBoolean connected = new MutableBoolean(false);
       MutableBoolean connectionClosed = new MutableBoolean(false);
 
-      YoMCAPVariableClient client = new YoMCAPVariableClient();
+      MCAPVariableClient client = new MCAPVariableClient();
       //      client.setTimestampListener((timestamp) -> System.out.println("Timestamp: " + timestamp));
       client.setStarterMCAPConsumer(mcapStarter ->
                                     {

@@ -2,12 +2,13 @@ package us.ihmc.robotDataLogger;
 
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.DaemonThreadFactory;
+import us.ihmc.robotDataLogger.websocket.client.MCAPWebSocketDataServerClientHandler.DataServerCommandConsumer;
 import us.ihmc.robotDataLogger.websocket.client.MCAPWebsocketDataConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPConsumer;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPRecordConsumer;
 import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.server.WebsocketAnnouncementMetadata;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
@@ -16,12 +17,7 @@ import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-/**
- * Main entry point to write a client to the data server
- *
- * @author Jesper Smith
- */
-public class YoMCAPVariableClient
+public class MCAPVariableClient
 {
    public static final int DEFAULT_TIMEOUT = 25000; //ms
 
@@ -35,10 +31,11 @@ public class YoMCAPVariableClient
    // Callbacks
    private TimestampListener timestampListener;
    private MCAPConsumer starterMCAPConsumer;
-   private MCAPSingleRecordConsumer recordConsumer;
+   private MCAPRecordConsumer recordConsumer;
    private ConnectionStateListener connectionStateListener;
+   private DataServerCommandConsumer dataServerCommandConsumer;
 
-   public YoMCAPVariableClient()
+   public MCAPVariableClient()
    {
    }
 
@@ -52,7 +49,7 @@ public class YoMCAPVariableClient
       this.starterMCAPConsumer = starterMCAPConsumer;
    }
 
-   public void setRecordConsumer(MCAPSingleRecordConsumer recordConsumer)
+   public void setRecordConsumer(MCAPRecordConsumer recordConsumer)
    {
       this.recordConsumer = recordConsumer;
    }
@@ -60,6 +57,11 @@ public class YoMCAPVariableClient
    public void setConnectionStateListener(ConnectionStateListener connectionStateListener)
    {
       this.connectionStateListener = connectionStateListener;
+   }
+
+   public void setDataServerCommandConsumer(DataServerCommandConsumer dataServerCommandConsumer)
+   {
+      this.dataServerCommandConsumer = dataServerCommandConsumer;
    }
 
    /**
@@ -113,7 +115,10 @@ public class YoMCAPVariableClient
       if (dataConsumer.isClosed())
          throw new RuntimeException("Client has closed completely");
 
-      dataConsumer.startSession(this::receivedTimestamp, this::receivedRecord, new ConnectionStateListener()
+      dataConsumer.setDataServerCommandConsumer(dataServerCommandConsumer);
+      dataConsumer.setTimestampListener(this::receivedTimestamp);
+      dataConsumer.setSingleRecordConsumer(this::receivedRecord);
+      dataConsumer.setConnectionStateListener(new ConnectionStateListener()
       {
          @Override
          public void connected()
@@ -129,6 +134,8 @@ public class YoMCAPVariableClient
                connectionStateListener.connectionClosed();
          }
       });
+
+      dataConsumer.startSession();
    }
 
    /**
@@ -172,6 +179,14 @@ public class YoMCAPVariableClient
       }
    }
 
+   public void sendRecord(Record record)
+   {
+      if (dataConsumer == null)
+         throw new RuntimeException("Session not started");
+
+      dataConsumer.sendRecord(record);
+   }
+
    private void receivedRecord(long timestamp, Record record)
    {
       if (recordConsumer != null)
@@ -205,12 +220,6 @@ public class YoMCAPVariableClient
       {
          dataConsumer.disconnectSession();
       }
-   }
-
-   void receivedCommand(DataServerCommand command, int argument)
-   {
-      // FIXME
-      //      commandExecutor.execute(() -> yoVariablesUpdatedListener.receivedCommand(command, argument));
    }
 
    public boolean isConnected()

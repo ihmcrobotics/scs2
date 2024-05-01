@@ -100,12 +100,6 @@ public class RecordDataInputBacked implements Record
    }
 
    @Override
-   public long getElementLength()
-   {
-      return RECORD_HEADER_LENGTH + bodyLength;
-   }
-
-   @Override
    public String toString()
    {
       return toString(0);

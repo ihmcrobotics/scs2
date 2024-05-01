@@ -21,6 +21,11 @@ public class MCAPNettyByteBufDataOutput implements MCAPDataOutput
       buffer = directBuffer ? Unpooled.directBuffer() : Unpooled.buffer();
    }
 
+   public MCAPNettyByteBufDataOutput(ByteBuf buffer)
+   {
+      this.buffer = buffer;
+   }
+
    @Override
    public long position()
    {

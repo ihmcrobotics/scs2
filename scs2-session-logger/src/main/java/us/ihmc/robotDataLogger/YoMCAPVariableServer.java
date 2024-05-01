@@ -99,42 +99,39 @@ public class YoMCAPVariableServer implements RobotVisualizer
                ThreadTools.sleep(1);
             }
 
-            if (yoVariableChangeData != null)
-            {
-               yoVariableChangeData.variable = variable;
-               cdrDeserializer.initialize(message.messageBuffer(), 0, message.dataLength());
+            yoVariableChangeData.variable = variable;
+            cdrDeserializer.initialize(message.messageBuffer(), 0, message.dataLength());
 
-               if (variable instanceof YoBoolean)
-               {
-                  boolean value = cdrDeserializer.read_bool();
-                  yoVariableChangeData.valueAsLongBits = value ? 1 : 0;
-               }
-               else if (variable instanceof YoDouble)
-               {
-                  double value = cdrDeserializer.read_float64();
-                  yoVariableChangeData.valueAsLongBits = Double.doubleToLongBits(value);
-               }
-               else if (variable instanceof YoInteger)
-               {
-                  int value = cdrDeserializer.read_int32();
-                  yoVariableChangeData.valueAsLongBits = value;
-               }
-               else if (variable instanceof YoLong)
-               {
-                  long value = cdrDeserializer.read_int64();
-                  yoVariableChangeData.valueAsLongBits = value;
-               }
-               else if (variable instanceof YoEnum)
-               {
-                  int value = cdrDeserializer.read_uint8();
-                  yoVariableChangeData.valueAsLongBits = value;
-               }
-               else
-               {
-                  throw new RuntimeException("Unsupported variable type " + variable.getClass().getSimpleName());
-               }
-               buffer.commit();
+            if (variable instanceof YoBoolean)
+            {
+               boolean value = cdrDeserializer.read_bool();
+               yoVariableChangeData.valueAsLongBits = value ? 1 : 0;
             }
+            else if (variable instanceof YoDouble)
+            {
+               double value = cdrDeserializer.read_float64();
+               yoVariableChangeData.valueAsLongBits = Double.doubleToLongBits(value);
+            }
+            else if (variable instanceof YoInteger)
+            {
+               int value = cdrDeserializer.read_int32();
+               yoVariableChangeData.valueAsLongBits = value;
+            }
+            else if (variable instanceof YoLong)
+            {
+               long value = cdrDeserializer.read_int64();
+               yoVariableChangeData.valueAsLongBits = value;
+            }
+            else if (variable instanceof YoEnum)
+            {
+               int value = cdrDeserializer.read_uint8();
+               yoVariableChangeData.valueAsLongBits = value;
+            }
+            else
+            {
+               throw new RuntimeException("Unsupported variable type " + variable.getClass().getSimpleName());
+            }
+            buffer.commit();
          }
       };
    }

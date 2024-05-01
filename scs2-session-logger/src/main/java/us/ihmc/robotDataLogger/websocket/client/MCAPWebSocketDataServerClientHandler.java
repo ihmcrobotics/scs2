@@ -20,8 +20,7 @@ import io.netty.util.CharsetUtil;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryReceiveBuffer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 
 import java.nio.ByteBuffer;
@@ -29,7 +28,7 @@ import java.nio.ByteBuffer;
 public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHandler<Object>
 {
    private final WebSocketClientHandshaker handshaker;
-   private final MCAPRegistryConsumer consumer;
+   private final MCAPDataScheduler consumer;
 
    private final int timestampPort;
    private final ConnectionStateListener connectionStateListener;
@@ -40,15 +39,22 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
 
    private volatile boolean waitingForPong = false;
 
+   private DataServerCommandConsumer dataServerCommandConsumer;
+
    public MCAPWebSocketDataServerClientHandler(WebSocketClientHandshaker handshaker,
                                                int timestampPort,
-                                               MCAPRegistryConsumer consumer,
+                                               MCAPDataScheduler consumer,
                                                ConnectionStateListener connectionStateListener)
    {
       this.handshaker = handshaker;
       this.consumer = consumer;
       this.timestampPort = timestampPort;
       this.connectionStateListener = connectionStateListener;
+   }
+
+   public void setDataServerCommandConsumer(DataServerCommandConsumer dataServerCommandConsumer)
+   {
+      this.dataServerCommandConsumer = dataServerCommandConsumer;
    }
 
    public ChannelFuture handshakeFuture()
@@ -91,13 +97,12 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
       if (frame instanceof TextWebSocketFrame)
       {
          DataServerCommand command = DataServerCommand.getCommand(frame.content());
-         if (command != null)
+         if (dataServerCommandConsumer != null && command != null)
          {
             int argument = command.getArgument(frame.content());
             if (argument != -1)
             {
-               // FIXME
-               //               yoVariableClient.receivedCommand(command, argument);
+               dataServerCommandConsumer.receivedCommand(command, argument);
             }
          }
       }
@@ -106,8 +111,7 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
          ByteBuffer byteBuffer = ByteBuffer.allocate(frame.content().readableBytes());
          frame.content().readBytes(byteBuffer);
          byteBuffer.flip();
-         MCAPRegistryReceiveBuffer buffer = new MCAPRegistryReceiveBuffer(System.nanoTime(), MCAPDataInput.wrap(byteBuffer));
-         consumer.onNewDataMessage(buffer);
+         consumer.onNewData(MCAPDataInput.wrap(byteBuffer));
 
          if (!sendConfiguration)
          {
@@ -160,5 +164,10 @@ public class MCAPWebSocketDataServerClientHandler extends SimpleChannelInboundHa
          handshakeFuture.setFailure(cause);
       }
       context.close();
+   }
+
+   public interface DataServerCommandConsumer
+   {
+      void receivedCommand(DataServerCommand command, int argument);
    }
 }

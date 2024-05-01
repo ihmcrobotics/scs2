@@ -77,12 +77,6 @@ public class MutableRecord implements Record
    }
 
    @Override
-   public long getElementLength()
-   {
-      return Record.RECORD_HEADER_LENGTH + bodyLength();
-   }
-
-   @Override
    public long bodyLength()
    {
       Objects.requireNonNull(body);

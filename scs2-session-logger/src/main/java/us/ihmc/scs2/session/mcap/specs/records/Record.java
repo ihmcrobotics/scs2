@@ -36,6 +36,12 @@ public interface Record extends MCAPElement
    <T> T body();
 
    @Override
+   default long getElementLength()
+   {
+      return RECORD_HEADER_LENGTH + bodyLength();
+   }
+
+   @Override
    default String toString(int indent)
    {
       String out = getClass().getSimpleName() + ":";

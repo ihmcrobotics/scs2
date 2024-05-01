@@ -16,18 +16,18 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import us.ihmc.pubsub.common.SerializedPayload;
-import us.ihmc.robotDataLogger.VariableChangeRequest;
-import us.ihmc.robotDataLogger.VariableChangeRequestPubSubType;
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.NettyUtils;
+import us.ihmc.robotDataLogger.websocket.client.MCAPWebSocketDataServerClientHandler.DataServerCommandConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection.DisconnectPromise;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPRecordConsumer;
+import us.ihmc.scs2.session.mcap.output.MCAPNettyByteBufDataOutput;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,19 +39,18 @@ import static io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFa
 public class MCAPWebsocketDataServerClient
 {
    private final EventLoopGroup group = NettyUtils.createEventGroundLoop();
-   private final MCAPRegistryConsumer consumer;
-
-   private final VariableChangeRequestPubSubType variableChangeRequestType = new VariableChangeRequestPubSubType();
-   private final SerializedPayload variableChangeRequestPayload = new SerializedPayload(variableChangeRequestType.getTypeSize());
+   private final MCAPDataScheduler consumer;
 
    private final Channel ch;
 
    private final DisconnectPromise disconnectPromise;
    private final UDPTimestampClient udpTimestampClient;
 
+   private final MCAPWebSocketDataServerClientHandler handler;
+
    public MCAPWebsocketDataServerClient(HTTPMCAPDataServerConnection connection,
                                         TimestampListener timestampListener,
-                                        MCAPSingleRecordConsumer mcapSingleRecordConsumer,
+                                        MCAPRecordConsumer mcapRecordConsumer,
                                         ConnectionStateListener connectionStateListener,
                                         int timeoutInMs) throws IOException
    {
@@ -68,18 +67,14 @@ public class MCAPWebsocketDataServerClient
          throw new IOException(e);
       }
 
-      consumer = new MCAPRegistryConsumer(mcapSingleRecordConsumer, connectionStateListener);
+      consumer = new MCAPDataScheduler(mcapRecordConsumer, connectionStateListener);
       udpTimestampClient = new UDPTimestampClient(timestampListener);
       udpTimestampClient.start();
 
-      MCAPWebSocketDataServerClientHandler handler = new MCAPWebSocketDataServerClientHandler(newHandshaker(uri,
-                                                                                                            WebSocketVersion.V13,
-                                                                                                            null,
-                                                                                                            true,
-                                                                                                            new DefaultHttpHeaders()),
-                                                                                              udpTimestampClient.getPort(),
-                                                                                              consumer,
-                                                                                              connectionStateListener);
+      handler = new MCAPWebSocketDataServerClientHandler(newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()),
+                                                         udpTimestampClient.getPort(),
+                                                         consumer,
+                                                         connectionStateListener);
 
       Bootstrap b = new Bootstrap();
       b.group(group).channel(NettyUtils.getSocketChannelClass()).handler(new ChannelInitializer<SocketChannel>()
@@ -136,20 +131,12 @@ public class MCAPWebsocketDataServerClient
       ch.close();
    }
 
-   // FIXME Need to improve this
-   public void writeVariableChangeRequest(int identifier, double valueAsDouble)
+   public void sendRecord(Record record)
    {
       try
       {
-         VariableChangeRequest msg = new VariableChangeRequest();
-         msg.setVariableID(identifier);
-         msg.setRequestedValue(valueAsDouble);
-
-         variableChangeRequestPayload.getData().clear();
-         variableChangeRequestType.serialize(msg, variableChangeRequestPayload);
-
-         ByteBuf data = ch.alloc().buffer(variableChangeRequestPayload.getLength());
-         data.writeBytes(variableChangeRequestPayload.getData());
+         ByteBuf data = ch.alloc().buffer((int) record.getElementLength());
+         record.write(new MCAPNettyByteBufDataOutput(data));
          BinaryWebSocketFrame frame = new BinaryWebSocketFrame(data);
          ch.writeAndFlush(frame);
       }
@@ -173,5 +160,11 @@ public class MCAPWebsocketDataServerClient
       {
          e.printStackTrace();
       }
+   }
+
+   public void setDataServerCommandConsumer(DataServerCommandConsumer consumer)
+   {
+      if (handler != null)
+         handler.setDataServerCommandConsumer(consumer);
    }
 }

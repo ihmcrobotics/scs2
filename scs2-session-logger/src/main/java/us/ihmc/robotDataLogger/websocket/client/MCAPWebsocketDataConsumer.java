@@ -2,15 +2,17 @@ package us.ihmc.robotDataLogger.websocket.client;
 
 import io.netty.buffer.ByteBuf;
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
+import us.ihmc.robotDataLogger.websocket.client.MCAPWebSocketDataServerClientHandler.DataServerCommandConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
 import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPRegistryConsumer.MCAPSingleRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPRecordConsumer;
 import us.ihmc.robotDataLogger.websocket.mcap.WebsocketResourcesAttachment;
 import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.scs2.session.mcap.input.MCAPNettyByteBufDataInput;
 import us.ihmc.scs2.session.mcap.specs.records.Attachment;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -22,12 +24,13 @@ public class MCAPWebsocketDataConsumer
    private HTTPMCAPDataServerConnection connection;
 
    private MCAPWebsocketDataServerClient session;
+   private DataServerCommandConsumer dataServerCommandConsumer;
    private boolean closed = false;
 
    private final int timeoutInMs;
 
    private TimestampListener timestampListener;
-   private MCAPSingleRecordConsumer singleRecordConsumer;
+   private MCAPRecordConsumer singleRecordConsumer;
    private ConnectionStateListener connectionStateListener;
 
    public MCAPWebsocketDataConsumer(HTTPMCAPDataServerConnection initialConnection, int timeoutInMs)
@@ -58,6 +61,16 @@ public class MCAPWebsocketDataConsumer
       }
    }
 
+   public void setDataServerCommandConsumer(DataServerCommandConsumer dataServerCommandConsumer)
+   {
+      synchronized (lock)
+      {
+         this.dataServerCommandConsumer = dataServerCommandConsumer;
+         if (session != null)
+            session.setDataServerCommandConsumer(dataServerCommandConsumer);
+      }
+   }
+
    public WebsocketResourcesAttachment getResourceAttachment() throws IOException
    {
       ByteBuf resourceZip = getResource(MCAPDataServerServerContent.ROBOT_MODEL_RESOURCES);
@@ -67,8 +80,22 @@ public class MCAPWebsocketDataConsumer
       return WebsocketResourcesAttachment.toWebsocketResourcesAttachment(Attachment.load(input, 0, resourceZip.readableBytes()));
    }
 
-   public void startSession(TimestampListener timestampListener, MCAPSingleRecordConsumer singleRecordConsumer, ConnectionStateListener connectionStateListener)
-         throws IOException
+   public void setTimestampListener(TimestampListener timestampListener)
+   {
+      this.timestampListener = timestampListener;
+   }
+
+   public void setSingleRecordConsumer(MCAPRecordConsumer singleRecordConsumer)
+   {
+      this.singleRecordConsumer = singleRecordConsumer;
+   }
+
+   public void setConnectionStateListener(ConnectionStateListener connectionStateListener)
+   {
+      this.connectionStateListener = connectionStateListener;
+   }
+
+   public void startSession() throws IOException
    {
       synchronized (lock)
       {
@@ -78,11 +105,9 @@ public class MCAPWebsocketDataConsumer
          }
 
          connection.take();
-         this.timestampListener = timestampListener;
-         this.singleRecordConsumer = singleRecordConsumer;
-         this.connectionStateListener = connectionStateListener;
 
          session = new MCAPWebsocketDataServerClient(connection, timestampListener, singleRecordConsumer, connectionStateListener, timeoutInMs);
+         session.setDataServerCommandConsumer(dataServerCommandConsumer);
       }
    }
 
@@ -164,6 +189,7 @@ public class MCAPWebsocketDataConsumer
             {
                connection = newConnection;
                session = new MCAPWebsocketDataServerClient(connection, timestampListener, singleRecordConsumer, connectionStateListener, timeoutInMs);
+               session.setDataServerCommandConsumer(dataServerCommandConsumer);
                return true;
             }
             else
@@ -179,14 +205,13 @@ public class MCAPWebsocketDataConsumer
       }
    }
 
-   // FIXME Fix this implementation
-   public void writeVariableChangeRequest(int identifier, double valueAsDouble)
+   public void sendRecord(Record record)
    {
       synchronized (lock)
       {
          if (session != null && session.isActive())
          {
-            session.writeVariableChangeRequest(identifier, valueAsDouble);
+            session.sendRecord(record);
          }
       }
    }
