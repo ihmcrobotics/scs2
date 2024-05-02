@@ -1,7 +1,8 @@
 package us.ihmc.robotDataLogger.websocket.dataBuffers;
 
 import us.ihmc.commons.thread.ThreadTools;
-import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
+import us.ihmc.robotDataLogger.websocket.interfaces.ConnectionStateListener;
+import us.ihmc.robotDataLogger.websocket.interfaces.MCAPRecordListener;
 import us.ihmc.scs2.session.mcap.input.MCAPDataInput;
 import us.ihmc.scs2.session.mcap.specs.records.Chunk;
 import us.ihmc.scs2.session.mcap.specs.records.Message;
@@ -11,19 +12,19 @@ import us.ihmc.scs2.session.mcap.specs.records.RecordDataInputBacked;
 
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class MCAPDataScheduler extends Thread
+public class MCAPDataReceiveScheduler extends Thread
 {
    private final static int MAXIMUM_ELEMENTS = 4096;
 
    private final PriorityBlockingQueue<MCAPData> orderedMCAPData = new PriorityBlockingQueue<>();
    private volatile boolean running = true;
 
-   private final MCAPRecordConsumer singleRecordConsumer;
+   private final MCAPRecordListener mcapRecordListener;
    private final ConnectionStateListener connectionStateListener;
 
-   public MCAPDataScheduler(MCAPRecordConsumer singleRecordConsumer, ConnectionStateListener connectionStateListener)
+   public MCAPDataReceiveScheduler(MCAPRecordListener mcapRecordListener, ConnectionStateListener connectionStateListener)
    {
-      this.singleRecordConsumer = singleRecordConsumer;
+      this.mcapRecordListener = mcapRecordListener;
       this.connectionStateListener = connectionStateListener;
 
       start();
@@ -73,7 +74,7 @@ public class MCAPDataScheduler extends Thread
    private void handlePackets() throws InterruptedException
    {
       MCAPData buffer = orderedMCAPData.take();
-      singleRecordConsumer.accept(buffer.getReceivedTimestamp(), buffer.getRecord());
+      mcapRecordListener.accept(buffer.getReceivedTimestamp(), buffer.getRecord());
    }
 
    public void onNewData(MCAPDataInput dataInput)
@@ -82,16 +83,6 @@ public class MCAPDataScheduler extends Thread
          orderedMCAPData.add(new MCAPData(System.nanoTime(), dataInput));
       else
          System.out.println("Dropping packet");
-   }
-
-   public interface MCAPConsumer
-   {
-      void accept(WebsocketMCAPStarter newMCAP);
-   }
-
-   public interface MCAPRecordConsumer
-   {
-      void accept(long timestamp, Record newRecord);
    }
 
    private static class MCAPData implements Comparable<MCAPData>

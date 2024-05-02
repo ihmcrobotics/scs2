@@ -35,13 +35,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-public class HTTPMCAPDataServerConnection
+public class HTTPMCAPServerConnection
 {
    private static final int TIMEOUT_MS = 1000;
 
    private final EventLoopGroup group = NettyUtils.createEventGroundLoop();
    private final HTTPDataServerDescription target;
-   private final HTTPDataServerConnectionListener listener;
+   private final HTTPMCAPServerConnectionListener listener;
    private WebsocketMCAPStarter mcapStarter;
 
    private Channel channel;
@@ -51,22 +51,22 @@ public class HTTPMCAPDataServerConnection
 
    private boolean taken = false;
 
-   public interface HTTPDataServerConnectionListener
+   public interface HTTPMCAPServerConnectionListener
    {
       /**
        * Channel has successfully connected and received a announcement
        *
-       * @param connection
+       * @param httpMCAPServerConnection
        */
-      void connected(HTTPMCAPDataServerConnection connection);
+      void connected(HTTPMCAPServerConnection httpMCAPServerConnection);
 
       /**
        * Channel has been disconnected. The channel is still cleaning up. closed() will be called when
        * cleanup is finished
        *
-       * @param connection
+       * @param httpMCAPServerConnection
        */
-      default void disconnected(HTTPMCAPDataServerConnection connection)
+      default void disconnected(HTTPMCAPServerConnection httpMCAPServerConnection)
       {
 
       }
@@ -81,9 +81,9 @@ public class HTTPMCAPDataServerConnection
       /**
        * The channel is closed and all threads have shut down.
        *
-       * @param httpDataServerConnection
+       * @param httpMCAPServerConnection
        */
-      default void closed(HTTPMCAPDataServerConnection httpDataServerConnection)
+      default void closed(HTTPMCAPServerConnection httpMCAPServerConnection)
       {
 
       }
@@ -96,10 +96,10 @@ public class HTTPMCAPDataServerConnection
     */
    public static class DisconnectPromise
    {
-      private final HTTPDataServerConnectionListener listener;
-      private final HTTPMCAPDataServerConnection connection;
+      private final HTTPMCAPServerConnectionListener listener;
+      private final HTTPMCAPServerConnection connection;
 
-      private DisconnectPromise(HTTPDataServerConnectionListener listener, HTTPMCAPDataServerConnection connection)
+      private DisconnectPromise(HTTPMCAPServerConnectionListener listener, HTTPMCAPServerConnection connection)
       {
          this.listener = listener;
          this.connection = connection;
@@ -120,13 +120,13 @@ public class HTTPMCAPDataServerConnection
     * @return A connection if successful
     * @throws IOException if connection failed
     */
-   public static HTTPMCAPDataServerConnection connect(String host, int port) throws IOException
+   public static HTTPMCAPServerConnection connect(String host, int port) throws IOException
    {
       HTTPDataServerDescription target = new HTTPDataServerDescription(host, port, null, false);
 
-      CompletableFuture<HTTPMCAPDataServerConnection> connectionFuture = new CompletableFuture<>();
+      CompletableFuture<HTTPMCAPServerConnection> connectionFuture = new CompletableFuture<>();
 
-      new HTTPMCAPDataServerConnection(target, new HTTPMCAPDataServerConnection.HTTPDataServerConnectionListener()
+      new HTTPMCAPServerConnection(target, new HTTPMCAPServerConnectionListener()
       {
          @Override
          public void connectionRefused(HTTPDataServerDescription target)
@@ -135,7 +135,7 @@ public class HTTPMCAPDataServerConnection
          }
 
          @Override
-         public void connected(HTTPMCAPDataServerConnection connection)
+         public void connected(HTTPMCAPServerConnection connection)
          {
             connectionFuture.complete(connection);
          }
@@ -158,7 +158,7 @@ public class HTTPMCAPDataServerConnection
     * @param target
     * @param listener
     */
-   public HTTPMCAPDataServerConnection(HTTPDataServerDescription target, HTTPDataServerConnectionListener listener)
+   public HTTPMCAPServerConnection(HTTPDataServerDescription target, HTTPMCAPServerConnectionListener listener)
    {
       this.target = target;
       this.listener = listener;
@@ -371,8 +371,8 @@ public class HTTPMCAPDataServerConnection
       {
          if (!taken)
          {
-            listener.disconnected(HTTPMCAPDataServerConnection.this);
-            group.shutdownGracefully().addListener((e) -> listener.closed(HTTPMCAPDataServerConnection.this));
+            listener.disconnected(HTTPMCAPServerConnection.this);
+            group.shutdownGracefully().addListener((e) -> listener.closed(HTTPMCAPServerConnection.this));
          }
          else
          {

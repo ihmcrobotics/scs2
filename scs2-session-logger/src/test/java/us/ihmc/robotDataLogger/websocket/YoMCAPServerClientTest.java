@@ -9,7 +9,7 @@ import us.ihmc.euclid.tools.EuclidCoreRandomTools;
 import us.ihmc.robotDataLogger.MCAPVariableClient;
 import us.ihmc.robotDataLogger.YoMCAPVariableServer;
 import us.ihmc.robotDataLogger.logger.DataServerSettings;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
+import us.ihmc.robotDataLogger.websocket.interfaces.ConnectionStateListener;
 import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
 import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
 import us.ihmc.scs2.session.mcap.specs.records.Channel;

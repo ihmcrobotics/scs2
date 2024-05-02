@@ -2,12 +2,12 @@ package us.ihmc.robotDataLogger.websocket.client;
 
 import io.netty.buffer.ByteBuf;
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
-import us.ihmc.robotDataLogger.websocket.client.MCAPWebSocketDataServerClientHandler.DataServerCommandConsumer;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
-import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
+import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.interfaces.ConnectionStateListener;
+import us.ihmc.robotDataLogger.websocket.interfaces.DataServerCommandConsumer;
+import us.ihmc.robotDataLogger.websocket.interfaces.MCAPRecordListener;
 import us.ihmc.robotDataLogger.websocket.mcap.WebsocketResourcesAttachment;
 import us.ihmc.robotDataLogger.websocket.server.MCAPDataServerServerContent;
 import us.ihmc.scs2.session.mcap.input.MCAPNettyByteBufDataInput;
@@ -21,19 +21,19 @@ import java.util.concurrent.TimeUnit;
 public class MCAPWebsocketDataConsumer
 {
    private final Object lock = new Object();
-   private HTTPMCAPDataServerConnection connection;
+   private HTTPMCAPServerConnection connection;
 
-   private MCAPWebsocketDataServerClient session;
-   private DataServerCommandConsumer dataServerCommandConsumer;
+   private MCAPWebsocketClient session;
    private boolean closed = false;
 
    private final int timeoutInMs;
 
    private TimestampListener timestampListener;
-   private MCAPRecordConsumer singleRecordConsumer;
+   private MCAPRecordListener singleRecordConsumer;
+   private DataServerCommandConsumer dataServerCommandConsumer;
    private ConnectionStateListener connectionStateListener;
 
-   public MCAPWebsocketDataConsumer(HTTPMCAPDataServerConnection initialConnection, int timeoutInMs)
+   public MCAPWebsocketDataConsumer(HTTPMCAPServerConnection initialConnection, int timeoutInMs)
    {
       connection = initialConnection;
       this.timeoutInMs = timeoutInMs;
@@ -61,16 +61,6 @@ public class MCAPWebsocketDataConsumer
       }
    }
 
-   public void setDataServerCommandConsumer(DataServerCommandConsumer dataServerCommandConsumer)
-   {
-      synchronized (lock)
-      {
-         this.dataServerCommandConsumer = dataServerCommandConsumer;
-         if (session != null)
-            session.setDataServerCommandConsumer(dataServerCommandConsumer);
-      }
-   }
-
    public WebsocketResourcesAttachment getResourceAttachment() throws IOException
    {
       ByteBuf resourceZip = getResource(MCAPDataServerServerContent.ROBOT_MODEL_RESOURCES);
@@ -85,9 +75,14 @@ public class MCAPWebsocketDataConsumer
       this.timestampListener = timestampListener;
    }
 
-   public void setSingleRecordConsumer(MCAPRecordConsumer singleRecordConsumer)
+   public void setSingleRecordConsumer(MCAPRecordListener singleRecordConsumer)
    {
       this.singleRecordConsumer = singleRecordConsumer;
+   }
+
+   public void setDataServerCommandConsumer(DataServerCommandConsumer dataServerCommandConsumer)
+   {
+      this.dataServerCommandConsumer = dataServerCommandConsumer;
    }
 
    public void setConnectionStateListener(ConnectionStateListener connectionStateListener)
@@ -106,8 +101,12 @@ public class MCAPWebsocketDataConsumer
 
          connection.take();
 
-         session = new MCAPWebsocketDataServerClient(connection, timestampListener, singleRecordConsumer, connectionStateListener, timeoutInMs);
-         session.setDataServerCommandConsumer(dataServerCommandConsumer);
+         session = new MCAPWebsocketClient(connection,
+                                           timestampListener,
+                                           singleRecordConsumer,
+                                           dataServerCommandConsumer,
+                                           connectionStateListener,
+                                           timeoutInMs);
       }
    }
 
@@ -182,14 +181,18 @@ public class MCAPWebsocketDataConsumer
          try
          {
             HTTPDataServerDescription oldDescription = connection.getTarget();
-            HTTPMCAPDataServerConnection newConnection = HTTPMCAPDataServerConnection.connect(oldDescription.getHost(), oldDescription.getPort());
+            HTTPMCAPServerConnection newConnection = HTTPMCAPServerConnection.connect(oldDescription.getHost(), oldDescription.getPort());
             newConnection.close();
 
             if (newConnection.getMCAPStarter().isSessionCompatible(connection.getMCAPStarter()))
             {
                connection = newConnection;
-               session = new MCAPWebsocketDataServerClient(connection, timestampListener, singleRecordConsumer, connectionStateListener, timeoutInMs);
-               session.setDataServerCommandConsumer(dataServerCommandConsumer);
+               session = new MCAPWebsocketClient(connection,
+                                                 timestampListener,
+                                                 singleRecordConsumer,
+                                                 dataServerCommandConsumer,
+                                                 connectionStateListener,
+                                                 timeoutInMs);
                return true;
             }
             else

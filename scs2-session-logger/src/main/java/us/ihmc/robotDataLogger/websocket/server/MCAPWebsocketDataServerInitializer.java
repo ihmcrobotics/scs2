@@ -7,6 +7,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
+import us.ihmc.robotDataLogger.websocket.interfaces.MCAPMessageListener;
 
 /**
  * Initializes a connection

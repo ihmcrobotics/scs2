@@ -45,7 +45,6 @@ public class MCAPWebsocketDataBroadcaster implements ChannelFutureListener
 
    public void addClient(MCAPWebsocketDataServerFrameHandler websocketLogFrameHandler)
    {
-
       synchronized (channelLock)
       {
 

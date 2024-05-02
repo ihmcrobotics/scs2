@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.Han
 import us.ihmc.commons.Conversions;
 import us.ihmc.robotDataLogger.logger.LogAliveListener;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
+import us.ihmc.robotDataLogger.websocket.interfaces.MCAPMessageListener;
 import us.ihmc.robotDataLogger.websocket.mcap.WebsocketRecord;
 
 import java.io.IOException;

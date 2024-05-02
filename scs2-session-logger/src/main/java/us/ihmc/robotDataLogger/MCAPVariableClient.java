@@ -2,13 +2,13 @@ package us.ihmc.robotDataLogger;
 
 import us.ihmc.robotDataLogger.listeners.TimestampListener;
 import us.ihmc.robotDataLogger.util.DaemonThreadFactory;
-import us.ihmc.robotDataLogger.websocket.client.MCAPWebSocketDataServerClientHandler.DataServerCommandConsumer;
 import us.ihmc.robotDataLogger.websocket.client.MCAPWebsocketDataConsumer;
-import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPDataServerConnection;
+import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPMCAPServerConnection;
 import us.ihmc.robotDataLogger.websocket.command.DataServerCommand;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.ConnectionStateListener;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPConsumer;
-import us.ihmc.robotDataLogger.websocket.dataBuffers.MCAPDataScheduler.MCAPRecordConsumer;
+import us.ihmc.robotDataLogger.websocket.interfaces.ConnectionStateListener;
+import us.ihmc.robotDataLogger.websocket.interfaces.DataServerCommandConsumer;
+import us.ihmc.robotDataLogger.websocket.interfaces.MCAPRecordListener;
+import us.ihmc.robotDataLogger.websocket.interfaces.MCAPStarterConsumer;
 import us.ihmc.robotDataLogger.websocket.mcap.WebsocketMCAPStarter;
 import us.ihmc.robotDataLogger.websocket.server.WebsocketAnnouncementMetadata;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
@@ -30,8 +30,8 @@ public class MCAPVariableClient
 
    // Callbacks
    private TimestampListener timestampListener;
-   private MCAPConsumer starterMCAPConsumer;
-   private MCAPRecordConsumer recordConsumer;
+   private MCAPStarterConsumer starterMCAPConsumer;
+   private MCAPRecordListener recordConsumer;
    private ConnectionStateListener connectionStateListener;
    private DataServerCommandConsumer dataServerCommandConsumer;
 
@@ -44,12 +44,12 @@ public class MCAPVariableClient
       this.timestampListener = timestampListener;
    }
 
-   public void setStarterMCAPConsumer(MCAPConsumer starterMCAPConsumer)
+   public void setStarterMCAPConsumer(MCAPStarterConsumer starterMCAPConsumer)
    {
       this.starterMCAPConsumer = starterMCAPConsumer;
    }
 
-   public void setRecordConsumer(MCAPRecordConsumer recordConsumer)
+   public void setRecordConsumer(MCAPRecordListener recordConsumer)
    {
       this.recordConsumer = recordConsumer;
    }
@@ -74,7 +74,7 @@ public class MCAPVariableClient
    {
       try
       {
-         HTTPMCAPDataServerConnection connection = HTTPMCAPDataServerConnection.connect(host, port);
+         HTTPMCAPServerConnection connection = HTTPMCAPServerConnection.connect(host, port);
          start(DEFAULT_TIMEOUT, connection);
       }
       catch (IOException e)
@@ -92,7 +92,7 @@ public class MCAPVariableClient
     * @param connection An existing HTTPDataServerConnection
     * @throws IOException
     */
-   public synchronized void start(int timeout, HTTPMCAPDataServerConnection connection) throws IOException
+   public synchronized void start(int timeout, HTTPMCAPServerConnection connection) throws IOException
    {
       if (dataConsumer != null)
       {
@@ -115,9 +115,9 @@ public class MCAPVariableClient
       if (dataConsumer.isClosed())
          throw new RuntimeException("Client has closed completely");
 
-      dataConsumer.setDataServerCommandConsumer(dataServerCommandConsumer);
       dataConsumer.setTimestampListener(this::receivedTimestamp);
       dataConsumer.setSingleRecordConsumer(this::receivedRecord);
+      dataConsumer.setDataServerCommandConsumer(this::receivedCommand);
       dataConsumer.setConnectionStateListener(new ConnectionStateListener()
       {
          @Override
@@ -192,6 +192,14 @@ public class MCAPVariableClient
       if (recordConsumer != null)
       {
          recordConsumer.accept(timestamp, record);
+      }
+   }
+
+   private void receivedCommand(DataServerCommand command, int argument)
+   {
+      if (dataServerCommandConsumer != null)
+      {
+         dataServerCommandConsumer.receivedCommand(command, argument);
       }
    }
 

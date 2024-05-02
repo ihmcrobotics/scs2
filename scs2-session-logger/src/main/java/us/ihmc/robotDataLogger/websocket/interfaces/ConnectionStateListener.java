@@ -1,4 +1,4 @@
-package us.ihmc.robotDataLogger.websocket.dataBuffers;
+package us.ihmc.robotDataLogger.websocket.interfaces;
 
 public interface ConnectionStateListener
 {
