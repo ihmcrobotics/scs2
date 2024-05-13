@@ -1,3 +1,0 @@
-uint8 value
-# TODO The constants shouldn't have to be published all the time
-string[] constants

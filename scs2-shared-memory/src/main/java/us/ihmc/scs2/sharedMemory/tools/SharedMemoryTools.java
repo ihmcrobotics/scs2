@@ -761,6 +761,24 @@ public class SharedMemoryTools
       return currentRegistry;
    }
 
+   public static YoVariable ensureYoVariableExists(YoRegistry rootRegistry, String variableFullname, Class<? extends YoVariable> type)
+   {
+      YoVariable variable = rootRegistry.findVariable(variableFullname);
+      if (variable != null)
+         return variable;
+      YoRegistry parentRegistry = ensurePathExists(rootRegistry, new YoNamespace(variableFullname).getParent());
+
+      if (type == YoDouble.class)
+         return new YoDouble(variableFullname, parentRegistry);
+      if (type == YoInteger.class)
+         return new YoInteger(variableFullname, parentRegistry);
+      if (type == YoLong.class)
+         new YoLong(variableFullname, parentRegistry);
+      if (type == YoBoolean.class)
+         new YoBoolean(variableFullname, parentRegistry);
+      return null;
+   }
+
    public static YoVariable ensureYoVariableExists(YoRegistry rootRegistry, String variableFullname, YoVariableType type)
    {
       YoVariable variable = rootRegistry.findVariable(variableFullname);

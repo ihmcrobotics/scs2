@@ -5,17 +5,9 @@ import us.ihmc.scs2.session.mcap.specs.records.Chunk;
 import us.ihmc.scs2.session.mcap.specs.records.Compression;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
 import us.ihmc.scs2.session.mcap.specs.records.Opcode;
-import us.ihmc.scs2.session.mcap.specs.records.Record;
 import us.ihmc.scs2.session.mcap.specs.records.Records;
-import us.ihmc.yoVariables.variable.YoBoolean;
-import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoEnum;
-import us.ihmc.yoVariables.variable.YoInteger;
-import us.ihmc.yoVariables.variable.YoLong;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 public class WebsocketSchemaStarterChunk implements Chunk
 {
@@ -32,13 +24,7 @@ public class WebsocketSchemaStarterChunk implements Chunk
    public static WebsocketSchemaStarterChunk create(MCAPBuilder mcapBuilder)
    {
       WebsocketSchemaStarterChunk chunk = new WebsocketSchemaStarterChunk();
-      List<Record> records = new ArrayList<>();
-      records.add(mcapBuilder.getVariableSchemaRecord(YoBoolean.class));
-      records.add(mcapBuilder.getVariableSchemaRecord(YoDouble.class));
-      records.add(mcapBuilder.getVariableSchemaRecord(YoInteger.class));
-      records.add(mcapBuilder.getVariableSchemaRecord(YoLong.class));
-      records.add(mcapBuilder.getVariableSchemaRecord(YoEnum.class));
-      chunk.records = new Records(records);
+      chunk.records = new Records(mcapBuilder.getAllSchemas());
       return chunk;
    }
 

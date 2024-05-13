@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
+import us.ihmc.euclid.Axis3D;
 import us.ihmc.scs2.session.mcap.encoding.CDRSerializer;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -9,8 +10,6 @@ import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -28,62 +26,39 @@ public class MCAPBuilder
 {
    public static final String MESSAGE_ENCODING = "cdr";
    private final List<SchemaInfoPackage> schemas = new ArrayList<>();
-   private final Map<Class<? extends YoVariable>, SchemaInfoPackage> variableToSchemaMap = new LinkedHashMap<>();
+   private final Map<YoVariableTypePackage, SchemaInfoPackage> variableToSchemaMap = new LinkedHashMap<>();
 
    private final List<ChannelInfoPackage> channels = new ArrayList<>();
    private final Map<YoVariable, ChannelInfoPackage> variableToChannelMap = new LinkedHashMap<>();
 
    private final CDRSerializer cdrSerializer = new CDRSerializer();
+   private Consumer<Schema> newSchemaListener;
    private Consumer<Channel> newChannelListener;
 
    public MCAPBuilder()
    {
-      for (Class<? extends YoVariable> variableType : Arrays.asList(YoBoolean.class, YoDouble.class, YoLong.class, YoInteger.class, YoEnum.class))
+      for (Class<? extends YoVariable> variableType : Arrays.asList(YoBoolean.class, YoDouble.class, YoLong.class, YoInteger.class))
       {
-         MutableSchema newSchema = nextSchema(variableType.getSimpleName(), schemas.size(), "ros2msg", loadYoVariableSchemaBytesFromFile(variableType));
-         SchemaInfoPackage schemaInfoPackage = new SchemaInfoPackage(newSchema);
-         schemas.add(schemaInfoPackage);
-         variableToSchemaMap.put(variableType, schemaInfoPackage);
+         getOrCreateSchema(YoVariableTypePackage.valueOf(variableType));
       }
+   }
+
+   public void setSchemaCreationListener(Consumer<Schema> newSchemaListener)
+   {
+      this.newSchemaListener = newSchemaListener;
    }
 
    public void setChannelCreationListener(Consumer<Channel> newChannelListener)
    {
-
       this.newChannelListener = newChannelListener;
    }
 
-   /**
-    * Load the schema file for the given variable type. The schema is stored in memory as a byte array instead of a string for efficiency.
-    * <p
-    * The file encoding should be UTF-8. The resulting array is prefixed with the length of the schema file as a 4-byte integer in little-endian order.
-    * </p>
-    *
-    * @param variableType the type of the variable.
-    * @return the schema file as a byte array.
-    */
-   private static byte[] loadYoVariableSchemaBytesFromFile(Class<? extends YoVariable> variableType)
+   private MutableSchema nextSchema(String name, String schema)
    {
-      ClassLoader classLoader = MCAPBuilder.class.getClassLoader();
-      try
-      {
-         try (InputStream schemaStream = classLoader.getResourceAsStream("mcap/schema/%sSchema.ros2msg".formatted(variableType.getSimpleName())))
-         {
-            Objects.requireNonNull(schemaStream, "Could not find schema file for variable: " + variableType.getSimpleName());
-            byte[] schemaBytes = schemaStream.readAllBytes();
-            ByteBuffer schemaBytesWithPrefixLength = ByteBuffer.allocate(schemaBytes.length + 4).order(ByteOrder.LITTLE_ENDIAN);
-            schemaBytesWithPrefixLength.putInt(schemaBytes.length);
-            schemaBytesWithPrefixLength.put(schemaBytes);
-            return schemaBytesWithPrefixLength.array();
-         }
-      }
-      catch (IOException e)
-      {
-         throw new RuntimeException(e);
-      }
+      return createSchema(name, schemas.size(), "ros2msg", schema.getBytes());
    }
 
-   private static MutableSchema nextSchema(String name, int schemaID, String encoding, byte[] data)
+   private static MutableSchema createSchema(String name, int schemaID, String encoding, byte[] data)
    {
       MutableSchema schema = new MutableSchema();
       schema.setId(schemaID);
@@ -103,9 +78,30 @@ public class MCAPBuilder
       return schemas.get(id).schemaRecord;
    }
 
-   public Record getVariableSchemaRecord(Class<? extends YoVariable> variableType)
+   public List<Record> getAllSchemas()
    {
-      return variableToSchemaMap.get(variableType).schemaRecord;
+      List<Record> records = new ArrayList<>();
+      for (SchemaInfoPackage schemaInfoPackage : schemas)
+      {
+         records.add(schemaInfoPackage.schemaRecord);
+      }
+      return records;
+   }
+
+   private SchemaInfoPackage getOrCreateSchema(YoVariableTypePackage variableTypePackage)
+   {
+      SchemaInfoPackage schemaInfoPackage = variableToSchemaMap.get(variableTypePackage);
+      if (schemaInfoPackage == null)
+      {
+         schemaInfoPackage = new SchemaInfoPackage(nextSchema(variableTypePackage.getSchemaName(), variableTypePackage.getSchema()));
+         schemas.add(schemaInfoPackage);
+         variableToSchemaMap.put(variableTypePackage, schemaInfoPackage);
+
+         if (newSchemaListener != null)
+            newSchemaListener.accept(schemaInfoPackage.schema);
+      }
+
+      return schemaInfoPackage;
    }
 
    public Record getOrCreateVariableChannelRecord(YoVariable variable)
@@ -118,10 +114,11 @@ public class MCAPBuilder
       ChannelInfoPackage channelInfoPackage = variableToChannelMap.get(variable);
       if (channelInfoPackage == null)
       {
+         SchemaInfoPackage schemaInfoPackage = getOrCreateSchema(YoVariableTypePackage.valueOf(variable));
          String topic = variable.getFullNameString().replace(YoTools.NAMESPACE_SEPERATOR, '/');
-         int schemaID = variableToSchemaMap.get(variable.getClass()).schema.id();
+         int schemaID = schemaInfoPackage.schema.id();
          Channel channel = nextChannel(topic, schemaID, channels.size(), MESSAGE_ENCODING, new MetadataMap());
-         channelInfoPackage = new ChannelInfoPackage(channel, variable, variableToSchemaMap.get(variable.getClass()).schema);
+         channelInfoPackage = new ChannelInfoPackage(channel, variable, schemaInfoPackage.schema);
          channels.add(channelInfoPackage);
          variableToChannelMap.put(variable, channelInfoPackage);
 
@@ -157,13 +154,13 @@ public class MCAPBuilder
       messageBuffer.order(ByteOrder.LITTLE_ENDIAN);
       cdrSerializer.initialize(messageBuffer);
       if (variable instanceof YoBoolean yoBoolean)
-         cdrSerializer.write_byte((byte) (yoBoolean.getBooleanValue() ? 1 : 0));
+         cdrSerializer.write_bool(yoBoolean.getValue());
       else if (variable instanceof YoDouble yoDouble)
-         cdrSerializer.write_float64(yoDouble.getDoubleValue());
+         cdrSerializer.write_float64(yoDouble.getValue());
       else if (variable instanceof YoLong yoLong)
-         cdrSerializer.write_int64(yoLong.getLongValue());
+         cdrSerializer.write_int64(yoLong.getValue());
       else if (variable instanceof YoInteger yoInteger)
-         cdrSerializer.write_int32(yoInteger.getIntegerValue());
+         cdrSerializer.write_int32(yoInteger.getValue());
       else if (variable instanceof YoEnum<?> yoEnum)
          cdrSerializer.write_uint8(yoEnum.getOrdinal());
       else
@@ -198,6 +195,128 @@ public class MCAPBuilder
          this.variable = variable;
          this.schema = schema;
          this.channelRecord = new MutableRecord(channel);
+      }
+   }
+
+   public static Class<? extends YoVariable> getVariableTypeFromSchemaName(String schemaName)
+   {
+      if (schemaName.equals("YoBoolean"))
+         return YoBoolean.class;
+      if (schemaName.equals("YoDouble"))
+         return YoDouble.class;
+      if (schemaName.equals("YoInteger"))
+         return YoInteger.class;
+      if (schemaName.equals("YoLong"))
+         return YoLong.class;
+      if (schemaName.startsWith("YoEnum"))
+         return YoEnum.class;
+      return null;
+   }
+
+   private static class YoVariableTypePackage
+   {
+      private static final YoVariableTypePackage BOOLEAN = new YoVariableTypePackage(YoBoolean.class, null, false);
+      private static final YoVariableTypePackage DOUBLE = new YoVariableTypePackage(YoDouble.class, null, false);
+      private static final YoVariableTypePackage INTEGER = new YoVariableTypePackage(YoInteger.class, null, false);
+      private static final YoVariableTypePackage LONG = new YoVariableTypePackage(YoLong.class, null, false);
+
+      private final Class<? extends YoVariable> variableType;
+      private final Class<? extends Enum<?>> enumType;
+      private final boolean allowNull;
+
+      public static YoVariableTypePackage valueOf(YoVariable yoVariable)
+      {
+         if (yoVariable instanceof YoBoolean)
+            return BOOLEAN;
+         if (yoVariable instanceof YoDouble)
+            return DOUBLE;
+         if (yoVariable instanceof YoInteger)
+            return INTEGER;
+         if (yoVariable instanceof YoLong)
+            return LONG;
+         if (yoVariable instanceof YoEnum<?> yoEnum)
+            return new YoVariableTypePackage(yoEnum.getClass(), yoEnum.getEnumType(), yoEnum.isNullAllowed());
+         return null;
+      }
+
+      public static YoVariableTypePackage valueOf(Class<? extends YoVariable> variableType)
+      {
+         if (variableType == YoBoolean.class)
+            return BOOLEAN;
+         if (variableType == YoDouble.class)
+            return DOUBLE;
+         if (variableType == YoInteger.class)
+            return INTEGER;
+         if (variableType == YoLong.class)
+            return LONG;
+         return null;
+      }
+
+      public YoVariableTypePackage(Class<? extends YoVariable> variableType, Class<? extends Enum<?>> enumType, boolean allowNull)
+      {
+         this.variableType = variableType;
+         this.enumType = enumType;
+         this.allowNull = allowNull;
+      }
+
+      private String getSchemaName()
+      {
+         if (enumType != null)
+            return variableType.getSimpleName() + "-" + enumType.getSimpleName();
+         else
+            return variableType.getSimpleName();
+      }
+
+      private String getSchema()
+      {
+         if (variableType == YoBoolean.class)
+            return "bool value";
+         else if (variableType == YoDouble.class)
+            return "float64 value";
+         else if (variableType == YoInteger.class)
+            return "int32 value";
+         else if (variableType == YoLong.class)
+            return "int64 value";
+         else if (enumType != null)
+            return createYoEnumSchema(enumType, allowNull);
+         else
+            throw new IllegalArgumentException("Unsupported variable type: " + variableType.getSimpleName());
+      }
+
+      /**
+       * Generate the schema for a given enum type.
+       * <p>
+       * Example with the {@link Axis3D} enum:
+       * <pre>
+       *    uint8 SIZE=3
+       *    uint8 X=0
+       *    uint8 Y=1
+       *    uint8 Z=2
+       *    bool ALLOW_NULL=false
+       *    uint8 value
+       * </pre>
+       * </p>
+       *
+       * @param enumType the enum type.
+       * @return the schema as a string.
+       */
+      public static String createYoEnumSchema(Class<? extends Enum<?>> enumType, boolean allowNull)
+      {
+         if (!enumType.isEnum())
+            throw new IllegalArgumentException("The provided class is not an enum: " + enumType.getSimpleName());
+
+         Enum<?>[] enumConstants = enumType.getEnumConstants();
+
+         StringBuilder schema = new StringBuilder();
+
+         schema.append("uint8 SIZE=").append(enumConstants.length).append("\n");
+         for (int i = 0; i < enumConstants.length; i++)
+         {
+            schema.append("uint8 ").append(enumConstants[i].name()).append("=").append(i).append("\n");
+         }
+         schema.append("bool ALLOW_NULL=").append(allowNull).append("\n");
+         schema.append("uint8 value\n");
+         return schema.toString();
       }
    }
 }

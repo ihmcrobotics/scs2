@@ -56,8 +56,8 @@ public class WebsocketMCAPStarter
    {
       this.header = new Header(MCAP_PROFILE, MCAP_VERSION);
       this.announcementMetadata = WebsocketAnnouncementMetadata.create(serverName, MCAP_VERSION, hostName, logModelProvider, serverSettings);
-      this.schemaStarterChunk = WebsocketSchemaStarterChunk.create(mcapBuilder);
       this.channelStarterChunk = WebsocketChannelStarterChunk.create(mcapBuilder);
+      this.schemaStarterChunk = WebsocketSchemaStarterChunk.create(mcapBuilder);
       this.robotModelAttachment = WebsocketRobotModelAttachment.create(logModelProvider);
       this.dataEnd = new DataEnd(0);
       this.footer = new Footer();
