@@ -1296,8 +1296,8 @@ public class SimMultiBodySystemTools
                      for (int i = 0; i < joint.getDegreesOfFreedom(); i++)
                         rowNames.add(joint.getName() + "_" + i);
                   }
-                  else
-                  {
+                  else if  (joint.getDegreesOfFreedom() > 0)
+                  { // Skip fixed-joints
                      rowNames.add(joint.getName());
                   }
                }
