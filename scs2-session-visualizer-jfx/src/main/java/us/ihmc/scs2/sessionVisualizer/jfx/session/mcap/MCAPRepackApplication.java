@@ -1,8 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
-import com.martiansoftware.jsap.JSAPException;
 import javafx.application.Platform;
-import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarStyle;
 import org.apache.commons.cli.CommandLine;
@@ -36,7 +35,7 @@ import java.time.temporal.ChronoUnit;
 public class MCAPRepackApplication
 {
 
-   public static void main(String[] args) throws JSAPException
+   public static void main(String[] args)
    {
       Options options = new Options();
       options.addOption("l", "chunkMin", true, "[Optional] Minimum duration of a chunk in milliseconds.");
@@ -87,81 +86,16 @@ public class MCAPRepackApplication
          return;
       }
 
-      File inputFile = null;
-
-      if (inputFileName != null)
-      {
-         inputFile = new File(inputFileName);
-         if (!inputFile.exists())
-         {
-            System.err.println("Cannot find input file: " + inputFile.getAbsolutePath());
-            System.exit(0);
-            return;
-         }
-      }
-
-      boolean javaFXStarted = false;
-
+      File inputFile = selectInputMCAPFile(inputFileName);
       if (inputFile == null)
       {
-         JavaFXApplicationCreator.spawnJavaFXMainApplication();
-         Platform.setImplicitExit(false);
-         javaFXStarted = true;
-
-         LogTools.info("No input file provided, opening file chooser.");
-         inputFile = JavaFXMissingTools.runAndWait(MCAPRepackApplication.class,
-                                                   () -> SessionVisualizerIOTools.showOpenDialog(null,
-                                                                                                 "Select input file",
-                                                                                                 new FileChooser.ExtensionFilter("MCAP files", "*.mcap"),
-                                                                                                 MCAPLogSessionManagerController.LOG_FILE_KEY));
-      }
-
-      if (inputFile == null)
-      {
-         System.err.println("No input file selected.");
          System.exit(0);
          return;
       }
 
-      File outputFile = null;
-
-      if (outputFileName != null)
-      {
-         outputFile = new File(outputFileName);
-         if (outputFile.exists())
-         {
-            if (isOverride)
-            {
-               outputFile.delete();
-            }
-            else
-            {
-               LogTools.error("Output file already exists: " + outputFile.getAbsolutePath() + ". Use the -f option to override it.");
-               System.exit(0);
-               return;
-            }
-         }
-      }
-      else
-      {
-         if (!javaFXStarted)
-         {
-            JavaFXApplicationCreator.spawnJavaFXMainApplication();
-            Platform.setImplicitExit(false);
-            javaFXStarted = true;
-         }
-
-         LogTools.info("No output file provided, opening file chooser.");
-         outputFile = JavaFXMissingTools.runAndWait(MCAPRepackApplication.class,
-                                                    () -> SessionVisualizerIOTools.showSaveDialog(null,
-                                                                                                  "Select output file",
-                                                                                                  new FileChooser.ExtensionFilter("MCAP files", "*.mcap"),
-                                                                                                  MCAPLogSessionManagerController.LOG_FILE_KEY));
-      }
-
+      File outputFile = selectOutputMCAPFile(outputFileName, isOverride);
       if (outputFile == null)
       {
-         System.err.println("No output file selected.");
          System.exit(0);
          return;
       }
@@ -235,5 +169,75 @@ public class MCAPRepackApplication
             LogTools.info("Repacking done.");
          }
       };
+   }
+
+   public static File selectInputMCAPFile(String inputFileName)
+   {
+      return selectInputFile(inputFileName, new ExtensionFilter("MCAP files", "*.mcap"), MCAPLogSessionManagerController.LOG_FILE_KEY);
+   }
+
+   public static File selectInputFile(String inputFileName, ExtensionFilter extensionFilter, String key)
+   {
+      File inputFile = null;
+
+      if (inputFileName != null)
+      {
+         inputFile = new File(inputFileName);
+         if (!inputFile.exists())
+         {
+            System.err.println("Cannot find input file: " + inputFile.getAbsolutePath());
+            return null;
+         }
+         return inputFile;
+      }
+
+      JavaFXApplicationCreator.spawnJavaFXMainApplication();
+      Platform.setImplicitExit(false);
+
+      LogTools.info("No input file provided, opening file chooser.");
+      inputFile = JavaFXMissingTools.runAndWait(MCAPRepackApplication.class,
+                                                () -> SessionVisualizerIOTools.showOpenDialog(null, "Select input file", extensionFilter, key));
+
+      if (inputFile == null)
+         System.err.println("No input file selected.");
+
+      return inputFile;
+   }
+
+   public static File selectOutputMCAPFile(String outputFileName, boolean isOverride)
+   {
+      File outputFile = null;
+
+      if (outputFileName != null)
+      {
+         outputFile = new File(outputFileName);
+         if (outputFile.exists())
+         {
+            if (isOverride)
+            {
+               outputFile.delete();
+            }
+            else
+            {
+               LogTools.error("Output file already exists: " + outputFile.getAbsolutePath() + ". Use the -f option to override it.");
+               return null;
+            }
+         }
+         return outputFile;
+      }
+
+      JavaFXApplicationCreator.spawnJavaFXMainApplication();
+      Platform.setImplicitExit(false);
+
+      LogTools.info("No output file provided, opening file chooser.");
+      outputFile = JavaFXMissingTools.runAndWait(MCAPRepackApplication.class,
+                                                 () -> SessionVisualizerIOTools.showSaveDialog(null,
+                                                                                               "Select output file",
+                                                                                               new ExtensionFilter("MCAP files", "*.mcap"),
+                                                                                               MCAPLogSessionManagerController.LOG_FILE_KEY));
+
+      if (outputFile == null)
+         System.err.println("No output file selected.");
+      return outputFile;
    }
 }
