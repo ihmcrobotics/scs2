@@ -1,8 +1,12 @@
 package us.ihmc.scs2.session.mcap.specs.records;
 
+import us.ihmc.scs2.session.mcap.encoding.MCAPCRC32Helper;
+import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 public class MutableStatistics implements Statistics
 {
@@ -14,7 +18,7 @@ public class MutableStatistics implements Statistics
    private long chunkCount;
    private long messageStartTime;
    private long messageEndTime;
-   private List<ChannelMessageCount> channelMessageCounts;
+   private List<ChannelMessageCount> channelMessageCounts; // The list index is the channel index
    private long channelMessageCountsLength;
 
    @Override
@@ -146,16 +150,21 @@ public class MutableStatistics implements Statistics
    {
       if (channelMessageCounts == null)
          channelMessageCounts = new ArrayList<>();
-      Optional<ChannelMessageCount> countOptional = channelMessageCounts.stream().filter(count -> count.channelId() == channelIndex).findFirst();
 
-      if (countOptional.isPresent())
+      while (channelMessageCounts.size() <= channelIndex)
+         channelMessageCounts.add(null);
+
+      ChannelMessageCount count = channelMessageCounts.get(channelIndex);
+
+      if (count == null)
       {
-         countOptional.get().incrementMessageCount();
+         count = new ChannelMessageCount(channelIndex, 1);
+         channelMessageCounts.set(channelIndex, count);
+         channelMessageCountsLength += ChannelMessageCount.ELEMENT_LENGTH;
       }
       else
       {
-         channelMessageCounts.add(new ChannelMessageCount(channelIndex, 1));
-         channelMessageCountsLength += ChannelMessageCount.ELEMENT_LENGTH;
+         count.incrementMessageCount();
       }
    }
 
@@ -217,6 +226,43 @@ public class MutableStatistics implements Statistics
    public List<ChannelMessageCount> channelMessageCounts()
    {
       return channelMessageCounts;
+   }
+
+   @Override
+   public void write(MCAPDataOutput dataOutput)
+   {
+      dataOutput.putLong(messageCount());
+      dataOutput.putUnsignedShort(schemaCount());
+      dataOutput.putUnsignedInt(channelCount());
+      dataOutput.putUnsignedInt(attachmentCount());
+      dataOutput.putUnsignedInt(metadataCount());
+      dataOutput.putUnsignedInt(chunkCount());
+      dataOutput.putLong(messageStartTime());
+      dataOutput.putLong(messageEndTime());
+      if (channelMessageCounts() == null)
+         dataOutput.putCollection(Collections.emptyList());
+      else
+         dataOutput.putCollection(channelMessageCounts().stream().filter(Objects::nonNull).toList());
+   }
+
+   @Override
+   public MCAPCRC32Helper updateCRC(MCAPCRC32Helper crc32)
+   {
+      if (crc32 == null)
+         crc32 = new MCAPCRC32Helper();
+      crc32.addLong(messageCount());
+      crc32.addUnsignedShort(schemaCount());
+      crc32.addUnsignedInt(channelCount());
+      crc32.addUnsignedInt(attachmentCount());
+      crc32.addUnsignedInt(metadataCount());
+      crc32.addUnsignedInt(chunkCount());
+      crc32.addLong(messageStartTime());
+      crc32.addLong(messageEndTime());
+      if (channelMessageCounts() == null)
+         crc32.addCollection(Collections.emptyList());
+      else
+         crc32.addCollection(channelMessageCounts().stream().filter(Objects::nonNull).toList());
+      return crc32;
    }
 
    @Override

@@ -5,7 +5,6 @@ import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -13,8 +12,8 @@ import java.util.stream.Stream;
 public class MCAPSummaryBuilder
 {
    // Creating groups in the following order. There will be right after DATA_END
-   private final Map<Integer, Record> schemas = new LinkedHashMap<>(); // Schemas in a map to avoid duplicates
-   private final Map<Integer, Record> channels = new LinkedHashMap<>(); // Channels in a map to avoid duplicates
+   private final List<Record> schemas = new ArrayList<>(); // The list index is the schema id
+   private final List<Record> channels = new ArrayList<>(); // The list index is the channel id
    private final List<Record> chunkIndices = new ArrayList<>();
    private final List<Record> attachmentIndices = new ArrayList<>();
    private final List<Record> metadataIndices = new ArrayList<>();
@@ -37,12 +36,16 @@ public class MCAPSummaryBuilder
          case SCHEMA:
          {
             Schema schema = record.body();
-            yield schemas.put(schema.id(), record) == null;
+            while (schemas.size() <= schema.id())
+               schemas.add(null);
+            yield schemas.set(schema.id(), record) == null;
          }
          case CHANNEL:
          {
             Channel channel = record.body();
-            yield channels.put(channel.id(), record) == null;
+            while (channels.size() <= channel.id())
+               channels.add(null);
+            yield channels.set(channel.id(), record) == null;
          }
          case CHUNK_INDEX:
          case ATTACHMENT_INDEX:
@@ -87,7 +90,7 @@ public class MCAPSummaryBuilder
 
    public void writeSummary(MCAPDataOutput dataOutput)
    {
-      finalizeMCAP(dataOutput, schemas.values(), channels.values(), chunkIndices, attachmentIndices, metadataIndices, new MutableRecord(statistics));
+      finalizeMCAP(dataOutput, schemas, channels, chunkIndices, attachmentIndices, metadataIndices, new MutableRecord(statistics));
    }
 
    /**
@@ -119,9 +122,17 @@ public class MCAPSummaryBuilder
       // Now we can write the groups
       long summarySectionOffset = dataOutput.position();
       long schemaOffset = dataOutput.position();
-      schemaList.forEach(r -> r.write(dataOutput));
+      schemaList.forEach(r ->
+                         {
+                            if (r != null)
+                               r.write(dataOutput);
+                         });
       long channelOffset = dataOutput.position();
-      channelList.forEach(r -> r.write(dataOutput));
+      channelList.forEach(r ->
+                          {
+                             if (r != null)
+                                r.write(dataOutput);
+                          });
       long chunkIndexOffset = dataOutput.position();
       chunkIndexList.forEach(r -> r.write(dataOutput));
       long attachmentIndexOffset = dataOutput.position();

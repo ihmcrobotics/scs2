@@ -80,12 +80,7 @@ public class MCAPBuilder
 
    public List<Record> getAllSchemas()
    {
-      List<Record> records = new ArrayList<>();
-      for (SchemaInfoPackage schemaInfoPackage : schemas)
-      {
-         records.add(schemaInfoPackage.schemaRecord);
-      }
-      return records;
+      return schemas.stream().map(schemaInfoPackage -> schemaInfoPackage.schemaRecord).toList();
    }
 
    private SchemaInfoPackage getOrCreateSchema(YoVariableTypePackage variableTypePackage)
@@ -138,6 +133,11 @@ public class MCAPBuilder
       channel.setMessageEncoding(messageEncoding);
       channel.setMetadata(metadata);
       return channel;
+   }
+
+   public List<Record> getAllChannels()
+   {
+      return channels.stream().map(channelInfoPackage -> channelInfoPackage.channelRecord).toList();
    }
 
    public void packVariableMessage(YoVariable variable, MutableMessage message)
@@ -221,7 +221,7 @@ public class MCAPBuilder
       private static final YoVariableTypePackage LONG = new YoVariableTypePackage(YoLong.class, null, false);
 
       private final Class<? extends YoVariable> variableType;
-      private final Class<? extends Enum<?>> enumType;
+      private final String[] enumValuesAsString;
       private final boolean allowNull;
 
       public static YoVariableTypePackage valueOf(YoVariable yoVariable)
@@ -235,7 +235,7 @@ public class MCAPBuilder
          if (yoVariable instanceof YoLong)
             return LONG;
          if (yoVariable instanceof YoEnum<?> yoEnum)
-            return new YoVariableTypePackage(yoEnum.getClass(), yoEnum.getEnumType(), yoEnum.isNullAllowed());
+            return new YoVariableTypePackage(yoEnum.getClass(), yoEnum.getEnumValuesAsString(), yoEnum.isNullAllowed());
          return null;
       }
 
@@ -252,17 +252,17 @@ public class MCAPBuilder
          return null;
       }
 
-      public YoVariableTypePackage(Class<? extends YoVariable> variableType, Class<? extends Enum<?>> enumType, boolean allowNull)
+      public YoVariableTypePackage(Class<? extends YoVariable> variableType, String[] enumValuesAsString, boolean allowNull)
       {
          this.variableType = variableType;
-         this.enumType = enumType;
+         this.enumValuesAsString = enumValuesAsString;
          this.allowNull = allowNull;
       }
 
       private String getSchemaName()
       {
-         if (enumType != null)
-            return variableType.getSimpleName() + "-" + enumType.getSimpleName();
+         if (enumValuesAsString != null)
+            return variableType.getSimpleName() + "-" + Arrays.toString(enumValuesAsString);
          else
             return variableType.getSimpleName();
       }
@@ -277,8 +277,8 @@ public class MCAPBuilder
             return "int32 value";
          else if (variableType == YoLong.class)
             return "int64 value";
-         else if (enumType != null)
-            return createYoEnumSchema(enumType, allowNull);
+         else if (enumValuesAsString != null)
+            return createYoEnumSchema(enumValuesAsString, allowNull);
          else
             throw new IllegalArgumentException("Unsupported variable type: " + variableType.getSimpleName());
       }
@@ -305,14 +305,17 @@ public class MCAPBuilder
          if (!enumType.isEnum())
             throw new IllegalArgumentException("The provided class is not an enum: " + enumType.getSimpleName());
 
-         Enum<?>[] enumConstants = enumType.getEnumConstants();
+         return createYoEnumSchema(Arrays.stream(enumType.getEnumConstants()).map(Enum::name).toArray(String[]::new), allowNull);
+      }
 
+      public static String createYoEnumSchema(String[] enumConstantsAsStrings, boolean allowNull)
+      {
          StringBuilder schema = new StringBuilder();
 
-         schema.append("uint8 SIZE=").append(enumConstants.length).append("\n");
-         for (int i = 0; i < enumConstants.length; i++)
+         schema.append("uint8 SIZE=").append(enumConstantsAsStrings.length).append("\n");
+         for (int i = 0; i < enumConstantsAsStrings.length; i++)
          {
-            schema.append("uint8 ").append(enumConstants[i].name()).append("=").append(i).append("\n");
+            schema.append("uint8 ").append(enumConstantsAsStrings[i]).append("=").append(i).append("\n");
          }
          schema.append("bool ALLOW_NULL=").append(allowNull).append("\n");
          schema.append("uint8 value\n");

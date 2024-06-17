@@ -10,12 +10,13 @@ import org.apache.commons.cli.ParseException;
 import us.ihmc.log.LogTools;
 
 import java.io.File;
+import java.io.IOException;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPRepackApplication.selectOutputMCAPFile;
 
 public class IHMCLogConverter
 {
-   public static void main(String[] args)
+   public static void main(String[] args) throws IOException, InterruptedException
    {
       Options options = new Options();
       options.addOption("i", "input", true, "[Optional] Input file to convert. If not provided a file chooser will be opened.");
@@ -71,7 +72,8 @@ public class IHMCLogConverter
       }
 
       LogTools.info("Converting IHMC log file: " + inputFile.getAbsolutePath() + " to MCAP log file: " + outputFile.getAbsolutePath());
-      IHMCLogToMCAPConverter.convertIHMCLogToMCAP(inputFile, outputFile);
+      new IHMCLogToMCAPConverter(inputFile, outputFile, 0.50);
+      System.exit(0);
    }
 
    public static File selectInputIHMCLogFile(String inputFileName)
