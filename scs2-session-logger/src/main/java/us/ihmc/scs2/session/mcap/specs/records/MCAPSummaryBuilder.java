@@ -2,11 +2,15 @@ package us.ihmc.scs2.session.mcap.specs.records;
 
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 public class MCAPSummaryBuilder
@@ -14,19 +18,39 @@ public class MCAPSummaryBuilder
    // Creating groups in the following order. There will be right after DATA_END
    private final List<Record> schemas = new ArrayList<>(); // The list index is the schema id
    private final List<Record> channels = new ArrayList<>(); // The list index is the channel id
-   private final List<Record> chunkIndices = new ArrayList<>();
+   private final List<Record> chunkIndices;
    private final List<Record> attachmentIndices = new ArrayList<>();
    private final List<Record> metadataIndices = new ArrayList<>();
-   private final Map<Opcode, List<Record>> indexMap = Map.of(Opcode.CHUNK_INDEX,
-                                                             chunkIndices,
-                                                             Opcode.ATTACHMENT_INDEX,
-                                                             attachmentIndices,
-                                                             Opcode.METADATA_INDEX,
-                                                             metadataIndices);
    private final MutableStatistics statistics = new MutableStatistics();
+   private final Path chunkIndexTempPath;
+   private final MCAPDataOutput chunkIndexTempDataOutput;
 
    public MCAPSummaryBuilder()
    {
+      this(false);
+   }
+
+   public MCAPSummaryBuilder(boolean storeChunkIndicesInTempFile)
+   {
+      if (storeChunkIndicesInTempFile)
+      {
+         chunkIndices = null;
+         try
+         {
+            chunkIndexTempPath = Files.createTempFile("mcap-chunk-indices", ".tmp");
+            chunkIndexTempDataOutput = MCAPDataOutput.wrap(new FileOutputStream(chunkIndexTempPath.toFile()).getChannel());
+         }
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
+      }
+      else
+      {
+         chunkIndices = new ArrayList<>();
+         chunkIndexTempPath = null;
+         chunkIndexTempDataOutput = null;
+      }
    }
 
    public void update(Record record)
@@ -48,10 +72,21 @@ public class MCAPSummaryBuilder
             yield channels.set(channel.id(), record) == null;
          }
          case CHUNK_INDEX:
+         {
+            if (chunkIndexTempDataOutput != null)
+               record.write(chunkIndexTempDataOutput);
+            else
+               chunkIndices.add(record);
+            yield false;
+         }
          case ATTACHMENT_INDEX:
+         {
+            attachmentIndices.add(record);
+            yield false;
+         }
          case METADATA_INDEX:
          {
-            indexMap.get(record.op()).add(record);
+            metadataIndices.add(record);
             yield false;
          }
          case ATTACHMENT:
@@ -90,7 +125,8 @@ public class MCAPSummaryBuilder
 
    public void writeSummary(MCAPDataOutput dataOutput)
    {
-      finalizeMCAP(dataOutput, schemas, channels, chunkIndices, attachmentIndices, metadataIndices, new MutableRecord(statistics));
+      chunkIndexTempDataOutput.close();
+      finalizeMCAP(dataOutput, schemas, channels, chunkIndices, chunkIndexTempPath, attachmentIndices, metadataIndices, new MutableRecord(statistics));
    }
 
    /**
@@ -109,6 +145,7 @@ public class MCAPSummaryBuilder
                                    Collection<? extends Record> allSchemas,
                                    Collection<? extends Record> allChannels,
                                    Collection<? extends Record> allChunkIndices,
+                                   Path chunkIndexTempPath,
                                    Collection<? extends Record> allAttachmentIndices,
                                    Collection<? extends Record> allMetadataIndices,
                                    Record statistics)
@@ -134,7 +171,21 @@ public class MCAPSummaryBuilder
                                 r.write(dataOutput);
                           });
       long chunkIndexOffset = dataOutput.position();
-      chunkIndexList.forEach(r -> r.write(dataOutput));
+      if (allChunkIndices != null)
+      {
+         chunkIndexList.forEach(r -> r.write(dataOutput));
+      }
+      else
+      {
+         try (FileInputStream chunkIndexTempInputStream = new FileInputStream(chunkIndexTempPath.toFile()))
+         {
+            dataOutput.putInputStream(chunkIndexTempInputStream);
+         }
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
+      }
       long attachmentIndexOffset = dataOutput.position();
       attachmentIndexList.forEach(r -> r.write(dataOutput));
       long metadataIndexOffset = dataOutput.position();

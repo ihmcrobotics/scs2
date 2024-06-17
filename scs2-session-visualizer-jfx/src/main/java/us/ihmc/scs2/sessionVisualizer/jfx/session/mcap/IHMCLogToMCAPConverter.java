@@ -23,13 +23,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IHMCLogToMCAPConverter
 {
    private static final boolean WRITE_SUMMARY = true;
-   private static final boolean WRITE_MESSAGE_INDEX_SUMMARY = false;
+   private static final boolean WRITE_MESSAGE_INDEX_SUMMARY = true;
 
    private final List<YoVariable> yoVariables;
    private final LogDataReader logDataReader;
    private final MCAPDataOutput dataOutput;
    private final MCAPBuilder mcapBuilder = new MCAPBuilder();
-   private final MCAPSummaryBuilder summaryBuilder = new MCAPSummaryBuilder();
+   private final MCAPSummaryBuilder summaryBuilder = new MCAPSummaryBuilder(true);
 
    private final double chunkDuration = 0.10;
 
