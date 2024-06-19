@@ -51,6 +51,9 @@ public final class YoMCAPMessage
          if (field.isVector() && field.isArray())
             throw new IllegalArgumentException("Field cannot be both a vector and an array: " + field + ", registry: " + messageRegistry);
 
+         if (field.getDefaultValue() != null)
+            continue; // Ignoring static fields for now. We'll process them further down when they happen to declare an enum.
+
          boolean isArrayOrVector = field.isArray() || field.isVector();
 
          Consumer<CDRDeserializer> deserializer;

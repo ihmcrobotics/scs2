@@ -4,12 +4,13 @@ import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 import us.ihmc.scs2.session.mcap.specs.records.DataEnd;
-import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder;
+import us.ihmc.scs2.session.mcap.specs.records.MCAPBuilder2;
 import us.ihmc.scs2.session.mcap.specs.records.MCAPSummaryBuilder;
 import us.ihmc.scs2.session.mcap.specs.records.Magic;
 import us.ihmc.scs2.session.mcap.specs.records.MutableChunk;
 import us.ihmc.scs2.session.mcap.specs.records.MutableMessage;
 import us.ihmc.scs2.session.mcap.specs.records.MutableRecord;
+import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.File;
@@ -25,10 +26,11 @@ public class IHMCLogToMCAPConverter
    private static final boolean WRITE_SUMMARY = true;
    private static final boolean WRITE_MESSAGE_INDEX_SUMMARY = true;
 
+   private final List<YoRegistry> yoRegistries;
    private final List<YoVariable> yoVariables;
    private final LogDataReader logDataReader;
    private final MCAPDataOutput dataOutput;
-   private final MCAPBuilder mcapBuilder = new MCAPBuilder();
+   private final MCAPBuilder2 mcapBuilder = new MCAPBuilder2();
    private final MCAPSummaryBuilder summaryBuilder = new MCAPSummaryBuilder(true);
 
    private final double chunkDuration = 0.10;
@@ -40,7 +42,8 @@ public class IHMCLogToMCAPConverter
 
       dataOutput.putBytes(Magic.MAGIC_BYTES); // header magic
       yoVariables = logDataReader.getParser().getYoVariablesList();
-      yoVariables.forEach(mcapBuilder::getOrCreateVariableChannelRecord);
+      yoRegistries = logDataReader.getParser().getRegistries().stream().filter(r -> r.getNumberOfVariables() > 0).toList();
+      yoRegistries.forEach(mcapBuilder::addRegistryRecursively);
       mcapBuilder.getAllSchemas().forEach(record ->
                                           {
                                              record.write(dataOutput);
@@ -65,7 +68,7 @@ public class IHMCLogToMCAPConverter
    private void writeData(double chunkDuration) throws InterruptedException
    {
       long chunkStartTime = -1;
-      long[] chunkVariablePreviousValues = null;
+      YoRegistryVariableValues[] chunkSavedState = null;
       List<MutableRecord> currentChunkRecords = new ArrayList<>(5 * yoVariables.size());
       int index = 0;
 
@@ -117,43 +120,74 @@ public class IHMCLogToMCAPConverter
                                 });
 
             chunkStartTime = -1;
-            chunkVariablePreviousValues = null;
          }
 
          if (chunkStartTime == -1)
          {
-            chunkVariablePreviousValues = null;
             chunkStartTime = currentTimestamp;
             currentChunkRecords.clear();
          }
 
-         for (int i = 0; i < yoVariables.size(); i++)
+         for (int i = 0; i < yoRegistries.size(); i++)
          {
-            YoVariable yoVariable = yoVariables.get(i);
-            if (chunkVariablePreviousValues != null)
+            YoRegistry yoRegistry = yoRegistries.get(i);
+            if (currentTimestamp != chunkStartTime && chunkSavedState != null && chunkSavedState[i] != null)
             {
-               long valueAsLongBits = yoVariable.getValueAsLongBits();
-               if (valueAsLongBits == chunkVariablePreviousValues[i])
-                  continue; // Skipping variables that have not changed
-               chunkVariablePreviousValues[i] = valueAsLongBits;
+               YoRegistryVariableValues variableValues = chunkSavedState[i];
+               boolean hasChanged = false;
+
+               for (int j = 0; j < yoRegistry.getVariables().size(); j++)
+               {
+                  YoVariable yoVariable = yoRegistry.getVariables().get(j);
+                  long valueAsLongBits = yoVariable.getValueAsLongBits();
+                  if (valueAsLongBits != variableValues.variableValues()[j])
+                  {
+                     variableValues.variableValues()[j] = valueAsLongBits;
+                     hasChanged = true;
+                  }
+               }
+
+               if (!hasChanged)
+                  continue;
             }
 
             MutableMessage message = new MutableMessage();
             message.setLogTime(chunkStartTime);
             message.setPublishTime(chunkStartTime);
             message.setSequence(index);
-            mcapBuilder.packVariableMessage(yoVariable, message);
+            mcapBuilder.packRegistryMessage(yoRegistry, message);
             MutableRecord messageRecord = new MutableRecord(message);
             currentChunkRecords.add(messageRecord);
             if (WRITE_SUMMARY)
                summaryBuilder.update(messageRecord);
          }
 
-         if (chunkVariablePreviousValues == null)
-            chunkVariablePreviousValues = yoVariables.stream().mapToLong(YoVariable::getValueAsLongBits).toArray();
+         if (currentTimestamp != chunkStartTime)
+         {
+            if (chunkSavedState == null)
+               chunkSavedState = new YoRegistryVariableValues[yoRegistries.size()];
+
+            for (int i = 0; i < yoRegistries.size(); i++)
+            {
+               YoRegistry yoRegistry = yoRegistries.get(i);
+
+               if (chunkSavedState[i] == null)
+                  chunkSavedState[i] = new YoRegistryVariableValues(yoRegistry, new long[yoRegistry.getVariables().size()]);
+
+               for (int j = 0; j < yoRegistry.getVariables().size(); j++)
+               {
+                  YoVariable yoVariable = yoRegistry.getVariables().get(j);
+                  chunkSavedState[i].variableValues()[j] = yoVariable.getValueAsLongBits();
+               }
+            }
+         }
       }
 
       enableWriterThread.set(false);
       writerThread.join();
+   }
+
+   private record YoRegistryVariableValues(YoRegistry registry, long[] variableValues)
+   {
    }
 }

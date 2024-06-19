@@ -87,7 +87,7 @@ public class ROS2SchemaParser
    {
       MCAPSchemaField field = new MCAPSchemaField();
       field.setType(line.substring(0, line.indexOf(' ')).trim());
-      field.setName(line.substring(line.indexOf(' ') + 1).trim());
+      String fieldName = line.substring(line.indexOf(' ') + 1).trim();
 
       int lBracketIndex = field.getType().indexOf('[');
       int rBracketIndex = field.getType().indexOf(']');
@@ -125,6 +125,21 @@ public class ROS2SchemaParser
          field.setVector(false);
          field.setMaxLength(-1);
       }
+
+      int equalIndex = fieldName.indexOf('=');
+
+      if (equalIndex != -1)
+      { // We have a default value
+         field.setDefaultValue(fieldName.substring(equalIndex + 1).trim());
+         fieldName = fieldName.substring(0, equalIndex).trim();
+      }
+      else
+      {
+         field.setDefaultValue(null);
+      }
+
+      field.setName(fieldName);
+
       return field;
    }
 }

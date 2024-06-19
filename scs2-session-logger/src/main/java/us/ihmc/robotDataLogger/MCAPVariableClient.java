@@ -286,9 +286,9 @@ public class MCAPVariableClient
             if (variableClass == null)
                continue;
 
-            while (variableClasses.size() <= schema.id())
+            while (variableClasses.size() < schema.id())
                variableClasses.add(null);
-            variableClasses.set(schema.id(), variableClass);
+            variableClasses.set(schema.id() - 1, variableClass);
          }
 
          WebsocketChannelStarterChunk channelStarterChunk = newMCAP.channelStarterChunk();

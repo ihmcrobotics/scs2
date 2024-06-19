@@ -152,19 +152,7 @@ public class MCAPBuilder
       ByteBuffer messageBuffer = message.messageBuffer();
       messageBuffer.clear();
       messageBuffer.order(ByteOrder.LITTLE_ENDIAN);
-      cdrSerializer.initialize(messageBuffer);
-      if (variable instanceof YoBoolean yoBoolean)
-         cdrSerializer.write_bool(yoBoolean.getValue());
-      else if (variable instanceof YoDouble yoDouble)
-         cdrSerializer.write_float64(yoDouble.getValue());
-      else if (variable instanceof YoLong yoLong)
-         cdrSerializer.write_int64(yoLong.getValue());
-      else if (variable instanceof YoInteger yoInteger)
-         cdrSerializer.write_int32(yoInteger.getValue());
-      else if (variable instanceof YoEnum<?> yoEnum)
-         cdrSerializer.write_uint8(yoEnum.getOrdinal());
-      else
-         throw new IllegalArgumentException("Unsupported variable type: " + variable.getClass().getSimpleName());
+      MCAPBuilder2.writeVariable(cdrSerializer, variable);
       messageBuffer.flip();
       message.setDataLength(messageBuffer.remaining());
    }

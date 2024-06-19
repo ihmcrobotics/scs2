@@ -60,16 +60,16 @@ public class MCAPSummaryBuilder
          case SCHEMA:
          {
             Schema schema = record.body();
-            while (schemas.size() <= schema.id())
+            while (schemas.size() < schema.id())
                schemas.add(null);
-            yield schemas.set(schema.id(), record) == null;
+            yield schemas.set(schema.id() - 1, record) == null;
          }
          case CHANNEL:
          {
             Channel channel = record.body();
-            while (channels.size() <= channel.id())
+            while (channels.size() < channel.id())
                channels.add(null);
-            yield channels.set(channel.id(), record) == null;
+            yield channels.set(channel.id() - 1, record) == null;
          }
          case CHUNK_INDEX:
          {
