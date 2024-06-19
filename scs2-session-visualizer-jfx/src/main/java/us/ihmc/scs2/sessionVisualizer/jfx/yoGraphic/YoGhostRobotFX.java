@@ -47,6 +47,7 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBa
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.DoubleConsumer;
 
 public class YoGhostRobotFX extends YoGraphicFX3D
@@ -64,10 +65,11 @@ public class YoGhostRobotFX extends YoGraphicFX3D
 
    private final List<LinkedYoVariable<?>> linkedYoVariables = new ArrayList<>();
 
-   private boolean forceUpdate = true;
+   private final AtomicBoolean forceUpdate = new AtomicBoolean(true);
 
    private final List<Runnable> clearStateBindingTasks = new ArrayList<>();
 
+   private boolean initializeMaterial = true;
    private PhongMaterial overridingMaterial = null;
    private final List<Runnable> reverseOverridingMaterialTasks = new ArrayList<>();
 
@@ -244,7 +246,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          }
       }
 
-      forceUpdate = true;
+      forceUpdate.set(true);
    }
 
    private BooleanProperty setupBinding(String variableName, DoubleConsumer setter)
@@ -257,7 +259,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          validityProperty.set(isValid);
          if (isValid)
             setter.accept(newValue.doubleValue());
-         forceUpdate = true;
+         forceUpdate.set(true);
       };
       doubleProperty.addListener(changeListener);
       // Trigger the change listener once to set the initial value.
@@ -303,15 +305,21 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          updateRobot |= linkedYoVariables.get(i).pull();
       }
 
-      if (updateRobot || forceUpdate)
+      if (!updateRobot)
+      {
+         updateRobot = forceUpdate.getAndSet(false);
+      }
+
+      if (updateRobot)
       {
          robot.getRootBody().updateFramesRecursively();
          rigidBodyFrameNodeMap.values().forEach(FrameNode::updatePose);
-         forceUpdate = false;
       }
 
-      if ((getColor() == null) != (overridingMaterial == null))
+      if (initializeMaterial || (getColor() == null) != (overridingMaterial == null))
       {
+         initializeMaterial = false;
+
          if (getColor() == null)
          {
             reverseOverridingMaterialTasks.forEach(Runnable::run);
