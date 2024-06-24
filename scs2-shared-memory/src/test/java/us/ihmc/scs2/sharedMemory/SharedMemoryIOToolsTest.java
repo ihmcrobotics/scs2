@@ -132,6 +132,7 @@ public class SharedMemoryIOToolsTest
                                                                                                      MATLAB_VARNAME_MAX_LENGTH + 100));
          exportedRoot.addChild(longNameRegistry);
          new YoDouble("bloppy", longNameRegistry);
+         new YoDouble("bushy", longNameRegistry);
 
          YoSharedBuffer exportedBuffer = SharedMemoryRandomTools.nextYoSharedBuffer(random, exportedRoot);
          SharedMemoryIOTools.exportRegistry(exportedRoot, new FileOutputStream(registryFileName));
