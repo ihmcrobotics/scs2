@@ -423,6 +423,8 @@ public class SharedMemoryIOTools
       Struct nameHelperStruct = Mat5.newStruct();
       matFile.addArray("NameOverflow", nameHelperStruct);
       Map<String, MutableInt> nameOverflowCounter = new HashMap<>();
+      // Save the registry's cropped name in a map to recycle later.
+      Map<YoNamespace, String> renamedRegistryMap = new HashMap<>();
 
       yoVariableBufferStream.forEach(yoVariableBuffer ->
                                      {
@@ -438,7 +440,12 @@ public class SharedMemoryIOTools
 
                                            for (int i = 1; i < parentNamespace.size(); i++)
                                            {
-                                              String subName = parentNamespace.getSubNames().get(i);
+                                              YoNamespace ancestorNamespace = parentNamespace.subNamespace(0, i + 1);
+                                              String subName;
+                                              if (renamedRegistryMap.containsKey(ancestorNamespace))
+                                                 subName = renamedRegistryMap.get(ancestorNamespace);
+                                              else
+                                                 subName = ancestorNamespace.getShortName();
                                               Struct childStruct;
 
                                               try
@@ -449,6 +456,7 @@ public class SharedMemoryIOTools
                                               {
                                                  childStruct = Mat5.newStruct();
                                                  String registryStructName = checkAndRegisterLongName(subName, nameOverflowCounter, nameHelperStruct);
+                                                 renamedRegistryMap.put(ancestorNamespace, registryStructName);
                                                  parentStruct.set(registryStructName, childStruct);
                                               }
 
