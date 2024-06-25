@@ -8,11 +8,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.Shape3D;
+import org.apache.commons.io.FilenameUtils;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tools.SingularValueDecomposition3D;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -20,6 +22,7 @@ import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
@@ -29,6 +32,7 @@ import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.ExtrudedPolygon2DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
+import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Point3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
 import us.ihmc.scs2.definition.geometry.STPBox3DDefinition;
@@ -57,6 +61,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBADoubleFX;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBAIntFX;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.YoColorRGBASingleFX;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1062,28 +1067,30 @@ public class YoGraphicTools
                                                          RigidBodyTransformReadOnly originPose,
                                                          GeometryDefinition geometryDefinition)
    {
-      if (geometryDefinition instanceof STPBox3DDefinition)
-         return convertSTPBox3DDefinition(referenceFrame, originPose, (STPBox3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Box3DDefinition)
-         return convertBox3DDefinition(referenceFrame, originPose, (Box3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Capsule3DDefinition)
-         return convertCapsule3DDefinition(referenceFrame, originPose, (Capsule3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Cone3DDefinition)
-         return convertCone3DDefinition(referenceFrame, originPose, (Cone3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Cylinder3DDefinition)
-         return convertCylinder3DDefinition(referenceFrame, originPose, (Cylinder3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Ellipsoid3DDefinition)
-         return convertEllipsoid3DDefinition(referenceFrame, originPose, (Ellipsoid3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof ExtrudedPolygon2DDefinition)
-         return convertExtrudedPolygon2DDefinition(referenceFrame, originPose, (ExtrudedPolygon2DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof ConvexPolytope3DDefinition)
-         return convertConvexPolytope3DDefinition(referenceFrame, originPose, (ConvexPolytope3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Point3DDefinition)
-         return convertPoint3DDefinition(referenceFrame, originPose, (Point3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Ramp3DDefinition)
-         return convertRamp3DDefinition(referenceFrame, originPose, (Ramp3DDefinition) geometryDefinition);
-      else if (geometryDefinition instanceof Sphere3DDefinition)
-         return convertSphere3DDefinition(referenceFrame, originPose, (Sphere3DDefinition) geometryDefinition);
+      if (geometryDefinition instanceof STPBox3DDefinition stpBox3DDefinition)
+         return convertSTPBox3DDefinition(referenceFrame, originPose, stpBox3DDefinition);
+      else if (geometryDefinition instanceof Box3DDefinition box3DDefinition)
+         return convertBox3DDefinition(referenceFrame, originPose, box3DDefinition);
+      else if (geometryDefinition instanceof Capsule3DDefinition capsule3DDefinition)
+         return convertCapsule3DDefinition(referenceFrame, originPose, capsule3DDefinition);
+      else if (geometryDefinition instanceof Cone3DDefinition cone3DDefinition)
+         return convertCone3DDefinition(referenceFrame, originPose, cone3DDefinition);
+      else if (geometryDefinition instanceof Cylinder3DDefinition cylinder3DDefinition)
+         return convertCylinder3DDefinition(referenceFrame, originPose, cylinder3DDefinition);
+      else if (geometryDefinition instanceof Ellipsoid3DDefinition ellipsoid3DDefinition)
+         return convertEllipsoid3DDefinition(referenceFrame, originPose, ellipsoid3DDefinition);
+      else if (geometryDefinition instanceof ExtrudedPolygon2DDefinition extrudedPolygon2DDefinition)
+         return convertExtrudedPolygon2DDefinition(referenceFrame, originPose, extrudedPolygon2DDefinition);
+      else if (geometryDefinition instanceof ConvexPolytope3DDefinition convexPolytope3DDefinition)
+         return convertConvexPolytope3DDefinition(referenceFrame, originPose, convexPolytope3DDefinition);
+      else if (geometryDefinition instanceof Point3DDefinition point3DDefinition)
+         return convertPoint3DDefinition(referenceFrame, originPose, point3DDefinition);
+      else if (geometryDefinition instanceof Ramp3DDefinition ramp3DDefinition)
+         return convertRamp3DDefinition(referenceFrame, originPose, ramp3DDefinition);
+      else if (geometryDefinition instanceof Sphere3DDefinition sphere3DDefinition)
+         return convertSphere3DDefinition(referenceFrame, originPose, sphere3DDefinition);
+      else if (geometryDefinition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
+         return convertModelFileGeometryDefinition(referenceFrame, originPose, modelFileGeometryDefinition);
       else
          throw new UnsupportedOperationException(
                "Unsupported " + GeometryDefinition.class.getSimpleName() + ": " + geometryDefinition.getClass().getSimpleName());
@@ -1334,6 +1341,29 @@ public class YoGraphicTools
       Quaternion orientation = new Quaternion(originPose.getRotation());
       yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
       yoGraphicFX.setSize(new Tuple3DProperty(referenceFrame, geometryDefinition.getSizeX(), geometryDefinition.getSizeY(), geometryDefinition.getSizeZ()));
+      return yoGraphicFX;
+   }
+
+   public static YoGraphicFX3D convertModelFileGeometryDefinition(ReferenceFrameWrapper referenceFrame,
+                                                                  RigidBodyTransformReadOnly originPose,
+                                                                  ModelFileGeometryDefinition geometryDefinition)
+   {
+      if (!FilenameUtils.isExtension(geometryDefinition.getFileName(), "obj"))
+         throw new UnsupportedOperationException("Unsupported model file type: " + geometryDefinition.getFileName());
+
+      LogTools.warn("Loading model file: {} into a graphic convex polytope. ", geometryDefinition.getFileName());
+
+      YoConvexPolytopeFX3D yoGraphicFX = new YoConvexPolytopeFX3D();
+      Tuple3DReadOnly position = originPose.getTranslation();
+      yoGraphicFX.setPosition(new Tuple3DProperty(referenceFrame, position.getX(), position.getY(), position.getZ()));
+      Quaternion orientation = new Quaternion(originPose.getRotation());
+      yoGraphicFX.setOrientation(new QuaternionProperty(referenceFrame, orientation.getX(), orientation.getY(), orientation.getZ(), orientation.getS()));
+
+      URL fileURL = DefinitionIOTools.resolveModelFileURL(geometryDefinition);
+      List<Point3D> vertices = DefinitionIOTools.loadOBJVertices(fileURL);
+      yoGraphicFX.setVertices(vertices.stream().map(v -> new Tuple3DProperty(referenceFrame, v.getX(), v.getY(), v.getZ())).toList());
+      yoGraphicFX.setNumberOfVertices(-1);
+
       return yoGraphicFX;
    }
 

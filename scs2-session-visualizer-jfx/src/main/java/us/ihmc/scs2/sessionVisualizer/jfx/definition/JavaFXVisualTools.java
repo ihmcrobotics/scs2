@@ -33,6 +33,7 @@ import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.AffineTransformDefinition;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
@@ -54,7 +55,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -264,25 +264,10 @@ public class JavaFXVisualTools
       if (geometryDefinition == null || geometryDefinition.getFileName() == null)
          return DEFAULT_MESH_VIEWS;
 
-      String filename = geometryDefinition.getFileName();
-      filename = filename.replace("\\", "/");
-
       if (resourceClassLoader == null)
          resourceClassLoader = JavaFXVisualTools.class.getClassLoader();
-      URL fileURL = resourceClassLoader.getResource(filename);
 
-      if (fileURL == null)
-      {
-         File file = new File(filename);
-         try
-         {
-            fileURL = file.toURI().toURL();
-         }
-         catch (MalformedURLException e)
-         {
-            throw new RuntimeException(e);
-         }
-      }
+      URL fileURL = DefinitionIOTools.resolveModelFileURL(geometryDefinition, resourceClassLoader);
 
       Material material;
       if (overridingMaterial != null)
