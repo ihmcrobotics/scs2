@@ -1,6 +1,7 @@
 package us.ihmc.scs2.definition;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.*;
 import us.ihmc.scs2.definition.robot.*;
@@ -41,11 +42,13 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -785,6 +788,35 @@ public class DefinitionIOTools
    }
 
    /**
+    * Resolve the URL of the file pointed to by the {@code geometryDefinition}.
+    *
+    * @param geometryDefinition the definition to process.
+    * @return the URL of the file.
+    */
+   public static URL resolveModelFileURL(ModelFileGeometryDefinition geometryDefinition)
+   {
+      return resolveModelFileURL(geometryDefinition, null);
+   }
+
+   /**
+    * Resolve the URL of the file pointed to by the {@code geometryDefinition}.
+    *
+    * @param geometryDefinition  the definition to process.
+    * @param resourceClassLoader the class loader to use while resolving the URL.
+    * @return the URL of the file.
+    */
+   public static URL resolveModelFileURL(ModelFileGeometryDefinition geometryDefinition, ClassLoader resourceClassLoader)
+   {
+      if (resourceClassLoader == null)
+         resourceClassLoader = geometryDefinition.getResourceClassLoader();
+
+      String filename = geometryDefinition.getFileName();
+      filename = filename.replace("\\", "/");
+
+      return filenameToURL(filename, resourceClassLoader);
+   }
+
+   /**
     * Convenience method to retrieve the URL of a file.
     *
     * @param filename            the name of the file.
@@ -793,6 +825,9 @@ public class DefinitionIOTools
     */
    public static URL filenameToURL(String filename, ClassLoader resourceClassLoader)
    {
+      if (resourceClassLoader == null)
+         resourceClassLoader = DefinitionIOTools.class.getClassLoader();
+
       URL fileURL = resourceClassLoader.getResource(filename);
 
       if (fileURL == null)
@@ -930,5 +965,40 @@ public class DefinitionIOTools
          childJoint.getSuccessor().setParentJoint(childJoint);
          connectKinematicsRecursive(childJoint.getSuccessor());
       }
+   }
+
+   /**
+    * Loads all the vertices from a Wavefront OBJ file.
+    * <p>
+    * This method does not check for the validity of the file.
+    * </p>
+    *
+    * @param objFileURL the URL of the OBJ file to load.
+    * @return the list of vertices.
+    */
+   public static List<Point3D> loadOBJVertices(URL objFileURL)
+   {
+      List<Point3D> vertices = new ArrayList<>();
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(objFileURL.openStream())))
+      {
+         String line;
+         while ((line = reader.readLine()) != null)
+         {
+            if (line.startsWith("v "))
+            {
+               String[] split = line.split(" ");
+               double x = Double.parseDouble(split[1]);
+               double y = Double.parseDouble(split[2]);
+               double z = Double.parseDouble(split[3]);
+               vertices.add(new Point3D(x, y, z));
+            }
+         }
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
+
+      return vertices;
    }
 }
