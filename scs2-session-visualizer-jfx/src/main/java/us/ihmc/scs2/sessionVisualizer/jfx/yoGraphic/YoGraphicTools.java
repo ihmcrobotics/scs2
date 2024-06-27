@@ -50,6 +50,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXContr
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
@@ -197,7 +198,7 @@ public class YoGraphicTools
       return parent;
    }
 
-   public static List<YoGraphicFXItem> createYoGraphicFXs(YoVariableDatabase yoVariableDatabase,
+   public static List<YoGraphicFXItem> createYoGraphicFXs(YoManager yoManager,
                                                           YoGroupFX parentGroup,
                                                           YoGraphicFXResourceManager resourceManager,
                                                           ReferenceFrameManager referenceFrameManager,
@@ -212,7 +213,7 @@ public class YoGraphicTools
 
       for (YoGraphicDefinition definition : yoGraphicListDefinition.getYoGraphics())
       {
-         YoGraphicFXItem item = createYoGraphicFX(yoVariableDatabase, parentGroup, resourceManager, referenceFrameManager, definition);
+         YoGraphicFXItem item = createYoGraphicFX(yoManager, parentGroup, resourceManager, referenceFrameManager, definition);
          if (item != null)
             items.add(item);
       }
@@ -220,7 +221,7 @@ public class YoGraphicTools
       return items;
    }
 
-   public static YoGraphicFXItem createYoGraphicFX(YoVariableDatabase yoVariableDatabase,
+   public static YoGraphicFXItem createYoGraphicFX(YoManager yoManager,
                                                    YoGroupFX parentGroup,
                                                    YoGraphicFXResourceManager resourceManager,
                                                    ReferenceFrameManager referenceFrameManager,
@@ -229,7 +230,7 @@ public class YoGraphicTools
       if (yoGraphicDefinition == null)
          return null;
 
-      YoGraphicFXItem yoGraphicFX = toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, yoGraphicDefinition);
+      YoGraphicFXItem yoGraphicFX = toYoGraphicFX(yoManager, resourceManager, referenceFrameManager, yoGraphicDefinition);
 
       if (yoGraphicFX == null)
       {
@@ -254,15 +255,16 @@ public class YoGraphicTools
       return yoGraphicFX;
    }
 
-   public static YoGraphicFXItem toYoGraphicFX(YoVariableDatabase yoVariableDatabase,
+   public static YoGraphicFXItem toYoGraphicFX(YoManager yoManager,
                                                YoGraphicFXResourceManager resourceManager,
                                                ReferenceFrameManager referenceFrameManager,
                                                YoGraphicDefinition definition)
    {
       try
       {
+         YoVariableDatabase yoVariableDatabase = yoManager.getRootRegistryDatabase();
          if (definition instanceof YoGraphicGroupDefinition)
-            return toYoGroupFX(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicGroupDefinition) definition);
+            return toYoGroupFX(yoManager, resourceManager, referenceFrameManager, (YoGraphicGroupDefinition) definition);
          else if (definition instanceof YoGraphicPoint2DDefinition)
             return toYoPointFX2D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicPoint2DDefinition) definition);
          else if (definition instanceof YoGraphicPolygon2DDefinition)
@@ -298,7 +300,7 @@ public class YoGraphicTools
          else if (definition instanceof YoGraphicEllipsoid3DDefinition)
             return toYoEllipsoidFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicEllipsoid3DDefinition) definition);
          else if (definition instanceof YoGraphicRobotDefinition)
-            return toYoGhostRobotFX(yoVariableDatabase, resourceManager, referenceFrameManager, (YoGraphicRobotDefinition) definition);
+            return toYoGhostRobotFX(yoManager, resourceManager, referenceFrameManager, (YoGraphicRobotDefinition) definition);
 
          LogTools.error("Unhandled graphic type: {}", definition.getClass().getSimpleName());
          return null;
@@ -341,7 +343,7 @@ public class YoGraphicTools
       yoGraphicFXToPack.setStrokeWidth(CompositePropertyTools.toDoubleProperty(yoVariableDatabase, definition.getStrokeWidth()));
    }
 
-   public static YoGroupFX toYoGroupFX(YoVariableDatabase yoVariableDatabase,
+   public static YoGroupFX toYoGroupFX(YoManager yoManager,
                                        YoGraphicFXResourceManager resourceManager,
                                        ReferenceFrameManager referenceFrameManager,
                                        YoGraphicGroupDefinition definition)
@@ -357,7 +359,7 @@ public class YoGraphicTools
             if (child == null)
                continue;
 
-            YoGraphicFXItem yoGraphicFX = toYoGraphicFX(yoVariableDatabase, resourceManager, referenceFrameManager, child);
+            YoGraphicFXItem yoGraphicFX = toYoGraphicFX(yoManager, resourceManager, referenceFrameManager, child);
             if (yoGraphicFX != null)
                yoGroupFX.addYoGraphicFXItem(yoGraphicFX);
          }
@@ -468,23 +470,23 @@ public class YoGraphicTools
       yoGraphicFXToPack.setDrawMode(toDrawMode(definition.getDrawMode()));
    }
 
-   public static YoGhostRobotFX toYoGhostRobotFX(YoVariableDatabase yoVariableDatabase,
+   public static YoGhostRobotFX toYoGhostRobotFX(YoManager yoManager,
                                                  YoGraphicFXResourceManager resourceManager,
                                                  ReferenceFrameManager referenceFrameManager,
                                                  YoGraphicRobotDefinition definition)
    {
-      YoGhostRobotFX yoGraphicFX = new YoGhostRobotFX(yoVariableDatabase);
-      toYoGhostRobotFX(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFX);
+      YoGhostRobotFX yoGraphicFX = new YoGhostRobotFX(yoManager);
+      toYoGhostRobotFX(yoManager, resourceManager, referenceFrameManager, definition, yoGraphicFX);
       return yoGraphicFX;
    }
 
-   public static void toYoGhostRobotFX(YoVariableDatabase yoVariableDatabase,
+   public static void toYoGhostRobotFX(YoManager yoManager,
                                        YoGraphicFXResourceManager resourceManager,
                                        ReferenceFrameManager referenceFrameManager,
                                        YoGraphicRobotDefinition definition,
                                        YoGhostRobotFX yoGraphicFXToPack)
    {
-      toYoGraphicFX3D(yoVariableDatabase, resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
+      toYoGraphicFX3D(yoManager.getRootRegistryDatabase(), resourceManager, referenceFrameManager, definition, yoGraphicFXToPack);
       if (definition.getColor() == null)
          yoGraphicFXToPack.setColor((BaseColorFX) null); // We actually do not want to set the color here.
       yoGraphicFXToPack.setRobotDefinition(definition.getRobotDefinition());

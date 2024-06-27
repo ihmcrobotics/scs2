@@ -24,10 +24,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YawPitchRollProperty;
+import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
 
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -139,6 +141,13 @@ public class CompositePropertyTools
 
    public static DoubleProperty toDoubleProperty(YoVariableDatabase yoVariableDatabase, String field)
    {
+      return toDoubleProperty(yoVariableDatabase, yoVariableDatabase::linkYoVariable, field);
+   }
+
+   public static DoubleProperty toDoubleProperty(YoVariableDatabase yoVariableDatabase,
+                                                 BiFunction<YoDouble, Object, LinkedYoDouble> linkedYoVariableFactory,
+                                                 String field)
+   {
       if (field == null)
       {
          return null;
@@ -161,7 +170,8 @@ public class CompositePropertyTools
             return new SimpleDoubleProperty(Double.NaN);
          }
          YoDoubleProperty yoDoubleProperty = new YoDoubleProperty(yoDouble);
-         yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble, yoDoubleProperty));
+         if (linkedYoVariableFactory != null)
+            yoDoubleProperty.setLinkedBuffer(linkedYoVariableFactory.apply(yoDouble, yoDoubleProperty));
          return yoDoubleProperty;
       }
    }
