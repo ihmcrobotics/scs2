@@ -386,16 +386,18 @@ public class URDFTools
             {
                parentModel = model1;
                childModel = model2;
+               break;
             }
             else if (model1LinkNames.contains(joint.getChild().getLink()))
             {
                parentModel = model2;
                childModel = model1;
+               break;
             }
          }
       }
 
-      if (model1.getJoints() != null)
+      if (parentModel == null && model1.getJoints() != null)
       {
          for (URDFJoint joint : model1.getJoints())
          {
@@ -404,11 +406,13 @@ public class URDFTools
             {
                parentModel = model2;
                childModel = model1;
+               break;
             }
             else if (model2LinkNames.contains(joint.getChild().getLink()))
             {
                parentModel = model1;
                childModel = model2;
+               break;
             }
          }
       }
