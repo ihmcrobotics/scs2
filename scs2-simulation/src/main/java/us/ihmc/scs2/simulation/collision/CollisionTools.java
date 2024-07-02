@@ -324,8 +324,10 @@ public class CollisionTools
 
    public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, ModelFileGeometryDefinition definition)
    {
-      if (!FilenameUtils.isExtension(definition.getFileName(), "obj"))
+      if (!FilenameUtils.isExtension(definition.getFileName().toLowerCase(), "obj"))
          throw new UnsupportedOperationException("Only Wavefront OBJ files are supported.");
+
+      LogTools.warn("Loading model file: {} into a collision convex polytope. ", definition.getFileName());
 
       URL objFileURL = DefinitionIOTools.resolveModelFileURL(definition);
       List<Point3D> vertices = DefinitionIOTools.loadOBJVertices(objFileURL);

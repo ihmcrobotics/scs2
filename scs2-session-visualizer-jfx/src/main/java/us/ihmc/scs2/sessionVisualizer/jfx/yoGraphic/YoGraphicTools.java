@@ -1348,7 +1348,7 @@ public class YoGraphicTools
                                                                   RigidBodyTransformReadOnly originPose,
                                                                   ModelFileGeometryDefinition geometryDefinition)
    {
-      if (!FilenameUtils.isExtension(geometryDefinition.getFileName(), "obj"))
+      if (!FilenameUtils.isExtension(geometryDefinition.getFileName().toLowerCase(), "obj"))
          throw new UnsupportedOperationException("Unsupported model file type: " + geometryDefinition.getFileName());
 
       LogTools.warn("Loading model file: {} into a graphic convex polytope. ", geometryDefinition.getFileName());
