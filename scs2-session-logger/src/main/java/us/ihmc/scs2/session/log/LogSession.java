@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -198,7 +199,7 @@ public class LogSession extends Session
     */
    public void addAfterReadCallback(TimeConsumer callback)
    {
-      afterReadCallbacks.add(callback);
+      afterReadCallbacks.add(Objects.requireNonNull(callback, "The callback cannot be null."));
    }
 
    /**
