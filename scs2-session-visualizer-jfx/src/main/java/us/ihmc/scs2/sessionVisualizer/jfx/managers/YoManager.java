@@ -7,7 +7,11 @@ import javafx.beans.property.SimpleLongProperty;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sharedMemory.LinkedBufferProperties;
@@ -18,7 +22,12 @@ import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoSearchTools;
 import us.ihmc.yoVariables.tools.YoTools;
-import us.ihmc.yoVariables.variable.*;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoManager extends ObservedAnimationTimer implements Manager
 {
@@ -106,7 +115,7 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       return linkedYoVariableFactory.newLinkedYoRegistry(registry);
    }
 
-   public LinkedYoVariable<?> newLinkedYoVariable(YoVariable yoVariable, Object initialUser)
+   public <L extends LinkedYoVariable<T>, T extends YoVariable> L newLinkedYoVariable(T yoVariable, Object initialUser)
    {
       return linkedYoVariableFactory.newLinkedYoVariable(yoVariable, initialUser);
    }

@@ -15,6 +15,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.robot.Robot;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -44,6 +46,8 @@ public class LogSession extends Session
     * </p>
     */
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
+
+   private final List<TimeConsumer> afterReadCallbacks = new ArrayList<>();
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -141,7 +145,13 @@ public class LogSession extends Session
 
       if (robotStateUpdater != null)
          robotStateUpdater.run();
-      return logDataReader.getCurrentRobotTime();
+
+      double currentTime = logDataReader.getCurrentRobotTime();
+
+      for (int i = 0; i < afterReadCallbacks.size(); i++)
+         afterReadCallbacks.get(i).accept(currentTime);
+
+      return currentTime;
    }
 
    private boolean firstLogPositionRequest = true;
@@ -179,6 +189,30 @@ public class LogSession extends Session
       }
    }
 
+   /**
+    * Adds a callback to be executed after reading each line of the log file.
+    * <p>
+    * This can be used to register some post-processing on the log data.
+    * </p>
+    *
+    * @param callback the callback to add.
+    */
+   public void addAfterReadCallback(TimeConsumer callback)
+   {
+      afterReadCallbacks.add(Objects.requireNonNull(callback, "The callback cannot be null."));
+   }
+
+   /**
+    * Removes a callback that was previously added.
+    *
+    * @param callback the callback to remove.
+    * @return {@code true} if the callback was removed, {@code false} if it was not found.
+    */
+   public boolean removeAfterReadCallback(TimeConsumer callback)
+   {
+      return afterReadCallbacks.remove(callback);
+   }
+
    @Override
    public String getSessionName()
    {
@@ -201,6 +235,11 @@ public class LogSession extends Session
    public List<YoGraphicDefinition> getYoGraphicDefinitions()
    {
       return yoGraphicDefinitions;
+   }
+
+   public List<Robot> getRobots()
+   {
+      return robots;
    }
 
    @Override

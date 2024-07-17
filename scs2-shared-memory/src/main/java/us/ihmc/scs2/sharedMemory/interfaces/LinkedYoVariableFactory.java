@@ -14,10 +14,10 @@ public interface LinkedYoVariableFactory
 
    LinkedYoRegistry newLinkedYoRegistry(YoRegistry registryToLink);
 
-   default LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink)
+   default <L extends LinkedYoVariable<T>, T extends YoVariable> L newLinkedYoVariable(T variableToLink)
    {
       return newLinkedYoVariable(variableToLink, null);
    }
 
-   LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink, Object initialUser);
+   <L extends LinkedYoVariable<T>, T extends YoVariable> L newLinkedYoVariable(T variableToLink, Object initialUser);
 }
