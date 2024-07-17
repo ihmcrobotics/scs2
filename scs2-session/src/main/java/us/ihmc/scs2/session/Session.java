@@ -513,7 +513,7 @@ public abstract class Session
     */
    public void addSessionModeChangeListener(SessionModeChangeListener listener)
    {
-      sessionModeChangeListeners.add(listener);
+      sessionModeChangeListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -536,7 +536,7 @@ public abstract class Session
     */
    public void addPreSessionModeChangeListener(SessionModeChangeListener listener)
    {
-      preSessionModeChangeListeners.add(listener);
+      preSessionModeChangeListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -558,7 +558,7 @@ public abstract class Session
     */
    public void addShutdownListener(Runnable listener)
    {
-      shutdownListeners.add(listener);
+      shutdownListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -581,7 +581,7 @@ public abstract class Session
     */
    public void addSessionPropertiesListener(Consumer<SessionProperties> listener)
    {
-      sessionPropertiesListeners.add(listener);
+      sessionPropertiesListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -604,7 +604,7 @@ public abstract class Session
     */
    public void addCurrentBufferPropertiesListener(Consumer<YoBufferPropertiesReadOnly> listener)
    {
-      currentBufferPropertiesListeners.add(listener);
+      currentBufferPropertiesListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -628,7 +628,7 @@ public abstract class Session
     */
    public void addRunThrowableListener(Consumer<Throwable> listener)
    {
-      runThrowableListeners.add(listener);
+      runThrowableListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -652,7 +652,7 @@ public abstract class Session
     */
    public void addPlaybackThrowableListener(Consumer<Throwable> listener)
    {
-      playbackThrowableListeners.add(listener);
+      playbackThrowableListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -721,7 +721,7 @@ public abstract class Session
     */
    public void addRobotDefinitionListChangeListener(Consumer<SessionRobotDefinitionListChange> listener)
    {
-      robotDefinitionListChangeListeners.add(listener);
+      robotDefinitionListChangeListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
