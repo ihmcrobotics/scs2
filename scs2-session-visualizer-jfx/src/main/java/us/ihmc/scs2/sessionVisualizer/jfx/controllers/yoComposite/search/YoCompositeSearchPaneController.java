@@ -90,10 +90,17 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
 
-      messager.bindBidirectional(topics.getYoVariableNameDisplay(), yoVariableNameDisplay, false);
-      yoVariableNameDisplay.addListener((o, oldValue, newValue) -> search(searchTextField.getText()));
+      Property<YoNameDisplay> yoVariableUserNameDisplay = new SimpleObjectProperty<>(this, "yoVariableUserNameDisplay", YoNameDisplay.SHORT_NAME);
+      messager.bindBidirectional(topics.getYoVariableNameDisplay(), yoVariableUserNameDisplay, false);
+      yoVariableUserNameDisplay.addListener((o, oldValue, newValue) -> search(searchTextField.getText()));
 
       this.ownerRegistry = ownerRegistry;
+
+      if (ownerRegistry != null)
+         yoVariableNameDisplay.setValue(YoNameDisplay.SHORT_NAME);
+      else
+         yoVariableNameDisplay.bindBidirectional(yoVariableUserNameDisplay);
+
       yoCompositeListView.setCellFactory(param -> new YoCompositeListCell(yoManager, yoVariableNameDisplay, numberPrecision, param));
       yoCompositeListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 

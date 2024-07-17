@@ -32,12 +32,12 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicRobotDefinition.YoOneDoFJointStateDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicRobotDefinition.YoRobotStateDefinition;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.RigidBodyFrameNodeFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
 import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
@@ -53,7 +53,7 @@ import java.util.function.DoubleConsumer;
 public class YoGhostRobotFX extends YoGraphicFX3D
 { // FIXME Need to handle the color property
    private final Group rootNode = new Group();
-   private final YoVariableDatabase yoVariableDatabase;
+   private final YoManager yoManager;
 
    private final Property<RobotDefinition> robotDefinitionProperty = new SimpleObjectProperty<>(this, "robotDefinition", null);
    private final Property<YoRobotStateDefinition> robotStateDefinitionProperty = new SimpleObjectProperty<>(this, "robotStateDefinition", null);
@@ -75,10 +75,10 @@ public class YoGhostRobotFX extends YoGraphicFX3D
 
    private final BooleanProperty rootJointPoseValid = new SimpleBooleanProperty(this, "rootJointPoseValid", true);
 
-   public YoGhostRobotFX(YoVariableDatabase yoVariableDatabase)
+   public YoGhostRobotFX(YoManager yoManager)
    {
+      this.yoManager = yoManager;
       setColor((BaseColorFX) null); // Remove the default color.
-      this.yoVariableDatabase = yoVariableDatabase;
 
       drawModeProperty.addListener((o, oldValue, newValue) -> JavaFXMissingTools.setDrawModeRecursive(rootNode, newValue));
 
@@ -272,7 +272,9 @@ public class YoGhostRobotFX extends YoGraphicFX3D
    {
       if (variableName == null)
          return new SimpleDoubleProperty(this, "dummy", 0.0);
-      DoubleProperty doubleProperty = CompositePropertyTools.toDoubleProperty(yoVariableDatabase, variableName);
+      DoubleProperty doubleProperty = CompositePropertyTools.toDoubleProperty(yoManager.getRootRegistryDatabase(),
+                                                                              yoManager::newLinkedYoVariable,
+                                                                              variableName);
       if (doubleProperty instanceof YoDoubleProperty yoDoubleProperty)
       {
          LinkedYoDouble linkedYoDouble = yoDoubleProperty.getLinkedBuffer();
@@ -382,7 +384,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
    @Override
    public YoGraphicFX clone()
    {
-      YoGhostRobotFX clone = new YoGhostRobotFX(yoVariableDatabase);
+      YoGhostRobotFX clone = new YoGhostRobotFX(yoManager);
       clone.setName(getName());
       clone.setColor(getColor());
       clone.setVisible(isVisible());
