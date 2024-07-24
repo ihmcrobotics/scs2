@@ -69,7 +69,8 @@ public class CollisionTools
    public static List<Collidable> extractCollidableRigidBodies(RobotDefinition robotDefinition, SimRigidBodyBasics rootBody)
    {
       return rootBody.subtreeStream()
-                     .flatMap(rigidBody -> toCollidableRigidBody(robotDefinition.getRigidBodyDefinition(rigidBody.getName()), rigidBody).stream())
+                     .flatMap(rigidBody -> toCollidableRigidBody(robotDefinition.getRigidBodyDefinition(rigidBody.getName()), rigidBody).stream()
+                                                                                                                                        .filter(Objects::nonNull))
                      .collect(Collectors.toList());
    }
 
@@ -102,12 +103,16 @@ public class CollisionTools
       return definition.getCollisionShapeDefinitions()
                        .stream()
                        .map(collisionShapeDefinition -> toStaticCollidable(collisionShapeDefinition, worldFrame))
+                       .filter(Objects::nonNull)
                        .collect(Collectors.toList());
    }
 
    private static Collidable toStaticCollidable(CollisionShapeDefinition definition, ReferenceFrame worldFrame)
    {
       FrameShape3DReadOnly shape = toFrameShape3D(definition.getOriginPose(), worldFrame, definition.getGeometryDefinition());
+
+      if (shape == null)
+         return null;
 
       long collisionMask = definition.getCollisionMask();
       long collisionGroup = definition.getCollisionGroup();
@@ -145,6 +150,8 @@ public class CollisionTools
          return toSTPRamp3D(originPose, (STPRamp3DDefinition) definition);
       else if (definition instanceof Ramp3DDefinition)
          return toRamp3D(originPose, (Ramp3DDefinition) definition);
+      else if (definition instanceof ModelFileGeometryDefinition)
+         return toConvexPolytope3D(originPose, (ModelFileGeometryDefinition) definition);
 
       LogTools.warn("Unhandled geometry type: " + definition.getClass().getSimpleName());
       return null;
@@ -152,34 +159,35 @@ public class CollisionTools
 
    public static FrameShape3DReadOnly toFrameShape3D(RigidBodyTransformReadOnly originPose, ReferenceFrame referenceFrame, GeometryDefinition definition)
    {
-      if (definition instanceof STPBox3DDefinition stpBox3DDefinition)
-         return new FrameSTPBox3D(referenceFrame, toSTPBox3D(originPose, stpBox3DDefinition));
-      if (definition instanceof Box3DDefinition box3DDefinition)
-         return new FrameBox3D(referenceFrame, toBox3D(originPose, box3DDefinition));
-      else if (definition instanceof STPCapsule3DDefinition stpCapsule3DDefinition)
-         return new FrameSTPCapsule3D(referenceFrame, toSTPCapsule3D(originPose, stpCapsule3DDefinition));
-      else if (definition instanceof Capsule3DDefinition capsule3DDefinition)
-         return new FrameCapsule3D(referenceFrame, toCapsule3D(originPose, capsule3DDefinition));
-      else if (definition instanceof ConvexPolytope3DDefinition convexPolytope3DDefinition)
-         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, convexPolytope3DDefinition));
-      else if (definition instanceof Cone3DDefinition cone3DDefinition)
-         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, cone3DDefinition));
-      else if (definition instanceof STPCylinder3DDefinition stpCylinder3DDefinition)
-         return new FrameSTPCylinder3D(referenceFrame, toSTPCylinder3D(originPose, stpCylinder3DDefinition));
-      else if (definition instanceof Cylinder3DDefinition cylinder3DDefinition)
-         return new FrameCylinder3D(referenceFrame, toCylinder3D(originPose, cylinder3DDefinition));
-      else if (definition instanceof Ellipsoid3DDefinition ellipsoid3DDefinition)
-         return new FrameEllipsoid3D(referenceFrame, toEllipsoid3D(originPose, ellipsoid3DDefinition));
-      else if (definition instanceof Point3DDefinition point3DDefinition)
-         return new FramePointShape3D(referenceFrame, toPointShape3D(originPose, point3DDefinition));
-      else if (definition instanceof Sphere3DDefinition sphere3DDefinition)
-         return new FrameSphere3D(referenceFrame, toSphere3D(originPose, sphere3DDefinition));
-      else if (definition instanceof STPRamp3DDefinition stpRamp3DDefinition)
-         return new FrameSTPRamp3D(referenceFrame, toSTPRamp3D(originPose, stpRamp3DDefinition));
-      else if (definition instanceof Ramp3DDefinition ramp3DDefinition)
-         return new FrameRamp3D(referenceFrame, toRamp3D(originPose, ramp3DDefinition));
-      else if (definition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
-         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, modelFileGeometryDefinition));
+      Shape3DReadOnly shape3D = toShape3D(originPose, definition);
+      if (shape3D == null)
+         return null;
+
+      if (shape3D instanceof STPBox3D stpBox3D)
+         return new FrameSTPBox3D(referenceFrame, stpBox3D);
+      if (shape3D instanceof Box3D box3D)
+         return new FrameBox3D(referenceFrame, box3D);
+      if (shape3D instanceof STPCapsule3D stpCapsule3D)
+         return new FrameSTPCapsule3D(referenceFrame, stpCapsule3D);
+      if (shape3D instanceof Capsule3D capsule3D)
+         return new FrameCapsule3D(referenceFrame, capsule3D);
+      if (shape3D instanceof ConvexPolytope3D convexPolytope3D)
+         return new FrameConvexPolytope3D(referenceFrame, convexPolytope3D);
+      if (shape3D instanceof STPCylinder3D stpCylinder3D)
+         return new FrameSTPCylinder3D(referenceFrame, stpCylinder3D);
+      if (shape3D instanceof Cylinder3D cylinder3D)
+         return new FrameCylinder3D(referenceFrame, cylinder3D);
+      if (shape3D instanceof Ellipsoid3D ellipsoid3D)
+         return new FrameEllipsoid3D(referenceFrame, ellipsoid3D);
+      if (shape3D instanceof PointShape3D pointShape3D)
+         return new FramePointShape3D(referenceFrame, pointShape3D);
+      if (shape3D instanceof Sphere3D sphere3D)
+         return new FrameSphere3D(referenceFrame, sphere3D);
+      // We do not have FrameTorus3D, skipping.
+      if (shape3D instanceof STPRamp3D stpRamp3D)
+         return new FrameSTPRamp3D(referenceFrame, stpRamp3D);
+      if (shape3D instanceof Ramp3D ramp3D)
+         return new FrameRamp3D(referenceFrame, ramp3D);
 
       LogTools.warn("Unhandled geometry type: " + definition.getClass().getSimpleName());
       return null;
@@ -325,12 +333,25 @@ public class CollisionTools
    public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, ModelFileGeometryDefinition definition)
    {
       if (!FilenameUtils.isExtension(definition.getFileName().toLowerCase(), "obj"))
-         throw new UnsupportedOperationException("Only Wavefront OBJ files are supported.");
+      {
+         LogTools.warn("Only Wavefront OBJ files are supported. File: {}", definition.getFileName());
+         return null;
+      }
 
       LogTools.warn("Loading model file: {} into a collision convex polytope. ", definition.getFileName());
 
       URL objFileURL = DefinitionIOTools.resolveModelFileURL(definition);
-      List<Point3D> vertices = DefinitionIOTools.loadOBJVertices(objFileURL);
+      List<Point3D> vertices;
+      try
+      {
+         vertices = DefinitionIOTools.loadOBJVertices(objFileURL);
+      }
+      catch (Exception e)
+      {
+         LogTools.error("Failed to load the model file: " + objFileURL, e.getMessage());
+         return null;
+      }
+
       if (!originPose.hasRotation())
       {
          if (originPose.hasTranslation())
