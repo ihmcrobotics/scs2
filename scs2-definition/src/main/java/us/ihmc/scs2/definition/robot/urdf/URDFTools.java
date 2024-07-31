@@ -222,7 +222,8 @@ public class URDFTools
    public static URDFModel loadURDFModel(InputStream inputStream,
                                          Collection<String> resourceDirectories,
                                          ClassLoader resourceClassLoader,
-                                         URDFParserProperties parserProperties) throws JAXBException
+                                         URDFParserProperties parserProperties)
+         throws JAXBException
    {
       try
       {
@@ -433,9 +434,8 @@ public class URDFTools
          return;
 
       Map<String, JointDefinition> jointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(JointDefinition::getName, Function.identity()));
-      Map<String, JointDefinition> linkNameToJointDefinitionMap = jointDefinitions.stream()
-                                                                                  .collect(Collectors.toMap(joint -> joint.getSuccessor().getName(),
-                                                                                                            Function.identity()));
+      Map<String, JointDefinition> linkNameToJointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(joint -> joint.getSuccessor().getName(),
+                                                                                                                     Function.identity()));
 
       for (URDFGazebo urdfGazebo : urdfGazebos)
       {
@@ -480,9 +480,8 @@ public class URDFTools
                                                        List<JointDefinition> jointDefinitions,
                                                        List<URDFJoint> urdfJoints)
    {
-      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream()
-                                                                                    .collect(Collectors.toMap(RigidBodyDefinition::getName,
-                                                                                                              Function.identity()));
+      Map<String, RigidBodyDefinition> rigidBodyDefinitionMap = rigidBodyDefinitions.stream().collect(Collectors.toMap(RigidBodyDefinition::getName,
+                                                                                                                       Function.identity()));
       Map<String, JointDefinition> jointDefinitionMap = jointDefinitions.stream().collect(Collectors.toMap(JointDefinition::getName, Function.identity()));
 
       if (urdfJoints != null)
@@ -712,9 +711,8 @@ public class URDFTools
       Vector3D surfaceNormal = parseAxis(urdfJoint.getAxis(), parserProperties);
 
       if (!surfaceNormal.geometricallyEquals(Axis3D.Y, 1.0e-5))
-         throw new UnsupportedOperationException(
-               "Planar joint are supported only with a surface normal equal to: " + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:"
-               + surfaceNormal);
+         throw new UnsupportedOperationException("Planar joint are supported only with a surface normal equal to: "
+               + EuclidCoreIOTools.getTuple3DString(Axis3D.Y) + ", received:" + surfaceNormal);
 
       return definition;
    }
@@ -749,17 +747,15 @@ public class URDFTools
       URDFJoint urdfJoint2 = urdfJoint.getSubJoints().get(2);
       URDFJoint urdfJoint3 = urdfJoint.getSubJoints().get(3);
 
-      if (!Objects.equals(urdfJoint0.getParent().getLink(), urdfJoint.getParent().getLink()) || !Objects.equals(urdfJoint1.getParent().getLink(),
-                                                                                                                urdfJoint.getParent().getLink()))
+      if (!Objects.equals(urdfJoint0.getParent().getLink(), urdfJoint.getParent().getLink())
+            || !Objects.equals(urdfJoint1.getParent().getLink(), urdfJoint.getParent().getLink()))
       {
-         throw new IllegalArgumentException(
-               "The 2 first sub-joints of the cross four bar joint must closest to the robot root and share the same parent link as the cross four bar joint.");
+         throw new IllegalArgumentException("The 2 first sub-joints of the cross four bar joint must closest to the robot root and share the same parent link as the cross four bar joint.");
       }
-      if (!Objects.equals(urdfJoint2.getChild().getLink(), urdfJoint.getChild().getLink()) || !Objects.equals(urdfJoint3.getChild().getLink(),
-                                                                                                              urdfJoint.getChild().getLink()))
+      if (!Objects.equals(urdfJoint2.getChild().getLink(), urdfJoint.getChild().getLink())
+            || !Objects.equals(urdfJoint3.getChild().getLink(), urdfJoint.getChild().getLink()))
       {
-         throw new IllegalArgumentException(
-               "The 2 last sub-joints of the cross four bar joint must farthest from the robot root and share the same child link as the cross four bar joint.");
+         throw new IllegalArgumentException("The 2 last sub-joints of the cross four bar joint must farthest from the robot root and share the same child link as the cross four bar joint.");
       }
 
       URDFLink urdfLink0 = urdfJoint.getSubLinks().get(0);
@@ -777,18 +773,16 @@ public class URDFTools
       if (Objects.equals(urdfJointA.getChild().getLink(), urdfLink0.getName()))
       {
          if (!Objects.equals(urdfJointB.getChild().getLink(), urdfLink1.getName()))
-            throw new IllegalArgumentException(
-                  "Error when parsing the cross-bars, jointA child: " + urdfJointA.getChild().getLink() + ", jointB child: " + urdfJointB.getChild().getLink()
-                  + ", link0: " + urdfLink0.getName() + ", link1: " + urdfLink1.getName());
+            throw new IllegalArgumentException("Error when parsing the cross-bars, jointA child: " + urdfJointA.getChild().getLink() + ", jointB child: "
+                  + urdfJointB.getChild().getLink() + ", link0: " + urdfLink0.getName() + ", link1: " + urdfLink1.getName());
          urdfLinkDA = urdfLink0;
          urdfLinkBC = urdfLink1;
       }
       else
       {
          if (!Objects.equals(urdfJointB.getChild().getLink(), urdfLink0.getName()))
-            throw new IllegalArgumentException(
-                  "Error when parsing the cross-bars, jointA child: " + urdfJointA.getChild().getLink() + ", jointB child: " + urdfJointB.getChild().getLink()
-                  + ", link0: " + urdfLink0.getName() + ", link1: " + urdfLink1.getName());
+            throw new IllegalArgumentException("Error when parsing the cross-bars, jointA child: " + urdfJointA.getChild().getLink() + ", jointB child: "
+                  + urdfJointB.getChild().getLink() + ", link0: " + urdfLink0.getName() + ", link1: " + urdfLink1.getName());
          urdfLinkDA = urdfLink1;
          urdfLinkBC = urdfLink0;
       }
@@ -796,10 +790,8 @@ public class URDFTools
       if (Objects.equals(urdfJoint2.getParent().getLink(), urdfLinkDA.getName()))
       {
          if (!Objects.equals(urdfJoint3.getParent().getLink(), urdfLinkBC.getName()))
-            throw new IllegalArgumentException(
-                  "Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: " + urdfJoint3.getParent()
-                                                                                                                                            .getLink()
-                  + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
+            throw new IllegalArgumentException("Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: "
+                  + urdfJoint3.getParent().getLink() + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
          urdfJointD = urdfJoint2;
          urdfJointC = urdfJoint3;
          if (actuatedJointIndex == 2)
@@ -810,15 +802,11 @@ public class URDFTools
       else
       {
          if (!Objects.equals(urdfJoint2.getParent().getLink(), urdfLinkBC.getName()))
-            throw new IllegalArgumentException(
-                  "Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: " + urdfJoint3.getParent()
-                                                                                                                                            .getLink()
-                  + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
+            throw new IllegalArgumentException("Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: "
+                  + urdfJoint3.getParent().getLink() + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
          if (!Objects.equals(urdfJoint3.getParent().getLink(), urdfLinkDA.getName()))
-            throw new IllegalArgumentException(
-                  "Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: " + urdfJoint3.getParent()
-                                                                                                                                            .getLink()
-                  + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
+            throw new IllegalArgumentException("Error when parsing the cross-bars, joint2 parent: " + urdfJoint2.getParent().getLink() + ", joint3 parent: "
+                  + urdfJoint3.getParent().getLink() + ", linkDA: " + urdfLinkDA.getName() + ", linkBC: " + urdfLinkBC.getName());
          urdfJointC = urdfJoint2;
          urdfJointD = urdfJoint3;
       }
@@ -1430,9 +1418,17 @@ public class URDFTools
    {
       URDFModel urdfModel = new URDFModel();
 
+      List<JointDefinition> allJointsMinusRootJoint = new ArrayList<>(robotDefinition.getAllJoints());
+      for (int i = 0; i < allJointsMinusRootJoint.size(); i++)
+      {
+         if(allJointsMinusRootJoint.get(i).equals(robotDefinition.getFloatingRootJointDefinition()))
+            allJointsMinusRootJoint.remove(i);
+      }
+
       urdfModel.setName(robotDefinition.getName());
-      urdfModel.setLinks(toURDFLinks(robotDefinition.getAllRigidBodies(), properties));
-      urdfModel.setJoints(toURDFJoints(robotDefinition.getAllJoints(), properties));
+      urdfModel.setLinks(toURDFLinks(RobotDefinition.collectSubtreeRigidBodyDefinitions(robotDefinition.getFloatingRootJointDefinition().getSuccessor()),
+                                     properties));
+      urdfModel.setJoints(toURDFJoints(allJointsMinusRootJoint, properties));
       urdfModel.setGazebos(toURDFGazebos(robotDefinition.getAllJoints(), properties));
 
       return urdfModel;
