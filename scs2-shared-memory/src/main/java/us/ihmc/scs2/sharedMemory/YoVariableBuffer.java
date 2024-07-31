@@ -1,7 +1,13 @@
 package us.ihmc.scs2.sharedMemory;
 
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
-import us.ihmc.yoVariables.variable.*;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 public abstract class YoVariableBuffer<T extends YoVariable>
 {
@@ -22,11 +28,18 @@ public abstract class YoVariableBuffer<T extends YoVariable>
 
    protected final T yoVariable;
    private final YoBufferPropertiesReadOnly properties;
+   private final int variableMemorySize;
 
    public YoVariableBuffer(T yoVariable, YoBufferPropertiesReadOnly properties)
    {
       this.yoVariable = yoVariable;
       this.properties = properties;
+      variableMemorySize = SharedMemoryTools.getVariableMemorySize(yoVariable);
+   }
+
+   public int getVariableMemorySize()
+   {
+      return variableMemorySize;
    }
 
    public abstract void resizeBuffer(int from, int length);
@@ -74,4 +87,10 @@ public abstract class YoVariableBuffer<T extends YoVariable>
    public abstract double[] getAsDoubleBuffer();
 
    public abstract void dispose();
+
+   @Override
+   public String toString()
+   {
+      return "%s [yoVariable=%s, properties=%s]".formatted(getClass().getSimpleName(), yoVariable, properties);
+   }
 }

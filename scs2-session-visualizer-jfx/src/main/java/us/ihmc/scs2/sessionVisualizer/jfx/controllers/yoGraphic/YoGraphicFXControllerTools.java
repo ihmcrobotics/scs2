@@ -1,20 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
-
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -26,8 +11,12 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
@@ -38,6 +27,16 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 public class YoGraphicFXControllerTools
 {
    public static List<Class<? extends YoGraphicFXItem>> yoGraphicFXTypes;
@@ -47,20 +46,26 @@ public class YoGraphicFXControllerTools
    static
    {
       Thread loader = new Thread(() ->
-      {
-         Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(YoGraphicFXItem.class.getPackage().getName()))
-                                                                             .setScanners(new SubTypesScanner()));
-         Set<Class<? extends YoGraphicFXItem>> yoGraphicFXSubTypes = reflections.getSubTypesOf(YoGraphicFXItem.class);
-         yoGraphicFXTypes = yoGraphicFXSubTypes.stream().filter(type -> !Modifier.isAbstract(type.getModifiers()) && !type.isInterface())
-                                               .sorted((c1, c2) -> c1.getSimpleName().compareTo(c2.getSimpleName())).collect(Collectors.toList());
-         Set<Class<? extends YoGraphicFX2D>> yoGraphicFX2DSubTypes = reflections.getSubTypesOf(YoGraphicFX2D.class);
-         yoGraphicFX2DTypes = yoGraphicFX2DSubTypes.stream().filter(type -> !Modifier.isAbstract(type.getModifiers()) && !type.isInterface())
-                                                   .sorted((c1, c2) -> c1.getSimpleName().compareTo(c2.getSimpleName())).collect(Collectors.toList());
-         Set<Class<? extends YoGraphicFX3D>> yoGraphicFX3DSubTypes = reflections.getSubTypesOf(YoGraphicFX3D.class);
-         yoGraphicFX3DTypes = yoGraphicFX3DSubTypes.stream().filter(type -> !Modifier.isAbstract(type.getModifiers()) && !type.isInterface())
-                                                   .sorted((c1, c2) -> c1.getSimpleName().compareTo(c2.getSimpleName())).collect(Collectors.toList());
-
-      }, "YoGraphicFX Loader");
+                                 {
+                                    Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(YoGraphicFXItem.class.getPackage()
+                                                                                                                                                                 .getName()))
+                                                                                                        .setScanners(new SubTypesScanner()));
+                                    Set<Class<? extends YoGraphicFXItem>> yoGraphicFXSubTypes = reflections.getSubTypesOf(YoGraphicFXItem.class);
+                                    yoGraphicFXTypes = yoGraphicFXSubTypes.stream()
+                                                                          .filter(type -> !Modifier.isAbstract(type.getModifiers()) && !type.isInterface())
+                                                                          .sorted((c1, c2) -> c1.getSimpleName().compareTo(c2.getSimpleName()))
+                                                                          .collect(Collectors.toList());
+                                    Set<Class<? extends YoGraphicFX2D>> yoGraphicFX2DSubTypes = reflections.getSubTypesOf(YoGraphicFX2D.class);
+                                    yoGraphicFX2DTypes = yoGraphicFX2DSubTypes.stream()
+                                                                              .filter(type -> !Modifier.isAbstract(type.getModifiers()) && !type.isInterface())
+                                                                              .sorted((c1, c2) -> c1.getSimpleName().compareTo(c2.getSimpleName()))
+                                                                              .collect(Collectors.toList());
+                                    Set<Class<? extends YoGraphicFX3D>> yoGraphicFX3DSubTypes = reflections.getSubTypesOf(YoGraphicFX3D.class);
+                                    yoGraphicFX3DTypes = yoGraphicFX3DSubTypes.stream()
+                                                                              .filter(type -> !Modifier.isAbstract(type.getModifiers()) && !type.isInterface())
+                                                                              .sorted((c1, c2) -> c1.getSimpleName().compareTo(c2.getSimpleName()))
+                                                                              .collect(Collectors.toList());
+                                 }, "YoGraphicFX Loader");
       loader.setPriority(Thread.MIN_PRIORITY);
       loader.setDaemon(true);
       loader.start();
@@ -83,7 +88,7 @@ public class YoGraphicFXControllerTools
       return clone;
    }
 
-   public static YoGraphicFXItem createYoGraphicFXItemAndRegister(ReferenceFrame worldFrame,
+   public static YoGraphicFXItem createYoGraphicFXItemAndRegister(ReferenceFrameWrapper worldFrame,
                                                                   YoGroupFX parentGroup,
                                                                   String itemName,
                                                                   Class<? extends YoGraphicFXItem> itemTypeToInstantiate)
@@ -96,8 +101,7 @@ public class YoGraphicFXControllerTools
       }
       else if (YoGraphicFX.class.isAssignableFrom(itemTypeToInstantiate))
       {
-         @SuppressWarnings("unchecked")
-         YoGraphicFX item = newInstance(worldFrame, (Class<? extends YoGraphicFX>) itemTypeToInstantiate);
+         @SuppressWarnings("unchecked") YoGraphicFX item = newInstance(worldFrame, (Class<? extends YoGraphicFX>) itemTypeToInstantiate);
 
          item.setName(itemName);
          boolean success = parentGroup.addYoGraphicFXItem(item);
@@ -109,17 +113,18 @@ public class YoGraphicFXControllerTools
       }
    }
 
-   private static YoGraphicFX newInstance(ReferenceFrame worldFrame, Class<? extends YoGraphicFX> itemTypeToInstantiate)
+   private static YoGraphicFX newInstance(ReferenceFrameWrapper worldFrame, Class<? extends YoGraphicFX> itemTypeToInstantiate)
    {
       try
       {
-         Constructor<? extends YoGraphicFX> constructor = itemTypeToInstantiate.getConstructor(ReferenceFrame.class);
+         Constructor<? extends YoGraphicFX> constructor = itemTypeToInstantiate.getConstructor(ReferenceFrameWrapper.class);
          return constructor.newInstance(worldFrame);
       }
-      catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException
-            | InvocationTargetException e)
+      catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException |
+             InvocationTargetException e)
       {
-         throw new RuntimeException("Something went wrong when instantiating a YoGraphicFX attempting to invoke its constructor with ReferenceFrame argument: ", e);
+         throw new RuntimeException("Something went wrong when instantiating a YoGraphicFX attempting to invoke its constructor with ReferenceFrame argument: ",
+                                    e);
       }
    }
 
@@ -341,10 +346,13 @@ public class YoGraphicFXControllerTools
       if (indexOf == -1)
          return original;
 
-      if (Character.isUpperCase(original.charAt(indexOf)))
-         replacement = Character.toUpperCase(replacement.charAt(0)) + replacement.substring(1);
-      else
-         replacement = Character.toLowerCase(replacement.charAt(0)) + replacement.substring(1);
+      if (Character.isAlphabetic(original.charAt(indexOf)))
+      {
+         if (Character.isUpperCase(original.charAt(indexOf)))
+            replacement = Character.toUpperCase(replacement.charAt(0)) + replacement.substring(1);
+         else
+            replacement = Character.toLowerCase(replacement.charAt(0)) + replacement.substring(1);
+      }
 
       return original.replaceAll("(?i)" + search, replacement);
    }
@@ -359,18 +367,18 @@ public class YoGraphicFXControllerTools
    public static ReadOnlyObjectProperty<List<Tuple2DProperty>> toTuple2DDoubleSupplierListProperty(ReadOnlyObjectProperty<List<DoubleProperty[]>> inputProperty)
    {
       ObjectProperty<List<Tuple2DProperty>> output = new SimpleObjectProperty<>(null, "tuple2DSupplierList", null);
-      inputProperty.addListener((o,
-                                 oldValue,
-                                 newValue) -> output.set(newValue.stream().map(array -> new Tuple2DProperty(null, array)).collect(Collectors.toList())));
+      inputProperty.addListener((o, oldValue, newValue) -> output.set(newValue.stream()
+                                                                              .map(array -> new Tuple2DProperty(null, array))
+                                                                              .collect(Collectors.toList())));
       return output;
    }
 
    public static ReadOnlyObjectProperty<List<Tuple3DProperty>> toTuple3DDoubleSupplierListProperty(ReadOnlyObjectProperty<List<DoubleProperty[]>> inputProperty)
    {
       ObjectProperty<List<Tuple3DProperty>> output = new SimpleObjectProperty<>(null, "tuple3DSupplierList", null);
-      inputProperty.addListener((o,
-                                 oldValue,
-                                 newValue) -> output.set(newValue.stream().map(array -> new Tuple3DProperty(null, array)).collect(Collectors.toList())));
+      inputProperty.addListener((o, oldValue, newValue) -> output.set(newValue.stream()
+                                                                              .map(array -> new Tuple3DProperty(null, array))
+                                                                              .collect(Collectors.toList())));
       return output;
    }
 

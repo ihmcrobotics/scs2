@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -11,6 +10,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.stage.Window;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
@@ -173,7 +173,7 @@ public class YoEntryTabPaneController
          if (selectedTab == null)
             return null;
 
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+         FontIcon exportIcon = new FontIcon();
          exportIcon.getStyleClass().add("save-icon-view");
          MenuItem menuItem = new MenuItem("Export active tab...", exportIcon);
 
@@ -197,7 +197,7 @@ public class YoEntryTabPaneController
          if (selectedTab == null)
             return null;
 
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+         FontIcon exportIcon = new FontIcon();
          exportIcon.getStyleClass().add("save-icon-view");
          MenuItem menuItem = new MenuItem("Export all tabs...", exportIcon);
 
@@ -221,7 +221,7 @@ public class YoEntryTabPaneController
          if (selectedTab == null)
             return null;
 
-         FontAwesomeIconView exportIcon = new FontAwesomeIconView();
+         FontIcon exportIcon = new FontIcon();
          exportIcon.getStyleClass().add("load-icon-view");
          MenuItem menuItem = new MenuItem("Import tab(s)...", exportIcon);
 

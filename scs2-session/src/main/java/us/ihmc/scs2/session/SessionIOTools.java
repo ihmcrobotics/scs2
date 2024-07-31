@@ -1,5 +1,22 @@
 package us.ihmc.scs2.session;
 
+import org.apache.commons.io.FileUtils;
+import us.ihmc.commons.nio.FileTools;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.DefinitionIOTools;
+import us.ihmc.scs2.definition.SessionInformationDefinition;
+import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.RobotStateDefinition;
+import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
+import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoVariable;
+
+import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -15,25 +32,6 @@ import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
-import javax.xml.bind.JAXBException;
-
-import org.apache.commons.io.FileUtils;
-
-import us.ihmc.commons.nio.FileTools;
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.DefinitionIOTools;
-import us.ihmc.scs2.definition.SessionInformationDefinition;
-import us.ihmc.scs2.definition.robot.RobotDefinition;
-import us.ihmc.scs2.definition.robot.RobotStateDefinition;
-import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
-import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
-import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools;
-import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
-import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
-import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class SessionIOTools
 {
@@ -210,14 +208,13 @@ public class SessionIOTools
          {
             String name = robotDefinition.getName();
             File robotFile = new File(file, name + robotDefinitionFileExtension);
-            LogTools.info("Exporting RobotDefinition for: {} File: {}", name, robotFile);
-            DefinitionIOTools.saveRobotDefinition(new FileOutputStream(robotFile), robotDefinition);
-            sessionInfo.getRobotFileNames().add(robotFile.getName());
             ClassLoader resourceClassLoader = robotDefinition.getResourceClassLoader();
             if (resourceClassLoader == null)
                resourceClassLoader = SessionIOTools.class.getClassLoader();
             File robotResourceDirectory = new File(resourcesDirectory, name);
-            DefinitionIOTools.saveResources(robotDefinition, robotResourceDirectory, resourceClassLoader);
+            LogTools.info("Exporting RobotDefinition for: {} File: {}", name, robotFile);
+            DefinitionIOTools.saveRobotDefinitionAndResources(robotFile, robotDefinition, robotResourceDirectory, resourceClassLoader);
+            sessionInfo.getRobotFileNames().add(robotFile.getName());
          }
       }
 
@@ -246,15 +243,14 @@ public class SessionIOTools
             terrainNames.add(name);
 
             File terrainFile = new File(file, name + terrainObjectDefinitionFileExtension);
+            File terrainResourceDirectory = new File(resourcesDirectory, name);
             LogTools.info("Exporting TerrainObjectDefinition for: {}. File: {}", name, terrainFile);
-            DefinitionIOTools.saveTerrainObjectDefinition(new FileOutputStream(terrainFile), terrainObjectDefinition);
-            sessionInfo.getTerrainFileNames().add(terrainFile.getName());
 
             ClassLoader resourceClassLoader = terrainObjectDefinition.getResourceClassLoader();
             if (resourceClassLoader == null)
                resourceClassLoader = SessionIOTools.class.getClassLoader();
-            File terrainResourceDirectory = new File(resourcesDirectory, name);
-            DefinitionIOTools.saveResources(terrainObjectDefinition, terrainResourceDirectory, resourceClassLoader);
+            DefinitionIOTools.saveTerrainObjectDefinitionAndResources(terrainFile, terrainObjectDefinition, terrainResourceDirectory, resourceClassLoader);
+            sessionInfo.getTerrainFileNames().add(terrainFile.getName());
          }
       }
 
@@ -262,7 +258,10 @@ public class SessionIOTools
       {
          File graphicFile = new File(file, "sessionGraphics" + yoGraphicConfigurationFileExtension);
          LogTools.info("Exporting session yoGraphics. File: {}", graphicFile);
-         DefinitionIOTools.saveYoGraphicListDefinition(new FileOutputStream(graphicFile), new YoGraphicListDefinition(session.getYoGraphicDefinitions()));
+         File yoGraphicResourceDirectory = new File(resourcesDirectory, "yoGraphics");
+         DefinitionIOTools.saveYoGraphicListDefinitionAndResources(graphicFile,
+                                                                   new YoGraphicListDefinition(session.getYoGraphicDefinitions()),
+                                                                   yoGraphicResourceDirectory);
          sessionInfo.setGraphicFileName(graphicFile.getName());
       }
 

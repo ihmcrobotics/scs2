@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.List;
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicPolygon2DDefinition} is a template for creating 2D polygon and which components
@@ -27,7 +26,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicPolygon2D")
@@ -47,13 +46,31 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
     */
    public YoGraphicPolygon2DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicPolygon2DDefinition(YoGraphicPolygon2DDefinition other)
+   {
+      super(other);
+      vertices = other.vertices == null ? null : other.vertices.stream().map(YoTuple2DDefinition::copy).toList();
+      numberOfVertices = other.numberOfVertices;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerListField("vertices", this::getVertices, this::setVertices, "v", Object::toString, YoTuple2DDefinition::parse);
       registerStringField("numberOfVertices", this::getNumberOfVertices, this::setNumberOfVertices);
    }
 
    /**
     * Sets the vertices for the polygon.
-    * 
+    *
     * @param vertices the vertices for the polygon.
     */
    @XmlElement
@@ -68,7 +85,7 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
     * Using this method allows to back the number of vertices with a {@code YoVariable} by giving the
     * variable name/fullname.
     * </p>
-    * 
+    *
     * @param numberOfVertices the number of vertices to use.
     */
    @XmlElement
@@ -85,6 +102,12 @@ public class YoGraphicPolygon2DDefinition extends YoGraphic2DDefinition
    public String getNumberOfVertices()
    {
       return numberOfVertices;
+   }
+
+   @Override
+   public YoGraphicPolygon2DDefinition copy()
+   {
+      return new YoGraphicPolygon2DDefinition(this);
    }
 
    @Override

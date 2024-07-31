@@ -3,7 +3,6 @@ package us.ihmc.scs2.simulation.robot.multiBodySystem;
 import us.ihmc.euclid.matrix.interfaces.Matrix3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
-import us.ihmc.mecano.multiBodySystem.interfaces.RevoluteJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RevoluteTwinsJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.spatial.interfaces.TwistReadOnly;
@@ -30,8 +29,8 @@ public class SimRevoluteTwinsJoint extends YoRevoluteTwinsJoint implements SimOn
    {
       this(definition.getName(),
            predecessor,
-           definition.getJointNameA(),
-           definition.getJointNameB(),
+           definition.getJointA().getName(),
+           definition.getJointB().getName(),
            definition.getBodyAB().getName(),
            definition.getTransformAToPredecessor(),
            definition.getTransformBToA(),
@@ -42,10 +41,21 @@ public class SimRevoluteTwinsJoint extends YoRevoluteTwinsJoint implements SimOn
            definition.getConstraintRatio(),
            definition.getConstraintOffset(),
            definition.getAxis());
+
       setJointLimits(definition.getPositionLowerLimit(), definition.getPositionUpperLimit());
       setVelocityLimits(definition.getVelocityLowerLimit(), definition.getVelocityUpperLimit());
       setEffortLimits(definition.getEffortLowerLimit(), definition.getEffortUpperLimit());
       setDamping(definition.getDamping());
+
+      var jointADefinition = definition.getJointA();
+      getJointA().setJointLimits(jointADefinition.getPositionLowerLimit(), jointADefinition.getPositionUpperLimit());
+      getJointA().setVelocityLimits(jointADefinition.getVelocityLowerLimit(), jointADefinition.getVelocityUpperLimit());
+      getJointA().setEffortLimits(jointADefinition.getEffortLowerLimit(), jointADefinition.getEffortUpperLimit());
+
+      var jointBDefinition = definition.getJointB();
+      getJointB().setJointLimits(jointBDefinition.getPositionLowerLimit(), jointBDefinition.getPositionUpperLimit());
+      getJointB().setVelocityLimits(jointBDefinition.getVelocityLowerLimit(), jointBDefinition.getVelocityUpperLimit());
+      getJointB().setEffortLimits(jointBDefinition.getEffortLowerLimit(), jointBDefinition.getEffortUpperLimit());
    }
 
    public SimRevoluteTwinsJoint(String name,

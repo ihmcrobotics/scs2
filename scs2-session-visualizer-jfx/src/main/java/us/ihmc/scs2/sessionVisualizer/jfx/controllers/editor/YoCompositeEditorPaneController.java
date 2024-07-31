@@ -1,11 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor;
 
-import java.util.Arrays;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-
 import com.jfoenix.controls.JFXTextField;
-
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
@@ -23,7 +18,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.DoubleSearchField;
@@ -31,6 +25,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.Ref
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField.YoCompositeSearchField;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
@@ -39,6 +34,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeCollection;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositePattern;
 import us.ihmc.scs2.sharedMemory.LinkedYoRegistry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class YoCompositeEditorPaneController
 {
@@ -72,6 +73,8 @@ public class YoCompositeEditorPaneController
    private ReferenceFrameManager referenceFrameManager;
 
    private ReferenceFrameSearchField yoReferenceFrameTextField;
+
+   private final List<Runnable> cleanupTasks = new ArrayList<>();
 
    public void initialize(SessionVisualizerToolkit toolkit, YoCompositeCollection yoCompositeCollection, boolean setupReferenceFrameFields)
    {
@@ -115,11 +118,12 @@ public class YoCompositeEditorPaneController
          int supplierIndex = i;
 
          yoComponentTextField.supplierProperty().addListener((o, oldValue, newValue) ->
-         {
-            DoubleProperty[] newSuppliers = Arrays.copyOf(compositeSupplierProperty.get(), numberOfComponents);
-            newSuppliers[supplierIndex] = newValue;
-            compositeSupplierProperty.set(newSuppliers);
-         });
+                                                             {
+                                                                DoubleProperty[] newSuppliers = Arrays.copyOf(compositeSupplierProperty.get(),
+                                                                                                              numberOfComponents);
+                                                                newSuppliers[supplierIndex] = newValue;
+                                                                compositeSupplierProperty.set(newSuppliers);
+                                                             });
 
          yoComponentTextFields[i] = yoComponentTextField;
       }
@@ -140,15 +144,17 @@ public class YoCompositeEditorPaneController
       }
 
       compositeNameProperty.addListener((observable, oldValue, newValue) ->
-      {
-         if (newValue == null || newValue.isEmpty())
-         {
-            compositeNameProperty.set(oldValue);
-            return;
-         }
+                                        {
+                                           if (newValue == null || newValue.isEmpty())
+                                           {
+                                              compositeNameProperty.set(oldValue);
+                                              return;
+                                           }
 
-         searchYoCompositeLabel.setText(YoGraphicFXControllerTools.replaceAndMatchCase(searchYoCompositeLabel.getText(), oldValue, newValue));
-      });
+                                           searchYoCompositeLabel.setText(YoGraphicFXControllerTools.replaceAndMatchCase(searchYoCompositeLabel.getText(),
+                                                                                                                         oldValue,
+                                                                                                                         newValue));
+                                        });
    }
 
    private void createLayout()
@@ -239,12 +245,26 @@ public class YoCompositeEditorPaneController
       compositeNameProperty.set(compositeName);
    }
 
+   public void clearInput()
+   {
+      for (int i = 0; i < numberOfComponents; i++)
+      {
+         componentSearchTextFields[i].setText("0.0");
+      }
+      if (yoCompositeTextField != null)
+         yoCompositeTextField.initializeFieldFromComponents();
+      if (referenceFrameSearchTextField != null)
+      {
+         referenceFrameSearchTextField.setText(referenceFrameManager.getWorldFrame().getName());
+      }
+   }
+
    public void setInput(YoComposite input)
    {
       if (yoCompositeTextField != null)
          yoCompositeTextField.setInput(input);
       else
-         componentSearchTextFields[0].setText(input.getUniqueName());
+         componentSearchTextFields[0].setText(input.getUniqueShortName());
    }
 
    public void setInput(CompositeProperty input)
@@ -279,11 +299,11 @@ public class YoCompositeEditorPaneController
          yoCompositeTextField.initializeFieldFromComponents();
    }
 
-   public void setReferenceFrame(ReferenceFrame referenceFrame)
+   public void setReferenceFrame(ReferenceFrameWrapper referenceFrame)
    {
       if (yoReferenceFrameTextField == null)
          return;
-      referenceFrameSearchTextField.setText(referenceFrame.getNameId());
+      referenceFrameSearchTextField.setText(referenceFrame.getFullName());
    }
 
    public ObservableBooleanValue inputsValidityProperty()
@@ -296,7 +316,7 @@ public class YoCompositeEditorPaneController
       return compositeSupplierProperty;
    }
 
-   public ReadOnlyProperty<Property<ReferenceFrame>> frameSupplierProperty()
+   public ReadOnlyProperty<Property<ReferenceFrameWrapper>> frameSupplierProperty()
    {
       return yoReferenceFrameTextField.supplierProperty();
    }
@@ -313,7 +333,7 @@ public class YoCompositeEditorPaneController
       compositeSupplierProperty.addListener((o, oldValue, newValue) -> componentsConsumer.accept(newValue));
    }
 
-   public void addInputListener(BiConsumer<DoubleProperty[], Property<ReferenceFrame>> frameComponentsConsumer)
+   public void addInputListener(BiConsumer<DoubleProperty[], Property<ReferenceFrameWrapper>> frameComponentsConsumer)
    {
       compositeSupplierProperty.addListener((o, oldValue, newValue) -> frameComponentsConsumer.accept(newValue, yoReferenceFrameTextField.getSupplier()));
       frameSupplierProperty().addListener((o, oldValue, newValue) -> frameComponentsConsumer.accept(compositeSupplierProperty.get(), newValue));

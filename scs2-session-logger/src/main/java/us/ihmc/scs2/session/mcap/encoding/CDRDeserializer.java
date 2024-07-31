@@ -1,4 +1,4 @@
-package us.ihmc.scs2.session.mcap;
+package us.ihmc.scs2.session.mcap.encoding;
 
 import us.ihmc.idl.CDR;
 import us.ihmc.log.LogTools;
@@ -107,7 +107,11 @@ public class CDRDeserializer
    public void finalize(boolean resetBufferPosition)
    {
       if (resetBufferPosition)
+      {
+         if (initialOffset > buffer.limit())
+            buffer.limit(initialLimit);
          buffer.position(initialOffset);
+      }
       buffer.limit(initialLimit);
    }
 

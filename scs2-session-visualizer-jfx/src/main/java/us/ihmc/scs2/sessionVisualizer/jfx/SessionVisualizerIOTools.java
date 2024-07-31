@@ -10,6 +10,7 @@ import javafx.scene.layout.Region;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import org.apache.commons.lang3.SystemUtils;
 import us.ihmc.commons.nio.FileTools;
@@ -20,13 +21,17 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -152,6 +157,7 @@ public class SessionVisualizerIOTools
 
    public static final URL SIDE_PANE_URL = getFXMLResource("SidePane");
    public static final URL USER_SIDE_PANE_URL = getFXMLResource("UserSidePane");
+   public static final URL ABOUT_WINDOW_URL = getFXMLResource("AboutWindow");
    public static final URL VIDEO_PREVIEW_PANE_URL = getFXMLResource("VideoRecordingPreviewPane");
    public static final URL SESSION_DATA_EXPORT_STAGE_URL = getFXMLResource("SessionDataExportStage");
    public static final URL SESSION_VARIABLE_FILTER_PANE_URL = getFXMLResource("SessionVariableFilterPane");
@@ -431,6 +437,13 @@ public class SessionVisualizerIOTools
       FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
       if (hasExtension && !SystemUtils.IS_OS_WINDOWS)
          fileChooser.setInitialFileName(extensions.get(0));
+
+      boolean usePhantomStage = owner == null;
+      if (usePhantomStage)
+      {
+         owner = getPhantomStage();
+      }
+
       File result = fileChooser.showSaveDialog(owner);
 
       if (result == null)
@@ -507,19 +520,57 @@ public class SessionVisualizerIOTools
 
    public static File showOpenDialog(Window owner, String title, ExtensionFilter extensionFilter, String pathKey)
    {
-      FileChooser fileChooser = fileChooser(title, extensionFilter, pathKey);
+      return showOpenDialog(owner, title, Collections.singletonList(extensionFilter), pathKey);
+   }
+
+   public static File showOpenDialog(Window owner, String title, Collection<ExtensionFilter> extensionFilters, String pathKey)
+   {
+      FileChooser fileChooser = fileChooser(title, extensionFilters, pathKey);
+
+      boolean usePhantomStage = owner == null;
+      if (usePhantomStage)
+      {
+         owner = getPhantomStage();
+         getPhantomStage().show();
+      }
+
       File result = fileChooser.showOpenDialog(owner);
       if (result != null)
          setDefaultFilePath(pathKey, result);
+
       return result;
+   }
+
+   private static Stage phantomStage = null;
+
+   private static Stage getPhantomStage()
+   {
+      if (phantomStage == null)
+      {
+         Stage stage = new Stage();
+         addSCSIconToWindow(stage);
+         stage.initStyle(StageStyle.UNDECORATED);
+         stage.setX(stage.getX() - 0.5 * stage.getWidth());
+         stage.setY(stage.getY() - 0.5 * stage.getHeight());
+         stage.setWidth(0);
+         stage.setHeight(0);
+         stage.show();
+         phantomStage = stage;
+      }
+      return phantomStage;
    }
 
    private static FileChooser fileChooser(String title, ExtensionFilter extensionFilter, String pathKey)
    {
+      return fileChooser(title, Collections.singletonList(extensionFilter), pathKey);
+   }
+
+   private static FileChooser fileChooser(String title, Collection<ExtensionFilter> extensionFilters, String pathKey)
+   {
       FileChooser fileChooser = new FileChooser();
       fileChooser.setTitle(title);
       fileChooser.setInitialDirectory(getDefaultFilePath(pathKey));
-      fileChooser.getExtensionFilters().add(extensionFilter);
+      fileChooser.getExtensionFilters().addAll(extensionFilters);
       return fileChooser;
    }
 
@@ -568,5 +619,48 @@ public class SessionVisualizerIOTools
 
          prefs.put(key, file.getAbsolutePath());
       }
+   }
+
+   /**
+    * Opens the given URI in the user's default browser.
+    *
+    * @param uri the URI to open
+    * @return {@code true} if the URI was successfully opened, {@code false} otherwise.
+    */
+   public static boolean openWebpage(URI uri)
+   {
+      Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+      if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE))
+      {
+         try
+         {
+            desktop.browse(uri);
+            return true;
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
+      }
+      return false;
+   }
+
+   /**
+    * Opens the given URL in the user's default browser.
+    *
+    * @param url the URL to open
+    * @return {@code true} if the URL was successfully opened, {@code false} otherwise.
+    */
+   public static boolean openWebpage(URL url)
+   {
+      try
+      {
+         return openWebpage(url.toURI());
+      }
+      catch (URISyntaxException e)
+      {
+         e.printStackTrace();
+      }
+      return false;
    }
 }

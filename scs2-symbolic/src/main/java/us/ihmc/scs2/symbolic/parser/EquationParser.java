@@ -9,6 +9,7 @@ import us.ihmc.scs2.symbolic.parser.EquationParseError.ProblemType;
 import us.ihmc.scs2.symbolic.parser.EquationToken.TokenType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class EquationParser
@@ -195,7 +196,7 @@ public class EquationParser
          int leftIndex = leftIndices.remove(leftIndices.size() - 1);
 
          // remember the element before so the new one can be inserted afterward.
-         EquationToken beforeLeft = unprocessedTokenStack.get(leftIndex - 1);
+         EquationToken beforeLeft = leftIndex > 0 ? unprocessedTokenStack.get(leftIndex - 1) : null;
 
          // Sublist with parentheses
          List<EquationToken> sublist = unprocessedTokenStack.subList(leftIndex, i + 1);
@@ -260,7 +261,8 @@ public class EquationParser
 
       List<EquationToken> output = new ArrayList<>();
 
-      for (int i = 0; i < limitIndices.size() - 1; i++)
+      // Reverse loop to handle changing indices when removing elements
+      for (int i = limitIndices.size() - 2; i >= 0; i--)
       {
          int start = limitIndices.get(i) + 1;
          int end = limitIndices.get(i + 1);
@@ -270,6 +272,8 @@ public class EquationParser
 
          output.add(parseBlockNoParentheses(equationString, tokens.subList(start, end), operationFactoriesToPack));
       }
+      // Reverse the list to get the correct order
+      Collections.reverse(output);
 
       // Clear the tokens to mark them as processed
       tokens.clear();

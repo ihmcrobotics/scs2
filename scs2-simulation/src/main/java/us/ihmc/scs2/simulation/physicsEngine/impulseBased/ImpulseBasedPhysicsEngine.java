@@ -1,14 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.impulseBased;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
@@ -19,6 +10,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.YoTimer;
+import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionTools;
 import us.ihmc.scs2.simulation.parameters.ConstraintParametersReadOnly;
@@ -36,6 +28,15 @@ import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Physics engine that simulates the dynamic behavior of multiple robots and their contact
@@ -81,9 +82,11 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    private final YoBoolean hasGlobalConstraintParameters;
    private final YoConstraintParameters globalConstraintParameters;
 
-   private final YoTimer physicsEngineTotalTimer = new YoTimer("physicsEngineTotalTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoDouble physicsEngineRealTimeRate = new YoDouble("physicsEngineRealTimeRate", physicsEngineRegistry);
+   private final YoRegistry physicsEngineStatisticsRegistry = new YoRegistry("physicsEngineStatistics");
+   private final YoTimer physicsEngineTotalTimer = new YoTimer("physicsEngineTotalTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoDouble physicsEngineRealTimeRate = new YoDouble("physicsEngineRealTimeRate", physicsEngineStatisticsRegistry);
 
+   private boolean estimateJointWrenches = false;
    private boolean hasBeenInitialized = false;
 
    private MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener;
@@ -92,6 +95,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       this.rootRegistry = rootRegistry;
       this.inertialFrame = inertialFrame;
+
+      physicsEngineRegistry.addChild(physicsEngineStatisticsRegistry);
 
       collisionDetectionPlugin = new SimpleCollisionDetection(inertialFrame);
 
@@ -103,6 +108,23 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       hasGlobalConstraintParameters = new YoBoolean("hasGlobalConstraintParameters", physicsEngineRegistry);
       globalConstraintParameters = new YoConstraintParameters("globalConstraint", physicsEngineRegistry);
       multiContactImpulseCalculatorPool = new YoMultiContactImpulseCalculatorPool(1, inertialFrame, multiContactCalculatorRegistry);
+   }
+
+   /**
+    * Whether to estimate the joint wrenches or not.
+    * <p>
+    * Estimating the joint wrenches is useful for estimating forces going through the robot limbs and can be used
+    * to do FEA analysis.
+    * </p>
+    * <p>
+    * When enabled, the joint wrenches are displayed in the simulation GUI under the {@link RobotJointWrenchCalculator} registry.
+    * </p>
+    *
+    * @param estimateJointWrenches {@code true} for estimating the joint wrenches, {@code false} otherwise.
+    */
+   public void setEstimateJointWrenches(boolean estimateJointWrenches)
+   {
+      this.estimateJointWrenches = estimateJointWrenches;
    }
 
    public void setMultiContactCalculatorStepListener(MultiContactImpulseCalculatorStepListener multiContactCalculatorStepListener)
@@ -122,6 +144,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       ImpulseBasedRobot ibRobot = new ImpulseBasedRobot(robot, physicsEngineRegistry);
+      if (estimateJointWrenches)
+         ibRobot.enableJointWrenchCalculator();
       robotMap.put(ibRobot.getRootBody(), ibRobot);
       rootRegistry.addChild(ibRobot.getRegistry());
       physicsEngineRegistry.addChild(ibRobot.getSecondaryRegistry());
@@ -159,11 +183,13 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       hasBeenInitialized = true;
    }
 
-   private final YoTimer initialPhaseTimer = new YoTimer("initialPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer detectCollisionsTimer = new YoTimer("detectCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer configureCollisionHandlersTimer = new YoTimer("configureCollisionHandlersTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer handleCollisionsTimer = new YoTimer("handleCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoTimer finalPhaseTimer = new YoTimer("finalPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoTimer initialPhaseTimer = new YoTimer("initialPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer detectCollisionsTimer = new YoTimer("detectCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer configureCollisionHandlersTimer = new YoTimer("configureCollisionHandlersTimer",
+                                                                       TimeUnit.MILLISECONDS,
+                                                                       physicsEngineStatisticsRegistry);
+   private final YoTimer handleCollisionsTimer = new YoTimer("handleCollisionsTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
+   private final YoTimer finalPhaseTimer = new YoTimer("finalPhaseTimer", TimeUnit.MILLISECONDS, physicsEngineStatisticsRegistry);
 
    private final Wrench tempWrench = new Wrench();
 
@@ -181,6 +207,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
 
       for (ImpulseBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.resetCalculators();
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
@@ -191,6 +219,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       for (ImpulseBasedRobot robot : robotList)
       {
          robot.updateCollidableBoundingBoxes();
+         robot.computeJointLowLevelControl();
 
          for (SimJointBasics joint : robot.getJointsToConsider())
          {
@@ -276,9 +305,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       {
          robot.writeJointAccelerations();
          robot.writeJointDeltaVelocities();
+         robot.computeJointWrenches(dt);
          robot.integrateState(dt);
-         robot.updateFrames();
-         robot.updateSensors();
       }
 
       finalPhaseTimer.stop();
@@ -291,6 +319,8 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    {
       for (ImpulseBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.getControllerManager().pauseControllers();
       }
    }

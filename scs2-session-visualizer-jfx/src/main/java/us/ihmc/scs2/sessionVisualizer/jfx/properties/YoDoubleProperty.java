@@ -1,15 +1,14 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.properties;
 
-import java.lang.ref.WeakReference;
-
-import org.apache.commons.lang3.mutable.MutableBoolean;
-
 import javafx.beans.property.DoublePropertyBase;
 import javafx.beans.property.Property;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.yoVariables.listener.YoVariableChangedListener;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.lang.ref.WeakReference;
 
 public class YoDoubleProperty extends DoublePropertyBase implements YoVariableProperty<YoDouble, Number>
 {
@@ -101,24 +100,24 @@ public class YoDoubleProperty extends DoublePropertyBase implements YoVariablePr
       MutableBoolean updatingThis = new MutableBoolean(false);
 
       addListener((o, oldValue, newValue) ->
-      { // YoVariable changed, updating control
-         if (updatingThis.isTrue())
-            return;
+                  { // YoVariable changed, updating control
+                     if (updatingThis.isTrue())
+                        return;
 
-         updatingControl.setTrue();
-         property.setValue(Double.valueOf(newValue.doubleValue()));
-         updatingControl.setFalse();
-      });
+                     updatingControl.setTrue();
+                     property.setValue(Double.valueOf(newValue.doubleValue()));
+                     updatingControl.setFalse();
+                  });
 
       property.addListener((o, oldValue, newValue) ->
-      {
-         if (updatingControl.isTrue())
-            return;
+                           {
+                              if (updatingControl.isTrue())
+                                 return;
 
-         updatingThis.setTrue();
-         set(newValue.doubleValue());
-         updatingThis.setFalse();
-      });
+                              updatingThis.setTrue();
+                              set(newValue.doubleValue());
+                              updatingThis.setFalse();
+                           });
    }
 
    @Override

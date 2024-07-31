@@ -1,9 +1,5 @@
 package us.ihmc.scs2.simulation.physicsEngine.contactPointBased;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.spatial.Wrench;
@@ -12,6 +8,7 @@ import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.CollisionTools;
 import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParametersReadOnly;
@@ -25,17 +22,21 @@ import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
 import us.ihmc.scs2.simulation.robot.trackers.GroundContactPoint;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 {
    /**
     * The maximum translational acceleration this joint may undergo before throwing an
-    * {@link UnreasonableAccelerationException UnreasonableAccelerationException}.
+    * {@link IllegalStateException}.
     */
    public static final double MAX_TRANS_ACCEL = 1000000000000.0;
 
    /**
     * The maximum rotational acceleration this joint may undergo before throwing an
-    * {@link UnreasonableAccelerationException UnreasonableAccelerationException}.
+    * {@link IllegalStateException}.
     */
    public static final double MAX_ROT_ACCEL = 10000000.0;
 
@@ -50,6 +51,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
    private final ContactPointBasedForceCalculator forceCalculator;
 
+   private boolean estimateJointWrenches = false;
    private boolean hasBeenInitialized = false;
 
    public ContactPointBasedPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
@@ -58,6 +60,23 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       this.rootRegistry = rootRegistry;
 
       forceCalculator = new ContactPointBasedForceCalculator(inertialFrame, physicsEngineRegistry);
+   }
+
+   /**
+    * Whether to estimate the joint wrenches or not.
+    * <p>
+    * Estimating the joint wrenches is useful for estimating forces going through the robot limbs and can be used
+    * to do FEA analysis.
+    * </p>
+    * <p>
+    * When enabled, the joint wrenches are displayed in the simulation GUI under the {@link RobotJointWrenchCalculator} registry.
+    * </p>
+    *
+    * @param estimateJointWrenches {@code true} for estimating the joint wrenches, {@code false} otherwise.
+    */
+   public void setEstimateJointWrenches(boolean estimateJointWrenches)
+   {
+      this.estimateJointWrenches = estimateJointWrenches;
    }
 
    @Override
@@ -89,6 +108,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
       for (ContactPointBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.resetCalculators();
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
@@ -98,8 +119,7 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
 
       for (ContactPointBasedRobot robot : robotList)
       {
-         robot.computeJointDamping();
-         robot.computeJointSoftLimits();
+         robot.computeJointLowLevelControl();
          robot.updateCollidableBoundingBoxes();
       }
 
@@ -142,18 +162,17 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
       for (ContactPointBasedRobot robot : robotList)
       {
          robot.writeJointAccelerations();
+         robot.computeJointWrenches(dt);
 
          robot.getAllJoints().forEach(joint ->
-         {
-            if (joint.getJointTwist().getAngularPart().norm() > MAX_ROT_ACCEL)
-               throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
-            if (joint.getJointTwist().getLinearPart().norm() > MAX_TRANS_ACCEL)
-               throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
-         });
+                                      {
+                                         if (joint.getJointTwist().getAngularPart().norm() > MAX_ROT_ACCEL)
+                                            throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
+                                         if (joint.getJointTwist().getLinearPart().norm() > MAX_TRANS_ACCEL)
+                                            throw new IllegalStateException("Unreasonable acceleration for the joint " + joint);
+                                      });
 
          robot.integrateState(dt);
-         robot.updateFrames();
-         robot.updateSensors();
       }
    }
 
@@ -162,6 +181,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    {
       for (ContactPointBasedRobot robot : robotList)
       {
+         robot.updateFrames();
+         robot.updateSensors();
          robot.getControllerManager().pauseControllers();
       }
    }
@@ -176,6 +197,8 @@ public class ContactPointBasedPhysicsEngine implements PhysicsEngine
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
       ContactPointBasedRobot cpbRobot = new ContactPointBasedRobot(robot, physicsEngineRegistry);
+      if (estimateJointWrenches)
+         cpbRobot.enableJointWrenchCalculator();
       rootRegistry.addChild(cpbRobot.getRegistry());
       physicsEngineRegistry.addChild(cpbRobot.getSecondaryRegistry());
       robotList.add(cpbRobot);

@@ -15,7 +15,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
@@ -76,7 +81,7 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private ToggleButton enableVariableFilterToggleButton;
    @FXML
-   private ComboBox<OutputFormat> outputFormatComboxBox;
+   private ComboBox<OutputFormat> outputFormatComboBox;
    @FXML
    private JFXTrimSlider logPositionSlider;
    @FXML
@@ -217,7 +222,7 @@ public class LogSessionManagerController implements SessionControlsController
       startTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       endTrimToCurrentButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       resetTrimsButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
-      outputFormatComboxBox.disableProperty().bind(showTrimsButton.selectedProperty().not());
+      outputFormatComboBox.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropAndExportButton.disableProperty().bind(showTrimsButton.selectedProperty().not());
       cropProgressMonitorPane.getChildren().addListener((ListChangeListener<Node>) c ->
       {
@@ -236,26 +241,26 @@ public class LogSessionManagerController implements SessionControlsController
                                       activeSessionProperty.set(null);
                                    });
 
-      outputFormatComboxBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
-      outputFormatComboxBox.getSelectionModel().select(OutputFormat.Default);
+      outputFormatComboBox.setItems(FXCollections.observableArrayList(OutputFormat.values()));
+      outputFormatComboBox.getSelectionModel().select(OutputFormat.Default);
       enableVariableFilterToggleButton.setDisable(true); // Only available if export format is MATLAB/CSV for now.
 
-      outputFormatComboxBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-                                                                                   {
-                                                                                      if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
-                                                                                      {
-                                                                                         enableVariableFilterToggleButton.setSelected(false);
-                                                                                         enableVariableFilterToggleButton.setDisable(true);
-                                                                                      }
-                                                                                      else
-                                                                                      {
-                                                                                         enableVariableFilterToggleButton.setDisable(false);
-                                                                                      }
-                                                                                   });
+      outputFormatComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
+                                                                                  {
+                                                                                     if (newValue == OutputFormat.Default || !showTrimsButton.isSelected())
+                                                                                     {
+                                                                                        enableVariableFilterToggleButton.setSelected(false);
+                                                                                        enableVariableFilterToggleButton.setDisable(true);
+                                                                                     }
+                                                                                     else
+                                                                                     {
+                                                                                        enableVariableFilterToggleButton.setDisable(false);
+                                                                                     }
+                                                                                  });
 
       showTrimsButton.selectedProperty().addListener((o, oldValue, newValue) ->
                                                      {
-                                                        if (newValue && outputFormatComboxBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
+                                                        if (newValue && outputFormatComboBox.getSelectionModel().getSelectedItem() != OutputFormat.Default)
                                                         {
                                                            enableVariableFilterToggleButton.setDisable(false);
                                                         }
@@ -334,7 +339,7 @@ public class LogSessionManagerController implements SessionControlsController
       LogPropertiesReader logProperties = newValue.getLogProperties();
 
       sessionNameLabel.setText(newValue.getSessionName());
-      dateLabel.setText(getDate(logProperties));
+      dateLabel.setText(getDate(logDirectory, logProperties));
       logPathLabel.setText(logDirectory.getAbsolutePath());
       endSessionButton.setDisable(false);
       logPositionSlider.setDisable(false);
@@ -433,7 +438,7 @@ public class LogSessionManagerController implements SessionControlsController
 
       File destination;
 
-      OutputFormat outputFormat = outputFormatComboxBox.getSelectionModel().getSelectedItem();
+      OutputFormat outputFormat = outputFormatComboBox.getSelectionModel().getSelectedItem();
       switch (outputFormat)
       {
          case MATLAB:
@@ -551,12 +556,6 @@ public class LogSessionManagerController implements SessionControlsController
    {
       enableVariableFilterToggleButton.setSelected(false);
       variableFilterControllerProperty.set(null);
-
-      if (activeSessionProperty.get() != null)
-      {
-         activeSessionProperty.get().shutdownSession();
-         activeSessionProperty.set(null);
-      }
    }
 
    @Override
@@ -600,17 +599,33 @@ public class LogSessionManagerController implements SessionControlsController
       }
    }
 
-   private static String getDate(LogProperties logProperties)
+   private static String getDate(File logDirectory, LogProperties logProperties)
    {
-      String timestampAsString = logProperties.getTimestampAsString();
+      String timestampAsString = parseTimestamp(logProperties.getTimestampAsString());
 
-      String year = timestampAsString.substring(0, 4);
-      String month = timestampAsString.substring(4, 6);
-      String day = timestampAsString.substring(6, 8);
-      String hour = timestampAsString.substring(9, 11);
-      String minute = timestampAsString.substring(11, 13);
-      String second = timestampAsString.substring(13, 15);
+      if (timestampAsString != null)
+         return timestampAsString;
 
+      timestampAsString = parseTimestamp(logDirectory.getName());
+
+      if (timestampAsString != null)
+         return timestampAsString;
+
+      return "N/D";
+   }
+
+   public static String parseTimestamp(String string)
+   {
+      if (string == null || string.length() < 15)
+         return null;
+
+      // Format: yyyyMMdd_HHmmss
+      String year = string.substring(0, 4);
+      String month = string.substring(4, 6);
+      String day = string.substring(6, 8);
+      String hour = string.substring(9, 11);
+      String minute = string.substring(11, 13);
+      String second = string.substring(13, 15);
       return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
    }
 }

@@ -23,7 +23,11 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -35,7 +39,7 @@ public class MCAPLogSession extends Session
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
    private final File initialRobotModelFile;
-   private MCAPFrameTransformBasedRobotStateUpdater robotStateUpdater = null;
+   private RobotStateUpdater robotStateUpdater = null;
    private final MCAPLogFileReader mcapLogFileReader;
 
    private final YoRegistry mcapRegistry = new YoRegistry("MCAP");
@@ -50,9 +54,7 @@ public class MCAPLogSession extends Session
 
    public MCAPLogSession(File mcapFile, long desiredLogDT, File robotModelFile) throws Exception
    {
-      mcapLogFileReader = new MCAPLogFileReader(mcapFile, desiredLogDT, getInertialFrame(), mcapRegistry);
-      mcapLogFileReader.loadSchemas();
-      mcapLogFileReader.loadChannels();
+      mcapLogFileReader = new MCAPLogFileReader(mcapFile, desiredLogDT, getInertialFrame(), mcapRegistry, sessionRegistry);
       yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());
 
       if (robotModelFile == null)
@@ -109,7 +111,25 @@ public class MCAPLogSession extends Session
          robots.add(robotToAdd);
          robotDefinitions.add(robotDefinition);
          rootRegistry.addChild(robotToAdd.getRegistry());
-         robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+         robotStateUpdater = mcapLogFileReader.createRobotStateUpdater(robotToAdd);
+         if (robotStateUpdater == null)
+            LogTools.warn("Unable to create a robot state updater for robot: " + robotDefinition.getName());
+      }
+
+      long frameByteSize = SharedMemoryTools.getRegistryMemorySize(mcapRegistry);
+      int numberOfVariables = mcapRegistry.getNumberOfVariablesDeep();
+      long maxMemory = Runtime.getRuntime().maxMemory();
+
+      LogTools.info("MCAP log: [number of variables: " + numberOfVariables + ", frame byte size: " + frameByteSize + "]");
+
+      long maxBufferSize = Math.max(1, (long) (ADMISSIBLE_BUFFER_TO_MAX_MEMORY_RATIO * (maxMemory / frameByteSize)));
+
+      if (sharedBuffer.getProperties().getSize() > maxBufferSize)
+      {
+         LogTools.warn(
+               "The log buffer size is too large for the available memory. Reducing the buffer size from " + sharedBuffer.getProperties().getSize() + " to "
+               + maxBufferSize);
+         sharedBuffer.resizeBuffer((int) maxBufferSize);
       }
 
       rootRegistry.addChild(mcapRegistry);
@@ -201,7 +221,7 @@ public class MCAPLogSession extends Session
       {// Handles when the user is scrubbing through the log using the log slider.
          processBufferRequests(false);
 
-         mcapLogFileReader.setCurrentTimestamp(mcapLogFileReader.getChunkManager().getTimestampAtIndex(logPosition));
+         mcapLogFileReader.setCurrentTimestamp(mcapLogFileReader.getMessageManager().getTimestampAtIndex(logPosition));
          try
          {
             mcapLogFileReader.readMessagesAtCurrentTimestamp();
@@ -262,27 +282,32 @@ public class MCAPLogSession extends Session
          robots.add(robotToAdd);
          robotDefinitions.add(robotDefinitionToAdd);
          rootRegistry.addChild(robotToAdd.getRegistry());
-         robotStateUpdater = new MCAPFrameTransformBasedRobotStateUpdater(robotToAdd, mcapLogFileReader.getFrameTransformManager());
+         robotStateUpdater = mcapLogFileReader.createRobotStateUpdater(robotToAdd);
+         if (robotStateUpdater == null)
+            LogTools.warn("Unable to create a robot state updater for robot: " + robotDefinitionToAdd.getName());
 
-         // Update the robot state history
-         YoBufferPropertiesReadOnly bufferProperties = getBufferProperties();
-         int previousBufferIndex = bufferProperties.getCurrentIndex();
-         int historyIndex = bufferProperties.getInPoint();
-
-         for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
+         if (robotStateUpdater != null)
          {
-            sharedBuffer.setCurrentIndex(historyIndex);
-            sharedBuffer.readBuffer();
-            robotStateUpdater.updateRobotState();
-            sharedBuffer.writeBuffer();
-            historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
-         }
+            // Update the robot state history
+            YoBufferPropertiesReadOnly bufferProperties = getBufferProperties();
+            int previousBufferIndex = bufferProperties.getCurrentIndex();
+            int historyIndex = bufferProperties.getInPoint();
 
-         // Go back to the previous buffer index
-         sharedBuffer.setCurrentIndex(previousBufferIndex);
-         sharedBuffer.readBuffer();
-         robotStateUpdater.updateRobotState(); // Just to make sure the robot is updated.
-         sharedBuffer.writeBuffer();
+            for (int i = 0; i < bufferProperties.getActiveBufferLength(); i++)
+            {
+               sharedBuffer.setCurrentIndex(historyIndex);
+               sharedBuffer.readBuffer();
+               robotStateUpdater.updateRobotState();
+               sharedBuffer.writeBuffer();
+               historyIndex = SharedMemoryTools.increment(historyIndex, 1, bufferProperties.getSize());
+            }
+
+            // Go back to the previous buffer index
+            sharedBuffer.setCurrentIndex(previousBufferIndex);
+            sharedBuffer.readBuffer();
+            robotStateUpdater.updateRobotState(); // Just to make sure the robot is updated.
+            sharedBuffer.writeBuffer();
+         }
 
          addedRobot = robotDefinitionToAdd;
       }
@@ -388,13 +413,8 @@ public class MCAPLogSession extends Session
       return mcapLogFileReader;
    }
 
-   public long getRelativeTimestampAtIndex(int index)
-   {
-      return mcapLogFileReader.getRelativeTimestampAtIndex(index);
-   }
-
    public File getMCAPFile()
    {
-      return mcapLogFileReader.getMcapFile();
+      return mcapLogFileReader.getMCAPFile();
    }
 }

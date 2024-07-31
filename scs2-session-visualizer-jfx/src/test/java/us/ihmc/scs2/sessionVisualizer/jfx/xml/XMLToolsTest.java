@@ -1,10 +1,11 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.xml;
 
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 
 import javax.xml.bind.JAXBException;
-
-import org.junit.jupiter.api.Test;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class XMLToolsTest
 {
@@ -12,6 +13,7 @@ public class XMLToolsTest
    @Test
    public void test() throws JAXBException, IOException
    {
-      XMLTools.loadYoGraphicListDefinition(getClass().getClassLoader().getResourceAsStream("yoGraphic/AtlasDefaultWalking.scs2.yoGraphic"));
+      InputStream inputStream = getClass().getClassLoader().getResourceAsStream("yoGraphic/AtlasDefaultWalking.scs2.yoGraphic");
+      DefinitionIOTools.loadYoGraphicListDefinition(inputStream);
    }
 }

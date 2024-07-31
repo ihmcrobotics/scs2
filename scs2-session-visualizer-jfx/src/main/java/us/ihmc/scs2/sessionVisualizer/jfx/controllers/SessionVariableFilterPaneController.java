@@ -1,24 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Predicate;
-
-import javax.xml.bind.JAXBException;
-
-import org.controlsfx.control.CheckTreeView;
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -33,6 +14,8 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.Pane;
+import org.controlsfx.control.CheckTreeView;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.scs2.definition.yoVariable.YoVariableGroupDefinition;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -43,6 +26,20 @@ import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
 
 public class SessionVariableFilterPaneController
 {
@@ -114,24 +111,24 @@ public class SessionVariableFilterPaneController
          }
       });
       selectedVariablesCheckTreeView.setOnContextMenuRequested(e ->
-      {
-         if (activeContexMenu.get() != null)
-         {
-            activeContexMenu.get().hide();
-            activeContexMenu.set(null);
-         }
+                                                               {
+                                                                  if (activeContexMenu.get() != null)
+                                                                  {
+                                                                     activeContexMenu.get().hide();
+                                                                     activeContexMenu.set(null);
+                                                                  }
 
-         FontAwesomeIconView collapseIcon = new FontAwesomeIconView(FontAwesomeIcon.MINUS_SQUARE_ALT);
-         FontAwesomeIconView expandIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS_SQUARE_ALT);
-         MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
-         MenuItem expandItem = new MenuItem("Expand all", expandIcon);
-         collapseItem.setOnAction(e2 -> collapseAll());
-         expandItem.setOnAction(e2 -> expandAll());
+                                                                  FontIcon collapseIcon = new FontIcon("fa-minus-square-o");
+                                                                  FontIcon expandIcon = new FontIcon("fa-plus-square-o");
+                                                                  MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
+                                                                  MenuItem expandItem = new MenuItem("Expand all", expandIcon);
+                                                                  collapseItem.setOnAction(e2 -> collapseAll());
+                                                                  expandItem.setOnAction(e2 -> expandAll());
 
-         ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem);
-         contextMenu.show(selectedVariablesCheckTreeView, e.getScreenX(), e.getScreenY());
-         activeContexMenu.set(contextMenu);
-      });
+                                                                  ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem);
+                                                                  contextMenu.show(selectedVariablesCheckTreeView, e.getScreenX(), e.getScreenY());
+                                                                  activeContexMenu.set(contextMenu);
+                                                               });
 
       selectedVariablesCheckTreeView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
       selectedVariablesCheckTreeView.setShowRoot(true);
@@ -153,28 +150,28 @@ public class SessionVariableFilterPaneController
       filterComboBox.getItems().add(IMPORT_FILTER_NAME);
 
       filterComboBox.getSelectionModel().selectedItemProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (IMPORT_FILTER_NAME.equals(newValue))
-         {
-            if (!importFilter())
-               filterComboBox.getSelectionModel().select(oldValue);
-            return;
-         }
+                                                                            {
+                                                                               if (IMPORT_FILTER_NAME.equals(newValue))
+                                                                               {
+                                                                                  if (!importFilter())
+                                                                                     filterComboBox.getSelectionModel().select(oldValue);
+                                                                                  return;
+                                                                               }
 
-         if (MODIFIED_FILTER_NAME.equals(oldValue))
-            updateModifiedFilterFromTreeView();
+                                                                               if (MODIFIED_FILTER_NAME.equals(oldValue))
+                                                                                  updateModifiedFilterFromTreeView();
 
-         if (MODIFIED_FILTER_NAME.equals(newValue))
-            currentFilter = modifiedFilter;
-         else if (ALL_FILTER_NAME.equals(newValue))
-            currentFilter = allFilter;
-         else if (NONE_FILTER_NAME.equals(newValue))
-            currentFilter = noneFilter;
-         else
-            currentFilter = filterMap.get(newValue);
+                                                                               if (MODIFIED_FILTER_NAME.equals(newValue))
+                                                                                  currentFilter = modifiedFilter;
+                                                                               else if (ALL_FILTER_NAME.equals(newValue))
+                                                                                  currentFilter = allFilter;
+                                                                               else if (NONE_FILTER_NAME.equals(newValue))
+                                                                                  currentFilter = noneFilter;
+                                                                               else
+                                                                                  currentFilter = filterMap.get(newValue);
 
-         applyFilterToTreeItems(currentFilter);
-      });
+                                                                               applyFilterToTreeItems(currentFilter);
+                                                                            });
       filterComboBox.getSelectionModel().select(ALL_FILTER_NAME);
 
       selectAllButton.setOnAction(e -> filterComboBox.getSelectionModel().select(ALL_FILTER_NAME));

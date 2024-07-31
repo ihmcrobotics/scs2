@@ -1,9 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
@@ -19,6 +15,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.CompositeProperty;
@@ -27,8 +24,14 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.QuaternionProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YawPitchRollProperty;
+import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
+
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CompositePropertyTools
 {
@@ -138,6 +141,13 @@ public class CompositePropertyTools
 
    public static DoubleProperty toDoubleProperty(YoVariableDatabase yoVariableDatabase, String field)
    {
+      return toDoubleProperty(yoVariableDatabase, yoVariableDatabase::linkYoVariable, field);
+   }
+
+   public static DoubleProperty toDoubleProperty(YoVariableDatabase yoVariableDatabase,
+                                                 BiFunction<YoDouble, Object, LinkedYoDouble> linkedYoVariableFactory,
+                                                 String field)
+   {
       if (field == null)
       {
          return null;
@@ -160,7 +170,8 @@ public class CompositePropertyTools
             return new SimpleDoubleProperty(Double.NaN);
          }
          YoDoubleProperty yoDoubleProperty = new YoDoubleProperty(yoDouble);
-         yoDoubleProperty.setLinkedBuffer(yoVariableDatabase.linkYoVariable(yoDouble, yoDoubleProperty));
+         if (linkedYoVariableFactory != null)
+            yoDoubleProperty.setLinkedBuffer(linkedYoVariableFactory.apply(yoDouble, yoDoubleProperty));
          return yoDoubleProperty;
       }
    }
@@ -194,14 +205,14 @@ public class CompositePropertyTools
       }
    }
 
-   public static Property<ReferenceFrame> toReferenceFrameProperty(YoVariableDatabase yoVariableDatabase,
-                                                                   ReferenceFrameManager referenceFrameManager,
-                                                                   String field)
+   public static Property<ReferenceFrameWrapper> toReferenceFrameProperty(YoVariableDatabase yoVariableDatabase,
+                                                                          ReferenceFrameManager referenceFrameManager,
+                                                                          String field)
    {
       if (field == null)
          return null;
 
-      ReferenceFrame referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(field);
+      ReferenceFrameWrapper referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(field);
 
       if (referenceFrame != null)
          return new SimpleObjectProperty<>(referenceFrame);
@@ -221,8 +232,9 @@ public class CompositePropertyTools
       if (referenceFrame != null)
          return new SimpleObjectProperty<>(referenceFrame);
 
-      LogTools.warn("Could not retrieve the frame {} using world instead (fullname: {})", fieldShort, field);
-      return new SimpleObjectProperty<>(referenceFrameManager.getWorldFrame());
+      LogTools.warn("Could not retrieve the frame {}. Could be a robot frame that is yet to be loaded (fullname: {}).", fieldShort, field);
+      referenceFrame = referenceFrameManager.getReferenceFrameFromFullname(field, true);
+      return new SimpleObjectProperty<>(referenceFrame);
    }
 
    public static String toDoublePropertyName(DoubleProperty doubleProperty)
@@ -245,12 +257,12 @@ public class CompositePropertyTools
          return Integer.toString(integerProperty.get());
    }
 
-   public static String toReferenceFramePropertyName(Property<ReferenceFrame> referenceFrameProperty)
+   public static String toReferenceFramePropertyName(Property<ReferenceFrameWrapper> referenceFrameProperty)
    {
       if (referenceFrameProperty == null || referenceFrameProperty.getValue() == null)
          return null;
       else if (referenceFrameProperty instanceof SimpleObjectProperty)
-         return referenceFrameProperty.getValue().getNameId();
+         return referenceFrameProperty.getValue().getFullName();
       else
          throw new UnsupportedOperationException("Unhandled property: " + referenceFrameProperty.getClass().getSimpleName());
    }
@@ -297,6 +309,17 @@ public class CompositePropertyTools
       return definition;
    }
 
+   public static YoTuple3DDefinition toYoTuple3DDefinition(DoubleProperty[] properties)
+   {
+      if (properties == null || properties.length != 3)
+         return null;
+      YoTuple3DDefinition definition = new YoTuple3DDefinition();
+      definition.setX(toDoublePropertyName(properties[0]));
+      definition.setY(toDoublePropertyName(properties[1]));
+      definition.setZ(toDoublePropertyName(properties[2]));
+      return definition;
+   }
+
    public static YoOrientation3DDefinition toYoOrientation3DDefinition(CompositeProperty property)
    {
       if (property == null)
@@ -318,6 +341,22 @@ public class CompositePropertyTools
       definition.setS(toDoublePropertyName(property.componentValueProperties()[3]));
       definition.setReferenceFrame(toReferenceFramePropertyName(property.referenceFrameProperty()));
       return definition;
+   }
+
+   public static YoQuaternionDefinition toYoQuaternionDefinition(DoubleProperty[] properties)
+   {
+      if (properties == null || properties.length != 4)
+         return null;
+      YoQuaternionDefinition definition = new YoQuaternionDefinition();
+      definition.setX(toDoublePropertyName(properties[0]));
+      definition.setY(toDoublePropertyName(properties[1]));
+      definition.setZ(toDoublePropertyName(properties[2]));
+      definition.setS(toDoublePropertyName(properties[3]));
+      return definition;
+   }
+
+   {
+
    }
 
    public static YoYawPitchRollDefinition toYoYawPitchRollDefinition(CompositeProperty property)

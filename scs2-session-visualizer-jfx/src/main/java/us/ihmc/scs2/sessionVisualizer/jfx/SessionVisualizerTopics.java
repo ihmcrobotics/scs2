@@ -64,6 +64,7 @@ public class SessionVisualizerTopics
    private Topic<Pair<Window, Double>> yoChartZoomFactor;
    private Topic<Pair<Window, Boolean>> yoChartRequestZoomIn, yoChartRequestZoomOut;
    private Topic<Pair<Window, Integer>> yoChartRequestShift;
+   private Topic<Pair<Window, Boolean>> yoChartShowYAxis;
 
    private Topic<Pair<Window, File>> yoChartGroupSaveConfiguration;
    private Topic<Pair<Window, File>> yoChartGroupLoadConfiguration;
@@ -101,6 +102,7 @@ public class SessionVisualizerTopics
    private Topic<Double> playbackRealTimeRate;
    private Topic<Integer> bufferRecordTickPeriod;
    private Topic<Integer> initializeBufferRecordTickPeriod;
+   private Topic<Long> runMaxDuration;
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
@@ -119,6 +121,7 @@ public class SessionVisualizerTopics
    private Topic<Integer> yoBufferCurrentSizeRequest;
    private Topic<Integer> yoBufferInitializeSize;
    private Topic<YoBufferPropertiesReadOnly> yoBufferCurrentProperties;
+   private Topic<Boolean> yoBufferForceListenerUpdate;
    private Topic<SensorMessage<CameraSensorDefinition>> cameraSensorDefinitionData;
    private Topic<SensorMessage<BufferedImage>> cameraSensorFrame;
 
@@ -163,6 +166,7 @@ public class SessionVisualizerTopics
       yoChartRequestZoomIn = SessionVisualizerMessagerAPI.YoChart.YoChartRequestZoomIn;
       yoChartRequestZoomOut = SessionVisualizerMessagerAPI.YoChart.YoChartRequestZoomOut;
       yoChartRequestShift = SessionVisualizerMessagerAPI.YoChart.YoChartRequestShift;
+      yoChartShowYAxis = SessionVisualizerMessagerAPI.YoChart.YoChartShowYAxis;
       yoChartGroupSaveConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupSaveConfiguration;
       yoChartGroupLoadConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupLoadConfiguration;
 
@@ -197,6 +201,7 @@ public class SessionVisualizerTopics
       playbackRealTimeRate = SessionMessagerAPI.PlaybackRealTimeRate;
       bufferRecordTickPeriod = SessionMessagerAPI.BufferRecordTickPeriod;
       initializeBufferRecordTickPeriod = SessionMessagerAPI.InitializeBufferRecordTickPeriod;
+      runMaxDuration = SessionMessagerAPI.RunMaxDuration;
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
@@ -217,6 +222,7 @@ public class SessionVisualizerTopics
       yoBufferCurrentSizeRequest = YoSharedBufferMessagerAPI.CurrentBufferSizeRequest;
       yoBufferInitializeSize = YoSharedBufferMessagerAPI.InitializeBufferSize;
       yoBufferCurrentProperties = YoSharedBufferMessagerAPI.CurrentBufferProperties;
+      yoBufferForceListenerUpdate = YoSharedBufferMessagerAPI.ForceListenerUpdate;
 
       cameraSensorDefinitionData = SessionMessagerAPI.Sensors.CameraSensorDefinitionData;
       cameraSensorFrame = SessionMessagerAPI.Sensors.CameraSensorFrame;
@@ -397,6 +403,11 @@ public class SessionVisualizerTopics
       return yoChartRequestShift;
    }
 
+   public Topic<Pair<Window, Boolean>> getYoChartShowYAxis()
+   {
+      return yoChartShowYAxis;
+   }
+
    public Topic<Pair<Window, File>> getYoChartGroupLoadConfiguration()
    {
       return yoChartGroupLoadConfiguration;
@@ -537,6 +548,11 @@ public class SessionVisualizerTopics
       return initializeBufferRecordTickPeriod;
    }
 
+   public Topic<Long> getRunMaxDuration()
+   {
+      return runMaxDuration;
+   }
+
    public Topic<SessionDataExportRequest> getSessionDataExportRequest()
    {
       return sessionDataExportRequest;
@@ -620,6 +636,11 @@ public class SessionVisualizerTopics
    public Topic<YoBufferPropertiesReadOnly> getYoBufferCurrentProperties()
    {
       return yoBufferCurrentProperties;
+   }
+
+   public Topic<Boolean> getYoBufferForceListenerUpdate()
+   {
+      return yoBufferForceListenerUpdate;
    }
 
    public Topic<SensorMessage<CameraSensorDefinition>> getCameraSensorDefinitionData()

@@ -1,21 +1,26 @@
 package us.ihmc.scs2.simulation.robot.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.ejml.data.DMatrix;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointMatrixIndexProvider;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBasics;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RobotOneDoFJointDampingCalculator
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
    private final List<JointCalculator> jointCalculators = new ArrayList<>();
+   private final JointMatrixIndexProvider jointMatrixIndexProvider;
 
    public RobotOneDoFJointDampingCalculator(RobotInterface robot)
    {
+      jointMatrixIndexProvider = robot.getJointMatrixIndexProvider();
+
       for (SimJointBasics joint : robot.getJointsToConsider())
       {
          if (joint instanceof SimOneDoFJointBasics)
@@ -25,11 +30,16 @@ public class RobotOneDoFJointDampingCalculator
       }
    }
 
-   public void compute()
+   public void compute(DMatrix tauToAppendTo)
    {
-      for (int i = 0; i < jointCalculators.size(); i++)
+      for (JointCalculator calculator : jointCalculators)
       {
-         jointCalculators.get(i).doControl();
+         calculator.doControl();
+
+         int jointIndex = jointMatrixIndexProvider.getJointDoFIndices(calculator.joint)[0];
+         double currentValue = tauToAppendTo.get(jointIndex, 0);
+         // Appending this tau to the current value
+         tauToAppendTo.set(jointIndex, 0, currentValue + calculator.dampingEffort.getDoubleValue());
       }
    }
 
@@ -53,7 +63,6 @@ public class RobotOneDoFJointDampingCalculator
       {
          double tauDamping = -joint.getDamping() * joint.getQd();
          dampingEffort.set(tauDamping);
-         joint.setTau(joint.getTau() + tauDamping);
       }
    }
 }

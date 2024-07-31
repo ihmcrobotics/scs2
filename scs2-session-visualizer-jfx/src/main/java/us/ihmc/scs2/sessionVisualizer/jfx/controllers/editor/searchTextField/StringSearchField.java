@@ -1,6 +1,11 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
@@ -78,7 +83,7 @@ public class StringSearchField extends PropertySearchField<StringProperty>
    {
       YoCompositeCollection yoVariableCollection = searchManager.getYoVariableCollection();
       YoComposite yoComposite = yoVariableCollection.getYoCompositeFromFullname(text);
-      return yoComposite == null ? null : yoComposite.getUniqueName();
+      return yoComposite == null ? null : yoComposite.getUniqueShortName();
    }
 
    @Override

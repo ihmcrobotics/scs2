@@ -1,38 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_BOOLEAN;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_DOUBLE;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_INTEGER;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_LONG;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_QUATERNION;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_TUPLE2D;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_TUPLE3D;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_VARIABLE;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.YO_YAW_PITCH_ROLL;
-import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.searchYoComposites;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-
-import javax.xml.bind.JAXBException;
-
 import com.google.common.base.CaseFormat;
-
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
@@ -61,6 +29,27 @@ import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools.*;
 
 public class YoCompositeSearchManager implements Manager
 {
@@ -160,7 +149,8 @@ public class YoCompositeSearchManager implements Manager
             customYoCompositePatterns.remove(change.getValueRemoved());
       });
 
-      messager.addTopicListenerBase(topics.getYoCompositePatternLoadRequest(), m -> loadYoCompositePatternFromFile(m.getMessageContent(), m.getSynchronizeHint()));
+      messager.addTopicListenerBase(topics.getYoCompositePatternLoadRequest(),
+                                    m -> loadYoCompositePatternFromFile(m.getMessageContent(), m.getSynchronizeHint()));
       messager.addTopicListener(topics.getYoCompositePatternSaveRequest(), this::saveYoCompositePatternToFile);
       messager.addTopicListener(topics.getYoCompositeRefreshAll(), m -> refreshYoCompositesInBackground());
       includeSCS2YoVariables = messager.createPropertyInput(topics.getShowSCS2YoVariables(), false);
@@ -210,14 +200,24 @@ public class YoCompositeSearchManager implements Manager
 
    public void searchYoCompositeInBackground(YoCompositePattern pattern)
    {
-      backgroundExecutorManager.queueTaskToExecuteInBackground(this, () -> searchYoCompositeNow(pattern));
+      searchYoCompositeInBackground(pattern, null);
+   }
+
+   public void searchYoCompositeInBackground(YoCompositePattern pattern, Consumer<YoCompositeCollection> callback)
+   {
+      backgroundExecutorManager.queueTaskToExecuteInBackground(this, () -> searchYoCompositeNow(pattern, callback));
    }
 
    public void searchYoCompositeNow(YoCompositePattern pattern)
    {
+      searchYoCompositeNow(pattern, null);
+   }
+
+   public void searchYoCompositeNow(YoCompositePattern pattern, Consumer<YoCompositeCollection> callback)
+   {
       if (activeSearches.containsKey(pattern))
       { // We have an active search, let's reschedule this search.
-         searchYoCompositeInBackground(pattern);
+         searchYoCompositeInBackground(pattern, callback);
          return;
       }
 
@@ -239,12 +239,14 @@ public class YoCompositeSearchManager implements Manager
          Class<? extends YoVariable> primitiveClass = primitivePatternToClass.get(pattern);
          String type = pattern.getType();
 
+         YoCompositeCollection collection;
          if (primitiveClass != null)
          {
-            YoCompositeCollection collection;
             try
             {
                collection = new YoCompositeCollection(pattern, collectPrimitiveYoComposites(pattern, primitiveClass, rootRegistry, registryFilter));
+               if (callback != null)
+                  callback.accept(collection);
             }
             catch (ConcurrentModificationException e)
             {
@@ -281,7 +283,7 @@ public class YoCompositeSearchManager implements Manager
 
             if (result != null)
             {
-               YoCompositeCollection collection = new YoCompositeCollection(pattern, result);
+               collection = new YoCompositeCollection(pattern, result);
 
                if (isSessionActive)
                {
@@ -299,6 +301,8 @@ public class YoCompositeSearchManager implements Manager
 
                      property.setValue(collection);
                   });
+                  if (callback != null)
+                     callback.accept(collection);
                }
             }
          }

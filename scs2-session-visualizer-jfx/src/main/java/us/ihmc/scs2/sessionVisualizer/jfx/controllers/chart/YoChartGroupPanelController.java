@@ -1,9 +1,14 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
 import javafx.beans.Observable;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -22,7 +27,11 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
-import javafx.scene.input.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -48,7 +57,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolki
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ChartGroupTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.DragAndDropTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
@@ -86,7 +95,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
    private final ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
    private Property<YoNameDisplay> userDesiredDisplayProperty;
-   private final BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
+   private final Property<YoNameDisplay> nameDisplayProperty = new SimpleObjectProperty<>(this, "nameDisplayProperty", YoNameDisplay.SHORT_NAME);
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -154,14 +163,14 @@ public class YoChartGroupPanelController implements VisualizerController
       });
       userDesiredDisplayProperty.addListener((o, oldValue, newValue) ->
                                              {
-                                                if (newValue == YoNameDisplay.UNIQUE_NAME)
-                                                   useUniqueNames.set(true);
-                                                else
+                                                if (newValue == YoNameDisplay.SHORT_NAME)
                                                    updateAutoUniqueNameDisplay();
+                                                else
+                                                   nameDisplayProperty.setValue(newValue);
                                              });
 
-      if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
-         useUniqueNames.set(true);
+      if (userDesiredDisplayProperty.getValue() != YoNameDisplay.SHORT_NAME)
+         nameDisplayProperty.setValue(userDesiredDisplayProperty.getValue());
 
       SetChangeListener<YoVariable> plottedVariableChangeListener = change ->
       {
@@ -180,12 +189,12 @@ public class YoChartGroupPanelController implements VisualizerController
                                      case ADD:
                                         gridPane.add(chart.getMainPane(), c.toCol(), c.toRow());
                                         chart.getPlottedVariables().addListener(plottedVariableChangeListener);
-                                        chart.useUniqueNamesProperty().bind(useUniqueNames);
+                                        chart.nameDisplayPropertyProperty().bind(nameDisplayProperty);
                                         break;
                                      case REMOVE:
                                         gridPane.getChildren().remove(chart.getMainPane());
                                         chart.getPlottedVariables().removeListener(plottedVariableChangeListener);
-                                        chart.useUniqueNamesProperty().unbind();
+                                        chart.nameDisplayPropertyProperty().unbind();
                                         break;
                                      case MOVE:
                                         GridPane.setConstraints(chart.getMainPane(), c.toCol(), c.toRow());
@@ -211,18 +220,21 @@ public class YoChartGroupPanelController implements VisualizerController
       }
       else
       {
-         automatedChartGroupName.set(StringTools.commonSubString(plottedVariableList.stream().map(YoVariable::getName).collect(Collectors.toList())));
+         toolkit.getGlobalToolkit()
+                .generateChartGroupTitle(this,
+                                         plottedVariableList,
+                                         value -> JavaFXMissingTools.runLaterIfNeeded(getClass(), () -> automatedChartGroupName.set(value)));
       }
 
-      if (userDesiredDisplayProperty.getValue() == YoNameDisplay.UNIQUE_NAME)
+      if (userDesiredDisplayProperty.getValue() != YoNameDisplay.SHORT_NAME)
       {
-         useUniqueNames.set(true);
+         nameDisplayProperty.setValue(userDesiredDisplayProperty.getValue());
       }
       else
       {
          List<? extends YoVariable> distinctVariables = plottedVariableList.stream().distinct().toList();
          long distinctNameCount = distinctVariables.stream().map(YoVariable::getName).distinct().count();
-         useUniqueNames.set(distinctNameCount < distinctVariables.size());
+         nameDisplayProperty.setValue(distinctNameCount < distinctVariables.size() ? YoNameDisplay.UNIQUE_SHORT_NAME : YoNameDisplay.SHORT_NAME);
       }
    }
 
@@ -468,7 +480,7 @@ public class YoChartGroupPanelController implements VisualizerController
 
       List<YoVariable> yoVariables = new ArrayList<>(controller.getPlottedVariables());
 
-      FontAwesomeIconView chartMoveIcon = controller.getChartMoveIcon();
+      Node chartMoveIcon = controller.getChartMoveIcon();
       Dragboard dragBoard = chartMoveIcon.startDragAndDrop(TransferMode.MOVE);
       SnapshotParameters params = new SnapshotParameters();
       params.setTransform(new Scale(0.5, 0.5));
@@ -558,6 +570,28 @@ public class YoChartGroupPanelController implements VisualizerController
    private boolean doesConfigurationFit(ChartGroupModel configuration)
    {
       return chartTable2D.getSize().contains(configuration.rowEnd(), configuration.columnEnd());
+   }
+
+   public boolean addVariableToPlot(String variableName, int row, int column, boolean resizeToFit)
+   {
+      if (resizeToFit)
+      {
+         if (row >= chartTable2D.getSize().getNumberOfRows() || column >= chartTable2D.getSize().getNumberOfCols())
+         {
+            int numberOfRows = Math.max(row + 1, chartTable2D.getSize().getNumberOfRows());
+            int numberOfCols = Math.max(column + 1, chartTable2D.getSize().getNumberOfCols());
+            chartTable2D.resize(new ChartTable2DSize(numberOfRows, numberOfCols));
+         }
+      }
+      else
+      {
+         if (row >= chartTable2D.getSize().getNumberOfRows() || column >= chartTable2D.getSize().getNumberOfCols())
+            return false;
+      }
+
+      YoChartPanelController chartController = chartTable2D.get(row, column);
+      chartController.addYoVariableToPlot(variableName);
+      return true;
    }
 
    public void loadChartGroupConfiguration(Window source, File file)

@@ -9,8 +9,18 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.input.*;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextField;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -80,10 +90,17 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 
       Property<Integer> numberPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 3);
 
-      messager.bindBidirectional(topics.getYoVariableNameDisplay(), yoVariableNameDisplay, false);
-      yoVariableNameDisplay.addListener((o, oldValue, newValue) -> search(searchTextField.getText()));
+      Property<YoNameDisplay> yoVariableUserNameDisplay = new SimpleObjectProperty<>(this, "yoVariableUserNameDisplay", YoNameDisplay.SHORT_NAME);
+      messager.bindBidirectional(topics.getYoVariableNameDisplay(), yoVariableUserNameDisplay, false);
+      yoVariableUserNameDisplay.addListener((o, oldValue, newValue) -> search(searchTextField.getText()));
 
       this.ownerRegistry = ownerRegistry;
+
+      if (ownerRegistry != null)
+         yoVariableNameDisplay.setValue(YoNameDisplay.SHORT_NAME);
+      else
+         yoVariableNameDisplay.bindBidirectional(yoVariableUserNameDisplay);
+
       yoCompositeListView.setCellFactory(param -> new YoCompositeListCell(yoManager, yoVariableNameDisplay, numberPrecision, param));
       yoCompositeListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -130,9 +147,9 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
          if (selectedItem == null)
             return null;
          CheckMenuItem menuItem = new CheckMenuItem("Show unique names");
-         menuItem.setSelected(yoVariableNameDisplay.getValue() == YoNameDisplay.UNIQUE_NAME);
+         menuItem.setSelected(yoVariableNameDisplay.getValue() == YoNameDisplay.UNIQUE_SHORT_NAME);
          menuItem.setOnAction(e -> messager.submitMessage(topics.getYoVariableNameDisplay(),
-                                                          menuItem.isSelected() ? YoNameDisplay.UNIQUE_NAME : YoNameDisplay.SHORT_NAME));
+                                                          menuItem.isSelected() ? YoNameDisplay.UNIQUE_SHORT_NAME : YoNameDisplay.SHORT_NAME));
          return menuItem;
       };
       MenuTools.setupContextMenu(yoCompositeListView, openNamespace, copyVariableName, copyVariableFullname, showUniqueNames);
@@ -302,6 +319,7 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       Function<YoComposite, String> nameExtractor = switch (yoVariableNameDisplay.getValue())
       {
          case UNIQUE_NAME -> YoComposite::getUniqueName;
+         case UNIQUE_SHORT_NAME -> YoComposite::getUniqueShortName;
          case SHORT_NAME -> YoComposite::getName;
          case FULL_NAME -> YoComposite::getFullname;
       };

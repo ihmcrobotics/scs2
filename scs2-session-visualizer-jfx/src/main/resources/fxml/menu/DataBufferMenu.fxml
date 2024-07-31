@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.jfoenix.controls.JFXTextField?>
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
 <?import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIconView?>
-<?import java.lang.String?>
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.CustomMenuItem?>
 <?import javafx.scene.control.Label?>
@@ -11,81 +9,83 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.layout.HBox?>
-
-<Menu fx:id="menu" text="Data Buffer" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.DataBufferMenuController">
-   <items>
-      <MenuItem onAction="#requestCropDataBuffer" text="Crop buffer to In/Out">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="crop-data-buffer-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#requestFlushDataBuffer" text="Flush old buffer">
-         <graphic>
-            <FontAwesomeIconView>
-               <styleClass>
-                  <String fx:value="flush-data-buffer-icon-view" />
-                  <String fx:value="menu-item-icon-view" />
-               </styleClass>
-            </FontAwesomeIconView>
-         </graphic>
-      </MenuItem>
-      <CustomMenuItem fx:id="bufferSizeMenuItem" mnemonicParsing="false" text="Unspecified Action">
-         <content>
-            <HBox alignment="CENTER" spacing="5.0">
-               <children>
-                  <FontAwesomeIconView>
-                     <styleClass>
-                        <String fx:value="resize-data-buffer-icon-view" />
-                        <String fx:value="menu-item-icon-view" />
-                     </styleClass>
-                  </FontAwesomeIconView>
-                  <Label text="Buffer size:" textFill="#000000fc" />
-                  <JFXTextField fx:id="bufferSizeTextField" prefWidth="55.0" />
-               </children>
-            </HBox>
-         </content>
-      </CustomMenuItem>
-      <CustomMenuItem fx:id="bufferRecordTickPeriodMenuItem" mnemonicParsing="false" text="Unspecified Action">
-         <content>
-            <HBox alignment="CENTER" spacing="5.0">
-               <children>
-                  <FontAwesomeIconView>
-                     <styleClass>
-                        <String fx:value="buffer-record-tick-period-icon-view" />
-                        <String fx:value="menu-item-icon-view" />
-                     </styleClass>
-                  </FontAwesomeIconView>
-                  <Label text="Record tick period:" textFill="#000000fc" />
-                  <JFXTextField fx:id="bufferRecordTickPeriodTextField" prefWidth="55.0" />
-               </children>
-            </HBox>
-         </content>
-      </CustomMenuItem>
-      <CustomMenuItem fx:id="numberPrecisionMenuItem" mnemonicParsing="false" text="Unspecified Action">
-         <content>
-            <HBox alignment="CENTER" spacing="5.0">
-               <children>
-                  <MaterialDesignIconView>
-                     <styleClass>
-                        <String fx:value="double-precision-icon-view" />
-                        <String fx:value="menu-item-icon-view" />
-                     </styleClass>
-                  </MaterialDesignIconView>
-                  <Label text="Number precision:" textFill="#000000fc" />
-                  <Spinner fx:id="numberPrecisionSpinner" prefWidth="70.0" />
-               </children>
-            </HBox>
-         </content>
-      </CustomMenuItem>
-      <CheckMenuItem fx:id="showSCS2YoVariablesMenuItem" mnemonicParsing="false" text="Show SCS2 YoVariables" />
-      <CheckMenuItem fx:id="enableFuzzyYoSearchMenuItem" mnemonicParsing="false" text="Enable Fuzzy YoSearch" />
-   </items>
-   <graphic>
-      <FontAwesomeIconView glyphName="DATABASE" />
-   </graphic>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<Menu fx:id="menu" text="Data Buffer" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.DataBufferMenuController">
+    <items>
+        <MenuItem onAction="#requestCropDataBuffer" text="Crop buffer to In/Out">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="crop-data-buffer-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <MenuItem onAction="#requestFlushDataBuffer" text="Flush old buffer">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="flush-data-buffer-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <CustomMenuItem fx:id="bufferSizeMenuItem" mnemonicParsing="false" text="Unspecified Action">
+            <content>
+                <HBox alignment="CENTER" spacing="5.0">
+                    <children>
+                        <FontIcon>
+                            <styleClass>
+                                <String fx:value="resize-data-buffer-icon-view"/>
+                                <String fx:value="menu-item-icon-view"/>
+                            </styleClass>
+                        </FontIcon>
+                        <Label text="Buffer size:" textFill="#000000fc"/>
+                        <JFXTextField fx:id="bufferSizeTextField" prefWidth="55.0"/>
+                    </children>
+                </HBox>
+            </content>
+        </CustomMenuItem>
+        <CustomMenuItem fx:id="bufferRecordTickPeriodMenuItem" mnemonicParsing="false" text="Unspecified Action">
+            <content>
+                <HBox alignment="CENTER" spacing="5.0">
+                    <children>
+                        <FontIcon>
+                            <styleClass>
+                                <String fx:value="buffer-record-tick-period-icon-view"/>
+                                <String fx:value="menu-item-icon-view"/>
+                            </styleClass>
+                        </FontIcon>
+                        <Label text="Record tick period:" textFill="#000000fc"/>
+                        <JFXTextField fx:id="bufferRecordTickPeriodTextField" prefWidth="55.0"/>
+                    </children>
+                </HBox>
+            </content>
+        </CustomMenuItem>
+        <CustomMenuItem fx:id="numberPrecisionMenuItem" mnemonicParsing="false" text="Unspecified Action">
+            <content>
+                <HBox alignment="CENTER" spacing="5.0">
+                    <children>
+                        <MaterialDesignIconView>
+                            <styleClass>
+                                <String fx:value="double-precision-icon-view"/>
+                                <String fx:value="menu-item-icon-view"/>
+                            </styleClass>
+                        </MaterialDesignIconView>
+                        <Label text="Number precision:" textFill="#000000fc"/>
+                        <Spinner fx:id="numberPrecisionSpinner" prefWidth="70.0"/>
+                    </children>
+                </HBox>
+            </content>
+        </CustomMenuItem>
+        <CheckMenuItem fx:id="showSCS2YoVariablesMenuItem" mnemonicParsing="false" text="Show SCS2 YoVariables"/>
+        <CheckMenuItem fx:id="enableFuzzyYoSearchMenuItem" mnemonicParsing="false" text="Enable Fuzzy YoSearch"/>
+    </items>
+    <graphic>
+        <FontIcon iconLiteral="fa-database"/>
+    </graphic>
 </Menu>

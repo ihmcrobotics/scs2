@@ -21,7 +21,11 @@ import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.scs2.sessionVisualizer.jfx.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry.YoEntryTabPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
@@ -33,7 +37,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -344,7 +353,7 @@ public class MultiSessionManager
       messager.submitMessage(topics.getShowOverheadPlotter(), configuration.getShowOverheadPlotter());
       messager.submitMessage(topics.getShowAdvancedControls(), configuration.getShowAdvancedControls());
       messager.submitMessage(topics.getYoVariableNameDisplay(),
-                             configuration.getShowYoVariableUniqueNames() ? YoNameDisplay.UNIQUE_NAME : YoNameDisplay.SHORT_NAME);
+                             configuration.getShowYoVariableUniqueNames() ? YoNameDisplay.UNIQUE_SHORT_NAME : YoNameDisplay.SHORT_NAME);
       if (configuration.hasYoSliderboardConfiguration())
          messager.submitMessage(topics.getYoMultiSliderboardLoad(), configuration.getYoSliderboardConfigurationFile(), synchronizeHint);
 
@@ -411,7 +420,7 @@ public class MultiSessionManager
       configuration.setShowYoSearchPanel(mainWindowController.leftSidePaneOpenProperty().get());
       configuration.setShowOverheadPlotter(mainWindowController.showOverheadPlotterProperty().getValue());
       configuration.setShowAdvancedControls(mainWindowController.showAdvancedControlsProperty().get());
-      configuration.setShowYoVariableUniqueNames(mainWindowController.yoNameDisplayProperty().getValue() == YoNameDisplay.UNIQUE_NAME);
+      configuration.setShowYoVariableUniqueNames(mainWindowController.yoNameDisplayProperty().getValue() == YoNameDisplay.UNIQUE_SHORT_NAME);
 
       try (OutputStream outputStream = new FileOutputStream(configuration.getYoEquationConfigurationFile()))
       {

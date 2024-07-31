@@ -1,24 +1,22 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.*;
 
 /**
  * A {@code YoGraphicListDefinition} is convenience class that allows to gather several
  * {@code YoGraphicDefinition}s into a list itself being a {@link YoGraphicDefinition}. This permits
  * using the regular API for single yoGraphic.
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicList")
 public class YoGraphicListDefinition extends YoGraphicDefinition
 {
-   /** The internal list of yoGraphics. */
+   /**
+    * The internal list of yoGraphics.
+    */
    private List<YoGraphicDefinition> yoGraphics = new ArrayList<>();
 
    /**
@@ -26,12 +24,11 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
     */
    public YoGraphicListDefinition()
    {
-      registerListField("yoGraphics", this::getYoGraphics, this::setYoGraphics, "g", YoGraphicDefinition::toParsableString, YoGraphicDefinition::parse);
    }
 
    /**
     * Creates and initializes a new list.
-    * 
+    *
     * @param yoGraphics the initial yoGraphics to include.
     */
    public YoGraphicListDefinition(YoGraphicDefinition... yoGraphics)
@@ -41,12 +38,31 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
 
    /**
     * Creates and initializes a new list.
-    * 
+    *
     * @param yoGraphics the initial yoGraphics to include.
     */
    public YoGraphicListDefinition(Collection<? extends YoGraphicDefinition> yoGraphics)
    {
       setYoGraphics(new ArrayList<>(yoGraphics));
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicListDefinition(YoGraphicListDefinition other)
+   {
+      super(other);
+      if (other.yoGraphics != null)
+         yoGraphics = other.yoGraphics.stream().filter(Objects::nonNull).map(YoGraphicDefinition::copy).toList();
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
+      registerListField("yoGraphics", this::getYoGraphics, this::setYoGraphics, "g", YoGraphicDefinition::toParsableString, YoGraphicDefinition::parse);
    }
 
    /**
@@ -60,7 +76,7 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
 
    /**
     * Adds a yoGraphic to this list.
-    * 
+    *
     * @param yoGraphic the yoGraphic to add.
     */
    public void addYoGraphic(YoGraphicDefinition yoGraphic)
@@ -84,7 +100,7 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
 
    /**
     * Sets the list.
-    * 
+    *
     * @param yoGraphics the new list.
     */
    @XmlElement(name = "yoGraphic")
@@ -141,7 +157,8 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
                   if (subGroup.getName().equals(otherSubGroup.getName()))
                   {
                      yoGraphics.remove(j);
-                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                     if (otherSubGroup.getChildren() != null)
+                        subGroup.getChildren().addAll(otherSubGroup.getChildren());
                   }
                }
             }
@@ -151,6 +168,12 @@ public class YoGraphicListDefinition extends YoGraphicDefinition
             list.mergeGroupsByName();
          }
       }
+   }
+
+   @Override
+   public YoGraphicListDefinition copy()
+   {
+      return new YoGraphicListDefinition(this);
    }
 
    public List<YoGraphicDefinition> getYoGraphics()

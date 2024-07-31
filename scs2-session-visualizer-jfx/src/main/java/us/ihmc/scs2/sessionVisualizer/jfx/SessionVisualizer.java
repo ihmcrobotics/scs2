@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
-import com.martiansoftware.jsap.*;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
@@ -19,11 +18,9 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.Messager;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
@@ -32,12 +29,15 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoSlider.*;
+import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardListDefinition;
+import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
-import us.ihmc.scs2.session.log.LogSession;
-import us.ihmc.scs2.session.mcap.MCAPLogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.CameraControlRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
@@ -45,13 +45,16 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.properties.*;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
+import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
-import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,8 +71,9 @@ public class SessionVisualizer
 
    static
    {
-      // Required for visualizing ROS topic which often have repeating sub-names in the topic names.
+      // Required for visualizing ROS topics which often have repeating sub-names in the topic names.
       System.setProperty("yo.allowRepeatingSubname", "true");
+      System.setProperty("prism.forceGPU", "true");
       DefinitionIOTools.loadResources();
       YoGraphicFXControllerTools.loadResources();
    }
@@ -79,10 +83,11 @@ public class SessionVisualizer
    private final SessionVisualizerToolkit toolkit;
    private final MultiSessionManager multiSessionManager;
 
-   private final MainWindowController mainWindowController;
+   protected final MainWindowController mainWindowController;
    private final SCS2JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
-   private final SessionVisualizerControlsImpl sessionVisualizerControls = new SessionVisualizerControlsImpl();
+   private final SessionVisualizerControlsImpl sessionVisualizerControls = createControls();
+
    private final List<Runnable> stopListeners = new ArrayList<>();
 
    private final Stage primaryStage;
@@ -101,7 +106,7 @@ public class SessionVisualizer
       Scene3DBuilder scene3DBuilder = new Scene3DBuilder();
       scene3DBuilder.addDefaultLighting();
 
-      toolkit = new SessionVisualizerToolkit(primaryStage, scene3DBuilder.getRoot());
+      toolkit = createToolkit(primaryStage, scene3DBuilder);
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
@@ -144,6 +149,16 @@ public class SessionVisualizer
       }
    }
 
+   protected SessionVisualizerControlsImpl createControls()
+   {
+      return new SessionVisualizerControlsImpl();
+   }
+
+   protected SessionVisualizerToolkit createToolkit(Stage primaryStage, Scene3DBuilder scene3DBuilder) throws Exception
+   {
+      return new SessionVisualizerToolkit(primaryStage, scene3DBuilder.getRoot());
+   }
+
    public void initializeStageWithPrimaryScreen()
    {
       initializeStageWithScreen(0.75, Screen.getPrimary(), primaryStage);
@@ -158,7 +173,7 @@ public class SessionVisualizer
       stage.setWidth(width);
       stage.setHeight(height);
       double centerX = bounds.getMinX() + (bounds.getWidth() - width) * 0.5;
-      double centerY = bounds.getMinY() + (bounds.getHeight() - height) * 1.0 / 3.0;
+      double centerY = bounds.getMinY() + (bounds.getHeight() - height) / 3.0;
       stage.setX(centerX);
       stage.setY(centerY);
    }
@@ -234,102 +249,14 @@ public class SessionVisualizer
 
    public static void main(String[] args) throws Exception
    {
-      String logFileOption = "logFileName";
-      String desiredDTOption = "desiredDT";
-      String defaultRobotFileOption = "defaultRobotFileName";
-      SimpleJSAP jsap = new SimpleJSAP("SCS2 Session Visualizer",
-                                       "Visualizes a robot log file, or live data from a compatible source.",
-                                       new Parameter[] {new FlaggedOption(logFileOption,
-                                                                          JSAP.STRING_PARSER,
-                                                                          null,
-                                                                          JSAP.NOT_REQUIRED,
-                                                                          'l',
-                                                                          "log",
-                                                                          "Log file to load, can either be a SCS2 log file or a MCAP log file."),
-                                                        new FlaggedOption(desiredDTOption,
-                                                                          JSAP.DOUBLE_PARSER,
-                                                                          "0.001",
-                                                                          JSAP.NOT_REQUIRED,
-                                                                          't',
-                                                                          "dt",
-                                                                          "If possible, the desired DT in seconds to use for the session visualizer. Default value is 1 millisecond."),
-                                                        new FlaggedOption(defaultRobotFileOption,
-                                                                          JSAP.STRING_PARSER,
-                                                                          null,
-                                                                          JSAP.NOT_REQUIRED,
-                                                                          'r',
-                                                                          "robot",
-                                                                          "Default robot file to load in case the log file does not contain any robot definition. Can be either a URDF or SDF file.")});
-      JSAPResult config = jsap.parse(args);
-
-      if (jsap.messagePrinted())
+      SessionVisualizerArgsHandler argsHandler = new SessionVisualizerArgsHandler();
+      if (!argsHandler.parseArgs(args))
       {
-         System.out.println(jsap.getUsage());
-         System.out.println(jsap.getHelp());
          System.exit(-1);
+         return;
       }
 
-      String logFileName = config.getString(logFileOption);
-      long desiredDT = (long) (1.0e9 * config.getDouble(desiredDTOption));
-      String defaultRobotFileName = config.getString(defaultRobotFileOption);
-
-      Session session = null;
-
-      if (logFileName != null)
-      {
-         File logFile = new File(logFileName);
-
-         if (!logFile.exists())
-         {
-            System.err.println("Cannot find log file: " + logFile.getAbsolutePath());
-            System.exit(-1);
-         }
-
-         if (FilenameUtils.getExtension(logFileName).equals("mcap"))
-         {
-            File defaultRobotFile;
-            if (defaultRobotFileName == null)
-            {
-               defaultRobotFile = null;
-            }
-            else
-            {
-               defaultRobotFile = new File(defaultRobotFileName);
-
-               if (!defaultRobotFile.exists())
-               {
-                  System.err.println("Cannot find default robot file: " + defaultRobotFile.getAbsolutePath());
-                  System.exit(-1);
-               }
-            }
-
-            session = new MCAPLogSession(logFile, desiredDT, defaultRobotFile);
-         }
-         else if (logFileName.equals(YoVariableLoggerListener.propertyFile))
-         {
-            session = new LogSession(logFile.getParentFile(), null);
-         }
-         else if (logFile.isDirectory())
-         {
-            File[] result = logFile.listFiles((dir, name) -> name.equals(YoVariableLoggerListener.propertyFile));
-            if (result == null || result.length == 0)
-            {
-               System.err.println("Cannot find log file: " + logFile.getAbsolutePath());
-               System.exit(-1);
-            }
-            else
-            {
-               session = new LogSession(logFile, null);
-            }
-         }
-         else
-         {
-            System.err.println("Unknown log file type: " + logFile.getAbsolutePath());
-            System.exit(-1);
-         }
-      }
-
-      SessionVisualizerControls controls = startSessionVisualizer(session, true);
+      SessionVisualizerControls controls = startSessionVisualizer(argsHandler.getSession(), true);
       // When running as remote visualizer, some non-daemon threads are not cleaned up properly.
       controls.addVisualizerShutdownListener(() -> System.exit(0));
    }
@@ -387,7 +314,7 @@ public class SessionVisualizer
       });
    }
 
-   private class SessionVisualizerControlsImpl implements SessionVisualizerControls
+   protected class SessionVisualizerControlsImpl implements SessionVisualizerControls
    {
       private final CountDownLatch visualizerReadyLatch = new CountDownLatch(1);
       private final CountDownLatch visualizerShutdownLatch = new CountDownLatch(1);
@@ -554,6 +481,12 @@ public class SessionVisualizer
       public void addYoEntry(String groupName, Collection<String> variableNames)
       {
          submitMessage(getTopics().getYoEntryListAdd(), YoEntryListDefinition.newYoVariableEntryList(groupName, variableNames));
+      }
+
+      @Override
+      public void requestChartsForceUpdate()
+      {
+         submitMessage(getTopics().getYoBufferForceListenerUpdate(), true);
       }
 
       @Override

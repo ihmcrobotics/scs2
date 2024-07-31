@@ -1,13 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-
-import org.apache.commons.lang3.mutable.MutableBoolean;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -22,8 +14,15 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.yoVariables.exceptions.IllegalNameException;
+
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
 
 public class YoGroupFX implements YoGraphicFXItem
 {
@@ -65,21 +64,20 @@ public class YoGroupFX implements YoGraphicFXItem
       }
       else
       {
-         Objects.requireNonNull(name);
+         Objects.requireNonNull(name, "The name of a YoGroupFX cannot be null.");
          nameProperty.set(name);
 
          parentGroupProperty = new SimpleObjectProperty<>(this, "parent", null);
          parentGroupProperty.addListener((observable, oldValue, newValue) ->
-         {
-            if (oldValue == null || newValue == oldValue)
-               return;
+                                         {
+                                            if (oldValue == null || newValue == oldValue)
+                                               return;
 
-            if (oldValue != null)
-               oldValue.children.remove(YoGroupFX.this);
+                                            oldValue.children.remove(YoGroupFX.this);
 
-            if (newValue != null && !newValue.children.contains(this))
-               newValue.children.add(this);
-         });
+                                            if (newValue != null)
+                                               newValue.children.add(this);
+                                         });
 
          setupChildrenListener();
          setupYoGraphicFXsListener(yoGraphicFX2DSet, group2D);
@@ -101,20 +99,20 @@ public class YoGroupFX implements YoGraphicFXItem
       MutableBoolean updating = new MutableBoolean(false);
 
       visibleProperty.addListener((o, oldValue, newValue) ->
-      {
-         if (updating.isTrue())
-            return;
+                                  {
+                                     if (updating.isTrue())
+                                        return;
 
-         updating.setTrue();
-         try
-         {
-            itemChildren.forEach(child -> child.setVisible(newValue));
-         }
-         finally
-         {
-            updating.setFalse();
-         }
-      });
+                                     updating.setTrue();
+                                     try
+                                     {
+                                        itemChildren.forEach(child -> child.setVisible(newValue));
+                                     }
+                                     finally
+                                     {
+                                        updating.setFalse();
+                                     }
+                                  });
 
       itemChildren.addListener(new SetChangeListener<>()
       {
@@ -156,7 +154,7 @@ public class YoGroupFX implements YoGraphicFXItem
             updating.setTrue();
             try
             {
-               visibleProperty.set(observable == null ? false : observable.get());
+               visibleProperty.set(observable != null && observable.get());
             }
             finally
             {
@@ -253,9 +251,9 @@ public class YoGroupFX implements YoGraphicFXItem
    @Override
    public void clear()
    {
-      children.forEach(child -> child.clear());
-      yoGraphicFX2DSet.forEach(graphic -> graphic.clear());
-      yoGraphicFX3DSet.forEach(graphic -> graphic.clear());
+      children.forEach(YoGroupFX::clear);
+      yoGraphicFX2DSet.forEach(YoGraphicFXItem::clear);
+      yoGraphicFX3DSet.forEach(YoGraphicFXItem::clear);
       children.clear();
       yoGraphicFX2DSet.clear();
       yoGraphicFX3DSet.clear();
@@ -305,7 +303,7 @@ public class YoGroupFX implements YoGraphicFXItem
 
    public boolean containsYoGraphicFXItem(String graphicName)
    {
-      return itemChildren.stream().filter(graphic -> graphic.getName().equals(graphicName)).findFirst().isPresent();
+      return itemChildren.stream().anyMatch(graphic -> graphic.getName().equals(graphicName));
    }
 
    public YoGraphicFXItem getYoGraphicFXItem(String graphicName)
@@ -327,7 +325,7 @@ public class YoGroupFX implements YoGraphicFXItem
 
    public boolean containsYoGraphicFX2D(String graphicName)
    {
-      return yoGraphicFX2DSet.stream().filter(graphic -> graphic.getName().equals(graphicName)).findFirst().isPresent();
+      return yoGraphicFX2DSet.stream().anyMatch(graphic -> graphic.getName().equals(graphicName));
    }
 
    public YoGraphicFX2D getYoGraphicFX2D(String graphicName)
@@ -354,7 +352,7 @@ public class YoGroupFX implements YoGraphicFXItem
 
    public boolean containsYoGraphicFX3D(String graphicName)
    {
-      return yoGraphicFX3DSet.stream().filter(graphic -> graphic.getName().equals(graphicName)).findFirst().isPresent();
+      return yoGraphicFX3DSet.stream().anyMatch(graphic -> graphic.getName().equals(graphicName));
    }
 
    public YoGraphicFX3D getYoGraphicFX3D(String graphicName)
@@ -450,7 +448,7 @@ public class YoGroupFX implements YoGraphicFXItem
 
    public boolean containsChild(String childName)
    {
-      return children.stream().filter(child -> childName.equals(child.getName())).findFirst().isPresent();
+      return children.stream().anyMatch(child -> childName.equals(child.getName()));
    }
 
    public List<YoGroupFX> collectSubtreeGroups()
@@ -484,8 +482,7 @@ public class YoGroupFX implements YoGraphicFXItem
    @Override
    public YoGroupFX clone()
    {
-      YoGroupFX clone = new YoGroupFX(nameProperty.get());
-      return clone;
+      return new YoGroupFX(nameProperty.get());
    }
 
    @Override

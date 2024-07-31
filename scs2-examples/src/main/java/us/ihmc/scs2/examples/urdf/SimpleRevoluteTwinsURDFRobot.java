@@ -1,13 +1,5 @@
 package us.ihmc.scs2.examples.urdf;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import javax.xml.bind.JAXBException;
-
 import us.ihmc.euclid.referenceFrame.FramePose3D;
 import us.ihmc.euclid.tuple2D.Vector2D;
 import us.ihmc.mecano.frames.MovingReferenceFrame;
@@ -22,13 +14,20 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
 
+import javax.xml.bind.JAXBException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public class SimpleRevoluteTwinsURDFRobot
 {
    public static void main(String[] args) throws JAXBException
    {
       System.out.println(new Vector2D(0.2, 0.2).norm());
 
-      InputStream is = SimpleCrossFourBarURDFRobot.class.getClassLoader().getResourceAsStream("urdf/SimpleRevoluteTwinsRobot.urdf");
+      InputStream is = SimpleCrossFourBarURDFRobot.class.getClassLoader().getResourceAsStream("urdf/SimpleRevoluteTwinsRobotTypeA.urdf");
       URDFModel urdfModel = URDFTools.loadURDFModel(is, Collections.emptyList(), SimpleCrossFourBarURDFRobot.class.getClassLoader());
       URDFTools.URDFParserProperties parserProperties = new URDFTools.URDFParserProperties();
       parserProperties.setRootJointFactory(null);
@@ -47,6 +46,7 @@ public class SimpleRevoluteTwinsURDFRobot
       scs2.setCameraPosition(0, 2, 0.3);
       scs2.startSimulationThread();
    }
+
    public static List<YoGraphicDefinition> frameAfterJointGraphics(RevoluteTwinsJointReadOnly joint)
    {
       List<YoGraphicDefinition> yoGraphics = new ArrayList<>();
@@ -72,10 +72,7 @@ public class SimpleRevoluteTwinsURDFRobot
 
       for (MovingReferenceFrame frame : frames)
       {
-         yoGraphics.add(YoGraphicDefinitionFactory.newYoGraphicCoordinateSystem3D(frame.getName(),
-                                                                                  new FramePose3D(frame),
-                                                                                  0.10,
-                                                                                  ColorDefinitions.Fuchsia()));
+         yoGraphics.add(YoGraphicDefinitionFactory.newYoGraphicCoordinateSystem3D(frame.getName(), new FramePose3D(frame), 0.10, ColorDefinitions.Fuchsia()));
       }
       return yoGraphics;
    }

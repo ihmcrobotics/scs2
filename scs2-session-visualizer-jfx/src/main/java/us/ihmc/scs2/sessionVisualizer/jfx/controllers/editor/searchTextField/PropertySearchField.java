@@ -1,10 +1,18 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.searchTextField;
 
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.*;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.TransferMode;
 import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.AutoCompletionBinding.ISuggestionRequest;
@@ -42,7 +50,7 @@ public abstract class PropertySearchField<T extends Property<?>>
                                                  return;
 
                                               String simplifiedText = simplifyText(newValue);
-                                              if (simplifiedText != null)
+                                              if (simplifiedText != null && !simplifiedText.equals(newValue))
                                               {
                                                  textField.setText(simplifiedText);
                                                  return;
@@ -63,6 +71,16 @@ public abstract class PropertySearchField<T extends Property<?>>
 
    protected abstract boolean isTextValid(String text);
 
+   /**
+    * Simplify the text to be displayed in the text field.
+    * <p>
+    * This method is useful to simplify the text displayed in the text field when the user types.
+    * It is expected to return {@code null} if the text is already in a simplified form.
+    * </p>
+    *
+    * @param text the text to simplify.
+    * @return the simplified text, or {@code null} if the text is already in a simplified form.
+    */
    protected abstract String simplifyText(String text);
 
    protected abstract Callback<ISuggestionRequest, Collection<String>> createSuggestions();
@@ -150,7 +168,7 @@ public abstract class PropertySearchField<T extends Property<?>>
       if (yoComposites != null)
       {
          success = true;
-         textField.setText(yoComposites.get(0).getUniqueName());
+         textField.setText(yoComposites.get(0).getUniqueShortName());
       }
       event.setDropCompleted(success);
       event.consume();

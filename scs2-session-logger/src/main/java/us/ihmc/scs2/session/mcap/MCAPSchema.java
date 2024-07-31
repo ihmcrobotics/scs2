@@ -1,9 +1,12 @@
 package us.ihmc.scs2.session.mcap;
 
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.scs2.session.mcap.MCAP.Schema;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -13,11 +16,13 @@ import java.util.Map;
  */
 public class MCAPSchema
 {
-   private int id;
-   private String name;
-   private List<MCAPSchemaField> staticFields = new ArrayList<>();
-   private List<MCAPSchemaField> fields;
-   private Map<String, MCAPSchema> subSchemaMap;
+   private final int id;
+   private final String name;
+   private final boolean isEnum;
+   private final String[] enumConstants;
+   private final List<MCAPSchemaField> staticFields = new ArrayList<>();
+   private final List<MCAPSchemaField> fields;
+   private final Map<String, MCAPSchema> subSchemaMap;
 
    protected MCAPSchema(String name, int id)
    {
@@ -29,12 +34,39 @@ public class MCAPSchema
       this(name, id, fields, null);
    }
 
+   /**
+    * Creates a schema that represents a struct.
+    *
+    * @param name         the name of the schema.
+    * @param id           the ID of the schema.
+    * @param fields       the fields of the schema.
+    * @param subSchemaMap the sub-schemas of the schema.
+    */
    protected MCAPSchema(String name, int id, List<MCAPSchemaField> fields, Map<String, MCAPSchema> subSchemaMap)
    {
       this.name = name;
       this.id = id;
       this.subSchemaMap = subSchemaMap;
       this.fields = fields;
+      this.isEnum = false;
+      this.enumConstants = null;
+   }
+
+   /**
+    * Creates a schema that represents an enum.
+    *
+    * @param name          the name of the schema.
+    * @param id            the ID of the schema.
+    * @param enumConstants the enum constants of the schema.
+    */
+   protected MCAPSchema(String name, int id, String[] enumConstants)
+   {
+      this.name = name;
+      this.id = id;
+      this.subSchemaMap = null;
+      this.fields = null;
+      this.isEnum = true;
+      this.enumConstants = enumConstants;
    }
 
    /**
@@ -55,6 +87,26 @@ public class MCAPSchema
    public String getName()
    {
       return name;
+   }
+
+   /**
+    * Whether this schema is an enum.
+    *
+    * @return {@code true} if this schema is an enum, {@code false} otherwise.
+    */
+   public boolean isEnum()
+   {
+      return isEnum;
+   }
+
+   /**
+    * The enum constants of the schema as defined in the MCAP schema file.
+    *
+    * @return the enum constants of the schema.
+    */
+   public String[] getEnumConstants()
+   {
+      return enumConstants;
    }
 
    /**
@@ -164,6 +216,10 @@ public class MCAPSchema
       out += "\n\t-name=" + name;
       if (fields != null)
          out += "\n\t-fields=\n" + EuclidCoreIOTools.getCollectionString("\n", fields, f -> f.toString(indent + 2));
+      if (enumConstants != null)
+         out += "\n\t-enumConstants=" + Arrays.toString(enumConstants);
+      if (!staticFields.isEmpty())
+         out += "\n\t-staticFields=\n" + EuclidCoreIOTools.getCollectionString("\n", staticFields, f -> f.toString(indent + 2));
       if (subSchemaMap != null)
          out += "\n\t-subSchemaMap=\n" + indentString(indent + 2) + EuclidCoreIOTools.getCollectionString("\n" + indentString(indent + 2),
                                                                                                           subSchemaMap.entrySet(),
@@ -173,10 +229,10 @@ public class MCAPSchema
       return indent(out, indent);
    }
 
-   public static String mcapMCAPMessageToString(MCAP.Message message, MCAPSchema schema)
+   public static String mcapMCAPMessageToString(Message message, MCAPSchema schema)
    {
       CDRDeserializer cdr = new CDRDeserializer();
-      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
+      cdr.initialize(message.messageBuffer(), 0, message.dataLength());
 
       String output = mcapMCAPMessageToString(cdr, schema, 0);
 

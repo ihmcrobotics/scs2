@@ -1,20 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
-import org.controlsfx.control.CheckTreeView;
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -49,6 +34,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import org.controlsfx.control.CheckTreeView;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -65,6 +52,17 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
 {
@@ -125,59 +123,60 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
             removeItem();
       });
       yoGraphicTreeView.setOnContextMenuRequested(e ->
-      {
-         if (activeContexMenu.get() != null)
-         {
-            activeContexMenu.get().hide();
-            activeContexMenu.set(null);
-         }
+                                                  {
+                                                     if (activeContexMenu.get() != null)
+                                                     {
+                                                        activeContexMenu.get().hide();
+                                                        activeContexMenu.set(null);
+                                                     }
 
-         FontAwesomeIconView collapseIcon = new FontAwesomeIconView(FontAwesomeIcon.MINUS_SQUARE_ALT);
-         FontAwesomeIconView expandIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS_SQUARE_ALT);
-         FontAwesomeIconView addIcon = new FontAwesomeIconView(FontAwesomeIcon.PLUS);
-         FontAwesomeIconView deleteIcon = new FontAwesomeIconView(FontAwesomeIcon.TIMES);
-         FontAwesomeIconView duplicateIcon = new FontAwesomeIconView(FontAwesomeIcon.CLONE);
-         addIcon.setFill(Color.web("#89e0c0"));
-         deleteIcon.setFill(Color.web("#edafb7"));
-         duplicateIcon.setFill(Color.web("#8996e0"));
-         MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
-         MenuItem expandItem = new MenuItem("Expand all", expandIcon);
-         MenuItem addItem = new MenuItem("Add item...", addIcon);
-         MenuItem removeItem = new MenuItem("Remove item", deleteIcon);
-         MenuItem duplicateItem = new MenuItem("Duplicate item", duplicateIcon);
-         collapseItem.setOnAction(e2 -> collapseAll());
-         expandItem.setOnAction(e2 -> expandAll());
-         addItem.setOnAction(e2 -> addItem());
-         removeItem.setOnAction(e2 -> removeItem());
-         duplicateItem.setOnAction(e2 -> duplicateItem());
+                                                     FontIcon collapseIcon = new FontIcon("fa-minus-square-o");
+                                                     FontIcon expandIcon = new FontIcon("fa-plus-square-o");
+                                                     FontIcon addIcon = new FontIcon("fa-plus");
+                                                     FontIcon deleteIcon = new FontIcon("fa-times");
+                                                     FontIcon duplicateIcon = new FontIcon("fa-clone");
+                                                     addIcon.setFill(Color.web("#89e0c0"));
+                                                     deleteIcon.setFill(Color.web("#edafb7"));
+                                                     duplicateIcon.setFill(Color.web("#8996e0"));
+                                                     MenuItem collapseItem = new MenuItem("Collapse all", collapseIcon);
+                                                     MenuItem expandItem = new MenuItem("Expand all", expandIcon);
+                                                     MenuItem addItem = new MenuItem("Add item...", addIcon);
+                                                     MenuItem removeItem = new MenuItem("Remove item", deleteIcon);
+                                                     MenuItem duplicateItem = new MenuItem("Duplicate item", duplicateIcon);
+                                                     collapseItem.setOnAction(e2 -> collapseAll());
+                                                     expandItem.setOnAction(e2 -> expandAll());
+                                                     addItem.setOnAction(e2 -> addItem());
+                                                     removeItem.setOnAction(e2 -> removeItem());
+                                                     duplicateItem.setOnAction(e2 -> duplicateItem());
 
-         ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem, addItem, removeItem, duplicateItem);
-         contextMenu.show(yoGraphicTreeView, e.getScreenX(), e.getScreenY());
-         activeContexMenu.set(contextMenu);
-      });
+                                                     ContextMenu contextMenu = new ContextMenu(collapseItem, expandItem, addItem, removeItem, duplicateItem);
+                                                     contextMenu.show(yoGraphicTreeView, e.getScreenX(), e.getScreenY());
+                                                     activeContexMenu.set(contextMenu);
+                                                  });
       refreshTreeView();
 
       saveChangesButton.setDisable(true);
       revertChangesButton.setDisable(true);
 
       activeEditor.addListener((observable, oldValue, newValue) ->
-      {
-         saveChangesButton.disableProperty().unbind();
-         revertChangesButton.disableProperty().unbind();
+                               {
+                                  saveChangesButton.disableProperty().unbind();
+                                  revertChangesButton.disableProperty().unbind();
 
-         if (newValue == null)
-         {
-            saveChangesButton.setDisable(true);
-            revertChangesButton.setDisable(true);
-         }
-         else
-         {
-            saveChangesButton.disableProperty().bind(newValue.hasChangesPendingProperty().and(newValue.inputsValidityProperty()).not());
-            revertChangesButton.disableProperty().bind(newValue.hasChangesPendingProperty().not());
-            newValue.saveChanges();
-            newValue.resetFields();
-         }
-      });
+                                  if (newValue == null)
+                                  {
+                                     saveChangesButton.setDisable(true);
+                                     revertChangesButton.setDisable(true);
+                                  }
+                                  else
+                                  {
+                                     saveChangesButton.disableProperty()
+                                                      .bind(newValue.hasChangesPendingProperty().and(newValue.inputsValidityProperty()).not());
+                                     revertChangesButton.disableProperty().bind(newValue.hasChangesPendingProperty().not());
+                                     newValue.saveChanges();
+                                     newValue.resetFields();
+                                  }
+                               });
 
       yoGraphicEditorPane.addEventHandler(KeyEvent.KEY_PRESSED, e ->
       {
@@ -307,18 +306,22 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
       }
    }
 
-   private void selectItem(TreeItem<YoGraphicFXItem> treeItem, YoGraphicFXItem itemToSelect)
+   private TreeItem<YoGraphicFXItem> selectItem(TreeItem<YoGraphicFXItem> treeItem, YoGraphicFXItem itemToSelect)
    {
       if (treeItem == null)
-         return;
+         return null;
       if (treeItem.getValue() == itemToSelect)
       {
          yoGraphicTreeView.getSelectionModel().select(treeItem);
-         return;
+         return treeItem;
       }
 
       for (TreeItem<YoGraphicFXItem> child : treeItem.getChildren())
-         selectItem(child, itemToSelect);
+      {
+         if (selectItem(child, itemToSelect) != null)
+            return child;
+      }
+      return null;
    }
 
    private boolean ignoreTreeSelectionUpdate = false;
@@ -449,19 +452,20 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
       if (searchQuery != null && !searchQuery.isEmpty())
       {
          backgroundSearch = backgroundExecutorManager.executeInBackground(() ->
-         {
-            if (allGraphicItems == null)
-            {
-               return null;
-            }
+                                                                          {
+                                                                             if (allGraphicItems == null)
+                                                                             {
+                                                                                return null;
+                                                                             }
 
-            return createFilteredRootItem(YoVariableTools.search(allGraphicItems,
-                                                                 item -> item.getName(),
-                                                                 searchQuery,
-                                                                 YoVariableTools.fromSearchEnginesEnum(SearchEngines.DEFAULT),
-                                                                 Integer.MAX_VALUE,
-                                                                 Collectors.toSet()));
-         });
+                                                                             return createFilteredRootItem(YoVariableTools.search(allGraphicItems,
+                                                                                                                                  item -> item.getName(),
+                                                                                                                                  searchQuery,
+                                                                                                                                  YoVariableTools.fromSearchEnginesEnum(
+                                                                                                                                        SearchEngines.DEFAULT),
+                                                                                                                                  Integer.MAX_VALUE,
+                                                                                                                                  Collectors.toSet()));
+                                                                          });
       }
       else
       {
@@ -557,7 +561,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
          YoGraphicFXItem yoGraphicFXItem = selectedItem.getValue();
 
          if (yoGraphicFXItem instanceof YoGraphicFX)
-            group = ((YoGraphicFX) yoGraphicFXItem).parentGroupProperty().get();
+            group = yoGraphicFXItem.parentGroupProperty().get();
          else if (yoGraphicFXItem instanceof YoGroupFX)
             group = ((YoGroupFX) yoGraphicFXItem);
          else
@@ -585,8 +589,10 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
          {
             JavaFXMissingTools.runLater(getClass(), () ->
             {
-               selectItem(defaultRootItem, newItem);
+               TreeItem<YoGraphicFXItem> newTreeItem = selectItem(defaultRootItem, newItem);
                yoGraphicTreeView.requestFocus();
+               if (newTreeItem != null)
+                  yoGraphicTreeView.scrollTo(yoGraphicTreeView.getRow(newTreeItem));
             });
          }
       }

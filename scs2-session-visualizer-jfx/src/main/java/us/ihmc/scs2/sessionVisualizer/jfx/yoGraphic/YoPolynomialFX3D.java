@@ -1,11 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.DoubleConsumer;
-import java.util.stream.Stream;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
@@ -15,6 +9,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
@@ -24,13 +19,20 @@ import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.scs2.definition.visual.SegmentedLine3DTriangleMeshFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.DoubleConsumer;
+import java.util.stream.Stream;
 
 public class YoPolynomialFX3D extends YoGraphicFX3D
 {
    private List<DoubleProperty> coefficientsX, coefficientsY, coefficientsZ;
    private IntegerProperty numberOfCoefficientsX, numberOfCoefficientsY, numberOfCoefficientsZ;
-   private Property<ReferenceFrame> referenceFrame;
+   private Property<ReferenceFrameWrapper> referenceFrame;
    private DoubleProperty startTime = new SimpleDoubleProperty(0.0);
    private DoubleProperty endTime;
    private DoubleProperty size = new SimpleDoubleProperty(0.01);
@@ -47,6 +49,12 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
 
    public YoPolynomialFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      JavaFXMissingTools.setDrawModeRecursive(polynomialNode, newValue);
+                                   });
       polynomialNode.getTransforms().add(affine);
       polynomialNode.idProperty().bind(nameProperty());
       polynomialNode.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
@@ -113,8 +121,8 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
          return;
       }
       else if (newPolynomialLocal.coefficientsX == null || newPolynomialLocal.coefficientsY == null || newPolynomialLocal.coefficientsZ == null
-            || newPolynomialLocal.coefficientsX.length == 0 || newPolynomialLocal.coefficientsY.length == 0 || newPolynomialLocal.coefficientsZ.length == 0
-            || newPolynomialLocal.containsNaN())
+               || newPolynomialLocal.coefficientsX.length == 0 || newPolynomialLocal.coefficientsY.length == 0 || newPolynomialLocal.coefficientsZ.length == 0
+               || newPolynomialLocal.containsNaN())
       {
          newMeshViews = new MeshView[0];
          return;
@@ -148,11 +156,13 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
                             .toArray(Mesh[]::new);
 
       MeshView[] meshViews = new MeshView[meshes.length];
+      DrawMode drawMode = getDrawMode() == null ? DrawMode.FILL : getDrawMode();
 
       for (int i = 0; i < meshes.length; i++)
       {
          meshViews[i] = new MeshView(meshes[i]);
          meshViews[i].setMaterial(material);
+         meshViews[i].setDrawMode(drawMode);
          meshViews[i].idProperty().bind(nameProperty().concat(" (").concat(Integer.toString(i)).concat(")"));
       }
 
@@ -314,12 +324,12 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       setNumberOfCoefficientsZ(new SimpleIntegerProperty(numberOfCoefficientsZ));
    }
 
-   public void setReferenceFrame(ReferenceFrame referenceFrame)
+   public void setReferenceFrame(ReferenceFrameWrapper referenceFrame)
    {
       setReferenceFrame(new SimpleObjectProperty<>(referenceFrame));
    }
 
-   public void setReferenceFrame(Property<ReferenceFrame> referenceFrame)
+   public void setReferenceFrame(Property<ReferenceFrameWrapper> referenceFrame)
    {
       this.referenceFrame = referenceFrame;
    }
@@ -441,7 +451,7 @@ public class YoPolynomialFX3D extends YoGraphicFX3D
       return numberOfCoefficientsZ;
    }
 
-   public Property<ReferenceFrame> getReferenceFrame()
+   public Property<ReferenceFrameWrapper> getReferenceFrame()
    {
       return referenceFrame;
    }

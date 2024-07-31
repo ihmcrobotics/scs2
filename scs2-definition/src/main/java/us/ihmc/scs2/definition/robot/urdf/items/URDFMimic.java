@@ -3,7 +3,7 @@ package us.ihmc.scs2.definition.robot.urdf.items;
 import java.util.Collections;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlAttribute;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/joint"> ROS Specification joint.</a>
@@ -16,19 +16,19 @@ public class URDFMimic implements URDFItem
    private String multiplier;
    private String offset;
 
-   @XmlElement(name = "joint")
+   @XmlAttribute(name = "joint")
    public void setJoint(String joint)
    {
       this.joint = joint;
    }
 
-   @XmlElement(name = "multiplier")
+   @XmlAttribute(name = "multiplier")
    public void setMultiplier(String multiplier)
    {
       this.multiplier = multiplier;
    }
 
-   @XmlElement(name = "offset")
+   @XmlAttribute(name = "offset")
    public void setOffset(String offset)
    {
       this.offset = offset;

@@ -1,25 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.StringUtils;
-
 import gnu.trove.list.array.TIntArrayList;
 import javafx.util.Pair;
+import org.apache.commons.lang3.StringUtils;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoComposite.YoCompositePatternDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoCompositePatternListDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
@@ -36,6 +21,24 @@ import us.ihmc.yoVariables.variable.YoEnum;
 import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class YoCompositeTools
 {
@@ -212,6 +215,8 @@ public class YoCompositeTools
          return new Pair<>(Collections.emptyList(), Collections.emptyList());
 
       Pair<List<YoComposite>, List<YoVariable>> result = new Pair<>(new ArrayList<>(), new ArrayList<>());
+      // This map is used to prevent creating composites with colliding names
+      Map<YoNamespace, List<YoComposite>> namespaceToYoCompositesMap = new HashMap<>();
 
       List<YoVariable> yoVariables = registry.getVariables();
 
@@ -226,7 +231,11 @@ public class YoCompositeTools
                searchPool.add(yoVariable);
          }
 
-         Pair<List<YoComposite>, List<YoVariable>> primitiveResult = searchYoComposites(pattern, searchPool, registry.getNamespace(), false);
+         Pair<List<YoComposite>, List<YoVariable>> primitiveResult = searchYoComposites(pattern,
+                                                                                        searchPool,
+                                                                                        registry.getNamespace(),
+                                                                                        false,
+                                                                                        namespaceToYoCompositesMap);
          result.getKey().addAll(primitiveResult.getKey());
          result.getValue().addAll(primitiveResult.getValue());
       }
@@ -246,7 +255,11 @@ public class YoCompositeTools
          // Searching cross-registry
          if (!registry.getChildren().isEmpty())
          {
-            Pair<List<YoComposite>, List<YoVariable>> crossRegistryResult = searchYoComposites(pattern, result.getValue(), null, true);
+            Pair<List<YoComposite>, List<YoVariable>> crossRegistryResult = searchYoComposites(pattern,
+                                                                                               result.getValue(),
+                                                                                               null,
+                                                                                               true,
+                                                                                               namespaceToYoCompositesMap);
             result.getKey().addAll(crossRegistryResult.getKey());
             result = new Pair<>(result.getKey(), crossRegistryResult.getValue());
          }
@@ -258,7 +271,8 @@ public class YoCompositeTools
    private static Pair<List<YoComposite>, List<YoVariable>> searchYoComposites(YoCompositePattern pattern,
                                                                                List<YoVariable> variables,
                                                                                YoNamespace namespace,
-                                                                               boolean useUniqueNames)
+                                                                               boolean useUniqueNames,
+                                                                               Map<YoNamespace, List<YoComposite>> namespaceToYoCompositesMap)
    {
       List<String[]> allComponentIdentifiers = new ArrayList<>();
       allComponentIdentifiers.add(pattern.getComponentIdentifiers());
@@ -330,14 +344,32 @@ public class YoCompositeTools
                   }
                   else
                   {
-                     throw new RuntimeException("Implement this edge case. Name collision: "
-                                                + EuclidCoreIOTools.getCollectionString("\n\t", "", "\n\t", container, Object::toString));
+                     throw new RuntimeException("Implement this edge case. Name collision: " + EuclidCoreIOTools.getCollectionString("\n\t",
+                                                                                                                                     "",
+                                                                                                                                     "\n\t",
+                                                                                                                                     container,
+                                                                                                                                     Object::toString));
                   }
                }
 
                if (namespace == null)
                   namespace = findCommonNamespace(components);
-               result.add(new YoComposite(pattern, candidateName.getName(), namespace, Arrays.asList(components)));
+               List<YoComposite> siblings = namespaceToYoCompositesMap.get(namespace);
+               if (siblings != null)
+               {
+                  Optional<YoComposite> homonym = siblings.stream().filter(sibling -> sibling.getName().equalsIgnoreCase(candidateName.getName())).findFirst();
+                  if (homonym.isPresent())
+                  {
+                     LogTools.error(
+                           "Name collision in composites: pattern: " + pattern + ", name: " + candidateName.getName() + ", components:\n\t-composite 1:"
+                           + EuclidCoreIOTools.getArrayString("[", "]", ", ", components, YoVariable::getName) + "\n\t-composite 2:"
+                           + EuclidCoreIOTools.getCollectionString("[", "]", ", ", homonym.get().getYoComponents(), YoVariable::getName));
+                     break;
+                  }
+               }
+               YoComposite newComposite = new YoComposite(pattern, candidateName.getName(), namespace, Arrays.asList(components));
+               result.add(newComposite);
+               namespaceToYoCompositesMap.computeIfAbsent(namespace, k -> new ArrayList<>()).add(newComposite);
 
                break;
             }
@@ -502,11 +534,14 @@ public class YoCompositeTools
             List<String> namespace1 = h1.namespace;
             List<String> namespace2 = h2.namespace;
 
-            if (namespace1 == null ? namespace2 == null : namespace1.equals(namespace2))
+            if (Objects.equals(namespace1, namespace2))
             {
-               throw new IllegalArgumentException("Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and "
-                                                  + h2.originalObject);
+               throw new IllegalArgumentException(
+                     "Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and " + h2.originalObject);
             }
+
+            if (namespace1 == null || namespace2 == null)
+               continue;
 
             int namespaceIndex1 = namespace1.size() - 1;
             int namespaceIndex2 = namespace2.size() - 1;
@@ -527,11 +562,11 @@ public class YoCompositeTools
                   namespaceIndex2--;
                }
 
-               if (namespaceIndex1 == 0 && namespaceIndex2 == 0 && h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()))
-                  throw new IllegalArgumentException("Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and "
-                                                     + h2.originalObject);
+               if (namespaceIndex1 == 0 && namespaceIndex2 == 0 && h1.uniqueName.equalsIgnoreCase(h2.uniqueName))
+                  throw new IllegalArgumentException(
+                        "Unsupported data structure, two elements have the same fullname: " + h1.originalObject + " and " + h2.originalObject);
             }
-            while (h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()));
+            while (h1.uniqueName.equalsIgnoreCase(h2.uniqueName));
          }
          else
          {
@@ -568,16 +603,16 @@ public class YoCompositeTools
                List<NamedObjectHolder<T>> homonymsToProcess = new ArrayList<>();
                TIntArrayList namespaceIndexOfHomonymsToProcess = new TIntArrayList();
 
-               for (int h1Index = 0; h1Index < homonyms.size();)
+               for (int h1Index = 0; h1Index < homonyms.size(); )
                {
                   boolean isH1Unique = true;
                   NamedObjectHolder<T> h1 = homonyms.get(h1Index);
 
-                  for (int h2Index = h1Index + 1; h2Index < homonyms.size();)
+                  for (int h2Index = h1Index + 1; h2Index < homonyms.size(); )
                   {
                      NamedObjectHolder<T> h2 = homonyms.get(h2Index);
 
-                     if (h1.uniqueName.toLowerCase().equals(h2.uniqueName.toLowerCase()))
+                     if (h1.uniqueName.equalsIgnoreCase(h2.uniqueName))
                      {
                         isH1Unique = false;
                         homonymsToProcess.add(homonyms.remove(h2Index));
@@ -608,6 +643,75 @@ public class YoCompositeTools
       }
 
       return nameObjectHolderList.stream().collect(Collectors.toMap(NamedObjectHolder::getOriginalObject, NamedObjectHolder::getUniqueName));
+   }
+
+   public static <T> Map<T, String> computeUniqueShortNames(Collection<T> nameObjectCollection,
+                                                            Function<T, String> nameFunction,
+                                                            Function<T, String> uniqueNameFunction)
+   {
+      Map<String, T> uniqueNameToNamedObjectMap = nameObjectCollection.stream().collect(Collectors.toMap(uniqueNameFunction, Function.identity()));
+
+      Map<String, List<String>> shortNameToUniqueNamesMap = new HashMap<>();
+      Map<T, String> result = new HashMap<>();
+
+      for (Entry<String, T> entry : uniqueNameToNamedObjectMap.entrySet())
+      {
+         String uniqueName = entry.getKey();
+         T namedObject = entry.getValue();
+         String name = nameFunction.apply(namedObject);
+         shortNameToUniqueNamesMap.computeIfAbsent(name, k -> new ArrayList<>()).add(uniqueName);
+      }
+
+      for (Entry<String, List<String>> entry : shortNameToUniqueNamesMap.entrySet())
+      {
+         // Now we try to find the shortest unique name
+         List<String> uniqueNames = entry.getValue();
+         String shortName = entry.getKey();
+
+         List<String> uniqueShortNames = new ArrayList<>();
+         // First naive attempt
+         boolean isNaiveApproachSuccessful = true;
+
+         for (String uniqueName : uniqueNames)
+         {
+            int firstSeparatorIndex = uniqueName.indexOf(".");
+            int lastSeparatorIndex = uniqueName.lastIndexOf(".");
+
+            String uniqueShortName;
+            if (firstSeparatorIndex != lastSeparatorIndex)
+               uniqueShortName = uniqueName.substring(0, firstSeparatorIndex) + "..." + uniqueName.substring(lastSeparatorIndex + 1);
+            else
+               uniqueShortName = uniqueName;
+
+            if (uniqueShortNames.contains(uniqueShortName))
+            {
+               // The naive approach fails.
+               isNaiveApproachSuccessful = false;
+               break;
+            }
+            else
+            {
+               uniqueShortNames.add(uniqueShortName);
+            }
+         }
+
+         if (isNaiveApproachSuccessful)
+         {
+            for (int i = 0; i < uniqueNames.size(); i++)
+            {
+               result.put(uniqueNameToNamedObjectMap.get(uniqueNames.get(i)), uniqueShortNames.get(i));
+            }
+         }
+         else
+         {
+            // For now, we'll just fall back to using the unique name
+            for (String uniqueName : uniqueNames)
+            {
+               result.put(uniqueNameToNamedObjectMap.get(uniqueName), uniqueName);
+            }
+         }
+      }
+      return result;
    }
 
    private static class NamedObjectHolder<T>

@@ -7,22 +7,22 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
-
-<GridPane fx:id="mainPane" styleClass="graphic-editor-gridpane" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
-   <columnConstraints>
-      <ColumnConstraints hgrow="NEVER" minWidth="-Infinity" />
-      <ColumnConstraints hgrow="ALWAYS" />
-      <ColumnConstraints hgrow="NEVER" />
-   </columnConstraints>
-   <rowConstraints>
-      <RowConstraints vgrow="SOMETIMES" />
-      <RowConstraints vgrow="SOMETIMES" />
-   </rowConstraints>
-   <children>
-      <Label fx:id="colorLabel" text="Color" />
-      <JFXColorPicker fx:id="colorPicker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.columnSpan="2147483647" />
-      <Label fx:id="opacityLabel" text="Opacity" GridPane.rowIndex="1" />
-      <JFXSlider fx:id="opacitySlider" majorTickUnit="10.0" minorTickCount="9" value="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-      <JFXTextField fx:id="opacityTextField" prefWidth="30.0" text="100" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-   </children>
+<GridPane fx:id="mainPane" styleClass="graphic-editor-gridpane" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1"
+          xmlns:fx="http://javafx.com/fxml/1">
+    <columnConstraints>
+        <ColumnConstraints hgrow="NEVER" minWidth="-Infinity"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+        <ColumnConstraints hgrow="NEVER"/>
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints vgrow="SOMETIMES"/>
+        <RowConstraints vgrow="SOMETIMES"/>
+    </rowConstraints>
+    <children>
+        <Label fx:id="colorLabel" text="Color"/>
+        <JFXColorPicker fx:id="colorPicker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.columnSpan="2147483647"/>
+        <Label fx:id="opacityLabel" text="Opacity" GridPane.rowIndex="1"/>
+        <JFXSlider fx:id="opacitySlider" majorTickUnit="10.0" minorTickCount="9" value="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <JFXTextField fx:id="opacityTextField" prefWidth="30.0" text="100" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+    </children>
 </GridPane>

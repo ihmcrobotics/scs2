@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+
 <?import com.jfoenix.controls.JFXTextField?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
-
-
 <HBox fx:id="mainPane" alignment="CENTER_LEFT" spacing="5.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <Label fx:id="searchRGBALabel" text="RGBA" HBox.hgrow="NEVER" />
-      <JFXTextField fx:id="searchRGBATextField" />
-      <ImageView fx:id="rgbaValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
-         <image>
-            <Image url="@../../../icons/invalid-icon.png" />
-         </image>
-      </ImageView>
-   </children>
+    <children>
+        <Label fx:id="searchRGBALabel" text="RGBA" HBox.hgrow="NEVER"/>
+        <JFXTextField fx:id="searchRGBATextField"/>
+        <ImageView fx:id="rgbaValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
+            <image>
+                <Image url="@../../icons/invalid-icon.png"/>
+            </image>
+        </ImageView>
+    </children>
 </HBox>

@@ -46,176 +46,228 @@
 .snapshot-icon-view {
     -fx-fill: black;
     -glyph-name: CAMERA;
+    -fx-icon-code: "fa-camera";
 }
 
 .video-icon-view {
     -fx-fill: black;
     -glyph-name: VIDEO_CAMERA;
+    -fx-icon-code: "fa-video-camera";
 }
 
 .run-icon-view {
     -glyph-name: GEARS;
+    -fx-icon-code: "fa-gears";
 }
 
 .playback-icon-view {
     -glyph-name: PLAY_CIRCLE;
+    -fx-icon-code: "fa-play-circle";
 }
 
 .pause-icon-view {
     -glyph-name: PAUSE_CIRCLE;
+    -fx-icon-code: "fa-pause-circle";
 }
 
 .set-inpoint-icon-view {
     -fx-fill: -default-pale-green;
     -glyph-name: STEP_BACKWARD;
+    -fx-icon-code: "fa-step-backward";
 }
 
 .set-outpoint-icon-view {
     -fx-fill: -default-pale-red;
     -glyph-name: STEP_FORWARD;
+    -fx-icon-code: "fa-step-forward";
 }
 
 .goto-inpoint-icon-view {
     -fx-fill: black;
     -glyph-name: ANGLE_DOUBLE_LEFT;
+    -fx-icon-code: "fa-angle-double-left";
 }
 
 .goto-outpoint-icon-view {
     -fx-fill: black;
     -glyph-name: ANGLE_DOUBLE_RIGHT;
+    -fx-icon-code: "fa-angle-double-right";
 }
 
 .step-backward-icon-view {
     -fx-fill: black;
     -glyph-name: ANGLE_LEFT;
+    -fx-icon-code: "fa-angle-left";
 }
 
 .step-forward-icon-view {
     -fx-fill: black;
     -glyph-name: ANGLE_RIGHT;
+    -fx-icon-code: "fa-angle-right";
 }
 
 .previous-keyframe-icon-view {
     -glyph-name: ARROW_CIRCLE_ALT_LEFT;
+    -fx-icon-code: "fa-arrow-circle-o-left";
 }
 
 .next-keyframe-icon-view {
     -glyph-name: ARROW_CIRCLE_ALT_RIGHT;
+    -fx-icon-code: "fa-arrow-circle-o-right";
 }
 
 .set-keyframe-icon-view {
     -glyph-name: KEY;
+    -fx-icon-code: "fa-key";
 }
 
 .zoom-in-icon-view {
     -glyph-name: SEARCH_PLUS;
+    -fx-icon-code: "fa-search-plus";
 }
 
 .zoom-out-icon-view {
     -glyph-name: SEARCH_MINUS;
+    -fx-icon-code: "fa-search-minus";
 }
 
 .show-simple-controls-icon-view {
     -glyph-name: MINUS_CIRCLE;
+    -fx-icon-code: "fa-minus-circle";
 }
 
 .show-advanced-controls-icon-view {
     -glyph-name: PLUS_CIRCLE;
+    -fx-icon-code: "fa-plus-circle";
 }
 
 .crop-data-buffer-icon-view {
     -fx-fill: black;
     -glyph-name: CROP;
+    -fx-icon-code: "fa-crop";
 }
 
 .flush-data-buffer-icon-view {
     -fx-fill: black;
     -glyph-name: ERASER;
+    -fx-icon-code: "fa-eraser";
 }
 
 .resize-data-buffer-icon-view {
     -fx-fill: black;
     -glyph-name: TACHOMETER;
+    -fx-icon-code: "fa-tachometer";
 }
 
 .buffer-record-tick-period-icon-view {
     -fx-fill: black;
     -glyph-name: FILTER;
+    -fx-icon-code: "fa-filter";
 }
 
 .double-precision-icon-view {
     -fx-fill: black;
     -glyph-name: NUMERIC;
+    -fx-icon-code: "fa-numeric";
 }
 
 .close-icon-view {
     -fx-fill: -default-pale-red;
     -glyph-name: SIGN_IN;
+    -fx-icon-code: "fa-sign-in";
 }
 
 .playback-realtime-rate-icon-view {
     -fx-fill: black;
     -glyph-name: TACHOMETER;
+    -fx-icon-code: "fa-tachometer";
+}
+
+.run-max-duration-icon-view {
+    -fx-fill: black;
+    -fx-icon-code: "fa-flag";
 }
 
 .start-remote-session-icon-view {
     -fx-fill: black;
     -glyph-name: WIFI;
+    -fx-icon-code: "fa-wifi";
 }
 
 .start-log-session-icon-view {
     -fx-fill: black;
     -glyph-name: SERVER;
+    -fx-icon-code: "fa-server";
 }
 
 .new-chart-window-icon-view {
     -fx-fill: black;
     -glyph-name: SHARE_SQUARE_ALT;
+    -fx-icon-code: "fa-share-square-o";
+}
+
+.show-icon-view {
+    -fx-fill: black;
+    -fx-icon-code: "fa-eye";
+}
+
+.hide-icon-view {
+    -fx-fill: black;
+    -fx-icon-code: "fa-eye-slash";
 }
 
 .refresh-composite-icon-view {
     -fx-fill: -default-pale-pink;
     -glyph-name: REFRESH;
+    -fx-icon-code: "fa-refresh";
 }
 
 .create-icon-view {
     -fx-fill: -default-pale-blue;
     -glyph-name: ALPHA;
+    -fx-icon-code: "fa-alpha";
 }
 
 .load-icon-view {
     -fx-fill: -default-pale-blue;
     -glyph-name: FOLDER_OPEN_ALT;
+    -fx-icon-code: "fa-folder-open-o";
 }
 
 .load-default-icon-view {
     -fx-fill: -default-pale-cyan;
     -glyph-name: FOLDER_OPEN_ALT;
+    -fx-icon-code: "fa-folder-open-o";
 }
 
 .save-icon-view {
     -fx-fill: -default-pale-blue;
     -glyph-name: FLOPPY_ALT;
+    -fx-icon-code: "fa-floppy-o";
 }
 
 .save-default-icon-view {
     -fx-fill: -default-pale-cyan;
     -glyph-name: FLOPPY_ALT;
+    -fx-icon-code: "fa-floppy-o";
 }
 
 .properties-icon-view {
     -fx-fill: black;
     -glyph-name: EDIT;
+    -fx-icon-code: "fa-edit";
 }
 
 .export-data-icon-view {
     -fx-fill: -default-pale-blue;
     -glyph-name: UPLOAD;
+    -fx-icon-code: "fa-upload";
 }
 
 .import-data-icon-view {
     -fx-fill: -default-pale-blue;
     -glyph-name: DOWNLOAD;
+    -fx-icon-code: "fa-download";
 }
 
 /*******************************************************************************
@@ -239,6 +291,8 @@
     -fx-fill: -default-pale-dark-blue;
     -glyph-name: CARET_SQUARE_ALT_DOWN;
     -glyph-size: -default-small-icon-size;
+    -fx-icon-code: "fa-caret-square-o-down";
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .chart {
@@ -363,12 +417,16 @@
     -fx-fill: -default-pale-red;
     -glyph-name: TIMES_CIRCLE_ALT;
     -glyph-size: -default-small-icon-size;
+    -fx-icon-code: "fa-times-circle-o";
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .chart-move-icon-view {
     -fx-fill: -default-pale-cyan;
     -glyph-name: ARROWS;
     -glyph-size: -default-small-icon-size;
+    -fx-icon-code: "fa-arrows";
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .chart-option-button {
@@ -379,6 +437,8 @@
     -fx-fill: -default-pale-purple;
     -glyph-name: BAR_CHART;
     -glyph-size: -default-small-icon-size;
+    -fx-icon-code: "fa-bar-chart";
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .chart-table-view-clear-button {
@@ -433,6 +493,7 @@
 
 .advanced-controls-icon-view {
     -glyph-size: -default-medium-icon-size;
+    -fx-icon-size: -default-medium-icon-size;
 }
 
 .buffer-index-slider {
@@ -448,6 +509,7 @@
 .simple-controls-icon-view {
     -fx-opacity: 0.8;
     -glyph-size: 30.0;
+    -fx-icon-size: 30.0;
 }
 
 .session-controls-active-mode {
@@ -466,6 +528,7 @@
 
 .menu-item-icon-view {
     -glyph-size: -default-small-icon-size;
+    -fx-icon-size: -default-small-icon-size;
 }
 
 /*******************************************************************************
@@ -503,6 +566,7 @@
 
 .remote-session-icon-view {
     -glyph-size: -default-small-icon-size;
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .infomation-grid-pane {
@@ -545,16 +609,19 @@
 
 .composite-editor-icon-view {
     -glyph-size: -default-small-icon-size;
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .add-icon-view {
     -fx-fill: -default-pale-green;
     -glyph-name: PLUS;
+    -fx-icon-code: "fa-plus";
 }
 
 .remove-icon-view {
     -fx-fill: -default-pale-red;
     -glyph-name: MINUS;
+    -fx-icon-code: "fa-minus";
 }
 
 .save-changes-button {
@@ -570,11 +637,13 @@
 .help-icon-view {
     -fx-fill: -default-pale-cyan;
     -glyph-name: QUESTION;
+    -fx-icon-code: "fa-question";
 }
 
 .alias-cleanup-icon-view {
     -fx-fill: rgb(138, 62, 189);
     -glyph-name: BROOM;
+    -fx-icon-code: "fa-broom";
 }
 
 /*******************************************************************************
@@ -589,6 +658,7 @@
 
 .graphic-editor-icon-view {
     -glyph-size: -default-small-icon-size;
+    -fx-icon-size: -default-small-icon-size;
 }
 
 .graphic-editor-gridpane {

@@ -1,25 +1,59 @@
 package us.ihmc.scs2.definition;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.*;
 import us.ihmc.scs2.definition.robot.*;
-import us.ihmc.scs2.definition.state.*;
+import us.ihmc.scs2.definition.state.JointState;
+import us.ihmc.scs2.definition.state.OneDoFJointState;
+import us.ihmc.scs2.definition.state.PlanarJointState;
+import us.ihmc.scs2.definition.state.SixDoFJointState;
+import us.ihmc.scs2.definition.state.SphericalJointState;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
-import us.ihmc.scs2.definition.visual.*;
-import us.ihmc.scs2.definition.yoComposite.*;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.MaterialDefinition;
+import us.ihmc.scs2.definition.visual.MaterialScriptDefinition;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
+import us.ihmc.scs2.definition.visual.TextureDefinition;
+import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoColorRGBASingleDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoCompositeDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoQuaternionDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
 import us.ihmc.scs2.definition.yoGraphic.*;
-import us.ihmc.scs2.definition.yoVariable.*;
+import us.ihmc.scs2.definition.yoVariable.YoBooleanDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoDoubleDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEnumDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition.EquationAliasDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoIntegerDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoLongDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoRegistryDefinition;
+import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,10 +65,14 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/**
+ * Tools to load and save definitions.
+ */
 public class DefinitionIOTools
 {
    private static final JAXBContext definitionContext;
 
+   // Load all the resources in the classpath to ensure they are available for the JAXB context.
    static
    {
       try
@@ -117,27 +155,31 @@ public class DefinitionIOTools
          classesToBeBound.add(VisualDefinition.class);
 
          // YoGraphicDefinition
-         classesToBeBound.add(YoGraphicListDefinition.class);
-         classesToBeBound.add(YoGraphicDefinition.class);
-         classesToBeBound.add(YoGraphicGroupDefinition.class);
          classesToBeBound.add(YoGraphic2DDefinition.class);
-         classesToBeBound.add(YoGraphicLine2DDefinition.class);
-         classesToBeBound.add(YoGraphicPoint2DDefinition.class);
-         classesToBeBound.add(YoGraphicPointcloud2DDefinition.class);
-         classesToBeBound.add(YoGraphicPolygon2DDefinition.class);
          classesToBeBound.add(YoGraphic3DDefinition.class);
          classesToBeBound.add(YoGraphicArrow3DDefinition.class);
          classesToBeBound.add(YoGraphicBox3DDefinition.class);
-         classesToBeBound.add(YoGraphicSTPBox3DDefinition.class);
          classesToBeBound.add(YoGraphicCapsule3DDefinition.class);
          classesToBeBound.add(YoGraphicCone3DDefinition.class);
+         classesToBeBound.add(YoGraphicConvexPolytope3DDefinition.class);
          classesToBeBound.add(YoGraphicCoordinateSystem3DDefinition.class);
          classesToBeBound.add(YoGraphicCylinder3DDefinition.class);
+         classesToBeBound.add(YoGraphicDefinition.class);
          classesToBeBound.add(YoGraphicEllipsoid3DDefinition.class);
+         classesToBeBound.add(YoGraphicGroupDefinition.class);
+         classesToBeBound.add(YoGraphicLine2DDefinition.class);
+         classesToBeBound.add(YoGraphicListDefinition.class);
+         classesToBeBound.add(YoGraphicPoint2DDefinition.class);
          classesToBeBound.add(YoGraphicPoint3DDefinition.class);
+         classesToBeBound.add(YoGraphicPointcloud2DDefinition.class);
          classesToBeBound.add(YoGraphicPointcloud3DDefinition.class);
+         classesToBeBound.add(YoGraphicPolygon2DDefinition.class);
          classesToBeBound.add(YoGraphicPolygonExtruded3DDefinition.class);
          classesToBeBound.add(YoGraphicPolynomial3DDefinition.class);
+         classesToBeBound.add(YoGraphicRamp3DDefinition.class);
+         classesToBeBound.add(YoGraphicSTPBox3DDefinition.class);
+         classesToBeBound.add(YoGraphicRobotDefinition.class);
+         classesToBeBound.add(YoListDefinition.class);
 
          // YoCompositeDefinition
          classesToBeBound.add(YoCompositeDefinition.class);
@@ -176,6 +218,62 @@ public class DefinitionIOTools
       // Only need to load this class to get the resources loaded.
    }
 
+   /**
+    * Loads a {@link YoGraphicListDefinition} from the given file.
+    * This loader also figures out the resources when any.
+    *
+    * @param file the file to load the definition from.
+    * @return the loaded definition.
+    */
+   public static YoGraphicListDefinition loadYoGraphicListDefinition(File file) throws JAXBException, IOException
+   {
+      YoGraphicListDefinition yoGraphicListDefinition = loadYoGraphicListDefinition(new FileInputStream(file));
+      setResourcesClassLoaderRecursive(file, yoGraphicListDefinition);
+      return yoGraphicListDefinition;
+   }
+
+   /**
+    * Sets the {@link RobotDefinition#setResourceClassLoader(ClassLoader)} for all the {@link RobotDefinition} in the given {@link YoGraphicDefinition}.
+    *
+    * @param file                the file from which the {@link YoGraphicDefinition} was loaded.
+    * @param yoGraphicDefinition the definition to process.
+    */
+   private static void setResourcesClassLoaderRecursive(File file, YoGraphicDefinition yoGraphicDefinition) throws MalformedURLException
+   {
+      if (yoGraphicDefinition instanceof YoGraphicRobotDefinition yoGraphicRobotDefinition)
+      {
+         RobotDefinition robotDefinition = yoGraphicRobotDefinition.getRobotDefinition();
+         robotDefinition.setResourceClassLoader(new URLClassLoader(new URL[] {file.getParentFile().toURI().toURL()}));
+      }
+      else if (yoGraphicDefinition instanceof YoGraphicGroupDefinition yoGraphicGroupDefinition)
+      {
+         if (yoGraphicGroupDefinition.getChildren() != null)
+         {
+            for (YoGraphicDefinition child : yoGraphicGroupDefinition.getChildren())
+            {
+               setResourcesClassLoaderRecursive(file, child);
+            }
+         }
+      }
+      else if (yoGraphicDefinition instanceof YoGraphicListDefinition yoGraphicListDefinition)
+      {
+         if (yoGraphicListDefinition.getYoGraphics() != null)
+         {
+            for (YoGraphicDefinition child : yoGraphicListDefinition.getYoGraphics())
+            {
+               setResourcesClassLoaderRecursive(file, child);
+            }
+         }
+      }
+   }
+
+   /**
+    * Loads a {@link YoGraphicListDefinition} from the given input stream.
+    * This loader cannot figure out resources.
+    *
+    * @param inputStream the input stream to load the definition from.
+    * @return the loaded definition.
+    */
    public static YoGraphicListDefinition loadYoGraphicListDefinition(InputStream inputStream) throws JAXBException, IOException
    {
       try (inputStream)
@@ -185,6 +283,29 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Saves the given {@link YoGraphicListDefinition} to the given file.
+    * This method also saves the resources when any.
+    *
+    * @param definitionFile     the file to save the definition to.
+    * @param definition         the definition to save.
+    * @param resourcesDirectory the directory to save the resources to.
+    */
+   public static void saveYoGraphicListDefinitionAndResources(File definitionFile, YoGraphicListDefinition definition, File resourcesDirectory)
+         throws JAXBException, IOException, URISyntaxException
+   {
+      YoGraphicListDefinition copy = definition.copy();
+      processYoGraphicResources(definitionFile, copy, resourcesDirectory);
+      saveYoGraphicListDefinition(new FileOutputStream(definitionFile), copy);
+   }
+
+   /**
+    * Saves the given {@link YoGraphicListDefinition} to the given output stream.
+    * This method cannot save the resources.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definition   the definition to save.
+    */
    public static void saveYoGraphicListDefinition(OutputStream outputStream, YoGraphicListDefinition definition) throws JAXBException, IOException
    {
       try (outputStream)
@@ -195,6 +316,50 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Processes and saves the resources of the given {@link YoGraphicDefinition} and copies them to the given {@code resourcesDirectory}.
+    *
+    * @param yoGraphicFile      the file from which the {@link YoGraphicDefinition} is being saved to.
+    * @param start              the definition to process.
+    * @param resourcesDirectory the directory to save the resources to.
+    */
+   private static void processYoGraphicResources(File yoGraphicFile, YoGraphicDefinition start, File resourcesDirectory) throws IOException, URISyntaxException
+   {
+      if (start instanceof YoGraphicRobotDefinition yoGraphicRobotDefinition)
+      {
+         RobotDefinition robotDefinition = yoGraphicRobotDefinition.getRobotDefinition();
+         if (robotDefinition != null)
+            processResources(yoGraphicFile, robotDefinition, resourcesDirectory, robotDefinition.getResourceClassLoader());
+      }
+      else if (start instanceof YoGraphicGroupDefinition yoGraphicGroupDefinition)
+      {
+         if (yoGraphicGroupDefinition.getChildren() != null)
+         {
+            for (YoGraphicDefinition child : yoGraphicGroupDefinition.getChildren())
+            {
+               processYoGraphicResources(yoGraphicFile, child, resourcesDirectory);
+            }
+         }
+      }
+      else if (start instanceof YoGraphicListDefinition yoGraphicListDefinition)
+      {
+         if (yoGraphicListDefinition.getYoGraphics() != null)
+         {
+            for (YoGraphicDefinition child : yoGraphicListDefinition.getYoGraphics())
+            {
+               processYoGraphicResources(yoGraphicFile, child, resourcesDirectory);
+            }
+         }
+      }
+   }
+
+   /**
+    * Loads a {@link RobotDefinition} from the given input stream.
+    * This loader cannot figure out resources.
+    *
+    * @param inputStream the input stream to load the definition from.
+    * @return the loaded definition.
+    */
    public static RobotDefinition loadRobotDefinition(InputStream inputStream) throws JAXBException, IOException
    {
       try (inputStream)
@@ -206,6 +371,33 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Saves the given {@link RobotDefinition} to the given file.
+    * This method also saves the resources when any.
+    *
+    * @param robotDefinitionFile the file to save the definition to.
+    * @param robotDefinition     the definition to save.
+    * @param resourceDirectory   the directory to save the resources to.
+    * @param defaultClassLoader  the class loader to use to load the resources to be copied over.
+    */
+   public static void saveRobotDefinitionAndResources(File robotDefinitionFile,
+                                                      RobotDefinition robotDefinition,
+                                                      File resourceDirectory,
+                                                      ClassLoader defaultClassLoader) throws IOException, JAXBException, URISyntaxException
+   {
+      ClassLoader classLoader = robotDefinition.getResourceClassLoader() != null ? robotDefinition.getResourceClassLoader() : defaultClassLoader;
+      RobotDefinition copy = new RobotDefinition(robotDefinition);
+      processResources(robotDefinitionFile, robotDefinition, resourceDirectory, classLoader);
+      saveRobotDefinition(new FileOutputStream(robotDefinitionFile), copy);
+   }
+
+   /**
+    * Saves the given {@link RobotDefinition} to the given output stream.
+    * This method cannot save the resources.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definition   the definition to save.
+    */
    public static void saveRobotDefinition(OutputStream outputStream, RobotDefinition definition) throws JAXBException, IOException
    {
       try (outputStream)
@@ -216,6 +408,13 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Loads a {@link TerrainObjectDefinition} from the given input stream.
+    * This loader cannot figure out resources.
+    *
+    * @param inputStream the input stream to load the definition from.
+    * @return the loaded definition.
+    */
    public static TerrainObjectDefinition loadTerrainObjectDefinition(InputStream inputStream) throws JAXBException, IOException
    {
       try (inputStream)
@@ -225,6 +424,34 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Saves the given {@link TerrainObjectDefinition} to the given file.
+    * This method also saves the resources when any.
+    *
+    * @param terrainObjectFile       the file to save the definition to.
+    * @param terrainObjectDefinition the definition to save.
+    * @param resourceDirectory       the directory to save the resources to.
+    * @param defaultClassLoader      the class loader to use to load the resources to be copied over.
+    */
+   public static void saveTerrainObjectDefinitionAndResources(File terrainObjectFile,
+                                                              TerrainObjectDefinition terrainObjectDefinition,
+                                                              File resourceDirectory,
+                                                              ClassLoader defaultClassLoader) throws IOException, JAXBException, URISyntaxException
+   {
+      ClassLoader classLoader =
+            terrainObjectDefinition.getResourceClassLoader() != null ? terrainObjectDefinition.getResourceClassLoader() : defaultClassLoader;
+      TerrainObjectDefinition copy = new TerrainObjectDefinition(terrainObjectDefinition);
+      processResources(terrainObjectFile, terrainObjectDefinition, resourceDirectory, classLoader);
+      saveTerrainObjectDefinition(new FileOutputStream(terrainObjectFile), copy);
+   }
+
+   /**
+    * Saves the given {@link TerrainObjectDefinition} to the given output stream.
+    * This method cannot save the resources.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definition   the definition to save.
+    */
    public static void saveTerrainObjectDefinition(OutputStream outputStream, TerrainObjectDefinition definition) throws JAXBException, IOException
    {
       try (outputStream)
@@ -235,6 +462,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Loads a {@link YoEquationListDefinition} from the given input stream.
+    *
+    * @param inputStream the input stream to load the definition from.
+    * @return the loaded definition.
+    */
    public static RobotStateDefinition loadRobotStateDefinition(InputStream inputStream) throws JAXBException, IOException
    {
       try (inputStream)
@@ -244,6 +477,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Saves the given {@link RobotStateDefinition} to the given output stream.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definition   the definition to save.
+    */
    public static void saveRobotStateDefinition(OutputStream outputStream, RobotStateDefinition definition) throws JAXBException, IOException
    {
       try (outputStream)
@@ -254,6 +493,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Loads a {@link YoEquationListDefinition} from the given input stream.
+    *
+    * @param inputStream the input stream to load the definition from.
+    * @return the loaded definition.
+    */
    public static YoEquationListDefinition loadYoEquationListDefinition(InputStream inputStream) throws JAXBException, IOException
    {
       try (inputStream)
@@ -263,11 +508,23 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Saves the given list of {@link YoEquationDefinition}s to the given output stream.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definitions  the definitions to save.
+    */
    public static void saveYoEquationListDefinition(OutputStream outputStream, List<YoEquationDefinition> definitions) throws JAXBException, IOException
    {
       saveYoEquationListDefinition(outputStream, new YoEquationListDefinition(definitions));
    }
 
+   /**
+    * Saves the given {@link YoEquationListDefinition} to the given output stream.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definition   the definition to save.
+    */
    public static void saveYoEquationListDefinition(OutputStream outputStream, YoEquationListDefinition definition) throws JAXBException, IOException
    {
       try (outputStream)
@@ -278,6 +535,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Loads a {@link SessionInformationDefinition} from the given input stream.
+    *
+    * @param inputStream the input stream to load the definition from.
+    * @return the loaded definition.
+    */
    public static SessionInformationDefinition loadSessionInformationDefinition(InputStream inputStream) throws JAXBException, IOException
    {
       try (inputStream)
@@ -287,6 +550,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Saves the given {@link SessionInformationDefinition} to the given output stream.
+    *
+    * @param outputStream the output stream to save the definition to.
+    * @param definition   the definition to save.
+    */
    public static void saveSessionInformationDefinition(OutputStream outputStream, SessionInformationDefinition definition) throws JAXBException, IOException
    {
       try (outputStream)
@@ -297,48 +566,103 @@ public class DefinitionIOTools
       }
    }
 
-   public static void saveResources(RobotDefinition robotDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
+   /**
+    * Copy the possible resources pointed to by the {@code robotDefinition} to the {@code resourceDirectory}.
+    * The filename of the {@code robotDefinition} is updated to point to the new resource location.
+    *
+    * @param robotFile          where the robot is saved. Used to resolve relative paths.
+    * @param robotDefinition    the definition to process. Modified.
+    * @param resourceDirectory  where to save the resources.
+    * @param defaultClassLoader the class loader to use to load the resources to be copied over.
+    */
+   private static void processResources(File robotFile, RobotDefinition robotDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
          throws IOException, URISyntaxException
    {
-      processResources(robotDefinition.getRootBodyDefinition(), resourceDirectory, defaultClassLoader);
+      processResources(robotFile, robotDefinition.getRootBodyDefinition(), resourceDirectory, defaultClassLoader);
    }
 
-   private static void processResources(RigidBodyDefinition rigidBody, File resourceDirectory, ClassLoader defaultClassLoader)
+   /**
+    * Copy the possible resources pointed to by the {@code rigidBody} to the {@code resourceDirectory}.
+    * The filename of the {@code rigidBody} is updated to point to the new resource location.
+    *
+    * @param baseFile           where the rigid body is saved. Used to resolve relative paths.
+    * @param rigidBody          the definition to process. Modified.
+    * @param resourceDirectory  where to save the resources.
+    * @param defaultClassLoader the class loader to use to load the resources to be copied over.
+    */
+   private static void processResources(File baseFile, RigidBodyDefinition rigidBody, File resourceDirectory, ClassLoader defaultClassLoader)
          throws IOException, URISyntaxException
    {
-      for (VisualDefinition visualDefinition : rigidBody.getVisualDefinitions())
+      if (rigidBody.getVisualDefinitions() != null)
       {
-         processResources(visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
-         processResources(visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         for (VisualDefinition visualDefinition : rigidBody.getVisualDefinitions())
+         {
+            processResources(baseFile, visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+            processResources(baseFile, visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
 
-      for (CollisionShapeDefinition collisionShapeDefinition : rigidBody.getCollisionShapeDefinitions())
+      if (rigidBody.getCollisionShapeDefinitions() != null)
       {
-         processResources(collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         for (CollisionShapeDefinition collisionShapeDefinition : rigidBody.getCollisionShapeDefinitions())
+         {
+            processResources(baseFile, collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
 
-      for (JointDefinition jointDefinition : rigidBody.getChildrenJoints())
+      if (rigidBody.getChildrenJoints() != null)
       {
-         processResources(jointDefinition.getSuccessor(), resourceDirectory, defaultClassLoader);
+         for (JointDefinition jointDefinition : rigidBody.getChildrenJoints())
+         {
+            processResources(baseFile, jointDefinition.getSuccessor(), resourceDirectory, defaultClassLoader);
+         }
       }
    }
 
-   public static void saveResources(TerrainObjectDefinition terrainObjectDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
-         throws IOException, URISyntaxException
+   /**
+    * Copy the possible resources pointed to by the {@code terrainObjectDefinition} to the {@code resourceDirectory}.
+    * The filename of the {@code terrainObjectDefinition} is updated to point to the new resource location.
+    *
+    * @param terrainObjectFile       where the geometry is saved. Used to resolve relative paths.
+    * @param terrainObjectDefinition the definition to process. Modified.
+    * @param resourceDirectory       where to save the resources.
+    * @param defaultClassLoader      the class loader to use to load the resources to be copied over.
+    */
+   private static void processResources(File terrainObjectFile,
+                                        TerrainObjectDefinition terrainObjectDefinition,
+                                        File resourceDirectory,
+                                        ClassLoader defaultClassLoader) throws IOException, URISyntaxException
    {
-      for (VisualDefinition visualDefinition : terrainObjectDefinition.getVisualDefinitions())
+      TerrainObjectDefinition copy = new TerrainObjectDefinition(terrainObjectDefinition);
+
+      if (copy.getVisualDefinitions() != null)
       {
-         processResources(visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
-         processResources(visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         for (VisualDefinition visualDefinition : copy.getVisualDefinitions())
+         {
+            processResources(terrainObjectFile, visualDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+            processResources(terrainObjectFile, visualDefinition.getMaterialDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
 
-      for (CollisionShapeDefinition collisionShapeDefinition : terrainObjectDefinition.getCollisionShapeDefinitions())
+      if (copy.getCollisionShapeDefinitions() != null)
       {
-         processResources(collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         for (CollisionShapeDefinition collisionShapeDefinition : copy.getCollisionShapeDefinitions())
+         {
+            processResources(terrainObjectFile, collisionShapeDefinition.getGeometryDefinition(), resourceDirectory, defaultClassLoader);
+         }
       }
    }
 
-   private static void processResources(GeometryDefinition geometryDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
+   /**
+    * Copy the possible resources pointed to by the {@code geometryDefinition} to the {@code resourceDirectory}.
+    * The filename of the {@code geometryDefinition} is updated to point to the new resource location.
+    *
+    * @param baseFile           where the geometry is saved. Used to resolve relative paths.
+    * @param geometryDefinition the definition to process. Modified.
+    * @param resourceDirectory  where to save the resources.
+    * @param defaultClassLoader the class loader to use to load the resources to be copied over.
+    */
+   private static void processResources(File baseFile, GeometryDefinition geometryDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
          throws IOException, URISyntaxException
    {
       if (geometryDefinition == null)
@@ -350,7 +674,9 @@ public class DefinitionIOTools
             return;
 
          String filename = modelFileGeometryDefinition.getFileName();
-         Path targetPath = resourceDirectory.toPath().resolve(filename);
+         Path targetPath = computeResourceTargetPath(resourceDirectory, filename);
+         Path relativePath = baseFile == null ? targetPath : baseFile.getParentFile().toPath().relativize(targetPath);
+         modelFileGeometryDefinition.setFileName(relativePath.toString().replace("\\", "/"));
 
          if (Files.exists(targetPath))
             return;
@@ -366,18 +692,64 @@ public class DefinitionIOTools
       }
    }
 
-   private static void processResources(MaterialDefinition materialDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
+   /**
+    * Convenience method that resolves the filename in the resource directory while simplifying the path.
+    *
+    * @param resourceDirectory the directory where the resources are saved.
+    * @param filename          the filename to resolve.
+    * @return
+    */
+   private static Path computeResourceTargetPath(File resourceDirectory, String filename)
+   {
+      if (filename == null || filename.isEmpty())
+         return null;
+
+      filename = filename.replace("\\", "/");
+
+      Path targetPath;
+
+      if (filename.contains("/"))
+      {
+         while (filename.substring(0, filename.indexOf("/")).equals(resourceDirectory.getName()))
+         {
+            filename = filename.substring(filename.indexOf("/") + 1);
+         }
+      }
+
+      targetPath = resourceDirectory.toPath().resolve(filename);
+      return targetPath;
+   }
+
+   /**
+    * Copy the possible resources pointed to by the {@code materialDefinition} to the {@code resourceDirectory}.
+    * The filename of the {@code materialDefinition} is updated to point to the new resource location.
+    *
+    * @param baseFile           where the material is saved. Used to resolve relative paths.
+    * @param materialDefinition the definition to process. Modified.
+    * @param resourceDirectory  where to save the resources.
+    * @param defaultClassLoader the class loader to use to load the resources to be copied over.
+    */
+   private static void processResources(File baseFile, MaterialDefinition materialDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
          throws IOException, URISyntaxException
    {
       if (materialDefinition == null)
          return;
-      processResources(materialDefinition.getDiffuseMap(), resourceDirectory, defaultClassLoader);
-      processResources(materialDefinition.getEmissiveMap(), resourceDirectory, defaultClassLoader);
-      processResources(materialDefinition.getNormalMap(), resourceDirectory, defaultClassLoader);
-      processResources(materialDefinition.getSpecularMap(), resourceDirectory, defaultClassLoader);
+      processResources(baseFile, materialDefinition.getDiffuseMap(), resourceDirectory, defaultClassLoader);
+      processResources(baseFile, materialDefinition.getEmissiveMap(), resourceDirectory, defaultClassLoader);
+      processResources(baseFile, materialDefinition.getNormalMap(), resourceDirectory, defaultClassLoader);
+      processResources(baseFile, materialDefinition.getSpecularMap(), resourceDirectory, defaultClassLoader);
    }
 
-   private static void processResources(TextureDefinition textureDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
+   /**
+    * Copy the possible resources pointed to by the {@code textureDefinition} to the {@code resourceDirectory}.
+    * The filename of the {@code textureDefinition} is updated to point to the new resource location.
+    *
+    * @param baseFile           where the texture is saved. Used to resolve relative paths.
+    * @param textureDefinition  the definition to process. Modified.
+    * @param resourceDirectory  where to save the resources.
+    * @param defaultClassLoader the class loader to use to load the resources to be copied over.
+    */
+   private static void processResources(File baseFile, TextureDefinition textureDefinition, File resourceDirectory, ClassLoader defaultClassLoader)
          throws IOException, URISyntaxException
    {
       if (textureDefinition == null)
@@ -388,30 +760,74 @@ public class DefinitionIOTools
 
       URL sourceURL;
 
-      if (textureDefinition.getFilename() != null)
+      String filename = textureDefinition.getFilename();
+
+      if (filename != null)
       {
-         sourceURL = filenameToURL(textureDefinition.getFilename(), defaultClassLoader);
+         sourceURL = filenameToURL(filename, defaultClassLoader);
       }
       else if (textureDefinition.getFileURL() != null)
       {
          sourceURL = textureDefinition.getFileURL();
+         filename = sourceURL.getPath();
       }
       else
       {
          return;
       }
 
-      Path targetPath = resourceDirectory.toPath().resolve(textureDefinition.getFilename());
+      Path targetPath = computeResourceTargetPath(resourceDirectory, filename);
+      Path relativePath = baseFile == null ? targetPath : baseFile.getParentFile().toPath().relativize(targetPath);
+      textureDefinition.setFilename(relativePath.toString().replace("\\", "/"));
 
-      if (Files.exists(targetPath))
-         return;
-
-      Files.createDirectories(targetPath.getParent());
-      copyFileAndSiblings(sourceURL, targetPath, defaultClassLoader);
+      if (!Files.exists(targetPath))
+      {
+         Files.createDirectories(targetPath.getParent());
+         copyFileAndSiblings(sourceURL, targetPath, defaultClassLoader);
+      }
    }
 
+   /**
+    * Resolve the URL of the file pointed to by the {@code geometryDefinition}.
+    *
+    * @param geometryDefinition the definition to process.
+    * @return the URL of the file.
+    */
+   public static URL resolveModelFileURL(ModelFileGeometryDefinition geometryDefinition)
+   {
+      return resolveModelFileURL(geometryDefinition, null);
+   }
+
+   /**
+    * Resolve the URL of the file pointed to by the {@code geometryDefinition}.
+    *
+    * @param geometryDefinition  the definition to process.
+    * @param resourceClassLoader the class loader to use while resolving the URL.
+    * @return the URL of the file.
+    */
+   public static URL resolveModelFileURL(ModelFileGeometryDefinition geometryDefinition, ClassLoader resourceClassLoader)
+   {
+      if (resourceClassLoader == null)
+         resourceClassLoader = geometryDefinition.getResourceClassLoader();
+
+      String filename = geometryDefinition.getFileName();
+      filename = filename.replace("\\", "/");
+
+      return filenameToURL(filename, resourceClassLoader);
+   }
+
+   /**
+    * Convenience method to retrieve the URL of a file.
+    *
+    * @param filename            the name of the file.
+    * @param resourceClassLoader the class loader to use to load the resources.
+    * @return the URL of the file.
+    */
    public static URL filenameToURL(String filename, ClassLoader resourceClassLoader)
    {
+      if (resourceClassLoader == null)
+         resourceClassLoader = DefinitionIOTools.class.getClassLoader();
+
       URL fileURL = resourceClassLoader.getResource(filename);
 
       if (fileURL == null)
@@ -429,6 +845,13 @@ public class DefinitionIOTools
       return fileURL;
    }
 
+   /**
+    * Copy the files in the {@code sourceURL}'s parent folder to the {@code targetPath}.
+    *
+    * @param sourceURL           the URL pointing to the file to copy.
+    * @param targetPath          the path to copy the file to.
+    * @param resourceClassLoader the class loader to use to load the resources to be copied over.
+    */
    private static void copyFileAndSiblings(URL sourceURL, Path targetPath, ClassLoader resourceClassLoader) throws IOException, URISyntaxException
    {
       if (sourceURL.getProtocol().equals("jar"))
@@ -441,8 +864,14 @@ public class DefinitionIOTools
       }
    }
 
-   private static void copyJarFileAndSiblings(URL sourceURL, Path targetPath, ClassLoader resourceClassLoader)
-         throws UnsupportedEncodingException, IOException, URISyntaxException
+   /**
+    * Copy the file tree from the jar file pointed to by the {@code sourceURL} to the {@code targetPath}.
+    *
+    * @param sourceURL           the URL pointing to the jar file.
+    * @param targetPath          the path to copy the file tree to.
+    * @param resourceClassLoader the class loader to use to load the resources to be copied over.
+    */
+   private static void copyJarFileAndSiblings(URL sourceURL, Path targetPath, ClassLoader resourceClassLoader) throws IOException
    {
       Path targetParentPath = targetPath.getParent();
 
@@ -485,6 +914,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Copy the file tree from {@code sourcePath} to {@code targetPath}.
+    *
+    * @param sourcePath the path to copy from.
+    * @param targetPath the path to copy to.
+    */
    private static void copyFileTree(Path sourcePath, Path targetPath) throws IOException
    {
       if (!Files.exists(targetPath))
@@ -511,6 +946,12 @@ public class DefinitionIOTools
       }
    }
 
+   /**
+    * Ensures {@link  JointDefinition#setPredecessor(RigidBodyDefinition)} and {@link RigidBodyDefinition#setParentJoint(JointDefinition)} are properly set for
+    * all the joints and bodies in the kinematic chain starting from the given {@code rootBody}.
+    *
+    * @param currentBody the root of the kinematic chain to process.
+    */
    private static void connectKinematicsRecursive(RigidBodyDefinition currentBody)
    {
       if (currentBody.getChildrenJoints() == null)
@@ -524,5 +965,40 @@ public class DefinitionIOTools
          childJoint.getSuccessor().setParentJoint(childJoint);
          connectKinematicsRecursive(childJoint.getSuccessor());
       }
+   }
+
+   /**
+    * Loads all the vertices from a Wavefront OBJ file.
+    * <p>
+    * This method does not check for the validity of the file.
+    * </p>
+    *
+    * @param objFileURL the URL of the OBJ file to load.
+    * @return the list of vertices.
+    */
+   public static List<Point3D> loadOBJVertices(URL objFileURL)
+   {
+      List<Point3D> vertices = new ArrayList<>();
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(objFileURL.openStream())))
+      {
+         String line;
+         while ((line = reader.readLine()) != null)
+         {
+            if (line.startsWith("v "))
+            {
+               String[] split = line.split(" ");
+               double x = Double.parseDouble(split[1]);
+               double y = Double.parseDouble(split[2]);
+               double z = Double.parseDouble(split[3]);
+               vertices.add(new Point3D(x, y, z));
+            }
+         }
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
+
+      return vertices;
    }
 }

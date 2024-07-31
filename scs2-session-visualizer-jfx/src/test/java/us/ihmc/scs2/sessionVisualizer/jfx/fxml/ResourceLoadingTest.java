@@ -1,7 +1,11 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.fxml;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.image.Image;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.testfx.api.FxToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -17,41 +21,22 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.image.Image;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ResourceLoadingTest
 {
    private static final boolean VERBOSE = true;
+   public static final ClassLoader CLASS_LOADER = SessionVisualizerIOTools.class.getClassLoader();
 
-   @BeforeAll
-   public static void startJavaFXThread()
-   {
-      try
-      {
-         Platform.startup(() ->
-         {
-         });
-      }
-      catch (Exception e)
-      {
-         // The toolkit may have been started already
-      }
-   }
-
-   // Sanity check: verify all the FXML files are loadable 
+   // Sanity check: verify all the FXML files are loadable
+   @Tag("javafx-headless")
    @Test
    public void testFXMLLoading() throws Throwable
    {
-      Throwable t = JavaFXMissingTools.runAndWait(ResourceLoadingTest.class, () ->
+      Callable<Throwable> testToRun = () ->
       {
          try
          {
@@ -61,6 +46,7 @@ public class ResourceLoadingTest
             {
                System.out.println(fxmlResource);
                FXMLLoader loader = new FXMLLoader(fxmlResource);
+               loader.setClassLoader(CLASS_LOADER);
                Object rootPane = assertDoesNotThrow(() -> loader.load());
                assertNotNull(rootPane);
 
@@ -77,7 +63,10 @@ public class ResourceLoadingTest
          {
             return e;
          }
-      });
+      };
+      if (!FxToolkit.isFXApplicationThreadRunning())
+         FxToolkit.registerPrimaryStage();
+      Throwable t = FxToolkit.setupFixture(testToRun);
 
       if (t != null)
       {
@@ -114,17 +103,16 @@ public class ResourceLoadingTest
             continue;
 
          assertDoesNotThrow(() ->
-         {
-            Image imageResource = (Image) field.get(null);
-            assertNotNull(imageResource);
-         }, "Test failed for field: " + field.getName());
+                            {
+                               Image imageResource = (Image) field.get(null);
+                               assertNotNull(imageResource);
+                            }, "Test failed for field: " + field.getName());
       }
    }
 
    private static List<URL> findResources(String folder, Predicate<Path> filter) throws URISyntaxException, IOException
    {
-      ClassLoader loader = Thread.currentThread().getContextClassLoader();
-      URL url = loader.getResource(folder);
+      URL url = CLASS_LOADER.getResource(folder);
       URI uri = url.toURI();
 
       Path myPath;
@@ -138,15 +126,15 @@ public class ResourceLoadingTest
          myPath = Paths.get(uri);
       }
       return Files.walk(myPath, Integer.MAX_VALUE).filter(filter).map(path ->
-      {
-         try
-         {
-            return path.toUri().toURL();
-         }
-         catch (MalformedURLException e)
-         {
-            throw new RuntimeException(e);
-         }
-      }).toList();
+                                                                      {
+                                                                         try
+                                                                         {
+                                                                            return path.toUri().toURL();
+                                                                         }
+                                                                         catch (MalformedURLException e)
+                                                                         {
+                                                                            throw new RuntimeException(e);
+                                                                         }
+                                                                      }).toList();
    }
 }

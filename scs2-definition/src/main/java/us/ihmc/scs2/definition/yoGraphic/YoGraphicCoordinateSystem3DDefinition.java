@@ -1,12 +1,11 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import java.util.Objects;
+import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+import java.util.Objects;
 
 /**
  * A {@code YoGraphicCoordinateSystem3DDefinition} is a template for creating 3D coordinate system
@@ -23,7 +22,7 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
  * See {@link YoGraphicDefinitionFactory} for factory methods simplifying the creation of yoGraphic
  * definitions.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicCoordinateSystem3D")
@@ -51,6 +50,28 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
     */
    public YoGraphicCoordinateSystem3DDefinition()
    {
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicCoordinateSystem3DDefinition(YoGraphicCoordinateSystem3DDefinition other)
+   {
+      super(other);
+      position = other.position == null ? null : other.position.copy();
+      orientation = other.orientation == null ? null : other.orientation.copy();
+      bodyLength = other.bodyLength;
+      headLength = other.headLength;
+      bodyRadius = other.bodyRadius;
+      headRadius = other.headRadius;
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
       registerTuple3DField("position", this::getPosition, this::setPosition);
       registerOrientation3DField("orientation", this::getOrientation, this::setOrientation);
       registerStringField("bodyLength", this::getBodyLength, this::setBodyLength);
@@ -61,7 +82,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the position of the coordinate system.
-    * 
+    *
     * @param position the position of the coordinate system.
     */
    @XmlElement
@@ -72,7 +93,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the orientation of the coordinate system.
-    * 
+    *
     * @param orientation the orientation of the coordinate system.
     */
    @XmlElement
@@ -83,7 +104,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the length of the body part for each arrow to a constant value.
-    * 
+    *
     * @param bodyLength the length of the body part for each arrow.
     */
    public void setBodyLength(double bodyLength)
@@ -94,7 +115,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the length of the body part for each arrow. It can be backed by a {@code YoVariable} by
     * setting it to the variable's name/fullname.
-    * 
+    *
     * @param bodyLength the length of the body part for each arrow.
     */
    @XmlElement
@@ -105,7 +126,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the length of the head part for each arrow to a constant value.
-    * 
+    *
     * @param headLength the length of the head part for each arrow.
     */
    public void setHeadLength(double headLength)
@@ -116,7 +137,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the length of the head part for each arrow. It can be backed by a {@code YoVariable} by
     * setting it to the variable's name/fullname.
-    * 
+    *
     * @param headLength the length of the head part for each arrow.
     */
    @XmlElement
@@ -127,7 +148,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the radius of the body part for each arrow to a constant value.
-    * 
+    *
     * @param bodyRadius the radius of the body part for each arrow.
     */
    public void setBodyRadius(double bodyRadius)
@@ -138,7 +159,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the radius of the body part for each arrow. It can be backed by a {@code YoVariable} by
     * setting it to the variable's name/fullname.
-    * 
+    *
     * @param bodyRadius the radius of the body part for each arrow.
     */
    @XmlElement
@@ -149,7 +170,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
 
    /**
     * Sets the radius of the head part for each arrow to a constant value.
-    * 
+    *
     * @param headRadius the radius of the head part for each arrow.
     */
    public void setHeadRadius(double headRadius)
@@ -160,7 +181,7 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    /**
     * Sets the radius of the head part for each arrow. It can be backed by a {@code YoVariable} by
     * setting it to the variable's name/fullname.
-    * 
+    *
     * @param headRadius the radius of the head part for each arrow.
     */
    @XmlElement
@@ -197,6 +218,12 @@ public class YoGraphicCoordinateSystem3DDefinition extends YoGraphic3DDefinition
    public String getHeadRadius()
    {
       return headRadius;
+   }
+
+   @Override
+   public YoGraphicCoordinateSystem3DDefinition copy()
+   {
+      return new YoGraphicCoordinateSystem3DDefinition(this);
    }
 
    @Override

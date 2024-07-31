@@ -6,6 +6,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -13,10 +14,10 @@ import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import us.ihmc.euclid.axisAngle.AxisAngle;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
@@ -40,6 +41,13 @@ public class YoArrowFX3D extends YoGraphicFX3D
 
    public YoArrowFX3D()
    {
+      drawModeProperty.addListener((o, oldValue, newValue) ->
+                                   {
+                                      if (newValue == null)
+                                         drawModeProperty.setValue(DrawMode.FILL);
+                                      body.setDrawMode(newValue);
+                                      head.setDrawMode(newValue);
+                                   });
       body.setMaterial(material);
       head.setMaterial(material);
       body.idProperty().bind(nameProperty().concat(" (body)"));
@@ -55,7 +63,7 @@ public class YoArrowFX3D extends YoGraphicFX3D
       arrow.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
    }
 
-   public YoArrowFX3D(ReferenceFrame worldFrame)
+   public YoArrowFX3D(ReferenceFrameWrapper worldFrame)
    {
       this();
       origin.setReferenceFrame(worldFrame);

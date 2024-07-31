@@ -1,13 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.function.BooleanSupplier;
-
-import org.apache.commons.lang3.mutable.MutableObject;
-
 import com.sun.javafx.application.PlatformImpl;
-
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -23,6 +16,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Material;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Affine;
@@ -36,12 +30,14 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import org.apache.commons.lang3.mutable.MutableObject;
 import us.ihmc.euclid.axisAngle.interfaces.AxisAngleReadOnly;
 import us.ihmc.euclid.exceptions.SingularMatrixException;
 import us.ihmc.euclid.matrix.interfaces.RotationMatrixReadOnly;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.transform.AffineTransform;
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
@@ -51,6 +47,11 @@ import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
+
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.BooleanSupplier;
 
 public class JavaFXMissingTools
 {
@@ -189,7 +190,19 @@ public class JavaFXMissingTools
 
    public static void runLater(Class<?> caller, Runnable task)
    {
-      Platform.runLater(task::run);
+      if (caller != null && Objects.equals("ResourceLoadingTest", caller.getSimpleName()))
+         System.out.println("ResourceLoadingTest: Platform.runLater() start");
+      try
+      {
+         Platform.runLater(task);
+      }
+      catch (IllegalStateException e)
+      {
+         System.err.println("Exception in Platform.runLater()");
+         e.printStackTrace();
+      }
+      if (caller != null && Objects.equals("ResourceLoadingTest", caller.getSimpleName()))
+         System.out.println("ResourceLoadingTest: Platform.runLater() end");
    }
 
    public static void runLaterIfNeeded(Class<?> caller, Runnable runnable)
@@ -418,9 +431,9 @@ public class JavaFXMissingTools
       };
 
       PlatformImpl.startup(() ->
-      {
-         runLater(application.getClass(), runnable);
-      });
+                           {
+                              runLater(application.getClass(), runnable);
+                           });
       PlatformImpl.setImplicitExit(false);
    }
 
@@ -442,13 +455,13 @@ public class JavaFXMissingTools
          // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
          // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
          dialog.setOnShown(e ->
-         {
-            runLater(JavaFXMissingTools.class, () ->
-            {
-               dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
-               dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
-            });
-         });
+                           {
+                              runLater(JavaFXMissingTools.class, () ->
+                              {
+                                 dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
+                                 dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
+                              });
+                           });
       }
    }
 
@@ -488,20 +501,27 @@ public class JavaFXMissingTools
                           jfxTransform.getTz());
    }
 
-   public static void toJavaFX(RigidBodyTransform euclidTransform, javafx.scene.transform.Affine jfxTransform)
+   public static void toJavaFX(RigidBodyTransformReadOnly euclidTransform, javafx.scene.transform.Affine jfxTransform)
    {
-      jfxTransform.setToTransform(euclidTransform.getM00(),
-                                  euclidTransform.getM01(),
-                                  euclidTransform.getM02(),
-                                  euclidTransform.getM03(),
-                                  euclidTransform.getM10(),
-                                  euclidTransform.getM11(),
-                                  euclidTransform.getM12(),
-                                  euclidTransform.getM13(),
-                                  euclidTransform.getM20(),
-                                  euclidTransform.getM21(),
-                                  euclidTransform.getM22(),
-                                  euclidTransform.getM23());
+      if (euclidTransform instanceof RigidBodyTransform matrixTransform)
+      {
+         jfxTransform.setToTransform(matrixTransform.getM00(),
+                                     matrixTransform.getM01(),
+                                     matrixTransform.getM02(),
+                                     matrixTransform.getM03(),
+                                     matrixTransform.getM10(),
+                                     matrixTransform.getM11(),
+                                     matrixTransform.getM12(),
+                                     matrixTransform.getM13(),
+                                     matrixTransform.getM20(),
+                                     matrixTransform.getM21(),
+                                     matrixTransform.getM22(),
+                                     matrixTransform.getM23());
+      }
+      else
+      {
+         toJavaFX(new RigidBodyTransform(euclidTransform), jfxTransform);
+      }
    }
 
    public static javafx.geometry.Point3D toJavaFX(Tuple3DReadOnly euclidInput)
@@ -609,9 +629,8 @@ public class JavaFXMissingTools
             z_out = z_in;
          }
       }
-      else if (transform instanceof Scale)
+      else if (transform instanceof Scale scale)
       {
-         Scale scale = ((Scale) transform);
          x_out = x_in / scale.getX();
          y_out = y_in / scale.getY();
          z_out = z_in / scale.getZ();
@@ -673,5 +692,13 @@ public class JavaFXMissingTools
          ((Shape3D) start).setDrawMode(drawMode);
       if (start instanceof Group)
          ((Group) start).getChildren().forEach(c -> setDrawModeRecursive(c, drawMode));
+   }
+
+   public static void setMaterialRecursive(Node start, Material material)
+   {
+      if (start instanceof Shape3D)
+         ((Shape3D) start).setMaterial(material);
+      if (start instanceof Group)
+         ((Group) start).getChildren().forEach(c -> setMaterialRecursive(c, material));
    }
 }

@@ -1,38 +1,8 @@
 package us.ihmc.scs2.definition.robot.urdf;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.sax.SAXSource;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
@@ -53,31 +23,26 @@ import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.robot.*;
+import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.robot.CrossFourBarJointDefinition;
+import us.ihmc.scs2.definition.robot.FixedJointDefinition;
+import us.ihmc.scs2.definition.robot.IMUSensorDefinition;
+import us.ihmc.scs2.definition.robot.JointDefinition;
+import us.ihmc.scs2.definition.robot.LidarSensorDefinition;
+import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
+import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.PlanarJointDefinition;
+import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteTwinsJointDefinition;
+import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.SensorDefinition;
+import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.WrenchSensorDefinition;
 import us.ihmc.scs2.definition.robot.sdf.SDFTools;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFAxis;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFBox;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFCollision;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFColor;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFCylinder;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFDynamics;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFFilenameHolder;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFGazebo;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFGeometry;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFInertia;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFInertial;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFItem;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint;
+import us.ihmc.scs2.definition.robot.urdf.items.*;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFJoint.URDFJointType;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFLimit;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFLink;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFLinkReference;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFMass;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFMaterial;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFMesh;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFOrigin;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFClip;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFCamera.URDFSensorImage;
@@ -93,14 +58,39 @@ import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFHorizontalScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFRay.URDFScan.URDFVerticalScan;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFSensor.URDFSensorType;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFSphere;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFTexture;
-import us.ihmc.scs2.definition.robot.urdf.items.URDFVisual;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * This class gathers tools for parsing a URDF file and for converting a parsed {@code URDFModel}
@@ -176,7 +166,7 @@ public class URDFTools
       try
       {
          // Internally, the unmarshaller does "new BufferedInputStream(new FileInputStream(urdfFile)" (see AbstractUnmarshallerImpl), no need to have 2 distinct implementations.
-         return loadURDFModel(new BufferedInputStream(new FileInputStream(urdfFile)), resourceDirectories, null, parserProperties);
+         return loadURDFModel(Collections.singletonList(new BufferedInputStream(new FileInputStream(urdfFile))), resourceDirectories, null, parserProperties);
       }
       catch (FileNotFoundException e)
       {
@@ -204,9 +194,7 @@ public class URDFTools
    }
 
    /**
-    * Parse a {@link URDFModel} from the given input stream.
-    *
-    * @param inputStream         the stream to be loaded.
+    * @param inputStream         the input streams to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
     * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
@@ -222,59 +210,472 @@ public class URDFTools
    public static URDFModel loadURDFModel(InputStream inputStream,
                                          Collection<String> resourceDirectories,
                                          ClassLoader resourceClassLoader,
+                                         URDFParserProperties parserProperties) throws JAXBException
+   {
+      return loadURDFModel(Collections.singletonList(inputStream), resourceDirectories, resourceClassLoader, parserProperties);
+   }
+
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    *
+    * @param inputStreams        the input streams to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @return the model.
+    */
+   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams, Collection<String> resourceDirectories, ClassLoader resourceClassLoader)
+         throws JAXBException
+   {
+      return loadURDFModel(inputStreams, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
+   }
+
+   /**
+    * Parse a {@link URDFModel} from the given input stream.
+    *
+    * @param inputStreams        the input streams to be loaded.
+    * @param resourceDirectories paths to resource directories. This allows to search for resources
+    *                            that are defined outside the {@code inputStream}.
+    * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
+    *                            are located in the class path, e.g. in the <tt>resources</tt> folder,
+    *                            simply use {@code CallerClass.getClassLoader()}. If the resources are
+    *                            located outside the scope of the class path, see
+    *                            {@link URLClassLoader} that allows to point to a directory among other
+    *                            options.
+    * @param parserProperties    provides additional properties related to how the parsing show be
+    *                            done.
+    * @return the model.
+    */
+   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams,
+                                         Collection<String> resourceDirectories,
+                                         ClassLoader resourceClassLoader,
                                          URDFParserProperties parserProperties)
          throws JAXBException
    {
+      Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
+      JAXBContext context = JAXBContext.newInstance(URDFModel.class);
+      Unmarshaller um = context.createUnmarshaller();
+
+      URDFModel combinedURDFModel = new URDFModel();
+
       try
       {
-         Set<String> allResourceDirectories = new HashSet<>(resourceDirectories);
-         URDFModel urdfModel;
-         JAXBContext context = JAXBContext.newInstance(URDFModel.class);
-         Unmarshaller um = context.createUnmarshaller();
-
-         if (!parserProperties.ignoreNamespace)
+         for (InputStream inputStream : inputStreams)
          {
-            urdfModel = (URDFModel) um.unmarshal(inputStream);
-         }
-         else
-         {
-            InputSource is = new InputSource(inputStream);
-            SAXParserFactory sax = SAXParserFactory.newInstance();
-            sax.setNamespaceAware(false);
-            XMLReader reader;
-
-            try
+            URDFModel urdfModel;
+            if (!parserProperties.ignoreNamespace)
             {
-               reader = sax.newSAXParser().getXMLReader();
+               urdfModel = (URDFModel) um.unmarshal(inputStream);
             }
-            catch (SAXException | ParserConfigurationException e)
+            else
             {
-               throw new JAXBException(e);
+               InputSource is = new InputSource(inputStream);
+               SAXParserFactory sax = SAXParserFactory.newInstance();
+               sax.setNamespaceAware(false);
+
+               XMLReader reader;
+               try
+               {
+                  reader = sax.newSAXParser().getXMLReader();
+               }
+               catch (ParserConfigurationException | SAXException e)
+               {
+                  throw new JAXBException(e);
+               }
+
+               SAXSource source = new SAXSource(reader, is);
+               urdfModel = (URDFModel) um.unmarshal(source);
             }
 
-            SAXSource source = new SAXSource(reader, is);
-            urdfModel = (URDFModel) um.unmarshal(source);
+            if (parserProperties.resolveResourcePaths)
+               resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
+
+            if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
+            {
+               urdfModel.getLinks().removeIf(link -> parserProperties.linksToIgnore.contains(link.getName()));
+            }
+
+            if (!parserProperties.jointsToIgnore.isEmpty() && urdfModel.getJoints() != null)
+            {
+               urdfModel.getJoints().removeIf(joint -> parserProperties.jointsToIgnore.contains(joint.getName()));
+            }
+
+            if (!parserProperties.parseSensors && urdfModel.getGazebos() != null)
+            {
+               urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
+            }
+
+            if (parserProperties.handleImplicitJointDefinitions)
+               handleImplicitJointDefinitions(urdfModel);
+
+            // Merge the current URDFModel with the combined URDFModel
+            combinedURDFModel = mergeURDFModels(combinedURDFModel, urdfModel);
          }
-         resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
-
-         if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
-            urdfModel.getLinks().removeIf(urdfLink -> parserProperties.linksToIgnore.contains(urdfLink.getName()));
-         if (!parserProperties.jointsToIgnore.isEmpty() && urdfModel.getJoints() != null)
-            urdfModel.getJoints().removeIf(urdfJoint -> parserProperties.jointsToIgnore.contains(urdfJoint.getName()));
-         if (!parserProperties.parseSensors)
-            urdfModel.getGazebos().removeIf(gazebo -> gazebo.getSensor() != null);
-
-         return urdfModel;
       }
       finally
       {
-         try
+         for (InputStream inputStream : inputStreams)
          {
-            inputStream.close();
+            try
+            {
+               inputStream.close();
+            }
+            catch (IOException e)
+            {
+               LogTools.error(e.getMessage());
+            }
          }
-         catch (IOException e)
+      }
+
+      return combinedURDFModel;
+   }
+
+   /**
+    * Determine the parent model and child model, return a merged model that contains the parent model and all parts of the child model
+    * that aren't contained within the parent model. The name is taken from the parent model
+    *
+    * @param model1 URDF model with joint and links to be checked
+    * @param model2 URDF model with joints and links to be checked
+    * @return the merged model that contains all the joints, links, gazebos, and correct name from the models
+    */
+   private static URDFModel mergeURDFModels(URDFModel model1, URDFModel model2)
+   {
+      // Check the edge cases where a model might not have anything
+      if (model1.getLinks() == null && model1.getJoints() == null)
+      {
+         return model2;
+      }
+      else if (model2.getLinks() == null && model2.getJoints() == null)
+      {
+         return model1;
+      }
+
+      // Get all names of links in model1
+      List<String> model1LinkNames = new ArrayList<>();
+      List<String> model2LinkNames = new ArrayList<>();
+
+      if (model1.getLinks() != null)
+      {
+         for (URDFLink link : model1.getLinks())
          {
-            LogTools.error(e.getMessage());
+            model1LinkNames.add(link.getName());
+         }
+      }
+
+      if (model2.getLinks() != null)
+      {
+         for (URDFLink link : model2.getLinks())
+         {
+            model2LinkNames.add(link.getName());
+         }
+      }
+
+      URDFModel parentModel = null;
+      URDFModel childModel = null;
+
+      if (model2.getJoints() != null)
+      {
+         for (URDFJoint joint : model2.getJoints())
+         {
+            // Check if the model1 has any links that are referenced in model2
+            if (model1LinkNames.contains(joint.getParent().getLink()))
+            {
+               parentModel = model1;
+               childModel = model2;
+               break;
+            }
+            else if (model1LinkNames.contains(joint.getChild().getLink()))
+            {
+               parentModel = model2;
+               childModel = model1;
+               break;
+            }
+         }
+      }
+
+      if (parentModel == null && model1.getJoints() != null)
+      {
+         for (URDFJoint joint : model1.getJoints())
+         {
+            // Check if the model2 has any links that are referenced in model1
+            if (model2LinkNames.contains(joint.getParent().getLink()))
+            {
+               parentModel = model2;
+               childModel = model1;
+               break;
+            }
+            else if (model2LinkNames.contains(joint.getChild().getLink()))
+            {
+               parentModel = model1;
+               childModel = model2;
+               break;
+            }
+         }
+      }
+
+      // Create a new URDFModel to hold the merged components
+      URDFModel mergedModel = new URDFModel();
+      List<String> mergedLinkNames = new ArrayList<>();
+      List<String> mergedJointNames = new ArrayList<>();
+      List<String> mergedGazeboNames = new ArrayList<>();
+
+      mergedModel.setName(parentModel.getName());
+
+      // Start with the parent links, we ignore duplicate links from the child model
+      List<URDFLink> mergedLinks = new ArrayList<>();
+      if (parentModel.getLinks() != null)
+      {
+         mergedLinks.addAll(parentModel.getLinks());
+         for (URDFLink link : parentModel.getLinks())
+         {
+            mergedLinkNames.add(link.getName());
+         }
+      }
+      if (childModel.getLinks() != null)
+      {
+         for (URDFLink link : childModel.getLinks())
+         {
+            if (!mergedLinkNames.contains(link.getName()))
+            {
+               mergedLinks.add(link);
+               mergedLinkNames.add(link.getName());
+            }
+            else
+            {
+               LogTools.warn("Link ({}) has already been added to urdf, skipping link", link.getName());
+            }
+         }
+      }
+      mergedModel.setLinks(mergedLinks);
+
+      // Start with the parent joints, we ignore duplicate joints from the child model
+      List<URDFJoint> mergedJoints = new ArrayList<>();
+      if (parentModel.getJoints() != null)
+      {
+         mergedJoints.addAll(parentModel.getJoints());
+         for (URDFJoint joint : parentModel.getJoints())
+         {
+            mergedJointNames.add(joint.getName());
+         }
+      }
+      if (childModel.getJoints() != null)
+      {
+         for (URDFJoint joint : childModel.getJoints())
+         {
+            if (!mergedJointNames.contains(joint.getName()))
+            {
+               mergedJoints.add(joint);
+               mergedJointNames.add(joint.getName());
+            }
+            else
+            {
+               LogTools.warn("Joint ({}) has already been added to urdf, skipping joint", joint.getName());
+            }
+         }
+      }
+      mergedModel.setJoints(mergedJoints);
+
+      // Start with the parent gazebos, we ignore duplicate gazebos from the child model
+      List<URDFGazebo> mergedGazebos = new ArrayList<>();
+      if (parentModel.getGazebos() != null)
+      {
+         mergedGazebos.addAll(parentModel.getGazebos());
+         for (URDFGazebo gazebo : parentModel.getGazebos())
+         {
+            mergedGazeboNames.add(gazebo.getReference());
+         }
+      }
+      if (childModel.getGazebos() != null)
+      {
+         for (URDFGazebo gazebo : childModel.getGazebos())
+         {
+            if (!mergedGazeboNames.contains(gazebo.getReference()))
+            {
+               mergedGazebos.add(gazebo);
+               mergedGazeboNames.add(gazebo.getReference());
+            }
+            else
+            {
+               LogTools.warn("Gazebo ({}) has already been added to urdf, skipping gazebo", gazebo.getReference());
+            }
+         }
+      }
+      mergedModel.setGazebos(mergedGazebos);
+
+      return mergedModel;
+   }
+
+   /**
+    * <i>-- Intended for internal use --</i>
+    * <p>
+    * Handles implicit and/or incomplete joint definitions in the given URDF model.
+    * </p>
+    *
+    * @param urdfModel the model to handle implicit joint definitions.
+    */
+   public static void handleImplicitJointDefinitions(URDFModel urdfModel)
+   {
+      {// Search for revolute twins joints that are not complete.
+         List<URDFJoint> urdfRevoluteTwinsJoints = urdfModel.getJoints()
+                                                            .stream()
+                                                            .filter(urdfJoint -> URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute_twins)
+                                                            .toList();
+
+         for (URDFJoint urdfRevoluteTwinsJoint : urdfRevoluteTwinsJoints)
+         {
+            if (urdfRevoluteTwinsJoint.getSubJoints() == null)
+            {
+               URDFLinkReference parent = urdfRevoluteTwinsJoint.getParent();
+               URDFLinkReference child = urdfRevoluteTwinsJoint.getChild();
+
+               URDFJoint jointA = urdfModel.getJoints()
+                                           .stream()
+                                           .filter(urdfJoint -> URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute)
+                                           .filter(urdfJoint -> urdfJoint.getParent().equals(parent))
+                                           .findFirst()
+                                           .orElse(null);
+               URDFJoint jointB = urdfModel.getJoints()
+                                           .stream()
+                                           .filter(urdfJoint -> URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute)
+                                           .filter(urdfJoint -> urdfJoint.getChild().equals(child))
+                                           .findFirst()
+                                           .orElse(null);
+               if (jointA == null || jointB == null)
+               {
+                  LogTools.error("Could not find the two joints defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName());
+                  continue;
+               }
+
+               if (!Objects.equals(jointA.getChild(), jointB.getParent()))
+               {
+                  LogTools.error("The two joints defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName() + " are not compatible.");
+                  continue;
+               }
+
+               URDFLink urdfLinkAB = urdfModel.getLinks()
+                                              .stream()
+                                              .filter(urdfLink -> Objects.equals(urdfLink.getName(), jointA.getChild().getLink()))
+                                              .findFirst()
+                                              .orElse(null);
+               if (urdfLinkAB == null)
+               {
+                  LogTools.error("Could not find the link defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName());
+                  continue;
+               }
+
+               int actuatedJointIndex = -1;
+               if (jointA.getMimic() != null)
+                  actuatedJointIndex = 1;
+               else if (jointB.getMimic() != null)
+                  actuatedJointIndex = 0;
+
+               if (actuatedJointIndex == -1)
+               {
+                  LogTools.error("Could not find the actuated joint defining the revolute twins joint: " + urdfRevoluteTwinsJoint.getName());
+                  continue;
+               }
+
+               urdfRevoluteTwinsJoint.setSubJoints(new ArrayList<>());
+               urdfRevoluteTwinsJoint.getSubJoints().add(jointA);
+               urdfRevoluteTwinsJoint.getSubJoints().add(jointB);
+               urdfRevoluteTwinsJoint.setSubLinks(new ArrayList<>());
+               urdfRevoluteTwinsJoint.getSubLinks().add(urdfLinkAB);
+               urdfRevoluteTwinsJoint.setActuatedJointIndex(String.valueOf(actuatedJointIndex));
+
+               urdfModel.getJoints().removeAll(urdfRevoluteTwinsJoint.getSubJoints());
+               urdfModel.getLinks().removeAll(urdfRevoluteTwinsJoint.getSubLinks());
+            }
+         }
+      }
+
+      { // Search for joints with a mimic tag and see if we can create revolute twins instead
+         List<URDFJoint> urdfConstrainedJoints = urdfModel.getJoints()
+                                                          .stream()
+                                                          .filter(urdfJoint -> Objects.nonNull(urdfJoint.getMimic())
+                                                                               && URDFJointType.parse(urdfJoint.getType()) == URDFJointType.revolute)
+                                                          .toList();
+
+         for (URDFJoint urdfConstrainedJoint : urdfConstrainedJoints)
+         {
+            String actuatedJointName = urdfConstrainedJoint.getMimic().getJoint();
+            URDFJoint urdfActuatedJoint = urdfModel.getJoints()
+                                                   .stream()
+                                                   .filter(urdfJoint -> urdfJoint.getName().equals(actuatedJointName))
+                                                   .findFirst()
+                                                   .orElse(null);
+            if (urdfActuatedJoint == null)
+            {
+               LogTools.error("Could not find actuated joint: " + actuatedJointName);
+               continue;
+            }
+
+            if (URDFJointType.parse(urdfActuatedJoint.getType()) != URDFJointType.revolute)
+               continue;
+
+            // First, verify that the two joints are compatible to be converted into a revolute twins
+            if (urdfConstrainedJoint.getAxis() == null || urdfActuatedJoint.getAxis() == null)
+               continue;
+
+            Vector3D constrainedAxis = parseAxis(urdfConstrainedJoint.getAxis(), null);
+            Vector3D actuatedAxis = parseAxis(urdfActuatedJoint.getAxis(), null);
+
+            if (!constrainedAxis.epsilonEquals(actuatedAxis, 1e-5))
+               continue;
+
+            URDFJoint jointA = null;
+            URDFJoint jointB = null;
+            URDFLink linkAB = null;
+            int actuatedJointIndex = -1;
+
+            if (Objects.equals(urdfConstrainedJoint.getChild(), urdfActuatedJoint.getParent()))
+            {
+               jointA = urdfConstrainedJoint;
+               jointB = urdfActuatedJoint;
+               linkAB = urdfModel.getLinks()
+                                 .stream()
+                                 .filter(urdfLink -> Objects.equals(urdfLink.getName(), urdfConstrainedJoint.getChild().getLink()))
+                                 .findFirst()
+                                 .orElse(null);
+               actuatedJointIndex = 1;
+            }
+
+            if (Objects.equals(urdfConstrainedJoint.getParent(), urdfActuatedJoint.getChild()))
+            {
+               jointA = urdfActuatedJoint;
+               jointB = urdfConstrainedJoint;
+               linkAB = urdfModel.getLinks()
+                                 .stream()
+                                 .filter(urdfLink -> Objects.equals(urdfLink.getName(), urdfConstrainedJoint.getParent().getLink()))
+                                 .findFirst()
+                                 .orElse(null);
+               actuatedJointIndex = 0;
+            }
+
+            if (jointA == null || linkAB == null)
+               continue;
+
+            // Now, we can convert the two joints into a revolute twins
+            URDFJoint revoluteTwinsJoint = new URDFJoint();
+            // TODO would be nice to have a way to set the name of the joint
+            revoluteTwinsJoint.setName(jointA.getName() + "_" + jointB.getName());
+            revoluteTwinsJoint.setType(URDFJointType.revolute_twins.toString());
+            revoluteTwinsJoint.setAxis(jointA.getAxis());
+            revoluteTwinsJoint.setParent(jointA.getParent());
+            revoluteTwinsJoint.setChild(jointB.getChild());
+            revoluteTwinsJoint.setActuatedJointIndex(String.valueOf(actuatedJointIndex));
+            revoluteTwinsJoint.setSubJoints(new ArrayList<>());
+            revoluteTwinsJoint.getSubJoints().add(jointA);
+            revoluteTwinsJoint.getSubJoints().add(jointB);
+            revoluteTwinsJoint.setSubLinks(new ArrayList<>());
+            revoluteTwinsJoint.getSubLinks().add(linkAB);
+            urdfModel.getJoints().set(urdfModel.getJoints().indexOf(jointA), revoluteTwinsJoint);
+            urdfModel.getJoints().remove(jointB);
+            urdfModel.getLinks().remove(linkAB);
          }
       }
    }
@@ -889,8 +1290,9 @@ public class URDFTools
       double constraintRatio = parseDouble(constrainedJoint.getMimic().getMultiplier(), Double.NaN);
       double constraintOffset = parseDouble(constrainedJoint.getMimic().getOffset(), Double.NaN);
 
-      definition.setJointNameA(urdfJointA.getName());
-      definition.setJointNameB(urdfJointB.getName());
+      definition.setJointA(toRevoluteJointDefinition(urdfJointA, false, parserProperties));
+      definition.setJointB(toRevoluteJointDefinition(urdfJointB, false, parserProperties));
+
       definition.setBodyAB(toRigidBodyDefinition(urdfLinkAB, parserProperties));
       definition.setTransformAToPredecessor(parseRigidBodyTransform(urdfJointA.getOrigin(), parserProperties));
       definition.setTransformBToA(parseRigidBodyTransform(urdfJointB.getOrigin(), parserProperties));
@@ -2230,7 +2632,7 @@ public class URDFTools
    /**
     * This class provides extra properties for tweaking operations when parsing a URDF file. It is used
     * in both
-    * {@link URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)} and
+    * {@link URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)} and
     * {@link URDFTools#toRobotDefinition(URDFModel, URDFParserProperties)}.
     *
     * @author Sylvain Bertrand
@@ -2242,11 +2644,23 @@ public class URDFTools
       private final Set<String> linksToIgnore = new HashSet<>();
       private Supplier<? extends JointDefinition> rootJointFactory = SixDoFJointDefinition::new;
 
+      private boolean resolveResourcePaths = true;
       private boolean autoGenerateVisualName = true;
       private boolean autoGenerateCollisionName = true;
       private boolean parseSensors = true;
       private boolean simplifyKinematics = true;
       private boolean transformToZUp = true;
+      private boolean handleImplicitJointDefinitions = true;
+
+      /**
+       * When set to {@code true}, the URDF parser will resolve the paths of the resources (meshes, textures, etc.).
+       *
+       * @param resolveResourcePaths {@code true} to resolve the resource paths, {@code false} otherwise.
+       */
+      public void setResolveResourcePaths(boolean resolveResourcePaths)
+      {
+         this.resolveResourcePaths = resolveResourcePaths;
+      }
 
       /**
        * Sets whether XML namespaces should be ignored.
@@ -2256,7 +2670,7 @@ public class URDFTools
        * </p>
        *
        * @param ignoreNamespace {@code true} to ignore namespaces. Recommended value {@code false}.
-       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       * @see URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)
        */
       public void setIgnoreNamespace(boolean ignoreNamespace)
       {
@@ -2270,7 +2684,7 @@ public class URDFTools
        * URDF files.
        *
        * @param nameOfJointToIgnore the name of a joint to be ignored when parsing the URDF file.
-       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       * @see URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)
        */
       public void addJointToIgnore(String nameOfJointToIgnore)
       {
@@ -2284,7 +2698,7 @@ public class URDFTools
        * URDF files.
        *
        * @param nameOfLinkToIgnore the name of a link to be ignored when parsing the URDF file.
-       * @see URDFTools#loadURDFModel(InputStream, Collection, ClassLoader, URDFParserProperties)
+       * @see URDFTools#loadURDFModel(Collection, Collection, ClassLoader, URDFParserProperties)
        */
       public void addLinkToIgnore(String nameOfLinkToIgnore)
       {
@@ -2372,6 +2786,23 @@ public class URDFTools
       public void setTransformToZUp(boolean transformToZUp)
       {
          this.transformToZUp = transformToZUp;
+      }
+
+      /**
+       * Specifies whether implicit joint definitions should be handled.
+       * <p>
+       * Currently, this feature covers:
+       * <ul>
+       *    <li>Detect when two joints are connected to the same link and one is constrained to the other with a mimic tag. The two joints will then be merged into one {@link RevoluteTwinsJointDefinition}.
+       * </ul>
+       * </p>
+       *
+       * @param handleImplicitJointDefinitions {@code true} [default value] handles implicit joint
+       *                                       definitions, {@code false} do nothing.
+       */
+      public void setHandleImplicitJointDefinitions(boolean handleImplicitJointDefinitions)
+      {
+         this.handleImplicitJointDefinitions = handleImplicitJointDefinitions;
       }
    }
 

@@ -1,13 +1,13 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import java.util.stream.Collectors;
 
 /**
  * A {@link YoGraphicGroupDefinition} is a template for creating a group which contains yoGraphics
@@ -16,24 +16,31 @@ import javax.xml.bind.annotation.XmlRootElement;
  * <p>
  * The group visible property is propagated down its descendants.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoGraphicGroup")
 public class YoGraphicGroupDefinition extends YoGraphicDefinition
 {
-   /** The list of children the group contains. */
+   /**
+    * The list of children the group contains.
+    */
    private List<YoGraphicDefinition> children;
 
-   /** Creates a new empty group. */
+   /**
+    * Creates a new empty group.
+    * <p>
+    * This constructor is meant for XML parser, to create an empty group prefer using {@link YoGraphicGroupDefinition(String)} or
+    * make sure to set the name later when using this constructor.
+    * </p>
+    */
    public YoGraphicGroupDefinition()
    {
-      registerListField("children", this::getChildren, this::setChildren, "child", YoGraphicDefinition::toParsableString, YoGraphicDefinition::parse);
    }
 
    /**
     * Creates a new empty group and sets its name.
-    * 
+    *
     * @param name the group name.
     */
    public YoGraphicGroupDefinition(String name)
@@ -43,8 +50,27 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
    }
 
    /**
+    * Copy constructor.
+    *
+    * @param other the other definition to copy. Not modified.
+    */
+   public YoGraphicGroupDefinition(YoGraphicGroupDefinition other)
+   {
+      super(other);
+      if (other.children != null)
+         children = other.children.stream().map(YoGraphicDefinition::copy).collect(Collectors.toList());
+   }
+
+   @Override
+   protected void registerFields()
+   {
+      super.registerFields();
+      registerListField("children", this::getChildren, this::setChildren, "child", YoGraphicDefinition::toParsableString, YoGraphicDefinition::parse);
+   }
+
+   /**
     * Creates a new group, sets its name, and adds children.
-    * 
+    *
     * @param name     the group name.
     * @param children the initial set of children for the group.
     */
@@ -55,7 +81,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    /**
     * Creates a new group, sets its name, and adds children.
-    * 
+    *
     * @param name     the group name.
     * @param children the initial set of children for the group.
     */
@@ -73,7 +99,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
     * See {@link YoGraphicDefinitionFactory} for factory methods helping with the creation of yoGraphic
     * definitions.
     * </p>
-    * 
+    *
     * @param child the new child.
     */
    public void addChild(YoGraphicDefinition child)
@@ -100,7 +126,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    /**
     * Sets the children for the group.
-    * 
+    *
     * @param children the children for the group.
     */
    @XmlElement
@@ -184,7 +210,8 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
                   if (subGroup.getName().equals(otherSubGroup.getName()))
                   {
                      children.remove(j);
-                     subGroup.getChildren().addAll(otherSubGroup.getChildren());
+                     if (otherSubGroup.getChildren() != null)
+                        subGroup.getChildren().addAll(otherSubGroup.getChildren());
                   }
                }
             }
@@ -198,7 +225,7 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
 
    /**
     * Returns whether the group is empty.
-    * 
+    *
     * @return {@code true} if the list of children either {@code null} or empty.
     */
    public boolean isEmpty()
@@ -209,6 +236,12 @@ public class YoGraphicGroupDefinition extends YoGraphicDefinition
    public List<YoGraphicDefinition> getChildren()
    {
       return children;
+   }
+
+   @Override
+   public YoGraphicGroupDefinition copy()
+   {
+      return new YoGraphicGroupDefinition(this);
    }
 
    @Override

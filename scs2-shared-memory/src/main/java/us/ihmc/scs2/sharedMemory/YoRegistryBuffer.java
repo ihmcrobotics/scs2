@@ -1,16 +1,16 @@
 package us.ihmc.scs2.sharedMemory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
-
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class YoRegistryBuffer
 {
@@ -19,6 +19,9 @@ public class YoRegistryBuffer
    private final Map<String, YoVariableBuffer<?>> yoVariableFullnameToBufferMap = new HashMap<>();
    private final YoBufferPropertiesReadOnly properties;
    private final YoRegistryChangedListener registryBufferUpdater;
+
+   /** The size of a single buffer frame in bytes. */
+   private long registryMemorySize;
 
    private final ReentrantLock lock = new ReentrantLock();
 
@@ -63,11 +66,26 @@ public class YoRegistryBuffer
       {
          yoVariableBuffers.add(yoVariableBuffer);
          yoVariableFullnameToBufferMap.put(fullName, yoVariableBuffer);
+         registryMemorySize += yoVariableBuffer.getVariableMemorySize();
       }
       finally
       {
          lock.unlock();
       }
+   }
+
+   /**
+    * Returns the size of the registry in bytes.
+    * <p>
+    * The size of the registry is the sum of the size of all the variables it contains. It can be used to estimate the memory size of a single frame in the
+    * buffer.
+    * </p>
+    *
+    * @return the size of the registry in bytes.
+    */
+   public long getRegistryMemorySize()
+   {
+      return registryMemorySize;
    }
 
    public void resizeBuffer(int from, int length)

@@ -2,291 +2,340 @@
 
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXTextField?>
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Accordion?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TitledPane?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox fx:id="mainPane" minHeight="800.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicItemCreatorDialogController">
-   <children>
-      <Accordion fx:id="accordion" VBox.vgrow="ALWAYS">
-         <panes>
-            <TitledPane fx:id="graphics2DTitledPane" text="2D Graphics">
-               <content>
-                  <GridPane hgap="5.0" vgap="5.0">
-                    <columnConstraints>
-                      <ColumnConstraints hgrow="SOMETIMES" />
-                      <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                    </columnConstraints>
-                    <rowConstraints>
-                      <RowConstraints maxHeight="-Infinity" minHeight="10.0" vgrow="SOMETIMES" />
-                    </rowConstraints>
-                     <children>
-                        <ToggleButton fx:id="yoLineFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Line">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoLineFX2D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPointcloudFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Pointcloud" GridPane.columnIndex="1">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPointcloudFX2D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPointFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Point" GridPane.columnIndex="2">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPointFX2D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPolygonFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polygon" GridPane.columnIndex="3">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPolygonFX2D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                     </children>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
-                  </GridPane>
-               </content>
-            </TitledPane>
-            <TitledPane fx:id="graphics3DTitledPane" text="3D Graphics">
-               <content>
-                  <GridPane hgap="5.0" vgap="5.0">
-                     <columnConstraints>
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                     </columnConstraints>
-                     <rowConstraints>
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                     </rowConstraints>
-                     <children>
-                        <ToggleButton fx:id="yoArrowFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Arrow">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoArrowFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoBoxFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Box" GridPane.columnIndex="1">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoBoxFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoCapsuleFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Capsule" GridPane.columnIndex="2">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoCapsuleFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoConeFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Cone" GridPane.columnIndex="3">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoConeFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoCoordinateSystemFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Coordinate System" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoCoordinateSystemFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoCylinderFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Cylinder" GridPane.columnIndex="2" GridPane.rowIndex="1">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoCylinderFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoEllipsoidFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Ellipsoid" GridPane.columnIndex="3" GridPane.rowIndex="1">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoEllipsoidFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPointcloudFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Pointcloud" GridPane.rowIndex="2">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPointcloudFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPointFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Point" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPointFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPolygonExtrudedFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polygon Extruded" GridPane.columnIndex="2" GridPane.rowIndex="2">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPolygonExtrudedFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoPolynomialFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Polynomial" GridPane.columnIndex="3" GridPane.rowIndex="2">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoPolynomialFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoRampFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Ramp" GridPane.rowIndex="3">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoRampFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoSTPBoxFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="STP Box" GridPane.columnIndex="1" GridPane.rowIndex="3">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoSTPBoxFX3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                        <ToggleButton fx:id="yoConvexPolytopeFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Convex Polytope" GridPane.rowIndex="1">
-                           <graphic>
-                              <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="graphic-editor-preview-icon">
-                                 <image>
-                                    <Image url="@../../icons/yoGraphic/YoConvexPolytope3D.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </ToggleButton>
-                     </children>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
-                  </GridPane>
-               </content>
-            </TitledPane>
-            <TitledPane fx:id="miscTitledPane" text="Misc.">
-               <content>
-                  <GridPane fx:id="miscPane" hgap="5.0" vgap="5.0">
-                     <columnConstraints>
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                        <ColumnConstraints hgrow="SOMETIMES" />
-                     </columnConstraints>
-                     <rowConstraints>
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                        <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES" />
-                     </rowConstraints>
-                     <children>
-                        <ToggleButton fx:id="yoGroupFXToggleButton" contentDisplay="TOP" mnemonicParsing="false" styleClass="graphic-editor-preview-button" text="Group">
-                           <graphic>
-                              <FontAwesomeIconView glyphName="OBJECT_GROUP" size="80" />
-                           </graphic>
-                        </ToggleButton>
-                     </children>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
-                  </GridPane>
-               </content>
-            </TitledPane>
-         </panes>
-      </Accordion>
-      <GridPane styleClass="graphic-editor-gridpane">
-         <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="-Infinity" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="250.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="-Infinity" />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints vgrow="SOMETIMES" />
-            <RowConstraints vgrow="SOMETIMES" />
-         </rowConstraints>
-         <children>
-            <Label text="Item name:" />
-            <JFXTextField fx:id="itemNameTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" />
-            <Label text="Item namespace:" GridPane.rowIndex="1" />
-            <JFXTextField fx:id="itemNamespaceTextField" disable="true" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <ImageView fx:id="itemNameValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2">
-               <image>
-                  <Image url="@../../icons/invalid-icon.png" />
-               </image>
-            </ImageView>
-         </children>
-      </GridPane>
-      <HBox alignment="CENTER_RIGHT" styleClass="graphic-editor-hbox">
-         <children>
-            <JFXButton fx:id="createItemButton" defaultButton="true" mnemonicParsing="false" onAction="#validateItemAndDispose" styleClass="graphic-editor-new-button" text="Create" />
-            <JFXButton cancelButton="true" mnemonicParsing="false" onAction="#cancelAndDispose" styleClass="graphic-editor-cancel-button" text="Cancel" />
-         </children>
-      </HBox>
-   </children>
-   <styleClass>
-      <String fx:value="graphic-editor-vbox" />
-      <String fx:value="graphic-editor-main-pane" />
-   </styleClass>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<VBox fx:id="mainPane" minHeight="800.0" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicItemCreatorDialogController">
+    <children>
+        <Accordion fx:id="accordion" VBox.vgrow="ALWAYS">
+            <panes>
+                <TitledPane fx:id="graphics2DTitledPane" text="2D Graphics">
+                    <content>
+                        <GridPane hgap="5.0" vgap="5.0">
+                            <columnConstraints>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                            </columnConstraints>
+                            <rowConstraints>
+                                <RowConstraints maxHeight="-Infinity" minHeight="10.0" vgrow="SOMETIMES"/>
+                            </rowConstraints>
+                            <children>
+                                <ToggleButton fx:id="yoLineFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Line">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoLineFX2D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPointcloudFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Pointcloud" GridPane.columnIndex="1">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPointcloudFX2D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPointFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Point" GridPane.columnIndex="2">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPointFX2D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPolygonFX2DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Polygon" GridPane.columnIndex="3">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPolygonFX2D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                            </children>
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                            </padding>
+                        </GridPane>
+                    </content>
+                </TitledPane>
+                <TitledPane fx:id="graphics3DTitledPane" text="3D Graphics">
+                    <content>
+                        <GridPane hgap="5.0" vgap="5.0">
+                            <columnConstraints>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                            </columnConstraints>
+                            <rowConstraints>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                            </rowConstraints>
+                            <children>
+                                <ToggleButton fx:id="yoArrowFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Arrow">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoArrowFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoBoxFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Box" GridPane.columnIndex="1">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoBoxFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoCapsuleFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Capsule" GridPane.columnIndex="2">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoCapsuleFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoConeFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Cone" GridPane.columnIndex="3">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoConeFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoCoordinateSystemFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Coordinate System" GridPane.columnIndex="1"
+                                              GridPane.rowIndex="1">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoCoordinateSystemFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoCylinderFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Cylinder" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoCylinderFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoEllipsoidFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Ellipsoid" GridPane.columnIndex="3" GridPane.rowIndex="1">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoEllipsoidFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPointcloudFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Pointcloud" GridPane.rowIndex="2">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPointcloudFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPointFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Point" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPointFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPolygonExtrudedFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Polygon Extruded" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPolygonExtrudedFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoPolynomialFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Polynomial" GridPane.columnIndex="3" GridPane.rowIndex="2">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoPolynomialFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoRampFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Ramp" GridPane.rowIndex="3">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoRampFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoSTPBoxFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="STP Box" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoSTPBoxFX3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoConvexPolytopeFX3DToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Convex Polytope" GridPane.rowIndex="1">
+                                    <graphic>
+                                        <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                   styleClass="graphic-editor-preview-icon">
+                                            <image>
+                                                <Image url="@../../icons/yoGraphic/YoConvexPolytope3D.png"/>
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </ToggleButton>
+                            </children>
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                            </padding>
+                        </GridPane>
+                    </content>
+                </TitledPane>
+                <TitledPane fx:id="miscTitledPane" text="Misc.">
+                    <content>
+                        <GridPane fx:id="miscPane" hgap="5.0" vgap="5.0">
+                            <columnConstraints>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                                <ColumnConstraints hgrow="SOMETIMES"/>
+                            </columnConstraints>
+                            <rowConstraints>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                                <RowConstraints maxHeight="-Infinity" vgrow="SOMETIMES"/>
+                            </rowConstraints>
+                            <children>
+                                <ToggleButton fx:id="yoGroupFXToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" text="Group">
+                                    <graphic>
+                                        <FontIcon iconLiteral="fa-object-group" iconSize="80"/>
+                                    </graphic>
+                                </ToggleButton>
+                                <ToggleButton fx:id="yoAddRobotFXToggleButton" contentDisplay="TOP" mnemonicParsing="false"
+                                              styleClass="graphic-editor-preview-button" stylesheets="@../../css/GeneralStylesheet.css" text="Add Robot"
+                                              GridPane.columnIndex="1">
+                                    <graphic>
+                                        <AnchorPane>
+                                            <children>
+                                                <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"
+                                                           styleClass="graphic-editor-preview-icon" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                    <image>
+                                                        <Image url="@../../icons/yoGraphic/YoRobotCollisions.png"/>
+                                                    </image>
+                                                </ImageView>
+                                                <FontIcon iconColor="#16bf4c" iconLiteral="fa-plus" iconSize="36" AnchorPane.bottomAnchor="0.0"
+                                                          AnchorPane.rightAnchor="0.0"/>
+                                            </children>
+                                        </AnchorPane>
+                                    </graphic>
+                                </ToggleButton>
+                            </children>
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                            </padding>
+                        </GridPane>
+                    </content>
+                </TitledPane>
+            </panes>
+        </Accordion>
+        <GridPane styleClass="graphic-editor-gridpane">
+            <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="-Infinity"/>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="250.0"/>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="-Infinity"/>
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints vgrow="SOMETIMES"/>
+                <RowConstraints vgrow="SOMETIMES"/>
+            </rowConstraints>
+            <children>
+                <Label text="Item name:"/>
+                <JFXTextField fx:id="itemNameTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
+                <Label text="Item namespace:" GridPane.rowIndex="1"/>
+                <JFXTextField fx:id="itemNamespaceTextField" disable="true" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                <ImageView fx:id="itemNameValidImageView" fitHeight="25.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="2">
+                    <image>
+                        <Image url="@../../icons/invalid-icon.png"/>
+                    </image>
+                </ImageView>
+            </children>
+        </GridPane>
+        <HBox alignment="CENTER_RIGHT" styleClass="graphic-editor-hbox">
+            <children>
+                <JFXButton fx:id="createItemButton" defaultButton="true" mnemonicParsing="false" onAction="#validateItemAndDispose"
+                           styleClass="graphic-editor-new-button" text="Create"/>
+                <JFXButton cancelButton="true" mnemonicParsing="false" onAction="#cancelAndDispose" styleClass="graphic-editor-cancel-button" text="Cancel"/>
+            </children>
+        </HBox>
+    </children>
+    <styleClass>
+        <String fx:value="graphic-editor-vbox"/>
+        <String fx:value="graphic-editor-main-pane"/>
+    </styleClass>
 </VBox>

@@ -1,137 +1,172 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXButton?>
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
-<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-
-<AnchorPane fx:id="mainAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController">
-   <children>
-      <VBox alignment="CENTER_RIGHT" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <children>
-            <GridPane hgap="5.0" styleClass="sliderboard-grid-pane" vgap="5.0" VBox.vgrow="ALWAYS">
-               <columnConstraints>
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
-               </columnConstraints>
-               <rowConstraints>
-                  <RowConstraints vgrow="NEVER" />
-                  <RowConstraints vgrow="NEVER" />
-                  <RowConstraints vgrow="NEVER" />
-                  <RowConstraints vgrow="NEVER" />
-                  <RowConstraints maxHeight="1.7976931348623157E308" />
-               </rowConstraints>
-               <children>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="1" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="2" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="3" GridPane.columnIndex="2" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="4" GridPane.columnIndex="3" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="5" GridPane.columnIndex="4" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="6" GridPane.columnIndex="5" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="7" GridPane.columnIndex="6" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308" styleClass="sliderboard-grid-cell" text="8" GridPane.columnIndex="7" GridPane.rowIndex="0">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <fx:include fx:id="knob0" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob1" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob2" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob3" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob4" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob5" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob6" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="6" GridPane.rowIndex="1" />
-                  <fx:include fx:id="knob7" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="7" GridPane.rowIndex="1" />
-                  <fx:include fx:id="button0" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button1" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="1" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button2" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button3" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="3" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button4" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="4" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button5" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="5" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button6" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="6" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button7" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="7" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-                  <fx:include fx:id="button8" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button9" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="1" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button10" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button11" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="3" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button12" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="4" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button13" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="5" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button14" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="6" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="button15" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="7" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
-                  <fx:include fx:id="slider0" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider1" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="1" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider2" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="2" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider3" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="3" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider4" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="4" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider5" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="5" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider6" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="6" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-                  <fx:include fx:id="slider7" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="7" GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES" />
-               </children>
-               <VBox.margin>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </VBox.margin>
-            </GridPane>
-            <HBox spacing="10.0" style="-fx-background-color: derive( -fx-background, -5%);" VBox.vgrow="NEVER">
-               <children>
-                  <Label fx:id="connectionStateLabel" alignment="BOTTOM_RIGHT" contentDisplay="RIGHT" graphicTextGap="8.0" maxWidth="1.7976931348623157E308" text="Not connected" HBox.hgrow="ALWAYS">
-                     <graphic>
-                        <ImageView fx:id="connectionStateImageView" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
-                           <image>
-                              <Image url="@../../../icons/invalid-icon.png" />
-                           </image>
-                        </ImageView>
-                     </graphic>
-                     <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-                     </padding>
-                  </Label>
-               </children>
-            </HBox>
-         </children>
-      </VBox>
-   </children>
+<AnchorPane fx:id="mainAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
+            stylesheets="@../../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.bcf2000.YoBCF2000SliderboardWindowController">
+    <children>
+        <VBox alignment="CENTER_RIGHT" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+              AnchorPane.topAnchor="0.0">
+            <children>
+                <GridPane hgap="5.0" styleClass="sliderboard-grid-pane" vgap="5.0" VBox.vgrow="ALWAYS">
+                    <columnConstraints>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="1.7976931348623157E308"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints vgrow="NEVER"/>
+                        <RowConstraints vgrow="NEVER"/>
+                        <RowConstraints vgrow="NEVER"/>
+                        <RowConstraints vgrow="NEVER"/>
+                        <RowConstraints maxHeight="1.7976931348623157E308"/>
+                    </rowConstraints>
+                    <children>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="1" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="2" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="3" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="4" GridPane.columnIndex="3" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="5" GridPane.columnIndex="4" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="6" GridPane.columnIndex="5" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="7" GridPane.columnIndex="6" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <Label alignment="CENTER" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" maxWidth="1.7976931348623157E308"
+                               styleClass="sliderboard-grid-cell" text="8" GridPane.columnIndex="7" GridPane.rowIndex="0">
+                            <font>
+                                <Font name="Arial Rounded MT Bold" size="30.0"/>
+                            </font>
+                        </Label>
+                        <fx:include fx:id="knob0" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="0"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob1" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="1"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob2" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="2"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob3" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="3"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob4" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="4"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob5" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="5"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob6" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="6"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="knob7" maxWidth="1.7976931348623157E308" source="YoBCF2000KnobControl.fxml" GridPane.columnIndex="7"
+                                    GridPane.rowIndex="1"/>
+                        <fx:include fx:id="button0" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.hgrow="SOMETIMES"
+                                    GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button1" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="1"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button2" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="2"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button3" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="3"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button4" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="4"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button5" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="5"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button6" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="6"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button7" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="7"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2"/>
+                        <fx:include fx:id="button8" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.hgrow="SOMETIMES"
+                                    GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button9" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="1"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button10" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="2"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button11" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="3"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button12" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="4"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button13" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="5"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button14" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="6"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="button15" maxWidth="1.7976931348623157E308" source="YoBCF2000ButtonControl.fxml" GridPane.columnIndex="7"
+                                    GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3"/>
+                        <fx:include fx:id="slider0" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="0"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider1" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="1"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider2" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="2"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider3" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="3"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider4" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="4"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider5" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="5"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider6" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="6"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                        <fx:include fx:id="slider7" maxWidth="1.7976931348623157E308" source="YoBCF2000SliderControl.fxml" GridPane.columnIndex="7"
+                                    GridPane.rowIndex="4" GridPane.vgrow="SOMETIMES"/>
+                    </children>
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </GridPane>
+                <HBox spacing="10.0" style="-fx-background-color: derive( -fx-background, -5%);" VBox.vgrow="NEVER">
+                    <children>
+                        <Label fx:id="connectionStateLabel" alignment="BOTTOM_RIGHT" contentDisplay="RIGHT" graphicTextGap="8.0"
+                               maxWidth="1.7976931348623157E308" text="Not connected" HBox.hgrow="ALWAYS">
+                            <graphic>
+                                <ImageView fx:id="connectionStateImageView" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@../../../icons/invalid-icon.png"/>
+                                    </image>
+                                </ImageView>
+                            </graphic>
+                            <padding>
+                                <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
+                            </padding>
+                        </Label>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
 </AnchorPane>

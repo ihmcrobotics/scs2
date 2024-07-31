@@ -2,11 +2,11 @@ package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.euclid.referenceFrame.interfaces.FrameOrientation3DReadOnly;
+import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 
-public abstract class Orientation3DProperty extends CompositeProperty implements FrameOrientation3DReadOnly
+public abstract class Orientation3DProperty extends CompositeProperty implements Orientation3DReadOnly
 {
    public Orientation3DProperty(String type, String[] componentIdentifiers)
    {
@@ -18,7 +18,7 @@ public abstract class Orientation3DProperty extends CompositeProperty implements
       super(type, componentIdentifiers, componentValues);
    }
 
-   public Orientation3DProperty(String type, String[] componentIdentifiers, ReferenceFrame referenceFrame, double... componentValues)
+   public Orientation3DProperty(String type, String[] componentIdentifiers, ReferenceFrameWrapper referenceFrame, double... componentValues)
    {
       super(type, componentIdentifiers, referenceFrame, componentValues);
    }
@@ -28,8 +28,10 @@ public abstract class Orientation3DProperty extends CompositeProperty implements
       super(type, componentIdentifiers, componentValueProperties);
    }
 
-   public Orientation3DProperty(String type, String[] componentIdentifiers, Property<ReferenceFrame> referenceFrameProperty,
-                                      DoubleProperty... componentValueProperties)
+   public Orientation3DProperty(String type,
+                                String[] componentIdentifiers,
+                                Property<ReferenceFrameWrapper> referenceFrameProperty,
+                                DoubleProperty... componentValueProperties)
    {
       super(type, componentIdentifiers, referenceFrameProperty, componentValueProperties);
    }

@@ -1,13 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.tools;
 
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public class ListViewTools
 {
@@ -15,7 +15,7 @@ public class ListViewTools
    {
       return listView ->
       {
-         FontAwesomeIconView removeIcon = new FontAwesomeIconView();
+         FontIcon removeIcon = new FontIcon();
          removeIcon.getStyleClass().add("remove-icon-view");
          MenuItem removeMenuItem = new MenuItem("Remove", removeIcon);
 
@@ -41,7 +41,7 @@ public class ListViewTools
    {
       return listView ->
       {
-         FontAwesomeIconView removeIcon = new FontAwesomeIconView();
+         FontIcon removeIcon = new FontIcon();
          removeIcon.getStyleClass().add("remove-icon-view");
          MenuItem removeMenuItem = new MenuItem("Remove all", removeIcon);
 
@@ -64,16 +64,16 @@ public class ListViewTools
          ObservableList<T> items = listView.getItems();
          int selectedIndex = listView.getSelectionModel().getSelectedIndex();
 
-         FontAwesomeIconView addBeforeIcon = new FontAwesomeIconView();
+         FontIcon addBeforeIcon = new FontIcon();
          addBeforeIcon.getStyleClass().add("add-icon-view");
          MenuItem addBefore = new MenuItem("Add before", addBeforeIcon);
 
          addBefore.setOnAction(e2 ->
-         {
-            T newItem = addAction.apply(selectedIndex);
-            if (newItem != null)
-               items.add(selectedIndex, newItem);
-         });
+                               {
+                                  T newItem = addAction.apply(selectedIndex);
+                                  if (newItem != null)
+                                     items.add(selectedIndex, newItem);
+                               });
 
          return addBefore;
       };
@@ -91,16 +91,16 @@ public class ListViewTools
          ObservableList<T> items = listView.getItems();
          int selectedIndex = listView.getSelectionModel().getSelectedIndex();
 
-         FontAwesomeIconView addAfterIcon = new FontAwesomeIconView();
+         FontIcon addAfterIcon = new FontIcon();
          addAfterIcon.getStyleClass().add("add-icon-view");
          MenuItem addAfter = new MenuItem("Add after", addAfterIcon);
 
          addAfter.setOnAction(e2 ->
-         {
-            T newItem = addAction.apply(selectedIndex + 1);
-            if (newItem != null)
-               items.add(selectedIndex + 1, newItem);
-         });
+                              {
+                                 T newItem = addAction.apply(selectedIndex + 1);
+                                 if (newItem != null)
+                                    items.add(selectedIndex + 1, newItem);
+                              });
 
          return addAfter;
       };

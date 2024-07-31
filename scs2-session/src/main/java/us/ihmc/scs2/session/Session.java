@@ -27,8 +27,16 @@ import us.ihmc.yoVariables.variable.YoVariable;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,6 +50,15 @@ import java.util.function.Consumer;
 @SuppressWarnings("CallToPrintStackTrace")
 public abstract class Session
 {
+   /**
+    * The default upper-bound ratio of the buffer memory to the total memory available.
+    * <p>
+    * This ratio is used to estimate the maximum amount of memory that can be used by the buffer. Helps clamp the buffer size to avoid running out of memory.
+    * </p>
+    */
+   public static final double ADMISSIBLE_BUFFER_TO_MAX_MEMORY_RATIO = SessionPropertiesHelper.loadDoubleProperty(
+         "scs2.session.buffer.admissiblebuffertomaxmemoryratio",
+         0.65);
    /**
     * Default buffer size.
     * <p>
@@ -293,6 +310,15 @@ public abstract class Session
     */
    private final AtomicLong desiredBufferPublishPeriod = new AtomicLong(DEFAULT_BUFFER_PUBLISH_PERIOD);
 
+   /**
+    * [Optional] Defines a maximum duration when running before switching back to pause mode. Set this to -1 to disable.
+    */
+   private final AtomicLong runMaxDuration = new AtomicLong(-1L);
+   /**
+    * Used to keep track of how long the session has been running.
+    */
+   private long runTickCounter = 0L;
+
    // State listener to publish internal to outside world
    /**
     * Period at which the current session properties are to be published.
@@ -313,6 +339,7 @@ public abstract class Session
    private final List<SessionModeChangeListener> preSessionModeChangeListeners = new ArrayList<>();
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
    private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
+   private final List<Runnable> bufferListenerForceUpdateListeners = new ArrayList<>();
    private final List<Runnable> shutdownListeners = new ArrayList<>();
 
    // For exception handling
@@ -486,7 +513,7 @@ public abstract class Session
     */
    public void addSessionModeChangeListener(SessionModeChangeListener listener)
    {
-      sessionModeChangeListeners.add(listener);
+      sessionModeChangeListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -509,7 +536,7 @@ public abstract class Session
     */
    public void addPreSessionModeChangeListener(SessionModeChangeListener listener)
    {
-      preSessionModeChangeListeners.add(listener);
+      preSessionModeChangeListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -531,7 +558,7 @@ public abstract class Session
     */
    public void addShutdownListener(Runnable listener)
    {
-      shutdownListeners.add(listener);
+      shutdownListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -554,7 +581,7 @@ public abstract class Session
     */
    public void addSessionPropertiesListener(Consumer<SessionProperties> listener)
    {
-      sessionPropertiesListeners.add(listener);
+      sessionPropertiesListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -577,7 +604,7 @@ public abstract class Session
     */
    public void addCurrentBufferPropertiesListener(Consumer<YoBufferPropertiesReadOnly> listener)
    {
-      currentBufferPropertiesListeners.add(listener);
+      currentBufferPropertiesListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -601,7 +628,7 @@ public abstract class Session
     */
    public void addRunThrowableListener(Consumer<Throwable> listener)
    {
-      runThrowableListeners.add(listener);
+      runThrowableListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -625,7 +652,7 @@ public abstract class Session
     */
    public void addPlaybackThrowableListener(Consumer<Throwable> listener)
    {
-      playbackThrowableListeners.add(listener);
+      playbackThrowableListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -694,7 +721,7 @@ public abstract class Session
     */
    public void addRobotDefinitionListChangeListener(Consumer<SessionRobotDefinitionListChange> listener)
    {
-      robotDefinitionListChangeListeners.add(listener);
+      robotDefinitionListChangeListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
    }
 
    /**
@@ -804,6 +831,16 @@ public abstract class Session
       this.runAtRealTimeRate.set(runAtRealTimeRate);
       if (getActiveMode() == SessionMode.RUNNING)
          scheduleSessionTask(getActiveMode());
+   }
+
+   /**
+    * Sets the maximum duration in nanoseconds when running before switching back to pause mode.
+    *
+    * @param runMaxDuration the maximum duration in nanoseconds. Set this to -1 to disable.
+    */
+   public void submitRunMaxDuration(long runMaxDuration)
+   {
+      this.runMaxDuration.set(runMaxDuration);
    }
 
    /**
@@ -1261,6 +1298,17 @@ public abstract class Session
    }
 
    /**
+    * Notifies all the listeners depending on buffer data that a change has occurred and they should update.
+    */
+   public void requestBufferListenerForceUpdate()
+   {
+      for (Runnable listener : bufferListenerForceUpdateListeners)
+      {
+         listener.run();
+      }
+   }
+
+   /**
     * Requests to export this session's data to file.
     * <p>
     * This is a blocking operation and will return only when done. If the internal thread is not
@@ -1531,7 +1579,8 @@ public abstract class Session
                                    runAtRealTimeRate.get(),
                                    playbackRealTimeRate.get(),
                                    sessionDTNanoseconds.get(),
-                                   bufferRecordTickPeriod.get());
+                                   bufferRecordTickPeriod.get(),
+                                   runMaxDuration.get());
    }
 
    /**
@@ -1660,6 +1709,12 @@ public abstract class Session
       if (caughtException)
          setSessionMode(SessionMode.PAUSE);
 
+      if (runMaxDuration.get() > 0L)
+      {
+         if (runTickCounter * sessionDTNanoseconds.get() >= runMaxDuration.get())
+            setSessionMode(SessionMode.PAUSE);
+      }
+
       return !caughtException;
    }
 
@@ -1680,6 +1735,7 @@ public abstract class Session
          sharedBuffer.incrementBufferIndex(true);
          sharedBuffer.processLinkedPushRequests(false);
          nextRunBufferRecordTickCounter = 0;
+         runTickCounter = 0L;
          firstRunTick = false;
       }
       else if (nextRunBufferRecordTickCounter <= 0)
@@ -1737,6 +1793,7 @@ public abstract class Session
          nextRunBufferRecordTickCounter = Math.max(1, bufferRecordTickPeriod.get());
       }
 
+      runTickCounter++;
       nextRunBufferRecordTickCounter--;
    }
 
@@ -2061,7 +2118,21 @@ public abstract class Session
       }
 
       if (newSize != null)
+      {
+         if (newSize > sharedBuffer.getProperties().getSize())
+         {
+            long maxMemory = Runtime.getRuntime().maxMemory();
+            long singleFrame = sharedBuffer.getSingleBufferFrameMemorySize();
+            long maxSize = (long) (ADMISSIBLE_BUFFER_TO_MAX_MEMORY_RATIO * (maxMemory / singleFrame));
+            if (newSize > maxSize)
+            {
+               LogTools.warn("Requested buffer size is too large: {} > {}. Buffer size will be set to {}.", newSize, maxSize, maxSize);
+               newSize = (int) maxSize;
+            }
+         }
+
          hasBufferBeenUpdated |= sharedBuffer.resizeBuffer(newSize);
+      }
 
       return hasBufferBeenUpdated;
    }
@@ -2187,6 +2258,16 @@ public abstract class Session
    public long getDesiredBufferPublishPeriod()
    {
       return desiredBufferPublishPeriod.get();
+   }
+
+   /**
+    * The max duration in nanoseconds for the running mode before switching back to pause mode.
+    *
+    * @return the max duration for the running mode in nanoseconds.
+    */
+   public long getRunMaxDuration()
+   {
+      return runMaxDuration.get();
    }
 
    /**
@@ -2341,6 +2422,7 @@ public abstract class Session
       private final TopicListener<Double> playbackRealTimeRateListener = Session.this::submitPlaybackRealTimeRate;
       private final TopicListener<Integer> bufferRecordTickPeriodListener = Session.this::setBufferRecordTickPeriod;
       private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
+      private final TopicListener<Long> runMaxDurationListener = Session.this::submitRunMaxDuration;
       private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
 
       private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
@@ -2373,14 +2455,19 @@ public abstract class Session
          messager.addTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
          messager.addTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
          messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
+         messager.addTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
          messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+
+         bufferListenerForceUpdateListeners.add(() ->
+                                                {
+                                                   if (messager.isMessagerOpen())
+                                                      messager.submitMessage(YoSharedBufferMessagerAPI.ForceListenerUpdate, true);
+                                                });
 
          addRobotDefinitionListChangeListener(change ->
                                               {
                                                  if (messager.isMessagerOpen())
-                                                 {
                                                     messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
-                                                 }
                                               });
 
          messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
@@ -2411,6 +2498,7 @@ public abstract class Session
          messager.removeTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
          messager.removeTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
          messager.removeTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
+         messager.removeTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
          messager.removeTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
 
          messager.removeTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
@@ -2440,6 +2528,7 @@ public abstract class Session
             messager.submitMessage(SessionMessagerAPI.PlaybackRealTimeRate, sessionProperties.getPlaybackRealTimeRate());
             messager.submitMessage(SessionMessagerAPI.RunAtRealTimeRate, sessionProperties.isRunAtRealTimeRate());
             messager.submitMessage(SessionMessagerAPI.BufferRecordTickPeriod, sessionProperties.getBufferRecordTickPeriod());
+            messager.submitMessage(SessionMessagerAPI.RunMaxDuration, sessionProperties.getRunMaxDuration());
          };
       }
    }

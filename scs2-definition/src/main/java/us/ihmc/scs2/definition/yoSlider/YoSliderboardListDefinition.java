@@ -1,17 +1,22 @@
 package us.ihmc.scs2.definition.yoSlider;
 
+import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
+
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
-import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "YoSliderboardList")
 public class YoSliderboardListDefinition
 {
    private String name;
    private List<YoSliderboardDefinition> yoSliderboards = new ArrayList<>();
+
+   // TODO This doesn't really belong here. Need to fix the whole configuration file format.
+   private WindowConfigurationDefinition windowConfiguration;
 
    public YoSliderboardListDefinition()
    {
@@ -36,10 +41,16 @@ public class YoSliderboardListDefinition
    public void set(YoSliderboardListDefinition other)
    {
       name = other.name;
+
       if (other.yoSliderboards != null)
          yoSliderboards = other.yoSliderboards.stream().map(YoSliderboardDefinition::new).collect(Collectors.toList());
       else
          yoSliderboards = null;
+
+      if (other.windowConfiguration != null)
+         windowConfiguration = new WindowConfigurationDefinition(other.windowConfiguration);
+      else
+         windowConfiguration = null;
    }
 
    public void setName(String name)
@@ -52,6 +63,11 @@ public class YoSliderboardListDefinition
       this.yoSliderboards = yoSliderboards;
    }
 
+   public void setWindowConfiguration(WindowConfigurationDefinition windowConfiguration)
+   {
+      this.windowConfiguration = windowConfiguration;
+   }
+
    public String getName()
    {
       return name;
@@ -62,6 +78,11 @@ public class YoSliderboardListDefinition
       return yoSliderboards;
    }
 
+   public WindowConfigurationDefinition getWindowConfiguration()
+   {
+      return windowConfiguration;
+   }
+
    @Override
    public boolean equals(Object object)
    {
@@ -69,13 +90,13 @@ public class YoSliderboardListDefinition
       {
          return true;
       }
-      else if (object instanceof YoSliderboardListDefinition)
+      else if (object instanceof YoSliderboardListDefinition other)
       {
-         YoSliderboardListDefinition other = (YoSliderboardListDefinition) object;
-
-         if (name == null ? other.name != null : !name.equals(other.name))
+         if (!Objects.equals(name, other.name))
             return false;
-         if (yoSliderboards == null ? other.yoSliderboards != null : !yoSliderboards.equals(other.yoSliderboards))
+         if (!Objects.equals(yoSliderboards, other.yoSliderboards))
+            return false;
+         if (!Objects.equals(windowConfiguration, other.windowConfiguration))
             return false;
          return true;
       }
@@ -88,6 +109,6 @@ public class YoSliderboardListDefinition
    @Override
    public String toString()
    {
-      return "name:" + name + ", yoSliderboards:" + yoSliderboards;
+      return "name:" + name + ", yoSliderboards:" + yoSliderboards + ", windowConfiguration:" + windowConfiguration;
    }
 }

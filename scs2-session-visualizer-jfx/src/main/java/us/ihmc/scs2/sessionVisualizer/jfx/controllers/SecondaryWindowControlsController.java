@@ -1,13 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
-
 import com.jfoenix.controls.JFXButton;
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
@@ -17,6 +14,8 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
 
 public class SecondaryWindowControlsController implements VisualizerController
 {
@@ -31,7 +30,7 @@ public class SecondaryWindowControlsController implements VisualizerController
    @FXML
    private JFXButton previousKeyFrameButton, nextKeyFrameButton;
    @FXML
-   private FontAwesomeIconView runningIconView, playbackIconView, pauseIconView;
+   private Node runningIconView, playbackIconView, pauseIconView;
 
    private Property<YoBufferPropertiesReadOnly> bufferProperties;
 
@@ -50,11 +49,11 @@ public class SecondaryWindowControlsController implements VisualizerController
 
       ReadOnlyObjectProperty<int[]> keyFrameIndicesProperty = toolkit.getKeyFrameManager().keyFrameIndicesProperty();
       keyFrameIndicesProperty.addListener((o, oldValue, newValue) ->
-      {
-         boolean disableKeyFrameButtons = newValue == null || newValue.length == 0;
-         previousKeyFrameButton.setDisable(disableKeyFrameButtons);
-         nextKeyFrameButton.setDisable(disableKeyFrameButtons);
-      });
+                                          {
+                                             boolean disableKeyFrameButtons = newValue == null || newValue.length == 0;
+                                             previousKeyFrameButton.setDisable(disableKeyFrameButtons);
+                                             nextKeyFrameButton.setDisable(disableKeyFrameButtons);
+                                          });
       boolean disableKeyFrameButtons = keyFrameIndicesProperty.get() == null || keyFrameIndicesProperty.get().length == 0;
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);

@@ -1,8 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -10,7 +7,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.SubScene;
 import javafx.stage.Stage;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -25,7 +21,15 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
 {
@@ -82,7 +86,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
       viewport3DManager = new MultiViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager);
       this.mainScene3D = viewport3DManager.getMainViewport().getSubScene();
-      mainView3DRoot.getChildren().addAll(yoGraphicFXManager.getRootNode3D(), yoRobotFXManager.getRootNode(), environmentManager.getRootNode());
+      mainView3DRoot.getChildren().addAll(yoRobotFXManager.getRootNode(), environmentManager.getRootNode(), yoGraphicFXManager.getRootNode3D());
       environmentManager.addSkybox(viewport3DManager.getMainViewport().getCamera());
 
       messager.addFXTopicListener(topics.getCamera3DRequest(), viewport3DManager::submitRequest);
@@ -310,7 +314,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       return yoCompositeSearchManager;
    }
 
-   public ReferenceFrame getWorldFrame()
+   public ReferenceFrameWrapper getWorldFrame()
    {
       return referenceFrameManager.getWorldFrame();
    }
@@ -363,5 +367,11 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public ObservableList<TerrainObjectDefinition> getSessionTerrainObjectDefinitions()
    {
       return sessionTerrainObjectDefinitions;
+   }
+
+   // TODO Move this to a more appropriate place
+   public void generateChartGroupTitle(Object caller, Collection<YoVariable> variables, Consumer<String> callback)
+   {
+      callback.accept(StringTools.commonSubString(variables.stream().map(YoVariable::getName).collect(Collectors.toList())));
    }
 }

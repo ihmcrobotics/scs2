@@ -1,13 +1,5 @@
 package us.ihmc.scs2.session.remote;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-
 import us.ihmc.commons.Conversions;
 import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.robotDataLogger.YoVariableClientInterface;
@@ -25,6 +17,14 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.simulation.robot.Robot;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class RemoteSession extends Session
 {
@@ -88,12 +88,12 @@ public class RemoteSession extends Session
          /* Do nothing, the client thread calls runTick(). */
       });
       addSessionPropertiesListener(properties ->
-      {
-         if (properties.getActiveMode() == SessionMode.RUNNING)
-            reconnect();
-         else
-            disconnect();
-      });
+                                   {
+                                      if (properties.getActiveMode() == SessionMode.RUNNING)
+                                         reconnect();
+                                      else
+                                         disconnect();
+                                   });
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 60.0));
    }
 
@@ -126,7 +126,12 @@ public class RemoteSession extends Session
    @Override
    public SessionProperties getSessionProperties()
    {
-      return new SessionProperties(getActiveMode(), getRunAtRealTimeRate(), getPlaybackRealTimeRate(), getSessionDTNanoseconds(), bufferRecordTickPeriod);
+      return new SessionProperties(getActiveMode(),
+                                   getRunAtRealTimeRate(),
+                                   getPlaybackRealTimeRate(),
+                                   getSessionDTNanoseconds(),
+                                   bufferRecordTickPeriod,
+                                   getRunMaxDuration());
    }
 
    public void receivedTimestampOnly(long timestamp)

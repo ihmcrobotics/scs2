@@ -20,7 +20,11 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.commons.Conversions;
@@ -78,7 +82,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    private final BooleanProperty leftDrawerOpen = new SimpleBooleanProperty(this, "leftDrawerOpenProperty", false);
    private final BooleanProperty rightDrawerOpen = new SimpleBooleanProperty(this, "rightDrawerOpenProperty", false);
    private final BooleanProperty disableUserControls = new SimpleBooleanProperty(this, "disableUserControlsProperty", false);
-   private final Property<YoNameDisplay> yoNameDisplayProperty = new SimpleObjectProperty<>(this, "yoNameDisplayProperty", YoNameDisplay.UNIQUE_NAME);
+   private final Property<YoNameDisplay> yoNameDisplayProperty = new SimpleObjectProperty<>(this, "yoNameDisplayProperty", YoNameDisplay.UNIQUE_SHORT_NAME);
 
    /**
     * Controller for the left pane where variable search and entries are displayed.
@@ -437,6 +441,21 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    public SplitPane getMainViewSplitPane()
    {
       return mainViewSplitPane;
+   }
+
+   public MainWindowMenuBarController getMainWindowMenuBarController()
+   {
+      return mainWindowMenuBarController;
+   }
+
+   public SessionSimpleControlsController getSessionSimpleControlsController()
+   {
+      return sessionSimpleControlsController;
+   }
+
+   public SessionAdvancedControlsController getSessionAdvancedControlsController()
+   {
+      return sessionAdvancedControlsController;
    }
 
    public YoChartGroupPanelController getYoChartGroupPanelController()

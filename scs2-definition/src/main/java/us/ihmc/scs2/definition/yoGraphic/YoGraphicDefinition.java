@@ -1,5 +1,14 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
+import us.ihmc.euclid.tools.EuclidCoreIOTools;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.visual.PaintDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
+import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
+
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -13,16 +22,6 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlTransient;
-
-import us.ihmc.euclid.tools.EuclidCoreIOTools;
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.visual.PaintDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoOrientation3DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
-import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 
 /**
  * Base class representing a template used to create 1+ yoGraphics. A yoGraphic is a 2D/3D graphic
@@ -71,11 +70,32 @@ public abstract class YoGraphicDefinition
 
    public YoGraphicDefinition()
    {
+      registerFields();
+   }
+
+   /**
+    * Copy constructor.
+    *
+    * @param other the definition to copy. Not modified.
+    */
+   public YoGraphicDefinition(YoGraphicDefinition other)
+   {
+      this.name = other.name;
+      this.visible = other.visible;
+      registerFields();
+   }
+
+   /**
+    * Registers all the fields of this definition.
+    * Extend this method to register the fields of the subclass.
+    */
+   protected void registerFields()
+   {
       registerStringField("name", this::getName, this::setName);
       registerBooleanField("visible", this::isVisible, this::setVisible);
    }
 
-   /** Human readable name for this yoGraphic, it will show up in the SCS GUI. */
+   /** Human-readable name for this yoGraphic, it will show up in the SCS GUI. */
    @XmlAttribute
    public final void setName(String name)
    {
@@ -89,17 +109,20 @@ public abstract class YoGraphicDefinition
       this.visible = visible;
    }
 
-   /** Human readable name for this yoGraphic, it will show up in the SCS GUI. */
+   /** Human-readable name for this yoGraphic, it will show up in the SCS GUI. */
    public final String getName()
    {
       return name;
    }
 
-   /** Whether the yoGrpahic should be visible by default when created. */
+   /** Whether the yoGraphic should be visible by default when created. */
    public final boolean isVisible()
    {
       return visible;
    }
+
+   /** Returns a deep copy of this definition. */
+   public abstract YoGraphicDefinition copy();
 
    @Override
    public boolean equals(Object object)
@@ -239,7 +262,7 @@ public abstract class YoGraphicDefinition
     *
     * @param roots a collection of the roots of trees to export the summary list of.
     * @return the summary list representing the {@code YoGraphicDefinition} trees. The first item in
-    *         the returned list describes the first element of {@code roots}.
+    *       the returned list describes the first element of {@code roots}.
     */
    public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(Collection<YoGraphicGroupDefinition> roots)
    {
@@ -267,7 +290,7 @@ public abstract class YoGraphicDefinition
     *
     * @param root the root of the tree to export the summary list of.
     * @return the summary list representing the {@code YoGraphicDefinition} tree. The first item in the
-    *         returned list describes the given {@code root}.
+    *       returned list describes the given {@code root}.
     */
    public static List<YoGraphicFieldsSummary> exportSubtreeYoGraphicFieldsSummaryList(YoGraphicGroupDefinition root)
    {
@@ -422,8 +445,7 @@ public abstract class YoGraphicDefinition
          {
             throw new RuntimeException("Error for definition: %s, field: %s, value: %s".formatted(getClass().getSimpleName(),
                                                                                                   field.fieldName,
-                                                                                                  fieldNameStringValueEntry.getFieldValue()),
-                                       e);
+                                                                                                  fieldNameStringValueEntry.getFieldValue()), e);
          }
       }
    }
@@ -555,7 +577,7 @@ public abstract class YoGraphicDefinition
     *                        in this example.
     * @param elementToString the {@code String} generator to use for each element.
     * @return a {@code String} representation of the {@code list} of the form:
-    *         {@code "List(e0=element0AsString, e1=elementAsString,...)"}.
+    *       {@code "List(e0=element0AsString, e1=elementAsString,...)"}.
     */
    static <T> String listToParsableString(List<T> list, String elementLabel, Function<T, String> elementToString)
    {

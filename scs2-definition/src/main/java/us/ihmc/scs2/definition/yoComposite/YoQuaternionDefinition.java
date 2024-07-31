@@ -269,6 +269,12 @@ public class YoQuaternionDefinition extends YoOrientation3DDefinition
       return new String[] {x, y, z, s};
    }
 
+   @Override
+   public YoQuaternionDefinition copy()
+   {
+      return new YoQuaternionDefinition(x, y, z, s, referenceFrame);
+   }
+
    /**
     * Parses the given {@code value} into a {@link YoQuaternionDefinition}. The given {@code String}
     * representation is expected to have been generated using {@link #toString()}. If the format

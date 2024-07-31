@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -31,6 +30,7 @@ import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.*;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.DynamicLineChart.ChartStyle;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData.ChartDataUpdate;
@@ -67,7 +67,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    @FXML
    private Button closeButton;
    @FXML
-   private FontAwesomeIconView chartMoveIcon;
+   private Node chartMoveIcon;
 
    private DynamicLineChart dynamicLineChart;
 
@@ -78,7 +78,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private final ObservableList<ChartMarker> keyFrameMarkers = FXCollections.observableArrayList();
 
    private YoCompositeSearchManager yoCompositeSearchManager;
-   private final BooleanProperty useUniqueNames = new SimpleBooleanProperty(this, "useUniqueNames", false);
+   private final Property<YoNameDisplay> nameDisplayProperty = new SimpleObjectProperty<>(this, "nameDisplayProperty", YoNameDisplay.SHORT_NAME);
 
    private Property<Integer> legendPrecision;
 
@@ -91,6 +91,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private final TopicListener<int[]> keyFrameMarkerListener = this::updateKeyFrameMarkers;
    private AtomicReference<List<String>> yoCompositeSelected;
    private Topic<List<String>> yoCompositeSelectedTopic;
+
+   private final BooleanProperty showYAxisProperty = new SimpleBooleanProperty(this, "showYAxis", false);
 
    private final SimpleObjectProperty<ContextMenu> contextMenuProperty = new SimpleObjectProperty<>(this, "graphContextMenu", null);
 
@@ -155,6 +157,15 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       dynamicLineChart.addMarker(inPointMarker);
       dynamicLineChart.addMarker(outPointMarker);
       dynamicLineChart.addMarker(bufferIndexMarker);
+
+      showYAxisProperty.set(!(dynamicLineChart.getYAxis() instanceof FastNumberAxis));
+      showYAxisProperty.addListener((observable, oldValue, newValue) ->
+                                    {
+                                       if (newValue)
+                                          dynamicLineChart.setYAxis(FastAxisBase.wrap(new NumberAxis()));
+                                       else
+                                          dynamicLineChart.setYAxis(new FastNumberAxis());
+                                    });
 
       userMarkers.addListener((ListChangeListener<ChartMarker>) change ->
       {
@@ -252,6 +263,11 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       // Only show the update markers when the session is running and the chart may be behind.
       messager.addFXTopicListener(topics.getSessionCurrentMode(), m -> dynamicLineChart.updateIndexMarkersVisible().set(m == SessionMode.RUNNING));
       messager.submitMessage(topics.getRequestCurrentKeyFrames(), new Object());
+      messager.addFXTopicListener(topics.getYoChartShowYAxis(), m ->
+      {
+         if (m.getKey() == toolkit.getWindow())
+            showYAxisProperty.set(m.getValue());
+      });
 
       messager = toolkit.getMessager();
       yoCompositeSelectedTopic = toolkit.getTopics().getYoCompositeSelected();
@@ -369,7 +385,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    {
       if (charts.containsKey(yoVariable))
          return;
-      charts.put(yoVariable, new YoVariableChartPackage(yoVariable, yoCompositeSearchManager.getYoVariableCollection().getYoVariableUniqueName(yoVariable)));
+      String yoVariableUniqueName = yoCompositeSearchManager.getYoVariableCollection().getYoVariableUniqueName(yoVariable);
+      String yoVariableUniqueShortName = yoCompositeSearchManager.getYoVariableCollection().getYoVariableUniqueShortName(yoVariable);
+      charts.put(yoVariable, new YoVariableChartPackage(yoVariable, yoVariableUniqueName, yoVariableUniqueShortName));
    }
 
    public void addYoVariablesToPlot(Collection<? extends YoVariable> yoVariables)
@@ -488,15 +506,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
          contextMenu.getItems().add(menuItem);
       }
 
-      boolean isYAxisVisible = !(dynamicLineChart.getYAxis() instanceof FastNumberAxis);
+      boolean isYAxisVisible = showYAxisProperty.get();
       MenuItem yAxisVisibleItem = new MenuItem(isYAxisVisible ? "Hide y-axis" : "Show y-axis");
-      yAxisVisibleItem.setOnAction(e ->
-                                   {
-                                      if (isYAxisVisible)
-                                         dynamicLineChart.setYAxis(new FastNumberAxis());
-                                      else
-                                         dynamicLineChart.setYAxis(FastAxisBase.wrap(new NumberAxis()));
-                                   });
+      yAxisVisibleItem.setOnAction(e -> showYAxisProperty.set(!isYAxisVisible));
       contextMenu.getItems().add(yAxisVisibleItem);
 
       return contextMenu;
@@ -758,9 +770,9 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       return DragAndDropTools.retrieveYoCompositesFromDragBoard(dragboard, yoCompositeSearchManager) != null;
    }
 
-   public BooleanProperty useUniqueNamesProperty()
+   public Property<YoNameDisplay> nameDisplayPropertyProperty()
    {
-      return useUniqueNames;
+      return nameDisplayProperty;
    }
 
    public ObservableSet<YoVariable> getPlottedVariables()
@@ -773,7 +785,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       return closeButton;
    }
 
-   public FontAwesomeIconView getChartMoveIcon()
+   public Node getChartMoveIcon()
    {
       return chartMoveIcon;
    }
@@ -811,17 +823,32 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    {
       private final YoNumberSeries series;
       private final YoVariableChartData chartData;
+      private final String variableUniqueName;
+      private final String yoVariableUniqueShortName;
       private final Object callerID = YoChartPanelController.this;
 
-      public YoVariableChartPackage(YoVariable yoVariable, String variableUniqueName)
+      public YoVariableChartPackage(YoVariable yoVariable, String variableUniqueName, String yoVariableUniqueShortName)
       {
          series = new YoNumberSeries(yoVariable, legendPrecision);
          chartData = chartDataManager.getYoVariableChartData(callerID, yoVariable);
+         this.variableUniqueName = variableUniqueName;
+         this.yoVariableUniqueShortName = yoVariableUniqueShortName;
+
          dynamicLineChart.addSeries(series);
 
-         if (useUniqueNames.get())
-            series.setSeriesName(variableUniqueName);
-         useUniqueNames.addListener((o, oldValue, newValue) -> series.setSeriesName(newValue ? variableUniqueName : yoVariable.getName()));
+         series.setSeriesName(getDisplayName());
+         nameDisplayProperty.addListener((o, oldValue, newValue) -> series.setSeriesName(getDisplayName()));
+      }
+
+      public String getDisplayName()
+      {
+         return switch (nameDisplayProperty.getValue())
+         {
+            case SHORT_NAME -> chartData.getYoVariable().getName();
+            case UNIQUE_NAME -> variableUniqueName;
+            case UNIQUE_SHORT_NAME -> yoVariableUniqueShortName;
+            case FULL_NAME -> chartData.getYoVariable().getFullNameString();
+         };
       }
 
       public void updateLegend()

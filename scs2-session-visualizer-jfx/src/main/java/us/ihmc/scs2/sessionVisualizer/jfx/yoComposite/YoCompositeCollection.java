@@ -1,19 +1,20 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoComposite;
 
+import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoVariable;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoVariable;
-
 public class YoCompositeCollection
 {
    private final YoCompositePattern pattern;
    private final List<YoComposite> yoComposites;
    private final Map<String, YoComposite> uniqueNameToYoComposite;
+   private final Map<String, YoComposite> uniqueShortNameToYoComposite;
    private final Map<String, YoComposite> fullnameToYoComposite;
 
    public YoCompositeCollection(YoCompositePattern pattern, List<YoComposite> yoComposites)
@@ -22,6 +23,7 @@ public class YoCompositeCollection
       this.yoComposites = yoComposites;
       YoComposite.computeUniqueNames(yoComposites);
       uniqueNameToYoComposite = yoComposites.stream().collect(Collectors.toMap(YoComposite::getUniqueName, Function.identity()));
+      uniqueShortNameToYoComposite = yoComposites.stream().collect(Collectors.toMap(YoComposite::getUniqueShortName, Function.identity()));
       fullnameToYoComposite = yoComposites.stream().collect(Collectors.toMap(YoComposite::getFullname, Function.identity()));
    }
 
@@ -46,9 +48,18 @@ public class YoCompositeCollection
       return yoTypeReference != null ? yoTypeReference.getUniqueName() : null;
    }
 
+   public String getYoVariableUniqueShortName(YoVariable yoVariable)
+   {
+      YoComposite yoTypeReference = fullnameToYoComposite.get(yoVariable.getFullNameString());
+      return yoTypeReference != null ? yoTypeReference.getUniqueShortName() : null;
+   }
+
    public YoComposite getYoCompositeFromUniqueName(String uniqueName)
    {
-      return uniqueNameToYoComposite.get(uniqueName);
+      YoComposite result = uniqueNameToYoComposite.get(uniqueName);
+      if (result == null)
+         result = uniqueShortNameToYoComposite.get(uniqueName);
+      return result;
    }
 
    public YoComposite getYoCompositeFromFullname(String fullname)
@@ -56,19 +67,14 @@ public class YoCompositeCollection
       return fullnameToYoComposite.get(fullname);
    }
 
-   public Map<String, YoComposite> getUniqueNameToYoComposite()
-   {
-      return uniqueNameToYoComposite;
-   }
-
-   public Map<String, YoComposite> getFullnameToYoComposite()
-   {
-      return fullnameToYoComposite;
-   }
-
    public Collection<String> uniqueNameCollection()
    {
       return uniqueNameToYoComposite.keySet();
+   }
+
+   public Collection<String> uniqueShortNameCollection()
+   {
+      return uniqueShortNameToYoComposite.keySet();
    }
 
    public Collection<String> fullnameCollection()

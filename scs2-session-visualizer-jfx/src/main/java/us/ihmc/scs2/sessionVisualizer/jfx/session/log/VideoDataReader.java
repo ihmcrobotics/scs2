@@ -1,16 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import gnu.trove.list.array.TLongArrayList;
-import gnu.trove.set.hash.TIntHashSet;
 import javafx.scene.image.WritableImage;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
@@ -18,6 +8,14 @@ import us.ihmc.concurrent.ConcurrentCopier;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.scs2.session.log.ProgressConsumer;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
 
 public class VideoDataReader
 {
@@ -72,7 +70,8 @@ public class VideoDataReader
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
 
          imageBuffer.commit();
-      } catch (IOException e)
+      }
+      catch (IOException e)
       {
          e.printStackTrace();
       }
@@ -103,7 +102,8 @@ public class VideoDataReader
             timestampWriter.print(" ");
             timestampWriter.println(pts);
             pts++;
-         } else if (robotTimestamp > endTimestamp)
+         }
+         else if (robotTimestamp > endTimestamp)
          {
             break;
          }
@@ -233,7 +233,7 @@ public class VideoDataReader
          replacedRobotTimestampIndex = new boolean[robotTimestamps.length];
          int duplicatesAtEndOfFile = getNumberOfDuplicatesAtEndOfFile();
 
-         for (int currentIndex = 0; currentIndex < robotTimestamps.length - duplicatesAtEndOfFile;)
+         for (int currentIndex = 0; currentIndex < robotTimestamps.length - duplicatesAtEndOfFile; )
          {
             if (robotTimestamps[currentIndex] != robotTimestamps[currentIndex + 1])
             {
@@ -247,7 +247,8 @@ public class VideoDataReader
             int nextNonDuplicateIndex = getNextNonDuplicateIndex(currentIndex);
             for (int i = currentIndex; i < nextNonDuplicateIndex; i++)
             {
-               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[i], robotTimestamps[nextNonDuplicateIndex],
+               long firstAdjustedTimestamp = (long) EuclidCoreTools.interpolate(robotTimestamps[i],
+                                                                                robotTimestamps[nextNonDuplicateIndex],
                                                                                 (double) 1 / (nextNonDuplicateIndex - i));
                robotTimestamps[i + 1] = firstAdjustedTimestamp;
             }
@@ -280,8 +281,9 @@ public class VideoDataReader
       /**
        * Searches the list of robotTimestamps for the value closest to queryRobotTimestamp and returns that index. Then sets videoTimestamp to
        * that index in oder to display the right frame.
-       * @param queryRobotTimestamp the value sent from the robot data in which we want to find the closest robotTimestamp in the timestamp file.
-       * @return the videoTimestamp that matches the index of the closest robotTimestamp in our timestamp file.
+       *
+       * @param queryRobotTimestamp the value sent from the robot data in which we want to find the closest robotTimestamp in the instant file.
+       * @return the videoTimestamp that matches the index of the closest robotTimestamp in our instant file.
        */
       public long getVideoTimestamp(long queryRobotTimestamp)
       {
@@ -297,7 +299,7 @@ public class VideoDataReader
          if (queryRobotTimestamp <= robotTimestamps[0])
             return 0;
 
-         if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length-1])
+         if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length - 1])
             return robotTimestamps.length - 1;
 
          int index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);

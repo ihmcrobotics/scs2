@@ -9,7 +9,15 @@ import us.ihmc.scs2.definition.visual.ColorDefinitions;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
+import us.ihmc.scs2.session.mcap.MCAPBufferedChunk.ChunkBundle;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
+import us.ihmc.scs2.session.mcap.encoding.CDRDeserializer;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
+import us.ihmc.scs2.session.mcap.specs.records.Channel;
+import us.ihmc.scs2.session.mcap.specs.records.Message;
+import us.ihmc.scs2.session.mcap.specs.records.Opcode;
+import us.ihmc.scs2.session.mcap.specs.records.Record;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.euclid.YoPose3D;
 import us.ihmc.yoVariables.euclid.YoQuaternion;
@@ -19,7 +27,15 @@ import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameQuaternion;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class MCAPFrameTransformManager
 {
@@ -51,21 +67,21 @@ public class MCAPFrameTransformManager
    private final Set<String> unattachedRootNames = new LinkedHashSet<>();
 
    private final YoGraphicGroupDefinition yoGraphicGroupDefinition = new YoGraphicGroupDefinition("FoxgloveFrameTransforms");
-   private MCAP.Schema mcapSchema;
+   private Schema mcapSchema;
 
    public MCAPFrameTransformManager(ReferenceFrame inertialFrame)
    {
       this.inertialFrame = inertialFrame;
    }
 
-   public void initialize(MCAP mcap) throws IOException
+   public void initialize(MCAP mcap, MCAPBufferedChunk chunkBuffer) throws IOException
    {
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
-         if (record.op() != MCAP.Opcode.SCHEMA)
+         if (record.op() != Opcode.SCHEMA)
             continue;
 
-         mcapSchema = (MCAP.Schema) record.body();
+         mcapSchema = (Schema) record.body();
          if (mcapSchema.name().equalsIgnoreCase("foxglove::FrameTransform"))
          {
             if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
@@ -85,7 +101,10 @@ public class MCAPFrameTransformManager
       }
 
       if (foxgloveFrameTransformSchema == null)
-         throw new RuntimeException("Could not find the schema for foxglove::FrameTransform");
+      {
+         LogTools.error("Could not find the schema for foxglove::FrameTransform");
+         return;
+      }
 
       // Flatten the schema to make it easier to read.
       foxgloveFrameTransformSchema = foxgloveFrameTransformSchema.flattenSchema();
@@ -106,52 +125,49 @@ public class MCAPFrameTransformManager
       }
 
       TIntObjectHashMap<String> channelIdToTopicMap = new TIntObjectHashMap<>();
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
-         if (record.op() == MCAP.Opcode.CHANNEL)
+         if (record.op() == Opcode.CHANNEL)
          {
-            MCAP.Channel channel = (MCAP.Channel) record.body();
+            Channel channel = (Channel) record.body();
             if (channel.schemaId() == foxgloveFrameTransformSchema.getId())
             {
                channelIdToTopicMap.put(channel.id(), channel.topic());
             }
-            record.unloadBody();
          }
       }
       channelIds.addAll(channelIdToTopicMap.keys());
 
       Map<String, BasicTransformInfo> allTransforms = new LinkedHashMap<>();
 
-      for (MCAP.Record record : mcap.records())
+      for (Record record : mcap.records())
       {
-         if (record.op() == MCAP.Opcode.CHUNK)
+         if (record.op() == Opcode.MESSAGE)
+            processRecord(record, channelIdToTopicMap, allTransforms);
+      }
+
+      int numberOfTransforms = allTransforms.size();
+      int numberOfChunkWithoutNewTransforms = 0;
+
+      for (ChunkBundle chunkBundle : chunkBuffer.getChunkBundles())
+      {
+         chunkBundle.requestLoadChunkBundle(true, false, false);
+
+         for (Record record : chunkBundle.getChunkRecords())
          {
-            MCAP.Chunk chunk = (MCAP.Chunk) record.body();
-            for (MCAP.Record chunkRecord : chunk.records())
-            {
-               if (chunkRecord.op() == MCAP.Opcode.MESSAGE)
-               {
-                  MCAP.Message message = (MCAP.Message) chunkRecord.body();
-                  String topic = channelIdToTopicMap.get(message.channelId());
-                  if (topic == null)
-                     continue;
-                  BasicTransformInfo transformInfo = extractFromMessage(foxgloveFrameTransformSchema, topic, message);
-                  allTransforms.put(transformInfo.childFrameName(), transformInfo);
-               }
-            }
-            chunk.unloadRecords();
-            record.unloadBody();
+            if (record.op() == Opcode.MESSAGE)
+               processRecord(record, channelIdToTopicMap, allTransforms);
          }
-         else if (record.op() == MCAP.Opcode.MESSAGE)
-         {
-            MCAP.Message message = (MCAP.Message) record.body();
-            String topic = channelIdToTopicMap.get(message.channelId());
-            if (topic == null)
-               continue;
-            BasicTransformInfo transformInfo = extractFromMessage(foxgloveFrameTransformSchema, topic, message);
-            allTransforms.put(transformInfo.childFrameName(), transformInfo);
-            record.unloadBody();
-         }
+
+         if (allTransforms.size() == numberOfTransforms)
+            numberOfChunkWithoutNewTransforms++;
+         else
+            numberOfChunkWithoutNewTransforms = 0;
+
+         if (numberOfChunkWithoutNewTransforms > 5)
+            break;
+
+         numberOfTransforms = allTransforms.size();
       }
 
       for (BasicTransformInfo transformInfo : allTransforms.values())
@@ -188,6 +204,18 @@ public class MCAPFrameTransformManager
       }
    }
 
+   private void processRecord(Record record, TIntObjectHashMap<String> channelIdToTopicMap, Map<String, BasicTransformInfo> allTransforms)
+   {
+      Message message = (Message) record.body();
+      String topic = channelIdToTopicMap.get(message.channelId());
+
+      if (topic == null)
+         return;
+
+      BasicTransformInfo transformInfo = extractFromMessage(foxgloveFrameTransformSchema, topic, message);
+      allTransforms.put(transformInfo.childFrameName(), transformInfo);
+   }
+
    private static LinkedList<BasicTransformInfo> sortTransforms(Map<String, BasicTransformInfo> allTransforms)
    {
       LinkedList<BasicTransformInfo> ordered = new LinkedList<>(allTransforms.values());
@@ -212,6 +240,9 @@ public class MCAPFrameTransformManager
 
    public void update()
    {
+      if (foxgloveFrameTransformSchema == null)
+         return;
+
       for (YoFoxGloveFrameTransform transform : transformList)
       {
          transform.update();
@@ -226,14 +257,15 @@ public class MCAPFrameTransformManager
     * @param message the message to read.
     * @return {@code true} if the message was successfully read, {@code false} otherwise.
     */
-   public boolean readMessage(MCAP.Message message)
+   public boolean readMessage(Message message)
    {
-      if (!channelIds.contains(message.channelId()))
-      {
+      if (foxgloveFrameTransformSchema == null)
          return false;
-      }
 
-      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
+      if (!channelIds.contains(message.channelId()))
+         return false;
+
+      cdr.initialize(message.messageBuffer(), 0, message.dataLength());
 
       double rx, ry, rz, rw;
       double tx, ty, tz;
@@ -313,7 +345,7 @@ public class MCAPFrameTransformManager
       }
       finally
       {
-         cdr.finalize(false);
+         cdr.finalize(true);
       }
 
       YoFoxGloveFrameTransform transform = rawNameToTransformMap.get(childFrameName);
@@ -344,7 +376,12 @@ public class MCAPFrameTransformManager
       return registry;
    }
 
-   public MCAP.Schema getMCAPSchema()
+   public boolean hasMCAPFrameTransforms()
+   {
+      return foxgloveFrameTransformSchema != null;
+   }
+
+   public Schema getMCAPSchema()
    {
       return mcapSchema;
    }
@@ -359,13 +396,13 @@ public class MCAPFrameTransformManager
       return sanitizedNameToTransformMap.get(name);
    }
 
-   private static BasicTransformInfo extractFromMessage(MCAPSchema flatSchema, String topic, MCAP.Message message)
+   private static BasicTransformInfo extractFromMessage(MCAPSchema flatSchema, String topic, Message message)
    {
       if (!flatSchema.isSchemaFlat())
          throw new IllegalArgumentException("The schema is not flat.");
 
       CDRDeserializer cdr = new CDRDeserializer();
-      cdr.initialize(message.messageBuffer(), message.offsetData(), message.lengthData());
+      cdr.initialize(message.messageBuffer(), 0, message.dataLength());
 
       String parentFrameName = null;
       String childFrameName = null;
@@ -429,8 +466,8 @@ public class MCAPFrameTransformManager
          poseToParent = new YoPose3D(namePrefix, registry);
          if (parent == null)
          {
-            YoPoint3D yoPosition = (YoPoint3D) poseToParent.getPosition();
-            YoQuaternion yoOrientation = (YoQuaternion) poseToParent.getOrientation();
+            YoPoint3D yoPosition = poseToParent.getPosition();
+            YoQuaternion yoOrientation = poseToParent.getOrientation();
             poseToRoot = new YoFramePose3D(new YoFramePoint3D(yoPosition.getYoX(), yoPosition.getYoY(), yoPosition.getYoZ(), inertialFrame),
                                            new YoFrameQuaternion(yoOrientation.getYoQx(),
                                                                  yoOrientation.getYoQy(),

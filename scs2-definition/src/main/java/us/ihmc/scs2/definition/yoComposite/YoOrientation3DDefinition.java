@@ -9,12 +9,14 @@ import javax.xml.bind.annotation.XmlSeeAlso;
  * variable name/fullname, or is a constant value, which case it is set to the string representation
  * of the value.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlSeeAlso({YoQuaternionDefinition.class, YoYawPitchRollDefinition.class})
 public abstract class YoOrientation3DDefinition extends YoCompositeDefinition
 {
+   public abstract YoOrientation3DDefinition copy();
+
    /**
     * Parses the given {@code value} into a {@link YoOrientation3DDefinition}. The given {@code String}
     * representation is expected to have been generated using {@link #toString()}. If the format

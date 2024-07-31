@@ -1,10 +1,10 @@
 package us.ihmc.scs2.definition.yoComposite;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * A {@link YoTuple3DDefinition} represents a template for creating a tuple 3D which components can
@@ -21,7 +21,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
  * See {@link YoGraphicDefinitionFactory} for factory methods to facilitate the creation of a
  * {@code YoTuple3DDefinition}.
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 @XmlRootElement(name = "YoTuple3D")
@@ -196,6 +196,11 @@ public class YoTuple3DDefinition extends YoCompositeDefinition
    public String[] getComponentValues()
    {
       return new String[] {x, y, z};
+   }
+
+   public YoTuple3DDefinition copy()
+   {
+      return new YoTuple3DDefinition(x, y, z, referenceFrame);
    }
 
    /**

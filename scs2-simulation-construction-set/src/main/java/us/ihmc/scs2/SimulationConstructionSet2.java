@@ -1,11 +1,5 @@
 package us.ihmc.scs2;
 
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
-
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
@@ -58,6 +52,12 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.registry.YoVariableHolder;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
  * Convenience class for creating a simulation environment with a JavaFX GUI.
@@ -172,8 +172,8 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * Default value for {@link #visualizerEnabled}. If the system property is not set, it is
     * {@code true} by default.
     */
-   public static final boolean DEFAULT_VISUALIZER_ENABLED = SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true)
-         && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
+   public static final boolean DEFAULT_VISUALIZER_ENABLED =
+         SessionPropertiesHelper.loadBooleanProperty("create.scs.gui", true) && SessionPropertiesHelper.loadBooleanProperty("scs2.disablegui", true, false);
 
    private final SimulationSession simulationSession;
 
@@ -1141,6 +1141,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void requestChartsForceUpdate()
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.requestChartsForceUpdate());
    }
 
    @Override

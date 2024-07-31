@@ -2,10 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Rectangle2D;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
@@ -118,6 +115,12 @@ public class SecondaryWindowManager implements Manager
       {
          yoGraphicEditor.getValue().closeAndDispose();
          yoGraphicEditor.setValue(null);
+      }
+
+      if (yoCompositeCreator.getValue() != null)
+      {
+         yoCompositeCreator.getValue().closeAndDispose();
+         yoCompositeCreator.setValue(null);
       }
 
       sliderboardManager.stopSession();
@@ -257,52 +260,9 @@ public class SecondaryWindowManager implements Manager
       Stage stage = new Stage();
 
       if (definition != null)
-      {
-         double positionX = definition.getPositionX();
-         double positionY = definition.getPositionY();
-         double width;
-         if (definition.getWidth() > 0.0)
-            width = definition.getWidth();
-         else
-            width = stage.getWidth();
-
-         double height;
-         if (definition.getHeight() > 0.0)
-            height = definition.getHeight();
-         else
-            height = stage.getHeight();
-
-         ObservableList<Screen> screensForRectangle = Screen.getScreensForRectangle(positionX, positionY, width, height);
-
-         if (screensForRectangle.isEmpty())
-         {
-            // The window would be outside the visible bounds of the screens.
-            // We'll reset the window so it appears in the middle of the primary screen.
-            Screen primary = Screen.getPrimary();
-            Rectangle2D visualBounds = primary.getVisualBounds();
-            width = Math.min(width, visualBounds.getWidth());
-            height = Math.min(height, visualBounds.getHeight());
-            positionX = 0.5 * (visualBounds.getMinX() + visualBounds.getMaxX() - width);
-            positionY = 0.5 * (visualBounds.getMinY() + visualBounds.getMaxY() - height);
-         }
-
-         stage.setX(positionX);
-         stage.setY(positionY);
-
-         if (definition.isMaximized())
-         {
-            stage.setMaximized(true);
-         }
-         else
-         {
-            stage.setWidth(width);
-            stage.setHeight(height);
-         }
-      }
+         SCSGuiConfiguration.loadWindowConfigurationDefinition(definition, stage);
       else
-      {
          initializeSecondaryWindowWithOwner(requestSource, stage);
-      }
 
       secondaryWindows.add(stage);
       return stage;
@@ -318,6 +278,7 @@ public class SecondaryWindowManager implements Manager
          definition.setPositionY(stage.getY());
          definition.setWidth(stage.getWidth());
          definition.setHeight(stage.getHeight());
+         definition.setShowing(stage.isShowing());
       }
       else
       {
@@ -326,6 +287,7 @@ public class SecondaryWindowManager implements Manager
          definition.setPositionY(stage.getY());
          definition.setWidth(stage.getWidth());
          definition.setHeight(stage.getHeight());
+         definition.setShowing(stage.isShowing());
       }
       return definition;
    }
@@ -395,6 +357,16 @@ public class SecondaryWindowManager implements Manager
          return;
       secondary.setX(owner.getX() + SECONDARY_WINDOW_POSITION_OFFSET);
       secondary.setY(owner.getY() + 30.0);
+   }
+
+   public int getNumberOfSecondaryWindows()
+   {
+      return secondaryWindows.size();
+   }
+
+   public SecondaryWindowController getSecondaryWindowController(int index)
+   {
+      return secondaryWindowControllers.get(index);
    }
 
    public static class NewWindowRequest

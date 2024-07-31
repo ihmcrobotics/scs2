@@ -1,9 +1,7 @@
 package us.ihmc.scs2.simulation.collision;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import org.apache.commons.io.FilenameUtils;
+import us.ihmc.euclid.geometry.interfaces.Vertex3DSupplier;
 import us.ihmc.euclid.referenceFrame.FrameBox3D;
 import us.ihmc.euclid.referenceFrame.FrameCapsule3D;
 import us.ihmc.euclid.referenceFrame.FrameCylinder3D;
@@ -26,7 +24,9 @@ import us.ihmc.euclid.shape.primitives.Sphere3D;
 import us.ihmc.euclid.shape.primitives.Torus3D;
 import us.ihmc.euclid.shape.primitives.interfaces.Shape3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
+import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
@@ -35,6 +35,7 @@ import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
+import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Point3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
 import us.ihmc.scs2.definition.geometry.STPBox3DDefinition;
@@ -55,6 +56,11 @@ import us.ihmc.scs2.simulation.shapes.STPBox3D;
 import us.ihmc.scs2.simulation.shapes.STPCapsule3D;
 import us.ihmc.scs2.simulation.shapes.STPCylinder3D;
 import us.ihmc.scs2.simulation.shapes.STPRamp3D;
+
+import java.net.URL;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class CollisionTools
 {
@@ -146,32 +152,34 @@ public class CollisionTools
 
    public static FrameShape3DReadOnly toFrameShape3D(RigidBodyTransformReadOnly originPose, ReferenceFrame referenceFrame, GeometryDefinition definition)
    {
-      if (definition instanceof STPBox3DDefinition)
-         return new FrameSTPBox3D(referenceFrame, toSTPBox3D(originPose, (STPBox3DDefinition) definition));
-      if (definition instanceof Box3DDefinition)
-         return new FrameBox3D(referenceFrame, toBox3D(originPose, (Box3DDefinition) definition));
-      else if (definition instanceof STPCapsule3DDefinition)
-         return new FrameSTPCapsule3D(referenceFrame, toSTPCapsule3D(originPose, (STPCapsule3DDefinition) definition));
-      else if (definition instanceof Capsule3DDefinition)
-         return new FrameCapsule3D(referenceFrame, toCapsule3D(originPose, (Capsule3DDefinition) definition));
-      else if (definition instanceof ConvexPolytope3DDefinition)
-         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, (ConvexPolytope3DDefinition) definition));
-      else if (definition instanceof Cone3DDefinition)
-         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, (Cone3DDefinition) definition));
-      else if (definition instanceof STPCylinder3DDefinition)
-         return new FrameSTPCylinder3D(referenceFrame, toSTPCylinder3D(originPose, (STPCylinder3DDefinition) definition));
-      else if (definition instanceof Cylinder3DDefinition)
-         return new FrameCylinder3D(referenceFrame, toCylinder3D(originPose, (Cylinder3DDefinition) definition));
-      else if (definition instanceof Ellipsoid3DDefinition)
-         return new FrameEllipsoid3D(referenceFrame, toEllipsoid3D(originPose, (Ellipsoid3DDefinition) definition));
-      else if (definition instanceof Point3DDefinition)
-         return new FramePointShape3D(referenceFrame, toPointShape3D(originPose, (Point3DDefinition) definition));
-      else if (definition instanceof Sphere3DDefinition)
-         return new FrameSphere3D(referenceFrame, toSphere3D(originPose, (Sphere3DDefinition) definition));
-      else if (definition instanceof STPRamp3DDefinition)
-         return new FrameSTPRamp3D(referenceFrame, toSTPRamp3D(originPose, (STPRamp3DDefinition) definition));
-      else if (definition instanceof Ramp3DDefinition)
-         return new FrameRamp3D(referenceFrame, toRamp3D(originPose, (Ramp3DDefinition) definition));
+      if (definition instanceof STPBox3DDefinition stpBox3DDefinition)
+         return new FrameSTPBox3D(referenceFrame, toSTPBox3D(originPose, stpBox3DDefinition));
+      if (definition instanceof Box3DDefinition box3DDefinition)
+         return new FrameBox3D(referenceFrame, toBox3D(originPose, box3DDefinition));
+      else if (definition instanceof STPCapsule3DDefinition stpCapsule3DDefinition)
+         return new FrameSTPCapsule3D(referenceFrame, toSTPCapsule3D(originPose, stpCapsule3DDefinition));
+      else if (definition instanceof Capsule3DDefinition capsule3DDefinition)
+         return new FrameCapsule3D(referenceFrame, toCapsule3D(originPose, capsule3DDefinition));
+      else if (definition instanceof ConvexPolytope3DDefinition convexPolytope3DDefinition)
+         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, convexPolytope3DDefinition));
+      else if (definition instanceof Cone3DDefinition cone3DDefinition)
+         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, cone3DDefinition));
+      else if (definition instanceof STPCylinder3DDefinition stpCylinder3DDefinition)
+         return new FrameSTPCylinder3D(referenceFrame, toSTPCylinder3D(originPose, stpCylinder3DDefinition));
+      else if (definition instanceof Cylinder3DDefinition cylinder3DDefinition)
+         return new FrameCylinder3D(referenceFrame, toCylinder3D(originPose, cylinder3DDefinition));
+      else if (definition instanceof Ellipsoid3DDefinition ellipsoid3DDefinition)
+         return new FrameEllipsoid3D(referenceFrame, toEllipsoid3D(originPose, ellipsoid3DDefinition));
+      else if (definition instanceof Point3DDefinition point3DDefinition)
+         return new FramePointShape3D(referenceFrame, toPointShape3D(originPose, point3DDefinition));
+      else if (definition instanceof Sphere3DDefinition sphere3DDefinition)
+         return new FrameSphere3D(referenceFrame, toSphere3D(originPose, sphere3DDefinition));
+      else if (definition instanceof STPRamp3DDefinition stpRamp3DDefinition)
+         return new FrameSTPRamp3D(referenceFrame, toSTPRamp3D(originPose, stpRamp3DDefinition));
+      else if (definition instanceof Ramp3DDefinition ramp3DDefinition)
+         return new FrameRamp3D(referenceFrame, toRamp3D(originPose, ramp3DDefinition));
+      else if (definition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
+         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, modelFileGeometryDefinition));
 
       LogTools.warn("Unhandled geometry type: " + definition.getClass().getSimpleName());
       return null;
@@ -312,5 +320,30 @@ public class CollisionTools
       // Ramp3DDefinition assume the origin at the center of the bottom face while Euclid places it at the bottom of the ramp.
       ramp3D.getPose().appendTranslation(-0.5 * definition.getSizeX(), 0.0, 0.0);
       return ramp3D;
+   }
+
+   public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, ModelFileGeometryDefinition definition)
+   {
+      if (!FilenameUtils.isExtension(definition.getFileName().toLowerCase(), "obj"))
+         throw new UnsupportedOperationException("Only Wavefront OBJ files are supported.");
+
+      LogTools.warn("Loading model file: {} into a collision convex polytope. ", definition.getFileName());
+
+      URL objFileURL = DefinitionIOTools.resolveModelFileURL(definition);
+      List<Point3D> vertices = DefinitionIOTools.loadOBJVertices(objFileURL);
+      if (!originPose.hasRotation())
+      {
+         if (originPose.hasTranslation())
+            vertices.forEach(vertex -> vertex.add(originPose.getTranslation()));
+      }
+      else if (!originPose.hasTranslation())
+      {
+         vertices.forEach(originPose::transform);
+      }
+      else
+      {
+         vertices.forEach(vertex -> originPose.getRotation().transform(vertex));
+      }
+      return new ConvexPolytope3D(Vertex3DSupplier.asVertex3DSupplier(vertices));
    }
 }

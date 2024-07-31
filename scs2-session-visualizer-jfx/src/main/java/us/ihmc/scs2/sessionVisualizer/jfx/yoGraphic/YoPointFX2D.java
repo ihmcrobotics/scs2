@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
-import java.util.List;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -16,9 +14,11 @@ import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import net.javainthebox.caraibe.svg.SVGContent;
 import net.javainthebox.caraibe.svg.SVGLoader;
-import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple2D.Point2D;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameWrapper;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
+
+import java.util.List;
 
 public class YoPointFX2D extends YoGraphicFX2D
 {
@@ -41,7 +41,7 @@ public class YoPointFX2D extends YoGraphicFX2D
       setGraphicResource(YoGraphicFXResourceManager.DEFAULT_POINT2D_GRAPHIC_RESOURCE);
    }
 
-   public YoPointFX2D(ReferenceFrame worldFrame)
+   public YoPointFX2D(ReferenceFrameWrapper worldFrame)
    {
       this();
       position.setReferenceFrame(worldFrame);
@@ -73,7 +73,6 @@ public class YoPointFX2D extends YoGraphicFX2D
          shape.strokeWidthProperty().bind(strokeWidthProperty);
          shape.idProperty().bind(nameProperty());
       }
-
    }
 
    @Override
@@ -85,10 +84,10 @@ public class YoPointFX2D extends YoGraphicFX2D
       if (position.containsNaN())
       {
          pointNode.getChildren().clear();
-//         translate.setX(Double.NEGATIVE_INFINITY);
-//         translate.setY(Double.NEGATIVE_INFINITY);
-//         scale.setX(0.0);
-//         scale.setY(0.0);
+         //         translate.setX(Double.NEGATIVE_INFINITY);
+         //         translate.setY(Double.NEGATIVE_INFINITY);
+         //         scale.setX(0.0);
+         //         scale.setY(0.0);
          return;
       }
       else

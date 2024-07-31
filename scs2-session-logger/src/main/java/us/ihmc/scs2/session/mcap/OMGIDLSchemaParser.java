@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -11,25 +12,34 @@ import us.ihmc.scs2.session.mcap.omgidl_parser.IDLBaseListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLLexer;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLListener;
 import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser;
+import us.ihmc.scs2.session.mcap.omgidl_parser.IDLParser.Enum_typeContext;
+import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
 public class OMGIDLSchemaParser
 {
-   public static MCAPSchema loadSchema(MCAP.Schema mcapSchema) throws IOException
+   public static MCAPSchema loadSchema(Schema mcapSchema) throws IOException
    {
-      return loadSchema(mcapSchema.name(), mcapSchema.id(), mcapSchema.data());
+      return loadSchema(mcapSchema.name(), mcapSchema.id(), new ByteBufferBackedInputStream(mcapSchema.data()));
    }
 
    public static MCAPSchema loadSchema(String name, int id, byte[] data) throws IOException
    {
+      return loadSchema(name, id, new ByteArrayInputStream(data));
+   }
+
+   public static MCAPSchema loadSchema(String name, int id, InputStream is) throws IOException
+   {
       MCAPSchema schema = new MCAPSchema(name, id, new ArrayList<>(), new HashMap<>());
 
-      CharStream bytesAsChar = CharStreams.fromStream(new ByteArrayInputStream(data));
+      CharStream bytesAsChar = CharStreams.fromStream(is);
 
       IDLLexer lexer = new IDLLexer(bytesAsChar);
       CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -61,7 +71,10 @@ public class OMGIDLSchemaParser
          private int maxLength;
          private boolean isArray;
          private boolean isSequence;
+         private boolean isEnum;
          private boolean isComplexType;
+
+         private String[] enumConstants;
 
          public MemberInfo()
          {
@@ -75,14 +88,16 @@ public class OMGIDLSchemaParser
             this.maxLength = -1;
             this.isArray = false;
             this.isSequence = false;
+            this.isEnum = false;
             this.isComplexType = false;
+            this.enumConstants = null;
          }
 
          @Override
          public String toString()
          {
             return "MemberInfo{" + "type='" + type + '\'' + ", name='" + name + '\'' + ", maxLength=" + maxLength + ", isArray=" + isArray + ", isSequence="
-                   + isSequence + ", isComplexType=" + isComplexType + '}';
+                   + isSequence + ", isEnum=" + isEnum + ", isComplexType=" + isComplexType + ", enumConstants=" + Arrays.toString(enumConstants) + '}';
          }
       }
 
@@ -195,6 +210,14 @@ public class OMGIDLSchemaParser
 
          currentMemberInfo.isSequence = true;
          currentMemberInfo.isComplexType = true;
+      }
+
+      @Override
+      public void exitEnum_type(Enum_typeContext ctx)
+      {
+         String name = ctx.identifier().getText();
+         MCAPSchema enumSchema = new MCAPSchema(name, -1, ctx.enumerator().stream().map(it -> it.identifier().ID().getText()).toArray(String[]::new));
+         this.currentSchema.getSubSchemaMap().put(name, enumSchema);
       }
 
       @Override

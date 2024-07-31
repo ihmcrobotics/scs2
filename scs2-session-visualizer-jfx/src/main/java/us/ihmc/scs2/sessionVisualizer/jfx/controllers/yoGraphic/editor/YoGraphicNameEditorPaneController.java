@@ -1,7 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.editor;
 
-import org.controlsfx.control.textfield.TextFields;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -14,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import org.controlsfx.control.textfield.TextFields;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
@@ -54,36 +53,36 @@ public class YoGraphicNameEditorPaneController
       YoGraphicFXControllerTools.bindValidityImageView(inputsValidityProperty, nameValidImageView);
 
       nameTextField.textProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == null || newValue.isEmpty())
-         {
-            inputsValidityProperty.set(false);
-         }
-         else
-         {
-            YoGraphicFXItem searchResult = findYoGraphicFXItem(newValue, namespaceTextField.getText());
-            boolean isNameValid = searchResult == null || searchResult == yoGraphicFXItem;
-            inputsValidityProperty.set(isNameValid);
-            if (isNameValid)
-               nameProperty.set(newValue);
-         }
-      });
+                                               {
+                                                  if (newValue == null || newValue.isEmpty())
+                                                  {
+                                                     inputsValidityProperty.set(false);
+                                                  }
+                                                  else
+                                                  {
+                                                     YoGraphicFXItem searchResult = findYoGraphicFXItem(newValue, namespaceTextField.getText());
+                                                     boolean isNameValid = searchResult == null || searchResult == yoGraphicFXItem;
+                                                     inputsValidityProperty.set(isNameValid);
+                                                     if (isNameValid)
+                                                        nameProperty.set(newValue);
+                                                  }
+                                               });
 
       namespaceTextField.textProperty().addListener((o, oldValue, newValue) ->
-      {
-         if (newValue == null || newValue.isEmpty())
-         {
-            inputsValidityProperty.set(false);
-         }
-         else
-         {
-            YoGraphicFXItem searchResult = findYoGraphicFXItem(nameTextField.getText(), newValue);
-            boolean isNamespaceValid = searchResult == null || searchResult == yoGraphicFXItem;
-            inputsValidityProperty.set(isNamespaceValid);
-            if (isNamespaceValid)
-               namespaceProperty.set(newValue);
-         }
-      });
+                                                    {
+                                                       if (newValue == null || newValue.isEmpty())
+                                                       {
+                                                          inputsValidityProperty.set(false);
+                                                       }
+                                                       else
+                                                       {
+                                                          YoGraphicFXItem searchResult = findYoGraphicFXItem(nameTextField.getText(), newValue);
+                                                          boolean isNamespaceValid = searchResult == null || searchResult == yoGraphicFXItem;
+                                                          inputsValidityProperty.set(isNamespaceValid);
+                                                          if (isNamespaceValid)
+                                                             namespaceProperty.set(newValue);
+                                                       }
+                                                    });
    }
 
    private YoGraphicFXItem findYoGraphicFXItem(String itemName, String namespace)
@@ -138,5 +137,10 @@ public class YoGraphicNameEditorPaneController
    public Label getNamespaceLabel()
    {
       return namespaceLabel;
+   }
+
+   public TextField getNameTextField()
+   {
+      return nameTextField;
    }
 }
