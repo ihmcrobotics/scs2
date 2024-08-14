@@ -32,7 +32,6 @@ mainDependencies {
    api("us.ihmc:euclid-frame:0.21.0")
    api("us.ihmc:ihmc-graphics-description:0.25.1")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
-   api("us.ihmc:svgloader:0.0")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.1")
    api("us.ihmc:ihmc-messager-javafx:0.2.0")
    api("org.bytedeco:javacv-platform:1.5.9")
