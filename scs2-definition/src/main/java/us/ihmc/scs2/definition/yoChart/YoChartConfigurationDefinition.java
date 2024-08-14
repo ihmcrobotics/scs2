@@ -2,8 +2,8 @@ package us.ihmc.scs2.definition.yoChart;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "ChartConfiguration")
 public class YoChartConfigurationDefinition

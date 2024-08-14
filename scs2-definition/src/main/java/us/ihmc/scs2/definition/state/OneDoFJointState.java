@@ -8,8 +8,8 @@ import us.ihmc.scs2.definition.state.interfaces.JointStateReadOnly;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlType;
 
 @XmlType(propOrder = {"configuration", "velocity", "acceleration", "effort"})
 public class OneDoFJointState extends JointStateBase implements OneDoFJointStateBasics

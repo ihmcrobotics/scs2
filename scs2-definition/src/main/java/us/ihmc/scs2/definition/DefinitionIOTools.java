@@ -38,10 +38,10 @@ import us.ihmc.scs2.definition.yoVariable.YoLongDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoRegistryDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;

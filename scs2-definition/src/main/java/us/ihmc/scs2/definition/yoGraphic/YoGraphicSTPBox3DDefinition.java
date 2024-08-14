@@ -2,8 +2,8 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import java.util.Objects;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * A {@code YoGraphicSTPBox3DDefinition} is a template for creating a 3D STP box and which

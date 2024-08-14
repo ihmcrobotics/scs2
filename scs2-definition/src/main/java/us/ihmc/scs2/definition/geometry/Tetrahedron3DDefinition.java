@@ -3,7 +3,7 @@ package us.ihmc.scs2.definition.geometry;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 /**
  * Definition for creating a regular 3D tetrahedron.
