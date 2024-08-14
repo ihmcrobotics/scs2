@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;

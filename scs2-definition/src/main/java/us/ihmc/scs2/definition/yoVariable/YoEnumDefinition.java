@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.yoVariable;
 
 import java.util.Arrays;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 public class YoEnumDefinition extends YoVariableDefinition
 {

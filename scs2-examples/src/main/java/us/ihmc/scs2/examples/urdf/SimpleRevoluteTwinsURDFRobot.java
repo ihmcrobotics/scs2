@@ -14,7 +14,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinitionFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;

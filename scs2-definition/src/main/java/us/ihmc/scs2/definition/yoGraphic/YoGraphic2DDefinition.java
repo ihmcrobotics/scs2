@@ -3,7 +3,7 @@ package us.ihmc.scs2.definition.yoGraphic;
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.PaintDefinition;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 
 /**

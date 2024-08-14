@@ -5,7 +5,7 @@ import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.*;
 import java.util.stream.Collectors;
 

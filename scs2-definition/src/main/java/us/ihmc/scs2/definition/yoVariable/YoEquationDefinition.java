@@ -1,7 +1,7 @@
 package us.ihmc.scs2.definition.yoVariable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

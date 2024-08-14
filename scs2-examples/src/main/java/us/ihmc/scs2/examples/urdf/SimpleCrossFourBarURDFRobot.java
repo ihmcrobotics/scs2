@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import us.ihmc.euclid.referenceFrame.FramePose3D;
 import us.ihmc.euclid.tuple2D.Vector2D;

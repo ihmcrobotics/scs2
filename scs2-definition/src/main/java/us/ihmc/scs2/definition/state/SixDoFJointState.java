@@ -1,6 +1,6 @@
 package us.ihmc.scs2.definition.state;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 import org.ejml.data.DMatrixRMaj;
 
