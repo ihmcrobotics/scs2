@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.yoComposite;
 
 import java.util.Objects;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
 
 import us.ihmc.scs2.definition.visual.ColorDefinition;
 import us.ihmc.scs2.definition.visual.ColorDefinitions;

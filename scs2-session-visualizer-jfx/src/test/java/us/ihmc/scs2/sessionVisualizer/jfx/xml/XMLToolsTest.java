@@ -3,7 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.xml;
 import org.junit.jupiter.api.Test;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 

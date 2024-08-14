@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.robot;
 
 import java.util.Objects;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 import us.ihmc.euclid.interfaces.Transformable;
 import us.ihmc.euclid.tools.EuclidHashCodeTools;

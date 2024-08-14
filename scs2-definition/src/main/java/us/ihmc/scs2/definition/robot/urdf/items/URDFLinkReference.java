@@ -1,6 +1,6 @@
 package us.ihmc.scs2.definition.robot.urdf.items;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;

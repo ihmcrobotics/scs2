@@ -8,7 +8,7 @@ import us.ihmc.scs2.definition.robot.urdf.URDFTools;
 import us.ihmc.scs2.definition.robot.urdf.URDFTools.URDFParserProperties;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
