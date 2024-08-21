@@ -10,6 +10,7 @@ import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.robotDataLogger.logger.MagewellDemuxer;
 import us.ihmc.robotDataLogger.logger.MagewellMuxer;
 import us.ihmc.scs2.session.log.ProgressConsumer;
+import us.ihmc.tools.CaptureTimeTools;
 
 import java.io.File;
 import java.io.IOException;
@@ -149,7 +150,7 @@ public class MagewellVideoDataReader implements VideoDataReader
          // We want to write all the frames at once to get equal timestamps between frames. When recording from the camera we have a fixed rate at which we
          // receive frames, so we don't need to worry about it, here however, we don't have that so we cna grab the next frame as fast as possible. However if the
          // timestamps between frames aren't large enough, things won't work. (maybe :))
-         long videoTimestamp = 1000 * (System.currentTimeMillis() - startTime);
+         long videoTimestamp = CaptureTimeTools.timeSinceStartedCaptureInSeconds(System.currentTimeMillis(), startTime);
          magewellMuxer.recordFrame(frame, videoTimestamp);
          videoTimestampsForCroppedLog[i] = magewellMuxer.getTimeStamp();
          i++;
