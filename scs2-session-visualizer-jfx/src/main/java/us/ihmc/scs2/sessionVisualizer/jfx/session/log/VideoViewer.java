@@ -39,7 +39,6 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader.FrameData;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 
 public class VideoViewer
@@ -54,9 +53,9 @@ public class VideoViewer
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
    private final Label queryRobotTimestampLabel = new Label();
-   private final Label demuxerCurrentPTSLabel = new Label();
-   private final Label cameraCurrentPTSLabel = new Label();
-   private final Label robotTimestampLabel = new Label();
+   private final Label currentDemuxerTimestampLabel = new Label();
+   private final Label currentVideoTimestampLabel = new Label();
+   private final Label currentRobotTimestampLabel = new Label();
 
    private final BooleanProperty updateVideoView = new SimpleBooleanProperty(this, "updateVideoView", false);
    private final ObjectProperty<Stage> videoWindowProperty = new SimpleObjectProperty<>(this, "videoWindow", null);
@@ -178,14 +177,14 @@ public class VideoViewer
          videoStatisticBox.setBorder(generalBorder);
 
          VBox videoStatisticLabels = new VBox(new Label("queryRobotTimestamp"),
-                                              new Label("robotTimestamp"),
-                                              new Label("cameraCurrentPTS"),
-                                              new Label("demuxerCurrentPTS"));
+                                              new Label("currentRobotTimestamp"),
+                                              new Label("currentVideoTimestamp"),
+                                              new Label("currentDemuxerTimestamp"));
          videoStatisticLabels.setBackground(generalBackground);
          videoStatisticLabels.setBorder(noRightBorder);
          videoStatisticLabels.setPadding(textInsets);
 
-         VBox videoStatistics = new VBox(queryRobotTimestampLabel, robotTimestampLabel, cameraCurrentPTSLabel, demuxerCurrentPTSLabel);
+         VBox videoStatistics = new VBox(queryRobotTimestampLabel, currentRobotTimestampLabel, currentVideoTimestampLabel, currentDemuxerTimestampLabel);
          videoStatistics.setBackground(generalBackground);
          videoStatistics.setBorder(noLeftBorder);
          videoStatistics.setPadding(textInsets);
@@ -230,7 +229,7 @@ public class VideoViewer
    {
       FrameData currentFrameData = reader.pollCurrentFrame();
 
-      if (currentFrameData == null)
+      if (currentFrameData.frame == null)
          return;
 
       WritableImage currentFrame = currentFrameData.frame;
@@ -244,9 +243,9 @@ public class VideoViewer
       {
          videoView.setImage(currentFrame);
          queryRobotTimestampLabel.setText(Long.toString(currentFrameData.queryRobotTimestamp));
-         robotTimestampLabel.setText(Long.toString(currentFrameData.robotTimestamp));
-         cameraCurrentPTSLabel.setText(Long.toString(currentFrameData.cameraCurrentPTS));
-         demuxerCurrentPTSLabel.setText(Long.toString(currentFrameData.demuxerCurrentPTS));
+         currentRobotTimestampLabel.setText(Long.toString(currentFrameData.currentRobotTimestamp));
+         currentVideoTimestampLabel.setText(Long.toString(currentFrameData.currentVideoTimestamp));
+         currentDemuxerTimestampLabel.setText(Long.toString(currentFrameData.currentDemuxerTimestamp));
 
          if (imageViewRootPane.get() != null)
          {

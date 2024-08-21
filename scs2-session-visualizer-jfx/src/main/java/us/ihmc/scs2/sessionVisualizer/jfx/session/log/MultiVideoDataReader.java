@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import us.ihmc.robotDataLogger.Camera;
+import us.ihmc.robotDataLogger.CameraType;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
@@ -27,7 +28,20 @@ public class MultiVideoDataReader
          Camera camera = cameras.get(i);
          try
          {
-            VideoDataReader reader = new VideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
+            VideoDataReader reader;
+            if (camera.getType().toString().equals(CameraType.CAPTURE_CARD_MAGEWELL.toString()))
+            {
+               reader = new MagewellVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
+            }
+            else if (camera.getType().toString().equals(CameraType.CAPTURE_CARD.toString()))
+            {
+               reader = new BlackMagicVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
+            }
+            else
+            {  // Older logs won't have the camera type set correctly, if there isn't a type set this as the only option
+               reader = new BlackMagicVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
+            }
+
             readers.add(reader);
          }
          catch (IOException e)
@@ -62,7 +76,9 @@ public class MultiVideoDataReader
             progressConsumer.info("Cropping video (%s)".formatted(camera.getVideoFileAsString()));
             double progressPercentage = (double) i / (double) readers.size();
             progressConsumer.progress(progressPercentage);
-            subProgressConsumer = progressConsumer.subProgress("Cropping video (%s): ".formatted(camera.getVideoFileAsString()), progressPercentage, (i + 1.0) / readers.size());
+            subProgressConsumer = progressConsumer.subProgress("Cropping video (%s): ".formatted(camera.getVideoFileAsString()),
+                                                               progressPercentage,
+                                                               (i + 1.0) / readers.size());
          }
 
          File timestampFile = new File(selectedDirectory, camera.getTimestampFileAsString());

@@ -4,7 +4,7 @@ import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.log.VideoDataReader;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.log.TimestampScrubber;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TimestampScrubberTest
 {
-   private static VideoDataReader.TimestampScrubber scrubber;
+   private static TimestampScrubber scrubber;
 
    private static long[] robotTimestamps;
    private static long[] videoTimestamps;
@@ -29,7 +29,7 @@ public class TimestampScrubberTest
       //        File timestampFile = new File("//10.7.4.48/LogData/Nadia/20230427_NadiaRunning/20230427_183903_NadiaRunningTallerCompleteFailRobotBreakMaybe/NadiaPoleNorth_Timestamps.dat");
       File timestampFile = new File(Objects.requireNonNull(TimestampScrubberTest.class.getClassLoader().getResource("sessionLogs/Capture.dat")).toURI());
 
-      scrubber = new VideoDataReader.TimestampScrubber(timestampFile, true, false);
+      scrubber = new TimestampScrubber(timestampFile, true, false);
 
       // Need to have one video in the log or this will fail
       robotTimestamps = scrubber.getRobotTimestampsArray();
@@ -60,7 +60,7 @@ public class TimestampScrubberTest
             System.out.println(currentRobotTimestamp + " -- " + previousRobotTimestamp);
 
          Assertions.assertTrue(currentRobotTimestamp > previousRobotTimestamp,
-                               "Cureent: " + currentRobotTimestamp + " and Previous: " + previousRobotTimestamp + " at Index: " + i);
+                               "Current: " + currentRobotTimestamp + " and Previous: " + previousRobotTimestamp + " at Index: " + i);
       }
    }
 
@@ -128,7 +128,7 @@ public class TimestampScrubberTest
       // Go through the robot timestamps in order and see if we get the desired video timestamp
       for (int i = 0; i < robotTimestamps.length - duplicatesAtEndOfFile; i++)
       {
-         long currentVideoTimestamp = scrubber.getVideoTimestamp(robotTimestamps[i]);
+         long currentVideoTimestamp = scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[i]);
          assertEquals(currentVideoTimestamp, videoTimestamps[i]);
       }
    }
@@ -138,7 +138,7 @@ public class TimestampScrubberTest
    {
       for (int i = robotTimestamps.length - duplicatesAtEndOfFile - 1; i > 0; i--)
       {
-         scrubber.getVideoTimestamp(robotTimestamps[i]);
+         scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[i]);
          assertEquals(scrubber.getCurrentVideoTimestamp(), videoTimestamps[i]);
       }
    }
@@ -149,7 +149,7 @@ public class TimestampScrubberTest
       // Go through the robot timestamps by +=2, so we skip every other frame and see if we get the desired video timestamp
       for (int i = 0; i < robotTimestamps.length - duplicatesAtEndOfFile; i += 2)
       {
-         scrubber.getVideoTimestamp(robotTimestamps[i]);
+         scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[i]);
          assertEquals(scrubber.getCurrentVideoTimestamp(), videoTimestamps[i], "For loop index: " + i);
       }
    }
@@ -159,13 +159,13 @@ public class TimestampScrubberTest
    {
       // Test grabbing random robot timestamps and checking to make sure we get the correct video timestamp
       // These robot timestamps need to be unique or the binary search will fail to get the correct video timestamp
-      scrubber.getVideoTimestamp(robotTimestamps[26]);
+      scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[26]);
       assertEquals(scrubber.getCurrentVideoTimestamp(), videoTimestamps[26]);
 
-      scrubber.getVideoTimestamp(robotTimestamps[40]);
+      scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[40]);
       assertEquals(scrubber.getCurrentVideoTimestamp(), videoTimestamps[40]);
 
-      scrubber.getVideoTimestamp(robotTimestamps[34]);
+      scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[34]);
       assertEquals(scrubber.getCurrentVideoTimestamp(), videoTimestamps[34]);
    }
 
@@ -173,7 +173,7 @@ public class TimestampScrubberTest
    public void testSearchRobotTimestampsForIndex()
    {
       // Sets the currentIndex to the end of the videoTimestamps to test edge case
-      scrubber.getVideoTimestamp(Long.MAX_VALUE);
+      scrubber.getVideoTimestampFromRobotTimestamp(Long.MAX_VALUE);
       int endOfArray = scrubber.getCurrentIndex();
 
       assertEquals(robotTimestamps.length - 1, endOfArray);
@@ -184,7 +184,7 @@ public class TimestampScrubberTest
    {
       File badName = new File("This_is_a_bad_file_name_lol");
 
-      Throwable thrown = assertThrows(RuntimeException.class, () -> new VideoDataReader.TimestampScrubber(badName, true, false));
+      Throwable thrown = assertThrows(RuntimeException.class, () -> new TimestampScrubber(badName, true, false));
       String messageException = thrown.getMessage().substring(0, 58);
 
       assertEquals("java.io.FileNotFoundException: " + badName, messageException);
@@ -194,7 +194,7 @@ public class TimestampScrubberTest
    public void testInsertionPointWhenSearching()
    {
       // Trying to find a robotTimestamp that doesn't exist will cause an insertionPoint
-      scrubber.getVideoTimestamp(robotTimestamps[0] + 1);
+      scrubber.getVideoTimestampFromRobotTimestamp(robotTimestamps[0] + 1);
       int insertionPointIndex = scrubber.getCurrentIndex();
 
       assertEquals(1, insertionPointIndex);
