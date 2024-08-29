@@ -46,13 +46,14 @@ public class VideoViewer
 
    private static final boolean LOGGER_VIDEO_DEBUG = SessionPropertiesHelper.loadBooleanPropertyOrEnvironment("scs2.session.gui.logger.video.debug",
                                                                                                               "SCS2_GUI_LOGGER_VIDEO_DEBUG",
-                                                                                                              false);
+                                                                                                              true);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
 
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
    private final ImageView videoView = new ImageView();
    private final Label queryRobotTimestampLabel = new Label();
+   private final Label currentFrameNumber = new Label();
    private final Label currentDemuxerTimestampLabel = new Label();
    private final Label currentVideoTimestampLabel = new Label();
    private final Label currentRobotTimestampLabel = new Label();
@@ -179,12 +180,17 @@ public class VideoViewer
          VBox videoStatisticLabels = new VBox(new Label("queryRobotTimestamp"),
                                               new Label("currentRobotTimestamp"),
                                               new Label("currentVideoTimestamp"),
-                                              new Label("currentDemuxerTimestamp"));
+                                              new Label("currentDemuxerTimestamp"),
+                                              new Label("currentFrameNumber"));
          videoStatisticLabels.setBackground(generalBackground);
          videoStatisticLabels.setBorder(noRightBorder);
          videoStatisticLabels.setPadding(textInsets);
 
-         VBox videoStatistics = new VBox(queryRobotTimestampLabel, currentRobotTimestampLabel, currentVideoTimestampLabel, currentDemuxerTimestampLabel);
+         VBox videoStatistics = new VBox(queryRobotTimestampLabel,
+                                         currentRobotTimestampLabel,
+                                         currentVideoTimestampLabel,
+                                         currentDemuxerTimestampLabel,
+                                         currentFrameNumber);
          videoStatistics.setBackground(generalBackground);
          videoStatistics.setBorder(noLeftBorder);
          videoStatistics.setPadding(textInsets);
@@ -246,6 +252,7 @@ public class VideoViewer
          currentRobotTimestampLabel.setText(Long.toString(currentFrameData.currentRobotTimestamp));
          currentVideoTimestampLabel.setText(Long.toString(currentFrameData.currentVideoTimestamp));
          currentDemuxerTimestampLabel.setText(Long.toString(currentFrameData.currentDemuxerTimestamp));
+         currentFrameNumber.setText(Long.toString((currentFrameData.frameNumber)));
 
          if (imageViewRootPane.get() != null)
          {

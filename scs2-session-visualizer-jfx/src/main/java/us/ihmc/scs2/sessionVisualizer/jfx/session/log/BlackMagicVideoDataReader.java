@@ -71,6 +71,7 @@ public class BlackMagicVideoDataReader implements VideoDataReader
          copyForWriting.currentRobotTimestamp = currentRobotTimestamp;
          copyForWriting.currentVideoTimestamp = videoTimestamp;
          copyForWriting.currentDemuxerTimestamp = demuxer.getCurrentPTS();
+         copyForWriting.frameNumber = demuxer.getCurrentFrame();
          YUVPicture nextFrame = demuxer.getNextFrame(); // Increment frame index after getting frame.
          copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
 

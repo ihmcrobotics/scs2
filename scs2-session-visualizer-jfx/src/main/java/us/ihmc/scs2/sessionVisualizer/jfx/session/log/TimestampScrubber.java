@@ -19,7 +19,6 @@ public class TimestampScrubber
 
    private int currentIndex = 0;
    private long currentRobotTimestamp = 0;
-   private long videoTimestamp;
 
    private boolean[] replacedRobotTimestampIndex;
 
@@ -138,7 +137,7 @@ public class TimestampScrubber
    public long getVideoTimestampFromRobotTimestamp(long queryRobotTimestamp)
    {
       currentIndex = searchRobotTimestampsForIndex(queryRobotTimestamp);
-      videoTimestamp = videoTimestamps[currentIndex];
+      long videoTimestamp = videoTimestamps[currentIndex];
       currentRobotTimestamp = robotTimestamps[currentIndex];
 
       return videoTimestamp;
@@ -165,29 +164,10 @@ public class TimestampScrubber
 
    public long[] getCroppedRobotTimestamps(long startRobotTimestamp, long endRobotTimestamp)
    {
-      int startIndex = findIndexOfRobotTimestamps(startRobotTimestamp);
-      int endIndex = findIndexOfRobotTimestamps(endRobotTimestamp);
+      int startIndex = searchRobotTimestampsForIndex(startRobotTimestamp);
+      int endIndex = searchRobotTimestampsForIndex(endRobotTimestamp);
 
       return Arrays.copyOfRange(robotTimestamps, startIndex, endIndex + 1);
-   }
-
-   private int findIndexOfRobotTimestamps(long value)
-   {
-      if (value <= robotTimestamps[0])
-         return 0;
-
-      if (value >= robotTimestamps[robotTimestamps.length - 1])
-         return robotTimestamps.length - 1;
-
-      int index = Arrays.binarySearch(robotTimestamps, value);
-
-      if (index < 0)
-      {
-         int nextIndex = -index - 1; // insertionPoint
-         index = nextIndex;
-      }
-
-      return index;
    }
 
    public int getCurrentIndex()
@@ -210,11 +190,6 @@ public class TimestampScrubber
       return robotTimestamps[i];
    }
 
-   public long getVideoTimestampAtIndex(int i)
-   {
-      return videoTimestamps[i];
-   }
-
    public long[] getRobotTimestampsArray()
    {
       return robotTimestamps;
@@ -223,11 +198,6 @@ public class TimestampScrubber
    public long[] getVideoTimestampsArray()
    {
       return videoTimestamps;
-   }
-
-   public long getCurrentVideoTimestamp()
-   {
-      return videoTimestamp;
    }
 
    public boolean getReplacedRobotTimestampIndex(int index)

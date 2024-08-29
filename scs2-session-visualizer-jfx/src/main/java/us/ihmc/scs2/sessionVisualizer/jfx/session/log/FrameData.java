@@ -13,4 +13,5 @@ public class FrameData
    public long currentRobotTimestamp;
    public long currentVideoTimestamp;
    public long currentDemuxerTimestamp;
+   public long frameNumber;
 }

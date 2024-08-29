@@ -62,18 +62,20 @@ public class MagewellVideoDataReader implements VideoDataReader
 
    public void readVideoFrame(long queryRobotTimestamp)
    {
-      long currentVideoTimestamps = timestampScrubber.getVideoTimestampFromRobotTimestamp(queryRobotTimestamp);
+      long currentVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(queryRobotTimestamp);
       long currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
-      magewellDemuxer.seekToPTS(currentVideoTimestamps);
+      magewellDemuxer.seekToPTS(currentVideoTimestamp);
 
-      // This is a copy that can be shown in the video view to debug timestamp issues
+      // This is the same variable that can be shown in the video view to debug timestamp issues
       {
+         // This is because in Java the variable is pointing to the same object in memory, and if the object happens to be final, any change to the new variable will be reflected in the other object
          FrameData copyForWriting = frameData;
          copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
          copyForWriting.currentRobotTimestamp = currentRobotTimestamp;
-         copyForWriting.currentVideoTimestamp = currentVideoTimestamps;
+         copyForWriting.currentVideoTimestamp = currentVideoTimestamp;
          copyForWriting.currentDemuxerTimestamp = magewellDemuxer.getCurrentPTS();
+         copyForWriting.frameNumber = magewellDemuxer.getFrameNumber();
       }
 
       Frame nextFrame = magewellDemuxer.getNextFrame();
@@ -112,11 +114,6 @@ public class MagewellVideoDataReader implements VideoDataReader
       }
 
       return writableImage;
-   }
-
-   public Frame getFrame()
-   {
-      return magewellDemuxer.getNextFrame();
    }
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
