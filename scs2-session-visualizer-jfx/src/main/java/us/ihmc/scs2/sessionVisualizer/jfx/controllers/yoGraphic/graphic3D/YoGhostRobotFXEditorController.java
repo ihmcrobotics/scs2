@@ -43,7 +43,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGhostRobotFX;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;

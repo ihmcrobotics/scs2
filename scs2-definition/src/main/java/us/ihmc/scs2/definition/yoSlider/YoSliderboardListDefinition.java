@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.yoSlider;
 
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

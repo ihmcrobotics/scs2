@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.yoComposite;
 
 import us.ihmc.scs2.definition.yoChart.YoChartGroupModelDefinition;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.*;
 
 /**

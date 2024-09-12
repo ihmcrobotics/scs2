@@ -1,6 +1,6 @@
 package us.ihmc.scs2.definition.visual;
 
-import javax.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
 
 import us.ihmc.scs2.definition.yoComposite.YoColorRGBADoubleDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoColorRGBAIntDefinition;

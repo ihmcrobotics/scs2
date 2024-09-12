@@ -2,8 +2,8 @@ package us.ihmc.scs2.definition.robot.urdf.items;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * <a href="http://wiki.ros.org/urdf/XML/link"> ROS Specification link.</a>
