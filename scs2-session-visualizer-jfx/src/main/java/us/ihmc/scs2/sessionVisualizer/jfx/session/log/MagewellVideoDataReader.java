@@ -132,7 +132,7 @@ public class MagewellVideoDataReader implements VideoDataReader
       long startFrame = getFrameAtTimestamp(startVideoTimestamp, magewellDemuxer); // This also moves the stream to the startFrame
       long endFrame = getFrameAtTimestamp(endVideoTimestamp, magewellDemuxer);
       long numberOfFrames = endFrame - startFrame;
-      int frameRate = (int) magewellDemuxer.getFrameRate();
+      int frameRate = magewellDemuxer.getFrameRate();
 
       magewellDemuxer.seekToPTS(startVideoTimestamp);
 
@@ -141,7 +141,11 @@ public class MagewellVideoDataReader implements VideoDataReader
 
       long startTime = System.currentTimeMillis();
 
-      MagewellMuxer magewellMuxer = new MagewellMuxer(outputFile, magewellDemuxer.getImageWidth(), magewellDemuxer.getImageHeight());
+      MagewellMuxer magewellMuxer = new MagewellMuxer(outputFile,
+                                                      magewellDemuxer.getImageWidth(),
+                                                      magewellDemuxer.getImageHeight(),
+                                                      magewellDemuxer.getFrameRate(),
+                                                      magewellDemuxer.getBitRate());
       magewellMuxer.start();
 
       Frame frame;
