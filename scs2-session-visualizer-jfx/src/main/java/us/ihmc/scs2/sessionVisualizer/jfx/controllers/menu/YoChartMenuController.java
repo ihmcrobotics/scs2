@@ -1,8 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
 import javafx.util.Pair;
+import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -18,6 +20,14 @@ public class YoChartMenuController implements VisualizerController
    private JavaFXMessager messager;
    private Window owner;
 
+   private boolean isYAxisVisible = false;
+
+   @FXML
+   private MenuItem toggleYAxisMenuItem;
+
+   @FXML
+   private FontIcon toggleYAxisIcon;
+
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
@@ -27,15 +37,27 @@ public class YoChartMenuController implements VisualizerController
    }
 
    @FXML
-   public void showChartYAxis()
+   public void toggleChartYAxis()
    {
-      messager.submitMessage(topics.getYoChartShowYAxis(), new Pair<>(owner, true));
+      isYAxisVisible = !isYAxisVisible;
+      messager.submitMessage(topics.getYoChartShowYAxis(), new Pair<>(owner, isYAxisVisible));
+      updateMenuItemText();
    }
 
-   @FXML
-   public void hideChartYAxis()
+   private void updateMenuItemText()
    {
-      messager.submitMessage(topics.getYoChartShowYAxis(), new Pair<>(owner, false));
+      if (isYAxisVisible)
+      {
+         toggleYAxisMenuItem.setText("Hide Charts Y-Axis");
+         toggleYAxisIcon.getStyleClass().clear();
+         toggleYAxisIcon.getStyleClass().addAll("hide-icon-view", "menu-item-icon-view");
+      }
+      else
+      {
+         toggleYAxisMenuItem.setText("Show Charts Y-Axis");
+         toggleYAxisIcon.getStyleClass().clear();
+         toggleYAxisIcon.getStyleClass().addAll("show-icon-view", "menu-item-icon-view");
+      }
    }
 
    @FXML
