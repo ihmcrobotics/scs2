@@ -6,21 +6,11 @@
 <Menu text="YoChart" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoChartMenuController">
    <items>
-      <MenuItem onAction="#showChartYAxis" text="Show Charts Y-Axis">
+      <MenuItem fx:id="toggleYAxisMenuItem" onAction="#toggleChartYAxis" text="Show Charts Y-Axis">
          <graphic>
-            <FontIcon>
+            <FontIcon fx:id="toggleYAxisIcon">
                <styleClass>
                   <String fx:value="show-icon-view"/>
-                  <String fx:value="menu-item-icon-view"/>
-               </styleClass>
-            </FontIcon>
-         </graphic>
-      </MenuItem>
-      <MenuItem onAction="#hideChartYAxis" text="Hide Charts Y-Axis">
-         <graphic>
-            <FontIcon>
-               <styleClass>
-                  <String fx:value="hide-icon-view"/>
                   <String fx:value="menu-item-icon-view"/>
                </styleClass>
             </FontIcon>
