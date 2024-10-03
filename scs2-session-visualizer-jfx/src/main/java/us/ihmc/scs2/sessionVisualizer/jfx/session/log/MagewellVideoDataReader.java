@@ -126,7 +126,6 @@ public class MagewellVideoDataReader implements VideoDataReader
 
       long[] robotTimestampsForCroppedLog = timestampScrubber.getCroppedRobotTimestamps(startTimestamp, endTimestamp);
       long[] videoTimestampsForCroppedLog = new long[robotTimestampsForCroppedLog.length];
-      int i = 0;
 
       // This stuff is used to print to SCS2 so the user knows how the cropped log is going, progress wise
       long startFrame = getFrameAtTimestamp(startVideoTimestamp, magewellDemuxer); // This also moves the stream to the startFrame
@@ -148,6 +147,7 @@ public class MagewellVideoDataReader implements VideoDataReader
                                                       magewellDemuxer.getBitRate());
       magewellMuxer.start();
 
+      int i = 0;
       Frame frame;
       while ((frame = magewellDemuxer.getNextFrame()) != null && magewellDemuxer.getFrameNumber() <= endFrame)
       {
