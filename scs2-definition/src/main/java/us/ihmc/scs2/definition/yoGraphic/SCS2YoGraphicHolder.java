@@ -1,11 +1,5 @@
 package us.ihmc.scs2.definition.yoGraphic;
 
-import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
-import us.ihmc.graphicsDescription.plotting.artifact.Artifact;
-import us.ihmc.graphicsDescription.yoGraphics.YoGraphic;
-import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsList;
-import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
-import us.ihmc.graphicsDescription.yoGraphics.plotting.ArtifactList;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
@@ -21,7 +15,7 @@ import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
  * <ul>
  * <li>2D vs 3D:
  * <ul>
- * <li>SCS1 uses {@link YoGraphic} for 3D graphics and {@link Artifact} for 2D graphics. In this
+ * <li>SCS1 uses {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphic} for 3D graphics and {@link us.ihmc.graphicsDescription.plotting.artifact.Artifact} for 2D graphics. In this
  * documentation, we abuse the term "yoGraphic" to refer to both the 2D and 3D types when referring
  * to SCS1.
  * <li>SCS2 base class {@link YoGraphicDefinition} is extended into 2 branches:
@@ -29,10 +23,10 @@ import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
  * </ul>
  * <li>Listing and grouping:
  * <ul>
- * <li>SCS1 uses {@link YoGraphicsListRegistry} to do both listing and grouping of yoGraphics.
- * {@link YoGraphicsList} to represent a list of {@link YoGraphic} and {@link ArtifactList} for
- * {@link Artifact}. The grouping per say is done by attributing a name to a list or specifying a
- * {@code listName} when registering a yoGraphic to the {@link YoGraphicsListRegistry}.
+ * <li>SCS1 uses {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry} to do both listing and grouping of yoGraphics.
+ * {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphicsList} to represent a list of {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphic} and {@link us.ihmc.graphicsDescription.yoGraphics.plotting.ArtifactList} for
+ * {@link us.ihmc.graphicsDescription.plotting.artifact.Artifact}. The grouping per say is done by attributing a name to a list or specifying a
+ * {@code listName} when registering a yoGraphic to the {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry}.
  * <li>SCS2 yoGraphic list is {@link YoGraphicListDefinition}. It is meant for convenience, because
  * it implements {@link YoGraphicDefinition}, it can be passed around the same way a yoGraphic would
  * be. For grouping, {@link YoGraphicGroupDefinition} should be used. You can think of it as a
@@ -62,7 +56,7 @@ import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
  * that the actual graphic can be updated. This is a non-trivial operation as yoGraphics often are
  * created by a controller that runs on a different thread than the simulation thread, and they
  * carry a state that is used by both the controller and simulation. To make things worse,
- * {@link Artifact} also implement the rendering.
+ * {@link us.ihmc.graphicsDescription.plotting.artifact.Artifact} also implement the rendering.
  * <li>Because SCS2 yoGraphics do not actually carry any state, there is no such issue. This comes
  * as the cost of making it way harder if not to say impossible to hack things around from the user
  * side (outside SCS2 codebase). This often prevents implementing a workaround to a missing feature.
@@ -70,9 +64,9 @@ import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
  * <li>YoGraphics propagation to the GUI:
  * <ul>
  * <li>With SCS1 yoGraphics the typical workflow is: create a new registry
- * {@link YoGraphicsListRegistry} in the main class where SCS is created, pass it down to the
+ * {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry} in the main class where SCS is created, pass it down to the
  * controller and any module running with the controller such that they can all create and register
- * their {@link YoGraphic}/{@link Artifact} to the registry, finally register the registry to SCS1
+ * their {@link us.ihmc.graphicsDescription.yoGraphics.YoGraphic}/{@link us.ihmc.graphicsDescription.plotting.artifact.Artifact} to the registry, finally register the registry to SCS1
  * or a {@code YoVariableServer}. In the case where a multithread controller is used, then 1
  * registry per thread must be created and it should not be shared through threads.
  * <li>With SCS2 yoGraphics the intended workflow is: each class needing yoGraphics to be visualized
@@ -86,7 +80,7 @@ import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
  * <li>Separation layer between yoGraphics and GUI rendering:
  * <ul>
  * <li>In SCS1, the yoGraphics are quite tightly connected to the rendered objects, so much that for
- * {@link Artifact}s the rendering actually happens inside the artifact class. This allows, when
+ * {@link us.ihmc.graphicsDescription.plotting.artifact.Artifact}s the rendering actually happens inside the artifact class. This allows, when
  * running simulation locally, for a certain scope of changes done on the yoGraphic to be reflected
  * in the GUI even if the change is not reflected through the change in value of any yoVariable.
  * <li>In SCS2, the yoGraphics are only used at the initialization phase of the session as templates
@@ -95,7 +89,7 @@ import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
  * </ul>
  * </ul>
  * </p>
- * 
+ *
  * @author Sylvain Bertrand
  */
 public interface SCS2YoGraphicHolder
@@ -118,13 +112,13 @@ public interface SCS2YoGraphicHolder
     * <ul>
     * <li>{@link YoGraphicDefinitionFactory}: gather convenience methods to create
     * {@link YoGraphicDefinition}s and other types needed to create yoGraphic.
-    * <li>{@link YoGraphicConversionTools}: for conversion tools between SCS1 and SCS2.
+    * <li>{@link us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools}: for conversion tools between SCS1 and SCS2.
     * <li>{@link SCS2DefinitionMissingTools}: for implementing that method that should have been
     * implemented somewhere in {@code scs2-definition}.
     * </ul>
     * </ul>
     * </p>
-    * 
+    *
     * @return the yoGraphics to be visualized in the SCS GUI.
     */
    YoGraphicDefinition getSCS2YoGraphics();
