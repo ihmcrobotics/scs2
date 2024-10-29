@@ -11,7 +11,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class SCS2DefinitionMissingTools
+public class SCS2DefinitionTools
 {
    public static void forEachRigidBodyDefinitionIncludingFourBars(RigidBodyDefinition start, Consumer<RigidBodyDefinition> rigidBodyConsumer)
    {

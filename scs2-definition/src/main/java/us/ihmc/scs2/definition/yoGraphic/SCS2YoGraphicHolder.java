@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.yoGraphic;
 
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
-import us.ihmc.scs2.definition.SCS2DefinitionMissingTools;
+import us.ihmc.scs2.definition.SCS2DefinitionTools;
 
 /**
  * This interface was initially created to bind classes that can create SCS2 yoGraphics, such that:
@@ -113,7 +113,7 @@ public interface SCS2YoGraphicHolder
     * <li>{@link YoGraphicDefinitionFactory}: gather convenience methods to create
     * {@link YoGraphicDefinition}s and other types needed to create yoGraphic.
     * <li>{@link us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools}: for conversion tools between SCS1 and SCS2.
-    * <li>{@link SCS2DefinitionMissingTools}: for implementing that method that should have been
+    * <li>{@link SCS2DefinitionTools}: for implementing that method that should have been
     * implemented somewhere in {@code scs2-definition}.
     * </ul>
     * </ul>
