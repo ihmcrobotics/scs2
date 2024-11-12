@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoPieChart;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -36,8 +37,8 @@ import java.util.function.Predicate;
 
 public class YoPieChartInputController
 {
-   private static final String HIGHLIGHTED_BORDER = "-fx-border-color:green; -fx-border-radius:5;";
-   private static final String HIGHLIGHTED_BACKGROUND = "-fx-background-color: #c5fcee88;";
+   private static final String HIGHLIGHTED_BORDER = "-fx-border-color:green; -fx-border-radius:10;";
+   private static final String HIGHLIGHTED_BACKGROUND = "-fx-background-color: #d3d3d3AA;";
    private static final String DEFAULT_BORDER = null;
    private static final String DEFAULT_BACKGROUND = null;
 
@@ -72,6 +73,9 @@ public class YoPieChartInputController
       messager = toolkit.getMessager();
       yoCompositeSelectedTopic = toolkit.getTopics().getYoCompositeSelected();
       yoCompositeSelected = messager.createInput(yoCompositeSelectedTopic);
+
+      // These property's get bound so it will update correctly
+      rootPane.styleProperty().bind(Bindings.concat(backgroundStyle, "; ", borderStyle));
 
       rootPane.setOnDragDetected(this::handleDragDetected);
       rootPane.setOnDragOver(this::handleDragOver);
@@ -248,7 +252,7 @@ public class YoPieChartInputController
    public void setYoVariableInput(YoVariable yoVariable)
    {
       this.yoVariable = yoVariable;
-      backgroundStyle.set(HIGHLIGHTED_BACKGROUND);
+      backgroundStyle.set(yoVariable == null ? DEFAULT_BACKGROUND : HIGHLIGHTED_BACKGROUND);
       if (yoVariable == null)
       {
          yoVariableDropLabel.setText(defaultText);
