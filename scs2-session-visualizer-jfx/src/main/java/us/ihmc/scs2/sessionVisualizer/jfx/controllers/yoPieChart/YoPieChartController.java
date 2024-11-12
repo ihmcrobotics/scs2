@@ -1,8 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoPieChart;
 
-import com.jfoenix.controls.JFXToggleNode;
+import javafx.animation.AnimationTimer;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.PieChart;
+import javafx.scene.chart.PieChart.Data;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
@@ -14,6 +16,7 @@ import org.w3c.dom.NodeList;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -24,6 +27,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,14 +38,13 @@ public class YoPieChartController implements VisualizerController
 
    @FXML
    public Button loadButton;
-
-   @FXML
-   private JFXToggleNode button;
+   public Button clearButton;
 
    @FXML
    private YoPieChartVariableController variable0Controller, variable1Controller, variable2Controller, variable3Controller, variable4Controller, variable5Controller, variable6Controller, variable7Controller, variable8Controller, variable9Controller, variable10Controller, variable11Controller;
 
    private List<YoPieChartVariableController> variableControllers;
+   private final List<YoVariable> yoVariablesInPieChart = new ArrayList<>();
 
    @FXML
    private PieChart pieChart;
@@ -71,6 +74,46 @@ public class YoPieChartController implements VisualizerController
          variableController.initialize(toolkit.getGlobalToolkit(), pieChart);
       }
 
+      AnimationTimer animationTimer = new AnimationTimer()
+      {
+         @Override
+         public void handle(long now)
+         {
+            if (pieChart.getData().isEmpty())
+               return;
+
+            // Get all the YoVariables held in the individual controllers to always stay synced
+            for (int i = 0; i < variableControllers.size(); i++)
+            {
+               YoPieChartVariableController variableController = variableControllers.get(i);
+
+               yoVariablesInPieChart.add(variableController.getYoVariable());
+            }
+
+            // Disable animations on the PieChart by setting the CSS property
+            pieChart.setStyle("-fx-pie-animation-time: 0ms;");
+
+            // For YoVariables that exist, update the data held in the pie chart
+            ObservableList<Data> currentData = pieChart.getData();
+            for (PieChart.Data data : currentData)
+            {
+               String name = data.getName();
+
+               for (YoVariable yoVariable : yoVariablesInPieChart)
+               {
+                  // We allow the YoVariables to be null, so we skip those
+                  if (yoVariable != null && yoVariable.getName().equals(name))
+                  {
+                     data.setPieValue(yoVariable.getValueAsDouble());
+                     break;
+                  }
+               }
+            }
+         }
+      };
+
+      animationTimer.start();
+
       stage.initOwner(toolkit.getWindow());
       stage.show();
       JavaFXMissingTools.centerWindowInOwner(stage, toolkit.getWindow());
@@ -93,6 +136,18 @@ public class YoPieChartController implements VisualizerController
       {
          loadFromXML(file);
       }
+   }
+
+   @FXML
+   public void clearChart(MouseEvent mouseEvent)
+   {
+      yoVariablesInPieChart.clear();
+
+      for (YoPieChartVariableController variableController : variableControllers)
+      {
+         variableController.clear();
+      }
+      pieChart.getData().clear();
    }
 
    private void loadFromXML(File file)

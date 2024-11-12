@@ -1,10 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoPieChart;
 
-import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.PieChart.Data;
@@ -31,7 +29,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoComposite;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,7 +44,6 @@ public class YoPieChartInputController
    private final StringProperty backgroundStyle = new SimpleStringProperty(this, "backgroundStyle", DEFAULT_BACKGROUND);
    private final StringProperty borderStyle = new SimpleStringProperty(this, "borderStyle", DEFAULT_BORDER);
 
-   private SessionVisualizerToolkit toolkit;
    private YoManager yoManager;
    private Region rootPane;
    private Labeled yoVariableDropLabel;
@@ -59,15 +55,13 @@ public class YoPieChartInputController
    private JavaFXMessager messager;
    private Topic<List<String>> yoCompositeSelectedTopic;
    private AtomicReference<List<String>> yoCompositeSelected;
-   private String defaultText = "Drop YoVariable here";
-   private List<YoVariable> yoVariablesForPieChart = new ArrayList<>();
+   private final String defaultText = "Drop YoVariable here";
    private PieChart pieChart;
 
    private YoVariableDatabase rootRegistryDatabase = null;
 
    public void initialize(SessionVisualizerToolkit toolkit, Region rootPane, Labeled yoVariableDropLabel, Predicate<YoVariable> filter, PieChart pieChart)
    {
-      this.toolkit = toolkit;
       this.rootPane = rootPane;
       this.yoVariableDropLabel = yoVariableDropLabel;
       this.filter = filter;
@@ -86,36 +80,6 @@ public class YoPieChartInputController
       rootPane.setOnDragExited(this::handleDragExited);
       rootPane.setOnMousePressed(this::handleMousePressed);
       rootPane.setOnMouseReleased(this::handleMouseReleased);
-
-      AnimationTimer animationTimer = new AnimationTimer()
-      {
-         @Override
-         public void handle(long now)
-         {
-            if (pieChart.getData().isEmpty())
-               return;
-
-            // Disable animations on the PieChart by setting the CSS property
-            pieChart.setStyle("-fx-pie-animation-time: 0ms;");
-
-            ObservableList<PieChart.Data> currentData = pieChart.getData();
-            for (PieChart.Data data : currentData)
-            {
-               String name = data.getName();
-
-               for (YoVariable yoVariable : yoVariablesForPieChart)
-               {
-                  if (yoVariable.getName().equals(name))
-                  {
-                     data.setPieValue(yoVariable.getValueAsDouble());
-                     break;
-                  }
-               }
-            }
-         }
-      };
-
-      animationTimer.start();
    }
 
    public void clear()
@@ -271,7 +235,6 @@ public class YoPieChartInputController
                               {
                                  if (data.getName().equals(yoVariableDropLabel.getText()))
                                  {
-                                    yoVariablesForPieChart.remove(yoVariableDropLabel.getText());
                                     pieChart.getData().remove(data);
                                     break;
                                  }
@@ -292,8 +255,14 @@ public class YoPieChartInputController
       }
       else
       {
-         yoVariablesForPieChart.add(yoVariable);
-         pieChart.getData().add(new Data(yoVariable.getName(), yoVariable.getValueAsDouble()));
+         // Check if a variable exists in the pie chart already, and if it does don't add it again
+         boolean alreadyExists = pieChart.getData().stream().anyMatch(data -> data.getName().equals(yoVariable.getName()));
+
+         if (!alreadyExists)
+         {
+            pieChart.getData().add(new Data(yoVariable.getName(), yoVariable.getValueAsDouble()));
+         }
+
          yoVariableDropLabel.setText(yoVariable.getName());
       }
    }
@@ -325,6 +294,5 @@ public class YoPieChartInputController
    public void setYoVariable(String yoVariableName)
    {
       setYoVariableInput(rootRegistryDatabase.searchExact(yoVariableName));
-//      this.yoVariable = rootRegistryDatabase.searchExact(yoVariableName);
    }
 }

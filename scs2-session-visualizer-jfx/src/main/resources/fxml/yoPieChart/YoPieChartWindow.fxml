@@ -58,10 +58,11 @@
                      </VBox>
                   </children>
                </VBox>
-               <VBox layoutX="1190.0" layoutY="863.0" prefHeight="82.0" prefWidth="99.0">
+               <VBox layoutX="1190.0" layoutY="873.0" prefHeight="72.0" prefWidth="99.0">
                   <children>
-                     <Button fx:id="saveButton" mnemonicParsing="false" onMousePressed="#saveLayout" prefHeight="43.0" prefWidth="99.0" text="Save" />
-                     <Button fx:id="loadButton" mnemonicParsing="false" onMousePressed="#loadLayout" prefHeight="39.0" prefWidth="99.0" text="Load" />
+                     <Button fx:id="saveButton" mnemonicParsing="false" onMouseReleased="#saveLayout" prefHeight="31.0" prefWidth="99.0" text="Save" />
+                     <Button fx:id="loadButton" mnemonicParsing="false" onMouseReleased="#loadLayout" prefHeight="31.0" prefWidth="99.0" text="Load" />
+                     <Button fx:id="clearButton" mnemonicParsing="false" onMouseReleased="#clearChart" prefHeight="24.0" prefWidth="111.0" text="Clear" />
                   </children>
                </VBox>
                 </children>
