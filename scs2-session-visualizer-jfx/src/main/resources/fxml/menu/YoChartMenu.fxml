@@ -16,6 +16,16 @@
             </FontIcon>
          </graphic>
       </MenuItem>
+      <MenuItem onAction="#openPieChartWindow" text="Pie Chart Window">
+         <graphic>
+            <FontIcon>
+               <styleClass>
+                  <String fx:value="new-chart-window-icon-view"/>
+                  <String fx:value="menu-item-icon-view"/>
+               </styleClass>
+            </FontIcon>
+         </graphic>
+      </MenuItem>
       <MenuItem onAction="#loadChartGroup" text="Load chart configuration...">
          <graphic>
             <FontIcon>
