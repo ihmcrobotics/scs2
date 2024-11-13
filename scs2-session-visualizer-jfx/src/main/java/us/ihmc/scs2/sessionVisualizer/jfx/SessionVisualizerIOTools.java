@@ -114,6 +114,7 @@ public class SessionVisualizerIOTools
    private static final String YO_GRAPHIC_2D = YO_GRAPHIC + "graphic2D/";
    private static final String YO_GRAPHIC_3D = YO_GRAPHIC + "graphic3D/";
    private static final String YO_GRAPHIC_GROUP = YO_GRAPHIC + "group/";
+   private static final String YO_PIE_CHART = "yoPieChart/";
    private static final String YO_EDITOR = "editor/";
    private static final String YO_SLIDERBOARD = "yoSliderboard/";
    private static final String YO_SLIDERBOARD_BCF2000 = YO_SLIDERBOARD + "bcf2000/";
@@ -163,6 +164,8 @@ public class SessionVisualizerIOTools
    public static final URL SESSION_VARIABLE_FILTER_PANE_URL = getFXMLResource("SessionVariableFilterPane");
    public static final URL PLOTTER2D_OPTIONS_STAGE_URL = getFXMLResource(YO_GRAPHIC, "Plotter2DOptionsStage");
    public static final URL CAMERA3D_OPTIONS_PANE_URL = getFXMLResource("camera/Camera3DOptionsPane");
+
+   public static final URL YO_PIE_CHART_WINDOW_URL = getFXMLResource(YO_PIE_CHART, "YoPieChartWindow");
 
    public static final URL CHART_PANEL_FXML_URL = getFXMLResource(CHART, "YoChartPanel");
    public static final URL CHART_GROUP_PANEL_URL = getFXMLResource(CHART, "YoChartGroupPanel");
