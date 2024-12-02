@@ -38,6 +38,11 @@ public class SecondaryWindowControlsController implements VisualizerController
    {
    }
 
+   public FlowPane getButtonsContainer()
+   {
+      return buttonsContainer;
+   }
+
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {

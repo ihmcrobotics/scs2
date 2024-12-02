@@ -17,6 +17,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.YoRegistryStatisticsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeAndEquationEditorWindowController;
@@ -26,16 +27,20 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoPieChart.YoPieChartContr
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SecondaryWindowManager implements Manager
 {
    private static final double SECONDARY_WINDOW_POSITION_OFFSET = 30.0;
 
    private final SessionVisualizerToolkit toolkit;
+
+   private final AtomicReference<VisualizerController> visualzationControllersReference = new AtomicReference<>();
 
    private final Property<YoCompositePatternPropertyWindowController> yoCompositePatternEditor = new SimpleObjectProperty<>(this,
                                                                                                                             "yoCompositePatternEditor",
@@ -142,6 +147,20 @@ public class SecondaryWindowManager implements Manager
       secondaryWindowControllers.clear();
    }
 
+   public void submitVisualizationController(VisualizerController request)
+   {
+      visualzationControllersReference.set(request);
+   }
+
+   public void handleSubmittedControllers()
+   {
+      VisualizerController pieChartCreator = visualzationControllersReference.getAndSet(null);
+      if (pieChartCreator != null)
+      {
+         newVisualizationController(pieChartCreator);
+      }
+   }
+
    public void openWindow(NewWindowRequest request)
    {
       if (request == null)
@@ -223,6 +242,14 @@ public class SecondaryWindowManager implements Manager
       {
          e.printStackTrace();
       }
+   }
+
+   public Stage newVisualizationController(VisualizerController visualizerController)
+   {
+      Stage stage = new Stage();
+      visualizerController.initialize(new SessionVisualizerWindowToolkit(stage, toolkit));
+
+      return stage;
    }
 
    public Stage newPieChartWindow(Window requestSource)

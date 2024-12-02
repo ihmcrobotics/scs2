@@ -204,9 +204,22 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       {
          backgroundExecutorManager.queueTaskToExecuteInBackground(this, () ->
          {
-            YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager, root, yoGraphicFXResourceManager, referenceFrameManager, definition);
-            if (item != null)
-               JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+            if (definition instanceof YoGraphicListDefinition definitionList)
+            {
+               List<YoGraphicFXItem> items = YoGraphicTools.createYoGraphicFXs(yoManager, root, yoGraphicFXResourceManager, referenceFrameManager, definitionList);
+               if (items != null)
+                  JavaFXMissingTools.runLater(getClass(), () ->
+                  {
+                     for (YoGraphicFXItem item : items)
+                        root.addYoGraphicFXItem(item);
+                  });
+            }
+            else
+            {
+               YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager, root, yoGraphicFXResourceManager, referenceFrameManager, definition);
+               if (item != null)
+                  JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+            }
          });
       });
    }
