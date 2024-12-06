@@ -17,6 +17,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Material;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
@@ -331,6 +332,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          else
          {
             overridingMaterial = new PhongMaterial();
+            overridingMaterial.diffuseColorProperty().addListener((var) -> overrideMaterialRecursive(rootNode, overridingMaterial));
             overrideMaterialRecursive(rootNode, overridingMaterial);
          }
       }
@@ -338,6 +340,24 @@ public class YoGhostRobotFX extends YoGraphicFX3D
       if (getColor() != null)
       {
          overridingMaterial.setDiffuseColor(getColor().get());
+         enforceColorsMatchRecursive(rootNode, overridingMaterial);
+      }
+   }
+
+   private void enforceColorsMatchRecursive(Node start, PhongMaterial material)
+   {
+      if (start instanceof Group group)
+      {
+         group.getChildren().forEach(child -> enforceColorsMatchRecursive(child, material));
+      }
+      else if (start instanceof Shape3D shape)
+      {
+         Material originalMaterial = shape.getMaterial();
+         if (originalMaterial != material)
+         {
+            reverseOverridingMaterialTasks.add(() -> shape.setMaterial(originalMaterial));
+            shape.setMaterial(material);
+         }
       }
    }
 

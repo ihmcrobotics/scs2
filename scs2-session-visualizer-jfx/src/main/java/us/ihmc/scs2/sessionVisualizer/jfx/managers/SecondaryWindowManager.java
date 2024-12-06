@@ -40,7 +40,7 @@ public class SecondaryWindowManager implements Manager
 
    private final SessionVisualizerToolkit toolkit;
 
-   private final AtomicReference<VisualizerController> visualzationControllersReference = new AtomicReference<>();
+   private final AtomicReference<List<VisualizerController>> visualzationControllersReference = new AtomicReference<>();
 
    private final Property<YoCompositePatternPropertyWindowController> yoCompositePatternEditor = new SimpleObjectProperty<>(this,
                                                                                                                             "yoCompositePatternEditor",
@@ -147,17 +147,22 @@ public class SecondaryWindowManager implements Manager
       secondaryWindowControllers.clear();
    }
 
-   public void submitVisualizationController(VisualizerController request)
+   public void queueVisualizationController(VisualizerController request)
    {
-      visualzationControllersReference.set(request);
+      if (visualzationControllersReference.get() == null)
+         visualzationControllersReference.set(new ArrayList<>());
+      visualzationControllersReference.get().add(request);
    }
 
    public void handleSubmittedControllers()
    {
-      VisualizerController pieChartCreator = visualzationControllersReference.getAndSet(null);
-      if (pieChartCreator != null)
+      List<VisualizerController> visualizations = visualzationControllersReference.getAndSet(null);
+      if (visualizations == null)
+         return;
+
+      for (VisualizerController visualization : visualizations)
       {
-         newVisualizationController(pieChartCreator);
+         newVisualizationController(visualization);
       }
    }
 
