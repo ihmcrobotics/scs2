@@ -213,9 +213,18 @@ public class YoGraphicTools
 
       for (YoGraphicDefinition definition : yoGraphicListDefinition.getYoGraphics())
       {
-         YoGraphicFXItem item = createYoGraphicFX(yoManager, parentGroup, resourceManager, referenceFrameManager, definition);
-         if (item != null)
-            items.add(item);
+         if (definition instanceof YoGraphicListDefinition definitionList)
+         {
+            List<YoGraphicFXItem> otherItems = createYoGraphicFXs(yoManager, parentGroup, resourceManager, referenceFrameManager, definitionList);
+            if (otherItems != null)
+               items.addAll(otherItems);
+         }
+         else
+         {
+            YoGraphicFXItem item = createYoGraphicFX(yoManager, parentGroup, resourceManager, referenceFrameManager, definition);
+            if (item != null)
+               items.add(item);
+         }
       }
 
       return items;
