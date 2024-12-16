@@ -228,6 +228,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    @Override
    public void handleImpl(long now)
    {
+      secondaryWindowManager.handleSubmittedControllers();
    }
 
    @Override
