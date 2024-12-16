@@ -113,9 +113,12 @@ public class MultiViewport3DManager
       }
    }
 
-   public void addSecondaryViewport()
+   public SecondaryViewport3DManager addSecondaryViewport()
    {
-      allViewports.add(new SecondaryViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager));
+      SecondaryViewport3DManager secondaryViewport3DManager = new SecondaryViewport3DManager(mainView3DRoot, yoManager, yoCompositeSearchManager, referenceFrameManager);
+      allViewports.add(secondaryViewport3DManager);
+
+      return secondaryViewport3DManager;
    }
 
    public MainViewport3DManager getMainViewport()

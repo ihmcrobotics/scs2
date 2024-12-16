@@ -49,4 +49,9 @@ public class MainWindowMenuBarController implements VisualizerController
    {
       menuBar.getMenus().add(index, menu);
    }
+
+   public MenuBar getMenuBar()
+   {
+      return menuBar;
+   }
 }
