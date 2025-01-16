@@ -9,8 +9,6 @@ ihmc {
    configurePublications()
 }
 
-val javaCPPVersion = "1.5.9"
-
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
    api("us.ihmc:scs2-definition:source")
@@ -21,7 +19,7 @@ mainDependencies {
    api("us.ihmc:ihmc-yovariables:0.13.3")
    api("us.ihmc:mecano-yovariables:17-0.19.0")
 
-   val bulletVersion = "3.25-1.5.11"
+   val bulletVersion = "3.25-1.5.11-ihmc-2"
    api("us.ihmc:bullet:$bulletVersion")
    api("us.ihmc:bullet:$bulletVersion:linux-x86_64")
    api("us.ihmc:bullet:$bulletVersion:windows-x86_64")
