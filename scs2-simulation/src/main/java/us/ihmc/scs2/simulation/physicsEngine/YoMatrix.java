@@ -10,6 +10,10 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
 
+/**
+ * @deprecated please use {@link us.ihmc.yoVariables.math.YoMatrix}
+ */
+@Deprecated
 public class YoMatrix implements DMatrix, ReshapeMatrix
 {
    // TODO: eventually consolidate YoMatrix implementations
