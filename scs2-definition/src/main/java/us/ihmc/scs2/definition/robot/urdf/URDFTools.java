@@ -64,10 +64,10 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.TextureDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.sax.SAXSource;
@@ -207,7 +207,10 @@ public class URDFTools
     *                            done.
     * @return the model.
     */
-   public static URDFModel loadURDFModel(InputStream inputStream, Collection<String> resourceDirectories, ClassLoader resourceClassLoader, URDFParserProperties parserProperties) throws JAXBException
+   public static URDFModel loadURDFModel(InputStream inputStream,
+                                         Collection<String> resourceDirectories,
+                                         ClassLoader resourceClassLoader,
+                                         URDFParserProperties parserProperties) throws JAXBException
    {
       return loadURDFModel(Collections.singletonList(inputStream), resourceDirectories, resourceClassLoader, parserProperties);
    }
@@ -215,7 +218,7 @@ public class URDFTools
    /**
     * Parse a {@link URDFModel} from the given input stream.
     *
-    * @param inputStreams         the input streams to be loaded.
+    * @param inputStreams        the input streams to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
     * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
@@ -226,7 +229,8 @@ public class URDFTools
     *                            options.
     * @return the model.
     */
-   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams, Collection<String> resourceDirectories, ClassLoader resourceClassLoader) throws JAXBException
+   public static URDFModel loadURDFModel(Collection<InputStream> inputStreams, Collection<String> resourceDirectories, ClassLoader resourceClassLoader)
+         throws JAXBException
    {
       return loadURDFModel(inputStreams, resourceDirectories, resourceClassLoader, DEFAULT_URDF_PARSER_PROPERTIES);
    }
@@ -234,7 +238,7 @@ public class URDFTools
    /**
     * Parse a {@link URDFModel} from the given input stream.
     *
-    * @param inputStreams         the input streams to be loaded.
+    * @param inputStreams        the input streams to be loaded.
     * @param resourceDirectories paths to resource directories. This allows to search for resources
     *                            that are defined outside the {@code inputStream}.
     * @param resourceClassLoader the class loader is used to retrieve the resources. If the resources
@@ -287,7 +291,8 @@ public class URDFTools
                urdfModel = (URDFModel) um.unmarshal(source);
             }
 
-            resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
+            if (parserProperties.resolveResourcePaths)
+               resolvePaths(urdfModel, allResourceDirectories, resourceClassLoader);
 
             if (!parserProperties.linksToIgnore.isEmpty() && urdfModel.getLinks() != null)
             {
@@ -332,6 +337,7 @@ public class URDFTools
    /**
     * Determine the parent model and child model, return a merged model that contains the parent model and all parts of the child model
     * that aren't contained within the parent model. The name is taken from the parent model
+    *
     * @param model1 URDF model with joint and links to be checked
     * @param model2 URDF model with joints and links to be checked
     * @return the merged model that contains all the joints, links, gazebos, and correct name from the models
@@ -380,16 +386,18 @@ public class URDFTools
             {
                parentModel = model1;
                childModel = model2;
+               break;
             }
             else if (model1LinkNames.contains(joint.getChild().getLink()))
             {
                parentModel = model2;
                childModel = model1;
+               break;
             }
          }
       }
 
-      if (model1.getJoints() != null)
+      if (parentModel == null && model1.getJoints() != null)
       {
          for (URDFJoint joint : model1.getJoints())
          {
@@ -398,11 +406,13 @@ public class URDFTools
             {
                parentModel = model2;
                childModel = model1;
+               break;
             }
             else if (model2LinkNames.contains(joint.getChild().getLink()))
             {
                parentModel = model1;
                childModel = model2;
+               break;
             }
          }
       }
@@ -2638,12 +2648,23 @@ public class URDFTools
       private final Set<String> linksToIgnore = new HashSet<>();
       private Supplier<? extends JointDefinition> rootJointFactory = SixDoFJointDefinition::new;
 
+      private boolean resolveResourcePaths = true;
       private boolean autoGenerateVisualName = true;
       private boolean autoGenerateCollisionName = true;
       private boolean parseSensors = true;
       private boolean simplifyKinematics = true;
       private boolean transformToZUp = true;
       private boolean handleImplicitJointDefinitions = true;
+
+      /**
+       * When set to {@code true}, the URDF parser will resolve the paths of the resources (meshes, textures, etc.).
+       *
+       * @param resolveResourcePaths {@code true} to resolve the resource paths, {@code false} otherwise.
+       */
+      public void setResolveResourcePaths(boolean resolveResourcePaths)
+      {
+         this.resolveResourcePaths = resolveResourcePaths;
+      }
 
       /**
        * Sets whether XML namespaces should be ignored.

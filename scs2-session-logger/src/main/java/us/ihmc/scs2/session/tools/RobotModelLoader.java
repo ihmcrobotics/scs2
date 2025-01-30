@@ -22,7 +22,7 @@ import us.ihmc.yoVariables.exceptions.NameCollisionException;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -234,14 +234,13 @@ public class RobotModelLoader
       {
          while ((ze = zip.getNextEntry()) != null)
          {
-            Path target = resourceDirectory.resolve(ze.getName());
-            Files.deleteIfExists(target);
-
+            // No need to explicitly handle directories, they will be created when copying files.
             if (ze.isDirectory())
-            {
-               Files.createDirectories(target);
                continue;
-            }
+
+            Path target = resourceDirectory.resolve(ze.getName());
+
+            Files.deleteIfExists(target);
 
             if (!Files.exists(target.getParent()))
                Files.createDirectories(target.getParent());

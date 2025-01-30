@@ -1,6 +1,6 @@
 package us.ihmc.scs2.definition.yoComposite;
 
-import javax.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
 
 /**
  * A {@code YoOrientation3DDefinition} is used to represent the template for a 3D orientation.

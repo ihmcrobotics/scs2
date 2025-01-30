@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import org.junit.jupiter.api.Test;
 
@@ -132,6 +132,7 @@ public class SharedMemoryIOToolsTest
                                                                                                      MATLAB_VARNAME_MAX_LENGTH + 100));
          exportedRoot.addChild(longNameRegistry);
          new YoDouble("bloppy", longNameRegistry);
+         new YoDouble("bushy", longNameRegistry);
 
          YoSharedBuffer exportedBuffer = SharedMemoryRandomTools.nextYoSharedBuffer(random, exportedRoot);
          SharedMemoryIOTools.exportRegistry(exportedRoot, new FileOutputStream(registryFileName));

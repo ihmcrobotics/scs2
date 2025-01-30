@@ -2,7 +2,7 @@ package us.ihmc.scs2.definition.geometry;
 
 import java.util.Objects;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
 
 public abstract class GeometryDefinition
 {

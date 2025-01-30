@@ -17,24 +17,30 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SecondaryWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.YoRegistryStatisticsPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeAndEquationEditorWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicPropertyWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoPieChart.YoPieChartController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SecondaryWindowManager implements Manager
 {
    private static final double SECONDARY_WINDOW_POSITION_OFFSET = 30.0;
 
    private final SessionVisualizerToolkit toolkit;
+
+   private final AtomicReference<List<VisualizerController>> visualzationControllersReference = new AtomicReference<>();
 
    private final Property<YoCompositePatternPropertyWindowController> yoCompositePatternEditor = new SimpleObjectProperty<>(this,
                                                                                                                             "yoCompositePatternEditor",
@@ -141,6 +147,25 @@ public class SecondaryWindowManager implements Manager
       secondaryWindowControllers.clear();
    }
 
+   public void queueVisualizationController(VisualizerController request)
+   {
+      if (visualzationControllersReference.get() == null)
+         visualzationControllersReference.set(new ArrayList<>());
+      visualzationControllersReference.get().add(request);
+   }
+
+   public void handleSubmittedControllers()
+   {
+      List<VisualizerController> visualizations = visualzationControllersReference.getAndSet(null);
+      if (visualizations == null)
+         return;
+
+      for (VisualizerController visualization : visualizations)
+      {
+         newVisualizationController(visualization);
+      }
+   }
+
    public void openWindow(NewWindowRequest request)
    {
       if (request == null)
@@ -156,6 +181,9 @@ public class SecondaryWindowManager implements Manager
             break;
          case NewWindowRequest.SECONDARY_CHART_WINDOW_TYPE:
             newChartWindow(request.requestSource);
+            break;
+         case NewWindowRequest.PIE_CHART_WINDOW_TYPE:
+            newPieChartWindow(request.requestSource);
             break;
          case NewWindowRequest.GRAPHIC_EDITOR_WINDOW_TYPE:
             openYoGraphicEditor(request.requestSource);
@@ -218,6 +246,35 @@ public class SecondaryWindowManager implements Manager
       catch (IOException e)
       {
          e.printStackTrace();
+      }
+   }
+
+   public Stage newVisualizationController(VisualizerController visualizerController)
+   {
+      Stage stage = new Stage();
+      visualizerController.initialize(new SessionVisualizerWindowToolkit(stage, toolkit));
+
+      return stage;
+   }
+
+   public Stage newPieChartWindow(Window requestSource)
+   {
+      Stage stage = new Stage();
+
+      try
+      {
+         // Loading template for secondary window
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.YO_PIE_CHART_WINDOW_URL);
+         loader.load();
+         YoPieChartController controller = loader.getController();
+         controller.initialize(new SessionVisualizerWindowToolkit(stage, toolkit));
+         return stage;
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+         stage.close();
+         return null;
       }
    }
 
@@ -374,6 +431,7 @@ public class SecondaryWindowManager implements Manager
       public static final String REGISTRY_STATISTICS_WINDOW_TYPE = "YoRegistryStatisticsWindow";
       public static final String BFC2000_SLIDERBOARD_WINDOW_TYPE = "BFC2000EditorWindow";
       public static final String XTOUCHCOMPACT_SLIDERBOARD_WINDOW_TYPE = "XTouchCompactEditorWindow";
+      public static final String PIE_CHART_WINDOW_TYPE = "PieChartEditorWindow";
       public static final String GRAPHIC_EDITOR_WINDOW_TYPE = "YoGraphicEditorWindow";
       public static final String COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE = "YoCompositePatternEditorWindow";
       public static final String COMPOSITE_CREATOR_WINDOW_TYPE = "YoCompositeEditorWindow";
@@ -398,6 +456,11 @@ public class SecondaryWindowManager implements Manager
       public static NewWindowRequest registryStatisticWindow(Window requestSource, YoRegistry registry)
       {
          return new NewWindowRequest(REGISTRY_STATISTICS_WINDOW_TYPE, requestSource, registry.getNamespace().toString());
+      }
+
+      public static NewWindowRequest pieChartWindow(Window requestSource)
+      {
+         return new NewWindowRequest(PIE_CHART_WINDOW_TYPE, requestSource);
       }
 
       public static NewWindowRequest bfc2000SliderboardWindow(Window requestSource)

@@ -210,6 +210,16 @@ public class YoChartGroupPanelController implements VisualizerController
       return chartTable2D.isEmpty();
    }
 
+   public ChartTable2DSize getSize()
+   {
+      return chartTable2D.getSize();
+   }
+
+   public void resize(ChartTable2DSize desiredSize)
+   {
+      chartTable2D.resize(desiredSize);
+   }
+
    private void updateAutoUniqueNameDisplay()
    {
       if (plottedVariableList.isEmpty())

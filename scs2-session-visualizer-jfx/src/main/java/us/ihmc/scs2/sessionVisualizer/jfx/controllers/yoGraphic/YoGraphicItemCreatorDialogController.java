@@ -333,7 +333,7 @@ public class YoGraphicItemCreatorDialogController
       Class<? extends YoGraphicFXItem> itemType = toItemType(toggleGroup.getSelectedToggle());
       if (itemType == YoGhostRobotFX.class)
       {
-         YoGhostRobotFX yoGhostRobotFX = new YoGhostRobotFX(yoManager.getRootRegistryDatabase());
+         YoGhostRobotFX yoGhostRobotFX = new YoGhostRobotFX(yoManager);
          yoGhostRobotFX.setName(itemNameTextField.getText());
          parent.addYoGraphicFX3D(yoGhostRobotFX);
          return yoGhostRobotFX;

@@ -2,8 +2,8 @@ package us.ihmc.scs2.definition.visual;
 
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Arrays;
 
 /**

@@ -1,10 +1,7 @@
 import org.apache.tools.ant.taskdefs.condition.Os
-import us.ihmc.cd.LogTools
 
 plugins {
    id("us.ihmc.ihmc-build")
-   id("us.ihmc.ihmc-ci") version "8.3"
-   id("us.ihmc.ihmc-cd") version "1.26"
 }
 
 ihmc {
@@ -20,21 +17,20 @@ mainDependencies {
    api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer:source")
 
-   var javaFXVersion = "17.0.9"
+   var javaFXVersion = "17.0.8"
    api(ihmc.javaFXModule("base", javaFXVersion))
    api(ihmc.javaFXModule("controls", javaFXVersion))
    api(ihmc.javaFXModule("graphics", javaFXVersion))
    api(ihmc.javaFXModule("fxml", javaFXVersion))
    api(ihmc.javaFXModule("swing", javaFXVersion))
 
-   api("us.ihmc:euclid:0.21.0")
-   api("us.ihmc:euclid-shape:0.21.0")
-   api("us.ihmc:euclid-frame:0.21.0")
-   api("us.ihmc:ihmc-graphics-description:0.25.1")
+   api("us.ihmc:euclid:0.22.2")
+   api("us.ihmc:euclid-shape:0.22.2")
+   api("us.ihmc:euclid-frame:0.22.2")
+   api("us.ihmc:ihmc-graphics-description:0.26.0")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
-   api("us.ihmc:svgloader:0.0")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.1")
-   api("us.ihmc:ihmc-messager-javafx:0.2.0")
+   api("us.ihmc:ihmc-messager-javafx:0.2.1")
    api("org.bytedeco:javacv-platform:1.5.9")
 
    api("org.reflections:reflections:0.9.11")
@@ -138,7 +134,7 @@ tasks.create("buildDebianPackage") {
       addVSyncLinuxHackForJavaFXApp(sourceFolder, mcapRepackAppExecutableName)
 
       File("$baseFolder/DEBIAN").mkdirs()
-      LogTools.info("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
+      println("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
 
       File("$baseFolder/DEBIAN/control").writeText(
             """

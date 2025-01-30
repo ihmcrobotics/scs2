@@ -13,7 +13,7 @@ import us.ihmc.scs2.definition.robot.urdf.URDFTools;
 import us.ihmc.scs2.definition.robot.urdf.URDFTools.URDFParserProperties;
 import us.ihmc.scs2.definition.robot.urdf.items.URDFModel;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;

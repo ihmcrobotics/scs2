@@ -17,6 +17,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Material;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
@@ -32,12 +33,12 @@ import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoYawPitchRollDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicRobotDefinition.YoOneDoFJointStateDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicRobotDefinition.YoRobotStateDefinition;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.FrameNode;
 import us.ihmc.scs2.sessionVisualizer.jfx.multiBodySystem.RigidBodyFrameNodeFactories;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX;
 import us.ihmc.scs2.sharedMemory.LinkedYoDouble;
 import us.ihmc.scs2.sharedMemory.LinkedYoVariable;
@@ -47,12 +48,13 @@ import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimOneDoFJointBa
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.DoubleConsumer;
 
 public class YoGhostRobotFX extends YoGraphicFX3D
 { // FIXME Need to handle the color property
    private final Group rootNode = new Group();
-   private final YoVariableDatabase yoVariableDatabase;
+   private final YoManager yoManager;
 
    private final Property<RobotDefinition> robotDefinitionProperty = new SimpleObjectProperty<>(this, "robotDefinition", null);
    private final Property<YoRobotStateDefinition> robotStateDefinitionProperty = new SimpleObjectProperty<>(this, "robotStateDefinition", null);
@@ -64,19 +66,20 @@ public class YoGhostRobotFX extends YoGraphicFX3D
 
    private final List<LinkedYoVariable<?>> linkedYoVariables = new ArrayList<>();
 
-   private boolean forceUpdate = true;
+   private final AtomicBoolean forceUpdate = new AtomicBoolean(true);
 
    private final List<Runnable> clearStateBindingTasks = new ArrayList<>();
 
+   private boolean initializeMaterial = true;
    private PhongMaterial overridingMaterial = null;
    private final List<Runnable> reverseOverridingMaterialTasks = new ArrayList<>();
 
    private final BooleanProperty rootJointPoseValid = new SimpleBooleanProperty(this, "rootJointPoseValid", true);
 
-   public YoGhostRobotFX(YoVariableDatabase yoVariableDatabase)
+   public YoGhostRobotFX(YoManager yoManager)
    {
+      this.yoManager = yoManager;
       setColor((BaseColorFX) null); // Remove the default color.
-      this.yoVariableDatabase = yoVariableDatabase;
 
       drawModeProperty.addListener((o, oldValue, newValue) -> JavaFXMissingTools.setDrawModeRecursive(rootNode, newValue));
 
@@ -244,7 +247,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          }
       }
 
-      forceUpdate = true;
+      forceUpdate.set(true);
    }
 
    private BooleanProperty setupBinding(String variableName, DoubleConsumer setter)
@@ -257,7 +260,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          validityProperty.set(isValid);
          if (isValid)
             setter.accept(newValue.doubleValue());
-         forceUpdate = true;
+         forceUpdate.set(true);
       };
       doubleProperty.addListener(changeListener);
       // Trigger the change listener once to set the initial value.
@@ -270,7 +273,9 @@ public class YoGhostRobotFX extends YoGraphicFX3D
    {
       if (variableName == null)
          return new SimpleDoubleProperty(this, "dummy", 0.0);
-      DoubleProperty doubleProperty = CompositePropertyTools.toDoubleProperty(yoVariableDatabase, variableName);
+      DoubleProperty doubleProperty = CompositePropertyTools.toDoubleProperty(yoManager.getRootRegistryDatabase(),
+                                                                              yoManager::newLinkedYoVariable,
+                                                                              variableName);
       if (doubleProperty instanceof YoDoubleProperty yoDoubleProperty)
       {
          LinkedYoDouble linkedYoDouble = yoDoubleProperty.getLinkedBuffer();
@@ -303,15 +308,21 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          updateRobot |= linkedYoVariables.get(i).pull();
       }
 
-      if (updateRobot || forceUpdate)
+      if (!updateRobot)
+      {
+         updateRobot = forceUpdate.getAndSet(false);
+      }
+
+      if (updateRobot)
       {
          robot.getRootBody().updateFramesRecursively();
          rigidBodyFrameNodeMap.values().forEach(FrameNode::updatePose);
-         forceUpdate = false;
       }
 
-      if ((getColor() == null) != (overridingMaterial == null))
+      if (initializeMaterial || (getColor() == null) != (overridingMaterial == null))
       {
+         initializeMaterial = false;
+
          if (getColor() == null)
          {
             reverseOverridingMaterialTasks.forEach(Runnable::run);
@@ -321,6 +332,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
          else
          {
             overridingMaterial = new PhongMaterial();
+            overridingMaterial.diffuseColorProperty().addListener((var) -> overrideMaterialRecursive(rootNode, overridingMaterial));
             overrideMaterialRecursive(rootNode, overridingMaterial);
          }
       }
@@ -328,6 +340,24 @@ public class YoGhostRobotFX extends YoGraphicFX3D
       if (getColor() != null)
       {
          overridingMaterial.setDiffuseColor(getColor().get());
+         enforceColorsMatchRecursive(rootNode, overridingMaterial);
+      }
+   }
+
+   private void enforceColorsMatchRecursive(Node start, PhongMaterial material)
+   {
+      if (start instanceof Group group)
+      {
+         group.getChildren().forEach(child -> enforceColorsMatchRecursive(child, material));
+      }
+      else if (start instanceof Shape3D shape)
+      {
+         Material originalMaterial = shape.getMaterial();
+         if (originalMaterial != material)
+         {
+            reverseOverridingMaterialTasks.add(() -> shape.setMaterial(originalMaterial));
+            shape.setMaterial(material);
+         }
       }
    }
 
@@ -374,7 +404,7 @@ public class YoGhostRobotFX extends YoGraphicFX3D
    @Override
    public YoGraphicFX clone()
    {
-      YoGhostRobotFX clone = new YoGhostRobotFX(yoVariableDatabase);
+      YoGhostRobotFX clone = new YoGhostRobotFX(yoManager);
       clone.setName(getName());
       clone.setColor(getColor());
       clone.setVisible(isVisible());

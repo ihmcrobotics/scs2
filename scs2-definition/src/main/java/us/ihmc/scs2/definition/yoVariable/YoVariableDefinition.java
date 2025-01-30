@@ -2,8 +2,8 @@ package us.ihmc.scs2.definition.yoVariable;
 
 import us.ihmc.yoVariables.tools.YoTools;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
 
 public abstract class YoVariableDefinition
 {

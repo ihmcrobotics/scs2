@@ -1,6 +1,6 @@
 package us.ihmc.scs2.definition.yoChart;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
 
 public class ChartDoubleBoundsDefinition
 {

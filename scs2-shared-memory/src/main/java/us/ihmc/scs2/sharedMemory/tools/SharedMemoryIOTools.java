@@ -16,10 +16,10 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoSearchTools;
 import us.ihmc.yoVariables.variable.*;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.*;
 import java.util.*;
 import java.util.function.IntConsumer;
@@ -423,6 +423,8 @@ public class SharedMemoryIOTools
       Struct nameHelperStruct = Mat5.newStruct();
       matFile.addArray("NameOverflow", nameHelperStruct);
       Map<String, MutableInt> nameOverflowCounter = new HashMap<>();
+      // Save the registry's cropped name in a map to recycle later.
+      Map<YoNamespace, String> renamedRegistryMap = new HashMap<>();
 
       yoVariableBufferStream.forEach(yoVariableBuffer ->
                                      {
@@ -438,7 +440,12 @@ public class SharedMemoryIOTools
 
                                            for (int i = 1; i < parentNamespace.size(); i++)
                                            {
-                                              String subName = parentNamespace.getSubNames().get(i);
+                                              YoNamespace ancestorNamespace = parentNamespace.subNamespace(0, i + 1);
+                                              String subName;
+                                              if (renamedRegistryMap.containsKey(ancestorNamespace))
+                                                 subName = renamedRegistryMap.get(ancestorNamespace);
+                                              else
+                                                 subName = ancestorNamespace.getShortName();
                                               Struct childStruct;
 
                                               try
@@ -449,6 +456,7 @@ public class SharedMemoryIOTools
                                               {
                                                  childStruct = Mat5.newStruct();
                                                  String registryStructName = checkAndRegisterLongName(subName, nameOverflowCounter, nameHelperStruct);
+                                                 renamedRegistryMap.put(ancestorNamespace, registryStructName);
                                                  parentStruct.set(registryStructName, childStruct);
                                               }
 

@@ -742,7 +742,7 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    }
 
    @Override
-   public LinkedYoVariable<?> newLinkedYoVariable(YoVariable variableToLink, Object initialUser)
+   public <L extends LinkedYoVariable<T>, T extends YoVariable> L newLinkedYoVariable(T variableToLink, Object initialUser)
    {
       if (isDisposed)
          return null;
@@ -759,6 +759,6 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
       {
          linkedBuffersLock.unlock();
       }
-      return linkedYoVariable;
+      return (L) linkedYoVariable;
    }
 }
