@@ -18,7 +18,7 @@ import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.mecano.yoVariables.spatial.YoFixedFrameSpatialVector;
 import us.ihmc.mecano.yoVariables.spatial.YoFixedFrameTwist;
 import us.ihmc.scs2.simulation.collision.CollisionResult;
-import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
+import us.ihmc.yoVariables.math.YoMatrix;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
 import us.ihmc.yoVariables.registry.YoRegistry;
