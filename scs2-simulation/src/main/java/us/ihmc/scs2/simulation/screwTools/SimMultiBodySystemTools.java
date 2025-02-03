@@ -5,7 +5,7 @@ import us.ihmc.euclid.tools.EuclidCoreTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.*;
 import us.ihmc.mecano.multiBodySystem.iterators.SubtreeStreams;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
-import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
+import us.ihmc.yoVariables.math.YoMatrix;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.*;
 import us.ihmc.yoVariables.registry.YoRegistry;
 

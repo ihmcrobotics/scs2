@@ -12,7 +12,7 @@ import us.ihmc.mecano.tools.MultiBodySystemTools;
 import us.ihmc.scs2.simulation.RobotJointWrenchCalculator;
 import us.ihmc.scs2.simulation.collision.Collidable;
 import us.ihmc.scs2.simulation.collision.FrameShapePosePredictor;
-import us.ihmc.scs2.simulation.physicsEngine.YoMatrix;
+import us.ihmc.yoVariables.math.YoMatrix;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.controller.RobotOneDoFJointDampingCalculator;
@@ -192,6 +192,6 @@ public class ContactPointBasedRobotPhysics
    private void sumJointTauContributions()
    {
       MultiBodySystemTools.extractJointsState(owner.getJointsToConsider(), JointStateType.EFFORT, jointsTau);
-      jointsTau.add(jointsTauLowLevelController);
+      jointsTau.addEquals(jointsTauLowLevelController);
    }
 }
