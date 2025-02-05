@@ -9,8 +9,6 @@ ihmc {
    configurePublications()
 }
 
-val javaCPPVersion = "1.5.9"
-
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
    api("us.ihmc:scs2-definition:source")
@@ -21,8 +19,10 @@ mainDependencies {
    api("us.ihmc:ihmc-yovariables:0.13.4")
    api("us.ihmc:mecano-yovariables:17-0.19.0")
 
-   apiBytedecoNatives("javacpp")
-   apiBytedecoNatives("bullet", "3.25-")
+   val bulletVersion = "3.25-1.5.11-ihmc-2"
+   api("us.ihmc:bullet:$bulletVersion")
+   api("us.ihmc:bullet:$bulletVersion:linux-x86_64")
+   api("us.ihmc:bullet:$bulletVersion:windows-x86_64")
 }
 
 debugDependencies {
@@ -32,19 +32,4 @@ debugDependencies {
 
 testDependencies {
    api("us.ihmc:scs2-session-visualizer-jfx:source")
-}
-
-fun us.ihmc.build.IHMCDependenciesExtension.apiBytedecoNatives(name: String, versionPrefix: String = "")
-{
-   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion")
-   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:linux-x86_64")
-   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:windows-x86_64")
-   apiBytedecoSelective("org.bytedeco:$name:$versionPrefix$javaCPPVersion:macosx-x86_64")
-}
-
-fun us.ihmc.build.IHMCDependenciesExtension.apiBytedecoSelective(dependencyNotation: String)
-{
-   api(dependencyNotation) {
-      exclude(group = "org.bytedeco")
-   }
 }
