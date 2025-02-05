@@ -43,7 +43,7 @@ jobs:
       - name: Set up JavaFX deps
         if: ${{ inputs.setup-javafx-headless }}
         run: |
-          sudo apt-get update -y && sudo apt-get install -y libxxf86vm1 libgl1-mesa-glx
+          sudo apt-get update -y && sudo apt-get install -y libxxf86vm1 libgl1 libglx-mesa0 libgl1-mesa-dev
 
       - name: Set up Virtual Display (for Linux)
         if: ${{ inputs.setup-javafx-headless }} && ( runner.os == 'Linux' )
