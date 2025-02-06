@@ -16,8 +16,8 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.22.3")
    api("us.ihmc:ihmc-messager:0.2.1")
-   api("us.ihmc:ihmc-yovariables:0.13.5")
-   api("us.ihmc:mecano-yovariables:17-0.19.0")
+   api("us.ihmc:ihmc-yovariables:0.13.6")
+   api("us.ihmc:mecano-yovariables:17-0.19.2")
 
    val bulletVersion = "3.25-1.5.11-ihmc-2"
    api("us.ihmc:bullet:$bulletVersion")
