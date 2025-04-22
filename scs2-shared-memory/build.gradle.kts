@@ -11,8 +11,8 @@ ihmc {
 
 mainDependencies {
    api("us.ihmc:scs2-definition:source")
-   api("us.ihmc:euclid:0.22.3")
-   api("us.ihmc:euclid-frame:0.22.3")
+   api("us.ihmc:euclid:0.22.4")
+   api("us.ihmc:euclid-frame:0.22.4")
    api("us.ihmc:ihmc-yovariables:0.13.6")
    api("us.hebi.matlab.mat:mfl-core:0.5.7")
 }
