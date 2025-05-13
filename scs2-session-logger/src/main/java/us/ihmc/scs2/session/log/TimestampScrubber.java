@@ -1,5 +1,6 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
+package us.ihmc.scs2.session.log;
 
+import gnu.trove.list.array.TByteArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import us.ihmc.euclid.tools.EuclidCoreTools;
 
@@ -8,7 +9,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class TimestampScrubber
 {
@@ -16,10 +19,16 @@ public class TimestampScrubber
    private final boolean interlaced;
    private long[] robotTimestamps;
    private long[] videoTimestamps;
+   private String[] videoFileNames;
+   private long[] videoFileStartIndices;
+   private byte[] videoFileIndices;
 
    private int currentIndex = 0;
    private long currentRobotTimestamp = 0;
    private long videoTimestamp;
+   private long videoFrameNumber;
+   private String currentVideoFilename;
+   private long delay = 0; // used to compensate for the delay between the robot and the video stream
 
    private boolean[] replacedRobotTimestampIndex;
 
@@ -51,12 +60,28 @@ public class TimestampScrubber
 
          TLongArrayList robotTimestamps = new TLongArrayList();
          TLongArrayList videoTimestamps = new TLongArrayList();
+         List<String> videoFileNames = new ArrayList<>();
+         TLongArrayList videoFileStartIndices = new TLongArrayList();
+         TByteArrayList videoFileIndices = new TByteArrayList();
 
+         int lineNumber = 0;
          while ((line = bufferedReader.readLine()) != null)
          {
             String[] stamps = line.split("\\s");
             long robotStamp = Long.parseLong(stamps[0]);
             long videoStamp = Long.parseLong(stamps[1]);
+            if (stamps.length > 2)
+            {
+               String fileName = stamps[2];
+               int fileIndex = videoFileNames.indexOf(fileName);
+               if (fileIndex < 0)
+               {
+                  fileIndex = videoFileNames.size();
+                  videoFileNames.add(fileName);
+                  videoFileStartIndices.add(lineNumber);
+               }
+               videoFileIndices.add((byte) fileIndex);
+            }
 
             if (interlaced)
             {
@@ -65,10 +90,17 @@ public class TimestampScrubber
 
             robotTimestamps.add(robotStamp);
             videoTimestamps.add(videoStamp);
+            lineNumber++;
          }
 
          this.robotTimestamps = robotTimestamps.toArray();
          this.videoTimestamps = videoTimestamps.toArray();
+         if (!videoFileNames.isEmpty())
+         {
+            this.videoFileNames = videoFileNames.toArray(new String[0]);
+            this.videoFileStartIndices = videoFileStartIndices.toArray();
+            this.videoFileIndices = videoFileIndices.toArray();
+         }
       }
       catch (FileNotFoundException e)
       {
@@ -140,12 +172,25 @@ public class TimestampScrubber
       currentIndex = searchRobotTimestampsForIndex(queryRobotTimestamp);
       videoTimestamp = videoTimestamps[currentIndex];
       currentRobotTimestamp = robotTimestamps[currentIndex];
+      if (videoFileNames != null)
+      {
+         byte videoFileIndex = videoFileIndices[currentIndex];
+         currentVideoFilename = videoFileNames[videoFileIndex];
+         videoFrameNumber = calculateVideoFrameNumber(currentIndex, videoFileIndex);
+      }
 
       return videoTimestamp;
    }
 
+   public int calculateVideoFrameNumber(int index, int videoIndex)
+   {
+      return index - (int) videoFileStartIndices[videoIndex];
+   }
+
    private int searchRobotTimestampsForIndex(long queryRobotTimestamp)
    {
+      queryRobotTimestamp += delay; // compensate for the delay between the robot and the video stream
+
       if (queryRobotTimestamp <= robotTimestamps[0])
          return 0;
 
@@ -154,10 +199,9 @@ public class TimestampScrubber
 
       int index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
-      if (index < 0)
+      if (index < 0) // Exact match not found -- see binarySearch doc
       {
-         int nextIndex = -index - 1; // insertionPoint
-         index = nextIndex;
+         index = -index - 1; // the point at which the key would be inserted into the array
       }
 
       return index;
@@ -171,15 +215,17 @@ public class TimestampScrubber
       return Arrays.copyOfRange(robotTimestamps, startIndex, endIndex + 1);
    }
 
-   private int findIndexOfRobotTimestamps(long value)
+   private int findIndexOfRobotTimestamps(long queryRobotTimestamp)
    {
-      if (value <= robotTimestamps[0])
+      queryRobotTimestamp += delay; // compensate for the delay between the robot and the video stream
+
+      if (queryRobotTimestamp <= robotTimestamps[0])
          return 0;
 
-      if (value >= robotTimestamps[robotTimestamps.length - 1])
+      if (queryRobotTimestamp >= robotTimestamps[robotTimestamps.length - 1])
          return robotTimestamps.length - 1;
 
-      int index = Arrays.binarySearch(robotTimestamps, value);
+      int index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
       if (index < 0)
       {
@@ -210,6 +256,16 @@ public class TimestampScrubber
       return robotTimestamps[i];
    }
 
+   public String[] getVideoFileNames()
+   {
+      return videoFileNames;
+   }
+
+   public long[] getVideoFileStartIndices()
+   {
+      return videoFileStartIndices;
+   }
+
    public long getVideoTimestampAtIndex(int i)
    {
       return videoTimestamps[i];
@@ -230,8 +286,28 @@ public class TimestampScrubber
       return videoTimestamp;
    }
 
+   public String getCurrentVideoFilename()
+   {
+      return currentVideoFilename;
+   }
+
+   public long getCurrentVideoFrameNumber()
+   {
+      return videoFrameNumber;
+   }
+
    public boolean getReplacedRobotTimestampIndex(int index)
    {
       return replacedRobotTimestampIndex[index];
+   }
+
+   public long getDelay()
+   {
+      return delay;
+   }
+
+   public void setDelay(long delay)
+   {
+      this.delay = delay;
    }
 }
