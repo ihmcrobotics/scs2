@@ -150,7 +150,7 @@ public class MagewellVideoDataReader implements VideoDataReader
          // We want to write all the frames at once to get equal timestamps between frames. When recording from the camera we have a fixed rate at which we
          // receive frames, so we don't need to worry about it, here however, we don't have that so we cna grab the next frame as fast as possible. However if the
          // timestamps between frames aren't large enough, things won't work. (maybe :))
-         long videoTimestamp = CaptureTimeTools.timeSinceStartedCaptureInSeconds(System.currentTimeMillis(), startTime);
+         long videoTimestamp = CaptureTimeTools.timeSinceStartedCaptureInMicroseconds(System.currentTimeMillis(), startTime);
          magewellMuxer.recordFrame(frame, videoTimestamp);
          videoTimestampsForCroppedLog[i] = magewellMuxer.getTimeStamp();
          i++;
