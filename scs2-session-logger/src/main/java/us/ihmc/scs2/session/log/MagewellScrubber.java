@@ -10,6 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * Provides support for scurbbing images from .mov files recorded with the Magewell logger.
+ */
 public class MagewellScrubber
 {
    private final TimestampScrubber timestampScrubber;

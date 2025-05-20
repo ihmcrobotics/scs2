@@ -19,6 +19,7 @@ public class TimestampScrubber
    private final boolean interlaced;
    private long[] robotTimestamps;
    private long[] videoTimestamps;
+   // video information is needed when data is separated into multiple files, for example svo2s
    private String[] videoFileNames;
    private long[] videoFileStartIndices;
    private byte[] videoFileIndices;
@@ -28,7 +29,8 @@ public class TimestampScrubber
    private long videoTimestamp;
    private long videoFrameNumber;
    private String currentVideoFilename;
-   private long delay = 0; // used to compensate for the delay between the robot and the video stream
+   // used to compensate for the delay between the robot and the video stream, typically user adjustable
+   private long delay = 0;
 
    private boolean[] replacedRobotTimestampIndex;
 
