@@ -18,7 +18,7 @@ public interface VideoDataReader
 
    void readVideoFrame(long timestamp);
 
-   void cropVideo(File file, File file2, long test, long what, ProgressConsumer heck) throws IOException;
+   void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException;
 
    String getName();
 
