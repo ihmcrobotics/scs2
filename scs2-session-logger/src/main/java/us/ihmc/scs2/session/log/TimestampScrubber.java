@@ -201,9 +201,10 @@ public class TimestampScrubber
 
       int index = Arrays.binarySearch(robotTimestamps, queryRobotTimestamp);
 
-      if (index < 0) // Exact match not found -- see binarySearch doc
+      if (index < 0)
       {
-         index = -index - 1; // the point at which the key would be inserted into the array
+         int nextIndex = -index - 1; // insertionPoint
+         index = nextIndex;
       }
 
       return index;
