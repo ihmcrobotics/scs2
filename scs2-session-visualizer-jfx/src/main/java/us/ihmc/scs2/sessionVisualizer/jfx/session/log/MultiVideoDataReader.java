@@ -10,6 +10,7 @@ import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.robotDataLogger.CameraType;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.scs2.session.log.ProgressConsumer;
+import us.ihmc.scs2.session.log.ZEDSVOScrubber;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
 public class MultiVideoDataReader
@@ -48,6 +49,12 @@ public class MultiVideoDataReader
          {
             System.err.println(e.getMessage());
          }
+      }
+
+      for (File zedSensorDatFile : ZEDSVOScrubber.findZEDSensorDatFiles(dataDirectory))
+      {
+         VideoDataReader reader = new ZEDSVOVideoDataReader(zedSensorDatFile);
+         readers.add(reader);
       }
    }
 
