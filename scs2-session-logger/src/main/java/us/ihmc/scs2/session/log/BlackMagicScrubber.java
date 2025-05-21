@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Provides support for scurbbing images from .mov files recorded from the Decklink cards.
+ * Provides support for scrubbing images from .mov files recorded from the Decklink cards.
  */
 public class BlackMagicScrubber
 {
