@@ -1,4 +1,4 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
+package us.ihmc.scs2.session.log;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,7 +7,6 @@ import org.jcodec.containers.mp4.MP4Packet;
 
 import us.ihmc.codecs.builder.MP4MJPEGMovieBuilder;
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
-import us.ihmc.scs2.session.log.ProgressConsumer;
 
 public class VideoConverter
 {
