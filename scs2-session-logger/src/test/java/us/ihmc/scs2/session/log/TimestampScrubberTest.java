@@ -1,10 +1,9 @@
-package us.ihmc.scs2.sessionVisualizer.jfx.session;
+package us.ihmc.scs2.session.log;
 
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.log.TimestampScrubber;
 
 import java.io.File;
 import java.io.IOException;
