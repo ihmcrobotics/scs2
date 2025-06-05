@@ -10,7 +10,7 @@ ihmc {
 }
 
 mainDependencies {
-   api("us.ihmc:euclid:0.22.4")
+   api("us.ihmc:euclid:0.22.5")
    api("us.ihmc:euclid-shape:0.22.3")
    api("us.ihmc:euclid-frame:0.22.3")
    api("us.ihmc:ihmc-commons:0.35.1")
