@@ -190,8 +190,8 @@ public class ZEDSVOScrubber
          return;
       }
 
-      printOnError(sl_retrieve_image(cameraID, leftColorImageSlMatPointer, SL_VIEW_LEFT, SL_MEM_CPU, imageWidth, imageHeight));
-      printOnError(sl_retrieve_image(cameraID, rightColorImageSlMatPointer, SL_VIEW_RIGHT, SL_MEM_CPU, imageWidth, imageHeight));
+      printOnError(sl_retrieve_image(cameraID, leftColorImageSlMatPointer, SL_VIEW_LEFT, SL_MEM_CPU, imageWidth, imageHeight, null));
+      printOnError(sl_retrieve_image(cameraID, rightColorImageSlMatPointer, SL_VIEW_RIGHT, SL_MEM_CPU, imageWidth, imageHeight, null));
 
       currentTimestamp = sl_get_current_timestamp(cameraID);
       lastGrabbedFrameNumber = frameNumber;
