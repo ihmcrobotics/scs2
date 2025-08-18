@@ -22,12 +22,12 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.YoRegistryStatisticsPaneCo
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoSliderboardManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator.YoCompositeAndEquationEditorWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.pattern.YoCompositePatternPropertyWindowController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoFilter.YoFilterCreatorWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicPropertyWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoPieChart.YoPieChartController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,6 +46,7 @@ public class SecondaryWindowManager implements Manager
                                                                                                                             "yoCompositePatternEditor",
                                                                                                                             null);
    private final Property<YoCompositeAndEquationEditorWindowController> yoCompositeCreator = new SimpleObjectProperty<>(this, "yoCompositeCreator", null);
+   private final Property<YoFilterCreatorWindowController> yoFilterCreator = new SimpleObjectProperty<>(this, "yoFilterCreator", null);
    private final Property<YoGraphicPropertyWindowController> yoGraphicEditor = new SimpleObjectProperty<>(this, "yoGraphicEditor", null);
    private final Property<YoRegistryStatisticsPaneController> yoRegistryStatistics = new SimpleObjectProperty<>(this, "yoRegistryStatistics", null);
    private final List<Stage> secondaryWindows = new ArrayList<>();
@@ -129,6 +130,12 @@ public class SecondaryWindowManager implements Manager
          yoCompositeCreator.setValue(null);
       }
 
+      if (yoFilterCreator.getValue() != null)
+      {
+         yoFilterCreator.getValue().closeAndDispose();
+         yoFilterCreator.setValue(null);
+      }
+
       sliderboardManager.stopSession();
 
       if (yoRegistryStatistics.getValue() != null)
@@ -179,6 +186,9 @@ public class SecondaryWindowManager implements Manager
          case NewWindowRequest.COMPOSITE_CREATOR_WINDOW_TYPE:
             openYoCompositeCreator(request.requestSource);
             break;
+         case NewWindowRequest.FILTER_CREATOR_WINDOW_TYPE:
+            openYoFilterCreator(request.requestSource);
+            break;
          case NewWindowRequest.SECONDARY_CHART_WINDOW_TYPE:
             newChartWindow(request.requestSource);
             break;
@@ -216,6 +226,30 @@ public class SecondaryWindowManager implements Manager
          YoCompositeAndEquationEditorWindowController controller = fxmlLoader.getController();
          controller.initialize(toolkit);
          yoCompositeCreator.setValue(controller);
+         initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
+         controller.showWindow();
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+   private void openYoFilterCreator(Window requestSource)
+   {
+      if (yoFilterCreator.getValue() != null)
+      {
+         yoFilterCreator.getValue().showWindow();
+         return;
+      }
+
+      try
+      {
+         FXMLLoader fxmlLoader = new FXMLLoader(SessionVisualizerIOTools.YO_FILTER_CREATOR_WINDOW_URL);
+         fxmlLoader.load();
+         YoFilterCreatorWindowController controller = fxmlLoader.getController();
+         controller.initialize(toolkit);
+         yoFilterCreator.setValue(controller);
          initializeSecondaryWindowWithOwner(requestSource, controller.getWindow());
          controller.showWindow();
       }
@@ -435,6 +469,7 @@ public class SecondaryWindowManager implements Manager
       public static final String GRAPHIC_EDITOR_WINDOW_TYPE = "YoGraphicEditorWindow";
       public static final String COMPOSITE_PATTERN_EDITOR_WINDOW_TYPE = "YoCompositePatternEditorWindow";
       public static final String COMPOSITE_CREATOR_WINDOW_TYPE = "YoCompositeEditorWindow";
+      public static final String FILTER_CREATOR_WINDOW_TYPE = "YoFilterEditorWindow";
       public static final String SECONDARY_CHART_WINDOW_TYPE = "SecondaryChartWindow";
 
       private final String windowType;
@@ -487,6 +522,12 @@ public class SecondaryWindowManager implements Manager
       {
          return new NewWindowRequest(COMPOSITE_CREATOR_WINDOW_TYPE, requestSource);
       }
+
+      public static NewWindowRequest filterCreatorWindow(Window requestSource)
+      {
+         return new NewWindowRequest(FILTER_CREATOR_WINDOW_TYPE, requestSource);
+      }
+
 
       public static NewWindowRequest chartWindow(Window requestSource)
       {

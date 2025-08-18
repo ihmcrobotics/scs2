@@ -138,6 +138,10 @@ public abstract class Session
     */
    public static final String USER_REGISTRY_NAME = "userRegistry";
    /**
+    * Name of the registry that will contain variables related to user application filters.
+    */
+   public static final String FILTER_REGISTRY_NAME = "filterRegistry";
+   /**
     * Namespace of the root registry for any session.
     */
    public static final YoNamespace ROOT_NAMESPACE = new YoNamespace(ROOT_REGISTRY_NAME);
@@ -181,6 +185,15 @@ public abstract class Session
     * </p>
     */
    protected final YoRegistry userRegistry = new YoRegistry(USER_REGISTRY_NAME);
+
+   /**
+    * The instance of the registry that is used to register variables related to user application.
+    * <p>
+    * Typically, this registry is used to register variables that are not initially part of the session.
+    * These variable can be used to store the result of an equation.
+    * </p>
+    */
+   protected final YoRegistry filterRegistry = new YoRegistry(FILTER_REGISTRY_NAME);
 
    /**
     * Variable holding the current time (in seconds) for this session. It represents notably:
@@ -395,6 +408,7 @@ public abstract class Session
       sessionRegistry.addChild(playbackRegistry);
       sessionRegistry.addChild(pauseRegistry);
       rootRegistry.addChild(userRegistry);
+      rootRegistry.addChild(filterRegistry);
 
       setSessionModeTask(SessionMode.RUNNING, this::runTick);
       setSessionModeTask(SessionMode.PLAYBACK, this::playbackTick);

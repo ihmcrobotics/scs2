@@ -30,6 +30,13 @@ public class YoCompositeMenuController implements VisualizerController
    {
       messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.compositeCreatorWindow(owner));
    }
+
+   @FXML
+   public void createYoFilter()
+   {
+      messager.submitMessage(topics.getOpenWindowRequest(), NewWindowRequest.filterCreatorWindow(owner));
+   }
+
    @FXML
    public void openYoCompositePatternEditor()
    {

@@ -110,6 +110,8 @@ public class SessionVisualizerIOTools
    private static final String YO_COMPOSITE_PATTERN = YO_COMPOSITE + "pattern/";
    private static final String YO_COMPOSITE_SEARCH = YO_COMPOSITE + "search/";
    private static final String YO_COMPOSITE_ENTRY = YO_COMPOSITE + "entry/";
+   private static final String YO_FILTER = "yoFilter/";
+   private static final String YO_FILTER_CREATOR = YO_FILTER + "creator/";
    private static final String YO_GRAPHIC = "yoGraphic/";
    private static final String YO_GRAPHIC_2D = YO_GRAPHIC + "graphic2D/";
    private static final String YO_GRAPHIC_3D = YO_GRAPHIC + "graphic3D/";
@@ -132,6 +134,10 @@ public class SessionVisualizerIOTools
    public static final URL YO_SEARCH_TAB_PANE_URL = getFXMLResource(YO_COMPOSITE_SEARCH, "YoSearchTabPane");
    public static final URL YO_ENTRY_LIST_VIEW_URL = getFXMLResource(YO_COMPOSITE_ENTRY, "YoEntryListView");
    public static final URL YO_REGISTRY_STATISTICS_URL = getFXMLResource("YoRegistryStatisticsPane");
+   // YoFilter resources:
+   public static final URL YO_FILTER_CREATOR_WINDOW_URL = getFXMLResource(YO_FILTER, "YoFilterCreatorWindow");
+   public static final URL YO_FILTER_CREATOR_DIALOG_URL = getFXMLResource(YO_FILTER, "YoFilterCreatorDialog");
+
    // YoGraphic resources:
    public static final URL GRAPHIC_2D_CROSS_URL = getYoGraphicResource("cross.svg");
    public static final URL GRAPHIC_2D_PLUS_URL = getYoGraphicResource("plus.svg");
@@ -178,6 +184,7 @@ public class SessionVisualizerIOTools
    public static final URL YO_GRAPHIC_ITEM_CREATOR_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicItemCreatorDialog");
    public static final URL YO_GRAPHIC_PROPERTY_URL = getFXMLResource(YO_GRAPHIC, "YoGraphicPropertyWindow");
    public static final URL YO_COMPOSITE_EDITOR_URL = getFXMLResource(YO_EDITOR, "YoCompositeEditorPane");
+   public static final URL YO_FILTER_EDITOR_URL = getFXMLResource(YO_EDITOR, "YoFilterEditorPane");
    public static final URL SIMPLE_COLOR_EDITOR_PANE_URL = getFXMLResource(YO_EDITOR, "SimpleColorEditorPane");
    public static final URL YO_COLOR_RGBA_EDITOR_PANE_URL = getFXMLResource(YO_EDITOR, "YoColorRGBAEditorPane");
    public static final URL YO_COLOR_RGBA_SINGLE_EDITOR_PANE_URL = getFXMLResource(YO_EDITOR, "YoColorRGBASingleEditorPane");

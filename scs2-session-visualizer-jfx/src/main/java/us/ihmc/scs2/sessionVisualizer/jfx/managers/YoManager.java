@@ -5,6 +5,7 @@ import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleLongProperty;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.filtering.YoFilter;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
@@ -29,6 +30,9 @@ import us.ihmc.yoVariables.variable.YoInteger;
 import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class YoManager extends ObservedAnimationTimer implements Manager
 {
    private static final boolean DEFAULT_ENABLE_FUZZY_SEARCH = SessionPropertiesHelper.loadBooleanProperty("scs2.session.gui.yovariable.enablefuzzysearch",
@@ -40,9 +44,12 @@ public class YoManager extends ObservedAnimationTimer implements Manager
 
    private YoRegistry rootRegistry;
    private YoRegistry userRegistry;
+   private YoRegistry filterRegistry;
    private LinkedYoRegistry linkedRootRegistry;
    private LinkedBufferProperties linkedBufferProperties;
    private LinkedYoVariableFactory linkedYoVariableFactory;
+
+   private List<YoFilter> filters;
 
    private boolean updatingYoVariables = true;
 
@@ -73,6 +80,8 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       linkedRootRegistry = linkedYoVariableFactory.newLinkedYoRegistry(rootRegistry);
       linkedBufferProperties = linkedYoVariableFactory.newLinkedBufferProperties();
       userRegistry = rootRegistry.getChild(Session.USER_REGISTRY_NAME);
+      filterRegistry = rootRegistry.getChild(Session.FILTER_REGISTRY_NAME);
+      filters = new ArrayList<>();
 
       updatingYoVariables = true;
       rootRegistry.addListener(counterUpdater);
@@ -93,6 +102,8 @@ public class YoManager extends ObservedAnimationTimer implements Manager
       linkedRootRegistry = null;
       linkedBufferProperties = null;
       userRegistry = null;
+      filterRegistry = null;
+      filters = null;
       rootRegistry.removeListener(counterUpdater);
       rootRegistry.destroy();
       rootRegistry = null;
@@ -128,6 +139,16 @@ public class YoManager extends ObservedAnimationTimer implements Manager
    public YoRegistry getUserRegistry()
    {
       return userRegistry;
+   }
+
+   public YoRegistry getFilterRegistry()
+   {
+      return filterRegistry;
+   }
+
+   public List<YoFilter> getFilters()
+   {
+      return filters;
    }
 
    public YoVariableDatabase getRootRegistryDatabase()

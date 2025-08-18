@@ -16,6 +16,7 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer:source")
+   api("us.ihmc:scs2-filtering:source")
 
    var javaFXVersion = "17.0.8"
    api(ihmc.javaFXModule("base", javaFXVersion))

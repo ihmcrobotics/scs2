@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXListView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import java.lang.String?>
+<AnchorPane fx:id="mainPane" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoFilter.YoFilterCreatorWindowController">
+    <children>
+        <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <HBox spacing="5.0" VBox.vgrow="ALWAYS">
+                    <children>
+                        <VBox prefWidth="250.0" spacing="10.0" HBox.hgrow="SOMETIMES">
+                            <children>
+                                <HBox alignment="CENTER" maxHeight="-Infinity" minHeight="-Infinity" spacing="10.0">
+                                    <children>
+                                        <Label maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" text="User YoVariables"/>
+                                        <Separator HBox.hgrow="ALWAYS"/>
+                                        <JFXButton contentDisplay="GRAPHIC_ONLY" focusTraversable="false" graphicTextGap="0.0" maxHeight="-Infinity"
+                                                   maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#newYoFilter"
+                                                   styleClass="chart-close-button">
+                                            <graphic>
+                                                <FontIcon iconSize="20" styleClass="add-icon-view"/>
+                                            </graphic>
+                                        </JFXButton>
+                                    </children>
+                                </HBox>
+                                <JFXListView fx:id="filterListView" prefHeight="250.0" prefWidth="300.0" VBox.vgrow="ALWAYS"/>
+                            </children>
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                            </padding>
+                        </VBox>
+                        <Separator orientation="VERTICAL" HBox.hgrow="NEVER"/>
+                    </children>
+                </HBox>
+                <HBox styleClass="graphic-editor-hbox" VBox.vgrow="NEVER">
+                    <children>
+                        <JFXButton fx:id="exportButton" minWidth="-Infinity" onAction="#exportFilters" styleClass="graphic-editor-button" text="Export...">
+                            <graphic>
+                                <FontIcon>
+                                    <styleClass>
+                                        <String fx:value="graphic-editor-icon-view"/>
+                                        <String fx:value="save-icon-view"/>
+                                    </styleClass>
+                                </FontIcon>
+                            </graphic>
+                        </JFXButton>
+                        <JFXButton fx:id="importButton" minWidth="-Infinity" onAction="#importFilters" styleClass="graphic-editor-button" text="Import...">
+                            <graphic>
+                                <FontIcon>
+                                    <styleClass>
+                                        <String fx:value="graphic-editor-icon-view"/>
+                                        <String fx:value="load-icon-view"/>
+                                    </styleClass>
+                                </FontIcon>
+                            </graphic>
+                        </JFXButton>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+    <padding>
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+    </padding>
+</AnchorPane>
