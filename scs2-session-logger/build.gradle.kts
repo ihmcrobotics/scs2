@@ -9,6 +9,12 @@ ihmc {
    configurePublications()
 }
 
+allprojects {
+   tasks.javadoc {
+      exclude("us/ihmc/**")
+   }
+}
+
 mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:scs2-simulation:source") // TODO Need to fix this, it needs the Robot.

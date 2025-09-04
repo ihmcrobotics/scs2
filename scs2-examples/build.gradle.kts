@@ -9,6 +9,12 @@ ihmc {
    configurePublications()
 }
 
+allprojects {
+   tasks.javadoc {
+      exclude("us/ihmc/**")
+   }
+}
+
 mainDependencies {
    api("org.fxyz3d:fxyz3d:0.6.0")
 
