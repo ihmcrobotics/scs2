@@ -9,6 +9,12 @@ ihmc {
    configurePublications()
 }
 
+allprojects {
+   tasks.javadoc {
+      exclude("us/ihmc/**")
+   }
+}
+
 mainDependencies {
    api("us.ihmc:euclid:0.22.5")
    api("us.ihmc:euclid-shape:0.22.5")
