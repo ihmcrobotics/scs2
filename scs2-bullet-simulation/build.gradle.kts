@@ -9,6 +9,12 @@ ihmc {
    configurePublications()
 }
 
+allprojects {
+   tasks.javadoc {
+      exclude("us/ihmc/**")
+   }
+}
+
 mainDependencies {
    api("us.ihmc:scs2-simulation:source")
    api("us.ihmc:scs2-definition:source")
