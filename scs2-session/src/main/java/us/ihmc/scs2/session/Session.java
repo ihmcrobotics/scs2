@@ -1915,13 +1915,20 @@ public abstract class Session
       publishBufferProperties(sharedBuffer.getProperties());
    }
 
+   private static double PAUSE_TASK_PERIOD = 0.01;
+
    /**
     * Calculates the period in nanoseconds the periodic thread should be running at for
     * {@link SessionMode#PAUSE}.
     */
    protected long computePauseTaskPeriod()
    {
-      return Conversions.secondsToNanoseconds(0.01);
+      return Conversions.secondsToNanoseconds(PAUSE_TASK_PERIOD);
+   }
+
+   public static void setPauseTaskPeriod(double pauseTaskPeriod)
+   {
+      PAUSE_TASK_PERIOD = pauseTaskPeriod;
    }
 
    /**
