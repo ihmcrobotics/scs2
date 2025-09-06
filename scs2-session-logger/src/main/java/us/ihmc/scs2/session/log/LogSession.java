@@ -154,6 +154,30 @@ public class LogSession extends Session
       return currentTime;
    }
 
+   /**
+    * To be used for automated log scrubbing.
+    *
+    * Running just one tick doesn't work for when using {@link Session#runTick}.
+    * Since the user would expect the in point to get reset in the normal run, but
+    * we don't want that in this case, we implement this separate method.
+    */
+   public void runOneTick()
+   {
+      logPositionRequest.getAndSet(-1);
+      processBufferRequests(false);
+
+      logDataReader.read();
+
+      if (robotStateUpdater != null)
+         robotStateUpdater.run();
+
+      sharedBuffer.incrementBufferIndex(true);
+
+      sharedBuffer.writeBuffer();
+      sharedBuffer.prepareLinkedBuffersForPull();
+      publishBufferProperties(sharedBuffer.getProperties());
+   }
+
    private boolean firstLogPositionRequest = true;
 
    @Override
