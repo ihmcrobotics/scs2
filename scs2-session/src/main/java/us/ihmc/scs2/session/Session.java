@@ -1926,6 +1926,11 @@ public abstract class Session
       return Conversions.secondsToNanoseconds(PAUSE_TASK_PERIOD);
    }
 
+   /**
+    * This was made adjustable to speed up headless log scrubbing faster than 100 Hz.
+    * This setting should typically not be changed.
+    * Warning: If set to a small value, could cause memory issues in the JavaFX visualizer.
+    */
    public static void setPauseTaskPeriod(double pauseTaskPeriod)
    {
       PAUSE_TASK_PERIOD = pauseTaskPeriod;
