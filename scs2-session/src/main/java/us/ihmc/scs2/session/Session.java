@@ -1915,13 +1915,25 @@ public abstract class Session
       publishBufferProperties(sharedBuffer.getProperties());
    }
 
+   private static double PAUSE_TASK_PERIOD = 0.01;
+
    /**
     * Calculates the period in nanoseconds the periodic thread should be running at for
     * {@link SessionMode#PAUSE}.
     */
    protected long computePauseTaskPeriod()
    {
-      return Conversions.secondsToNanoseconds(0.01);
+      return Conversions.secondsToNanoseconds(PAUSE_TASK_PERIOD);
+   }
+
+   /**
+    * This was made adjustable to speed up headless log scrubbing faster than 100 Hz.
+    * This setting should typically not be changed.
+    * Warning: If set to a small value, could cause memory issues in the JavaFX visualizer.
+    */
+   public static void setPauseTaskPeriod(double pauseTaskPeriod)
+   {
+      PAUSE_TASK_PERIOD = pauseTaskPeriod;
    }
 
    /**
