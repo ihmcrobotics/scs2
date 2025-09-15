@@ -60,7 +60,6 @@ public class MCAPLogFileReader
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<Schema> rawSchemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
-   private final MCAPFrameTransformManager frameTransformManager;
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
    private final YoLong currentChunkEndTimestamp = new YoLong("MCAPCurrentChunkEndTimestamp", propertiesRegistry);
    private final YoLong currentTimestamp = new YoLong("MCAPCurrentTimestamp", propertiesRegistry);
@@ -101,10 +100,6 @@ public class MCAPLogFileReader
 
       initialTimestamp = messageManager.firstMessageTimestamp();
       finalTimestamp = messageManager.lastMessageTimestamp();
-      startTime = System.nanoTime();
-      frameTransformManager = new MCAPFrameTransformManager(inertialFrame); // This is fast.
-      mcapRegistry.addChild(frameTransformManager.getRegistry());
-      LogTools.info("Created frame transform manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
       startTime = System.nanoTime();
       loadSchemas(); // On 10GB log file, this takes about 32 seconds.
@@ -166,18 +161,6 @@ public class MCAPLogFileReader
 
    private void loadSchemas() throws IOException
    {
-      try
-      {
-         frameTransformManager.initialize(mcap, chunkBuffer);
-      }
-      catch (Exception e)
-      {
-         Schema schema = frameTransformManager.getMCAPSchema();
-         File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
-         LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
-         throw e;
-      }
-
       for (Record record : mcap.records())
       {
          if (record.op() != Opcode.SCHEMA)
@@ -187,9 +170,6 @@ public class MCAPLogFileReader
          rawSchemas.put(schema.id(), schema);
 
          if (SCHEMA_TO_IGNORE.contains(schema.name()))
-            continue;
-
-         if (frameTransformManager.hasMCAPFrameTransforms() && schema.id() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
 
          try
@@ -203,8 +183,7 @@ public class MCAPLogFileReader
          }
          catch (Exception e)
          {
-            File debugFile = exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, schema, e);
-            LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " + debugFile.getAbsolutePath());
+            LogTools.error("Failed to load schema: " + schema.name() + ", saved to: " );
             throw e;
          }
       }
@@ -217,8 +196,6 @@ public class MCAPLogFileReader
          if (record.op() != Opcode.CHANNEL)
             continue;
          Channel channel = (Channel) record.body();
-         if (frameTransformManager.hasMCAPFrameTransforms() && channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
-            continue;
 
          MCAPSchema schema = schemas.get(channel.schemaId());
 
@@ -257,7 +234,6 @@ public class MCAPLogFileReader
          }
          catch (Exception e)
          {
-            exportChannelToFile(SCS2_MCAP_DEBUG_HOME, channel, schema, e);
             LogTools.error("Failed to load channel: " + channel.id() + ", schema ID: " + channel.schemaId() + ", saved to: " + SCS2_MCAP_DEBUG_HOME);
             e.printStackTrace();
          }
@@ -286,11 +262,6 @@ public class MCAPLogFileReader
       chunkBuffer.requestLoadChunk(timestamp, false);
    }
 
-   public YoGraphicDefinition getYoGraphic()
-   {
-      return frameTransformManager.getYoGraphic();
-   }
-
    public boolean incrementTimestamp()
    {
       long nextTimestamp = messageManager.nextMessageTimestamp(currentTimestamp.getValue());
@@ -315,10 +286,6 @@ public class MCAPLogFileReader
       {
          try
          {
-            boolean wasAFrameTransform = frameTransformManager.readMessage(message);
-            if (wasAFrameTransform)
-               continue;
-
             YoMCAPMessage yoMCAPMessage = yoMessageMap.get(message.channelId());
 
             if (yoMCAPMessage == null)
@@ -339,44 +306,9 @@ public class MCAPLogFileReader
                               message.channelId(),
                               yoMCAPMessage.getSchema().getName());
                exportMessageDataToFile(SCS2_MCAP_DEBUG_HOME, message, yoMCAPMessage.getSchema(), e);
-               exportSchemaToFile(SCS2_MCAP_DEBUG_HOME, rawSchemas.get(yoMCAPMessage.getSchema().getId()), e);
             }
          }
       }
-      // Update the Tf transforms wrt to world.
-      frameTransformManager.update();
-   }
-
-   public static File exportSchemaToFile(Path path, Schema schema, Exception e) throws IOException
-   {
-      String filename;
-      if (e != null)
-         filename = "schema-%s-%s.txt".formatted(cleanupName(schema.name()), e.getClass().getSimpleName());
-      else
-         filename = "schema-%s.txt".formatted(cleanupName(schema.name()));
-      File debugFile = path.resolve(filename).toFile();
-      if (debugFile.exists())
-         debugFile.delete();
-      debugFile.createNewFile();
-      FileOutputStream os = new FileOutputStream(debugFile);
-      os.getChannel().write(schema.data());
-      os.close();
-      return debugFile;
-   }
-
-   public static void exportChannelToFile(Path path, Channel channel, MCAPSchema schema, Exception e) throws IOException
-   {
-      File debugFile;
-      if (e != null)
-         debugFile = path.resolve("channel-%d-schema-%s-%s.txt".formatted(channel.id(), cleanupName(schema.getName()), e.getClass().getSimpleName())).toFile();
-      else
-         debugFile = path.resolve("channel-%d-schema-%s.txt".formatted(channel.id(), cleanupName(schema.getName()))).toFile();
-      if (debugFile.exists())
-         debugFile.delete();
-      debugFile.createNewFile();
-      PrintWriter pw = new PrintWriter(debugFile);
-      pw.write(channel.toString());
-      pw.close();
    }
 
    public static void exportMessageDataToFile(Path path, Message message, MCAPSchema schema, Exception e) throws IOException
@@ -437,18 +369,8 @@ public class MCAPLogFileReader
       return mcapFile;
    }
 
-   public MCAPFrameTransformManager getFrameTransformManager()
-   {
-      return frameTransformManager;
-   }
-
    public RobotStateUpdater createRobotStateUpdater(Robot robot)
    {
-      if (frameTransformManager.hasMCAPFrameTransforms())
-      {
-         return new MCAPFrameTransformBasedRobotStateUpdater(robot, frameTransformManager);
-      }
-
       for (YoMCAPMessage yoMCAPMessage : yoMessageMap.valueCollection())
       {
          if (MCAPMujocoBasedRobotStateUpdater.isRobotMujocoStateMessage(robot, yoMCAPMessage))

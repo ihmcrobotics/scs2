@@ -55,7 +55,6 @@ public class MCAPLogSession extends Session
    public MCAPLogSession(File mcapFile, long desiredLogDT, File robotModelFile) throws Exception
    {
       mcapLogFileReader = new MCAPLogFileReader(mcapFile, desiredLogDT, getInertialFrame(), mcapRegistry, sessionRegistry);
-      yoGraphicDefinitions.add(mcapLogFileReader.getYoGraphic());
 
       if (robotModelFile == null)
       {

@@ -3,6 +3,7 @@ package us.ihmc.scs2.session.mcap;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,28 +38,11 @@ public class ROS2SchemaParser
     */
    public static MCAPSchema loadSchema(String name, int id, byte[] data)
    {
+      List<MCAPSchemaField> fields = new ArrayList<>();
 
-      String schemasBundledString = new String(data);
-      schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
-      String[] schemasStrings = schemasBundledString.split(SUB_SCHEMA_SEPARATOR_REGEX);
-
-      List<MCAPSchemaField> fields = schemasStrings[0].lines().map(ROS2SchemaParser::parseMCAPSchemaField).collect(Collectors.toList());
+      fields.add(parseMCAPSchemaField(""));
 
       LinkedHashMap<String, MCAPSchema> subSchemaMap = new LinkedHashMap<>();
-
-      for (int i = 1; i < schemasStrings.length; i++)
-      {
-         String schemaString = schemasStrings[i];
-
-         int firstNewLineCharacter = schemaString.indexOf("\n");
-         String firstLine = schemaString.substring(0, firstNewLineCharacter);
-         String subName = firstLine.replace(SUB_SCHEMA_PREFIX, "").trim();
-         List<MCAPSchemaField> subFields = schemaString.substring(firstNewLineCharacter + 1)
-                                                       .lines()
-                                                       .map(ROS2SchemaParser::parseMCAPSchemaField)
-                                                       .collect(Collectors.toList());
-         subSchemaMap.put(subName, new MCAPSchema(subName, -1, subFields, null));
-      }
 
       // Update the fields to indicate whether they are complex types or not.
       for (MCAPSchemaField field : fields)
@@ -85,46 +69,15 @@ public class ROS2SchemaParser
 
    public static MCAPSchemaField parseMCAPSchemaField(String line)
    {
+      System.out.println("SCHEMA::");
+      System.out.println(line);
+
       MCAPSchemaField field = new MCAPSchemaField();
-      field.setType(line.substring(0, line.indexOf(' ')).trim());
-      field.setName(line.substring(line.indexOf(' ') + 1).trim());
+      field.setArray(false);
+      field.setVector(false);
+      field.setName("data");
+      field.setType("float32");
 
-      int lBracketIndex = field.getType().indexOf('[');
-      int rBracketIndex = field.getType().indexOf(']');
-
-      if (lBracketIndex < rBracketIndex)
-      {
-         String maxLengthStr = field.getType().substring(lBracketIndex + 1, rBracketIndex);
-         if (maxLengthStr.startsWith("<="))
-         {
-            field.setArray(false);
-            field.setVector(true);
-            maxLengthStr = maxLengthStr.substring(2);
-         }
-         else
-         {
-            field.setArray(true);
-            field.setVector(false);
-         }
-         field.setComplexType(true);
-         try
-         {
-            field.setMaxLength(Integer.parseInt(maxLengthStr));
-         }
-         catch (NumberFormatException e)
-         {
-            // The length is probably defined as a maximum length "array[<=54]"
-            maxLengthStr = maxLengthStr.replace("<=", "");
-            field.setMaxLength(Integer.parseInt(maxLengthStr));
-         }
-         field.setType(field.getType().substring(0, lBracketIndex));
-      }
-      else
-      {
-         field.setArray(false);
-         field.setVector(false);
-         field.setMaxLength(-1);
-      }
       return field;
    }
 }
