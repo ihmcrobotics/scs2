@@ -94,7 +94,7 @@ app.entrypoint(mcapRepackAppExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.
 /**
  * This task is used to compile the project and filter out any dependency not required for Linux.
  */
-tasks.create("installDistLinux") {
+tasks.register("installDistLinux") {
    dependsOn("installDist")
 
    doLast() {
@@ -109,7 +109,7 @@ tasks.create("installDistLinux") {
    }
 }
 
-tasks.create("buildDebianPackage") {
+tasks.register("buildDebianPackage") {
    dependsOn("installDistLinux")
 
    doLast {
@@ -188,21 +188,20 @@ tasks.create("buildDebianPackage") {
 
       if (Os.isFamily(Os.FAMILY_UNIX))
       {
-         exec {
-            commandLine("chmod", "+x", "$baseFolder/DEBIAN/postinst")
-         }
-         exec {
-            commandLine("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName")
-         }
-         exec {
-            commandLine("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName")
-         }
-         exec {
-            workingDir(File(debianFolder))
-            commandLine("dpkg", "--build", "scs2-${ihmc.version}")
-         }
+         exec(ProcessBuilder("chmod", "+x", "$baseFolder/DEBIAN/postinst"))
+         exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName"))
+         exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName"))
+         exec(ProcessBuilder("dpkg", "--build", "scs2-${ihmc.version}").directory(File(debianFolder)))
       }
    }
+}
+
+fun exec(processBuilder: ProcessBuilder)
+{
+   project.logger.quiet(processBuilder.command().joinToString(" "))
+   val process = processBuilder.start()
+   process.inputStream.bufferedReader().use { project.logger.quiet(it.readText()) }
+   process.waitFor()
 }
 
 fun addVSyncLinuxHackForJavaFXApp(sourceFolder: String, javafxappname: String)
