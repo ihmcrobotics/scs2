@@ -188,20 +188,12 @@ tasks.register("buildDebianPackage") {
 
       if (Os.isFamily(Os.FAMILY_UNIX))
       {
-         exec(ProcessBuilder("chmod", "+x", "$baseFolder/DEBIAN/postinst"))
-         exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName"))
-         exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName"))
-         exec(ProcessBuilder("dpkg", "--build", "scs2-${ihmc.version}").directory(File(debianFolder)))
+         ihmc.exec(ProcessBuilder("chmod", "+x", "$baseFolder/DEBIAN/postinst"))
+         ihmc.exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName"))
+         ihmc.exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName"))
+         ihmc.exec(ProcessBuilder("dpkg", "--build", "scs2-${ihmc.version}").directory(File(debianFolder)))
       }
    }
-}
-
-fun exec(processBuilder: ProcessBuilder)
-{
-   project.logger.quiet(processBuilder.command().joinToString(" "))
-   val process = processBuilder.start()
-   process.inputStream.bufferedReader().use { project.logger.quiet(it.readText()) }
-   process.waitFor()
 }
 
 fun addVSyncLinuxHackForJavaFXApp(sourceFolder: String, javafxappname: String)
