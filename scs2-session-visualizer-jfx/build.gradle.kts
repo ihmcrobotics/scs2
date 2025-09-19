@@ -94,7 +94,7 @@ app.entrypoint(mcapRepackAppExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.
 /**
  * This task is used to compile the project and filter out any dependency not required for Linux.
  */
-tasks.create("installDistLinux") {
+tasks.register("installDistLinux") {
    dependsOn("installDist")
 
    doLast() {
@@ -109,7 +109,7 @@ tasks.create("installDistLinux") {
    }
 }
 
-tasks.create("buildDebianPackage") {
+tasks.register("buildDebianPackage") {
    dependsOn("installDistLinux")
 
    doLast {
@@ -188,19 +188,10 @@ tasks.create("buildDebianPackage") {
 
       if (Os.isFamily(Os.FAMILY_UNIX))
       {
-         exec {
-            commandLine("chmod", "+x", "$baseFolder/DEBIAN/postinst")
-         }
-         exec {
-            commandLine("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName")
-         }
-         exec {
-            commandLine("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName")
-         }
-         exec {
-            workingDir(File(debianFolder))
-            commandLine("dpkg", "--build", "scs2-${ihmc.version}")
-         }
+         ihmc.exec(ProcessBuilder("chmod", "+x", "$baseFolder/DEBIAN/postinst"))
+         ihmc.exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$sessionVisualizerExecutableName"))
+         ihmc.exec(ProcessBuilder("chmod", "+x", "$sourceFolder/bin/$mcapRepackAppExecutableName"))
+         ihmc.exec(ProcessBuilder("dpkg", "--build", "scs2-${ihmc.version}").directory(File(debianFolder)))
       }
    }
 }
