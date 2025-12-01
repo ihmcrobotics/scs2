@@ -357,6 +357,7 @@ public class MCAPLogFileReader
       File debugFile = path.resolve(filename).toFile();
       if (debugFile.exists())
          debugFile.delete();
+      debugFile.getParentFile().mkdirs();
       debugFile.createNewFile();
       FileOutputStream os = new FileOutputStream(debugFile);
       os.getChannel().write(schema.data());
@@ -373,6 +374,7 @@ public class MCAPLogFileReader
          debugFile = path.resolve("channel-%d-schema-%s.txt".formatted(channel.id(), cleanupName(schema.getName()))).toFile();
       if (debugFile.exists())
          debugFile.delete();
+      debugFile.getParentFile().mkdirs();
       debugFile.createNewFile();
       PrintWriter pw = new PrintWriter(debugFile);
       pw.write(channel.toString());
@@ -390,6 +392,7 @@ public class MCAPLogFileReader
 
       if (debugFile.exists())
          debugFile.delete();
+      debugFile.getParentFile().mkdirs();
       debugFile.createNewFile();
       FileOutputStream os = new FileOutputStream(debugFile);
       os.write(message.messageData());
@@ -405,6 +408,7 @@ public class MCAPLogFileReader
          debugFile = path.resolve("chunk-%d.txt".formatted(chunk.messageStartTime())).toFile();
       if (debugFile.exists())
          debugFile.delete();
+      debugFile.getParentFile().mkdirs();
       debugFile.createNewFile();
       FileOutputStream os = new FileOutputStream(debugFile);
       MCAPDataOutput dataOutput = MCAPDataOutput.wrap(os.getChannel());

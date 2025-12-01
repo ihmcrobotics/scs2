@@ -109,7 +109,7 @@ public final class YoMCAPMessage
                                                   YoMCAPMessage::clearData,
                                                   fieldName,
                                                   field.isArray(),
-                                                  field.getMaxLength(),
+                                                  field.getMaxLength() == -1 ? 100: field.getMaxLength(), // TODO: Memory allocation only uses maxLength and doesn't use the actual length deserialized from CDR
                                                   messageRegistry));
             }
          }
@@ -213,7 +213,6 @@ public final class YoMCAPMessage
    @SuppressWarnings({"unchecked", "rawtypes"})
    private static Consumer<CDRDeserializer> createYoVariableArray(MCAPSchemaField field, YoRegistry registry)
    {
-      int maxLength = field.getMaxLength();
       String fieldName = field.getName();
       String fieldType = field.getType();
 
@@ -230,7 +229,7 @@ public final class YoMCAPMessage
                                  conversion.yoResetter(),
                                  fieldName,
                                  isFixedSize,
-                                 maxLength,
+                                 field.getMaxLength() == -1 ? 100: field.getMaxLength(), // TODO: Memory allocation only uses maxLength and doesn't use the actual length deserialized from CDR
                                  registry);
       return null;
    }
@@ -238,7 +237,6 @@ public final class YoMCAPMessage
    @SuppressWarnings("rawtypes")
    private static Consumer<CDRDeserializer> createYoEnumArray(MCAPSchemaField field, MCAPSchema enumSchema, YoRegistry registry)
    {
-      int maxLength = field.getMaxLength();
       String fieldName = field.getName();
 
       if (field.isVector() == field.isArray())
@@ -253,7 +251,7 @@ public final class YoMCAPMessage
                               conversion.yoResetter(),
                               fieldName,
                               isFixedSize,
-                              maxLength,
+                              field.getMaxLength() == -1 ? 100: field.getMaxLength(), // TODO: Memory allocation only uses maxLength and doesn't use the actual length deserialized from CDR
                               registry);
    }
 
@@ -377,7 +375,7 @@ public final class YoMCAPMessage
       allConversions.add(new YoConversionToolbox<>("uint64", YoLong.class, YoLong::new, (v, cdr) -> v.set(cdr.read_uint64()), yoLongResetter));
       allConversions.add(new YoConversionToolbox<>("unsignedlonglong", YoLong.class, YoLong::new, (v, cdr) -> v.set(cdr.read_uint64()), yoLongResetter));
       // TODO string deserializer: Preserving the BiConsumer signature to remain consistent with the other deserializers. Only skipping string in CDR for now.
-      allConversions.add(new YoConversionToolbox<>("string", null, null, (v, cdr) -> cdr.read_string(), null));
+//      allConversions.add(new YoConversionToolbox<>("string", null, null, (v, cdr) -> cdr.read_string(), null));
       conversionMap = allConversions.stream().collect(Collectors.toMap(YoConversionToolbox::primitiveType, conversion -> conversion));
    }
 

@@ -24,6 +24,8 @@ mainDependencies {
    api("org.antlr:antlr4-runtime:4.13.1")
    //api("org.lz4:lz4-java:1.8.0")
    api("com.github.vatbub:mslinks:1.0.6.2")
+
+   api("us.ihmc:jros2-parser:1.1.2")
 }
 
 testDependencies {
