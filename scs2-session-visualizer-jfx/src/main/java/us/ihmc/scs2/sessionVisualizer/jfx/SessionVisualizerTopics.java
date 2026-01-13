@@ -5,12 +5,14 @@ import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.*;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -70,6 +72,7 @@ public class SessionVisualizerTopics
    private Topic<Pair<Window, File>> yoChartGroupLoadConfiguration;
 
    private Topic<YoEntryListDefinition> yoEntryListAdd;
+   private Topic<Pair<String, YoChartConfigurationDefinition>> yoChartListAdd;
 
    private Topic<File> yoMultiSliderboardSave;
    private Topic<File> yoMultiSliderboardLoad;
@@ -421,6 +424,11 @@ public class SessionVisualizerTopics
    public Topic<YoEntryListDefinition> getYoEntryListAdd()
    {
       return yoEntryListAdd;
+   }
+
+   public Topic<Pair<String, YoChartConfigurationDefinition>> getYoChartListAdd()
+   {
+      return yoChartListAdd;
    }
 
    public Topic<File> getYoMultiSliderboardSave()

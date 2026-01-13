@@ -1203,6 +1203,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public void addYoChart(String groupName, Collection<String> variableNames)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addYoChart(groupName, variableNames));
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));

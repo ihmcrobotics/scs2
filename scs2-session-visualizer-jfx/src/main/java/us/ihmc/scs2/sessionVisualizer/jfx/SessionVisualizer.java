@@ -484,6 +484,12 @@ public class SessionVisualizer
       }
 
       @Override
+      public void addYoChart(String groupName, Collection<String> variableNames)
+      {
+         submitMessage(getTopics().getYoChartListAdd(), YoEntryListDefinition.newYoVariableEntryList(groupName, variableNames));
+      }
+
+      @Override
       public void requestChartsForceUpdate()
       {
          submitMessage(getTopics().getYoBufferForceListenerUpdate(), true);

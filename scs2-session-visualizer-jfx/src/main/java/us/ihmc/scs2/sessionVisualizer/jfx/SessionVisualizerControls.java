@@ -738,6 +738,51 @@ public interface SessionVisualizerControls
    }
 
    /**
+    * Adds a variable entry in a new chart in the default chart group.
+    *
+    * @param variableName the name of the variable to add. The variable will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   default void addYoChart(String variableName)
+   {
+      addYoChart(Collections.singletonList(variableName));
+   }
+
+   /**
+    * Adds variable entries in a new chart in the default chart group.
+    *
+    * @param variableNames the name of the variables to add. The variables will be looked up using
+    *                      {@link YoRegistry#findVariable(String)}.
+    */
+   default void addYoChart(Collection<String> variableNames)
+   {
+      addYoChart(null, variableNames);
+   }
+
+   /**
+    * Adds a variable entry in a new chart in the group named {@code groupName}. The group will be created if it
+    * doesn't exist yet.
+    *
+    * @param groupName    the name of the group.
+    * @param variableName the name of the variable to add. The variable will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   default void addYoChart(String groupName, String variableName)
+   {
+      addYoEntry(groupName, Collections.singletonList(variableName));
+   }
+
+   /**
+    * Adds variable entries in a new chart in the group named {@code groupName}. The group will be created if it
+    * doesn't exist yet.
+    *
+    * @param groupName     the name of the group.
+    * @param variableNames the name of the variables to add. The variables will be looked up using
+    *                      {@link YoRegistry#findVariable(String)}.
+    */
+   void addYoChart(String groupName, Collection<String> variableNames);
+
+   /**
     * Adds a variable entry to the default entry tab.
     *
     * @param variableName the name of the variable to add. The variable will be looked up using
