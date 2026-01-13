@@ -54,6 +54,7 @@ import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.net.URL;
+import java.sql.Ref;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -271,11 +272,42 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
     *
+    * @param inertialFrame the inertial frame of the system.
+    */
+   public SimulationConstructionSet2(ReferenceFrame inertialFrame)
+   {
+      this(Session.retrieveCallerName(), inertialFrame, contactPointBasedPhysicsEngineFactory());
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
     * @param simulationName the name of the simulation.
     */
    public SimulationConstructionSet2(String simulationName)
    {
       this(simulationName, contactPointBasedPhysicsEngineFactory());
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
+    * @param simulationName the name of the simulation.
+    * @param inertialFrame  the inertial frame of the system.
+    */
+   public SimulationConstructionSet2(String simulationName, ReferenceFrame inertialFrame)
+   {
+      this(simulationName, inertialFrame, contactPointBasedPhysicsEngineFactory());
    }
 
    /**
@@ -301,10 +333,43 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
     *
+    * @param inertialFrame        the inertial frame of the system.
+    * @param physicsEngineFactory the factory to use for setting the physics engine.
+    */
+   public SimulationConstructionSet2(ReferenceFrame inertialFrame, PhysicsEngineFactory physicsEngineFactory)
+   {
+      this(Session.retrieveCallerName(), inertialFrame, physicsEngineFactory);
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
     * @param simulationName       the name of the simulation.
     * @param physicsEngineFactory the factory to use for setting the physics engine.
     */
    public SimulationConstructionSet2(String simulationName, PhysicsEngineFactory physicsEngineFactory)
+   {
+      this(simulationName, inertialFrame, physicsEngineFactory);
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
+    * @param simulationName       the name of the simulation.
+    * @param inertialFrame        the inertial frame of the system.
+    * @param physicsEngineFactory the factory to use for setting the physics engine.
+    */
+   public SimulationConstructionSet2(String simulationName, ReferenceFrame inertialFrame, PhysicsEngineFactory physicsEngineFactory)
    {
       simulationSession = new SimulationSession(inertialFrame, simulationName, physicsEngineFactory);
       simulationSessionControls = simulationSession.getSimulationSessionControls();
