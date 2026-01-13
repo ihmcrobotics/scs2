@@ -72,7 +72,7 @@ public class SessionVisualizerTopics
    private Topic<Pair<Window, File>> yoChartGroupLoadConfiguration;
 
    private Topic<YoEntryListDefinition> yoEntryListAdd;
-   private Topic<Pair<String, YoChartConfigurationDefinition>> yoChartListAdd;
+   private Topic<org.apache.commons.lang3.tuple.Pair<String, YoChartConfigurationDefinition>> yoChartListAdd;
 
    private Topic<File> yoMultiSliderboardSave;
    private Topic<File> yoMultiSliderboardLoad;
@@ -174,6 +174,7 @@ public class SessionVisualizerTopics
       yoChartGroupLoadConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupLoadConfiguration;
 
       yoEntryListAdd = SessionVisualizerMessagerAPI.YoEntry.YoEntryListAdd;
+      yoChartListAdd = SessionVisualizerMessagerAPI.YoChart.YoChartListAdd;
 
       yoMultiSliderboardSave = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardSave;
       yoMultiSliderboardLoad = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardLoad;
@@ -426,7 +427,7 @@ public class SessionVisualizerTopics
       return yoEntryListAdd;
    }
 
-   public Topic<Pair<String, YoChartConfigurationDefinition>> getYoChartListAdd()
+   public Topic<org.apache.commons.lang3.tuple.Pair<String, YoChartConfigurationDefinition>> getYoChartListAdd()
    {
       return yoChartListAdd;
    }

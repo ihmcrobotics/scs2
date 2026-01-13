@@ -176,7 +176,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          { // no group name specified, add it to the main. If a group is specified, ignore this.
             ChartTable2DSize currentSize = yoChartGroupPanelController.getSize();
             int currentRows = currentSize.getNumberOfRows();
-            yoChartGroupPanelController.resize(new ChartTable2DSize(currentRows + 1, currentSize.getNumberOfCols()));
+            yoChartGroupPanelController.resize(new ChartTable2DSize(currentRows + 1, Math.max(currentSize.getNumberOfCols(), 1)));
             YoChartPanelController controller = yoChartGroupPanelController.getChartPanelController(currentRows, 0);
             controller.setChartConfiguration(change.getValue());
          }

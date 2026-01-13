@@ -20,7 +20,12 @@ public class TriangleMesh3DDefinition extends GeometryDefinition
 
    public TriangleMesh3DDefinition()
    {
-      setName("TriangleMesh");
+      this("TriangleMesh");
+   }
+
+   public TriangleMesh3DDefinition(String name)
+   {
+      setName(name);
    }
 
    public TriangleMesh3DDefinition(Point3D32[] vertices, Point2D32[] textures, Vector3D32[] normals, int[] triangleIndices)

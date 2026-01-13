@@ -14,6 +14,7 @@ import gnu.trove.list.array.TIntArrayList;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.axisAngle.AxisAngle;
+import us.ihmc.euclid.geometry.interfaces.BoundingBox2DReadOnly;
 import us.ihmc.euclid.geometry.interfaces.ConvexPolygon2DReadOnly;
 import us.ihmc.euclid.geometry.interfaces.LineSegment3DReadOnly;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
@@ -40,25 +41,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.geometry.ArcTorus3DDefinition;
-import us.ihmc.scs2.definition.geometry.Box3DDefinition;
-import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
-import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
-import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
-import us.ihmc.scs2.definition.geometry.ExtrudedPolygon2DDefinition;
-import us.ihmc.scs2.definition.geometry.GeometryDefinition;
-import us.ihmc.scs2.definition.geometry.HemiEllipsoid3DDefinition;
-import us.ihmc.scs2.definition.geometry.Polygon2DDefinition;
-import us.ihmc.scs2.definition.geometry.Polygon3DDefinition;
-import us.ihmc.scs2.definition.geometry.PyramidBox3DDefinition;
-import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
-import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
-import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
-import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
-import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
+import us.ihmc.scs2.definition.geometry.*;
 
 /**
  * This class provides factories to create generic meshes, i.e. {@code TriangleMesh3DDefinition}, to
@@ -2213,6 +2196,83 @@ public class TriangleMesh3DFactories
       triangleIndices[index++] = 17;
 
       return new TriangleMesh3DDefinition("Ramp Factory", points, textPoints, normals, triangleIndices);
+   }
+
+   /**
+    * Creates a triangle mesh for a Height Map.
+
+    * @return the generic triangle mesh.
+    */
+   public static TriangleMesh3DDefinition HeightMap(HeightMapDefinition heightMapDefinition)
+   {
+      BoundingBox2DReadOnly boundingBox = heightMapDefinition.getBoundingBox();
+      double resolution = 2e-1;
+      double width = boundingBox.getMaxX() - boundingBox.getMinX();
+      double length = boundingBox.getMaxY() - boundingBox.getMinY();
+      double middleX = 0.5 * (boundingBox.getMaxX() + boundingBox.getMinX());
+      double middleY = 0.5 * (boundingBox.getMaxY() + boundingBox.getMinY());
+
+      int widthVertices = (int) Math.ceil(width / resolution) + 1;
+      int lengthVertices = (int) Math.ceil(length / resolution) + 1;
+
+      double widthResolution = width / (widthVertices - 1);
+      double lengthResolution = length / (lengthVertices - 1);
+
+      double minX = middleX - 0.5 * (widthVertices - 1) * widthResolution;
+      double maxX = middleX + 0.5 * (widthVertices - 1) * widthResolution;
+
+      double minY = middleY - 0.5 * (lengthVertices - 1) * lengthResolution;
+      double maxY = middleY + 0.5 * (lengthVertices - 1) * lengthResolution;
+
+      int numberOfVertices = widthVertices * lengthVertices;
+      int numberOfTriangles = 2 * (widthVertices - 1) * (lengthVertices - 1);
+      int[] triangleIndices = new int[3 * numberOfTriangles];
+
+      Point3D32[] points = new Point3D32[numberOfVertices];
+      Vector3D32[] normals = new Vector3D32[numberOfVertices];
+      Point2D32[] texturePoints = new Point2D32[numberOfVertices];
+
+      // Height and normal of the height maps
+      double x = minX;
+      for (int xIndex = 0; xIndex < widthVertices; xIndex++)
+      {
+         double y = minY;
+         for (int yIndex = 0; yIndex < lengthVertices; yIndex++)
+         {
+            double z = heightMapDefinition.getHeightAt(x, y);
+
+            Vector3DReadOnly normal = heightMapDefinition.getNormalAt(x, y);
+
+            int index = xIndex * lengthVertices + yIndex;
+            points[index] = new Point3D32((float) x, (float) y, (float) z);
+            normals[index] = new Vector3D32(normal.getX32(), normal.getY32(), normal.getZ32());
+            float xText = (float) ((x - minX) / width);
+            float yText = (float) ((y - minY) / length);
+            texturePoints[index] = new Point2D32(xText, yText);
+
+            y += lengthResolution;
+         }
+         x += widthResolution;
+      }
+
+      // Handle the indices
+      int index = 0;
+      for (int xIndex = 0; xIndex < widthVertices - 1; xIndex++)
+      {
+         for (int yIndex = 0; yIndex < lengthVertices - 1; yIndex++)
+         {
+            // Face of the cell
+            triangleIndices[index++] = xIndex * lengthVertices + yIndex;
+            triangleIndices[index++] = (xIndex + 1) * lengthVertices + yIndex;
+            triangleIndices[index++] = xIndex * lengthVertices + yIndex + 1;
+
+            triangleIndices[index++] = xIndex * lengthVertices + yIndex + 1;
+            triangleIndices[index++] = (xIndex + 1) * lengthVertices + yIndex + 1;
+            triangleIndices[index++] = (xIndex + 1) * lengthVertices + yIndex;
+         }
+      }
+
+      return new TriangleMesh3DDefinition("Height Map Factory", points, texturePoints, normals, triangleIndices);
    }
 
    /**

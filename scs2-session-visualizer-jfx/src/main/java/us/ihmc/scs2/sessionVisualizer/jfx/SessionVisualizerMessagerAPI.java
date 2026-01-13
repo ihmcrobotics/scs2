@@ -5,6 +5,7 @@ import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.messager.MessagerAPIFactory.*;
+import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
@@ -160,6 +161,9 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<Window, Boolean>> YoChartShowYAxis = APIRoot.child(YoChart).child(YAxis).topic(Show);
       public static final Topic<Pair<Window, File>> YoChartGroupSaveConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Save);
       public static final Topic<Pair<Window, File>> YoChartGroupLoadConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Load);
+
+      public static final Topic<org.apache.commons.lang3.tuple.Pair<String, YoChartConfigurationDefinition>> YoChartListAdd = APIRoot.child(YoChart).child(Group).topic(Add);
+
    }
 
    public static class YoEntry

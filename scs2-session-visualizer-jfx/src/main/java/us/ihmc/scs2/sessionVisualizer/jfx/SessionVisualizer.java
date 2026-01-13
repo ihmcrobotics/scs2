@@ -25,6 +25,7 @@ import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
+import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
@@ -486,7 +487,7 @@ public class SessionVisualizer
       @Override
       public void addYoChart(String groupName, Collection<String> variableNames)
       {
-         submitMessage(getTopics().getYoChartListAdd(), YoEntryListDefinition.newYoVariableEntryList(groupName, variableNames));
+         submitMessage(getTopics().getYoChartListAdd(), YoChartConfigurationDefinition.newYoVariableChartList(groupName, variableNames));
       }
 
       @Override

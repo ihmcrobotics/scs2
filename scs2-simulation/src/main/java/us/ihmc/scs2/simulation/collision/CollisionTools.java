@@ -25,6 +25,7 @@ import us.ihmc.euclid.shape.primitives.Torus3D;
 import us.ihmc.euclid.shape.primitives.interfaces.Shape3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.Point3D;
+import us.ihmc.euclid.tuple3D.Point3D32;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
@@ -44,6 +45,7 @@ import us.ihmc.scs2.definition.geometry.STPCylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.STPRamp3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
+import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -58,6 +60,7 @@ import us.ihmc.scs2.simulation.shapes.STPCylinder3D;
 import us.ihmc.scs2.simulation.shapes.STPRamp3D;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -180,6 +183,8 @@ public class CollisionTools
          return new FrameRamp3D(referenceFrame, toRamp3D(originPose, ramp3DDefinition));
       else if (definition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
          return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, modelFileGeometryDefinition));
+      else if (definition instanceof TriangleMesh3DDefinition meshDefinition)
+         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, meshDefinition));
 
       LogTools.warn("Unhandled geometry type: " + definition.getClass().getSimpleName());
       return null;
@@ -331,6 +336,25 @@ public class CollisionTools
 
       URL objFileURL = DefinitionIOTools.resolveModelFileURL(definition);
       List<Point3D> vertices = DefinitionIOTools.loadOBJVertices(objFileURL);
+      if (!originPose.hasRotation())
+      {
+         if (originPose.hasTranslation())
+            vertices.forEach(vertex -> vertex.add(originPose.getTranslation()));
+      }
+      else if (!originPose.hasTranslation())
+      {
+         vertices.forEach(originPose::transform);
+      }
+      else
+      {
+         vertices.forEach(vertex -> originPose.getRotation().transform(vertex));
+      }
+      return new ConvexPolytope3D(Vertex3DSupplier.asVertex3DSupplier(vertices));
+   }
+
+   public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, TriangleMesh3DDefinition definition)
+   {
+      List<Point3D32> vertices = Arrays.asList(definition.getVertices());
       if (!originPose.hasRotation())
       {
          if (originPose.hasTranslation())
