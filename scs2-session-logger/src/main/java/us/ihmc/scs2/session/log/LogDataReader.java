@@ -342,6 +342,11 @@ public class LogDataReader implements LogDataReaderInterface
       return parser;
    }
 
+   public List<YoVariable> getYoVariablesList()
+   {
+      return yoVariables;
+   }
+
    public int getCurrentLogPosition()
    {
       return currentRecordTick.getValue();

@@ -336,7 +336,7 @@ public class LogSessionManagerController implements SessionControlsController
    private void initializeControls(LogSession newValue)
    {
       File logDirectory = newValue.getLogDirectory();
-      LogDataReader logDataReader = newValue.getLogDataReader();
+      LogDataReaderInterface logDataReader = newValue.getLogDataReader();
       LogPropertiesReader logProperties = newValue.getLogProperties();
 
       sessionNameLabel.setText(newValue.getSessionName());
@@ -493,7 +493,7 @@ public class LogSessionManagerController implements SessionControlsController
 
       int from = (int) logPositionSlider.getTrimStartValue();
       int to = (int) logPositionSlider.getTrimEndValue();
-      List<YoVariable> logVariables = activeSessionProperty.get().getLogDataReader().getParser().getYoVariablesList();
+      List<YoVariable> logVariables = activeSessionProperty.get().getLogDataReader().getYoVariablesList();
 
       backgroundExecutorManager.executeInBackground(() ->
                                                     {

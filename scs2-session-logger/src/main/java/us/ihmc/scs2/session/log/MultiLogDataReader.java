@@ -4,6 +4,7 @@ import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +19,7 @@ public class MultiLogDataReader implements LogDataReaderInterface
    private final List<AddedLogData> addedLogs = new ArrayList<>();
 
    private final YoRegistry sharedRegistry = new YoRegistry("sharedRegistry");
+   private final List<YoVariable> yoVariables = new ArrayList<>();
 
    public MultiLogDataReader(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -25,13 +27,15 @@ public class MultiLogDataReader implements LogDataReaderInterface
       sharedRegistry.addChild(mainLogReader.getYoRegistry());
       long initialTimestamp = mainLogReader.getInitialTimestamp();
       mainDT = mainLogReader.getTimestamp(1) - initialTimestamp;
+      yoVariables.addAll(mainLogReader.getParser().getYoVariablesList());
    }
 
    public void addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
       AddedLogData addedLogData = new AddedLogData(logDirectory, progressConsumer, mainLogReader.getInitialTimestamp(), mainDT);
       addedLogData.seek(mainLogReader.getCurrentLogPosition());
-      sharedRegistry.addChild(mainLogReader.getYoRegistry());
+      sharedRegistry.addChild(addedLogData.logDataReader.getYoRegistry());
+      yoVariables.addAll(addedLogData.logDataReader.getYoVariablesList());
       // TODO augment log properties.
       // TODO augment parser
 
@@ -103,6 +107,12 @@ public class MultiLogDataReader implements LogDataReaderInterface
    public int getNumberOfEntries()
    {
       return mainLogReader.getNumberOfEntries();
+   }
+
+   @Override
+   public List<YoVariable> getYoVariablesList()
+   {
+      return yoVariables;
    }
 
    private class AddedLogData

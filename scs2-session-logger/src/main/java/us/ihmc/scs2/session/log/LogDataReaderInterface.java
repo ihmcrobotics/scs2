@@ -3,6 +3,9 @@ package us.ihmc.scs2.session.log;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
+
+import java.util.List;
 
 public interface LogDataReaderInterface
 {
@@ -23,4 +26,6 @@ public interface LogDataReaderInterface
    int getNumberOfEntries();
 
    YoLong getTimestamp();
+
+   List<YoVariable> getYoVariablesList();
 }
