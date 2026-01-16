@@ -23,7 +23,7 @@ import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class LogDataReader
+public class LogDataReader implements LogDataReaderInterface
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
 
@@ -157,6 +157,7 @@ public class LogDataReader
       }
    }
 
+   @Override
    public boolean read()
    {
       boolean done = readAndProcessALogLineReturnTrueIfDone();
@@ -165,6 +166,25 @@ public class LogDataReader
          currentRecordTick.increment();
       }
       return done;
+   }
+
+   @Override
+   public double getDt()
+   {
+      return getParser().getDt();
+   }
+
+   public void setToNaN()
+   {
+      timestamp.set(-1);
+      robotTime.setToNaN();
+
+      IntStream.range(0, yoVariables.size()).parallel().forEach(i ->
+                                                                {
+                                                                   yoVariables.get(i).setValueFromDouble(Double.NaN, false);
+                                                                });
+
+      // TODO do something with joint states?
    }
 
    private boolean readAndProcessALogLineReturnTrueIfDone()

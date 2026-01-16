@@ -36,7 +36,7 @@ public class LogSession extends Session
    private final Runnable robotStateUpdater;
 
    private final File logDirectory;
-   private final LogDataReader logDataReader;
+   private final MultiLogDataReader logDataReader;
    private final LogPropertiesReader logProperties;
 
    /**
@@ -54,7 +54,7 @@ public class LogSession extends Session
       this.logDirectory = logDirectory;
       try
       {
-         logDataReader = new LogDataReader(logDirectory, progressConsumer);
+         logDataReader = new MultiLogDataReader(logDirectory, progressConsumer);
          LogTools.info("Created data reader.");
       }
       catch (IOException e)
@@ -253,7 +253,7 @@ public class LogSession extends Session
       return logDirectory;
    }
 
-   public LogDataReader getLogDataReader()
+   public LogDataReaderInterface getLogDataReader()
    {
       return logDataReader;
    }

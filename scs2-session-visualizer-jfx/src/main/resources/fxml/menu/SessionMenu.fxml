@@ -27,6 +27,16 @@
                 </FontIcon>
             </graphic>
         </MenuItem>
+        <MenuItem fx:id="addLogMenuItem" onAction="#addLogSession" text="Add log...">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="start-log-session-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
         <MenuItem onAction="#startMCAPLogSession" text="Open MCAP log...">
             <graphic>
                 <FontIcon>

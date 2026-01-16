@@ -35,6 +35,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.session.log.LogDataReader;
+import us.ihmc.scs2.session.log.LogDataReaderInterface;
 import us.ihmc.scs2.session.log.LogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -121,7 +122,7 @@ public class LogSessionManagerController implements SessionControlsController
       {
          if (activeSessionProperty.get() == null)
             return 0;
-         LogDataReader logDataReader = activeSessionProperty.get().getLogDataReader();
+         LogDataReaderInterface logDataReader = activeSessionProperty.get().getLogDataReader();
          return logDataReader.getRelativeTimestamp(position.intValue());
       }));
 
@@ -129,7 +130,7 @@ public class LogSessionManagerController implements SessionControlsController
       {
          if (oldValue != null)
          {
-            LogDataReader logDataReader = oldValue.getLogDataReader();
+            LogDataReaderInterface logDataReader = oldValue.getLogDataReader();
             logDataReader.getTimestamp().removeListeners();
          }
 
