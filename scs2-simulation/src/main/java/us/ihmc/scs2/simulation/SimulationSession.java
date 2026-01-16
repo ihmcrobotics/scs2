@@ -115,6 +115,11 @@ public class SimulationSession extends Session
    }
 
    @Override
+   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   {
+   }
+
+   @Override
    protected void initializeSession()
    {
       super.initializeSession();

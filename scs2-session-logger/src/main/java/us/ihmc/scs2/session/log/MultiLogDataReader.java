@@ -1,7 +1,10 @@
 package us.ihmc.scs2.session.log;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.graphicsDescription.yoGraphics.plotting.ArtifactList;
+import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.jointState.JointState;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
@@ -17,13 +20,14 @@ import java.util.List;
 
 public class MultiLogDataReader implements LogDataReaderInterface
 {
+   private static final Logger log = LoggerFactory.getLogger(MultiLogDataReader.class);
    private final LogDataReader mainLogReader;
    private final long mainDT;
+   private final String path;
 
    private final List<AddedLogData> addedLogs = new ArrayList<>();
 
    private final YoRegistry sharedRegistry = new YoRegistry("sharedRegistry");
-   private final YoRegistry rootRegistry = new YoRegistry("rootRegistry");
    private final List<YoVariable> yoVariables = new ArrayList<>();
 
    private final YoGraphicGroupDefinition scs2Graphics = new YoGraphicGroupDefinition();
@@ -31,22 +35,27 @@ public class MultiLogDataReader implements LogDataReaderInterface
 
    public MultiLogDataReader(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
+      this.path = logDirectory.getAbsolutePath();
       mainLogReader = new LogDataReader(logDirectory, progressConsumer);
       sharedRegistry.addChild(mainLogReader.getLocalYoRegistry());
       long initialTimestamp = mainLogReader.getInitialTimestamp();
       mainDT = mainLogReader.getTimestamp(1) - initialTimestamp;
       yoVariables.addAll(mainLogReader.getParser().getYoVariablesList());
-      rootRegistry.addChild(mainLogReader.getParser().getRootRegistry());
 
       mainLogReader.getLogSCS1YoGraphics().getYoGraphicsLists().forEach(scs1Graphics::registerYoGraphicsList);
       List<ArtifactList> artifactLists = new ArrayList<>();
       mainLogReader.getLogSCS1YoGraphics().getRegisteredArtifactLists(artifactLists);
       artifactLists.forEach(scs1Graphics::registerArtifactList);
-      scs2Graphics.addChild(mainLogReader.getLogSCS2YoGraphics());
+      mainLogReader.getLogSCS2YoGraphics().forEach(scs2Graphics::addChild);
    }
 
    public LogDataReaderInterface addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
+      if (isLogLoaded(logDirectory))
+      {
+         LogTools.warn(logDirectory.getAbsolutePath() + " is already loaded.");
+         return null;
+      }
       AddedLogData addedLogData = new AddedLogData(logDirectory, progressConsumer, mainLogReader.getInitialTimestamp(), mainDT);
       addedLogData.seek(mainLogReader.getCurrentLogPosition());
 //      sharedRegistry.addChild(addedLogData.logDataReader.getYoRegistry());
@@ -57,6 +66,14 @@ public class MultiLogDataReader implements LogDataReaderInterface
       addedLogs.add(addedLogData);
 
       return addedLogData.logDataReader;
+   }
+
+   private boolean isLogLoaded(File logDirectory)
+   {
+      if (path.equals(logDirectory.getAbsolutePath()))
+         return true;
+      else
+         return addedLogs.stream().anyMatch(addedLog -> addedLog.path.equals(logDirectory.getAbsolutePath()));
    }
 
    @Override
@@ -92,6 +109,12 @@ public class MultiLogDataReader implements LogDataReaderInterface
    }
 
    @Override
+   public File getLogDirectory()
+   {
+      return mainLogReader.getLogDirectory();
+   }
+
+   @Override
    public LogPropertiesReader getLogProperties()
    {
       return mainLogReader.getLogProperties();
@@ -104,14 +127,15 @@ public class MultiLogDataReader implements LogDataReaderInterface
    }
 
    @Override
-   public double getDt()
-   {
-      return mainLogReader.getParser().getDt();
-   }
-
    public YoVariableHandshakeParser getParser()
    {
       return mainLogReader.getParser();
+   }
+
+   @Override
+   public double getDt()
+   {
+      return mainLogReader.getParser().getDt();
    }
 
    @Override
@@ -123,13 +147,33 @@ public class MultiLogDataReader implements LogDataReaderInterface
    @Override
    public YoRegistry getLogRootRegistry()
    {
-      return rootRegistry;
+      return mainLogReader.getParser().getRootRegistry();
+   }
+
+   @Override
+   public YoGraphicsListRegistry getLogSCS1YoGraphics()
+   {
+      return scs1Graphics;
+   }
+
+   @Override
+   public List<YoGraphicGroupDefinition> getLogSCS2YoGraphics()
+   {
+      List<YoGraphicGroupDefinition> result = new ArrayList<>();
+      result.add(scs2Graphics);
+      return result;
    }
 
    @Override
    public int getNumberOfEntries()
    {
       return mainLogReader.getNumberOfEntries();
+   }
+
+   @Override
+   public long getRelativeTimestamp(int position)
+   {
+      return mainLogReader.getRelativeTimestamp(position);
    }
 
    @Override
@@ -144,36 +188,53 @@ public class MultiLogDataReader implements LogDataReaderInterface
       return mainLogReader.getJointStates();
    }
 
+   @Override
+   public List<LogDataReaderInterface> getAddedLogDataReaders()
+   {
+      List<LogDataReaderInterface> result = new ArrayList<>();
+      for (AddedLogData addedLog : addedLogs)
+         result.add(addedLog.logDataReader);
+      return result;
+   }
+
    private class AddedLogData
    {
       public final LogDataReader logDataReader;
-      public int relativeStart;
-      public int seekMultiplier;
+      public long relativeStart;
+      public int timeRateMultiplier;
       private boolean inBounds;
+      public final String path;
 
       public AddedLogData(File logDirectory, ProgressConsumer progressConsumer, long mainInitialTimestamp, long mainDT) throws IOException
       {
+         this.path = logDirectory.getAbsolutePath();
          logDataReader = new LogDataReader(logDirectory, progressConsumer);
          long localDT = logDataReader.getTimestamp(1) - logDataReader.getInitialTimestamp();
-         seekMultiplier = (int) (localDT / mainDT);
-         relativeStart =  -((logDataReader.getInitialTimestamp() - mainInitialTimestamp) * seekMultiplier);
+         timeRateMultiplier = (int) Math.round(((double) localDT) / ((double) mainDT));
+         relativeStart = -((logDataReader.getInitialTimestamp() - mainInitialTimestamp) * timeRateMultiplier);
+         LogTools.info("Added log {} with localDT {}, mainDT {}.", path, localDT, mainDT);
+         LogTools.info("seek multiplier {} and relative start {}", timeRateMultiplier, relativeStart);
       }
 
       public void seek(int mainPosition)
       {
-         int relativePosition = computeRelativePosition(mainPosition);
+         long relativePosition = computeRelativePosition(mainPosition);
          if (relativePosition < 0 || relativePosition >= logDataReader.getNumberOfEntries())
+         {
+            LogTools.info("Main position {} is outside of bounds with relative position {}", mainPosition, relativePosition);
             inBounds = false;
+         }
          else
          {
+            LogTools.info("Main position {} is inside of bounds with relative position {}", mainPosition, relativePosition);
             inBounds = true;
-            logDataReader.seek(relativePosition);
+            logDataReader.seek((int) relativePosition);
          }
       }
 
-      private int computeRelativePosition(int mainPosition)
+      private long computeRelativePosition(int mainPosition)
       {
-         return mainPosition * seekMultiplier + relativeStart;
+         return (long) mainPosition * timeRateMultiplier + relativeStart;
       }
 
       public void read()

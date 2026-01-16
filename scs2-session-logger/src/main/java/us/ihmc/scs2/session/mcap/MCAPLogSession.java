@@ -139,6 +139,12 @@ public class MCAPLogSession extends Session
       setSessionMode(SessionMode.PAUSE);
    }
 
+
+   @Override
+   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   {
+   }
+
    /**
     * Returns the robot model file that was used to create this session.
     *

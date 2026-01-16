@@ -103,6 +103,11 @@ public class RemoteSession extends Session
    }
 
    @Override
+   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   {
+   }
+
+   @Override
    protected long computeRunTaskPeriod()
    {
       return Conversions.secondsToNanoseconds(0.01);

@@ -17,6 +17,7 @@ import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.yoVariables.registry.YoRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class LogSession extends Session
    private final List<Robot> robots = new ArrayList<>();
    private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
-   private final Runnable robotStateUpdater;
+   private Runnable robotStateUpdater;
 
    private final File logDirectory;
    private final MultiLogDataReader logDataReader;
@@ -48,6 +49,8 @@ public class LogSession extends Session
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
    private final List<TimeConsumer> afterReadCallbacks = new ArrayList<>();
+   private final List<Runnable> graphicsChangedCallbacks = new ArrayList<>();
+   private final YoRegistry addedLogs = new YoRegistry("addedLogs");
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -63,7 +66,9 @@ public class LogSession extends Session
       }
       logProperties = logDataReader.getLogProperties();
 
-      addLogToStructs(logDataReader);
+      addLogToStructs(logDataReader, true);
+
+      rootRegistry.addChild(addedLogs);
 
       sessionName = logProperties.getNameAsString();
 
@@ -74,6 +79,7 @@ public class LogSession extends Session
          robotDefinitions.add(robotDefinition);
          Robot robot = new Robot(robotDefinition, getInertialFrame());
          robots.add(robot);
+         // TODO add to the add Logs.
          robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logDataReader.getJointStates(), rootRegistry);
       }
       else
@@ -86,19 +92,71 @@ public class LogSession extends Session
       setSessionMode(SessionMode.PAUSE);
    }
 
-   private void addLogToStructs(LogDataReaderInterface logDataReader)
+   private void addLogToStructs(LogDataReaderInterface logDataReader, boolean isMain) throws IOException
    {
       rootRegistry.addChild(logDataReader.getLocalYoRegistry());
-      rootRegistry.addChild(logDataReader.getLogRootRegistry());
+      if (isMain)
+         rootRegistry.addChild(logDataReader.getLogRootRegistry());
+      else
+      {
+         // We're instituting a 1-step down registry here so that there are registry name conflicts.
+         YoRegistry addedLog = new YoRegistry(logDataReader.getLogDirectory().getName());
+         rootRegistry.addChild(addedLog);
+         addedLog.addChild(logDataReader.getLogRootRegistry());
+      }
+
+      // update the graphic definitions.
       yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(logDataReader.getLogSCS1YoGraphics())));
-      if (logDataReader.getLogSCS2YoGraphics() != null)
-         yoGraphicDefinitions.addAll(logDataReader.getLogSCS2YoGraphics());
+
+      if (logDataReader.getLogSCS2YoGraphics() != null && !logDataReader.getLogSCS2YoGraphics().isEmpty())
+      {
+         logDataReader.getLogSCS2YoGraphics().forEach( graphics ->
+               {
+                     if (!graphics.isEmpty())
+                        yoGraphicDefinitions.add(graphics);
+               });
+      }
+
+
+      // This alerts the graphics system that it needs to update. if we've added a log to an existing session, its graphics need to be loaded by the
+      // YoGraphicFXManager
+      graphicsChangedCallbacks.forEach(Runnable::run);
    }
 
-   public void addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
+   public LogDataReaderInterface addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
       LogDataReaderInterface addedDataReader = logDataReader.addLog(logDirectory, progressConsumer);
-      addLogToStructs(addedDataReader);
+      if (addedDataReader != null)
+      {
+         addLogToStructs(addedDataReader, false);
+
+         if (robotStateUpdater == null)
+         {
+            RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
+
+            if (robotDefinition != null)
+            {
+               robotDefinitions.add(robotDefinition);
+               Robot robot = new Robot(robotDefinition, getInertialFrame());
+               robots.add(robot);
+               robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logDataReader.getJointStates(), rootRegistry);
+               robotStateUpdater.run();
+
+            }
+            else
+            {
+               robotStateUpdater = null;
+            }
+         }
+
+      }
+      return addedDataReader;
+   }
+
+   @Override
+   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   {
+      graphicsChangedCallbacks.add(graphicsChangedCallback);
    }
 
    public void submitLogPositionRequest(int logPosition)

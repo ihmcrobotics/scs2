@@ -1753,6 +1753,8 @@ public abstract class Session
     */
    protected abstract double doSpecificRunTick();
 
+   public abstract void addGraphicsChangedCallback(Runnable runnable);
+
    /**
     * Performs buffer operations to finalize a run tick, such as incrementing the current index and
     * writing the {@link YoVariable} values into the buffer, and publishes data to the listeners.

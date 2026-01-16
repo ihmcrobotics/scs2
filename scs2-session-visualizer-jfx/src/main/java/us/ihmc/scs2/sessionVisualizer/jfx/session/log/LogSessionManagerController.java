@@ -24,7 +24,9 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -43,6 +45,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneC
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -70,7 +73,7 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private ProgressIndicator loadingSpinner;
    @FXML
-   private Button openSessionButton, endSessionButton;
+   private Button openSessionButton, addLogButton, endSessionButton;
    @FXML
    private Label sessionNameLabel, dateLabel, logPathLabel;
    @FXML
@@ -92,6 +95,9 @@ public class LogSessionManagerController implements SessionControlsController
    @FXML
    private FlowPane videoThumbnailPane;
 
+   @FXML
+   private Pane additionalLogWeightContainer;
+
    private enum OutputFormat
    {
       Default, MATLAB, CSV;
@@ -102,6 +108,7 @@ public class LogSessionManagerController implements SessionControlsController
    private final ObjectProperty<YoVariableLogCropper> logCropperProperty = new SimpleObjectProperty<>(this, "logCropper", null);
 
    private BackgroundExecutorManager backgroundExecutorManager;
+   private SessionVisualizerToolkit toolkit;
 
    private final ObjectProperty<SessionVariableFilterPaneController> variableFilterControllerProperty = new SimpleObjectProperty<>(null);
 
@@ -112,6 +119,7 @@ public class LogSessionManagerController implements SessionControlsController
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
    {
+      this.toolkit = toolkit;
       stage = new Stage();
 
       topics = toolkit.getTopics();
@@ -212,6 +220,39 @@ public class LogSessionManagerController implements SessionControlsController
       }
       activeSessionProperty.addListener(activeSessionListener);
 
+      messager.addTopicListener(topics.getOpenAddLogRequest(), request ->
+      {
+         if (!(toolkit.getSession() instanceof LogSession activeSession))
+            throw new RuntimeException("The active session is not a LogSession.");
+
+         FileChooser fileChooser = new FileChooser();
+         fileChooser.setInitialDirectory(SessionVisualizerIOTools.getDefaultFilePath(LOG_FILE_KEY));
+         fileChooser.getExtensionFilters().add(new ExtensionFilter("Log property file", "*.log"));
+         fileChooser.setTitle("Choose log directory");
+         File result = fileChooser.showOpenDialog(stage);
+         if (result == null)
+            return;
+         LogTools.info("Adding log: " + result.getAbsolutePath());
+
+         backgroundExecutorManager.executeInBackground(() ->
+                                                       {
+                                                          try
+                                                          {
+                                                             LogDataReaderInterface addedLog = activeSession.addLog(result.getParentFile(), null);
+                                                             if (addedLog != null)
+                                                             {
+                                                                addLogToGUI(addedLog);
+                                                                openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog);
+                                                             }
+                                                          }
+                                                          catch (IOException e)
+                                                          {
+                                                             LogTools.error("Error adding log: " + e.getMessage());
+                                                             e.printStackTrace();
+                                                          }
+                                                       });
+      });
+
       thumbnailsTitledPane.expandedProperty().addListener((o, oldValue, newValue) -> JavaFXMissingTools.runLater(getClass(), stage::sizeToScene));
 
       logPositionSlider.showTrimProperty().bind(showTrimsButton.selectedProperty());
@@ -233,6 +274,9 @@ public class LogSessionManagerController implements SessionControlsController
 
       loadingSpinner.visibleProperty().addListener((o, oldValue, newValue) -> openSessionButton.setDisable(newValue));
       openSessionButton.setOnAction(e -> openLogFile());
+
+      addLogButton.disableProperty().bind(activeSessionProperty.isNull());
+      addLogButton.setOnAction(e -> messager.submitMessage(topics.getOpenAddLogRequest(), new OpenAddLogRequest(stage)));
 
       endSessionButton.setOnAction(e ->
                                    {
@@ -275,6 +319,8 @@ public class LogSessionManagerController implements SessionControlsController
       messager.addFXTopicListener(topics.getDisableUserControls(), m ->
       {
          openSessionButton.setDisable(m);
+         if (activeSessionProperty.get() != null)
+            addLogButton.setDisable(m);
          endSessionButton.setDisable(m);
          cropControlsContainer.setDisable(m);
          logPositionSlider.setDisable(m);
@@ -372,6 +418,7 @@ public class LogSessionManagerController implements SessionControlsController
       cropControlsContainer.setDisable(true);
       multiVideoViewerProperty.set(null);
       logCropperProperty.set(null);
+      additionalLogWeightContainer.getChildren().clear();
    }
 
    public void openLogFile()
@@ -411,7 +458,69 @@ public class LogSessionManagerController implements SessionControlsController
       loadingSpinner.setVisible(isLoading);
    }
 
+   private void addLogToGUI(LogDataReaderInterface logDataReader)
+   {
+      LogSession activeSession = activeSessionProperty.get();
+      if (activeSession == null)
+         return;
+
+      JavaFXMissingTools.runLater(getClass(), () ->
+      {
+         Label dateLabel = new Label(getDate(logDataReader.getLogDirectory(), logDataReader.getLogProperties()));
+         Label logPathLabel = new Label(logDataReader.getLogDirectory().getAbsolutePath());
+         JFXTrimSlider logPositionSlider = new JFXTrimSlider();
+         logPositionSlider.setMin(0);
+         logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
+         logPositionSlider.setValue(logDataReader.getCurrentLogPosition());
+         logPositionSlider.setDisable(true);
+         logPositionSlider.setValueFactory(param -> new TimeStringBinding(param.valueProperty(), position -> logDataReader.getRelativeTimestamp(position.intValue())));
+
+         activeSession.addCurrentBufferPropertiesListener(properties ->
+         {
+            JavaFXMissingTools.runLater(getClass(), () -> logPositionSlider.setValue(logDataReader.getCurrentLogPosition()));
+         });
+
+         GridPane gridPane = new GridPane();
+         gridPane.setHgap(5.0);
+         gridPane.setVgap(5.0);
+         gridPane.add(new Label("Date:"), 0, 0);
+         gridPane.add(dateLabel, 1, 0);
+         gridPane.add(new Label("Log path:"), 0, 1);
+         gridPane.add(logPathLabel, 1, 1);
+
+         JavaFXMissingTools.setAnchorConstraints(gridPane, 0.0);
+
+         VBox vBox = new VBox(5.0, gridPane, logPositionSlider);
+         additionalLogWeightContainer.getChildren().add(vBox);
+         if (stage != null)
+            stage.sizeToScene();
+      });
+   }
+
    @FXML
+   private void openVariableComparisonSearchDialog(LogDataReaderInterface mainLogReader, LogDataReaderInterface addedLogReader)
+   {
+      JavaFXMissingTools.runLater(getClass(), () ->
+      {
+         try
+         {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/session/LogVariableComparisonSearchDialog.fxml"));
+            loader.load();
+            LogVariableComparisonSearchDialogController controller = loader.getController();
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Compare Log Variables");
+            dialogStage.initOwner(stage);
+            dialogStage.setScene(new Scene(loader.getRoot()));
+            controller.initialize(toolkit, dialogStage, mainLogReader, addedLogReader);
+            dialogStage.show();
+         }
+         catch (IOException e)
+         {
+            e.printStackTrace();
+         }
+      });
+   }
+
    public void resetTrims()
    {
       logPositionSlider.setTrimStartValue(0.0);

@@ -95,6 +95,11 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       backgroundTask = backgroundExecutorManager.scheduleTaskInBackground(this::computeBackground, 1000, 100, TimeUnit.MILLISECONDS);
    }
 
+   public void updateGraphics(Session session)
+   {
+      setupYoGraphicDefinitions(session.getYoGraphicDefinitions());
+   }
+
    @Override
    public void stopSession()
    {
@@ -193,6 +198,43 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
             }
          });
       }
+   }
+
+   private void setupYoGraphicDefinitions(List<YoGraphicDefinition> definitions)
+   {
+      // TODO: Workaround for when a reference frame and a yoGraphic that depends on that frame are added somewhat at the same time.
+      // By queueing to with the referenceFrameManager, we syncing the loading with the frame loading.
+      // Maybe a better solution would be to attempt to load the yoGraphic ASAP, if the frame is missing, use a placeholder and try to resolve it later.
+      backgroundExecutorManager.queueTaskToExecuteInBackground(referenceFrameManager, () ->
+      {
+         backgroundExecutorManager.queueTaskToExecuteInBackground(this, () ->
+         {
+            for (YoGraphicDefinition definition : definitions)
+            {
+               if (definition instanceof YoGraphicListDefinition definitionList)
+               {
+                  List<YoGraphicFXItem> items = YoGraphicTools.createYoGraphicFXs(yoManager,
+                                                                                  root,
+                                                                                  yoGraphicFXResourceManager,
+                                                                                  referenceFrameManager,
+                                                                                  definitionList);
+                  if (items != null)
+                     JavaFXMissingTools.runLater(getClass(), () ->
+                     {
+                        for (YoGraphicFXItem item : items)
+                           root.addYoGraphicFXItem(item);
+                     });
+               }
+               else
+               {
+
+                  YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager, root, yoGraphicFXResourceManager, referenceFrameManager, definition);
+                  if (item != null)
+                     JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+               }
+            }
+         });
+      });
    }
 
    private void setupYoGraphicDefinition(YoGraphicDefinition definition)

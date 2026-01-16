@@ -111,6 +111,11 @@ public class SimulationDataSession extends Session
    }
 
    @Override
+   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   {
+   }
+
+   @Override
    protected double doSpecificRunTick()
    {
       return 0;

@@ -2,6 +2,7 @@ package us.ihmc.scs2.session.log;
 
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsList;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
+import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.robotDataLogger.jointState.JointState;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
@@ -23,6 +24,10 @@ public interface LogDataReaderInterface
 
    LogPropertiesReader getLogProperties();
 
+   java.io.File getLogDirectory();
+
+   YoVariableHandshakeParser getParser();
+
    double getDt();
 
    YoRegistry getLocalYoRegistry();
@@ -37,7 +42,14 @@ public interface LogDataReaderInterface
 
    YoLong getTimestamp();
 
+   long getRelativeTimestamp(int position);
+
    List<YoVariable> getYoVariablesList();
 
    List<JointState> getJointStates();
+   
+   default List<LogDataReaderInterface> getAddedLogDataReaders()
+   {
+      return java.util.Collections.emptyList();
+   }
 }
