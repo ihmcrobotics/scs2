@@ -181,6 +181,10 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
                                          {
                                             backgroundExecutorManager.executeInBackground(() -> yoGraphicFXManager.updateGraphics(session));
                                          });
+//      session.addRobotDefinitionListChangeListener((request) ->
+//                                                   {
+//                                                      backgroundExecutorManager.executeInBackground(() -> yoRobotFXManager.handleSessionRobotDefinitionListChangeState(request));
+//                                                   });
 
       mainWindow.setTitle(session.getSessionName());
    }

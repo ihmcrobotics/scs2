@@ -3,22 +3,19 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.controlsfx.control.textfield.TextFields;
 import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.session.log.LogDataReaderInterface;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.BindSynchronizingVariablesRequest;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 public class LogVariableComparisonSearchDialogController
 {
@@ -35,9 +32,7 @@ public class LogVariableComparisonSearchDialogController
    @FXML
    private Label addedLogBestMatchLabel;
    @FXML
-   private Button searchButton;
-   @FXML
-   private Button closeButton;
+   private Button selectButton;
 
    private Stage stage;
    private SessionVisualizerToolkit toolkit;
@@ -51,8 +46,8 @@ public class LogVariableComparisonSearchDialogController
       this.mainLogReader = mainLogReader;
       this.addedLogReader = addedLogReader;
 
-      setupSearchField(mainLogSearchField, mainLogSearchStackPane, mainLogBestMatchLabel, mainLogReader);
-      setupSearchField(addedLogSearchField, addedLogSearchStackPane, addedLogBestMatchLabel, addedLogReader);
+      setupSearchField(mainLogSearchField, mainLogBestMatchLabel, mainLogReader);
+      setupSearchField(addedLogSearchField, addedLogBestMatchLabel, addedLogReader);
 
       mainLogSearchField.addEventFilter(KeyEvent.KEY_PRESSED, e ->
       {
@@ -86,16 +81,8 @@ public class LogVariableComparisonSearchDialogController
       });
    }
 
-   private void setupSearchField(TextField textArea, StackPane stackPane, Label bestMatchLabel, LogDataReaderInterface logDataReader)
+   private void setupSearchField(TextField textArea, Label bestMatchLabel, LogDataReaderInterface logDataReader)
    {
-//      Collection<String> variableNames = logDataReader.getYoVariablesList()
-//                                                      .stream()
-//                                                      .map(YoVariable::getFullNameString)
-//                                                      .collect(Collectors.toList());
-
-//      SearchFieldWithHint searchFieldWithHint = new SearchFieldWithHint(textArea, variableNames);
-//      stackPane.getChildren().add(searchFieldWithHint.getHintLabel());
-
       textArea.textProperty().addListener((o, oldValue, newValue) ->
       {
          String match = findFirstMatch(newValue, logDataReader);
@@ -103,7 +90,6 @@ public class LogVariableComparisonSearchDialogController
       });
    }
 
-   @FXML
    public void search()
    {
       String mainLogVarName = mainLogSearchField.getText();
@@ -132,12 +118,6 @@ public class LogVariableComparisonSearchDialogController
       if (finalQuery.isEmpty())
          return null;
 
-//      return logDataReader.getYoVariablesList()
-//                          .stream()
-//                          .map(YoVariable::getFullNameString)
-//                          .filter(name -> us.ihmc.scs2.sessionVisualizer.jfx.controllers.RegularExpression.check(name, finalQuery))
-//                          .findFirst()
-//                          .orElse(null);
       return logDataReader.getYoVariablesList()
                           .stream()
                           .map(YoVariable::getFullNameString)
@@ -147,8 +127,24 @@ public class LogVariableComparisonSearchDialogController
    }
 
    @FXML
-   public void close()
+   public void select()
    {
+      String mainLogVarName = mainLogSearchField.getText();
+      String addedLogVarName = addedLogSearchField.getText();
+
+      // If the user hasn't typed anything, we can't search.
+      if (mainLogVarName == null || mainLogVarName.trim().isEmpty() || addedLogVarName == null || addedLogVarName.trim().isEmpty())
+         return;
+
+      String bestMatchMainName  = mainLogBestMatchLabel.getText();
+      String bestMatchAddedName = addedLogBestMatchLabel.getText();
+
+      if (!bestMatchMainName.equals("N/A") && !bestMatchAddedName.equals("N/A"))
+      {
+         BindSynchronizingVariablesRequest request = new BindSynchronizingVariablesRequest(addedLogReader.getLogDirectory().getAbsolutePath(), mainLogVarName, addedLogVarName);
+         toolkit.getMessager().submitMessage(toolkit.getTopics().getBindSynchronizingVariablesRequest(), request);
+      }
+
       stage.close();
    }
 }

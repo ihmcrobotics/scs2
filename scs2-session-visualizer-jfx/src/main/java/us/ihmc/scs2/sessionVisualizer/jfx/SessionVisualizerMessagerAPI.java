@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import javafx.stage.Window;
 import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.messager.MessagerAPIFactory.*;
@@ -15,6 +16,7 @@ import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.BindSynchronizingVariablesRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
@@ -163,7 +165,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<Window, File>> YoChartGroupSaveConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Save);
       public static final Topic<Pair<Window, File>> YoChartGroupLoadConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Load);
 
-      public static final Topic<org.apache.commons.lang3.tuple.Pair<String, YoChartConfigurationDefinition>> YoChartListAdd = APIRoot.child(YoChart).child(Group).topic(Add);
+      public static final Topic<ImmutablePair<String, YoChartConfigurationDefinition>> YoChartListAdd = APIRoot.child(YoChart).child(Group).topic(Add);
 
    }
 
@@ -225,6 +227,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Session> StartNewSessionRequest = APIRoot.child(Session).child(Start).topic(Request);
       public static final Topic<OpenSessionControlsRequest> OpenSessionControlsRequest = APIRoot.child(Session).child(Controls).topic(Request);
       public static final Topic<OpenAddLogRequest> OpenAddLogRequest = APIRoot.child(Session).child(Controls).topic(Add);
+      public static final Topic<BindSynchronizingVariablesRequest> BindSynchronizingVariablesRequest = APIRoot.child(Session).child(Controls).topic(Recordable);
    }
 
    public static final MessagerAPI API = apiFactory.getAPIAndCloseFactory();

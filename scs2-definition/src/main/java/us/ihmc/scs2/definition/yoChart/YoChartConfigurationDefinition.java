@@ -85,7 +85,7 @@ public class YoChartConfigurationDefinition
       return negates;
    }
 
-   public static Pair<String, YoChartConfigurationDefinition> newYoVariableChartList(String name, Collection<String> variableNames)
+   public static ImmutablePair<String, YoChartConfigurationDefinition> newYoVariableChartList(String name, Collection<String> variableNames)
    {
       return new ImmutablePair<>(name, new YoChartConfigurationDefinition(variableNames));
    }

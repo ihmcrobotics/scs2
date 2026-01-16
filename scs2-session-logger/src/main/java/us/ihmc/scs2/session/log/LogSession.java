@@ -12,9 +12,13 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange.SessionRobotDefinitionListChangeType;
+import us.ihmc.scs2.session.mcap.MCAPLogSession;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -50,7 +54,6 @@ public class LogSession extends Session
 
    private final List<TimeConsumer> afterReadCallbacks = new ArrayList<>();
    private final List<Runnable> graphicsChangedCallbacks = new ArrayList<>();
-   private final YoRegistry addedLogs = new YoRegistry("addedLogs");
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -67,8 +70,6 @@ public class LogSession extends Session
       logProperties = logDataReader.getLogProperties();
 
       addLogToStructs(logDataReader, true);
-
-      rootRegistry.addChild(addedLogs);
 
       sessionName = logProperties.getNameAsString();
 
@@ -123,6 +124,11 @@ public class LogSession extends Session
       graphicsChangedCallbacks.forEach(Runnable::run);
    }
 
+   public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
+   {
+      logDataReader.bindSynchronization(logToSynchronize, mainLogVarName, logToSyncVarName);
+   }
+
    public LogDataReaderInterface addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
       LogDataReaderInterface addedDataReader = logDataReader.addLog(logDirectory, progressConsumer);
@@ -132,6 +138,7 @@ public class LogSession extends Session
 
          if (robotStateUpdater == null)
          {
+            LogPropertiesReader logProperties = addedDataReader.getLogProperties();
             RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
 
             if (robotDefinition != null)
@@ -139,9 +146,11 @@ public class LogSession extends Session
                robotDefinitions.add(robotDefinition);
                Robot robot = new Robot(robotDefinition, getInertialFrame());
                robots.add(robot);
-               robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logDataReader.getJointStates(), rootRegistry);
+               robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, addedDataReader.getJointStates(), rootRegistry);
                robotStateUpdater.run();
 
+               SessionRobotDefinitionListChange change = SessionRobotDefinitionListChange.add(robotDefinition);
+               reportRobotDefinitionListChange(change);
             }
             else
             {
@@ -158,6 +167,7 @@ public class LogSession extends Session
    {
       graphicsChangedCallbacks.add(graphicsChangedCallback);
    }
+
 
    public void submitLogPositionRequest(int logPosition)
    {

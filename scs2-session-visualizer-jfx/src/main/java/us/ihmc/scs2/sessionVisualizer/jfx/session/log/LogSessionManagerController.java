@@ -252,6 +252,15 @@ public class LogSessionManagerController implements SessionControlsController
                                                           }
                                                        });
       });
+      messager.addTopicListener(topics.getBindSynchronizingVariablesRequest(), request ->
+      {
+         if (!(toolkit.getSession() instanceof LogSession activeSession))
+            throw new RuntimeException("The active session is not a LogSession.");
+
+         backgroundExecutorManager.executeInBackground(() -> activeSession.bindSynchronization(request.getAddedLogName(),
+                                                                                               request.getMainVariableName(),
+                                                                                               request.getAddedLogVariableName()));
+      });
 
       thumbnailsTitledPane.expandedProperty().addListener((o, oldValue, newValue) -> JavaFXMissingTools.runLater(getClass(), stage::sizeToScene));
 

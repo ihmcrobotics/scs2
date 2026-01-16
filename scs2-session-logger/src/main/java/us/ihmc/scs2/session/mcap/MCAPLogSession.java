@@ -332,7 +332,7 @@ public class MCAPLogSession extends Session
       }
    }
 
-   private static RobotDefinition loadRobotDefinition(File robotDefinitionFile)
+   static RobotDefinition loadRobotDefinition(File robotDefinitionFile)
    {
       if (FilenameUtils.isExtension(robotDefinitionFile.getName(), "urdf"))
       {

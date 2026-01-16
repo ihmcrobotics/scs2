@@ -44,8 +44,7 @@
       </GridPane>
       <HBox alignment="CENTER_RIGHT" spacing="10.0">
          <children>
-            <Button fx:id="searchButton" mnemonicParsing="false" onAction="#search" text="Search" />
-            <Button fx:id="closeButton" mnemonicParsing="false" onAction="#close" text="Close" />
+            <Button fx:id="selectButton" mnemonicParsing="false" onAction="#select" text="Select" />
          </children>
       </HBox>
    </children>

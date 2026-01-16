@@ -16,6 +16,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class MultiLogDataReader implements LogDataReaderInterface
@@ -26,6 +27,7 @@ public class MultiLogDataReader implements LogDataReaderInterface
    private final String path;
 
    private final List<AddedLogData> addedLogs = new ArrayList<>();
+   private final HashMap<String, AddedLogData> addedLogNameMap = new HashMap<>();
 
    private final YoRegistry sharedRegistry = new YoRegistry("sharedRegistry");
    private final List<YoVariable> yoVariables = new ArrayList<>();
@@ -56,7 +58,7 @@ public class MultiLogDataReader implements LogDataReaderInterface
          LogTools.warn(logDirectory.getAbsolutePath() + " is already loaded.");
          return null;
       }
-      AddedLogData addedLogData = new AddedLogData(logDirectory, progressConsumer, mainLogReader.getInitialTimestamp(), mainDT);
+      AddedLogData addedLogData = new AddedLogData(logDirectory, progressConsumer, mainDT);
       addedLogData.seek(mainLogReader.getCurrentLogPosition());
 //      sharedRegistry.addChild(addedLogData.logDataReader.getYoRegistry());
       yoVariables.addAll(addedLogData.logDataReader.getYoVariablesList());
@@ -64,9 +66,44 @@ public class MultiLogDataReader implements LogDataReaderInterface
       // TODO augment parser
 
       addedLogs.add(addedLogData);
+      addedLogNameMap.put(addedLogData.logDataReader.getLogDirectory().getAbsolutePath(), addedLogData);
 
       return addedLogData.logDataReader;
    }
+
+   public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
+   {
+      AddedLogData addedLogData = addedLogNameMap.get(logToSynchronize);
+      YoVariable mainLogVar = mainLogReader.getYoVariablesList()
+                   .stream()
+                   .filter(var -> var.getName().contains(mainLogVarName))
+                   .findFirst()
+                   .orElse(null);
+      YoVariable addedLogVar = addedLogData.logDataReader.getYoVariablesList()
+                                           .stream()
+                                           .filter(var -> var.getName().contains(logToSyncVarName))
+                                           .findFirst()
+                                           .orElse(null);
+      int currentMainPosition = mainLogReader.getCurrentLogPosition();
+      int currentAddedPosition = addedLogData.logDataReader.getCurrentLogPosition();
+      mainLogReader.read();
+      addedLogData.logDataReader.read();
+      double currentMainValue = mainLogVar.getValueAsDouble();
+      double currentAddedValue = addedLogVar.getValueAsDouble();
+      mainLogReader.read();
+      addedLogData.logDataReader.read();
+      double nextMainValue = mainLogVar.getValueAsDouble();
+      double nextAddedValue = addedLogVar.getValueAsDouble();
+      double mainDT = nextMainValue - currentMainValue;
+      double addedDT = nextAddedValue - currentAddedValue;
+
+      double timeRateMultiplier = addedDT / mainDT;
+      int offset = (int) ((currentAddedPosition - currentMainPosition) * timeRateMultiplier);
+      addedLogData.relativeStart = offset;
+
+      addedLogData.seek(mainLogReader.getCurrentLogPosition());
+   }
+
 
    private boolean isLogLoaded(File logDirectory)
    {
@@ -200,20 +237,17 @@ public class MultiLogDataReader implements LogDataReaderInterface
    private class AddedLogData
    {
       public final LogDataReader logDataReader;
-      public long relativeStart;
+      public int relativeStart;
       public int timeRateMultiplier;
       private boolean inBounds;
       public final String path;
 
-      public AddedLogData(File logDirectory, ProgressConsumer progressConsumer, long mainInitialTimestamp, long mainDT) throws IOException
+      public AddedLogData(File logDirectory, ProgressConsumer progressConsumer, long mainDT) throws IOException
       {
          this.path = logDirectory.getAbsolutePath();
          logDataReader = new LogDataReader(logDirectory, progressConsumer);
          long localDT = logDataReader.getTimestamp(1) - logDataReader.getInitialTimestamp();
          timeRateMultiplier = (int) Math.round(((double) localDT) / ((double) mainDT));
-         relativeStart = -((logDataReader.getInitialTimestamp() - mainInitialTimestamp) * timeRateMultiplier);
-         LogTools.info("Added log {} with localDT {}, mainDT {}.", path, localDT, mainDT);
-         LogTools.info("seek multiplier {} and relative start {}", timeRateMultiplier, relativeStart);
       }
 
       public void seek(int mainPosition)
@@ -221,16 +255,15 @@ public class MultiLogDataReader implements LogDataReaderInterface
          long relativePosition = computeRelativePosition(mainPosition);
          if (relativePosition < 0 || relativePosition >= logDataReader.getNumberOfEntries())
          {
-            LogTools.info("Main position {} is outside of bounds with relative position {}", mainPosition, relativePosition);
             inBounds = false;
          }
          else
          {
-            LogTools.info("Main position {} is inside of bounds with relative position {}", mainPosition, relativePosition);
             inBounds = true;
             logDataReader.seek((int) relativePosition);
          }
       }
+
 
       private long computeRelativePosition(int mainPosition)
       {
