@@ -26,20 +26,22 @@
           <RowConstraints minHeight="60.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label text="Main Log:" />
-            <StackPane fx:id="mainLogSearchStackPane" GridPane.columnIndex="1">
+            <Label text="Main Log:" GridPane.rowIndex="0"  />
+            <StackPane fx:id="mainLogSearchStackPane"  GridPane.rowSpan="2" GridPane.columnIndex="1" GridPane.rowIndex="0" >
                <children>
                   <TextField fx:id="mainLogSearchField" prefHeight="50.0" prefWidth="50.0" promptText="Search variable in main log..." />
                </children>
             </StackPane>
-            <Label fx:id="mainLogBestMatchLabel" maxWidth="1.7976931348623157E308" text="N/A" GridPane.columnIndex="2" />
-            <Label text="Added Log:" GridPane.rowIndex="1" />
-            <StackPane fx:id="addedLogSearchStackPane" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <Label fx:id="mainLogBestMatchLabel" maxWidth="1.7976931348623157E308" text="N/A" GridPane.rowIndex="0"  GridPane.columnIndex="2" />
+            <Label fx:id="mainLogBestMatchLabelShort" maxWidth="1.7976931348623157E308" text="N/A" GridPane.rowIndex="1" GridPane.columnIndex="2" />
+            <Label text="Added Log:" GridPane.rowIndex="2" />
+            <StackPane fx:id="addedLogSearchStackPane" GridPane.rowSpan="2" GridPane.columnIndex="1" GridPane.rowIndex="2">
                <children>
                   <TextField fx:id="addedLogSearchField" prefHeight="50.0" prefWidth="50.0" promptText="Search variable in added log..."  />
                </children>
             </StackPane>
-            <Label fx:id="addedLogBestMatchLabel" maxWidth="1.7976931348623157E308" text="N/A" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <Label fx:id="addedLogBestMatchLabel" maxWidth="1.7976931348623157E308" text="N/A" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+            <Label fx:id="addedLogBestMatchLabelShort" maxWidth="1.7976931348623157E308" text="N/A" GridPane.columnIndex="2" GridPane.rowIndex="3" />
          </children>
       </GridPane>
       <HBox alignment="CENTER_RIGHT" spacing="10.0">

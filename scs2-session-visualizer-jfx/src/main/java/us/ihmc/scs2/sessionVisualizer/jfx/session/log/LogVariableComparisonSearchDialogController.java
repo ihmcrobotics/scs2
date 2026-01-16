@@ -32,22 +32,24 @@ public class LogVariableComparisonSearchDialogController
    @FXML
    private Label addedLogBestMatchLabel;
    @FXML
+   private Label mainLogBestMatchLabelShort;
+   @FXML
+   private Label addedLogBestMatchLabelShort;
+   @FXML
    private Button selectButton;
 
    private Stage stage;
    private SessionVisualizerToolkit toolkit;
-   private LogDataReaderInterface mainLogReader;
    private LogDataReaderInterface addedLogReader;
 
    public void initialize(SessionVisualizerToolkit toolkit, Stage stage, LogDataReaderInterface mainLogReader, LogDataReaderInterface addedLogReader)
    {
       this.toolkit = toolkit;
       this.stage = stage;
-      this.mainLogReader = mainLogReader;
       this.addedLogReader = addedLogReader;
 
-      setupSearchField(mainLogSearchField, mainLogBestMatchLabel, mainLogReader);
-      setupSearchField(addedLogSearchField, addedLogBestMatchLabel, addedLogReader);
+      setupSearchField(mainLogSearchField, mainLogBestMatchLabel, mainLogBestMatchLabelShort, mainLogReader);
+      setupSearchField(addedLogSearchField, addedLogBestMatchLabel, addedLogBestMatchLabelShort, addedLogReader);
 
       mainLogSearchField.addEventFilter(KeyEvent.KEY_PRESSED, e ->
       {
@@ -81,12 +83,21 @@ public class LogVariableComparisonSearchDialogController
       });
    }
 
-   private void setupSearchField(TextField textArea, Label bestMatchLabel, LogDataReaderInterface logDataReader)
+   private void setupSearchField(TextField textArea, Label bestMatchLabel, Label bestMatchLabelShort, LogDataReaderInterface logDataReader)
    {
       textArea.textProperty().addListener((o, oldValue, newValue) ->
       {
-         String match = findFirstMatch(newValue, logDataReader);
-         bestMatchLabel.setText(match != null ? match : "N/A");
+         YoVariable match = findFirstMatch(newValue, logDataReader);
+         if (match != null)
+         {
+            bestMatchLabel.setText(match.getFullNameString());
+            bestMatchLabelShort.setText(match.getName());
+         }
+         else
+         {
+            bestMatchLabel.setText("N/A");
+            bestMatchLabelShort.setText("N/A");
+         }
       });
    }
 
@@ -109,7 +120,7 @@ public class LogVariableComparisonSearchDialogController
       toolkit.getMessager().submitMessage(toolkit.getTopics().getYoChartListAdd(), new ImmutablePair<>("Log Comparison", chartDefinition));
    }
 
-   private String findFirstMatch(String query, LogDataReaderInterface logDataReader)
+   private YoVariable findFirstMatch(String query, LogDataReaderInterface logDataReader)
    {
       if (query == null || query.isEmpty())
          return null;
@@ -118,12 +129,7 @@ public class LogVariableComparisonSearchDialogController
       if (finalQuery.isEmpty())
          return null;
 
-      return logDataReader.getYoVariablesList()
-                          .stream()
-                          .map(YoVariable::getFullNameString)
-                          .filter(name -> name.contains(finalQuery))
-                          .findFirst()
-                          .orElse(null);
+      return logDataReader.getYoVariablesList().stream().filter(v -> v.getName().contains(finalQuery)).findFirst().orElse(null);
    }
 
    @FXML
