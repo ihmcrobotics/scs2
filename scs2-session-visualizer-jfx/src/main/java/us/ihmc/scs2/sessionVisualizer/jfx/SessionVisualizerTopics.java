@@ -12,10 +12,10 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.*;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
-import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
@@ -109,6 +109,7 @@ public class SessionVisualizerTopics
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
+   private Topic<OpenAddLogRequest> openAddLogRequest;
 
    private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeRequest;
    private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeState;
@@ -209,6 +210,7 @@ public class SessionVisualizerTopics
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
+      openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
 
       sessionRobotDefinitionListChangeRequest = SessionMessagerAPI.SessionRobotDefinitionListChangeRequest;
       sessionRobotDefinitionListChangeState = SessionMessagerAPI.SessionRobotDefinitionListChangeState;
@@ -575,6 +577,11 @@ public class SessionVisualizerTopics
    public Topic<OpenSessionControlsRequest> getOpenSessionControlsRequest()
    {
       return openSessionControlsRequest;
+   }
+
+   public Topic<OpenAddLogRequest> getOpenAddLogRequest()
+   {
+      return openAddLogRequest;
    }
 
    public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeRequest()

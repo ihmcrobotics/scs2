@@ -15,6 +15,7 @@ import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 
@@ -223,6 +224,7 @@ public class SessionVisualizerMessagerAPI
 
       public static final Topic<Session> StartNewSessionRequest = APIRoot.child(Session).child(Start).topic(Request);
       public static final Topic<OpenSessionControlsRequest> OpenSessionControlsRequest = APIRoot.child(Session).child(Controls).topic(Request);
+      public static final Topic<OpenAddLogRequest> OpenAddLogRequest = APIRoot.child(Session).child(Controls).topic(Add);
    }
 
    public static final MessagerAPI API = apiFactory.getAPIAndCloseFactory();

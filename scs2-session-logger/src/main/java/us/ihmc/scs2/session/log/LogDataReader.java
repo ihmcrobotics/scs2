@@ -352,7 +352,7 @@ public class LogDataReader implements LogDataReaderInterface
       return currentRecordTick.getValue();
    }
 
-   public YoRegistry getYoRegistry()
+   public YoRegistry getLocalYoRegistry()
    {
       return registry;
    }

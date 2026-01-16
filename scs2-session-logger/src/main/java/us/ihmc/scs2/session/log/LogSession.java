@@ -63,12 +63,7 @@ public class LogSession extends Session
       }
       logProperties = logDataReader.getLogProperties();
 
-      YoVariableHandshakeParser parser = logDataReader.getParser();
-      rootRegistry.addChild(logDataReader.getYoRegistry());
-      rootRegistry.addChild(parser.getRootRegistry());
-      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(parser.getSCS1YoGraphics())));
-      if (parser.getSCS2YoGraphics() != null)
-         yoGraphicDefinitions.addAll(parser.getSCS2YoGraphics());
+      addLogToStructs(logDataReader);
 
       sessionName = logProperties.getNameAsString();
 
@@ -79,7 +74,7 @@ public class LogSession extends Session
          robotDefinitions.add(robotDefinition);
          Robot robot = new Robot(robotDefinition, getInertialFrame());
          robots.add(robot);
-         robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, parser, rootRegistry);
+         robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logDataReader.getJointStates(), rootRegistry);
       }
       else
       {
@@ -87,8 +82,23 @@ public class LogSession extends Session
       }
 
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
-      setSessionDTSeconds(parser.getDt());
+      setSessionDTSeconds(logDataReader.getDt());
       setSessionMode(SessionMode.PAUSE);
+   }
+
+   private void addLogToStructs(LogDataReaderInterface logDataReader)
+   {
+      rootRegistry.addChild(logDataReader.getLocalYoRegistry());
+      rootRegistry.addChild(logDataReader.getLogRootRegistry());
+      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(logDataReader.getLogSCS1YoGraphics())));
+      if (logDataReader.getLogSCS2YoGraphics() != null)
+         yoGraphicDefinitions.addAll(logDataReader.getLogSCS2YoGraphics());
+   }
+
+   public void addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
+   {
+      LogDataReaderInterface addedDataReader = logDataReader.addLog(logDirectory, progressConsumer);
+      addLogToStructs(addedDataReader);
    }
 
    public void submitLogPositionRequest(int logPosition)

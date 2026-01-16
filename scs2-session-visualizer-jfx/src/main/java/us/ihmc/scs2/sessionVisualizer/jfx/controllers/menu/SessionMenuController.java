@@ -7,6 +7,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest.SessionType;
 import javafx.scene.control.MenuItem;
@@ -52,7 +53,7 @@ public class SessionMenuController implements VisualizerController
    @FXML
    void addLogSession()
    {
-//      messager.submitMessage(topics.getOpenSessionControlsRequest(), new OpenSessionControlsRequest(owner, SessionType.LOG));
+      messager.submitMessage(topics.getOpenAddLogRequest(), new OpenAddLogRequest(owner));
    }
 
    @FXML
