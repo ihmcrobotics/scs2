@@ -53,6 +53,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +107,9 @@ public class LogSessionManagerController implements SessionControlsController
    private final ObjectProperty<MultiVideoViewer> multiVideoViewerProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
    private final ObjectProperty<LogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
    private final ObjectProperty<YoVariableLogCropper> logCropperProperty = new SimpleObjectProperty<>(this, "logCropper", null);
+
+   private final List<JFXTrimSlider> addedLogPositionSliders = new ArrayList<>();
+
 
    private BackgroundExecutorManager backgroundExecutorManager;
    private SessionVisualizerToolkit toolkit;
@@ -333,6 +337,8 @@ public class LogSessionManagerController implements SessionControlsController
          endSessionButton.setDisable(m);
          cropControlsContainer.setDisable(m);
          logPositionSlider.setDisable(m);
+         for (JFXTrimSlider addedSlider : addedLogPositionSliders)
+            addedSlider.setDisable(m);
       });
 
       enableVariableFilterToggleButton.selectedProperty().addListener((o, oldValue, newValue) ->
@@ -484,6 +490,14 @@ public class LogSessionManagerController implements SessionControlsController
          logPositionSlider.setDisable(true);
          logPositionSlider.setValueFactory(param -> new TimeStringBinding(param.valueProperty(), position -> logDataReader.getRelativeTimestamp(position.intValue())));
 
+         logPositionSlider.showTrimProperty().bind(showTrimsButton.selectedProperty());
+         logPositionSlider.showTrimProperty().addListener((o, oldValue, newValue) ->
+                                                          {
+                                                             if (newValue)
+                                                                resetTrims();
+                                                          });
+         addedLogPositionSliders.add(logPositionSlider);
+
          activeSession.addCurrentBufferPropertiesListener(properties ->
          {
             JavaFXMissingTools.runLater(getClass(), () -> logPositionSlider.setValue(logDataReader.getCurrentLogPosition()));
@@ -534,18 +548,25 @@ public class LogSessionManagerController implements SessionControlsController
    {
       logPositionSlider.setTrimStartValue(0.0);
       logPositionSlider.setTrimEndValue(logPositionSlider.getMax());
+      for (JFXTrimSlider slider : addedLogPositionSliders)
+      {
+         slider.setTrimStartValue(0.0);
+         slider.setTrimEndValue(slider.getMax());
+      }
    }
 
    @FXML
    public void snapStartTrimToCurrent()
    {
       logPositionSlider.setTrimStartValue(logPositionSlider.getValue());
+      addedLogPositionSliders.forEach(slider -> slider.setTrimStartValue(logPositionSlider.getValue()));
    }
 
    @FXML
    public void snapEndTrimToCurrent()
    {
       logPositionSlider.setTrimEndValue(logPositionSlider.getValue());
+      addedLogPositionSliders.forEach(slider -> slider.setTrimEndValue(logPositionSlider.getValue()));
    }
 
    @FXML
