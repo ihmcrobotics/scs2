@@ -245,7 +245,7 @@ public class LogSessionManagerController implements SessionControlsController
                                                              LogDataReaderInterface addedLog = activeSession.addLog(result.getParentFile(), null);
                                                              if (addedLog != null)
                                                              {
-                                                                addLogToGUI(addedLog);
+                                                                addLogToGUI(result, addedLog);
                                                                 openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog);
                                                              }
                                                           }
@@ -473,7 +473,7 @@ public class LogSessionManagerController implements SessionControlsController
       loadingSpinner.setVisible(isLoading);
    }
 
-   private void addLogToGUI(LogDataReaderInterface logDataReader)
+   private void addLogToGUI(File logDirectory, LogDataReaderInterface logDataReader)
    {
       LogSession activeSession = activeSessionProperty.get();
       if (activeSession == null)
@@ -517,6 +517,25 @@ public class LogSessionManagerController implements SessionControlsController
          additionalLogWeightContainer.getChildren().add(vBox);
          if (stage != null)
             stage.sizeToScene();
+
+         // Add to the videos
+         LogPropertiesReader logProperties = logDataReader.getLogProperties();
+         MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
+         multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
+         logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
+         MultiVideoViewer viewer = multiVideoViewerProperty.get();
+         viewer.addVideoReader(multiReader);
+         // need to make sure to compare this against what already exists.
+         boolean logHasVideos = multiReader.getNumberOfVideos() > 0 || thumbnailsTitledPane.isExpanded();
+         thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
+         thumbnailsTitledPane.setExpanded(logHasVideos);
+         thumbnailsTitledPane.setDisable(!logHasVideos);
+         JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
+         JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
+
+         // TODO add to the log cropper
+//         logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
+
       });
    }
 
