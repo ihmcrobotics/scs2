@@ -383,6 +383,10 @@ public class LogSessionManagerController implements SessionControlsController
                                                                          stage.sizeToScene();
                                                                       });
 
+      // Add all loaded logs.
+
+
+
       stage.setScene(new Scene(mainPane));
       stage.setTitle("Log session controls");
       stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
@@ -419,6 +423,14 @@ public class LogSessionManagerController implements SessionControlsController
       thumbnailsTitledPane.setDisable(!logHasVideos);
       JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
       JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
+
+      for (LogDataReaderInterface addedLog : newValue.getLogDataReader().getAddedLogDataReaders())
+      {
+         if (addedLog != null)
+         {
+            addLogToGUI(addedLog.getLogDirectory(), addedLog);
+         }
+      }
    }
 
    private void clearControls()
@@ -533,10 +545,8 @@ public class LogSessionManagerController implements SessionControlsController
          JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
          JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
 
-         // TODO add to the log cropper
+         // Added a new cropper
          addedLogCropperProperty.get().add(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
-
-         //         logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
 
       });
    }

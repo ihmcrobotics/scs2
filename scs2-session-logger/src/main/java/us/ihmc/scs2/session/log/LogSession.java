@@ -4,6 +4,7 @@ import us.ihmc.commons.Conversions;
 import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogProperties;
+import us.ihmc.robotDataLogger.Synchronization;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -41,6 +42,8 @@ public class LogSession extends Session
    private final CompositeLogDataReader logDataReader;
    private final LogProperties logProperties;
 
+   private boolean initialized = false;
+
    /**
     * This is used to jump to a specific position in the log when the user drags the slider.
     * <p>
@@ -70,27 +73,23 @@ public class LogSession extends Session
 
       sessionName = logProperties.getNameAsString();
 
-      RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
+      addLogInternal(logDataReader, logDirectory, false);
 
-      if (robotDefinition != null)
+      for (int i = 0; i < logProperties.getChildLogs().size(); i++)
       {
-         robotDefinitions.add(robotDefinition);
-         Robot robot = new Robot(robotDefinition, getInertialFrame());
-         robots.add(robot);
-         // TODO add to the add Logs.
-         robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logDataReader.getJointStates(), rootRegistry);
+         LogDataReaderInterface childLog = logDataReader.getAddedLogDataReaders().get(i);
+         addLogToStructs(childLog, false);
+         addLogInternal(childLog, new File(logDirectory, logProperties.getChildLogs().get(i).getChildNameAsString()), false);
       }
-      else
-      {
-         robotStateUpdater = null;
-      }
+
+
 
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
       setSessionDTSeconds(logDataReader.getDt());
       setSessionMode(SessionMode.PAUSE);
    }
 
-   private void addLogToStructs(LogDataReaderInterface logDataReader, boolean isMain) throws IOException
+   private void addLogToStructs(LogDataReaderInterface logDataReader, boolean isMain)
    {
       rootRegistry.addChild(logDataReader.getLocalYoRegistry());
       if (isMain)
@@ -123,7 +122,9 @@ public class LogSession extends Session
 
    public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
    {
-      logDataReader.bindSynchronization(logToSynchronize, mainLogVarName, logToSyncVarName);
+      Synchronization synchronization = logDataReader.bindSynchronization(logToSynchronize, mainLogVarName, logToSyncVarName);
+      int childNumber = logDataReader.getLogNumber(logToSynchronize);
+      logDataReader.getLogProperties().getChildLogs().get(childNumber).getSynchronization().set(synchronization);
    }
 
    public LogDataReaderInterface addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
@@ -132,31 +133,38 @@ public class LogSession extends Session
       if (addedDataReader != null)
       {
          addLogToStructs(addedDataReader, false);
+         addLogInternal(addedDataReader, logDirectory,true);
+      }
+      return addedDataReader;
+   }
 
-         if (robotStateUpdater == null)
+   private void addLogInternal(LogDataReaderInterface logToAdd, File logDirectory, boolean notifyListeners) throws IOException
+   {
+      if (robotStateUpdater == null)
+      {
+         LogProperties logProperties = logToAdd.getLogProperties();
+         RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
+
+         if (robotDefinition != null)
          {
-            LogProperties logProperties = addedDataReader.getLogProperties();
-            RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
-
-            if (robotDefinition != null)
-            {
-               robotDefinitions.add(robotDefinition);
-               Robot robot = new Robot(robotDefinition, getInertialFrame());
-               robots.add(robot);
-               robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, addedDataReader.getJointStates(), rootRegistry);
+            robotDefinitions.add(robotDefinition);
+            Robot robot = new Robot(robotDefinition, getInertialFrame());
+            robots.add(robot);
+            robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logToAdd.getJointStates(), rootRegistry);
+            if (initialized)
                robotStateUpdater.run();
 
+            if (notifyListeners)
+            {
                SessionRobotDefinitionListChange change = SessionRobotDefinitionListChange.add(robotDefinition);
                reportRobotDefinitionListChange(change);
             }
-            else
-            {
-               robotStateUpdater = null;
-            }
          }
-
+         else
+         {
+            robotStateUpdater = null;
+         }
       }
-      return addedDataReader;
    }
 
    @Override
@@ -179,6 +187,7 @@ public class LogSession extends Session
 
       if (robotStateUpdater != null)
          robotStateUpdater.run();
+      initialized = true;
    }
 
    @Override

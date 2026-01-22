@@ -59,13 +59,8 @@ public class LogDataReader implements LogDataReaderInterface
 
    public LogDataReader(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
-      this(logDirectory, progressConsumer, YoVariableLoggerListener.propertyFile);
-   }
-
-   public LogDataReader(File logDirectory, ProgressConsumer progressConsumer, String propertyFile) throws IOException
-   {
       this.logDirectory = logDirectory;
-      logProperties = new LogPropertiesReader(new File(logDirectory, propertyFile));
+      logProperties = new LogPropertiesReader(RobotDataLogTools.propertyFile(logDirectory));
       RobotDataLogTools.updateLogs(logDirectory, logProperties, progressConsumer);
       LogTools.info("Loaded log properties.");
 
