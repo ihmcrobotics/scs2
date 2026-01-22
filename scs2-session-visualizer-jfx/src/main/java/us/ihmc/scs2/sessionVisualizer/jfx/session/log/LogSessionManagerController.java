@@ -155,6 +155,11 @@ public class LogSessionManagerController implements SessionControlsController
          else
          {
             messager.submitMessage(topics.getStartNewSessionRequest(), newValue);
+
+            // Remove these controls that were added during the last session
+            addedLogCropperProperty.get().clear();
+            additionalLogWeightContainer.getChildren().clear();
+
             initializeControls(newValue);
          }
       };
@@ -205,6 +210,8 @@ public class LogSessionManagerController implements SessionControlsController
                                               oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
                                            if (newValue != null)
                                               newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+
+                                           // Remove the added log sliders
                                         });
 
       multiVideoViewerProperty.addListener((o, oldValue, newValue) ->
