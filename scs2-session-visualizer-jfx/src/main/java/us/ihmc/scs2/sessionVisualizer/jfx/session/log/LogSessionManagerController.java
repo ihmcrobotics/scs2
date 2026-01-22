@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
+import com.jfoenix.controls.JFXSlider;
 import com.jfoenix.controls.JFXTrimSlider;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.LongProperty;
@@ -107,6 +108,7 @@ public class LogSessionManagerController implements SessionControlsController
    private final ObjectProperty<MultiVideoViewer> multiVideoViewerProperty = new SimpleObjectProperty<>(this, "multiVideoThumbnailViewer", null);
    private final ObjectProperty<LogSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
    private final ObjectProperty<YoVariableLogCropper> logCropperProperty = new SimpleObjectProperty<>(this, "logCropper", null);
+   private final ObjectProperty<List<YoVariableLogCropper>> addedLogCropperProperty = new SimpleObjectProperty<>(this, "addedLogCroppers", new ArrayList<>());
 
    private final List<JFXTrimSlider> addedLogPositionSliders = new ArrayList<>();
 
@@ -245,7 +247,7 @@ public class LogSessionManagerController implements SessionControlsController
                                                              LogDataReaderInterface addedLog = activeSession.addLog(result.getParentFile(), null);
                                                              if (addedLog != null)
                                                              {
-                                                                addLogToGUI(result, addedLog);
+                                                                addLogToGUI(result.getParentFile(), addedLog);
                                                                 openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog);
                                                              }
                                                           }
@@ -332,8 +334,6 @@ public class LogSessionManagerController implements SessionControlsController
       messager.addFXTopicListener(topics.getDisableUserControls(), m ->
       {
          openSessionButton.setDisable(m);
-         if (activeSessionProperty.get() != null)
-            addLogButton.setDisable(m);
          endSessionButton.setDisable(m);
          cropControlsContainer.setDisable(m);
          logPositionSlider.setDisable(m);
@@ -354,7 +354,6 @@ public class LogSessionManagerController implements SessionControlsController
                                                                                   SessionVariableFilterPaneController controller = loader.getController();
                                                                                   Set<String> logVariableSet = activeSessionProperty.get()
                                                                                                                                     .getLogDataReader()
-                                                                                                                                    .getParser()
                                                                                                                                     .getYoVariablesList()
                                                                                                                                     .stream()
                                                                                                                                     .map(YoVariable::getFullNameString)
@@ -398,7 +397,7 @@ public class LogSessionManagerController implements SessionControlsController
    {
       File logDirectory = newValue.getLogDirectory();
       LogDataReaderInterface logDataReader = newValue.getLogDataReader();
-      LogPropertiesReader logProperties = newValue.getLogProperties();
+      LogProperties logProperties = newValue.getLogProperties();
 
       sessionNameLabel.setText(newValue.getSessionName());
       dateLabel.setText(getDate(logDirectory, logProperties));
@@ -433,6 +432,7 @@ public class LogSessionManagerController implements SessionControlsController
       cropControlsContainer.setDisable(true);
       multiVideoViewerProperty.set(null);
       logCropperProperty.set(null);
+      addedLogCropperProperty.get().clear();
       additionalLogWeightContainer.getChildren().clear();
    }
 
@@ -519,7 +519,7 @@ public class LogSessionManagerController implements SessionControlsController
             stage.sizeToScene();
 
          // Add to the videos
-         LogPropertiesReader logProperties = logDataReader.getLogProperties();
+         LogProperties logProperties = logDataReader.getLogProperties();
          MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
          multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
          logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
@@ -534,7 +534,9 @@ public class LogSessionManagerController implements SessionControlsController
          JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
 
          // TODO add to the log cropper
-//         logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
+         addedLogCropperProperty.get().add(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
+
+         //         logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
 
       });
    }
@@ -690,6 +692,60 @@ public class LogSessionManagerController implements SessionControlsController
                                                           messager.submitMessage(topics.getDisableUserControls(), false);
                                                           setIsLoading(false);
                                                        }
+                                                    });
+
+
+      backgroundExecutorManager.executeInBackground(() ->
+                                                    {
+                                                       setIsLoading(true);
+                                                       messager.submitMessage(topics.getDisableUserControls(), true);
+
+
+                                                       for (int i = 0; i < addedLogPositionSliders.size(); i++)
+                                                       {
+                                                          YoVariableLogCropper addedCropper = addedLogCropperProperty.get().get(i);
+
+
+                                                          JFXTrimSlider slider = addedLogPositionSliders.get(i);
+                                                          int addedFrom = (int) slider.getTrimStartValue();
+                                                          int addedTo = (int) slider.getTrimEndValue();
+                                                          LogDataReaderInterface logDataReader = activeSessionProperty.get().getLogDataReader().getAddedLogDataReaders().get(i);
+                                                          List<YoVariable> addedLogVariables = logDataReader.getYoVariablesList();
+
+                                                          File addedDestination = new File(destination, logDataReader.getLogProperties().getNameAsString());
+                                                          try
+                                                          {
+
+                                                             if (outputFormat == OutputFormat.MATLAB)
+                                                                addedCropper.cropMATLAB(addedDestination,
+                                                                                      addedLogVariables,
+                                                                                      variableFilter,
+                                                                                      registryFilter,
+                                                                                      addedFrom,
+                                                                                      addedTo,
+                                                                                      controller);
+                                                             else if (outputFormat == OutputFormat.CSV)
+                                                                addedCropper.cropCSV(addedDestination,
+                                                                                   addedLogVariables,
+                                                                                   variableFilter,
+                                                                                   registryFilter,
+                                                                                   addedFrom,
+                                                                                   addedTo,
+                                                                                   controller);
+                                                             else
+                                                                addedCropper.crop(addedDestination, addedFrom, addedTo, controller);
+                                                          }
+                                                          catch (Exception e)
+                                                          {
+                                                             e.printStackTrace();
+                                                             controller.error("Terminated with exception: " + e.getMessage());
+                                                             controller.done();
+                                                          }
+
+                                                       }
+                                                       messager.submitMessage(topics.getDisableUserControls(), false);
+                                                       setIsLoading(false);
+
                                                     });
    }
 

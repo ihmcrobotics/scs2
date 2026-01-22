@@ -4,9 +4,11 @@ import us.ihmc.commons.Conversions;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogIndex;
+import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.jointState.JointState;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
+import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
@@ -57,8 +59,13 @@ public class LogDataReader implements LogDataReaderInterface
 
    public LogDataReader(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
+      this(logDirectory, progressConsumer, YoVariableLoggerListener.propertyFile);
+   }
+
+   public LogDataReader(File logDirectory, ProgressConsumer progressConsumer, String propertyFile) throws IOException
+   {
       this.logDirectory = logDirectory;
-      logProperties = new LogPropertiesReader(RobotDataLogTools.propertyFile(logDirectory));
+      logProperties = new LogPropertiesReader(new File(logDirectory, propertyFile));
       RobotDataLogTools.updateLogs(logDirectory, logProperties, progressConsumer);
       LogTools.info("Loaded log properties.");
 
@@ -173,7 +180,7 @@ public class LogDataReader implements LogDataReaderInterface
    @Override
    public double getDt()
    {
-      return getParser().getDt();
+      return parser.getDt();
    }
 
    public void setToNaN()
@@ -334,7 +341,8 @@ public class LogDataReader implements LogDataReaderInterface
       return logDirectory;
    }
 
-   public LogPropertiesReader getLogProperties()
+   @Override
+   public LogProperties getLogProperties()
    {
       return logProperties;
    }

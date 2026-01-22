@@ -3,7 +3,7 @@ package us.ihmc.scs2.session.log;
 import us.ihmc.commons.Conversions;
 import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
-import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
+import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -13,12 +13,9 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
-import us.ihmc.scs2.session.SessionRobotDefinitionListChange.SessionRobotDefinitionListChangeType;
-import us.ihmc.scs2.session.mcap.MCAPLogSession;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
-import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -41,8 +38,8 @@ public class LogSession extends Session
    private Runnable robotStateUpdater;
 
    private final File logDirectory;
-   private final MultiLogDataReader logDataReader;
-   private final LogPropertiesReader logProperties;
+   private final CompositeLogDataReader logDataReader;
+   private final LogProperties logProperties;
 
    /**
     * This is used to jump to a specific position in the log when the user drags the slider.
@@ -60,7 +57,7 @@ public class LogSession extends Session
       this.logDirectory = logDirectory;
       try
       {
-         logDataReader = new MultiLogDataReader(logDirectory, progressConsumer);
+         logDataReader = new CompositeLogDataReader(logDirectory, progressConsumer);
          LogTools.info("Created data reader.");
       }
       catch (IOException e)
@@ -138,7 +135,7 @@ public class LogSession extends Session
 
          if (robotStateUpdater == null)
          {
-            LogPropertiesReader logProperties = addedDataReader.getLogProperties();
+            LogProperties logProperties = addedDataReader.getLogProperties();
             RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
 
             if (robotDefinition != null)
@@ -331,12 +328,12 @@ public class LogSession extends Session
       return logDirectory;
    }
 
-   public LogDataReaderInterface getLogDataReader()
+   public CompositeLogDataReader getLogDataReader()
    {
       return logDataReader;
    }
 
-   public LogPropertiesReader getLogProperties()
+   public LogProperties getLogProperties()
    {
       return logProperties;
    }

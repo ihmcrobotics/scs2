@@ -31,12 +31,17 @@ import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoVariableLogCropper extends YoVariableLogReader
 {
-   private final MultiVideoDataReader multiVideoDataReader;
+   private final List<VideoDataReader> videoDataReaders;
 
    public YoVariableLogCropper(MultiVideoDataReader multiVideoDataReader, File logDirectory, LogProperties logProperties)
    {
+      this(multiVideoDataReader.getReaders(), logDirectory, logProperties);
+   }
+
+   public YoVariableLogCropper(List<VideoDataReader> videoDataReaders, File logDirectory, LogProperties logProperties)
+   {
       super(logDirectory, logProperties);
-      this.multiVideoDataReader = multiVideoDataReader;
+      this.videoDataReaders = videoDataReaders;
    }
 
    public void crop(File destination, int from, int to, ProgressConsumer progressConsumer)
@@ -95,7 +100,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
          progressConsumer.info("Writing variable data %d/%d".formatted(0, to - from));
 
          ProgressConsumer dataCopyingProgress;
-         if (multiVideoDataReader == null || multiVideoDataReader.getNumberOfVideos() == 0)
+         if (videoDataReaders == null || videoDataReaders.isEmpty())
             dataCopyingProgress = progressConsumer.subProgress(0.10, 1.00);
          else
             dataCopyingProgress = progressConsumer.subProgress(0.10, 0.50);
@@ -124,8 +129,8 @@ public class YoVariableLogCropper extends YoVariableLogReader
 
          progressConsumer.info("Cropping video files");
 
-         if (multiVideoDataReader != null && multiVideoDataReader.getNumberOfVideos() > 0)
-            multiVideoDataReader.crop(destination, getTimestamp(from), getTimestamp(to), progressConsumer.subProgress(0.50, 1.0));
+         if (videoDataReaders != null && !videoDataReaders.isEmpty())
+            MultiVideoDataReader.crop(destination, videoDataReaders, getTimestamp(from), getTimestamp(to), progressConsumer.subProgress(0.50, 1.0));
 
          progressConsumer.done();
       }

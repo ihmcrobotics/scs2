@@ -10,6 +10,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 public class MultiVideoViewer extends ObservedAnimationTimer
 {
    private final Pane thumbnailsContainer;
+   private final List<VideoDataReader> readers = new ArrayList<>();
    private final List<VideoViewer> videoViewers = new ArrayList<>();
    private boolean isStarted = false;
    private final Window owner;
@@ -24,12 +25,17 @@ public class MultiVideoViewer extends ObservedAnimationTimer
       for (VideoDataReader reader : multiReader.getReaders())
       {
          videoViewers.add(new VideoViewer(owner, reader, defaultThumbnailWidth));
+         readers.add(reader);
       }
    }
 
    public void addVideoReader(MultiVideoDataReader multiReader)
    {
-      multiReader.getReaders().forEach( reader -> addVideoViewer(new VideoViewer(owner, reader, defaultThumbnailWidth)));
+      multiReader.getReaders().forEach( reader ->
+                                        {
+                                           readers.add(reader);
+                                           addVideoViewer(new VideoViewer(owner, reader, defaultThumbnailWidth));
+                                        });
    }
 
    public void addVideoViewer(VideoViewer videoViewer)

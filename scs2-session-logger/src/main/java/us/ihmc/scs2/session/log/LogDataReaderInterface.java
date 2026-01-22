@@ -2,6 +2,7 @@ package us.ihmc.scs2.session.log;
 
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsList;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
+import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.robotDataLogger.jointState.JointState;
@@ -22,11 +23,9 @@ public interface LogDataReaderInterface
 
    int getCurrentLogPosition();
 
-   LogPropertiesReader getLogProperties();
+   LogProperties getLogProperties();
 
    java.io.File getLogDirectory();
-
-   YoVariableHandshakeParser getParser();
 
    double getDt();
 
