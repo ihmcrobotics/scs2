@@ -33,12 +33,10 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import us.ihmc.commons.lists.PairList;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.Synchronization;
 import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReaderInterface;
@@ -418,6 +416,7 @@ public class LogSessionManagerController implements SessionControlsController
       logPositionSlider.setValue(0.0);
       logPositionSlider.setMin(0.0);
       logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
+
       cropControlsContainer.setDisable(false);
       MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
       multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
@@ -531,7 +530,6 @@ public class LogSessionManagerController implements SessionControlsController
          gridPane.setVgap(5.0);
          gridPane.add(new Label("Date:"), 0, 0);
          gridPane.add(dateLabel, 1, 0);
-         gridPane.add(new Label("Log path:"), 0, 1);
          gridPane.add(logPathLabel, 1, 1);
 
          JavaFXMissingTools.setAnchorConstraints(gridPane, 0.0);
@@ -594,8 +592,8 @@ public class LogSessionManagerController implements SessionControlsController
       {
          JFXTrimSlider slider = sliderPair.getLeft();
          ChildLogSynchronization synchronization = sliderPair.getRight();
-         slider.setTrimStartValue(synchronization.computeRelativePosition(0));
-         slider.setTrimEndValue(synchronization.computeRelativePosition((int) logPositionSlider.getMax()));
+         slider.setTrimStartValue(synchronization.computeChildPosition(0));
+         slider.setTrimEndValue(synchronization.computeChildPosition((int) logPositionSlider.getMax()));
       }
    }
 
@@ -607,7 +605,7 @@ public class LogSessionManagerController implements SessionControlsController
                                       {
                                          JFXTrimSlider slider = sliderPair.getLeft();
                                          ChildLogSynchronization synchronization = sliderPair.getRight();
-                                         slider.setTrimStartValue(synchronization.computeRelativePosition((int) logPositionSlider.getValue()));
+                                         slider.setTrimStartValue(synchronization.computeChildPosition((int) logPositionSlider.getValue()));
                                       });
    }
 
@@ -619,7 +617,7 @@ public class LogSessionManagerController implements SessionControlsController
                                       {
                                          JFXTrimSlider slider = sliderPair.getLeft();
                                          ChildLogSynchronization synchronization = sliderPair.getRight();
-                                         slider.setTrimEndValue(synchronization.computeRelativePosition((int) logPositionSlider.getValue()));
+                                         slider.setTrimEndValue(synchronization.computeChildPosition((int) logPositionSlider.getValue()));
                                       });
    }
 

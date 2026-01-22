@@ -1,5 +1,7 @@
 package us.ihmc.scs2.session.log;
 
+import us.ihmc.log.LogTools;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -16,13 +18,13 @@ public class ChildLogData
       this.parentLogDataReader = parentLogDataReader;
       this.path = logDirectory.getAbsolutePath();
       childLogDataReader = new LogDataReader(logDirectory, progressConsumer);
-      long localDT = childLogDataReader.getTimestamp(1) - childLogDataReader.getInitialTimestamp();
+      long localDT = childLogDataReader.getTimestamp(1) - childLogDataReader.getTimestamp(0);
       synchronization.setJogRate((int) Math.round(((double) localDT) / ((double) mainDT)));
    }
 
    public void seek(int mainPosition)
    {
-      long relativePosition = synchronization.computeRelativePosition(mainPosition);
+      long relativePosition = synchronization.computeChildPosition(mainPosition);
       if (relativePosition < 0 || relativePosition >= childLogDataReader.getNumberOfEntries())
       {
          inBounds = false;
@@ -39,7 +41,10 @@ public class ChildLogData
       // need to perform a seek, as the indexing is different between this and the main log reader
       seek(parentLogDataReader.getCurrentLogPosition());
       if (inBounds)
+      {
+         LogTools.info("Reading child log at position: " + childLogDataReader.getCurrentLogPosition());
          childLogDataReader.read();
+      }
       else
          childLogDataReader.setToNaN();
    }

@@ -1,5 +1,9 @@
 package us.ihmc.scs2.session.log;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.ops.CommonOps_BDRM;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.graphicsDescription.yoGraphics.plotting.ArtifactList;
 import us.ihmc.log.LogTools;
@@ -17,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 public class CompositeLogDataReader implements LogDataReaderInterface
 {
@@ -112,35 +117,97 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    public Synchronization synchronizeChildLogWithParent(String childLogToSynchronize, String parentLogSyncVariableName, String childLogSyncVariableName)
    {
       ChildLogData childLogData = childLogNames.get(childLogToSynchronize);
-      YoVariable parentLogVariable = parentLogReader.getYoVariablesList()
-                                                    .stream()
-                                                    .filter(var -> var.getName().contains(parentLogSyncVariableName))
-                                                    .findFirst()
-                                                    .orElse(null);
-      YoVariable childLogVariable = childLogData.getChildLogDataReader().getYoVariablesList()
-                                                                   .stream()
-                                                                   .filter(var -> var.getName().contains(childLogSyncVariableName))
-                                                                   .findFirst()
-                                                                   .orElse(null);
-      int currentParentPosition = parentLogReader.getCurrentLogPosition();
-      int currentChildPosition = childLogData.getChildLogDataReader().getCurrentLogPosition();
-      parentLogReader.read();
-      childLogData.getChildLogDataReader().read();
-      double currentParentValue = parentLogVariable.getValueAsDouble();
-      double currentChildValue = childLogVariable.getValueAsDouble();
-      parentLogReader.read();
-      childLogData.getChildLogDataReader().read();
-      double nextParentValue = parentLogVariable.getValueAsDouble();
-      double nextChildValue = childLogVariable.getValueAsDouble();
-      double parentDT = nextParentValue - currentParentValue;
-      double childDT = nextChildValue - currentChildValue;
 
-      double timeRateMultiplier = childDT / parentDT;
-      childLogData.getSynchronization().setOffset((int) ((currentChildPosition - currentParentPosition) * timeRateMultiplier));
+      // First, get simple coefficients. This will allow us to compute the max and min range over which the data overlaps to perform a more procise fit.
+      double[] parentCoefficients = computeEasyLinearCoefficients(parentLogReader, parentLogSyncVariableName);
+      double[] childCoefficients = computeEasyLinearCoefficients(childLogData.getChildLogDataReader(), childLogSyncVariableName);
 
-      childLogData.seek(parentLogReader.getCurrentLogPosition());
+      double[] mapping = computeMapping(parentCoefficients, childCoefficients);
+      ChildLogSynchronization synchronization = childLogData.getSynchronization();
+      synchronization.setOffset(mapping[1]);
+      synchronization.setJogRate(mapping[0]);
+
+      // Compute the overlapping range of data that we care about this being synchronized.
+      long minParentIndex = Math.max(0, synchronization.computeParentPosition(0));
+      long maxParentIndex = Math.min(parentLogReader.getNumberOfEntries() - 1, synchronization.computeParentPosition(childLogData.getChildLogDataReader().getNumberOfEntries() - 1));
+      long minChildIndex = Math.max(synchronization.computeChildPosition((int) minParentIndex), 0);
+      long maxChildIndex = Math.min(childLogData.getChildLogDataReader().getNumberOfEntries() - 1, synchronization.computeChildPosition((int) maxParentIndex));
+
+      double[] fitParentCoefficients = performLinearFit(parentLogReader, parentLogSyncVariableName, (int) minParentIndex, (int) maxParentIndex);
+      double[] fitChildCoefficients = performLinearFit(childLogData.getChildLogDataReader(), childLogSyncVariableName, (int) minChildIndex, (int) maxChildIndex);
+
+      double[] fitMapping = computeMapping(fitParentCoefficients, fitChildCoefficients);
+      synchronization = childLogData.getSynchronization();
+      synchronization.setOffset(fitMapping[1]);
+      synchronization.setJogRate(fitMapping[0]);
 
       return childLogData.getSynchronization().toPacket();
+   }
+
+   private static double[] computeMapping(double[] parentCoefficients, double[] childCoefficients)
+   {
+      double jogRate = parentCoefficients[0] / childCoefficients[0];
+      double offset = ((parentCoefficients[1] - childCoefficients[1]) / childCoefficients[0]);
+      return new double[]{jogRate, offset};
+   }
+
+   private static double[] computeEasyLinearCoefficients(LogDataReaderInterface logDataReader, String variableName)
+   {
+      int currentPosition = logDataReader.getCurrentLogPosition();
+      YoVariable variable = logDataReader.getYoVariablesList()
+                                                    .stream()
+                                                    .filter(var -> var.getName().contains(variableName))
+                                                    .findFirst()
+                                                    .orElse(null);
+      int finalPosition = logDataReader.getNumberOfEntries() - 1;
+      logDataReader.seek(0);
+      logDataReader.read();
+      double initialValue = variable.getValueAsDouble();
+      logDataReader.seek(finalPosition);
+      logDataReader.read();
+      double finalValue = variable.getValueAsDouble();
+
+      logDataReader.seek(currentPosition);
+
+      return new double[] {(finalValue - initialValue) / finalPosition, initialValue};
+   }
+
+   private static double[] performLinearFit(LogDataReaderInterface logDataReader, String variableName, int min, int max)
+   {
+      int samples = 50;
+      int currentPosition = logDataReader.getCurrentLogPosition();
+      YoVariable variable = logDataReader.getYoVariablesList()
+                                         .stream()
+                                         .filter(var -> var.getName().contains(variableName))
+                                         .findFirst()
+                                         .orElse(null);
+
+      Random random = new Random(1738L);
+      DMatrixRMaj A = new DMatrixRMaj(50, 2);
+      DMatrixRMaj b = new DMatrixRMaj(50, 1);
+
+      for (int i = 0; i < samples; i++)
+      {
+         int position = random.nextInt(min, max + 1);
+         logDataReader.seek(position);
+         logDataReader.read();
+         b.set(i, variable.getValueAsDouble());
+         A.set(i, 0, position);
+         A.set(i, 1, 1.0);
+      }
+
+      DMatrixRMaj ATransA = new DMatrixRMaj(2, 2);
+      DMatrixRMaj lhs = new DMatrixRMaj(2, samples);
+      CommonOps_DDRM.multInner(A, ATransA);
+      CommonOps_DDRM.invert(ATransA);
+      CommonOps_DDRM.multTransB(ATransA, A, lhs);
+      DMatrixRMaj solution = new DMatrixRMaj(2, 1);
+      CommonOps_DDRM.mult(lhs, b, solution);
+
+      // re-initialize the reader
+      logDataReader.seek(currentPosition);
+
+      return solution.data;
    }
 
    private boolean isLogLoaded(File logDirectory)
@@ -164,6 +231,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    public boolean read()
    {
       // This has to be called before the added log to get the index of the main log correct.
+      LogTools.info("Reading log at position: " + parentLogReader.getCurrentLogPosition());
       boolean ended = parentLogReader.read();
       for (ChildLogData childLog : childLogs)
          childLog.read();

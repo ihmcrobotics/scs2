@@ -164,6 +164,7 @@ public class LogDataReader implements LogDataReaderInterface
    @Override
    public boolean read()
    {
+      LogTools.info("Actually reading log at " + currentRecordTick.getValue());
       boolean done = readAndProcessALogLineReturnTrueIfDone();
       if (!done)
       {
