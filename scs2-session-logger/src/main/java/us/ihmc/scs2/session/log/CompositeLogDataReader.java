@@ -32,7 +32,6 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    private final List<ChildLogData> childLogs = new ArrayList<>();
    private final HashMap<String, ChildLogData> childLogNames = new HashMap<>();
 
-   private final YoRegistry sharedRegistry = new YoRegistry("sharedRegistry");
    private final List<YoVariable> yoVariables = new ArrayList<>();
 
    private final YoGraphicGroupDefinition scs2Graphics = new YoGraphicGroupDefinition();
@@ -43,7 +42,6 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    {
       this.path = logDirectory.getAbsolutePath();
       parentLogReader = new LogDataReader(logDirectory, progressConsumer);
-      sharedRegistry.addChild(parentLogReader.getLocalYoRegistry());
       long initialTimestamp = parentLogReader.getInitialTimestamp();
       mainDT = parentLogReader.getTimestamp(1) - initialTimestamp;
 
@@ -278,7 +276,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    @Override
    public YoRegistry getLocalYoRegistry()
    {
-      return sharedRegistry;
+      return parentLogReader.getLocalYoRegistry();
    }
 
    @Override
