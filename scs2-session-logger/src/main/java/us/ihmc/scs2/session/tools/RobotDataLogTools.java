@@ -16,11 +16,6 @@ import us.ihmc.scs2.session.log.ProgressConsumer;
 
 public class RobotDataLogTools
 {
-   public static File propertyFile(File logDirectory, int childNumber)
-   {
-      return new File(logDirectory, YoVariableLoggerListener.propertyFileNameBuilder(childNumber));
-   }
-
    public static File propertyFile(File logDirectory)
    {
       return new File(logDirectory, YoVariableLoggerListener.propertyFile);
@@ -152,19 +147,6 @@ public class RobotDataLogTools
       modelStream.readFully(modelData);
       modelStream.close();
       return modelData;
-   }
-
-   public static boolean hasRobotDefinition(LogProperties logProperties)
-   {
-      return hasRobotDefinition(logProperties.getModel());
-   }
-
-   public static boolean hasRobotDefinition(Model model)
-   {
-      if (model.getPathAsString().isEmpty())
-         return false;
-
-      return !model.getResourceBundleAsString().isEmpty();
    }
 
    public static RobotDefinition loadRobotDefinition(File logDirectory, LogProperties logProperties) throws IOException
