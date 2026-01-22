@@ -92,7 +92,7 @@ public class LogDataReader implements LogDataReaderInterface
 
          if (!indexData.exists())
          {
-            throw new RuntimeException("Cannot find " + logProperties.getVariables().getIndexAsString());
+            throw new RuntimeException("Cannot find " + logProperties.getVariables().getIndexAsString() + " in " + logDirectory);
          }
          logIndex = new LogIndex(indexData, logChannel.size());
          compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize));
