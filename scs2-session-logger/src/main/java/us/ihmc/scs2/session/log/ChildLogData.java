@@ -42,7 +42,6 @@ public class ChildLogData
       seek(parentLogDataReader.getCurrentLogPosition());
       if (inBounds)
       {
-         LogTools.info("Reading child log at position: " + childLogDataReader.getCurrentLogPosition());
          childLogDataReader.read();
       }
       else

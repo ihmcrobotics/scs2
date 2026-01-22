@@ -1,9 +1,7 @@
 package us.ihmc.scs2.session.log;
 
-import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
-import org.ejml.ops.CommonOps_BDRM;
 import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.graphicsDescription.yoGraphics.plotting.ArtifactList;
 import us.ihmc.log.LogTools;
@@ -32,6 +30,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    private final List<ChildLogData> childLogs = new ArrayList<>();
    private final HashMap<String, ChildLogData> childLogNames = new HashMap<>();
 
+   private final YoRegistry parentRegistry = new YoRegistry("parentRegistry");
    private final List<YoVariable> yoVariables = new ArrayList<>();
 
    private final YoGraphicGroupDefinition scs2Graphics = new YoGraphicGroupDefinition();
@@ -42,6 +41,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    {
       this.path = logDirectory.getAbsolutePath();
       parentLogReader = new LogDataReader(logDirectory, progressConsumer);
+      parentRegistry.addChild(parentLogReader.getLocalYoRegistry());
       long initialTimestamp = parentLogReader.getInitialTimestamp();
       mainDT = parentLogReader.getTimestamp(1) - initialTimestamp;
 
@@ -229,7 +229,6 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    public boolean read()
    {
       // This has to be called before the added log to get the index of the main log correct.
-      LogTools.info("Reading log at position: " + parentLogReader.getCurrentLogPosition());
       boolean ended = parentLogReader.read();
       for (ChildLogData childLog : childLogs)
          childLog.read();
@@ -276,7 +275,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    @Override
    public YoRegistry getLocalYoRegistry()
    {
-      return parentLogReader.getLocalYoRegistry();
+      return parentRegistry;
    }
 
    @Override
