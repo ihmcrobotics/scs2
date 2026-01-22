@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import com.jfoenix.controls.JFXSlider;
 import com.jfoenix.controls.JFXTrimSlider;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.LongProperty;
@@ -33,11 +32,15 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import us.ihmc.commons.lists.PairList;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
-import us.ihmc.scs2.session.log.LogDataReader;
+import us.ihmc.robotDataLogger.Synchronization;
+import us.ihmc.scs2.session.log.ChildLogData;
+import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReaderInterface;
 import us.ihmc.scs2.session.log.LogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -110,8 +113,7 @@ public class LogSessionManagerController implements SessionControlsController
    private final ObjectProperty<YoVariableLogCropper> logCropperProperty = new SimpleObjectProperty<>(this, "logCropper", null);
    private final ObjectProperty<List<YoVariableLogCropper>> addedLogCropperProperty = new SimpleObjectProperty<>(this, "addedLogCroppers", new ArrayList<>());
 
-   private final List<JFXTrimSlider> addedLogPositionSliders = new ArrayList<>();
-
+   private final PairList<JFXTrimSlider, ChildLogSynchronization> childLogPositionSliders = new PairList<>();
 
    private BackgroundExecutorManager backgroundExecutorManager;
    private SessionVisualizerToolkit toolkit;
@@ -251,11 +253,11 @@ public class LogSessionManagerController implements SessionControlsController
                                                        {
                                                           try
                                                           {
-                                                             LogDataReaderInterface addedLog = activeSession.addLog(result.getParentFile(), null);
+                                                             ChildLogData addedLog = activeSession.addLog(result.getParentFile(), null);
                                                              if (addedLog != null)
                                                              {
                                                                 addLogToGUI(result.getParentFile(), addedLog);
-                                                                openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog);
+                                                                openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog.getChildLogDataReader());
                                                              }
                                                           }
                                                           catch (IOException e)
@@ -344,8 +346,6 @@ public class LogSessionManagerController implements SessionControlsController
          endSessionButton.setDisable(m);
          cropControlsContainer.setDisable(m);
          logPositionSlider.setDisable(m);
-         for (JFXTrimSlider addedSlider : addedLogPositionSliders)
-            addedSlider.setDisable(m);
       });
 
       enableVariableFilterToggleButton.selectedProperty().addListener((o, oldValue, newValue) ->
@@ -431,11 +431,11 @@ public class LogSessionManagerController implements SessionControlsController
       JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
       JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
 
-      for (LogDataReaderInterface addedLog : newValue.getLogDataReader().getAddedLogDataReaders())
+      for (ChildLogData addedLog : newValue.getLogDataReader().getChildLogData())
       {
          if (addedLog != null)
          {
-            addLogToGUI(addedLog.getLogDirectory(), addedLog);
+            addLogToGUI(addedLog.getChildLogDataReader().getLogDirectory(), addedLog);
          }
       }
    }
@@ -492,17 +492,21 @@ public class LogSessionManagerController implements SessionControlsController
       loadingSpinner.setVisible(isLoading);
    }
 
-   private void addLogToGUI(File logDirectory, LogDataReaderInterface logDataReader)
+   private void addLogToGUI(File logDirectory, ChildLogData childLogData)
    {
       LogSession activeSession = activeSessionProperty.get();
       if (activeSession == null)
          return;
+
+      LogDataReaderInterface logDataReader = childLogData.getChildLogDataReader();
+      ChildLogSynchronization synchronization = childLogData.getSynchronization();
 
       JavaFXMissingTools.runLater(getClass(), () ->
       {
          Label dateLabel = new Label(getDate(logDataReader.getLogDirectory(), logDataReader.getLogProperties()));
          Label logPathLabel = new Label(logDataReader.getLogDirectory().getAbsolutePath());
          JFXTrimSlider logPositionSlider = new JFXTrimSlider();
+
          logPositionSlider.setMin(0);
          logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
          logPositionSlider.setValue(logDataReader.getCurrentLogPosition());
@@ -515,7 +519,7 @@ public class LogSessionManagerController implements SessionControlsController
                                                              if (newValue)
                                                                 resetTrims();
                                                           });
-         addedLogPositionSliders.add(logPositionSlider);
+         childLogPositionSliders.add(logPositionSlider, synchronization);
 
          activeSession.addCurrentBufferPropertiesListener(properties ->
          {
@@ -554,7 +558,6 @@ public class LogSessionManagerController implements SessionControlsController
 
          // Added a new cropper
          addedLogCropperProperty.get().add(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
-
       });
    }
 
@@ -586,10 +589,13 @@ public class LogSessionManagerController implements SessionControlsController
    {
       logPositionSlider.setTrimStartValue(0.0);
       logPositionSlider.setTrimEndValue(logPositionSlider.getMax());
-      for (JFXTrimSlider slider : addedLogPositionSliders)
+
+      for (ImmutablePair<JFXTrimSlider, ChildLogSynchronization> sliderPair : childLogPositionSliders)
       {
-         slider.setTrimStartValue(0.0);
-         slider.setTrimEndValue(slider.getMax());
+         JFXTrimSlider slider = sliderPair.getLeft();
+         ChildLogSynchronization synchronization = sliderPair.getRight();
+         slider.setTrimStartValue(synchronization.computeRelativePosition(0));
+         slider.setTrimEndValue(synchronization.computeRelativePosition((int) logPositionSlider.getMax()));
       }
    }
 
@@ -597,14 +603,24 @@ public class LogSessionManagerController implements SessionControlsController
    public void snapStartTrimToCurrent()
    {
       logPositionSlider.setTrimStartValue(logPositionSlider.getValue());
-      addedLogPositionSliders.forEach(slider -> slider.setTrimStartValue(logPositionSlider.getValue()));
+      childLogPositionSliders.forEach(sliderPair ->
+                                      {
+                                         JFXTrimSlider slider = sliderPair.getLeft();
+                                         ChildLogSynchronization synchronization = sliderPair.getRight();
+                                         slider.setTrimStartValue(synchronization.computeRelativePosition((int) logPositionSlider.getValue()));
+                                      });
    }
 
    @FXML
    public void snapEndTrimToCurrent()
    {
       logPositionSlider.setTrimEndValue(logPositionSlider.getValue());
-      addedLogPositionSliders.forEach(slider -> slider.setTrimEndValue(logPositionSlider.getValue()));
+      childLogPositionSliders.forEach(sliderPair ->
+                                      {
+                                         JFXTrimSlider slider = sliderPair.getLeft();
+                                         ChildLogSynchronization synchronization = sliderPair.getRight();
+                                         slider.setTrimEndValue(synchronization.computeRelativePosition((int) logPositionSlider.getValue()));
+                                      });
    }
 
    @FXML
@@ -718,15 +734,15 @@ public class LogSessionManagerController implements SessionControlsController
                                                        messager.submitMessage(topics.getDisableUserControls(), true);
 
 
-                                                       for (int i = 0; i < addedLogPositionSliders.size(); i++)
+                                                       for (int i = 0; i < childLogPositionSliders.size(); i++)
                                                        {
                                                           YoVariableLogCropper addedCropper = addedLogCropperProperty.get().get(i);
 
 
-                                                          JFXTrimSlider slider = addedLogPositionSliders.get(i);
+                                                          JFXTrimSlider slider = childLogPositionSliders.get(i).getLeft();
                                                           int addedFrom = (int) slider.getTrimStartValue();
                                                           int addedTo = (int) slider.getTrimEndValue();
-                                                          LogDataReaderInterface logDataReader = activeSessionProperty.get().getLogDataReader().getAddedLogDataReaders().get(i);
+                                                          LogDataReaderInterface logDataReader = activeSessionProperty.get().getLogDataReader().getChildLogDataReaders().get(i);
                                                           List<YoVariable> addedLogVariables = logDataReader.getYoVariablesList();
 
                                                           File addedDestination = new File(destination, logDataReader.getLogProperties().getNameAsString());

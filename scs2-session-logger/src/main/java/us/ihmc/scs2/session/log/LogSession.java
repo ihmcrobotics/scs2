@@ -5,7 +5,6 @@ import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.Synchronization;
-import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -77,12 +76,10 @@ public class LogSession extends Session
 
       for (int i = 0; i < logProperties.getChildLogs().size(); i++)
       {
-         LogDataReaderInterface childLog = logDataReader.getAddedLogDataReaders().get(i);
+         LogDataReaderInterface childLog = logDataReader.getChildLogDataReaders().get(i);
          addLogToStructs(childLog, false);
          addLogInternal(childLog, new File(logDirectory, logProperties.getChildLogs().get(i).getChildNameAsString()), false);
       }
-
-
 
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
       setSessionDTSeconds(logDataReader.getDt());
@@ -122,20 +119,20 @@ public class LogSession extends Session
 
    public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
    {
-      Synchronization synchronization = logDataReader.bindSynchronization(logToSynchronize, mainLogVarName, logToSyncVarName);
+      Synchronization synchronization = logDataReader.synchronizeChildLogWithParent(logToSynchronize, mainLogVarName, logToSyncVarName);
       // We want to set the offset to 0, so that whenever this is exported, everything starts from the same point
       synchronization.setOffset(0);
       int childNumber = logDataReader.getLogNumber(logToSynchronize);
       logDataReader.getLogProperties().getChildLogs().get(childNumber).getSynchronization().set(synchronization);
    }
 
-   public LogDataReaderInterface addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
+   public ChildLogData addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
-      LogDataReaderInterface addedDataReader = logDataReader.addLog(logDirectory, progressConsumer);
+      ChildLogData addedDataReader = logDataReader.addChildLog(logDirectory, progressConsumer);
       if (addedDataReader != null)
       {
-         addLogToStructs(addedDataReader, false);
-         addLogInternal(addedDataReader, logDirectory,true);
+         addLogToStructs(addedDataReader.getChildLogDataReader(), false);
+         addLogInternal(addedDataReader.getChildLogDataReader(), logDirectory,true);
       }
       return addedDataReader;
    }
