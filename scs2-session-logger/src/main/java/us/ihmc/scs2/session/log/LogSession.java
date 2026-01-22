@@ -123,6 +123,8 @@ public class LogSession extends Session
    public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
    {
       Synchronization synchronization = logDataReader.bindSynchronization(logToSynchronize, mainLogVarName, logToSyncVarName);
+      // We want to set the offset to 0, so that whenever this is exported, everything starts from the same point
+      synchronization.setOffset(0);
       int childNumber = logDataReader.getLogNumber(logToSynchronize);
       logDataReader.getLogProperties().getChildLogs().get(childNumber).getSynchronization().set(synchronization);
    }

@@ -145,7 +145,6 @@ public class CompositeLogDataReader implements LogDataReaderInterface
 
       addedLogData.seek(mainLogReader.getCurrentLogPosition());
 
-
       return addedLogData.synchronization.toPacket();
    }
 
