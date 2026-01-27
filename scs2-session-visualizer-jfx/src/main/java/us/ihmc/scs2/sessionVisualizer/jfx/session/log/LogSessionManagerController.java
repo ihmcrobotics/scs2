@@ -145,7 +145,7 @@ public class LogSessionManagerController implements SessionControlsController
          if (oldValue != null)
          {
             LogDataReaderInterface logDataReader = oldValue.getLogDataReader();
-            logDataReader.getTimestamp().removeListeners();
+            logDataReader.removeTimestampListeners();
          }
 
          if (newValue == null)
@@ -247,22 +247,23 @@ public class LogSessionManagerController implements SessionControlsController
             return;
          LogTools.info("Adding log: " + result.getAbsolutePath());
 
+         try
+         {
+            ChildLogData addedLog = activeSession.addLog(result.getParentFile());
+            if (addedLog != null)
+            {
+               addLogToGUI(result.getParentFile(), addedLog);
+               openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog.getChildLogDataReader());
+            }
+         }
+         catch (IOException e)
+         {
+            LogTools.error("Error adding log: " + e.getMessage());
+            e.printStackTrace();
+         }
          backgroundExecutorManager.executeInBackground(() ->
                                                        {
-                                                          try
-                                                          {
-                                                             ChildLogData addedLog = activeSession.addLog(result.getParentFile(), null);
-                                                             if (addedLog != null)
-                                                             {
-                                                                addLogToGUI(result.getParentFile(), addedLog);
-                                                                openVariableComparisonSearchDialog(activeSession.getLogDataReader(), addedLog.getChildLogDataReader());
-                                                             }
-                                                          }
-                                                          catch (IOException e)
-                                                          {
-                                                             LogTools.error("Error adding log: " + e.getMessage());
-                                                             e.printStackTrace();
-                                                          }
+
                                                        });
       });
       messager.addTopicListener(topics.getBindSynchronizingVariablesRequest(), request ->
@@ -500,6 +501,11 @@ public class LogSessionManagerController implements SessionControlsController
       LogDataReaderInterface logDataReader = childLogData.getChildLogDataReader();
       ChildLogSynchronization synchronization = childLogData.getSynchronization();
 
+      LogProperties logProperties = logDataReader.getLogProperties();
+      MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
+      multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
+      logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
+
       JavaFXMissingTools.runLater(getClass(), () ->
       {
          Label dateLabel = new Label(getDate(logDataReader.getLogDirectory(), logDataReader.getLogProperties()));
@@ -520,10 +526,33 @@ public class LogSessionManagerController implements SessionControlsController
                                                           });
          childLogPositionSliders.add(logPositionSlider, synchronization);
 
-         activeSession.addCurrentBufferPropertiesListener(properties ->
+         AtomicBoolean logPositionUpdate = new AtomicBoolean(true);
+
+         Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
          {
-            JavaFXMissingTools.runLater(getClass(), () -> logPositionSlider.setValue(logDataReader.getCurrentLogPosition()));
-         });
+            int currentLogPosition = logDataReader.getCurrentLogPosition();
+
+            JavaFXMissingTools.runLater(getClass(), () ->
+            {
+               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
+               {
+                  logPositionUpdate.set(true);
+                  logPositionSlider.setValue(currentLogPosition);
+                  logPositionUpdate.set(false);
+               }
+            });
+         };
+         activeSession.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+
+         activeSessionProperty.addListener((o, oldValue, newValue) ->
+                                           {
+                                              if (oldValue != null)
+                                                 oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                              if (newValue != null)
+                                                 newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+
+                                              // Remove the added log sliders
+                                           });
 
          GridPane gridPane = new GridPane();
          gridPane.setHgap(5.0);
@@ -540,10 +569,7 @@ public class LogSessionManagerController implements SessionControlsController
             stage.sizeToScene();
 
          // Add to the videos
-         LogProperties logProperties = logDataReader.getLogProperties();
-         MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
-         multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
-         logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
+
          MultiVideoViewer viewer = multiVideoViewerProperty.get();
          viewer.addVideoReader(multiReader);
          // need to make sure to compare this against what already exists.

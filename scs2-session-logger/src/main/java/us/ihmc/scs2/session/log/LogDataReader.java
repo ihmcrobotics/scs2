@@ -11,6 +11,7 @@ import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
+import us.ihmc.tools.compression.SnappyLibrary;
 import us.ihmc.tools.compression.SnappyUtils;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -30,6 +31,8 @@ import java.util.stream.IntStream;
 public class LogDataReader implements LogDataReaderInterface
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
+
+   private final SnappyLibrary snappyLibrary = new SnappyLibrary();
 
    private final File logDirectory;
    private final LogPropertiesReader logProperties;
@@ -143,9 +146,16 @@ public class LogDataReader implements LogDataReaderInterface
       return numberOfEntries;
    }
 
+   @Override
    public YoLong getTimestamp()
    {
       return timestamp;
+   }
+
+   @Override
+   public void removeTimestampListeners()
+   {
+      timestamp.removeListeners();
    }
 
    public void seek(int position)
@@ -278,7 +288,7 @@ public class LogDataReader implements LogDataReaderInterface
 
          try
          {
-            SnappyUtils.uncompress(compressedBuffer, logLine);
+            SnappyUtils.uncompress(snappyLibrary, compressedBuffer, logLine);
          }
          catch (Exception e)
          {

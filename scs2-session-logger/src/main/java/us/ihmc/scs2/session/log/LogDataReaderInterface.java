@@ -38,6 +38,8 @@ public interface LogDataReaderInterface
 
    YoLong getTimestamp();
 
+   void removeTimestampListeners();
+
    long getRelativeTimestamp(int position);
 
    List<YoVariable> getYoVariablesList();

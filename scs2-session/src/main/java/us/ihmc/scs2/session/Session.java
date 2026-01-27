@@ -1753,7 +1753,7 @@ public abstract class Session
     */
    protected abstract double doSpecificRunTick();
 
-   public abstract void addGraphicsChangedCallback(Runnable runnable);
+   public abstract void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer);
 
    /**
     * Performs buffer operations to finalize a run tick, such as incrementing the current index and

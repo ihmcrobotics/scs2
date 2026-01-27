@@ -115,7 +115,7 @@ public class SimulationSession extends Session
    }
 
    @Override
-   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer)
    {
    }
 

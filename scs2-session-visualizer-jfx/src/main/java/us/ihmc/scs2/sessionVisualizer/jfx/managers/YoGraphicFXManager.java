@@ -95,9 +95,9 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       backgroundTask = backgroundExecutorManager.scheduleTaskInBackground(this::computeBackground, 1000, 100, TimeUnit.MILLISECONDS);
    }
 
-   public void updateGraphics(Session session)
+   public void addGraphics(List<YoGraphicDefinition> addedGraphics)
    {
-      setupYoGraphicDefinitions(session.getYoGraphicDefinitions());
+      setupYoGraphicDefinitions(addedGraphics);
    }
 
    @Override

@@ -9,10 +9,8 @@ import javafx.scene.SubScene;
 import javafx.stage.Stage;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.MessagerAPIFactory;
-import us.ihmc.messager.SynchronizeHint;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMessagerAPI;
 import us.ihmc.scs2.session.SessionState;
@@ -30,7 +28,6 @@ import us.ihmc.yoVariables.variable.YoVariable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -49,7 +46,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final KeyFrameManager keyFrameManager;
    private final CameraSensorsManager cameraSensorsManager;
 
-   private final BackgroundExecutorManager backgroundExecutorManager = new BackgroundExecutorManager(4);
+   private final BackgroundExecutorManager backgroundExecutorManager = new BackgroundExecutorManager(8);
    private final ReferenceFrameManager referenceFrameManager = new ReferenceFrameManager(yoManager, backgroundExecutorManager);
    private final YoRobotFXManager yoRobotFXManager;
    private final EnvironmentManager environmentManager;
@@ -177,10 +174,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
                                                        }
                                                     });
 
-      session.addGraphicsChangedCallback(() ->
-                                         {
-                                            backgroundExecutorManager.executeInBackground(() -> yoGraphicFXManager.updateGraphics(session));
-                                         });
+      session.addGraphicsAddedCallback(yoGraphicFXManager::addGraphics);
 
       mainWindow.setTitle(session.getSessionName());
    }

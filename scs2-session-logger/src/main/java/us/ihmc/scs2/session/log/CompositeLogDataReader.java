@@ -24,37 +24,18 @@ import java.util.Random;
 public class CompositeLogDataReader implements LogDataReaderInterface
 {
    private final LogDataReader parentLogReader;
-   private final long mainDT;
    private final String path;
 
    private final List<ChildLogData> childLogs = new ArrayList<>();
    private final HashMap<String, ChildLogData> childLogNames = new HashMap<>();
 
    private final YoRegistry parentRegistry = new YoRegistry("parentRegistry");
-   private final List<YoVariable> yoVariables = new ArrayList<>();
-
-   private final YoGraphicGroupDefinition scs2Graphics = new YoGraphicGroupDefinition();
-   private final YoGraphicsListRegistry scs1Graphics = new YoGraphicsListRegistry();
-
 
    public CompositeLogDataReader(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
       this.path = logDirectory.getAbsolutePath();
       parentLogReader = new LogDataReader(logDirectory, progressConsumer);
       parentRegistry.addChild(parentLogReader.getLocalYoRegistry());
-      long initialTimestamp = parentLogReader.getInitialTimestamp();
-      mainDT = parentLogReader.getTimestamp(1) - initialTimestamp;
-
-      // Load all the variables into a local copy.
-      yoVariables.addAll(parentLogReader.getYoVariablesList());
-
-      // Load all the graphics into the local copy.
-      parentLogReader.getLogSCS1YoGraphics().getYoGraphicsLists().forEach(scs1Graphics::registerYoGraphicsList);
-      List<ArtifactList> artifactLists = new ArrayList<>();
-      parentLogReader.getLogSCS1YoGraphics().getRegisteredArtifactLists(artifactLists);
-      artifactLists.forEach(scs1Graphics::registerArtifactList);
-      parentLogReader.getLogSCS2YoGraphics().forEach(scs2Graphics::addChild);
-
 
       for (ChildLog childLog : parentLogReader.getLogProperties().getChildLogs())
       {
@@ -62,6 +43,10 @@ public class CompositeLogDataReader implements LogDataReaderInterface
       }
    }
 
+   /**
+    * Internal method used to load a child log from the configuration when this object is constructed. This happens only when opening a log that has child
+    * members. This both adds the log, and binds the synchronization
+    */
    private void loadChildLog(File logDirectory, ChildLog childLog, ProgressConsumer progressConsumer) throws IOException
    {
       ChildLogData logData = addChildLogInternal(logDirectory, progressConsumer, childLog.getChildName().toString());
@@ -80,9 +65,13 @@ public class CompositeLogDataReader implements LogDataReaderInterface
       return childLogs.indexOf(childLogNames.get(logName));
    }
 
-   public ChildLogData addChildLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
+   /**
+    * External method used to add a new log as a child to this composite log reader. This log is not yet synchronized, which gets called later using
+    * {@link #synchronizeChildLogWithParent(String, String, String)}.
+    */
+   public ChildLogData addChildLog(File logDirectory) throws IOException
    {
-      ChildLogData childLogData = addChildLogInternal(logDirectory, progressConsumer, null);
+      ChildLogData childLogData = addChildLogInternal(logDirectory, null, null);
       if (childLogData == null)
          return null;
 
@@ -102,7 +91,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
          LogTools.warn(logDirectory.getAbsolutePath() + " is already loaded.");
          return null;
       }
-      ChildLogData childLogData = new ChildLogData(this, logDirectory, progressConsumer, mainDT);
+      ChildLogData childLogData = new ChildLogData(this, logDirectory, progressConsumer);
       childLogData.seek(parentLogReader.getCurrentLogPosition());
 
       childLogs.add(childLogData);
@@ -116,11 +105,14 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    {
       ChildLogData childLogData = childLogNames.get(childLogToSynchronize);
 
-      // First, get simple coefficients. This will allow us to compute the max and min range over which the data overlaps to perform a more procise fit.
-      double[] parentCoefficients = computeEasyLinearCoefficients(parentLogReader, parentLogSyncVariableName);
-      double[] childCoefficients = computeEasyLinearCoefficients(childLogData.getChildLogDataReader(), childLogSyncVariableName);
+      YoVariable parentVariable = findVariable(parentLogReader, parentLogSyncVariableName);
+      YoVariable childVariable = findVariable(childLogData.getChildLogDataReader(), childLogSyncVariableName);
 
-      double[] mapping = computeMapping(parentCoefficients, childCoefficients);
+      // First, get simple coefficients. This will allow us to compute the max and min range over which the data overlaps to perform a more precise fit.
+      double[] parentCoefficients = computeEasyLinearCoefficients(parentLogReader, parentVariable);
+      double[] childCoefficients = computeEasyLinearCoefficients(childLogData.getChildLogDataReader(), childVariable);
+
+      double[] mapping = computeTimestampMapping(parentCoefficients, childCoefficients);
       ChildLogSynchronization synchronization = childLogData.getSynchronization();
       synchronization.setOffset(mapping[1]);
       synchronization.setJogRate(mapping[0]);
@@ -131,32 +123,35 @@ public class CompositeLogDataReader implements LogDataReaderInterface
       long minChildIndex = Math.max(synchronization.computeChildPosition((int) minParentIndex), 0);
       long maxChildIndex = Math.min(childLogData.getChildLogDataReader().getNumberOfEntries() - 1, synchronization.computeChildPosition((int) maxParentIndex));
 
-      double[] fitParentCoefficients = performLinearFit(parentLogReader, parentLogSyncVariableName, (int) minParentIndex, (int) maxParentIndex);
-      double[] fitChildCoefficients = performLinearFit(childLogData.getChildLogDataReader(), childLogSyncVariableName, (int) minChildIndex, (int) maxChildIndex);
+      double[] fitParentCoefficients = computeLinearFit(parentLogReader, parentVariable, (int) minParentIndex, (int) maxParentIndex);
+      double[] fitChildCoefficients = computeLinearFit(childLogData.getChildLogDataReader(), childVariable, (int) minChildIndex, (int) maxChildIndex);
 
-      double[] fitMapping = computeMapping(fitParentCoefficients, fitChildCoefficients);
-      synchronization = childLogData.getSynchronization();
+      double[] fitMapping = computeTimestampMapping(fitParentCoefficients, fitChildCoefficients);
       synchronization.setOffset(fitMapping[1]);
       synchronization.setJogRate(fitMapping[0]);
 
-      return childLogData.getSynchronization().toPacket();
+      return synchronization.toPacket();
    }
 
-   private static double[] computeMapping(double[] parentCoefficients, double[] childCoefficients)
+   private static YoVariable findVariable(LogDataReaderInterface logDataReader, String variableName)
+   {
+      return logDataReader.getYoVariablesList()
+                          .stream()
+                          .filter(var -> var.getName().contains(variableName))
+                          .findFirst()
+                          .orElse(null);
+   }
+
+   private static double[] computeTimestampMapping(double[] parentCoefficients, double[] childCoefficients)
    {
       double jogRate = parentCoefficients[0] / childCoefficients[0];
       double offset = ((parentCoefficients[1] - childCoefficients[1]) / childCoefficients[0]);
       return new double[]{jogRate, offset};
    }
 
-   private static double[] computeEasyLinearCoefficients(LogDataReaderInterface logDataReader, String variableName)
+   private static double[] computeEasyLinearCoefficients(LogDataReaderInterface logDataReader, YoVariable variable)
    {
       int currentPosition = logDataReader.getCurrentLogPosition();
-      YoVariable variable = logDataReader.getYoVariablesList()
-                                                    .stream()
-                                                    .filter(var -> var.getName().contains(variableName))
-                                                    .findFirst()
-                                                    .orElse(null);
       int finalPosition = logDataReader.getNumberOfEntries() - 1;
       logDataReader.seek(0);
       logDataReader.read();
@@ -170,15 +165,10 @@ public class CompositeLogDataReader implements LogDataReaderInterface
       return new double[] {(finalValue - initialValue) / finalPosition, initialValue};
    }
 
-   private static double[] performLinearFit(LogDataReaderInterface logDataReader, String variableName, int min, int max)
+   private static double[] computeLinearFit(LogDataReaderInterface logDataReader, YoVariable variable, int min, int max)
    {
       int samples = 50;
       int currentPosition = logDataReader.getCurrentLogPosition();
-      YoVariable variable = logDataReader.getYoVariablesList()
-                                         .stream()
-                                         .filter(var -> var.getName().contains(variableName))
-                                         .findFirst()
-                                         .orElse(null);
 
       Random random = new Random(1738L);
       DMatrixRMaj A = new DMatrixRMaj(50, 2);
@@ -267,6 +257,14 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    }
 
    @Override
+   public void removeTimestampListeners()
+   {
+      parentLogReader.getTimestamp().removeListeners();
+      for (ChildLogData childLogData : childLogs)
+         childLogData.getChildLogDataReader().getTimestamp().removeListeners();
+   }
+
+   @Override
    public double getDt()
    {
       return parentLogReader.getParser().getDt();
@@ -281,21 +279,19 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    @Override
    public YoRegistry getLogRootRegistry()
    {
-      return parentLogReader.getParser().getRootRegistry();
+      return parentLogReader.getLogRootRegistry();
    }
 
    @Override
    public YoGraphicsListRegistry getLogSCS1YoGraphics()
    {
-      return scs1Graphics;
+      return parentLogReader.getLogSCS1YoGraphics();
    }
 
    @Override
    public List<YoGraphicGroupDefinition> getLogSCS2YoGraphics()
    {
-      List<YoGraphicGroupDefinition> result = new ArrayList<>();
-      result.add(scs2Graphics);
-      return result;
+      return parentLogReader.getLogSCS2YoGraphics();
    }
 
    @Override
@@ -313,7 +309,7 @@ public class CompositeLogDataReader implements LogDataReaderInterface
    @Override
    public List<YoVariable> getYoVariablesList()
    {
-      return yoVariables;
+      return parentLogReader.getYoVariablesList();
    }
 
    @Override

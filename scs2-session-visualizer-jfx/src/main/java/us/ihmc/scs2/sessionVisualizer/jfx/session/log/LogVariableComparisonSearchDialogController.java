@@ -1,11 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
+import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.jetbrains.annotations.NotNull;
 import us.ihmc.scs2.session.log.LogDataReaderInterface;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.BindSynchronizingVariablesRequest;
@@ -36,6 +38,8 @@ public class LogVariableComparisonSearchDialogController
    private Stage stage;
    private SessionVisualizerToolkit toolkit;
    private LogDataReaderInterface addedLogReader;
+   private ChangeListener<? super String> mainListener;
+   private ChangeListener<? super String> addedListener;
 
    public void initialize(SessionVisualizerToolkit toolkit, Stage stage, LogDataReaderInterface mainLogReader, LogDataReaderInterface addedLogReader)
    {
@@ -43,29 +47,33 @@ public class LogVariableComparisonSearchDialogController
       this.stage = stage;
       this.addedLogReader = addedLogReader;
 
-      setupSearchField(mainLogSearchField, mainLogBestMatchLabel, mainLogBestMatchLabelShort, mainLogReader);
-      setupSearchField(addedLogSearchField, addedLogBestMatchLabel, addedLogBestMatchLabelShort, addedLogReader);
+      mainListener = getStringChangeListener(mainLogBestMatchLabel, mainLogBestMatchLabelShort, mainLogReader);
+      addedListener = getStringChangeListener(addedLogBestMatchLabel, addedLogBestMatchLabelShort, addedLogReader);
+      mainLogSearchField.textProperty().addListener(mainListener);
+      addedLogSearchField.textProperty().addListener(addedListener);
    }
 
-   private void setupSearchField(TextField textArea, Label bestMatchLabel, Label bestMatchLabelShort, LogDataReaderInterface logDataReader)
+   private ChangeListener<? super String> getStringChangeListener(Label bestMatchLabel,
+                                                                  Label bestMatchLabelShort,
+                                                                  LogDataReaderInterface logDataReader)
    {
-      textArea.textProperty().addListener((o, oldValue, newValue) ->
-                                          {
-                                             JavaFXMissingTools.runLater(getClass(), () ->
-                                             {
-                                                YoVariable match = findFirstMatch(newValue, logDataReader);
-                                                if (match != null)
-                                                {
-                                                   bestMatchLabel.setText(match.getFullNameString());
-                                                   bestMatchLabelShort.setText(match.getName());
-                                                }
-                                                else
-                                                {
-                                                   bestMatchLabel.setText("N/A");
-                                                   bestMatchLabelShort.setText("N/A");
-                                                }
-                                             });
-                                          });
+      return (o, oldValue, newValue) ->
+      {
+         JavaFXMissingTools.runLater(getClass(), () ->
+         {
+            YoVariable match = findFirstMatch(newValue, logDataReader);
+            if (match != null)
+            {
+               bestMatchLabel.setText(match.getFullNameString());
+               bestMatchLabelShort.setText(match.getName());
+            }
+            else
+            {
+               bestMatchLabel.setText("N/A");
+               bestMatchLabelShort.setText("N/A");
+            }
+         });
+      };
    }
 
    private static YoVariable findFirstMatch(String query, LogDataReaderInterface logDataReader)
@@ -101,6 +109,8 @@ public class LogVariableComparisonSearchDialogController
          toolkit.getMessager().submitMessage(toolkit.getTopics().getBindSynchronizingVariablesRequest(), request);
       }
 
+      mainLogSearchField.textProperty().removeListener(mainListener);
+      addedLogSearchField.textProperty().removeListener(addedListener);
       stage.close();
    }
 }

@@ -13,13 +13,11 @@ public class ChildLogData
    private boolean inBounds;
    private final String path;
 
-   public ChildLogData(LogDataReaderInterface parentLogDataReader, File logDirectory, ProgressConsumer progressConsumer, long mainDT) throws IOException
+   public ChildLogData(LogDataReaderInterface parentLogDataReader, File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
       this.parentLogDataReader = parentLogDataReader;
       this.path = logDirectory.getAbsolutePath();
       childLogDataReader = new LogDataReader(logDirectory, progressConsumer);
-      long localDT = childLogDataReader.getTimestamp(1) - childLogDataReader.getTimestamp(0);
-      synchronization.setJogRate((int) Math.round(((double) localDT) / ((double) mainDT)));
    }
 
    public void seek(int mainPosition)

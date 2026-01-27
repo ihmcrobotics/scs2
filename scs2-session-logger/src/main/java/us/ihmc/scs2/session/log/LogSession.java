@@ -27,15 +27,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class LogSession extends Session
 {
    private final String sessionName;
-   private final List<Robot> robots = new ArrayList<>();
-   private final List<RobotDefinition> robotDefinitions = new ArrayList<>();
    private final List<YoGraphicDefinition> yoGraphicDefinitions = new ArrayList<>();
    private Runnable robotStateUpdater;
+   private RobotDefinition robotDefinition;
+   private Robot robot;
 
    private final File logDirectory;
    private final CompositeLogDataReader logDataReader;
@@ -52,7 +53,7 @@ public class LogSession extends Session
    private final AtomicInteger logPositionRequest = new AtomicInteger(-1);
 
    private final List<TimeConsumer> afterReadCallbacks = new ArrayList<>();
-   private final List<Runnable> graphicsChangedCallbacks = new ArrayList<>();
+   private final List<Consumer<List<YoGraphicDefinition>>> graphicsAddedCallbacks = new ArrayList<>();
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -67,11 +68,9 @@ public class LogSession extends Session
          throw new RuntimeException(e);
       }
       logProperties = logDataReader.getLogProperties();
-
-      addLogToStructs(logDataReader, true);
-
       sessionName = logProperties.getNameAsString();
 
+      addLogToStructs(logDataReader, true);
       addLogInternal(logDataReader, logDirectory, false);
 
       for (int i = 0; i < logProperties.getChildLogs().size(); i++)
@@ -99,22 +98,24 @@ public class LogSession extends Session
          addedLog.addChild(logDataReader.getLogRootRegistry());
       }
 
+      List<YoGraphicDefinition> addedGraphics = new ArrayList<>();
       // update the graphic definitions.
-      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(logDataReader.getLogSCS1YoGraphics())));
+      addedGraphics.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(logDataReader.getLogSCS1YoGraphics())));
 
       if (logDataReader.getLogSCS2YoGraphics() != null && !logDataReader.getLogSCS2YoGraphics().isEmpty())
       {
          logDataReader.getLogSCS2YoGraphics().forEach( graphics ->
                {
                      if (!graphics.isEmpty())
-                        yoGraphicDefinitions.add(graphics);
+                        addedGraphics.add(graphics);
                });
       }
+      yoGraphicDefinitions.addAll(addedGraphics);
 
 
       // This alerts the graphics system that it needs to update. if we've added a log to an existing session, its graphics need to be loaded by the
       // YoGraphicFXManager
-      graphicsChangedCallbacks.forEach(Runnable::run);
+      graphicsAddedCallbacks.forEach(consumer -> consumer.accept(addedGraphics));
    }
 
    public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
@@ -126,9 +127,9 @@ public class LogSession extends Session
       logDataReader.getLogProperties().getChildLogs().get(childNumber).getSynchronization().set(synchronization);
    }
 
-   public ChildLogData addLog(File logDirectory, ProgressConsumer progressConsumer) throws IOException
+   public ChildLogData addLog(File logDirectory) throws IOException
    {
-      ChildLogData addedDataReader = logDataReader.addChildLog(logDirectory, progressConsumer);
+      ChildLogData addedDataReader = logDataReader.addChildLog(logDirectory);
       if (addedDataReader != null)
       {
          addLogToStructs(addedDataReader.getChildLogDataReader(), false);
@@ -146,9 +147,8 @@ public class LogSession extends Session
 
          if (robotDefinition != null)
          {
-            robotDefinitions.add(robotDefinition);
-            Robot robot = new Robot(robotDefinition, getInertialFrame());
-            robots.add(robot);
+            this.robotDefinition = robotDefinition;
+            robot = new Robot(robotDefinition, getInertialFrame());
             robotStateUpdater = RobotModelLoader.setupRobotUpdater(robot, logToAdd.getJointStates(), rootRegistry);
             if (initialized)
                robotStateUpdater.run();
@@ -162,14 +162,16 @@ public class LogSession extends Session
          else
          {
             robotStateUpdater = null;
+            robot = null;
+            this.robotDefinition = null;
          }
       }
    }
 
    @Override
-   public void addGraphicsChangedCallback(Runnable graphicsChangedCallback)
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> graphicsChangedCallback)
    {
-      graphicsChangedCallbacks.add(graphicsChangedCallback);
+      graphicsAddedCallbacks.add(graphicsChangedCallback);
    }
 
 
@@ -305,7 +307,9 @@ public class LogSession extends Session
    @Override
    public List<RobotDefinition> getRobotDefinitions()
    {
-      return robotDefinitions;
+      if (robotDefinition == null)
+         return Collections.emptyList();
+      return Collections.singletonList(robotDefinition);
    }
 
    @Override
@@ -322,13 +326,17 @@ public class LogSession extends Session
 
    public List<Robot> getRobots()
    {
-      return robots;
+      if (robot == null)
+         return Collections.emptyList();
+      return Collections.singletonList(robot);
    }
 
    @Override
    public List<RobotStateDefinition> getCurrentRobotStateDefinitions(boolean initialState)
    {
-      return robots.stream().map(Robot::getCurrentRobotStateDefinition).collect(Collectors.toList());
+      if (robot == null)
+         return Collections.emptyList();
+      return Collections.singletonList(robot.getCurrentRobotStateDefinition());
    }
 
    public File getLogDirectory()
