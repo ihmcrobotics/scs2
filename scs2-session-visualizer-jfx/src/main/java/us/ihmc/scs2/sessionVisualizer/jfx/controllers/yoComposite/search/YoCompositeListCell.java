@@ -76,8 +76,12 @@ public class YoCompositeListCell extends ListCell<YoComposite>
    @Override
    protected void updateItem(YoComposite yoComposite, boolean empty)
    {
+      boolean isSameItem = this.yoComposite == yoComposite;
       this.yoComposite = yoComposite;
       super.updateItem(yoComposite, empty);
+
+      if (isSameItem && !empty)
+         return;
 
       // Cleanup the properties: remove listeners and disable linked buffer
       yoVariableProperties.forEach(YoVariableProperty::dispose);
