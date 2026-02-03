@@ -5,6 +5,7 @@ import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -1524,13 +1525,29 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       executeOrScheduleVisualizerTask(() -> visualizerControls.addVisualizerShutdownListener(listener));
    }
 
+   /**
+    * Returns the session visualizer controls. This allows for more control of the session's settings
+    * and features once the simulation thread has been started
+    *
+    * @return visualizerControls The session visualizer controls
+    */
    public SessionVisualizerControls getSessionVisualizerControls()
    {
+      if (visualizerControls == null)
+         LogTools.warn("SessionVisualizerControls is null. Simulation probably not started yet.");
       return visualizerControls;
    }
 
+   /**
+    * Returns the session visualizer toolkit. This allows for more control of the session's settings and
+    * features, including the addition of custom external GUIs once the simulation thread has been started
+    *
+    * @return visualizerToolkit The session visualizer toolkit
+    */
    public SessionVisualizerToolkit getSessionVisualizerToolkit()
    {
+      if (visualizerToolkit == null)
+         LogTools.warn("SessionVisualizerToolkit is null. Simulation probably not started yet.");
       return visualizerToolkit;
    }
 
