@@ -15,7 +15,6 @@ public class SessionMenuController implements VisualizerController
    @FXML
    private Menu menu;
 
-
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
    private Stage owner;

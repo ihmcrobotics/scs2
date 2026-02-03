@@ -32,8 +32,6 @@ public class LogDataReader
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
 
-   private final SnappyLibrary snappyLibrary = new SnappyLibrary();
-
    protected final File logDirectory;
    private final LogPropertiesReader logProperties;
    private final YoVariableHandshakeParser parser;
@@ -284,7 +282,7 @@ public class LogDataReader
 
          try
          {
-            SnappyUtils.uncompress(snappyLibrary, compressedBuffer, logLine);
+            SnappyUtils.uncompress(compressedBuffer, logLine);
          }
          catch (Exception e)
          {

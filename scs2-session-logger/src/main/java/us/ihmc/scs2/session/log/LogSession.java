@@ -349,7 +349,7 @@ public class LogSession extends Session
       return logDirectory;
    }
 
-   public CompositeLogDataReader getLogDataReader()
+   public LogDataReader getLogDataReader()
    {
       return logDataReader;
    }
