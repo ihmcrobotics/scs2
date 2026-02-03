@@ -39,15 +39,15 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
-import us.ihmc.scs2.session.log.LogDataReaderInterface;
+import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.log.LogSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
-import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -136,7 +136,7 @@ public class LogSessionManagerController implements SessionControlsController
       {
          if (activeSessionProperty.get() == null)
             return 0;
-         LogDataReaderInterface logDataReader = activeSessionProperty.get().getLogDataReader();
+         LogDataReader logDataReader = activeSessionProperty.get().getLogDataReader();
          return logDataReader.getRelativeTimestamp(position.intValue());
       }));
 
@@ -144,7 +144,7 @@ public class LogSessionManagerController implements SessionControlsController
       {
          if (oldValue != null)
          {
-            LogDataReaderInterface logDataReader = oldValue.getLogDataReader();
+            LogDataReader logDataReader = oldValue.getLogDataReader();
             logDataReader.removeTimestampListeners();
          }
 
@@ -406,7 +406,7 @@ public class LogSessionManagerController implements SessionControlsController
    private void initializeControls(LogSession newValue)
    {
       File logDirectory = newValue.getLogDirectory();
-      LogDataReaderInterface logDataReader = newValue.getLogDataReader();
+      LogDataReader logDataReader = newValue.getLogDataReader();
       LogProperties logProperties = newValue.getLogProperties();
 
       sessionNameLabel.setText(newValue.getSessionName());
@@ -498,7 +498,7 @@ public class LogSessionManagerController implements SessionControlsController
       if (activeSession == null)
          return;
 
-      LogDataReaderInterface logDataReader = childLogData.getChildLogDataReader();
+      LogDataReader logDataReader = childLogData.getChildLogDataReader();
       ChildLogSynchronization synchronization = childLogData.getSynchronization();
 
       LogProperties logProperties = logDataReader.getLogProperties();
@@ -586,7 +586,7 @@ public class LogSessionManagerController implements SessionControlsController
    }
 
    @FXML
-   private void openVariableComparisonSearchDialog(LogDataReaderInterface mainLogReader, LogDataReaderInterface addedLogReader)
+   private void openVariableComparisonSearchDialog(LogDataReader parentLogReader, LogDataReader childLogReader)
    {
       JavaFXMissingTools.runLater(getClass(), () ->
       {
@@ -599,7 +599,7 @@ public class LogSessionManagerController implements SessionControlsController
             dialogStage.setTitle("Compare Log Variables");
             dialogStage.initOwner(stage);
             dialogStage.setScene(new Scene(loader.getRoot()));
-            controller.initialize(toolkit, dialogStage, mainLogReader, addedLogReader);
+            controller.initialize(toolkit, dialogStage, parentLogReader, childLogReader);
             dialogStage.show();
          }
          catch (IOException e)
@@ -766,7 +766,7 @@ public class LogSessionManagerController implements SessionControlsController
                                                           JFXTrimSlider slider = childLogPositionSliders.get(i).getLeft();
                                                           int addedFrom = (int) slider.getTrimStartValue();
                                                           int addedTo = (int) slider.getTrimEndValue();
-                                                          LogDataReaderInterface logDataReader = activeSessionProperty.get().getLogDataReader().getChildLogDataReaders().get(i);
+                                                          LogDataReader logDataReader = activeSessionProperty.get().getLogDataReader().getChildLogDataReaders().get(i);
                                                           List<YoVariable> addedLogVariables = logDataReader.getYoVariablesList();
 
                                                           File addedDestination = new File(destination, logDataReader.getLogProperties().getNameAsString());

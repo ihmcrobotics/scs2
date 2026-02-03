@@ -28,13 +28,13 @@ import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class LogDataReader implements LogDataReaderInterface
+public class LogDataReader
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
 
    private final SnappyLibrary snappyLibrary = new SnappyLibrary();
 
-   private final File logDirectory;
+   protected final File logDirectory;
    private final LogPropertiesReader logProperties;
    private final YoVariableHandshakeParser parser;
 
@@ -146,13 +146,11 @@ public class LogDataReader implements LogDataReaderInterface
       return numberOfEntries;
    }
 
-   @Override
    public YoLong getTimestamp()
    {
       return timestamp;
    }
 
-   @Override
    public void removeTimestampListeners()
    {
       timestamp.removeListeners();
@@ -171,7 +169,6 @@ public class LogDataReader implements LogDataReaderInterface
       }
    }
 
-   @Override
    public boolean read()
    {
       boolean done = readAndProcessALogLineReturnTrueIfDone();
@@ -182,7 +179,6 @@ public class LogDataReader implements LogDataReaderInterface
       return done;
    }
 
-   @Override
    public double getDt()
    {
       return parser.getDt();
@@ -346,8 +342,7 @@ public class LogDataReader implements LogDataReaderInterface
       return logDirectory;
    }
 
-   @Override
-   public LogProperties getLogProperties()
+   public LogPropertiesReader getLogProperties()
    {
       return logProperties;
    }
@@ -372,25 +367,21 @@ public class LogDataReader implements LogDataReaderInterface
       return registry;
    }
 
-   @Override
    public YoRegistry getLogRootRegistry()
    {
       return parser.getRootRegistry();
    }
 
-   @Override
    public YoGraphicsListRegistry getLogSCS1YoGraphics()
    {
       return parser.getSCS1YoGraphics();
    }
 
-   @Override
    public List<YoGraphicGroupDefinition> getLogSCS2YoGraphics()
    {
       return parser.getSCS2YoGraphics();
    }
 
-   @Override
    public List<JointState> getJointStates()
    {
       return jointStates;

@@ -7,8 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import org.jetbrains.annotations.NotNull;
-import us.ihmc.scs2.session.log.LogDataReaderInterface;
+import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.BindSynchronizingVariablesRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
@@ -37,25 +36,25 @@ public class LogVariableComparisonSearchDialogController
 
    private Stage stage;
    private SessionVisualizerToolkit toolkit;
-   private LogDataReaderInterface addedLogReader;
+   private LogDataReader childLogReader;
    private ChangeListener<? super String> mainListener;
    private ChangeListener<? super String> addedListener;
 
-   public void initialize(SessionVisualizerToolkit toolkit, Stage stage, LogDataReaderInterface mainLogReader, LogDataReaderInterface addedLogReader)
+   public void initialize(SessionVisualizerToolkit toolkit, Stage stage, LogDataReader parentLogReader, LogDataReader childLogReader)
    {
       this.toolkit = toolkit;
       this.stage = stage;
-      this.addedLogReader = addedLogReader;
+      this.childLogReader = childLogReader;
 
-      mainListener = getStringChangeListener(mainLogBestMatchLabel, mainLogBestMatchLabelShort, mainLogReader);
-      addedListener = getStringChangeListener(addedLogBestMatchLabel, addedLogBestMatchLabelShort, addedLogReader);
+      mainListener = getStringChangeListener(mainLogBestMatchLabel, mainLogBestMatchLabelShort, parentLogReader);
+      addedListener = getStringChangeListener(addedLogBestMatchLabel, addedLogBestMatchLabelShort, childLogReader);
       mainLogSearchField.textProperty().addListener(mainListener);
       addedLogSearchField.textProperty().addListener(addedListener);
    }
 
    private ChangeListener<? super String> getStringChangeListener(Label bestMatchLabel,
                                                                   Label bestMatchLabelShort,
-                                                                  LogDataReaderInterface logDataReader)
+                                                                  LogDataReader logDataReader)
    {
       return (o, oldValue, newValue) ->
       {
@@ -76,7 +75,7 @@ public class LogVariableComparisonSearchDialogController
       };
    }
 
-   private static YoVariable findFirstMatch(String query, LogDataReaderInterface logDataReader)
+   private static YoVariable findFirstMatch(String query, LogDataReader logDataReader)
    {
       if (query == null || query.isEmpty())
          return null;
@@ -103,7 +102,7 @@ public class LogVariableComparisonSearchDialogController
 
       if (!bestMatchMainName.equals("N/A") && !bestMatchAddedName.equals("N/A"))
       {
-         BindSynchronizingVariablesRequest request = new BindSynchronizingVariablesRequest(addedLogReader.getLogDirectory().getAbsolutePath(),
+         BindSynchronizingVariablesRequest request = new BindSynchronizingVariablesRequest(childLogReader.getLogDirectory().getAbsolutePath(),
                                                                                            mainLogVarName,
                                                                                            addedLogVarName);
          toolkit.getMessager().submitMessage(toolkit.getTopics().getBindSynchronizingVariablesRequest(), request);

@@ -5,6 +5,7 @@ import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.Synchronization;
+import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -40,7 +41,7 @@ public class LogSession extends Session
 
    private final File logDirectory;
    private final CompositeLogDataReader logDataReader;
-   private final LogProperties logProperties;
+   private final LogPropertiesReader logProperties;
 
    private boolean initialized = false;
 
@@ -75,7 +76,7 @@ public class LogSession extends Session
 
       for (int i = 0; i < logProperties.getChildLogs().size(); i++)
       {
-         LogDataReaderInterface childLog = logDataReader.getChildLogDataReaders().get(i);
+         LogDataReader childLog = logDataReader.getChildLogDataReaders().get(i);
          addLogToStructs(childLog, false);
          addLogInternal(childLog, new File(logDirectory, logProperties.getChildLogs().get(i).getChildNameAsString()), false);
       }
@@ -85,7 +86,7 @@ public class LogSession extends Session
       setSessionMode(SessionMode.PAUSE);
    }
 
-   private void addLogToStructs(LogDataReaderInterface logDataReader, boolean isMain)
+   private void addLogToStructs(LogDataReader logDataReader, boolean isMain)
    {
       rootRegistry.addChild(logDataReader.getLocalYoRegistry());
       if (isMain)
@@ -138,7 +139,7 @@ public class LogSession extends Session
       return addedDataReader;
    }
 
-   private void addLogInternal(LogDataReaderInterface logToAdd, File logDirectory, boolean notifyListeners) throws IOException
+   private void addLogInternal(LogDataReader logToAdd, File logDirectory, boolean notifyListeners) throws IOException
    {
       if (robotStateUpdater == null)
       {
@@ -349,7 +350,7 @@ public class LogSession extends Session
       return logDataReader;
    }
 
-   public LogProperties getLogProperties()
+   public LogPropertiesReader getLogProperties()
    {
       return logProperties;
    }

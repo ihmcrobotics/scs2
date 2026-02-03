@@ -1,19 +1,17 @@
 package us.ihmc.scs2.session.log;
 
-import us.ihmc.log.LogTools;
-
 import java.io.File;
 import java.io.IOException;
 
 public class ChildLogData
 {
-   private final LogDataReaderInterface parentLogDataReader;
+   private final LogDataReader parentLogDataReader;
    private final LogDataReader childLogDataReader;
    private final ChildLogSynchronization synchronization = new ChildLogSynchronization();
    private boolean inBounds;
    private final String path;
 
-   public ChildLogData(LogDataReaderInterface parentLogDataReader, File logDirectory, ProgressConsumer progressConsumer) throws IOException
+   public ChildLogData(LogDataReader parentLogDataReader, File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
       this.parentLogDataReader = parentLogDataReader;
       this.path = logDirectory.getAbsolutePath();
@@ -51,7 +49,7 @@ public class ChildLogData
       return synchronization;
    }
 
-   public LogDataReaderInterface getChildLogDataReader()
+   public LogDataReader getChildLogDataReader()
    {
       return childLogDataReader;
    }
