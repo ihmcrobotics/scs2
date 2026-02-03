@@ -23,7 +23,7 @@ mainDependencies {
    api("us.ihmc:euclid-frame-shape:0.22.5")
    api("us.ihmc:ihmc-messager:0.2.1")
    api("us.ihmc:ihmc-yovariables:0.13.7")
-   api("us.ihmc:mecano-yovariables:17-0.19.2")
+   api("us.ihmc:mecano-yovariables:17-0.19.3")
 
    val bulletVersion = "3.25-1.5.11"
    api("org.bytedeco:bullet:$bulletVersion")
