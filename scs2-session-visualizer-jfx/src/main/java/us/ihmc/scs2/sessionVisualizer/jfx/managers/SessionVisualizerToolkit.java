@@ -174,7 +174,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
                                                        }
                                                     });
 
-      session.addGraphicsAddedCallback(yoGraphicFXManager::addGraphics);
+      session.addGraphicsAddedCallback(yoGraphicFXManager::addYoGraphics);
 
       mainWindow.setTitle(session.getSessionName());
    }

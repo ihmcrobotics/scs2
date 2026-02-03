@@ -14,7 +14,6 @@ import gnu.trove.list.array.TIntArrayList;
 import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.Axis3D;
 import us.ihmc.euclid.axisAngle.AxisAngle;
-import us.ihmc.euclid.geometry.interfaces.BoundingBox2DReadOnly;
 import us.ihmc.euclid.geometry.interfaces.ConvexPolygon2DReadOnly;
 import us.ihmc.euclid.geometry.interfaces.LineSegment3DReadOnly;
 import us.ihmc.euclid.geometry.tools.EuclidGeometryTools;
@@ -41,8 +40,25 @@ import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DBasics;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.geometry.*;
-
+import us.ihmc.scs2.definition.geometry.ArcTorus3DDefinition;
+import us.ihmc.scs2.definition.geometry.Box3DDefinition;
+import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
+import us.ihmc.scs2.definition.geometry.Cone3DDefinition;
+import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
+import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
+import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
+import us.ihmc.scs2.definition.geometry.ExtrudedPolygon2DDefinition;
+import us.ihmc.scs2.definition.geometry.GeometryDefinition;
+import us.ihmc.scs2.definition.geometry.HemiEllipsoid3DDefinition;
+import us.ihmc.scs2.definition.geometry.Polygon2DDefinition;
+import us.ihmc.scs2.definition.geometry.Polygon3DDefinition;
+import us.ihmc.scs2.definition.geometry.PyramidBox3DDefinition;
+import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
+import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
+import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
+import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
+import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
+import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
 /**
  * This class provides factories to create generic meshes, i.e. {@code TriangleMesh3DDefinition}, to
  * represent a 3D shape.

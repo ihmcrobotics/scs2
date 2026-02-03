@@ -249,7 +249,7 @@ public class LogSessionManagerController implements SessionControlsController
 
          try
          {
-            ChildLogData addedLog = activeSession.addLog(result.getParentFile());
+            ChildLogData addedLog = activeSession.addLogAtDirectory(result.getParentFile());
             if (addedLog != null)
             {
                addLogToGUI(result.getParentFile(), addedLog);
@@ -389,10 +389,6 @@ public class LogSessionManagerController implements SessionControlsController
                                                                          stage.sizeToScene();
                                                                       });
 
-      // Add all loaded logs.
-
-
-
       stage.setScene(new Scene(mainPane));
       stage.setTitle("Log session controls");
       stage.getIcons().add(SessionVisualizerIOTools.LOG_SESSION_IMAGE);
@@ -417,7 +413,6 @@ public class LogSessionManagerController implements SessionControlsController
       logPositionSlider.setValue(0.0);
       logPositionSlider.setMin(0.0);
       logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
-
       cropControlsContainer.setDisable(false);
       MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
       multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());

@@ -18,6 +18,7 @@ import us.ihmc.yoVariables.variable.YoVariable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -225,7 +226,7 @@ public class CompositeLogDataReader extends LogDataReader
    @Override
    public void removeTimestampListeners()
    {
-      getTimestamp().removeListeners();
+      super.removeTimestampListeners();
       for (ChildLogData childLogData : childLogs)
          childLogData.getChildLogDataReader().getTimestamp().removeListeners();
    }

@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sharedMemory.tools;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
-import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.yoVariable.YoVariableDefinition;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint2D;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoint3D;

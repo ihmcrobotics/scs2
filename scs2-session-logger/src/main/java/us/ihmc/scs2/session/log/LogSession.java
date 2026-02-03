@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class LogSession extends Session
 {
@@ -43,6 +42,10 @@ public class LogSession extends Session
    private final CompositeLogDataReader logDataReader;
    private final LogPropertiesReader logProperties;
 
+   /**
+    * This flag is changed to true whenever the session has been initialized. If a log is added that overrides the robotStateUpdater,
+    * this flag tells the updater whether to run.
+    */
    private boolean initialized = false;
 
    /**
@@ -71,14 +74,14 @@ public class LogSession extends Session
       logProperties = logDataReader.getLogProperties();
       sessionName = logProperties.getNameAsString();
 
-      addLogToStructs(logDataReader, true);
-      addLogInternal(logDataReader, logDirectory, false);
+      addLogToDataContainers(logDataReader, true);
+      addLogInternal(logDataReader, false);
 
       for (int i = 0; i < logProperties.getChildLogs().size(); i++)
       {
          LogDataReader childLog = logDataReader.getChildLogDataReaders().get(i);
-         addLogToStructs(childLog, false);
-         addLogInternal(childLog, new File(logDirectory, logProperties.getChildLogs().get(i).getChildNameAsString()), false);
+         addLogToDataContainers(childLog, false);
+         addLogInternal(childLog, false);
       }
 
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
@@ -86,7 +89,7 @@ public class LogSession extends Session
       setSessionMode(SessionMode.PAUSE);
    }
 
-   private void addLogToStructs(LogDataReader logDataReader, boolean isMain)
+   private void addLogToDataContainers(LogDataReader logDataReader, boolean isMain)
    {
       rootRegistry.addChild(logDataReader.getLocalYoRegistry());
       if (isMain)
@@ -128,21 +131,22 @@ public class LogSession extends Session
       logDataReader.getLogProperties().getChildLogs().get(childNumber).getSynchronization().set(synchronization);
    }
 
-   public ChildLogData addLog(File logDirectory) throws IOException
+   public ChildLogData addLogAtDirectory(File logDirectory) throws IOException
    {
       ChildLogData addedDataReader = logDataReader.addChildLog(logDirectory);
       if (addedDataReader != null)
       {
-         addLogToStructs(addedDataReader.getChildLogDataReader(), false);
-         addLogInternal(addedDataReader.getChildLogDataReader(), logDirectory,true);
+         addLogToDataContainers(addedDataReader.getChildLogDataReader(), false);
+         addLogInternal(addedDataReader.getChildLogDataReader(), true);
       }
       return addedDataReader;
    }
 
-   private void addLogInternal(LogDataReader logToAdd, File logDirectory, boolean notifyListeners) throws IOException
+   private void addLogInternal(LogDataReader logToAdd, boolean notifyListeners) throws IOException
    {
       if (robotStateUpdater == null)
       {
+         File logDirectory = logToAdd.getLogDirectory();
          LogProperties logProperties = logToAdd.getLogProperties();
          RobotDefinition robotDefinition = RobotDataLogTools.loadRobotDefinition(logDirectory, logProperties);
 
