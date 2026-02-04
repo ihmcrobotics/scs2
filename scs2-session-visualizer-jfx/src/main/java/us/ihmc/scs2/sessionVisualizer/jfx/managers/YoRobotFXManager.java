@@ -138,7 +138,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), this::handleSessionRobotDefinitionListChangeState);
    }
 
-   private void handleSessionRobotDefinitionListChangeState(SessionRobotDefinitionListChange change)
+   public void handleSessionRobotDefinitionListChangeState(SessionRobotDefinitionListChange change)
    {
       if (change.getAddedRobotDefinition() == null)
       {

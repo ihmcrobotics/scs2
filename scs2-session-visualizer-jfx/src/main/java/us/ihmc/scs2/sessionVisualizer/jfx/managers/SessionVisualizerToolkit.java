@@ -46,7 +46,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    private final KeyFrameManager keyFrameManager;
    private final CameraSensorsManager cameraSensorsManager;
 
-   private final BackgroundExecutorManager backgroundExecutorManager = new BackgroundExecutorManager(4);
+   private final BackgroundExecutorManager backgroundExecutorManager = new BackgroundExecutorManager(8);
    private final ReferenceFrameManager referenceFrameManager = new ReferenceFrameManager(yoManager, backgroundExecutorManager);
    private final YoRobotFXManager yoRobotFXManager;
    private final EnvironmentManager environmentManager;
@@ -173,6 +173,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
                                                           sessionChangeListeners.forEach(listener -> listener.sessionChanged(oldSession, session));
                                                        }
                                                     });
+
+      session.addGraphicsAddedCallback(yoGraphicFXManager::addYoGraphics);
 
       mainWindow.setTitle(session.getSessionName());
    }

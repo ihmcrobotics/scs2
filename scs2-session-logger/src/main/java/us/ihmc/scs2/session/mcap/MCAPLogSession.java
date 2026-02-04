@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class MCAPLogSession extends Session
@@ -137,6 +138,12 @@ public class MCAPLogSession extends Session
       setDesiredBufferPublishPeriod(Conversions.secondsToNanoseconds(1.0 / 30.0));
       setSessionDTNanoseconds(desiredLogDT);
       setSessionMode(SessionMode.PAUSE);
+   }
+
+
+   @Override
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer)
+   {
    }
 
    /**
@@ -326,7 +333,7 @@ public class MCAPLogSession extends Session
       }
    }
 
-   private static RobotDefinition loadRobotDefinition(File robotDefinitionFile)
+   static RobotDefinition loadRobotDefinition(File robotDefinitionFile)
    {
       if (FilenameUtils.isExtension(robotDefinitionFile.getName(), "urdf"))
       {
