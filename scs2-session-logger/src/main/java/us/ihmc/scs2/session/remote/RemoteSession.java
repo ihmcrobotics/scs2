@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class RemoteSession extends Session
@@ -96,6 +97,11 @@ public class RemoteSession extends Session
    public long getDelay()
    {
       return serverTimestamp.get() - latestDataTimestamp.get();
+   }
+
+   @Override
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer)
+   {
    }
 
    @Override

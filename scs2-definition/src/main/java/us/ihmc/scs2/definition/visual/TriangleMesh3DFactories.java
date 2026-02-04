@@ -59,7 +59,6 @@ import us.ihmc.scs2.definition.geometry.Tetrahedron3DDefinition;
 import us.ihmc.scs2.definition.geometry.Torus3DDefinition;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
 import us.ihmc.scs2.definition.geometry.TruncatedCone3DDefinition;
-
 /**
  * This class provides factories to create generic meshes, i.e. {@code TriangleMesh3DDefinition}, to
  * represent a 3D shape.

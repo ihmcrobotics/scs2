@@ -1,9 +1,16 @@
 package us.ihmc.scs2.definition.yoChart;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import us.ihmc.scs2.definition.yoEntry.YoEntryDefinition;
+import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 
 @XmlRootElement(name = "ChartConfiguration")
 public class YoChartConfigurationDefinition
@@ -13,6 +20,15 @@ public class YoChartConfigurationDefinition
    private List<String> yoVariables;
    private List<ChartDoubleBoundsDefinition> yBounds;
    private List<Boolean> negates;
+
+   public YoChartConfigurationDefinition()
+   {
+   }
+
+   public YoChartConfigurationDefinition(Collection<String> variables)
+   {
+      this.yoVariables = new ArrayList<>(variables);
+   }
 
    @XmlElement
    public void setIdentifier(YoChartIdentifierDefinition identifier)
@@ -67,5 +83,10 @@ public class YoChartConfigurationDefinition
    public List<Boolean> getNegates()
    {
       return negates;
+   }
+
+   public static ImmutablePair<String, YoChartConfigurationDefinition> newYoVariableChartList(String name, Collection<String> variableNames)
+   {
+      return new ImmutablePair<>(name, new YoChartConfigurationDefinition(variableNames));
    }
 }

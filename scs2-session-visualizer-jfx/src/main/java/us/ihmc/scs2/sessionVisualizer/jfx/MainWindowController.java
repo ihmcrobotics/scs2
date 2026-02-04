@@ -33,7 +33,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -167,6 +169,18 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
                                   m -> yoChartGroupPanelController.loadChartGroupConfiguration(m.getKey(), m.getValue()));
       messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(),
                                   m -> yoChartGroupPanelController.saveChartGroupConfiguration(m.getKey(), m.getValue()));
+
+      messager.addFXTopicListener(topics.getYoChartListAdd(), change ->
+      {
+         if (change.getKey() == null)
+         { // no group name specified, add it to the main. If a group is specified, ignore this.
+            ChartTable2DSize currentSize = yoChartGroupPanelController.getSize();
+            int currentRows = currentSize.getNumberOfRows();
+            yoChartGroupPanelController.resize(new ChartTable2DSize(currentRows + 1, Math.max(currentSize.getNumberOfCols(), 1)));
+            YoChartPanelController controller = yoChartGroupPanelController.getChartPanelController(currentRows, 0);
+            controller.setChartConfiguration(change.getValue());
+         }
+      });
    }
 
    public void setupViewport3D(Pane viewportPane)
