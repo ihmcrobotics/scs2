@@ -1,17 +1,13 @@
 package us.ihmc.scs2.session.log;
 
 import us.ihmc.commons.Conversions;
-import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogIndex;
-import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.jointState.JointState;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
-import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
-import us.ihmc.tools.compression.SnappyLibrary;
 import us.ihmc.tools.compression.SnappyUtils;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -368,11 +364,6 @@ public class LogDataReader
    public YoRegistry getLogRootRegistry()
    {
       return parser.getRootRegistry();
-   }
-
-   public YoGraphicsListRegistry getLogSCS1YoGraphics()
-   {
-      return parser.getSCS1YoGraphics();
    }
 
    public List<YoGraphicGroupDefinition> getLogSCS2YoGraphics()

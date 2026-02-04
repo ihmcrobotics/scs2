@@ -1,7 +1,6 @@
 package us.ihmc.scs2.session.log;
 
 import us.ihmc.commons.Conversions;
-import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogProperties;
 import us.ihmc.robotDataLogger.Synchronization;
@@ -104,8 +103,6 @@ public class LogSession extends Session
 
       List<YoGraphicDefinition> addedGraphics = new ArrayList<>();
       // update the graphic definitions.
-      addedGraphics.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(logDataReader.getLogSCS1YoGraphics())));
-
       if (logDataReader.getLogSCS2YoGraphics() != null && !logDataReader.getLogSCS2YoGraphics().isEmpty())
       {
          logDataReader.getLogSCS2YoGraphics().forEach( graphics ->
