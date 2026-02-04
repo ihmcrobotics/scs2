@@ -1,7 +1,6 @@
 package us.ihmc.scs2.session.log;
 
 import us.ihmc.commons.Conversions;
-import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
@@ -66,7 +65,6 @@ public class LogSession extends Session
       YoVariableHandshakeParser parser = logDataReader.getParser();
       rootRegistry.addChild(logDataReader.getYoRegistry());
       rootRegistry.addChild(parser.getRootRegistry());
-      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics", YoGraphicConversionTools.toYoGraphicDefinitions(parser.getSCS1YoGraphics())));
       if (parser.getSCS2YoGraphics() != null)
          yoGraphicDefinitions.addAll(parser.getSCS2YoGraphics());
 
