@@ -23,4 +23,22 @@ public class TreeViewTools
             collapseRecursively(child);
       }
    }
+
+   public static <T> TreeItem<T> findItem(TreeItem<T> parent, T value)
+   {
+      if (parent == null)
+         return null;
+
+      if (parent.getValue() == value)
+         return parent;
+
+      for (TreeItem<T> child : parent.getChildren())
+      {
+         TreeItem<T> result = findItem(child, value);
+         if (result != null)
+            return result;
+      }
+
+      return null;
+   }
 }

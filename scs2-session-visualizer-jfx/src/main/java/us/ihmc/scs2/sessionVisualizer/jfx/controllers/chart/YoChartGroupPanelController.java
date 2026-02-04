@@ -582,6 +582,11 @@ public class YoChartGroupPanelController implements VisualizerController
       return chartTable2D.getSize().contains(configuration.rowEnd(), configuration.columnEnd());
    }
 
+   public YoChartPanelController getChartPanelController(int row, int column)
+   {
+      return chartTable2D.get(row, column);
+   }
+
    public boolean addVariableToPlot(String variableName, int row, int column, boolean resizeToFit)
    {
       if (resizeToFit)

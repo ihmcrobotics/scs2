@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class SimulationDataSession extends Session
@@ -108,6 +109,11 @@ public class SimulationDataSession extends Session
          setSessionMode(SessionMode.PAUSE);
       });
       startSessionThread();
+   }
+
+   @Override
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer)
+   {
    }
 
    @Override

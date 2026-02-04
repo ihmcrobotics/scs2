@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox prefWidth="800.0" spacing="15.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogVariableComparisonSearchDialogController">
+   <children>
+      <Label style="-fx-font-weight: bold; -fx-font-size: 14;" text="Select Logged Variables To Synchronize Over" />
+      <GridPane hgap="10.0" vgap="10.0">
+        <columnConstraints>
+          <ColumnConstraints hgrow="NEVER" minWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="300.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="300.0" />
+        </columnConstraints>
+
+         <children>
+            <Label text="Main Log:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+            <StackPane fx:id="mainLogSearchStackPane"  GridPane.rowSpan="2" GridPane.rowIndex="0" GridPane.columnIndex="1"  >
+               <children>
+                  <TextField fx:id="mainLogSearchField" prefHeight="50.0" prefWidth="50.0" promptText="Search variable in parent log..." />
+               </children>
+            </StackPane>
+            <Label fx:id="mainLogBestMatchLabel" maxWidth="1.7976931348623157E308" text="N/A" GridPane.rowIndex="0"  GridPane.columnIndex="2" />
+            <Label fx:id="mainLogBestMatchLabelShort" maxWidth="1.7976931348623157E308" text="N/A" GridPane.rowIndex="1" GridPane.columnIndex="2" />
+            <Label text="Added Log:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+            <StackPane fx:id="addedLogSearchStackPane" GridPane.rowSpan="2" GridPane.rowIndex="2" GridPane.columnIndex="1">
+               <children>
+                  <TextField fx:id="addedLogSearchField" prefHeight="50.0" prefWidth="50.0" promptText="Search variable in child log..."  />
+               </children>
+            </StackPane>
+            <Label fx:id="addedLogBestMatchLabel" maxWidth="1.7976931348623157E308" text="N/A" GridPane.rowIndex="2" GridPane.columnIndex="2"  />
+            <Label fx:id="addedLogBestMatchLabelShort" maxWidth="1.7976931348623157E308" text="N/A" GridPane.rowIndex="3" GridPane.columnIndex="2" />
+         </children>
+      </GridPane>
+      <HBox alignment="CENTER_RIGHT" spacing="10.0">
+         <children>
+            <Button fx:id="selectButton" mnemonicParsing="false" onAction="#select" text="Select" />
+         </children>
+      </HBox>
+   </children>
+   <padding>
+      <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+   </padding>
+</VBox>
