@@ -11,15 +11,35 @@ public class MultiVideoViewer extends ObservedAnimationTimer
 {
    private final Pane thumbnailsContainer;
    private final List<VideoViewer> videoViewers = new ArrayList<>();
+   private boolean isStarted = false;
+   private final Window owner;
+   private final double defaultThumbnailWidth;
 
    public MultiVideoViewer(Window owner, Pane thumbnailsContainer, MultiVideoDataReader multiReader, double defaultThumbnailWidth)
    {
+      this.owner = owner;
       this.thumbnailsContainer = thumbnailsContainer;
+      this.defaultThumbnailWidth = defaultThumbnailWidth;
 
       for (VideoDataReader reader : multiReader.getReaders())
       {
          videoViewers.add(new VideoViewer(owner, reader, defaultThumbnailWidth));
       }
+   }
+
+   public void addVideoReader(MultiVideoDataReader multiReader)
+   {
+      multiReader.getReaders().forEach( reader ->
+                                        {
+                                           addVideoViewer(new VideoViewer(owner, reader, defaultThumbnailWidth));
+                                        });
+   }
+
+   public void addVideoViewer(VideoViewer videoViewer)
+   {
+      videoViewers.add(videoViewer);
+      if (isStarted)
+         thumbnailsContainer.getChildren().add(videoViewer.getThumbnail());
    }
 
    @Override
@@ -31,6 +51,8 @@ public class MultiVideoViewer extends ObservedAnimationTimer
       {
          thumbnailsContainer.getChildren().add(videoViewer.getThumbnail());
       }
+
+      isStarted = true;
    }
 
    @Override
@@ -49,5 +71,7 @@ public class MultiVideoViewer extends ObservedAnimationTimer
          thumbnailsContainer.getChildren().remove(videoViewer.getThumbnail());
          videoViewer.stop();
       }
+
+      isStarted = false;
    }
 }

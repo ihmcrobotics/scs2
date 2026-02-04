@@ -39,6 +39,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.YoCompositeTools;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -258,7 +259,27 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
       {
          ObservableList<YoComposite> result = searchResult;
          searchResult = null;
+
+         if (result.equals(yoCompositeListView.getItems()))
+            return;
+
+         List<String> selectedFullnames = yoCompositeListView.getSelectionModel()
+                                                             .getSelectedItems()
+                                                             .stream()
+                                                             .filter(Objects::nonNull)
+                                                             .map(YoComposite::getFullname)
+                                                             .toList();
+
          yoCompositeListView.setItems(result);
+
+         if (!selectedFullnames.isEmpty())
+         {
+            for (YoComposite item : result)
+            {
+               if (selectedFullnames.contains(item.getFullname()))
+                  yoCompositeListView.getSelectionModel().select(item);
+            }
+         }
       }
    }
 

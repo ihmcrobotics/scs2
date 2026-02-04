@@ -29,6 +29,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SecondaryWindowControlsCon
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartGroupPanelController;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.YoChartPanelController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -43,6 +44,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class SecondaryWindowController implements VisualizerController
@@ -160,6 +162,27 @@ public class SecondaryWindowController implements VisualizerController
       SessionVisualizerTopics topics = toolkit.getTopics();
       messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
       messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
+      messager.addFXTopicListener(topics.getYoChartListAdd(), change ->
+      {
+         if (change.getKey() != null)
+         {
+            Optional<Tab> tabCandidate = tabPane.getTabs().stream().filter(t -> t.getText().equals(change.getKey())).findFirst();
+            Tab tab;
+            if (tabCandidate.isEmpty())
+            {
+               tab = newChartGroupTab();
+               tab.setText(change.getKey());
+            }
+            else
+               tab = tabCandidate.get();
+            YoChartGroupPanelController panelController = chartGroupControllers.get(tab);
+            ChartTable2DSize currentSize = panelController.getSize();
+            int currentRows = currentSize.getNumberOfRows();
+            panelController.resize(new ChartTable2DSize(currentRows + 1, currentSize.getNumberOfCols()));
+            YoChartPanelController controller = panelController.getChartPanelController(currentRows, 0);
+            controller.setChartConfiguration(change.getValue());
+         }
+      });
       isMessagerSetup = true;
    }
 

@@ -71,21 +71,26 @@ public class MultiVideoDataReader
 
    public void crop(File selectedDirectory, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
    {
+      crop(selectedDirectory, readers, startTimestamp, endTimestamp, progressConsumer);
+   }
+
+   public static void crop(File selectedDirectory, List<VideoDataReader> videoDataReaders, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
+   {
       ProgressConsumer subProgressConsumer = null;
 
-      for (int i = 0; i < readers.size(); i++)
+      for (int i = 0; i < videoDataReaders.size(); i++)
       {
-         VideoDataReader reader = readers.get(i);
+         VideoDataReader reader = videoDataReaders.get(i);
          Camera camera = reader.getCamera();
 
          if (progressConsumer != null)
          {
             progressConsumer.info("Cropping video (%s)".formatted(camera.getVideoFileAsString()));
-            double progressPercentage = (double) i / (double) readers.size();
+            double progressPercentage = (double) i / (double) videoDataReaders.size();
             progressConsumer.progress(progressPercentage);
             subProgressConsumer = progressConsumer.subProgress("Cropping video (%s): ".formatted(camera.getVideoFileAsString()),
                                                                progressPercentage,
-                                                               (i + 1.0) / readers.size());
+                                                               (i + 1.0) / videoDataReaders.size());
          }
 
          File timestampFile = new File(selectedDirectory, camera.getTimestampFileAsString());
