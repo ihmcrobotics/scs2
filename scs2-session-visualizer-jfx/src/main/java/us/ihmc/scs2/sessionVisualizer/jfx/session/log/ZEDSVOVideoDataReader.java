@@ -26,7 +26,7 @@ public class ZEDSVOVideoDataReader implements VideoDataReader
 
    public ZEDSVOVideoDataReader(File timestampsDatFile)
    {
-      zedScrubber = new ZEDSVOScrubber(timestampsDatFile);
+      zedScrubber = new ZEDSVOScrubber(timestampsDatFile, true);
 
       camera.setVideoFile("%s.svo2".formatted(zedScrubber.getName())); // We just have to set this to not crash
       camera.setTimestampFile(timestampsDatFile.toPath().getFileName().toString());
@@ -43,6 +43,21 @@ public class ZEDSVOVideoDataReader implements VideoDataReader
 
       Mat imageMat = new Mat(imageHeight, imageWidth, opencv_core.CV_8UC4, // BGRA8
                              sl_mat_get_ptr(leftColorImageSlMatPointer, SL_MEM_CPU), sl_mat_get_step_bytes(leftColorImageSlMatPointer, SL_MEM_CPU));
+
+      Pointer depthPtr = zedScrubber.getDepthSlMatPointer();
+      if (depthPtr != null && !depthPtr.isNull())
+      {
+         long step = sl_mat_get_step_bytes(depthPtr, SL_MEM_CPU);
+         Mat depth16 = new Mat(imageHeight, imageWidth, opencv_core.CV_16UC1,
+                               sl_mat_get_ptr(depthPtr, SL_MEM_CPU), step);
+
+         // For quick logging/stats, or build a WritableImage if you have a depth panel here.
+         Mat depth8 = new Mat();
+         opencv_core.normalize(depth16, depth8, 0.0, 255.0,
+                               opencv_core.NORM_MINMAX, opencv_core.CV_8UC1, null);
+         depth8.close();
+      }
+
 
       WritableImage writableImage = new WritableImage(imageWidth, imageHeight);
 
