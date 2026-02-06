@@ -158,9 +158,24 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
 
       if (searchResult != null)
       {
-         registryTreeView.setShowRoot(showRoot);
-         registryTreeView.setRoot(searchResult);
+         TreeItem<YoRegistry> result = searchResult;
          searchResult = null;
+
+         if (result.equals(registryTreeView.getRoot()))
+            return;
+
+         TreeItem<YoRegistry> selectedItem = registryTreeView.getSelectionModel().getSelectedItem();
+         YoRegistry selectedRegistry = selectedItem == null ? null : selectedItem.getValue();
+
+         registryTreeView.setShowRoot(showRoot);
+         registryTreeView.setRoot(result);
+
+         if (selectedRegistry != null)
+         {
+            TreeItem<YoRegistry> newSelectedItem = TreeViewTools.findItem(registryTreeView.getRoot(), selectedRegistry);
+            if (newSelectedItem != null && newSelectedItem != registryTreeView.getSelectionModel().getSelectedItem())
+               registryTreeView.getSelectionModel().select(newSelectedItem);
+         }
       }
 
       if (refreshRootRegistry)

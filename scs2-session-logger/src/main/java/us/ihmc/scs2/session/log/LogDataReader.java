@@ -6,6 +6,7 @@ import us.ihmc.robotDataLogger.LogIndex;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.jointState.JointState;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -27,7 +28,7 @@ public class LogDataReader
 {
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
 
-   private final File logDirectory;
+   protected final File logDirectory;
    private final LogPropertiesReader logProperties;
    private final YoVariableHandshakeParser parser;
 
@@ -88,7 +89,7 @@ public class LogDataReader
 
          if (!indexData.exists())
          {
-            throw new RuntimeException("Cannot find " + logProperties.getVariables().getIndexAsString());
+            throw new RuntimeException("Cannot find " + logProperties.getVariables().getIndexAsString() + " in " + logDirectory);
          }
          logIndex = new LogIndex(indexData, logChannel.size());
          compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize));
@@ -144,6 +145,11 @@ public class LogDataReader
       return timestamp;
    }
 
+   public void removeTimestampListeners()
+   {
+      timestamp.removeListeners();
+   }
+
    public void seek(int position)
    {
       currentRecordTick.set(position);
@@ -165,6 +171,24 @@ public class LogDataReader
          currentRecordTick.increment();
       }
       return done;
+   }
+
+   public double getDt()
+   {
+      return parser.getDt();
+   }
+
+   public void setToNaN()
+   {
+      timestamp.set(-1);
+      robotTime.setToNaN();
+
+      IntStream.range(0, yoVariables.size()).parallel().forEach(i ->
+                                                                {
+                                                                   yoVariables.get(i).setValueFromDouble(Double.NaN, false);
+                                                                });
+
+      // TODO do something with joint states?
    }
 
    private boolean readAndProcessALogLineReturnTrueIfDone()
@@ -322,13 +346,33 @@ public class LogDataReader
       return parser;
    }
 
+   public List<YoVariable> getYoVariablesList()
+   {
+      return yoVariables;
+   }
+
    public int getCurrentLogPosition()
    {
       return currentRecordTick.getValue();
    }
 
-   public YoRegistry getYoRegistry()
+   public YoRegistry getLocalYoRegistry()
    {
       return registry;
+   }
+
+   public YoRegistry getLogRootRegistry()
+   {
+      return parser.getRootRegistry();
+   }
+
+   public List<YoGraphicGroupDefinition> getLogSCS2YoGraphics()
+   {
+      return parser.getSCS2YoGraphics();
+   }
+
+   public List<JointState> getJointStates()
+   {
+      return jointStates;
    }
 }

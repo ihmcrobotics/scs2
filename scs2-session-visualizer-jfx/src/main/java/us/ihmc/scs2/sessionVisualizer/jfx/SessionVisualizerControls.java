@@ -7,7 +7,6 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
-import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
@@ -644,7 +643,6 @@ public interface SessionVisualizerControls
     * Adds a dynamic graphic to the 3D scene. The new graphic is added to root group.
     *
     * @param yoGraphicDefinition the definition of the graphic to be added.
-    * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *       controls: YoGraphic</a>
@@ -655,7 +653,6 @@ public interface SessionVisualizerControls
     * Adds dynamic graphics to the 3D scene. The new graphics are added to root group.
     *
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
-    * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *       controls: YoGraphic</a>
@@ -674,7 +671,6 @@ public interface SessionVisualizerControls
     * @param namespace           the desired namespace for the new graphic. The separator used is
     *                            {@value YoGraphicDefinition#SEPARATOR}.
     * @param yoGraphicDefinition the definition of the graphic to be added.
-    * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *       controls: YoGraphic</a>
@@ -712,7 +708,6 @@ public interface SessionVisualizerControls
     * @param namespace            the desired namespace for the new graphics. The separator used is
     *                             {@value YoGraphicDefinition#SEPARATOR}.
     * @param yoGraphicDefinitions the definitions of the graphics to be added.
-    * @see YoGraphicConversionTools
     * @see YoGraphicDefinitionFactory
     * @see <a href="https://github.com/ihmcrobotics/simulation-construction-set-2/wiki/YoGraphic">GUI
     *       controls: YoGraphic</a>
@@ -736,6 +731,51 @@ public interface SessionVisualizerControls
          addYoGraphic(group);
       }
    }
+
+   /**
+    * Adds a variable entry in a new chart in the default chart group.
+    *
+    * @param variableName the name of the variable to add. The variable will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   default void addYoChart(String variableName)
+   {
+      addYoChart(Collections.singletonList(variableName));
+   }
+
+   /**
+    * Adds variable entries in a new chart in the default chart group.
+    *
+    * @param variableNames the name of the variables to add. The variables will be looked up using
+    *                      {@link YoRegistry#findVariable(String)}.
+    */
+   default void addYoChart(Collection<String> variableNames)
+   {
+      addYoChart(null, variableNames);
+   }
+
+   /**
+    * Adds a variable entry in a new chart in the group named {@code groupName}. The group will be created if it
+    * doesn't exist yet.
+    *
+    * @param groupName    the name of the group.
+    * @param variableName the name of the variable to add. The variable will be looked up using
+    *                     {@link YoRegistry#findVariable(String)}.
+    */
+   default void addYoChart(String groupName, String variableName)
+   {
+      addYoEntry(groupName, Collections.singletonList(variableName));
+   }
+
+   /**
+    * Adds variable entries in a new chart in the group named {@code groupName}. The group will be created if it
+    * doesn't exist yet.
+    *
+    * @param groupName     the name of the group.
+    * @param variableNames the name of the variables to add. The variables will be looked up using
+    *                      {@link YoRegistry#findVariable(String)}.
+    */
+   void addYoChart(String groupName, Collection<String> variableNames);
 
    /**
     * Adds a variable entry to the default entry tab.

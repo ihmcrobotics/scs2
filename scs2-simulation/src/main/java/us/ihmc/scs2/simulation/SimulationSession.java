@@ -115,6 +115,11 @@ public class SimulationSession extends Session
    }
 
    @Override
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer)
+   {
+   }
+
+   @Override
    protected void initializeSession()
    {
       super.initializeSession();

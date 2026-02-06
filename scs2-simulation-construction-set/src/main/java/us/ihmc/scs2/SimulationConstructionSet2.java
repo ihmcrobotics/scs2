@@ -5,6 +5,7 @@ import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
@@ -26,6 +27,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -179,6 +181,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    private final SimulationSessionControls simulationSessionControls;
    private SessionVisualizerControls visualizerControls;
+   private SessionVisualizerToolkit visualizerToolkit;
    private ConcurrentLinkedQueue<Runnable> pendingVisualizerTasks = null;
 
    private boolean visualizerEnabled = DEFAULT_VISUALIZER_ENABLED;
@@ -271,11 +274,42 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
     *
+    * @param inertialFrame the inertial frame of the system.
+    */
+   public SimulationConstructionSet2(ReferenceFrame inertialFrame)
+   {
+      this(Session.retrieveCallerName(), inertialFrame, contactPointBasedPhysicsEngineFactory());
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
     * @param simulationName the name of the simulation.
     */
    public SimulationConstructionSet2(String simulationName)
    {
       this(simulationName, contactPointBasedPhysicsEngineFactory());
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
+    * @param simulationName the name of the simulation.
+    * @param inertialFrame  the inertial frame of the system.
+    */
+   public SimulationConstructionSet2(String simulationName, ReferenceFrame inertialFrame)
+   {
+      this(simulationName, inertialFrame, contactPointBasedPhysicsEngineFactory());
    }
 
    /**
@@ -301,10 +335,43 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
     * </ul>
     *
+    * @param inertialFrame        the inertial frame of the system.
+    * @param physicsEngineFactory the factory to use for setting the physics engine.
+    */
+   public SimulationConstructionSet2(ReferenceFrame inertialFrame, PhysicsEngineFactory physicsEngineFactory)
+   {
+      this(Session.retrieveCallerName(), inertialFrame, physicsEngineFactory);
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
     * @param simulationName       the name of the simulation.
     * @param physicsEngineFactory the factory to use for setting the physics engine.
     */
    public SimulationConstructionSet2(String simulationName, PhysicsEngineFactory physicsEngineFactory)
+   {
+      this(simulationName, inertialFrame, physicsEngineFactory);
+   }
+
+   /**
+    * Creates a new simulation environment.
+    * <ul>
+    * <li>See {@link #addRobot(RobotDefinition)} for adding robots to the simulation.
+    * <li>See {@link #addTerrainObject(TerrainObjectDefinition)} for adding objects to the environment.
+    * <li>Call {@link #startSimulationThread()} to fire up the environment before simulating.
+    * </ul>
+    *
+    * @param simulationName       the name of the simulation.
+    * @param inertialFrame        the inertial frame of the system.
+    * @param physicsEngineFactory the factory to use for setting the physics engine.
+    */
+   public SimulationConstructionSet2(String simulationName, ReferenceFrame inertialFrame, PhysicsEngineFactory physicsEngineFactory)
    {
       simulationSession = new SimulationSession(inertialFrame, simulationName, physicsEngineFactory);
       simulationSessionControls = simulationSession.getSimulationSessionControls();
@@ -707,7 +774,9 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
       if (visualizerEnabled && visualizerControls == null)
       {
-         visualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, javaFXThreadImplicitExit, shutdownSessionOnVisualizerClose);
+         SessionVisualizer sessionVisualizer = SessionVisualizer.startSessionVisualizerExpert(simulationSession, javaFXThreadImplicitExit, shutdownSessionOnVisualizerClose);
+         visualizerControls = sessionVisualizer.getSessionVisualizerControls();
+         visualizerToolkit = sessionVisualizer.getToolkit();
 
          if (pendingVisualizerTasks != null && !pendingVisualizerTasks.isEmpty())
          {
@@ -1138,6 +1207,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public void addYoChart(String groupName, Collection<String> variableNames)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.addYoChart(groupName, variableNames));
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));
@@ -1518,6 +1594,32 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addVisualizerShutdownListener(Runnable listener)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addVisualizerShutdownListener(listener));
+   }
+
+   /**
+    * Returns the session visualizer controls. This allows for more control of the session's settings
+    * and features once the simulation thread has been started
+    *
+    * @return visualizerControls The session visualizer controls
+    */
+   public SessionVisualizerControls getSessionVisualizerControls()
+   {
+      if (visualizerControls == null)
+         LogTools.warn("SessionVisualizerControls is null. Simulation probably not started yet.");
+      return visualizerControls;
+   }
+
+   /**
+    * Returns the session visualizer toolkit. This allows for more control of the session's settings and
+    * features, including the addition of custom external GUIs once the simulation thread has been started
+    *
+    * @return visualizerToolkit The session visualizer toolkit
+    */
+   public SessionVisualizerToolkit getSessionVisualizerToolkit()
+   {
+      if (visualizerToolkit == null)
+         LogTools.warn("SessionVisualizerToolkit is null. Simulation probably not started yet.");
+      return visualizerToolkit;
    }
 
    /** {@inheritDoc} */

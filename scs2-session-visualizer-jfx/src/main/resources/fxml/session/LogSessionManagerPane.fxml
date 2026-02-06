@@ -19,10 +19,11 @@
                     <children>
                         <JFXSpinner fx:id="loadingSpinner" prefHeight="30.0" prefWidth="30.0" visible="false" HBox.hgrow="NEVER"/>
                         <JFXButton fx:id="openSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Open log..."/>
+                        <JFXButton fx:id="addLogButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Add log..."/>
                         <JFXButton fx:id="endSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="end-session-button" text="End session"/>
                     </children>
                 </HBox>
-                <GridPane hgap="5.0" minHeight="-Infinity" minWidth="-Infinity" vgap="5.0" VBox.vgrow="NEVER">
+                <GridPane fx:id="mainLogGridPane" hgap="5.0" minHeight="-Infinity" minWidth="-Infinity" vgap="5.0" VBox.vgrow="NEVER">
                     <columnConstraints>
                         <ColumnConstraints hgrow="NEVER"/>
                         <ColumnConstraints hgrow="SOMETIMES"/>
@@ -47,6 +48,7 @@
                         <Insets bottom="20.0"/>
                     </padding>
                 </JFXTrimSlider>
+                <VBox fx:id="additionalLogWeightContainer" spacing="10.0"/>
                 <VBox fx:id="cropControlsContainer">
                     <children>
                         <JFXToggleButton fx:id="showTrimsButton" size="6.0" text="Enable crop data controls"/>

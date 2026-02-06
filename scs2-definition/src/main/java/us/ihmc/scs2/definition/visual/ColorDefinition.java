@@ -112,6 +112,20 @@ public class ColorDefinition extends PaintDefinition
    }
 
    /**
+    * Sets the color components for this color.
+    *
+    * @param red   red component in range [0.0-1.0].
+    * @param green green component in range [0.0-1.0].
+    * @param blue  blue component in range [0.0-1.0].
+    */
+   public void set(double red, double green, double blue)
+   {
+      setRed(red);
+      setGreen(green);
+      setBlue(blue);
+   }
+
+   /**
     * Sets the red component for this color.
     *
     * @param red red component in range [0.0-255].

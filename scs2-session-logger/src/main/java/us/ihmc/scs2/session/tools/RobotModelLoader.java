@@ -57,10 +57,15 @@ public class RobotModelLoader
 
    public static Runnable setupRobotUpdater(RobotInterface robot, YoVariableHandshakeParser handshakeParser, YoRegistry rootRegistry)
    {
+      return setupRobotUpdater(robot, handshakeParser.getJointStates(), rootRegistry);
+   }
+
+   public static Runnable setupRobotUpdater(RobotInterface robot, List<JointState> jointStates, YoRegistry rootRegistry)
+   {
       if (robot == null)
          return null;
 
-      Map<String, JointState> jointNameToState = handshakeParser.getJointStates().stream().collect(Collectors.toMap(JointState::getName, Function.identity()));
+      Map<String, JointState> jointNameToState = jointStates.stream().collect(Collectors.toMap(JointState::getName, Function.identity()));
 
       List<Runnable> jointStateUpdaters = new ArrayList<>();
 
