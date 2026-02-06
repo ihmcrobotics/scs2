@@ -38,7 +38,7 @@ public class YoServerExample
 
       YoRegistry mainRegistry = new YoRegistry("MainRegistry");
       YoVariable[] mainVariables = SharedMemoryRandomTools.nextYoVariables(random, "main_", numberOfYoVariables, mainRegistry);
-      yoServer.setMainRegistry(mainRegistry, null);
+      yoServer.setMainRegistry(mainRegistry);
 
       YoRegistry[] secondaryRegistries = new YoRegistry[numberOfSecondaryRegistries];
       List<YoVariable> secondaryVariables = new ArrayList<>();

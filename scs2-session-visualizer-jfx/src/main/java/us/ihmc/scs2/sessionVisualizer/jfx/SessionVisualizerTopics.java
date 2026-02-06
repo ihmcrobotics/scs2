@@ -2,9 +2,11 @@ package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import javafx.stage.Window;
 import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
+import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
@@ -14,7 +16,9 @@ import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.session.BindSynchronizingVariablesRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
@@ -70,6 +74,7 @@ public class SessionVisualizerTopics
    private Topic<Pair<Window, File>> yoChartGroupLoadConfiguration;
 
    private Topic<YoEntryListDefinition> yoEntryListAdd;
+   private Topic<ImmutablePair<String, YoChartConfigurationDefinition>> yoChartListAdd;
 
    private Topic<File> yoMultiSliderboardSave;
    private Topic<File> yoMultiSliderboardLoad;
@@ -106,6 +111,8 @@ public class SessionVisualizerTopics
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
+   private Topic<OpenAddLogRequest> openAddLogRequest;
+   private Topic<BindSynchronizingVariablesRequest> bindSynchronizingVariablesRequest;
 
    private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeRequest;
    private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeState;
@@ -171,6 +178,7 @@ public class SessionVisualizerTopics
       yoChartGroupLoadConfiguration = SessionVisualizerMessagerAPI.YoChart.YoChartGroupLoadConfiguration;
 
       yoEntryListAdd = SessionVisualizerMessagerAPI.YoEntry.YoEntryListAdd;
+      yoChartListAdd = SessionVisualizerMessagerAPI.YoChart.YoChartListAdd;
 
       yoMultiSliderboardSave = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardSave;
       yoMultiSliderboardLoad = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardLoad;
@@ -205,6 +213,8 @@ public class SessionVisualizerTopics
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
+      openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
+      bindSynchronizingVariablesRequest = SessionVisualizerMessagerAPI.SessionAPI.BindSynchronizingVariablesRequest;
 
       sessionRobotDefinitionListChangeRequest = SessionMessagerAPI.SessionRobotDefinitionListChangeRequest;
       sessionRobotDefinitionListChangeState = SessionMessagerAPI.SessionRobotDefinitionListChangeState;
@@ -423,6 +433,11 @@ public class SessionVisualizerTopics
       return yoEntryListAdd;
    }
 
+   public Topic<ImmutablePair<String, YoChartConfigurationDefinition>> getYoChartListAdd()
+   {
+      return yoChartListAdd;
+   }
+
    public Topic<File> getYoMultiSliderboardSave()
    {
       return yoMultiSliderboardSave;
@@ -566,6 +581,16 @@ public class SessionVisualizerTopics
    public Topic<OpenSessionControlsRequest> getOpenSessionControlsRequest()
    {
       return openSessionControlsRequest;
+   }
+
+   public Topic<OpenAddLogRequest> getOpenAddLogRequest()
+   {
+      return openAddLogRequest;
+   }
+
+   public Topic<BindSynchronizingVariablesRequest> getBindSynchronizingVariablesRequest()
+   {
+      return bindSynchronizingVariablesRequest;
    }
 
    public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeRequest()

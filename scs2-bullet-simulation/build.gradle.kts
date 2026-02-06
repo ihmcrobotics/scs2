@@ -22,13 +22,13 @@ mainDependencies {
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:euclid-frame-shape:0.22.5")
    api("us.ihmc:ihmc-messager:0.2.1")
-   api("us.ihmc:ihmc-yovariables:0.13.6")
-   api("us.ihmc:mecano-yovariables:17-0.19.2")
+   api("us.ihmc:ihmc-yovariables:0.13.7")
+   api("us.ihmc:mecano-yovariables:17-0.19.3")
 
-   val bulletVersion = "3.25-1.5.11-ihmc-2"
-   api("us.ihmc:bullet:$bulletVersion")
-   api("us.ihmc:bullet:$bulletVersion:linux-x86_64")
-   api("us.ihmc:bullet:$bulletVersion:windows-x86_64")
+   val bulletVersion = "3.25-1.5.11"
+   api("org.bytedeco:bullet:$bulletVersion")
+   api("org.bytedeco:bullet:$bulletVersion:linux-x86_64")
+   api("org.bytedeco:bullet:$bulletVersion:windows-x86_64")
 }
 
 debugDependencies {

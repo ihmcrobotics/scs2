@@ -141,6 +141,10 @@ public class YoSearchTabPaneController
    @FXML
    void startYoVariableDragAndDrop(MouseEvent event)
    {
-      mainYoCompositeSearchPaneController.startYoVariableDragAndDrop(event);
+      YoCompositeSearchPaneController controller = tabCompositeControllerMap.get(yoSearchTabPane.getSelectionModel().getSelectedItem());
+      if (controller != null)
+         controller.startYoVariableDragAndDrop(event);
+      else
+         mainYoCompositeSearchPaneController.startYoVariableDragAndDrop(event);
    }
 }

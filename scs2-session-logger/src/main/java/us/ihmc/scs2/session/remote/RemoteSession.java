@@ -1,7 +1,6 @@
 package us.ihmc.scs2.session.remote;
 
 import us.ihmc.commons.Conversions;
-import us.ihmc.graphicsDescription.conversion.YoGraphicConversionTools;
 import us.ihmc.robotDataLogger.YoVariableClientInterface;
 import us.ihmc.robotDataLogger.handshake.LogHandshake;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
@@ -11,7 +10,6 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
@@ -24,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class RemoteSession extends Session
@@ -58,8 +57,6 @@ public class RemoteSession extends Session
 
       rootRegistry.addChild(handshakeParser.getRootRegistry());
       rootRegistry.addChild(debugRegistry.getYoRegistry());
-      yoGraphicDefinitions.add(new YoGraphicGroupDefinition("SCS1 YoGraphics",
-                                                            YoGraphicConversionTools.toYoGraphicDefinitions(handshakeParser.getSCS1YoGraphics())));
       yoGraphicDefinitions.addAll(handshakeParser.getSCS2YoGraphics());
 
       RobotDefinition robotDefinition = RobotModelLoader.loadModel(handshake.getModelName(),
@@ -100,6 +97,11 @@ public class RemoteSession extends Session
    public long getDelay()
    {
       return serverTimestamp.get() - latestDataTimestamp.get();
+   }
+
+   @Override
+   public void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer)
+   {
    }
 
    @Override

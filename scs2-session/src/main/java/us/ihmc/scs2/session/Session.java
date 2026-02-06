@@ -1754,6 +1754,13 @@ public abstract class Session
    protected abstract double doSpecificRunTick();
 
    /**
+    * Adds a consumer for added graphics to the session. This allows alerting the visualization manager that graphics have been added to the session while it
+    * is running. This event can happen when adding an additional log to be viewed.
+    * @param addedGraphicsConsumer
+    */
+   public abstract void addGraphicsAddedCallback(Consumer<List<YoGraphicDefinition>> addedGraphicsConsumer);
+
+   /**
     * Performs buffer operations to finalize a run tick, such as incrementing the current index and
     * writing the {@link YoVariable} values into the buffer, and publishes data to the listeners.
     * <p>
