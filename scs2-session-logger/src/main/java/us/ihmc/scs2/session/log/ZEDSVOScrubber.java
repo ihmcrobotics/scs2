@@ -40,6 +40,7 @@ public class ZEDSVOScrubber
    private final String sensorName;
    private final String perceptionDirectory;
    private final TimestampScrubber timestampScrubber;
+   private final boolean enableDepth;
    private long currentTimestamp;
 
    private record SVOFile(int cameraID, String currentVideoFilename, SL_InitParameters initParameters, SL_RuntimeParameters runtimeParameters) { }
@@ -49,6 +50,7 @@ public class ZEDSVOScrubber
    private float fps;
    private Pointer leftColorImageSlMatPointer;
    private Pointer rightColorImageSlMatPointer;
+   private Pointer depthSlMatPointer;
 
    private record SVOToCrop(String svoFileName, boolean copyOnly, int startFrame, int endFrame) { }
 
@@ -101,8 +103,9 @@ public class ZEDSVOScrubber
       return zedSensorDatFiles.toArray(new File[0]);
    }
 
-   public ZEDSVOScrubber(File timestampsDatFile)
+   public ZEDSVOScrubber(File timestampsDatFile, boolean enableDepth)
    {
+      this.enableDepth = enableDepth;
       this.sensorName = timestampsDatFile.getName().replaceAll("_Timestamps.dat$", "");
 
       perceptionDirectory = timestampsDatFile.toPath().getParent().toAbsolutePath().toString();
@@ -129,11 +132,17 @@ public class ZEDSVOScrubber
          initParameters.input_type(SL_INPUT_TYPE_SVO);
          initParameters.sdk_verbose(0); // false
          initParameters.svo_real_time_mode(false);
+         initParameters.depth_mode(SL_DEPTH_MODE_NEURAL);
          initParameters.coordinate_unit(SL_UNIT_METER);
          initParameters.coordinate_system(SL_COORDINATE_SYSTEM_RIGHT_HANDED_Z_UP_X_FWD);
 
          SL_RuntimeParameters runtimeParameters = new SL_RuntimeParameters();
-         runtimeParameters.enable_depth(false);
+         runtimeParameters.reference_frame(SL_REFERENCE_FRAME_CAMERA);
+         runtimeParameters.enable_depth(enableDepth);
+         runtimeParameters.confidence_threshold(70);
+         runtimeParameters.texture_confidence_threshold(100);
+         runtimeParameters.remove_saturated_areas(true);
+         runtimeParameters.enable_fill_mode(false);
 
          sl_create_camera(cameraID);
 
@@ -155,6 +164,16 @@ public class ZEDSVOScrubber
          leftColorImageSlMatPointer = sl_mat_create_new(imageWidth, imageHeight, SL_MAT_TYPE_U8_C4, SL_MEM_CPU); // JavaFX WritableImage is CPU
       if (rightColorImageSlMatPointer == null)
          rightColorImageSlMatPointer = sl_mat_create_new(imageWidth, imageHeight, SL_MAT_TYPE_U8_C4, SL_MEM_CPU); // JavaFX WritableImage is CPU
+
+      if (enableDepth)
+      {
+         if (depthSlMatPointer == null || sl_mat_get_width(depthSlMatPointer) != imageWidth || sl_mat_get_height(depthSlMatPointer) != imageHeight)
+         {
+            if (depthSlMatPointer != null)
+               sl_mat_free(depthSlMatPointer, SL_MEM_CPU);
+            depthSlMatPointer = sl_mat_create_new(imageWidth, imageHeight, SL_MAT_TYPE_U16_C1, SL_MEM_CPU);
+         }
+      }
 
       int frameNumber = (int) timestampScrubber.getCurrentVideoFrameNumber();
 
@@ -192,6 +211,9 @@ public class ZEDSVOScrubber
 
       printOnError(sl_retrieve_image(cameraID, leftColorImageSlMatPointer, SL_VIEW_LEFT, SL_MEM_CPU, imageWidth, imageHeight, null));
       printOnError(sl_retrieve_image(cameraID, rightColorImageSlMatPointer, SL_VIEW_RIGHT, SL_MEM_CPU, imageWidth, imageHeight, null));
+      if (enableDepth) {
+         printOnError(sl_retrieve_measure(cameraID, depthSlMatPointer, SL_MEASURE_DEPTH_U16_MM, SL_MEM_CPU, imageWidth, imageHeight, null));
+      }
 
       currentTimestamp = sl_get_current_timestamp(cameraID);
       lastGrabbedFrameNumber = frameNumber;
@@ -358,6 +380,11 @@ public class ZEDSVOScrubber
          sl_mat_free(rightColorImageSlMatPointer, SL_MEM_CPU);
          rightColorImageSlMatPointer.close();
       }
+      if (depthSlMatPointer != null && !depthSlMatPointer.isNull()) {
+         sl_mat_free(depthSlMatPointer, SL_MEM_CPU);
+         depthSlMatPointer.close();
+      }
+
 
       for (SVOFile svoFile : svoFiles.values())
       {
@@ -394,6 +421,11 @@ public class ZEDSVOScrubber
    public Pointer getRightColorImageSlMatPointer()
    {
       return rightColorImageSlMatPointer;
+   }
+
+   public Pointer getDepthSlMatPointer()
+   {
+      return depthSlMatPointer;
    }
 
    public TimestampScrubber getTimestampScrubber()
