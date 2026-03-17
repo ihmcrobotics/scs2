@@ -1,8 +1,7 @@
 package us.ihmc.scs2.session.mcap.encoding;
 
-import us.ihmc.idl.CDR;
+import us.ihmc.fastddsjava.pointers.fastddsjava;
 import us.ihmc.log.LogTools;
-import us.ihmc.pubsub.common.SerializedPayload;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -125,7 +124,7 @@ public class CDRDeserializer
       // @formatter:off
       /* int dummy = */ buffer.get();
       short encapsulation = buffer.get();
-      if (encapsulation == SerializedPayload.CDR_BE || encapsulation == SerializedPayload.PL_CDR_BE)
+      if (encapsulation == fastddsjava.CDR_BE || encapsulation == fastddsjava.PL_CDR_BE)
       {
          buffer.order(ByteOrder.BIG_ENDIAN);
       }
@@ -141,7 +140,6 @@ public class CDRDeserializer
     * Reads a boolean {@code bool} from the buffer.
     *
     * @return the boolean value.
-    * @see CDR#read_type_7()
     */
    public boolean read_bool()
    {
@@ -152,7 +150,6 @@ public class CDRDeserializer
     * Reads a float {@code float32} from the buffer.
     *
     * @return the float value.
-    * @see CDR#read_type_5()
     */
    public float read_float32()
    {
@@ -164,7 +161,6 @@ public class CDRDeserializer
     * Reads a double {@code float64} from the buffer.
     *
     * @return the double value.
-    * @see CDR#read_type_6()
     */
    public double read_float64()
    {
@@ -176,7 +172,6 @@ public class CDRDeserializer
     * Reads a byte {@code byte} from the buffer.
     *
     * @return the byte value.
-    * @see CDR#read_type_9()
     */
    public byte read_byte()
    {
@@ -187,7 +182,6 @@ public class CDRDeserializer
     * Reads a byte {@code int8} from the buffer.
     *
     * @return the byte value.
-    * @see CDR#read_type_9()
     */
    public byte read_int8()
    {
@@ -198,7 +192,6 @@ public class CDRDeserializer
     * Reads an unsigned byte {@code uint8} from the buffer.
     *
     * @return the unsigned byte value.
-    * @see CDR#read_type_9()
     */
    public int read_uint8()
    {
@@ -209,7 +202,6 @@ public class CDRDeserializer
     * Reads a short {@code int16} from the buffer.
     *
     * @return the short value.
-    * @see CDR#read_type_1()
     */
    public short read_int16()
    {
@@ -221,7 +213,6 @@ public class CDRDeserializer
     * Reads an unsigned short {@code uint16} from the buffer.
     *
     * @return the unsigned short value.
-    * @see CDR#read_type_3()
     */
    public int read_uint16()
    {
@@ -232,7 +223,6 @@ public class CDRDeserializer
     * Reads an integer {@code int32} from the buffer.
     *
     * @return the integer value.
-    * @see CDR#read_type_2()
     */
    public int read_int32()
    {
@@ -244,7 +234,6 @@ public class CDRDeserializer
     * Reads an unsigned integer {@code uint32} from the buffer.
     *
     * @return the unsigned integer value.
-    * @see CDR#read_type_4()
     */
    public long read_uint32()
    {
@@ -255,7 +244,6 @@ public class CDRDeserializer
     * Reads a long {@code int64} from the buffer.
     *
     * @return the long value.
-    * @see CDR#read_type_11()
     */
    public long read_int64()
    {
@@ -271,7 +259,6 @@ public class CDRDeserializer
     * </p>
     *
     * @return the unsigned long value.
-    * @see CDR#read_type_12()
     */
    public long read_uint64()
    {
@@ -286,7 +273,6 @@ public class CDRDeserializer
     * Reads a string {@code string} from the buffer.
     *
     * @return the string value.
-    * @see CDR#read_type_d(StringBuilder)
     */
    public String read_string()
    {
@@ -297,7 +283,6 @@ public class CDRDeserializer
     * Reads a string {@code string} from the buffer and returns the result as a byte array for each character.
     *
     * @return the string value as a byte array.
-    * @see CDR#read_type_d(StringBuilder)
     */
    public byte[] read_stringAsBytes()
    {
@@ -312,7 +297,6 @@ public class CDRDeserializer
     * Reads a string {@code string} from the buffer into the given {@code stringBuilderToPack}.
     *
     * @param stringBuilderToPack the string builder to which the characters are added.
-    * @see CDR#read_type_d(StringBuilder)
     */
    public void read_string(StringBuilder stringBuilderToPack)
    {
@@ -333,7 +317,6 @@ public class CDRDeserializer
     *
     * @param reader      the reader to use to read the array elements.
     * @param arrayLength the size of the array to read.
-    * @see CDR#read_type_f()
     */
    public void read_array(ElementReader reader, int arrayLength)
    {

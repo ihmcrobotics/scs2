@@ -1,18 +1,19 @@
 package us.ihmc.scs2.session.tools;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.Model;
-import us.ihmc.robotDataLogger.Variables;
+import logger_msgs.msg.dds.HandshakeFileType;
+import logger_msgs.msg.dds.LogProperties;
+import logger_msgs.msg.dds.Model;
+import logger_msgs.msg.dds.Variables;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.log.LogTimeStampedIndexGenerator;
 import us.ihmc.scs2.session.log.ProgressConsumer;
+
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class RobotDataLogTools
 {
@@ -113,7 +114,9 @@ public class RobotDataLogTools
    public static YoVariableHandshakeParser parseYoVariables(File logDirectory, Variables variables) throws IOException
    {
       File handshakeFile = handshakeFile(logDirectory, variables, true);
-      YoVariableHandshakeParser parser = YoVariableHandshakeParser.create(variables.getHandshakeFileType());
+      HandshakeFileType handshakeFileType = new HandshakeFileType();
+      handshakeFileType.setType(variables.getHandshakeFileType());
+      YoVariableHandshakeParser parser = YoVariableHandshakeParser.create(handshakeFileType);
       parser.parseFrom(readResourceFile(handshakeFile));
       return parser;
    }

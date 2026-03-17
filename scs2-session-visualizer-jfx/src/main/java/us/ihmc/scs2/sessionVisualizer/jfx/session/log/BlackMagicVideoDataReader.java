@@ -1,8 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
+import logger_msgs.msg.dds.Camera;
 import us.ihmc.codecs.generated.YUVPicture;
 import us.ihmc.concurrent.ConcurrentCopier;
-import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.scs2.session.log.BlackMagicScrubber;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 

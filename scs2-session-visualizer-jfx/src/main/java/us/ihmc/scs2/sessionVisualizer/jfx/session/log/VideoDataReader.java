@@ -1,6 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import us.ihmc.robotDataLogger.Camera;
+import logger_msgs.msg.dds.Camera;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 
 import java.io.File;

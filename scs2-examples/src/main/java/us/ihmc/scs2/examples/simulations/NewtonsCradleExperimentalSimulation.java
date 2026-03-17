@@ -22,7 +22,7 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 public class NewtonsCradleExperimentalSimulation
 {
    private static final String NEWTONS_CRADLE = "NewtonsCradle";
-   private final int numberOfBalls = 6;
+   private final int numberOfBalls = 100;
    private final double ballRadius = 0.05;
 
    private final double stringLength = 0.6;

@@ -1,15 +1,14 @@
 package us.ihmc.scs2.session.log;
 
+import logger_msgs.msg.dds.LogProperties;
+import logger_msgs.msg.dds.Synchronization;
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.Synchronization;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
-import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;

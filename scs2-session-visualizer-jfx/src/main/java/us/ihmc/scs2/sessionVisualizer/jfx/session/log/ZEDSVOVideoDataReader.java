@@ -2,10 +2,10 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import logger_msgs.msg.dds.Camera;
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
-import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.session.log.ZEDSVOScrubber;
 
