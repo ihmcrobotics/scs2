@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
-import com.martiansoftware.jsap.JSAPException;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 import me.tongfei.progressbar.ProgressBar;
@@ -36,7 +35,7 @@ import java.time.temporal.ChronoUnit;
 public class MCAPRepackApplication
 {
 
-   public static void main(String[] args) throws JSAPException
+   public static void main(String[] args)
    {
       Options options = new Options();
       options.addOption("l", "chunkMin", true, "[Optional] Minimum duration of a chunk in milliseconds.");
