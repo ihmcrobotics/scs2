@@ -138,7 +138,7 @@ public class ZEDSVOScrubber
          sl_create_camera(cameraID);
 
          LogTools.info("Opening SVO file: " + svoFileName); // Only print once per SVO file
-         printOnError(sl_open_camera(cameraID, initParameters, 0, svoFileName, "", 0, "", "", ""));
+         printOnError(sl_open_camera_from_svo_file(cameraID, initParameters, svoFileName, "", "", ""));
 
          svoFile = new SVOFile(cameraID, svoFileName, initParameters, runtimeParameters);
          svoFiles.put(videoFilename, svoFile);
