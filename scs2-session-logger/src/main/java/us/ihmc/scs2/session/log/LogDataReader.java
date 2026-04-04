@@ -44,6 +44,13 @@ public class LogDataReader
    private final ByteBuffer compressedBuffer;
    private int index = 0;
 
+   // Batch decompression state
+   private final int batchSize;
+   private final int singleTickSize;
+   private final ByteBuffer batchBuffer;
+   private int tickIndexInBatch = 0;
+   private int currentBatchTickCount = 0;
+
    private final List<JointState> jointStates;
 
    private final ByteBuffer logLine;
@@ -83,6 +90,7 @@ public class LogDataReader
       logChannel = logFileInputStream.getChannel();
 
       compressed = logProperties.getVariables().getCompressed();
+      singleTickSize = bufferSize;
       if (compressed)
       {
          File indexData = new File(logDirectory, logProperties.getVariables().getIndexAsString());
@@ -92,8 +100,11 @@ public class LogDataReader
             throw new RuntimeException("Cannot find " + logProperties.getVariables().getIndexAsString() + " in " + logDirectory);
          }
          logIndex = new LogIndex(indexData, logChannel.size());
-         compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize));
-         numberOfEntries = logIndex.getNumberOfEntries();
+         int storedBatchSize = logProperties.getVariables().getCompressionBatchSize();
+         batchSize = storedBatchSize <= 0 ? 1 : storedBatchSize;
+         compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize * batchSize));
+         batchBuffer = ByteBuffer.allocate(bufferSize * batchSize);
+         numberOfEntries = logIndex.getNumberOfEntries() * batchSize;
          LogTools.info("Loaded indexing.");
       }
       else
@@ -101,6 +112,8 @@ public class LogDataReader
          numberOfEntries = (int) (logChannel.size() / bufferSize) - 1;
          logIndex = null;
          compressedBuffer = null;
+         batchSize = 1;
+         batchBuffer = null;
       }
 
       logLine = ByteBuffer.allocate(bufferSize);
@@ -231,16 +244,57 @@ public class LogDataReader
    {
       if (compressed)
       {
-         index = position;
-         if (index < logIndex.dataOffsets.length)
+         int batchIndex = position / batchSize;
+         int tickOffset = position % batchSize;
+
+         currentBatchTickCount = 0;
+         tickIndexInBatch = 0;
+         index = batchIndex;
+
+         if (batchIndex < logIndex.dataOffsets.length)
+            logChannel.position(logIndex.dataOffsets[batchIndex]);
+
+         if (tickOffset > 0)
          {
-            logChannel.position(logIndex.dataOffsets[position]);
+            readNextBatch();
+            tickIndexInBatch = tickOffset;
          }
       }
       else
       {
          logChannel.position((long) position * (long) logLine.capacity());
       }
+   }
+
+   private boolean readNextBatch() throws IOException
+   {
+      if (index >= logIndex.getNumberOfEntries())
+         return false;
+
+      int size = logIndex.compressedSizes[index];
+      compressedBuffer.clear();
+      compressedBuffer.limit(size);
+
+      int read = logChannel.read(compressedBuffer);
+      if (read != size)
+         throw new RuntimeException("Expected read of " + size + ", got " + read + ". TODO: Implement loop for reading the full log line.");
+
+      compressedBuffer.flip();
+      batchBuffer.clear();
+
+      try
+      {
+         SnappyUtils.uncompress(compressedBuffer, batchBuffer);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+
+      currentBatchTickCount = batchBuffer.position() / singleTickSize;
+      tickIndexInBatch = 0;
+      index++;
+      return true;
    }
 
    public long getTimestamp(int position)
@@ -250,7 +304,7 @@ public class LogDataReader
          throw new RuntimeException("Cannot get timestamp for non-compressed logs");
       }
 
-      return logIndex.timestamps[position];
+      return logIndex.timestamps[position / batchSize];
    }
 
    private boolean readLogLine() throws IOException
@@ -260,31 +314,17 @@ public class LogDataReader
 
       if (compressed)
       {
-         if (index >= logIndex.getNumberOfEntries())
+         if (tickIndexInBatch >= currentBatchTickCount)
          {
-            return false;
+            if (!readNextBatch())
+               return false;
          }
-         int size = logIndex.compressedSizes[index];
-         compressedBuffer.clear();
-         compressedBuffer.limit(size);
 
-         int read = logChannel.read(compressedBuffer);
-
-         if (read != size)
-         {
-            throw new RuntimeException("Expected read of " + size + ", got " + read + ". TODO: Implement loop for reading the full log line.");
-         }
-         compressedBuffer.flip();
-
-         try
-         {
-            SnappyUtils.uncompress(compressedBuffer, logLine);
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace();
-         }
-         ++index;
+         int tickStart = tickIndexInBatch * singleTickSize;
+         batchBuffer.limit(tickStart + singleTickSize);
+         batchBuffer.position(tickStart);
+         logLine.put(batchBuffer);
+         tickIndexInBatch++;
 
          return true;
       }
@@ -308,7 +348,7 @@ public class LogDataReader
 
    public int getPosition(long timestamp)
    {
-      return logIndex.seek(timestamp);
+      return logIndex.seek(timestamp) * batchSize;
    }
 
    public long getRelativeTimestamp(int position)
