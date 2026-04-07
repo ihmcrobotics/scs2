@@ -104,7 +104,9 @@ public class LogDataReader
          batchSize = storedBatchSize <= 0 ? 1 : storedBatchSize;
          compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize * batchSize));
          batchBuffer = ByteBuffer.allocate(bufferSize * batchSize);
-         numberOfEntries = logIndex.getNumberOfEntries() * batchSize;
+         int storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
+         int lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
+         numberOfEntries = (logIndex.getNumberOfEntries() - 1) * batchSize + lastBatchTicks;
          LogTools.info("Loaded indexing.");
       }
       else
