@@ -9,6 +9,7 @@ import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
+import com.github.luben.zstd.Zstd;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
@@ -40,6 +41,7 @@ public class LogDataReader
 
    // Compressed data helpers
    private final boolean compressed;
+   private final boolean useZstd;
    private final LogIndex logIndex;
    private final ByteBuffer compressedBuffer;
    private int index = 0;
@@ -90,6 +92,7 @@ public class LogDataReader
       logChannel = logFileInputStream.getChannel();
 
       compressed = logProperties.getVariables().getCompressed();
+      useZstd = logProperties.getVariables().getCompressionTypeAsString().equals("zstd");
       singleTickSize = bufferSize;
       if (compressed)
       {
@@ -102,8 +105,9 @@ public class LogDataReader
          logIndex = new LogIndex(indexData, logChannel.size());
          int storedBatchSize = logProperties.getVariables().getCompressionBatchSize();
          batchSize = storedBatchSize <= 0 ? 1 : storedBatchSize;
-         compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize * batchSize));
-         batchBuffer = ByteBuffer.allocate(bufferSize * batchSize);
+         int rawBatchBytes = bufferSize * batchSize;
+         compressedBuffer = ByteBuffer.allocate(useZstd ? (int) Zstd.compressBound(rawBatchBytes) : SnappyUtils.maxCompressedLength(rawBatchBytes));
+         batchBuffer = ByteBuffer.allocate(rawBatchBytes);
          int storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
          int lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
          numberOfEntries = (logIndex.getNumberOfEntries() - 1) * batchSize + lastBatchTicks;
@@ -284,13 +288,24 @@ public class LogDataReader
       compressedBuffer.flip();
       batchBuffer.clear();
 
-      try
+      if (useZstd)
       {
-         SnappyUtils.uncompress(compressedBuffer, batchBuffer);
+         long result = Zstd.decompressByteArray(batchBuffer.array(), 0, batchBuffer.capacity(),
+                                                compressedBuffer.array(), compressedBuffer.position(), compressedBuffer.remaining());
+         if (Zstd.isError(result))
+            throw new RuntimeException("Zstd decompression failed: " + Zstd.getErrorName(result));
+         batchBuffer.position((int) result);
       }
-      catch (Exception e)
+      else
       {
-         e.printStackTrace();
+         try
+         {
+            SnappyUtils.uncompress(compressedBuffer, batchBuffer);
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+         }
       }
 
       currentBatchTickCount = batchBuffer.position() / singleTickSize;
