@@ -19,6 +19,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.YawPitchRollTransformDefinition;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
+import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
@@ -1566,6 +1567,13 @@ public class URDFTools
          Sphere3DDefinition sphereGeometryDefinition = new Sphere3DDefinition();
          sphereGeometryDefinition.setRadius(parseDouble(urdfGeometry.getSphere().getRadius(), 0.0));
          return sphereGeometryDefinition;
+      }
+      if (urdfGeometry.getCapsule() != null)
+      {
+         Capsule3DDefinition capsuleGeometryDefinition = new Capsule3DDefinition();
+         capsuleGeometryDefinition.setRadius(parseDouble(urdfGeometry.getCapsule().getRadius(), 0.0));
+         capsuleGeometryDefinition.setLength(parseDouble(urdfGeometry.getCapsule().getLength(), 0.0));
+         return capsuleGeometryDefinition;
       }
       if (urdfGeometry.getMesh() != null)
       {
