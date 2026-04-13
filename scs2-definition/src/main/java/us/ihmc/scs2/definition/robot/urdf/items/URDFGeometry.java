@@ -14,6 +14,7 @@ public class URDFGeometry implements URDFItem
    private URDFBox box;
    private URDFCylinder cylinder;
    private URDFSphere sphere;
+   private URDFCapsule capsule;
    private URDFMesh mesh;
 
    @XmlElement(name = "box")
@@ -32,6 +33,12 @@ public class URDFGeometry implements URDFItem
    public void setSphere(URDFSphere sphere)
    {
       this.sphere = sphere;
+   }
+
+   @XmlElement(name = "capsule")
+   public void setCapsule(URDFCapsule capsule)
+   {
+      this.capsule = capsule;
    }
 
    @XmlElement(name = "mesh")
@@ -55,6 +62,11 @@ public class URDFGeometry implements URDFItem
       return sphere;
    }
 
+   public URDFCapsule getCapsule()
+   {
+      return capsule;
+   }
+
    public URDFMesh getMesh()
    {
       return mesh;
@@ -63,7 +75,7 @@ public class URDFGeometry implements URDFItem
    @Override
    public String getContentAsString()
    {
-      return format("[box: %s, cylinder: %s, sphere: %s, mesh: %s]", box, cylinder, sphere, mesh);
+      return format("[box: %s, cylinder: %s, sphere: %s, capsule: %s, mesh: %s]", box, cylinder, sphere, capsule, mesh);
    }
 
    @Override
@@ -75,6 +87,6 @@ public class URDFGeometry implements URDFItem
    @Override
    public List<URDFFilenameHolder> getFilenameHolders()
    {
-      return URDFItem.combineItemFilenameHolders(box, cylinder, sphere, mesh);
+      return URDFItem.combineItemFilenameHolders(box, cylinder, sphere, capsule, mesh);
    }
 }
