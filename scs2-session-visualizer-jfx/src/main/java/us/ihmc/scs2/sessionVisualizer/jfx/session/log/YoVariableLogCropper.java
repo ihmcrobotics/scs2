@@ -55,6 +55,12 @@ public class YoVariableLogCropper extends YoVariableLogReader
          return;
       }
 
+      int batchSize = getBatchSize();
+      int batchFrom = from / batchSize;
+      int batchTo = to / batchSize;
+      int validTicksInLastBatch = (to % batchSize) + 1;
+      int numberOfBatches = batchTo - batchFrom + 1;
+
       try
       {
          progressConsumer.info("Creating directories");
@@ -84,6 +90,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
 
          progressConsumer.info("Copying description files");
          progressConsumer.progress(0.04);
+         logProperties.getVariables().setValidTicksInLastBatch(validTicksInLastBatch);
          copyMetaData(destination);
 
          progressConsumer.info("Seeking variable data");
@@ -97,7 +104,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
          FileOutputStream indexStream = new FileOutputStream(indexFile);
          FileChannel indexChannel = indexStream.getChannel();
 
-         progressConsumer.info("Writing variable data %d/%d".formatted(0, to - from));
+         progressConsumer.info("Writing variable data %d/%d".formatted(0, numberOfBatches));
 
          ProgressConsumer dataCopyingProgress;
          if (videoDataReaders == null || videoDataReaders.isEmpty())
@@ -106,14 +113,14 @@ public class YoVariableLogCropper extends YoVariableLogReader
             dataCopyingProgress = progressConsumer.subProgress(0.10, 0.50);
 
          ByteBuffer indexBuffer = ByteBuffer.allocateDirect(16);
-         for (int i = from; i <= to; i++)
+         for (int batch = batchFrom; batch <= batchTo; batch++)
          {
-            progressConsumer.info("Writing variable data %d/%d".formatted(i - from, to - from));
-            dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
-            ByteBuffer compressedData = readCompressedData(i);
+            progressConsumer.info("Writing variable data %d/%d".formatted(batch - batchFrom, numberOfBatches));
+            dataCopyingProgress.progress((double) (batch - batchFrom) / (double) numberOfBatches);
+            ByteBuffer compressedData = readCompressedData(batch);
 
             indexBuffer.clear();
-            indexBuffer.putLong(getTimestamp(i));
+            indexBuffer.putLong(getTimestamp(batch));
             indexBuffer.putLong(outputChannel.position());
             indexBuffer.flip();
             indexChannel.write(indexBuffer);
@@ -130,7 +137,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
          progressConsumer.info("Cropping video files");
 
          if (videoDataReaders != null && !videoDataReaders.isEmpty())
-            MultiVideoDataReader.crop(destination, videoDataReaders, getTimestamp(from), getTimestamp(to), progressConsumer.subProgress(0.50, 1.0));
+            MultiVideoDataReader.crop(destination, videoDataReaders, getTimestamp(batchFrom), getTimestamp(batchTo), progressConsumer.subProgress(0.50, 1.0));
 
          progressConsumer.done();
       }
@@ -271,31 +278,56 @@ public class YoVariableLogCropper extends YoVariableLogReader
          progressConsumer.info("Writing variable data");
          ProgressConsumer dataCopyingProgress = progressConsumer.subProgress(0.20, 1.00);
 
+         int batchSize = getBatchSize();
+         int longsPerTick = getNumberOfVariables();
+
          if (logVariablesFiltered != null)
          {
+            int lastBatchIndex = -1;
+            LongBuffer cachedBatch = null;
+
             for (int i = from; i <= to; i++)
             {
                dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
-               LongBuffer data = readData(i).asLongBuffer();
+               int batchIndex = i / batchSize;
+               int tickOffset = i % batchSize;
 
+               if (batchIndex != lastBatchIndex)
+               {
+                  cachedBatch = readData(batchIndex).asLongBuffer();
+                  lastBatchIndex = batchIndex;
+               }
+
+               int tickStartLong = tickOffset * longsPerTick;
                for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
                {
-                  matlabEntryWriters.get(varIndex).accept(i - from, data.get(logVariableIndices.get(varIndex) + 1));
+                  matlabEntryWriters.get(varIndex).accept(i - from, cachedBatch.get(tickStartLong + logVariableIndices.get(varIndex) + 1));
                }
             }
          }
          else
          {
+            int lastBatchIndex = -1;
+            LongBuffer cachedBatch = null;
+
             for (int i = from; i <= to; i++)
             {
                dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
-               LongBuffer data = readData(i).asLongBuffer();
+               int batchIndex = i / batchSize;
+               int tickOffset = i % batchSize;
 
-               data.get(); // Time entry
+               if (batchIndex != lastBatchIndex)
+               {
+                  cachedBatch = readData(batchIndex).asLongBuffer();
+                  lastBatchIndex = batchIndex;
+               }
+
+               cachedBatch.position(tickOffset * longsPerTick);
+               cachedBatch.get(); // Time entry
 
                for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
                {
-                  matlabEntryWriters.get(varIndex).accept(i - from, data.get());
+                  matlabEntryWriters.get(varIndex).accept(i - from, cachedBatch.get());
                }
             }
          }
@@ -437,17 +469,31 @@ public class YoVariableLogCropper extends YoVariableLogReader
          progressConsumer.info("Writing variable data");
          ProgressConsumer dataCopyingProgress = progressConsumer.subProgress(0.04, 1.00);
 
+         int batchSize = getBatchSize();
+         int longsPerTick = getNumberOfVariables();
+
          if (logVariablesFiltered != null)
          {
+            int lastBatchIndex = -1;
+            LongBuffer cachedBatch = null;
+
             for (int i = from; i <= to; i++)
             {
                progressConsumer.info("Writing variable data %d/%d".formatted(i - from, to - from));
                dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
-               LongBuffer data = readData(i).asLongBuffer();
+               int batchIndex = i / batchSize;
+               int tickOffset = i % batchSize;
 
+               if (batchIndex != lastBatchIndex)
+               {
+                  cachedBatch = readData(batchIndex).asLongBuffer();
+                  lastBatchIndex = batchIndex;
+               }
+
+               int tickStartLong = tickOffset * longsPerTick;
                for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
                {
-                  valueWriter.get(varIndex).accept(data.get(logVariableIndices.get(varIndex) + 1));
+                  valueWriter.get(varIndex).accept(cachedBatch.get(tickStartLong + logVariableIndices.get(varIndex) + 1));
                   if (varIndex < numberOfYoVariables - 1)
                      printStream.print(", ");
                   else
@@ -457,17 +503,28 @@ public class YoVariableLogCropper extends YoVariableLogReader
          }
          else
          {
+            int lastBatchIndex = -1;
+            LongBuffer cachedBatch = null;
+
             for (int i = from; i <= to; i++)
             {
                progressConsumer.info("Writing variable data %d/%d".formatted(i - from, to - from));
                dataCopyingProgress.progress((double) (i - from) / (double) (to - from));
-               LongBuffer data = readData(i).asLongBuffer();
+               int batchIndex = i / batchSize;
+               int tickOffset = i % batchSize;
 
-               data.get(); // Time entry
+               if (batchIndex != lastBatchIndex)
+               {
+                  cachedBatch = readData(batchIndex).asLongBuffer();
+                  lastBatchIndex = batchIndex;
+               }
+
+               cachedBatch.position(tickOffset * longsPerTick);
+               cachedBatch.get(); // Time entry
 
                for (int varIndex = 0; varIndex < numberOfYoVariables; varIndex++)
                {
-                  valueWriter.get(varIndex).accept(data.get());
+                  valueWriter.get(varIndex).accept(cachedBatch.get());
                   if (varIndex < numberOfYoVariables - 1)
                      printStream.print(", ");
                   else
