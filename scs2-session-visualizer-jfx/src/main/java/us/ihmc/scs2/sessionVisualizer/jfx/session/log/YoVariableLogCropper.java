@@ -170,35 +170,9 @@ public class YoVariableLogCropper extends YoVariableLogReader
          return;
       }
 
-      TIntArrayList logVariableIndices = null;
-      List<YoVariable> logVariablesFiltered = null;
-
-      if (variableFilter != null || registryFilter != null)
-      {
-         logVariableIndices = new TIntArrayList();
-         logVariablesFiltered = new ArrayList<>();
-
-         for (int varIndex = 0; varIndex < logVariables.size(); varIndex++)
-         {
-            boolean keepVariable = true;
-            YoVariable logVariable = logVariables.get(varIndex);
-
-            if (variableFilter != null && !variableFilter.test(logVariable))
-               keepVariable = false;
-
-            if (keepVariable)
-            {
-               if (registryFilter != null && !registryFilter.test(logVariable.getRegistry()))
-                  keepVariable = false;
-            }
-
-            if (keepVariable)
-            {
-               logVariableIndices.add(varIndex);
-               logVariablesFiltered.add(logVariable);
-            }
-         }
-      }
+      FilterResult filter = filterVariables(logVariables, variableFilter, registryFilter);
+      TIntArrayList logVariableIndices = filter.indices();
+      List<YoVariable> logVariablesFiltered = filter.variables();
 
       try
       {
@@ -380,35 +354,9 @@ public class YoVariableLogCropper extends YoVariableLogReader
          return;
       }
 
-      TIntArrayList logVariableIndices = null;
-      List<YoVariable> logVariablesFiltered = null;
-
-      if (variableFilter != null || registryFilter != null)
-      {
-         logVariableIndices = new TIntArrayList();
-         logVariablesFiltered = new ArrayList<>();
-
-         for (int varIndex = 0; varIndex < logVariables.size(); varIndex++)
-         {
-            boolean keepVariable = true;
-            YoVariable logVariable = logVariables.get(varIndex);
-
-            if (variableFilter != null && !variableFilter.test(logVariable))
-               keepVariable = false;
-
-            if (keepVariable)
-            {
-               if (registryFilter != null && !registryFilter.test(logVariable.getRegistry()))
-                  keepVariable = false;
-            }
-
-            if (keepVariable)
-            {
-               logVariableIndices.add(varIndex);
-               logVariablesFiltered.add(logVariable);
-            }
-         }
-      }
+      FilterResult filter = filterVariables(logVariables, variableFilter, registryFilter);
+      TIntArrayList logVariableIndices = filter.indices();
+      List<YoVariable> logVariablesFiltered = filter.variables();
 
       try
       {
@@ -540,5 +488,39 @@ public class YoVariableLogCropper extends YoVariableLogReader
       {
          throw new RuntimeException(e);
       }
+   }
+
+   private record FilterResult(List<YoVariable> variables, TIntArrayList indices) {}
+
+   /**
+    * Filters the given log variables by the provided variable and registry predicates.
+    * Returns a {@link FilterResult} containing the filtered variables and their original indices.
+    * If no filters are provided, both fields of the result are null.
+    */
+   private static FilterResult filterVariables(List<YoVariable> logVariables,
+                                               Predicate<YoVariable> variableFilter,
+                                               Predicate<YoRegistry> registryFilter)
+   {
+      // Nothing to filter here so lets return
+      if (variableFilter == null && registryFilter == null)
+         return new FilterResult(null, null);
+
+      TIntArrayList indices = new TIntArrayList();
+      List<YoVariable> filtered = new ArrayList<>();
+
+      for (int i = 0; i < logVariables.size(); i++)
+      {
+         YoVariable variable = logVariables.get(i);
+         if (variableFilter != null && !variableFilter.test(variable))
+            continue;
+         if (registryFilter != null && !registryFilter.test(variable.getRegistry()))
+            continue;
+
+         // Variable is part of the filter, add it
+         indices.add(i);
+         filtered.add(variable);
+      }
+
+      return new FilterResult(filtered, indices);
    }
 }
