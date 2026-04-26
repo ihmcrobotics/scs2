@@ -9,6 +9,7 @@ import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
+import com.github.luben.zstd.Zstd;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
@@ -40,6 +41,7 @@ public class LogDataReader
 
    // Compressed data helpers
    private final boolean compressed;
+   private final CompressionType compressionType;
    private final LogIndex logIndex;
    private final ByteBuffer compressedBuffer;
    private int index = 0;
@@ -71,7 +73,7 @@ public class LogDataReader
       parser = RobotDataLogTools.parseYoVariables(logDirectory, logProperties);
       LogTools.info("Loaded YoVariable definition.");
 
-      LogTools.info("This log contains " + parser.getNumberOfVariables() + " YoVariables");
+      LogTools.info("This log contains " + parser.getNumberOfVariables() + " YoVariables in " + parser.getRegistries().size() + " registries.");
 
       timestamp = new YoLong("timestamp", registry);
       robotTime = new YoDouble("robotTime", registry);
@@ -90,7 +92,9 @@ public class LogDataReader
       logChannel = logFileInputStream.getChannel();
 
       compressed = logProperties.getVariables().getCompressed();
+      compressionType = compressed ? CompressionType.fromString(logProperties.getVariables().getCompressionTypeAsString()) : CompressionType.NONE;
       singleTickSize = bufferSize;
+
       if (compressed)
       {
          File indexData = new File(logDirectory, logProperties.getVariables().getIndexAsString());
@@ -100,12 +104,28 @@ public class LogDataReader
             throw new RuntimeException("Cannot find " + logProperties.getVariables().getIndexAsString() + " in " + logDirectory);
          }
          logIndex = new LogIndex(indexData, logChannel.size());
+
+         // For legacy logs we need to check what the batch size is
          int storedBatchSize = logProperties.getVariables().getCompressionBatchSize();
          batchSize = storedBatchSize <= 0 ? 1 : storedBatchSize;
-         compressedBuffer = ByteBuffer.allocate(SnappyUtils.maxCompressedLength(bufferSize * batchSize));
-         batchBuffer = ByteBuffer.allocate(bufferSize * batchSize);
-         int storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
-         int lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
+
+         int rawBatchBytes = bufferSize * batchSize;
+         compressedBuffer = ByteBuffer.allocate(switch (compressionType)
+                                                {
+                                                   case ZSTD -> (int) Zstd.compressBound(rawBatchBytes);
+                                                   default -> SnappyUtils.maxCompressedLength(rawBatchBytes);
+                                                });
+         batchBuffer = ByteBuffer.allocate(rawBatchBytes);
+
+         // If using a batch size, the last batch will probably not contain full valid data because odds are the final tick
+         // from the controller isn't an increment of the batch size. We only need to do this check if the batch size isn't 1
+         int lastBatchTicks = batchSize; // Last batch is full
+         if (batchSize > 1)
+         {
+            int storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
+            lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
+
+         }
          numberOfEntries = (logIndex.getNumberOfEntries() - 1) * batchSize + lastBatchTicks;
          LogTools.info("Loaded indexing.");
       }
@@ -270,9 +290,11 @@ public class LogDataReader
 
    private boolean readNextBatch() throws IOException
    {
+      // No more batches to read
       if (index >= logIndex.getNumberOfEntries())
          return false;
 
+      // Read the compressed batch from the log channel into compressedBuffer
       int size = logIndex.compressedSizes[index];
       compressedBuffer.clear();
       compressedBuffer.limit(size);
@@ -281,18 +303,35 @@ public class LogDataReader
       if (read != size)
          throw new RuntimeException("Expected read of " + size + ", got " + read + ". TODO: Implement loop for reading the full log line.");
 
+      // Prepare buffers for decompression: flip compressedBuffer for reading, clear batchBuffer for writing
       compressedBuffer.flip();
       batchBuffer.clear();
 
-      try
+      // Decompress into batchBuffer; position after decompression reflects how many bytes were written
+      switch (compressionType)
       {
-         SnappyUtils.uncompress(compressedBuffer, batchBuffer);
-      }
-      catch (Exception e)
-      {
-         e.printStackTrace();
+         case ZSTD ->
+         {
+            long result = Zstd.decompressByteArray(batchBuffer.array(), 0, batchBuffer.capacity(),
+                                                   compressedBuffer.array(), compressedBuffer.position(), compressedBuffer.remaining());
+            if (Zstd.isError(result))
+               throw new RuntimeException("Zstd decompression failed: " + Zstd.getErrorName(result));
+            batchBuffer.position((int) result);
+         }
+         default ->
+         {
+            try
+            {
+               SnappyUtils.uncompress(compressedBuffer, batchBuffer);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+            }
+         }
       }
 
+      // Derive how many complete ticks were decompressed and reset the tick cursor
       currentBatchTickCount = batchBuffer.position() / singleTickSize;
       tickIndexInBatch = 0;
       index++;
@@ -309,6 +348,8 @@ public class LogDataReader
       return logIndex.timestamps[position / batchSize];
    }
 
+   // Reads a single tick into logLine and rewinds logLongArray so callers can read from the start.
+   // Returns false if there is no more data to read.
    private boolean readLogLine() throws IOException
    {
       logLine.clear();
@@ -316,6 +357,7 @@ public class LogDataReader
 
       if (compressed)
       {
+         // Current batch exhausted, load the next one
          if (tickIndexInBatch >= currentBatchTickCount)
          {
             if (!readNextBatch())
@@ -348,6 +390,7 @@ public class LogDataReader
       }
    }
 
+   // Converts a timestamp to a tick position; the index seek returns a batch index, so multiply by batchSize to get the first tick of that batch
    public int getPosition(long timestamp)
    {
       return logIndex.seek(timestamp) * batchSize;
@@ -416,5 +459,21 @@ public class LogDataReader
    public List<JointState> getJointStates()
    {
       return jointStates;
+   }
+
+   private enum CompressionType
+   {
+      NONE, SNAPPY, ZSTD;
+
+      public static CompressionType fromString(String value)
+      {
+         return switch (value.trim().toLowerCase())
+         {
+            case "", "none" -> NONE;
+            case "snappy" -> SNAPPY;
+            case "zstd" -> ZSTD;
+            default -> throw new IllegalArgumentException("Unsupported compression type: " + value);
+         };
+      }
    }
 }
