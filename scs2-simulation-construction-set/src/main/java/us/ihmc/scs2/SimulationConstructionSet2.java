@@ -9,7 +9,10 @@ import us.ihmc.log.LogTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.terrain.FlatGroundDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.definition.visual.ColorDefinition;
+import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple3DDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
@@ -545,6 +548,34 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void addTerrainObjects(Collection<? extends TerrainObjectDefinition> terrainObjectDefinitions)
    {
       simulationSession.addTerrainObjects(terrainObjectDefinitions);
+   }
+
+   /**
+    * Adds a flat ground to the environment.
+    */
+   public void addFlatGround()
+   {
+      addTerrainObject(new FlatGroundDefinition());
+   }
+
+   /**
+    * Adds a flat ground to the environment.
+    *
+    * @param colorDefinition the color to use for the ground visual.
+    */
+   public void addFlatGround(ColorDefinition colorDefinition)
+   {
+      addTerrainObject(new FlatGroundDefinition(colorDefinition));
+   }
+
+   /**
+    * Adds a flat ground to the environment.
+    *
+    * @param materialDefinition the material to use for the ground visual.
+    */
+   public void addFlatGround(MaterialDefinition materialDefinition)
+   {
+      addTerrainObject(new FlatGroundDefinition(materialDefinition));
    }
 
    /**
