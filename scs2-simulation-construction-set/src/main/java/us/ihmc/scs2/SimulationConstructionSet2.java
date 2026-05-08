@@ -44,8 +44,10 @@ import us.ihmc.scs2.simulation.SimulationTerminalCondition;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
 import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParameters;
+import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParametersReadOnly;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.physicsEngine.contactPointBased.ContactPointBasedPhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFrameVector3D;
@@ -395,6 +397,43 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public PhysicsEngine getPhysicsEngine()
    {
       return simulationSession.getPhysicsEngine();
+   }
+
+   /**
+    * Gets the contact parameters used by the default contact point based physics engine.
+    * <p>
+    * This is a convenience accessor for the common SCS2 setup. If this simulation was created with a
+    * different physics engine, this method throws an {@link IllegalStateException}.
+    * </p>
+    *
+    * @return the contact point based contact parameters.
+    */
+   public ContactPointBasedContactParametersReadOnly getContactPointBasedContactParameters()
+   {
+      return getContactPointBasedPhysicsEngine().getGroundContactParameters();
+   }
+
+   /**
+    * Sets the contact parameters used by the default contact point based physics engine.
+    * <p>
+    * This is a convenience setter for the common SCS2 setup. If this simulation was created with a
+    * different physics engine, this method throws an {@link IllegalStateException}.
+    * </p>
+    *
+    * @param contactParameters the contact point based contact parameters.
+    */
+   public void setContactPointBasedContactParameters(ContactPointBasedContactParametersReadOnly contactParameters)
+   {
+      getContactPointBasedPhysicsEngine().setGroundContactParameters(contactParameters);
+   }
+
+   private ContactPointBasedPhysicsEngine getContactPointBasedPhysicsEngine()
+   {
+      PhysicsEngine physicsEngine = getPhysicsEngine();
+      if (physicsEngine instanceof ContactPointBasedPhysicsEngine)
+         return (ContactPointBasedPhysicsEngine) physicsEngine;
+      throw new IllegalStateException(
+            "The current physics engine is not a contact point based physics engine: " + physicsEngine.getClass().getSimpleName());
    }
 
    /**
