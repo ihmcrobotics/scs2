@@ -1,5 +1,11 @@
 package us.ihmc.scs2.simulation.parameters;
 
+import us.ihmc.scs2.simulation.physicsEngine.contactPointBased.ContactPointBasedPhysicsEngine;
+
+/**
+ * Mutable parameter set for configuring contacts resolved by the
+ * {@link ContactPointBasedPhysicsEngine}.
+ */
 public class ContactPointBasedContactParameters implements ContactPointBasedContactParametersBasics
 {
    private double kxy;
@@ -11,6 +17,11 @@ public class ContactPointBasedContactParameters implements ContactPointBasedCont
    private double alphaStick;
    private boolean enableSlip;
 
+   /**
+    * Creates a parameter set with the default values used by the contact point based physics engine.
+    *
+    * @return a new mutable parameter set initialized with the engine defaults.
+    */
    public static ContactPointBasedContactParameters defaultParameters()
    {
       ContactPointBasedContactParameters parameters = new ContactPointBasedContactParameters();

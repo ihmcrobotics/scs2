@@ -5,6 +5,13 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
 
+/**
+ * YoVariable-backed contact point parameter set.
+ * <p>
+ * This implementation is useful when the contact parameters need to be inspected or adjusted through
+ * a {@link YoRegistry} while a simulation is running.
+ * </p>
+ */
 public class YoContactPointBasedContactParameters implements ContactPointBasedContactParametersBasics
 {
    private final YoDouble kxy;
@@ -16,6 +23,13 @@ public class YoContactPointBasedContactParameters implements ContactPointBasedCo
    private final YoDouble alphaStick;
    private final YoBoolean enableSlip;
 
+   /**
+    * Creates YoVariables for each contact parameter and registers them to {@code registry}.
+    *
+    * @param prefix   optional prefix applied to every created YoVariable name. May be {@code null}
+    *                 or empty.
+    * @param registry registry to which the created YoVariables are added.
+    */
    public YoContactPointBasedContactParameters(String prefix, YoRegistry registry)
    {
       String kxyName = "kxy";
