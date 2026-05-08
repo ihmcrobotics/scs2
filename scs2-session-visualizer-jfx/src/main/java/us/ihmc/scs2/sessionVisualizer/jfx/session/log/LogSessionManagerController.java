@@ -846,7 +846,7 @@ public class LogSessionManagerController implements SessionControlsController
       @Override
       protected String computeValue()
       {
-         long nanoTime = observableNanoTime.get();
+         long nanoTime = Math.max(0, observableNanoTime.get());
          long hours = TimeUnit.NANOSECONDS.toHours(nanoTime);
          long minutes = TimeUnit.NANOSECONDS.toMinutes(nanoTime);
          long seconds = TimeUnit.NANOSECONDS.toSeconds(nanoTime);
