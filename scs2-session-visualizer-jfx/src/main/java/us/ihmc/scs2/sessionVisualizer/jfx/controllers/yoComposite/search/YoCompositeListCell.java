@@ -122,7 +122,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
             YoVariable component = yoComposite.getYoComponents().get(i);
             String componentIdentifier = yoComposite.getPattern().getComponentIdentifiers()[i];
             Label idLabel = new Label(componentIdentifier);
-            idLabel.setTooltip(new Tooltip(component.getName() + "\n" + component.getNamespace()));
+            idLabel.setTooltip(new Tooltip(YoVariableTooltipTools.createYoVariableTooltipText(component)));
             Region componentControl = yoVariableControls.get(i);
             cellGraphic.getChildren().addAll(idLabel, componentControl);
             GridPane.setConstraints(idLabel, 0, i);
@@ -141,7 +141,10 @@ public class YoCompositeListCell extends ListCell<YoComposite>
 
       updateYoCompositeName(nameDisplay.getValue());
       nameDisplay.addListener((o, oldValue, newValue) -> updateYoCompositeName(newValue));
-      yoCompositeNameDisplay.setTooltip(new Tooltip(yoComposite.getName() + "\n" + yoComposite.getNamespace()));
+      if (yoComposite.getPattern().getComponentIdentifiers() == null)
+         yoCompositeNameDisplay.setTooltip(new Tooltip(YoVariableTooltipTools.createYoVariableTooltipText(yoComposite.getYoComponents().get(0))));
+      else
+         yoCompositeNameDisplay.setTooltip(new Tooltip(yoComposite.getName() + "\n" + yoComposite.getNamespace()));
    }
 
    private void updateYoCompositeName(YoNameDisplay nameDisplay)
