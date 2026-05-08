@@ -792,6 +792,20 @@ public interface SimulationSessionControls
    void changeBufferSize(int bufferSize);
 
    /**
+    * Requests to change the size of the buffer. (synchronous)
+    * <p>
+    * This is an alias for {@link #changeBufferSize(int)} with setter-style naming.
+    * </p>
+    *
+    * @param bufferSize the new buffer size.
+    * @see #changeBufferSize(int)
+    */
+   default void setBufferSize(int bufferSize)
+   {
+      changeBufferSize(bufferSize);
+   }
+
+   /**
     * Applies a function to the buffer from the in-point to the out-point. (synchronous)
     * <p>
     * This is a blocking request which will return only when the operation has completed.

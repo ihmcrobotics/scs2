@@ -1009,6 +1009,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public void setBufferSize(int bufferSize)
+   {
+      simulationSessionControls.setBufferSize(bufferSize);
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void applyBufferProcessor(YoBufferProcessor processor)
    {
       simulationSessionControls.applyBufferProcessor(processor);
