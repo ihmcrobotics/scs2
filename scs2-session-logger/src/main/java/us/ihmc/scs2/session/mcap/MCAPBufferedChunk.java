@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -193,10 +192,13 @@ public class MCAPBufferedChunk
    {
       private final int index;
       private final ChunkIndex chunkIndex;
-      private Records chunkRecords;
-      private TLongObjectHashMap<List<Message>> bundledMessages;
+      private volatile Records chunkRecords;
+      private volatile TLongObjectHashMap<List<Message>> bundledMessages;
 
-      private volatile CountDownLatch chunkLoadedLatch, messagesLoadedLatch;
+      private final Object chunkLoadedLock = new Object();
+      private final Object messagesLoadedLock = new Object();
+      private boolean chunkLoading = false;
+      private boolean messagesLoading = false;
 
       private long lastLoadingRequestTime = Long.MIN_VALUE;
 
@@ -228,21 +230,35 @@ public class MCAPBufferedChunk
             ChunkBundle oldestChunkBundle = null;
             for (ChunkBundle chunkBundle : loadedChunkBundles)
             {
+               if (chunkBundle.isLoading())
+                  continue;
+
                if (oldestChunkBundle == null || chunkBundle.lastLoadingRequestTime < oldestChunkBundle.lastLoadingRequestTime)
                   oldestChunkBundle = chunkBundle;
             }
+
             if (oldestChunkBundle == null)
-               throw new RuntimeException("Unexpected: no chunk bundle to unload");
+               return;
+
             oldestChunkBundle.unloadChunk();
          }
       }
 
       private void unloadChunk()
       {
-         chunkRecords = null;
-         bundledMessages = null;
-         chunkLoadedLatch = null;
-         messagesLoadedLatch = null;
+         synchronized (chunkLoadedLock)
+         {
+            synchronized (messagesLoadedLock)
+            {
+               bundledMessages = null;
+               messagesLoading = false;
+               messagesLoadedLock.notifyAll();
+            }
+
+            chunkRecords = null;
+            chunkLoading = false;
+            chunkLoadedLock.notifyAll();
+         }
          loadedChunkBundles.remove(this);
          lastLoadingRequestTime = Long.MIN_VALUE;
       }
@@ -264,25 +280,37 @@ public class MCAPBufferedChunk
          if (recordRequestTime)
             lastLoadingRequestTime = System.nanoTime();
 
-         if (chunkRecords != null)
+         boolean loadChunk = false;
+         boolean loadMessages = false;
+
+         synchronized (chunkLoadedLock)
          {
-            if (createMessages && bundledMessages == null)
+            if (chunkRecords != null)
             {
-               try
-               {
-                  loadMessagesNow();
-               }
-               catch (IOException e)
-               {
-                  throw new RuntimeException(e);
-               }
+               loadMessages = createMessages && bundledMessages == null;
+            }
+            else if (!chunkLoading)
+            {
+               chunkLoading = true;
+               loadChunk = true;
+            }
+         }
+
+         if (loadMessages)
+         {
+            try
+            {
+               loadMessagesNow();
+            }
+            catch (IOException e)
+            {
+               throw new RuntimeException(e);
             }
             return;
          }
 
-         if (chunkLoadedLatch == null)
+         if (loadChunk)
          {
-            chunkLoadedLatch = new CountDownLatch(1);
             freeUpChunkBundleSpots(1);
 
             Runnable loadingTask = () ->
@@ -300,8 +328,11 @@ public class MCAPBufferedChunk
                }
                finally
                {
-                  chunkLoadedLatch.countDown();
-                  chunkLoadedLatch = null;
+                  synchronized (chunkLoadedLock)
+                  {
+                     chunkLoading = false;
+                     chunkLoadedLock.notifyAll();
+                  }
                }
             };
 
@@ -311,14 +342,21 @@ public class MCAPBufferedChunk
                executorService.submit(loadingTask);
          }
 
-         try
+         if (wait)
          {
-            if (chunkLoadedLatch != null && wait)
-               chunkLoadedLatch.await();
-         }
-         catch (InterruptedException e)
-         {
-            throw new RuntimeException(e);
+            waitForChunkLoaded();
+
+            if (createMessages && chunkRecords != null && bundledMessages == null)
+            {
+               try
+               {
+                  loadMessagesNow();
+               }
+               catch (IOException e)
+               {
+                  throw new RuntimeException(e);
+               }
+            }
          }
       }
 
@@ -336,48 +374,97 @@ public class MCAPBufferedChunk
 
       public void loadMessagesNow() throws IOException
       {
-         if (bundledMessages != null)
-            return;
-
-         if (messagesLoadedLatch != null)
+         Records records = chunkRecords;
+         if (records == null)
          {
-            try
-            {
-               messagesLoadedLatch.await();
-            }
-            catch (InterruptedException e)
-            {
-               throw new RuntimeException(e);
-            }
-            return;
+            requestLoadChunkBundle(true, false, false);
+            records = chunkRecords;
+            if (records == null)
+               return;
          }
 
-         messagesLoadedLatch = new CountDownLatch(1);
+         synchronized (messagesLoadedLock)
+         {
+            while (messagesLoading)
+            {
+               try
+               {
+                  messagesLoadedLock.wait();
+               }
+               catch (InterruptedException e)
+               {
+                  throw new RuntimeException(e);
+               }
+            }
+
+            if (bundledMessages != null)
+               return;
+
+            messagesLoading = true;
+         }
+
+         TLongObjectHashMap<List<Message>> newBundledMessages = new TLongObjectHashMap<>();
 
          try
          {
-            if (bundledMessages == null)
-               bundledMessages = new TLongObjectHashMap<>();
-
-            for (Record record : chunkRecords)
+            for (Record record : records)
             {
                if (record.op() != Opcode.MESSAGE)
                   continue;
 
                Message message = record.body();
-               List<Message> messages = bundledMessages.get(round(message.logTime(), desiredLogDT));
+               long roundedLogTime = round(message.logTime(), desiredLogDT);
+               List<Message> messages = newBundledMessages.get(roundedLogTime);
                if (messages == null)
                {
                   messages = new ArrayList<>();
-                  bundledMessages.put(round(message.logTime(), desiredLogDT), messages);
+                  newBundledMessages.put(roundedLogTime, messages);
                }
                messages.add(message);
+            }
+
+            synchronized (messagesLoadedLock)
+            {
+               if (chunkRecords == records && bundledMessages == null)
+                  bundledMessages = newBundledMessages;
             }
          }
          finally
          {
-            messagesLoadedLatch.countDown();
-            messagesLoadedLatch = null;
+            synchronized (messagesLoadedLock)
+            {
+               messagesLoading = false;
+               messagesLoadedLock.notifyAll();
+            }
+         }
+      }
+
+      private void waitForChunkLoaded()
+      {
+         synchronized (chunkLoadedLock)
+         {
+            while (chunkLoading)
+            {
+               try
+               {
+                  chunkLoadedLock.wait();
+               }
+               catch (InterruptedException e)
+               {
+                  throw new RuntimeException(e);
+               }
+            }
+         }
+      }
+
+      private boolean isLoading()
+      {
+         synchronized (chunkLoadedLock)
+         {
+            synchronized (messagesLoadedLock)
+            {
+               return chunkLoading || messagesLoading;
+            }
          }
       }
 
@@ -412,7 +499,9 @@ public class MCAPBufferedChunk
                throw new RuntimeException(e);
             }
          }
-         return bundledMessages.get(round(logTime, desiredLogDT));
+
+         TLongObjectHashMap<List<Message>> messagesByLogTime = bundledMessages;
+         return messagesByLogTime == null ? null : messagesByLogTime.get(round(logTime, desiredLogDT));
       }
    }
 }
