@@ -15,9 +15,11 @@ import java.util.function.Supplier;
 
 public class ChartTable2D
 {
+   public static final ChartTable2DSize DEFAULT_MAX_SIZE = new ChartTable2DSize(9, 6);
+
    private boolean ignoreSizePropertyListener = false;
    private final Property<ChartTable2DSize> size = new SimpleObjectProperty<>(new ChartTable2DSize(0, 0));
-   private final Property<ChartTable2DSize> maxSize = new SimpleObjectProperty<>(new ChartTable2DSize(6, 6));
+   private final Property<ChartTable2DSize> maxSize = new SimpleObjectProperty<>(DEFAULT_MAX_SIZE);
    private final Supplier<YoChartPanelController> chartBuilder;
 
    private final List<ChartChangeListener> listeners = new ArrayList<>();
