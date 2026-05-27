@@ -4,11 +4,14 @@ import org.bytedeco.javacv.Frame;
 import us.ihmc.robotDataLogger.Camera;
 import us.ihmc.robotDataLogger.logger.MagewellDemuxer;
 import us.ihmc.robotDataLogger.logger.MagewellMuxer;
+import us.ihmc.robotDataLogger.logger.MagewellRemuxer;
 import us.ihmc.tools.CaptureTimeTools;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Provides support for scrubbing images from .mov files recorded with the Magewell logger.
@@ -19,6 +22,7 @@ public class MagewellScrubber
    private final String name;
 
    private final MagewellDemuxer magewellDemuxer;
+   private final File videoFile;
 
    private final Camera camera;
    private long currentVideoTimestamp;
@@ -35,7 +39,7 @@ public class MagewellScrubber
          System.err.println("Video data is using timestamps instead of frame numbers. Falling back to seeking based on timestamp.");
       }
 
-      File videoFile = new File(dataDirectory, camera.getVideoFileAsString());
+      videoFile = new File(dataDirectory, camera.getVideoFileAsString());
 
       if (!videoFile.exists())
       {
@@ -69,6 +73,62 @@ public class MagewellScrubber
    }
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
+   {
+      if (camera.getInterlaced())
+      {
+         // Interlaced recordings halve the stored video timestamps, which the lossless remux path below does not
+         // account for. The Magewell capture is progressive (720p60), so this is a safety net for an unexpected
+         // interlaced source: fall back to the original frame-accurate transcoding crop.
+         cropVideoByTranscoding(outputFile, timestampFile, startTimestamp, endTimestamp, progressConsumer);
+         return;
+      }
+
+      long startVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp);
+      long endVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp);
+      int frameRate = (int) magewellDemuxer.getFrameRate();
+
+      // Lossless stream copy: MagewellRemuxer copies the encoded H.264 packets instead of decoding and re-encoding,
+      // so the cropped video is bit-for-bit identical to the source (and stays lossless when re-cropped). The start
+      // is snapped back to the preceding keyframe, so the copied frames begin at or before the requested start.
+      List<MagewellRemuxer.CroppedFrame> croppedFrames = MagewellRemuxer.crop(videoFile,
+                                                                              outputFile,
+                                                                              startVideoTimestamp,
+                                                                              endVideoTimestamp,
+                                                                              progressConsumer == null ? null : progressConsumer::progress);
+
+      // Rebuild the timestamp sidecar file: pair each copied frame with its true robot timestamp and its new,
+      // rebased video timestamp. The copied frames are contiguous starting at the snapped keyframe, so the k-th
+      // output frame corresponds to source frame (keyframeIndex + k).
+      try (PrintWriter timestampWriter = new PrintWriter(timestampFile))
+      {
+         timestampWriter.println(1 + "\n" + frameRate);
+
+         if (!croppedFrames.isEmpty())
+         {
+            long[] robotTimestamps = timestampScrubber.getRobotTimestampsArray();
+            long[] videoTimestamps = timestampScrubber.getVideoTimestampsArray();
+            int keyframeIndex = nearestIndex(videoTimestamps, croppedFrames.get(0).sourcePtsMicros());
+
+            for (int k = 0; k < croppedFrames.size(); k++)
+            {
+               int sourceIndex = keyframeIndex + k;
+               if (sourceIndex >= robotTimestamps.length)
+                  break;
+
+               timestampWriter.print(robotTimestamps[sourceIndex]);
+               timestampWriter.print(" ");
+               timestampWriter.println(croppedFrames.get(k).outputPtsMicros());
+            }
+         }
+      }
+   }
+
+   /**
+    * Frame-accurate crop that decodes and re-encodes every frame. Retained as a fallback for interlaced sources,
+    * which the lossless stream-copy {@link #cropVideo} path does not handle.
+    */
+   private void cropVideoByTranscoding(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer)
+         throws IOException
    {
       long startVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp);
       long endVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp);
@@ -120,6 +180,24 @@ public class MagewellScrubber
 
       magewellMuxer.close();
       timestampWriter.close();
+   }
+
+   /** Returns the index in the ascending {@code sortedValues} whose value is closest to {@code target}. */
+   private static int nearestIndex(long[] sortedValues, long target)
+   {
+      int index = Arrays.binarySearch(sortedValues, target);
+      if (index >= 0)
+         return index;
+
+      int insertion = -index - 1;
+      if (insertion == 0)
+         return 0;
+      if (insertion >= sortedValues.length)
+         return sortedValues.length - 1;
+
+      long below = sortedValues[insertion - 1];
+      long above = sortedValues[insertion];
+      return (target - below <= above - target) ? insertion - 1 : insertion;
    }
 
    private static long getFrameAtTimestamp(long endCameraTimestamp, MagewellDemuxer magewellDemuxer)
