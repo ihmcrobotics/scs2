@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bytedeco.javacpp.DoublePointer;
 
+import us.ihmc.euclid.referenceFrame.FramePoint3D;
 import us.ihmc.euclid.referenceFrame.FrameVector3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -14,6 +15,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
+import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
@@ -211,7 +213,14 @@ public class MujocoRobot extends RobotExtension
       }
    }
 
-   private int pullCount = 0;
+   // Once-per-sim-second diagnostic: print pelvis z and any body carrying significant Fz so we
+   // can see whether vertical drift lives in MuJoCo's qpos (pelvis_z climbs) or upstream
+   // (pelvis_z stable but feet wrenches misbehaving). Threshold deliberately lower than
+   // WrenchBasedFootSwitch's low threshold so we catch transient touchdown forces too.
+   private double nextDiagnosticTime = 0.0;
+   private final FramePoint3D diagBodyOrigin = new FramePoint3D();
+   private static final double DIAGNOSTIC_PERIOD_SECONDS = 1.0;
+   private static final double DIAGNOSTIC_FZ_THRESHOLD_N = 5.0;
 
    /**
     * Read MuJoCo {@code qpos} / {@code qvel} / {@code qacc} back into the mecano joint state so
@@ -225,20 +234,6 @@ public class MujocoRobot extends RobotExtension
                                    DoublePointer qvel,
                                    DoublePointer qacc)
    {
-      if (pullCount < 5 || pullCount % 200 == 0)
-      {
-         JointAddress root = mujocoMultiBodyRobot.getRootJointAddress();
-         if (root != null)
-         {
-            System.out.printf("[MujocoRobot] t=%.3fs pull #%d qpos[root]=(%.4f, %.4f, %.4f)%n",
-                              currentTime,
-                              pullCount,
-                              qpos.get(root.qposadr),
-                              qpos.get(root.qposadr + 1),
-                              qpos.get(root.qposadr + 2));
-         }
-      }
-      pullCount++;
       for (JointBasics joint : getJointsToConsider())
       {
          JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
@@ -270,6 +265,15 @@ public class MujocoRobot extends RobotExtension
             int qv = address.qveladr;
             linearVelocity.set(qvel.get(qv), qvel.get(qv + 1), qvel.get(qv + 2));
             angularVelocity.set(qvel.get(qv + 3), qvel.get(qv + 4), qvel.get(qv + 5));
+            // MuJoCo freejoint qvel convention is split:
+            //   qvel[0:3] (linear) -- inertial/WORLD frame
+            //   qvel[3:6] (angular) -- BODY frame
+            // mecano's SixDoFJoint twist expects both parts in the body (after-joint) frame.
+            // So only the linear part needs rotation; angular passes through.
+            //   v_body = R^T * v_world
+            // Empirically verified: rotating the angular part as well regresses walking time
+            // (138 s -> ~20 s in non-perfect-sensor mode), confirming the per-component split.
+            quaternion.inverseTransform(linearVelocity);
             floating.getJointTwist().getLinearPart().set(linearVelocity);
             floating.getJointTwist().getAngularPart().set(angularVelocity);
 
@@ -311,5 +315,91 @@ public class MujocoRobot extends RobotExtension
       }
 
       updateFrames();
+
+      logDiagnosticsIfDue(currentTime, qpos, qvel, qacc);
+   }
+
+   private void logDiagnosticsIfDue(double currentTime, DoublePointer qpos, DoublePointer qvel, DoublePointer qacc)
+   {
+      if (currentTime < nextDiagnosticTime)
+         return;
+      nextDiagnosticTime = currentTime + DIAGNOSTIC_PERIOD_SECONDS;
+
+      JointAddress root = mujocoMultiBodyRobot.getRootJointAddress();
+      if (root == null)
+         return;
+
+      ReferenceFrame inertial = getRobot().getInertialFrame();
+      StringBuilder line = new StringBuilder();
+      line.append(String.format("[MujocoRobot] t=%6.2fs pelvisZ=%.4f", currentTime, qpos.get(root.qposadr + 2)));
+
+      // wrenchRegistry was populated by updateSensors at the START of this tick from the
+      // cfrc_ext that mj_step computed during the previous tick. One-tick stale (~0.1 ms at
+      // Alex's 1e-4 simulateDT) which is fine for once-per-second diagnostics.
+      for (Map.Entry<Integer, SimRigidBodyBasics> entry : mecanoBodyByMujocoId.entrySet())
+      {
+         SimRigidBodyBasics body = entry.getValue();
+         WrenchReadOnly w = wrenchRegistry.apply(body);
+         if (w == null)
+            continue;
+         double fz = w.getLinearPartZ();
+         if (Math.abs(fz) < DIAGNOSTIC_FZ_THRESHOLD_N)
+            continue;
+         diagBodyOrigin.setToZero(body.getBodyFixedFrame());
+         diagBodyOrigin.changeFrame(inertial);
+         line.append(String.format(" | %s z=%.4f Fz=%6.1f", body.getName(), diagBodyOrigin.getZ(), fz));
+      }
+      System.out.println(line);
+
+      // qvel / qacc / mecano-twist comparison for the floating root.
+      //   MuJoCo qvel for freejoint -- linear: WORLD frame, angular: BODY frame (split!)
+      //   mecano SixDoFJoint twist:                                BOTH in BODY frame
+      // pullStateFromMujoco rotates only the linear part of qvel, so twst.lin should DIVERGE
+      // from qvel.lin during pelvis rotation (the rotation working) while twst.ang stays
+      // identical to qvel.ang. qacc is shown raw and is in world frame for both parts.
+      int qv = root.qveladr;
+      for (JointBasics joint : getJointsToConsider())
+      {
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null || !address.isFloatingRoot || !(joint instanceof SixDoFJointBasics floating))
+            continue;
+         System.out.printf("[MujocoRobot.frames] qvel.lin=%s qvel.ang=%s%n",
+                           fmtVec3(qvel.get(qv), qvel.get(qv + 1), qvel.get(qv + 2)),
+                           fmtVec3(qvel.get(qv + 3), qvel.get(qv + 4), qvel.get(qv + 5)));
+         System.out.printf("                     twst.lin=%s twst.ang=%s%n",
+                           fmtVec3(floating.getJointTwist().getLinearPartX(),
+                                   floating.getJointTwist().getLinearPartY(),
+                                   floating.getJointTwist().getLinearPartZ()),
+                           fmtVec3(floating.getJointTwist().getAngularPartX(),
+                                   floating.getJointTwist().getAngularPartY(),
+                                   floating.getJointTwist().getAngularPartZ()));
+         System.out.printf("                     qacc.lin=%s qacc.ang=%s%n",
+                           fmtVec3(qacc.get(qv), qacc.get(qv + 1), qacc.get(qv + 2)),
+                           fmtVec3(qacc.get(qv + 3), qacc.get(qv + 4), qacc.get(qv + 5)));
+         System.out.printf("                     macc.lin=%s macc.ang=%s%n",
+                           fmtVec3(floating.getJointAcceleration().getLinearPartX(),
+                                   floating.getJointAcceleration().getLinearPartY(),
+                                   floating.getJointAcceleration().getLinearPartZ()),
+                           fmtVec3(floating.getJointAcceleration().getAngularPartX(),
+                                   floating.getJointAcceleration().getAngularPartY(),
+                                   floating.getJointAcceleration().getAngularPartZ()));
+         // Pelvis yaw (about world Z). If this is large and qvel.lin disagrees with twst.lin,
+         // we've localised the frame bug.
+         double yawRad = 0.0;
+         try
+         {
+            yawRad = floating.getJointPose().getOrientation().getYaw();
+         }
+         catch (Exception ignored)
+         {
+         }
+         System.out.printf("                     pelvisYaw=%.3frad%n", yawRad);
+         break;
+      }
+   }
+
+   private static String fmtVec3(double x, double y, double z)
+   {
+      return String.format("(%+7.3f,%+7.3f,%+7.3f)", x, y, z);
    }
 }

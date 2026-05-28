@@ -123,6 +123,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       }
 
       dynamicsWorld.step(globalSimulationParameters.getSubSteps());
+      dynamicsWorld.logContactsIfDue(currentTime);
 
       for (MujocoRobot robot : robotList)
          robot.pullStateFromMujoco(currentTime,

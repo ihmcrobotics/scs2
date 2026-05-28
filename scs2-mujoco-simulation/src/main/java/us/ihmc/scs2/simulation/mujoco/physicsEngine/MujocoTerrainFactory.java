@@ -40,7 +40,7 @@ public final class MujocoTerrainFactory
       GeometryDefinition geometry = shape.getGeometryDefinition();
       RigidBodyTransformReadOnly pose = shape.getOriginPose();
 
-      sb.append("    <geom name=\"").append(name).append("\" ");
+      sb.append("    <geom class=\"terrain\" name=\"").append(name).append("\" ");
       sb.append(MujocoTools.toPosQuatAttributes(pose));
       sb.append(' ');
 
