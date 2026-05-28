@@ -79,7 +79,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.initializeState();
-         robot.updateSensors();
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
          robot.getControllerManager().initializeControllers();
       }
       hasBeenInitialized = true;
@@ -99,7 +99,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.updateFrames();
-         robot.updateSensors();
+         // updateSensors reads MuJoCo's cfrc_ext from the previous step. Controllers therefore
+         // see one-tick-stale contact wrenches; same discrete-time convention as Bullet /
+         // ContactPointBased. On the very first tick cfrc_ext is zero (mj_makeData default).
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
@@ -122,7 +125,11 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       dynamicsWorld.step(globalSimulationParameters.getSubSteps());
 
       for (MujocoRobot robot : robotList)
-         robot.pullStateFromMujoco(currentTime, dt, dynamicsWorld.getData().qpos(), dynamicsWorld.getData().qvel());
+         robot.pullStateFromMujoco(currentTime,
+                                   dt,
+                                   dynamicsWorld.getData().qpos(),
+                                   dynamicsWorld.getData().qvel(),
+                                   dynamicsWorld.getData().qacc());
    }
 
    private void compileIfNeeded()
@@ -154,6 +161,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          MujocoMultiBodyRobot mujocoMultiBodyRobot = MujocoMultiBodyRobotFactory.registerJoints(robot.getRobotDefinition(),
                                                                                                  dynamicsWorld.getModel());
          dynamicsWorld.addMujocoRobot(mujocoMultiBodyRobot);
+         // Seed non-root qpos/qvel from RobotDefinition. HumanoidRobotInitialSetup writes the
+         // half-squat pose onto each OneDoFJointDefinition's initial state; without this push the
+         // robot spawns at q=0 (legs locked straight) and falls before the first controller tick.
+         MujocoMultiBodyRobotFactory.seedInitialJointState(robot.getRobotDefinition(), mujocoMultiBodyRobot, dynamicsWorld.getData());
 
          MujocoRobot mujocoRobot = new MujocoRobot(robot, physicsEngineRegistry, mujocoMultiBodyRobot);
          // Robot.getRegistry() was already attached to rootRegistry in addRobot. Just attach the
@@ -180,7 +191,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.updateFrames();
-         robot.updateSensors();
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
          robot.getControllerManager().pauseControllers();
       }
    }

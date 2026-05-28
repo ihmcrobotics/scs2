@@ -19,6 +19,7 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 public class MujocoMultiBodyRobot
 {
    private final String robotName;
+   private final String namePrefix;
    private final mjModel model;
    private final Map<String, JointAddress> jointAddressByName = new LinkedHashMap<>();
    private final Map<String, Integer> bodyIdByName = new LinkedHashMap<>();
@@ -27,23 +28,26 @@ public class MujocoMultiBodyRobot
    public MujocoMultiBodyRobot(String robotName, mjModel model)
    {
       this.robotName = robotName;
+      this.namePrefix = robotName + "_";
       this.model = model;
    }
 
    /**
     * Resolve the MuJoCo body id for {@code scs2BodyName}. Required for routing external wrenches
-    * to {@code mjData.xfrc_applied[bodyId * 6 + i]}.
+    * to {@code mjData.xfrc_applied[bodyId * 6 + i]}. Bodies are prefixed with {@code robotName_}
+    * in the MJCF (see {@link MujocoMultiBodyRobotFactory}) so two robots with the same SCS2 body
+    * names don't collide on {@code mj_name2id}.
     */
    public void registerBody(String scs2BodyName)
    {
       int bodyId;
-      try (BytePointer name = new BytePointer(scs2BodyName))
+      try (BytePointer name = new BytePointer(namePrefix + scs2BodyName))
       {
          bodyId = Mujoco.mj_name2id(model, Mujoco.mjOBJ_BODY, name);
       }
       if (bodyId < 0)
       {
-         System.err.println("[MujocoMultiBodyRobot] body not found in MJCF: '" + scs2BodyName + "'");
+         System.err.println("[MujocoMultiBodyRobot] body not found in MJCF: '" + namePrefix + scs2BodyName + "'");
          return;
       }
       bodyIdByName.put(scs2BodyName, bodyId);
@@ -62,12 +66,12 @@ public class MujocoMultiBodyRobot
    public void registerJoint(String scs2JointName, boolean isFloatingRoot)
    {
       int jointId;
-      try (BytePointer name = new BytePointer(scs2JointName))
+      try (BytePointer name = new BytePointer(namePrefix + scs2JointName))
       {
          jointId = Mujoco.mj_name2id(model, Mujoco.mjOBJ_JOINT, name);
       }
       if (jointId < 0)
-         throw new RuntimeException("MuJoCo joint not found: '" + scs2JointName + "' in robot '" + robotName + "'");
+         throw new RuntimeException("MuJoCo joint not found: '" + namePrefix + scs2JointName + "' in robot '" + robotName + "'");
 
       int qposadr = model.jnt_qposadr().get(jointId);
       int qveladr = model.jnt_dofadr().get(jointId);

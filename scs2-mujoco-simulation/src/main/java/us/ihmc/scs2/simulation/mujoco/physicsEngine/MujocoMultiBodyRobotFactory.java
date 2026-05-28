@@ -1,7 +1,9 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -20,9 +22,12 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
+import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.robot.Robot;
 
 /**
@@ -85,7 +90,9 @@ public final class MujocoMultiBodyRobotFactory
       }
       for (Robot robot : robots)
       {
-         appendRobotBodies(mjcf, robot.getRobotDefinition(), 2);
+         RobotDefinition robotDefinition = robot.getRobotDefinition();
+         Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
+         appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, 2);
       }
       mjcf.append("  </worldbody>\n");
       mjcf.append("</mujoco>\n");
@@ -94,27 +101,29 @@ public final class MujocoMultiBodyRobotFactory
 
    /**
     * Register every joint in {@code robotDefinition} on the supplied {@link MujocoMultiBodyRobot}.
-    * The world must already be compiled (model != null) before calling.
+    * The world must already be compiled (model != null) before calling. Joints listed in
+    * {@code robotDefinition.getNameOfJointsToIgnore()} are skipped: they don't appear in the MJCF
+    * (see {@link #appendBody}) and the controller never commands them, so there's nothing to map.
     */
    public static MujocoMultiBodyRobot registerJoints(RobotDefinition robotDefinition, mjModel model)
    {
       MujocoMultiBodyRobot mujocoRobot = new MujocoMultiBodyRobot(robotDefinition.getName(), model);
+      Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
 
       for (JointDefinition jointDefinition : robotDefinition.getAllJoints())
       {
+         if (ignoredJointNames.contains(jointDefinition.getName()))
+            continue;
          boolean isFloatingRoot = jointDefinition instanceof SixDoFJointDefinition
                                   && jointDefinition.getParentJoint() == null;
          try
          {
             mujocoRobot.registerJoint(jointDefinition.getName(), isFloatingRoot);
-            System.out.println("[MujocoMultiBodyRobotFactory] registered joint '" + jointDefinition.getName()
-                               + "' (isFloatingRoot=" + isFloatingRoot + ")");
          }
          catch (RuntimeException e)
          {
             System.err.println("[MujocoMultiBodyRobotFactory] SKIPPED joint '" + jointDefinition.getName() + "': " + e.getMessage());
          }
-         // Also register the successor RigidBody so external wrench points can find their target.
          RigidBodyDefinition successor = jointDefinition.getSuccessor();
          if (successor != null)
             mujocoRobot.registerBody(successor.getName());
@@ -122,20 +131,55 @@ public final class MujocoMultiBodyRobotFactory
       return mujocoRobot;
    }
 
-   private static void appendRobotBodies(StringBuilder sb, RobotDefinition robotDefinition, int indentLevel)
+   /**
+    * Push the {@code q} component of each non-root joint's {@code OneDoFJointStateReadOnly} initial
+    * state into {@code mjData.qpos}. Without this step Alex (and any humanoid spawned via
+    * {@code HumanoidRobotInitialSetup.initializeRobotDefinition}) starts at all-zero joint angles
+    * (arms straight down, knees locked) and immediately collapses, even though the
+    * RobotDefinition carries a perfectly good half-squat pose. The root SixDoF freejoint is
+    * already seeded by the body's {@code pos}/{@code quat} attributes emitted in MJCF, so we leave
+    * it alone here.
+    */
+   public static void seedInitialJointState(RobotDefinition robotDefinition, MujocoMultiBodyRobot mujocoRobot, mjData data)
    {
-      List<JointDefinition> rootJoints = robotDefinition.getRootJointDefinitions();
-      for (JointDefinition rootJoint : rootJoints)
+      for (JointDefinition jointDefinition : robotDefinition.getAllJoints())
       {
-         appendBody(sb, rootJoint, rootJoint.getSuccessor(), indentLevel);
+         if (!(jointDefinition instanceof OneDoFJointDefinition))
+            continue;
+         JointAddress address = mujocoRobot.getJointAddress(jointDefinition.getName());
+         if (address == null || address.isFloatingRoot)
+            continue;
+         if (!(jointDefinition.getInitialJointState() instanceof OneDoFJointStateReadOnly initial))
+            continue;
+         double q = initial.getConfiguration();
+         if (!Double.isNaN(q))
+            data.qpos().put(address.qposadr, q);
+         double qd = initial.getVelocity();
+         if (!Double.isNaN(qd))
+            data.qvel().put(address.qveladr, qd);
       }
    }
 
-   private static void appendBody(StringBuilder sb, JointDefinition joint, RigidBodyDefinition body, int indent)
+   private static void appendRobotBodies(StringBuilder sb, RobotDefinition robotDefinition, Set<String> ignoredJointNames, int indentLevel)
+   {
+      String namePrefix = robotDefinition.getName() + "_";
+      List<JointDefinition> rootJoints = robotDefinition.getRootJointDefinitions();
+      for (JointDefinition rootJoint : rootJoints)
+      {
+         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, indentLevel);
+      }
+   }
+
+   private static void appendBody(StringBuilder sb,
+                                  JointDefinition joint,
+                                  RigidBodyDefinition body,
+                                  String namePrefix,
+                                  Set<String> ignoredJointNames,
+                                  int indent)
    {
       String pad = "  ".repeat(indent);
 
-      sb.append(pad).append("<body name=\"").append(body.getName()).append('"');
+      sb.append(pad).append("<body name=\"").append(namePrefix).append(body.getName()).append('"');
       // For the root joint, place the body at its initial pose (MuJoCo uses the body's pos/quat
       // attributes as the starting qpos for the freejoint). Non-root joints use transformToParent
       // since the parent body's frame is the reference.
@@ -144,55 +188,54 @@ public final class MujocoMultiBodyRobotFactory
          sb.append(' ').append(MujocoTools.toPosQuatAttributes(spawnTransform));
       sb.append(">\n");
 
-      appendJoint(sb, joint, indent + 1);
+      appendJoint(sb, joint, namePrefix, indent + 1);
       appendInertial(sb, body, indent + 1);
 
       int geomIndex = 0;
       for (CollisionShapeDefinition shape : body.getCollisionShapeDefinitions())
       {
-         appendGeom(sb, body.getName() + "_geom_" + geomIndex, shape, indent + 1);
+         appendGeom(sb, namePrefix + body.getName() + "_geom_" + geomIndex, shape, indent + 1);
          geomIndex++;
       }
 
-      // Recurse into child joints (this body is the predecessor for each child joint).
       for (JointDefinition childJoint : body.getChildrenJoints())
       {
          if (childJoint.getSuccessor() == null)
             continue;
-         appendBody(sb, childJoint, childJoint.getSuccessor(), indent + 1);
+         if (ignoredJointNames.contains(childJoint.getName()))
+            continue;
+         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, indent + 1);
       }
 
       sb.append(pad).append("</body>\n");
    }
 
-   private static void appendJoint(StringBuilder sb, JointDefinition joint, int indent)
+   private static void appendJoint(StringBuilder sb, JointDefinition joint, String namePrefix, int indent)
    {
       String pad = "  ".repeat(indent);
       if (joint instanceof SixDoFJointDefinition)
       {
-         sb.append(pad).append("<freejoint name=\"").append(joint.getName()).append("\"/>\n");
+         sb.append(pad).append("<freejoint name=\"").append(namePrefix).append(joint.getName()).append("\"/>\n");
       }
       else if (joint instanceof RevoluteJointDefinition rev)
       {
-         appendOneDofJoint(sb, pad, "hinge", rev);
+         appendOneDofJoint(sb, pad, "hinge", namePrefix, rev);
       }
       else if (joint instanceof PrismaticJointDefinition pris)
       {
-         appendOneDofJoint(sb, pad, "slide", pris);
+         appendOneDofJoint(sb, pad, "slide", namePrefix, pris);
       }
       else
       {
-         // Fixed, planar, spherical, cross-four-bar not supported in v1 -- the body just inherits
-         // the parent body's frame statically.
          sb.append(pad).append("<!-- TODO unsupported joint type: ").append(joint.getClass().getSimpleName())
            .append(" (name=").append(joint.getName()).append(") -->\n");
       }
    }
 
-   private static void appendOneDofJoint(StringBuilder sb, String pad, String mjcfType, OneDoFJointDefinition jointDef)
+   private static void appendOneDofJoint(StringBuilder sb, String pad, String mjcfType, String namePrefix, OneDoFJointDefinition jointDef)
    {
       Tuple3DReadOnly axis = jointDef.getAxis();
-      sb.append(pad).append("<joint name=\"").append(jointDef.getName())
+      sb.append(pad).append("<joint name=\"").append(namePrefix).append(jointDef.getName())
         .append("\" type=\"").append(mjcfType)
         .append("\" axis=\"").append(axis.getX()).append(' ').append(axis.getY()).append(' ').append(axis.getZ())
         .append("\"/>\n");
