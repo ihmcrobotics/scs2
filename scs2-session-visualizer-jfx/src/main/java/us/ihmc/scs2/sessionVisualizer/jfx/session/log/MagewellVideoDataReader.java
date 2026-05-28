@@ -33,9 +33,21 @@ public class MagewellVideoDataReader implements VideoDataReader
       return magewellScrubber.getMagewellDemuxer().getImageWidth();
    }
 
+   /** Cap on consecutive non-video packets to skip per seek (audio/timecode interleaved with video). */
+   private static final int MAX_NON_VIDEO_FRAMES_TO_SKIP = 256;
+
    public void readVideoFrame(long queryRobotTimestamp)
    {
       Frame nextFrame = magewellScrubber.readVideoFrame(queryRobotTimestamp);
+
+      // The underlying FFmpegFrameGrabber.grabFrame() returns the next packet from any stream,
+      // so a multi-stream MP4 (video + audio + timecode) may yield non-image frames here.
+      int skipped = 0;
+      while (nextFrame != null && !hasImageData(nextFrame) && skipped < MAX_NON_VIDEO_FRAMES_TO_SKIP)
+      {
+         nextFrame = magewellScrubber.getMagewellDemuxer().getNextFrame();
+         skipped++;
+      }
 
       // This is a copy that can be shown in the video view to debug timestamp issues
       {
@@ -49,6 +61,11 @@ public class MagewellVideoDataReader implements VideoDataReader
       frameData.frame = convertFrameToWritableImage(nextFrame);
    }
 
+   private static boolean hasImageData(Frame frame)
+   {
+      return frame.image != null && frame.imageWidth > 0 && frame.imageHeight > 0;
+   }
+
    /**
     * This class converts a {@link Frame} to a {@link WritableImage} in order to be displayed correctly in JavaFX.
     *
@@ -59,7 +76,7 @@ public class MagewellVideoDataReader implements VideoDataReader
    {
       Image currentImage;
 
-      if (frameToConvert == null)
+      if (frameToConvert == null || !hasImageData(frameToConvert))
       {
          return null;
       }
