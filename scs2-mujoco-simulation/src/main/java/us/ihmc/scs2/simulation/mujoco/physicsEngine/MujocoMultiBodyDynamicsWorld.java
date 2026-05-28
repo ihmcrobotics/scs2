@@ -105,12 +105,17 @@ public class MujocoMultiBodyDynamicsWorld
    public void step()
    {
       Mujoco.mj_step(model, data);
+      // mj_step only computes cfrc_ext / cfrc_int when MJCF sensors require them. We read
+      // cfrc_ext directly per-tick in MujocoRobot.updateSensors so the F/T sensor plumbing has
+      // contact wrenches to integrate; force the post-constraint pass here unconditionally.
+      Mujoco.mj_rnePostConstraint(model, data);
    }
 
    public void step(int substeps)
    {
       for (int i = 0; i < substeps; i++)
          Mujoco.mj_step(model, data);
+      Mujoco.mj_rnePostConstraint(model, data);
    }
 
    public double getTimestep()

@@ -41,14 +41,15 @@ public class MujocoNativeSmokeTest
    }
 
    @Test
-   public void canLoadAndStepATrivialMjcf()
+   public void canLoadAndStepATrivialMjcf() throws java.io.IOException
    {
+      // mj_loadXML takes a *file path*, not XML content. Write the MJCF to a temp file first.
+      java.nio.file.Path mjcfPath = java.nio.file.Files.createTempFile("mujoco-smoke-", ".xml");
+      java.nio.file.Files.writeString(mjcfPath, TRIVIAL_MJCF);
+      mjcfPath.toFile().deleteOnExit();
+
       BytePointer errorBuffer = new BytePointer(1000);
-      mjModel model;
-      try (BytePointer xml = new BytePointer(TRIVIAL_MJCF))
-      {
-         model = Mujoco.mj_loadXML(xml, null, errorBuffer, 1000);
-      }
+      mjModel model = Mujoco.mj_loadXML(mjcfPath.toAbsolutePath().toString(), null, errorBuffer, 1000);
       assertNotNull(model, "mj_loadXML returned null. Error: " + errorBuffer.getString());
       assertTrue(!model.isNull(), "mj_loadXML returned null model. Error: " + errorBuffer.getString());
 
