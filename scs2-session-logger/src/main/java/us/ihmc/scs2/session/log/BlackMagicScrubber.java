@@ -2,7 +2,7 @@ package us.ihmc.scs2.session.log;
 
 import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
 import us.ihmc.codecs.generated.YUVPicture;
-import us.ihmc.robotDataLogger.Camera;
+import logger_msgs.Camera;
 
 import java.io.File;
 import java.io.IOException;

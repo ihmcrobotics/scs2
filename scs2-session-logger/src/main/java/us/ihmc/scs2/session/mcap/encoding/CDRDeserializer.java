@@ -1,8 +1,7 @@
 package us.ihmc.scs2.session.mcap.encoding;
 
-import us.ihmc.idl.CDR;
+import us.ihmc.fastddsjava.pointers.fastddsjava;
 import us.ihmc.log.LogTools;
-import us.ihmc.pubsub.common.SerializedPayload;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -125,7 +124,7 @@ public class CDRDeserializer
       // @formatter:off
       /* int dummy = */ buffer.get();
       short encapsulation = buffer.get();
-      if (encapsulation == SerializedPayload.CDR_BE || encapsulation == SerializedPayload.PL_CDR_BE)
+      if (encapsulation == fastddsjava.CDR_BE || encapsulation == fastddsjava.PL_CDR_BE)
       {
          buffer.order(ByteOrder.BIG_ENDIAN);
       }

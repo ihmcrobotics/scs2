@@ -5,9 +5,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.Model;
-import us.ihmc.robotDataLogger.Variables;
+import logger_msgs.LogProperties;
+import logger_msgs.Model;
+import logger_msgs.Variables;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
 import us.ihmc.scs2.definition.robot.RobotDefinition;

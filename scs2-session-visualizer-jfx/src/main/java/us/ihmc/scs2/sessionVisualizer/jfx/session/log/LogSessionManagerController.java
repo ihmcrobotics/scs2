@@ -36,7 +36,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import us.ihmc.commons.lists.PairList;
 import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
-import us.ihmc.robotDataLogger.LogProperties;
+import logger_msgs.LogProperties;
 import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
