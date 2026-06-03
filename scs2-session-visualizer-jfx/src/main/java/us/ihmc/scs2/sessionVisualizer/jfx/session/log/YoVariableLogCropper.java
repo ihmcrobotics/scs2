@@ -17,7 +17,7 @@ import us.hebi.matlab.mat.format.Mat5;
 import us.hebi.matlab.mat.types.MatFile;
 import us.hebi.matlab.mat.types.Matrix;
 import us.hebi.matlab.mat.types.Struct;
-import us.ihmc.robotDataLogger.LogProperties;
+import logger_msgs.LogProperties;
 import us.ihmc.robotDataLogger.logger.YoVariableLogReader;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.yoVariables.registry.YoNamespace;
