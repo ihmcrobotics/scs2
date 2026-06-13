@@ -9,6 +9,7 @@ public class MujocoSimulationParameters
    private double timestep = 0.002;
    private int solverIterations = 100;
    private int subSteps = 1;
+   private double contactSolrefTimeconst = 0.005;
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
@@ -45,10 +46,21 @@ public class MujocoSimulationParameters
       this.subSteps = subSteps;
    }
 
+   public double getContactSolrefTimeconst()
+   {
+      return contactSolrefTimeconst;
+   }
+
+   public void setContactSolrefTimeconst(double contactSolrefTimeconst)
+   {
+      this.contactSolrefTimeconst = contactSolrefTimeconst;
+   }
+
    public void set(MujocoSimulationParameters other)
    {
       this.timestep = other.timestep;
       this.solverIterations = other.solverIterations;
       this.subSteps = other.subSteps;
+      this.contactSolrefTimeconst = other.contactSolrefTimeconst;
    }
 }

@@ -127,10 +127,11 @@ public class MujocoPhysicsEngine implements PhysicsEngine
 
       for (MujocoRobot robot : robotList)
          robot.pullStateFromMujoco(currentTime,
-                                   dt,
+                                   gravity,
                                    dynamicsWorld.getData().qpos(),
                                    dynamicsWorld.getData().qvel(),
-                                   dynamicsWorld.getData().qacc());
+                                   dynamicsWorld.getData().qacc(),
+                                   dynamicsWorld.getData().cacc());
    }
 
    private void compileIfNeeded()
@@ -147,10 +148,12 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          throw new RuntimeException("Could not create MuJoCo working directory", e);
       }
 
+      MujocoSimulationParameters compileParams = new MujocoSimulationParameters();
+      compileParams.set(globalSimulationParameters.toPlainParameters());
       String mjcf = MujocoMultiBodyRobotFactory.buildWorldMjcf(pendingRobots,
                                                                pendingTerrain,
                                                                workingDirectory,
-                                                               globalSimulationParameters.getTimestep());
+                                                               compileParams);
       System.out.println("[MujocoPhysicsEngine] working dir: " + workingDirectory);
       System.out.println("[MujocoPhysicsEngine] composite MJCF:\n" + mjcf);
       dynamicsWorld.compile(mjcf, new File(workingDirectory, "world.xml"));

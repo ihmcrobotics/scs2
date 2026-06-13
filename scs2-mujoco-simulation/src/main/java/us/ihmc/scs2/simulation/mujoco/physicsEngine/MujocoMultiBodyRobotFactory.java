@@ -28,6 +28,7 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
 
 /**
@@ -65,15 +66,16 @@ public final class MujocoMultiBodyRobotFactory
    public static String buildWorldMjcf(List<Robot> robots,
                                        List<TerrainObjectDefinition> terrainObjects,
                                        File workingDirectory,
-                                       double timestep)
+                                       MujocoSimulationParameters parameters)
    {
       if (!workingDirectory.exists() && !workingDirectory.mkdirs())
          throw new RuntimeException("Could not create MuJoCo working directory: " + workingDirectory);
 
       StringBuilder mjcf = new StringBuilder();
       mjcf.append("<mujoco>\n");
-      mjcf.append("  <option timestep=\"").append(timestep)
-          .append("\" gravity=\"0 0 -9.81\" solver=\"Newton\" iterations=\"100\"/>\n");
+      mjcf.append("  <option timestep=\"").append(parameters.getTimestep())
+          .append("\" gravity=\"0 0 -9.81\" solver=\"Newton\" iterations=\"")
+          .append(parameters.getSolverIterations()).append("\"/>\n");
       // MuJoCo 3.x removed the `coordinate` attribute (local is the only mode). `angle="radian"`
       // is also the default in 3.x but kept here for clarity.
       mjcf.append("  <compiler angle=\"radian\"/>\n");
@@ -122,7 +124,8 @@ public final class MujocoMultiBodyRobotFactory
       //   terrain-terr.: (2&1)|(2&1) = 0  -> excluded (irrelevant; tiles don't overlap)
       // Selective self-collision (e.g. hand-on-torso for manipulation) is out of scope for v1.
       mjcf.append("  <default>\n");
-      mjcf.append("    <geom friction=\"1.0 0.05 0.01\" solref=\"0.005 1\" condim=\"4\"/>\n");
+      mjcf.append("    <geom friction=\"1.0 0.05 0.01\" solref=\"")
+          .append(parameters.getContactSolrefTimeconst()).append(" 1\" condim=\"4\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
       mjcf.append("      <geom contype=\"1\" conaffinity=\"2\"/>\n");
       mjcf.append("    </default>\n");
