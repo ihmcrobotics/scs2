@@ -145,10 +145,11 @@ public class MujocoRobot extends RobotExtension
     * wrench into MuJoCo's per-body {@code xfrc_applied} array, in world frame at the body's
     * CoM. Limitations in v1:
     * <ul>
-    *   <li>Moment-arm transfer assumes the body's body-frame origin coincides with its CoM
-    *       (true when {@code RigidBodyDefinition.getCenterOfMassOffset()} is zero, which it is
-    *       for the SCS2 examples used so far). Bodies with non-zero CoM offset will see a
-    *       moment error equal to {@code offset x F}.</li>
+    *   <li>{@code xfrc_applied} layout is {@code [torque | force]} (rotation:translation),
+    *       matching MuJoCo's {@code cfrc_ext} and {@code cacc} conventions.</li>
+    *   <li>Moment-arm transfer assumes the wrench application point coincides with the body CoM.
+    *       Bodies with non-zero CoM offset will see a moment error equal to
+    *       {@code (r_forcePoint - r_CoM) x F}.</li>
     *   <li>{@code xfrc_applied} entries for managed bodies are zeroed at the start of each push
     *       so persistent wrenches don't accumulate across steps.</li>
     * </ul>
@@ -178,13 +179,14 @@ public class MujocoRobot extends RobotExtension
          {
             tmpExternalWrench.setIncludingFrame(wp.getWrench());
             tmpExternalWrench.changeFrame(worldFrame);
-            // MuJoCo xfrc layout: (Fx, Fy, Fz, Tx, Ty, Tz) in world frame at body CoM.
-            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + tmpExternalWrench.getLinearPartX());
-            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + tmpExternalWrench.getLinearPartY());
-            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + tmpExternalWrench.getLinearPartZ());
-            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + tmpExternalWrench.getAngularPartX());
-            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + tmpExternalWrench.getAngularPartY());
-            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + tmpExternalWrench.getAngularPartZ());
+            // MuJoCo xfrc_applied layout: [torque | force] (rotation:translation), world frame at body CoM.
+            // This matches cfrc_ext and cacc — angular/rotation components first, linear/force second.
+            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + tmpExternalWrench.getAngularPartX());
+            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + tmpExternalWrench.getAngularPartY());
+            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + tmpExternalWrench.getAngularPartZ());
+            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + tmpExternalWrench.getLinearPartX());
+            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + tmpExternalWrench.getLinearPartY());
+            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + tmpExternalWrench.getLinearPartZ());
          }
       }
    }
