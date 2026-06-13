@@ -13,12 +13,14 @@ public class YoMujocoSimulationParameters
    private final YoDouble timestep;
    private final YoInteger solverIterations;
    private final YoInteger subSteps;
+   private final YoDouble contactSolrefTimeconst;
 
    public YoMujocoSimulationParameters(String prefix, YoRegistry registry)
    {
       timestep = new YoDouble(prefix + "Timestep", registry);
       solverIterations = new YoInteger(prefix + "SolverIterations", registry);
       subSteps = new YoInteger(prefix + "SubSteps", registry);
+      contactSolrefTimeconst = new YoDouble(prefix + "ContactSolrefTimeconst", registry);
 
       set(MujocoSimulationParameters.defaultMujocoSimulationParameters());
    }
@@ -28,6 +30,7 @@ public class YoMujocoSimulationParameters
       timestep.set(parameters.getTimestep());
       solverIterations.set(parameters.getSolverIterations());
       subSteps.set(parameters.getSubSteps());
+      contactSolrefTimeconst.set(parameters.getContactSolrefTimeconst());
    }
 
    public double getTimestep()
@@ -43,5 +46,20 @@ public class YoMujocoSimulationParameters
    public int getSubSteps()
    {
       return subSteps.getIntegerValue();
+   }
+
+   public double getContactSolrefTimeconst()
+   {
+      return contactSolrefTimeconst.getDoubleValue();
+   }
+
+   public MujocoSimulationParameters toPlainParameters()
+   {
+      MujocoSimulationParameters plain = new MujocoSimulationParameters();
+      plain.setTimestep(getTimestep());
+      plain.setSolverIterations(getSolverIterations());
+      plain.setSubSteps(getSubSteps());
+      plain.setContactSolrefTimeconst(getContactSolrefTimeconst());
+      return plain;
    }
 }

@@ -9,6 +9,7 @@ import us.ihmc.euclid.referenceFrame.FramePoint3D;
 import us.ihmc.euclid.referenceFrame.FrameVector3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.mecano.algorithms.SpatialAccelerationCalculator;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
@@ -58,13 +59,8 @@ public class MujocoRobot extends RobotExtension
    private final Vector3D forceWorld = new Vector3D();
    private final Vector3D torqueShift = new Vector3D();
 
-   // Finite-diff scratch for floating-root spatial acceleration.
-   private final Quaternion prevFloatingOrientation = new Quaternion();
-   private final Vector3D prevFloatingTwistLinear = new Vector3D();
-   private final Vector3D prevFloatingTwistAngular = new Vector3D();
-   private final Vector3D scratchPrevAngularInCurrentFrame = new Vector3D();
-   private final Vector3D scratchPrevLinearInCurrentFrame = new Vector3D();
-   private boolean havePreviousFloatingState = false;
+   // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
+   private final Vector3D caccCoMShift = new Vector3D();
 
    public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
    {
@@ -223,16 +219,25 @@ public class MujocoRobot extends RobotExtension
    private static final double DIAGNOSTIC_FZ_THRESHOLD_N = 5.0;
 
    /**
-    * Read MuJoCo {@code qpos} / {@code qvel} / {@code qacc} back into the mecano joint state so
-    * SCS2 frames, twists, and accelerations are consistent with the MuJoCo simulation. Joint
-    * accelerations are pulled so the {@link SpatialAccelerationCalculator} downstream of
-    * {@link #updateSensors} returns meaningful IMU linear-acceleration readings.
+    * Read MuJoCo {@code qpos} / {@code qvel} / {@code qacc} / {@code cacc} back into the mecano
+    * joint state so SCS2 frames, twists, and accelerations are consistent with the MuJoCo
+    * simulation.
+    *
+    * <p>For 1-DoF joints the scalar {@code qacc} is used directly (no frame ambiguity).
+    *
+    * <p>For the floating root, {@code cacc} (com-based spatial acceleration, already computed by
+    * {@code mj_rnePostConstraint} each step) is used instead of finite-differencing the twist.
+    * {@code cacc[bodyId*6..+5]} is [αx αy αz ax ay az] at the body CoM in world frame, in
+    * Featherstone spatial form. We rotate to body frame, shift from CoM to joint origin, and set
+    * the joint acceleration directly — no Coriolis correction needed because {@code cacc} is
+    * already spatial.
     */
    public void pullStateFromMujoco(double currentTime,
-                                   double dt,
+                                   Vector3DReadOnly gravity,
                                    DoublePointer qpos,
                                    DoublePointer qvel,
-                                   DoublePointer qacc)
+                                   DoublePointer qacc,
+                                   DoublePointer cacc)
    {
       for (JointBasics joint : getJointsToConsider())
       {
@@ -241,20 +246,6 @@ public class MujocoRobot extends RobotExtension
             continue;
          if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
          {
-            // Snapshot previous orientation and joint twist so we can finite-diff the spatial
-            // acceleration in the joint frame. Direct copy of mjData.qacc is the wrong recipe:
-            // MuJoCo's free-joint qacc is a conventional kinematic acceleration in world frame,
-            // but mecano expects a spatial acceleration in the body frame (with the v x w
-            // Coriolis term baked in). BulletRobotLinkRoot.computeJointAcceleration uses the
-            // same finite-diff + cross-product recipe we replicate below.
-            boolean canFiniteDiff = havePreviousFloatingState && dt > 0.0;
-            if (canFiniteDiff)
-            {
-               prevFloatingOrientation.set(floating.getJointPose().getOrientation());
-               prevFloatingTwistLinear.set(floating.getJointTwist().getLinearPart());
-               prevFloatingTwistAngular.set(floating.getJointTwist().getAngularPart());
-            }
-
             int qp = address.qposadr;
             position.set(qpos.get(qp), qpos.get(qp + 1), qpos.get(qp + 2));
             // MuJoCo quaternion order is (w, x, y, z).
@@ -277,32 +268,41 @@ public class MujocoRobot extends RobotExtension
             floating.getJointTwist().getLinearPart().set(linearVelocity);
             floating.getJointTwist().getAngularPart().set(angularVelocity);
 
-            if (canFiniteDiff)
+            // Read floating-root acceleration from cacc (com-based spatial acceleration).
+            // This is exact and lag-free compared to finite-differencing the joint twist.
+            int bodyId = mujocoMultiBodyRobot.getBodyId(floating.getSuccessor().getName());
+            if (bodyId >= 0)
             {
-               // Rotate previous twist components from previous joint frame into current joint
-               // frame, then subtract from current to get the body-frame finite-diff. Standard
-               // moving-frame derivative recipe.
-               prevFloatingOrientation.transform(prevFloatingTwistAngular, scratchPrevAngularInCurrentFrame);
-               floating.getJointPose().getOrientation().inverseTransform(scratchPrevAngularInCurrentFrame);
-               angularAcceleration.sub(floating.getJointTwist().getAngularPart(), scratchPrevAngularInCurrentFrame);
-               angularAcceleration.scale(1.0 / dt);
+               int base = bodyId * 6;
+               // cacc layout: [αx αy αz ax ay az] at CoM in world frame.
+               // MuJoCo's cacc uses proper-acceleration convention (root reference = -g), so
+               // a body at rest reads +9.81 m/s² upward. SpatialAccelerationCalculator already
+               // applies the -g reference via setGravitionalAcceleration, which would double-count
+               // gravity. Add gravity here to convert back to the Featherstone mathematical
+               // convention (= 0 at rest) that the calculator expects.
+               angularAcceleration.set(cacc.get(base), cacc.get(base + 1), cacc.get(base + 2));
+               linearAcceleration.set(cacc.get(base + 3), cacc.get(base + 4), cacc.get(base + 5));
+               linearAcceleration.add(gravity); // world frame: +(-9.81 z) → 9.81 - 9.81 = 0 at rest
 
-               prevFloatingOrientation.transform(prevFloatingTwistLinear, scratchPrevLinearInCurrentFrame);
-               floating.getJointPose().getOrientation().inverseTransform(scratchPrevLinearInCurrentFrame);
-               linearAcceleration.sub(floating.getJointTwist().getLinearPart(), scratchPrevLinearInCurrentFrame);
-               linearAcceleration.scale(1.0 / dt);
+               // Rotate both parts from world to body frame.
+               quaternion.inverseTransform(angularAcceleration);
+               quaternion.inverseTransform(linearAcceleration);
+
+               // Shift spatial linear acceleration from CoM to joint origin (body frame).
+               // For spatial accelerations: a_origin = a_CoM + α × r_{CoM→origin}
+               //                                      = a_CoM - α × comOffset
+               // (no centripetal ω×(ω×r) term — that only appears in classical acceleration)
+               caccCoMShift.cross(angularAcceleration, floating.getSuccessor().getInertia().getCenterOfMassOffset());
+               linearAcceleration.sub(caccCoMShift);
 
                floating.getJointAcceleration().getAngularPart().set(angularAcceleration);
                floating.getJointAcceleration().getLinearPart().set(linearAcceleration);
-               // Convert conventional acceleration to spatial: a^spatial_linear = a_linear + v x w.
-               floating.getJointAcceleration().addCrossToLinearPart(floating.getJointTwist().getLinearPart(),
-                                                                     floating.getJointTwist().getAngularPart());
+               // cacc is already Featherstone spatial — addCrossToLinearPart is NOT needed.
             }
             else
             {
                floating.getJointAcceleration().setToZero();
             }
-            havePreviousFloatingState = true;
          }
          else if (joint instanceof OneDoFJointBasics oneDoF)
          {
