@@ -74,8 +74,10 @@ public final class MujocoMultiBodyRobotFactory
       StringBuilder mjcf = new StringBuilder();
       mjcf.append("<mujoco>\n");
       mjcf.append("  <option timestep=\"").append(parameters.getTimestep())
-          .append("\" gravity=\"0 0 -9.81\" solver=\"Newton\" iterations=\"")
-          .append(parameters.getSolverIterations()).append("\"/>\n");
+          .append("\" gravity=\"0 0 -9.81\" integrator=\"implicitfast\" solver=\"Newton\" iterations=\"")
+          .append(parameters.getSolverIterations())
+          .append("\" noslip_iterations=\"").append(parameters.getNoslipIterations())
+          .append("\"/>\n");
       // MuJoCo 3.x removed the `coordinate` attribute (local is the only mode). `angle="radian"`
       // is also the default in 3.x but kept here for clarity.
       mjcf.append("  <compiler angle=\"radian\"/>\n");
@@ -125,7 +127,9 @@ public final class MujocoMultiBodyRobotFactory
       // Selective self-collision (e.g. hand-on-torso for manipulation) is out of scope for v1.
       mjcf.append("  <default>\n");
       mjcf.append("    <geom friction=\"1.0 0.05 0.01\" solref=\"")
-          .append(parameters.getContactSolrefTimeconst()).append(" 1\" condim=\"4\"/>\n");
+          .append(parameters.getContactSolrefTimeconst()).append(" 1\" solimp=\"")
+          .append(parameters.getContactSolimpDmin()).append(" ")
+          .append(parameters.getContactSolimpDmax()).append(" 0.0007 0.5 2\" condim=\"4\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
       mjcf.append("      <geom contype=\"1\" conaffinity=\"2\"/>\n");
       mjcf.append("    </default>\n");

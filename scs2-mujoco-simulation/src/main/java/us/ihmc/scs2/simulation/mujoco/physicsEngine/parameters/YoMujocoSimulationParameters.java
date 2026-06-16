@@ -14,6 +14,9 @@ public class YoMujocoSimulationParameters
    private final YoInteger solverIterations;
    private final YoInteger subSteps;
    private final YoDouble contactSolrefTimeconst;
+   private final YoDouble contactSolimpDmin;
+   private final YoDouble contactSolimpDmax;
+   private final YoInteger noslipIterations;
 
    public YoMujocoSimulationParameters(String prefix, YoRegistry registry)
    {
@@ -21,6 +24,9 @@ public class YoMujocoSimulationParameters
       solverIterations = new YoInteger(prefix + "SolverIterations", registry);
       subSteps = new YoInteger(prefix + "SubSteps", registry);
       contactSolrefTimeconst = new YoDouble(prefix + "ContactSolrefTimeconst", registry);
+      contactSolimpDmin = new YoDouble(prefix + "ContactSolimpDmin", registry);
+      contactSolimpDmax = new YoDouble(prefix + "ContactSolimpDmax", registry);
+      noslipIterations = new YoInteger(prefix + "NoslipIterations", registry);
 
       set(MujocoSimulationParameters.defaultMujocoSimulationParameters());
    }
@@ -31,6 +37,9 @@ public class YoMujocoSimulationParameters
       solverIterations.set(parameters.getSolverIterations());
       subSteps.set(parameters.getSubSteps());
       contactSolrefTimeconst.set(parameters.getContactSolrefTimeconst());
+      contactSolimpDmin.set(parameters.getContactSolimpDmin());
+      contactSolimpDmax.set(parameters.getContactSolimpDmax());
+      noslipIterations.set(parameters.getNoslipIterations());
    }
 
    public double getTimestep()
@@ -53,6 +62,21 @@ public class YoMujocoSimulationParameters
       return contactSolrefTimeconst.getDoubleValue();
    }
 
+   public double getContactSolimpDmin()
+   {
+      return contactSolimpDmin.getDoubleValue();
+   }
+
+   public double getContactSolimpDmax()
+   {
+      return contactSolimpDmax.getDoubleValue();
+   }
+
+   public int getNoslipIterations()
+   {
+      return noslipIterations.getIntegerValue();
+   }
+
    public MujocoSimulationParameters toPlainParameters()
    {
       MujocoSimulationParameters plain = new MujocoSimulationParameters();
@@ -60,6 +84,9 @@ public class YoMujocoSimulationParameters
       plain.setSolverIterations(getSolverIterations());
       plain.setSubSteps(getSubSteps());
       plain.setContactSolrefTimeconst(getContactSolrefTimeconst());
+      plain.setContactSolimpDmin(getContactSolimpDmin());
+      plain.setContactSolimpDmax(getContactSolimpDmax());
+      plain.setNoslipIterations(getNoslipIterations());
       return plain;
    }
 }

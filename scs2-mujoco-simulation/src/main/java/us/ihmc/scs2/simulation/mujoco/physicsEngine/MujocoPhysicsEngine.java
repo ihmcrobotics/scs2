@@ -98,10 +98,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
 
       for (MujocoRobot robot : robotList)
       {
-         robot.updateFrames();
          // updateSensors reads MuJoCo's cfrc_ext from the previous step. Controllers therefore
          // see one-tick-stale contact wrenches; same discrete-time convention as Bullet /
          // ContactPointBased. On the very first tick cfrc_ext is zero (mj_makeData default).
+         // Frames are already current from pullStateFromMujoco() at the end of the previous step.
          robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
