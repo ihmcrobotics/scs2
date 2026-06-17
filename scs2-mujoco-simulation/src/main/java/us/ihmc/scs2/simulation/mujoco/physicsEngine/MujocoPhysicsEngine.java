@@ -4,14 +4,18 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.tools.JointStateType;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+import us.ihmc.scs2.session.YoTimer;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoSimulationParameters;
@@ -21,6 +25,7 @@ import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
  * SCS2 {@link PhysicsEngine} backed by MuJoCo via a custom JavaCPP preset.
@@ -52,6 +57,18 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    private final MujocoMultiBodyDynamicsWorld dynamicsWorld = new MujocoMultiBodyDynamicsWorld();
    private final YoMujocoSimulationParameters globalSimulationParameters;
    private final YoBoolean hasBeenCompiled;
+
+   private static final int REALTIME_RATE_SAMPLES = 100;
+   private double simulateDt = 0.0;
+   private long simulateCallStartTime = 0;
+   private long realtimeRateWindowStartTime = 0;
+   private long realtimeRateSampleCounter = 0;
+
+   private final YoDouble mujocoRealtimeRate = new YoDouble("MujocoRealtimeRate", physicsEngineRegistry);
+   private final YoDouble mujocoSimulateTimeMs = new YoDouble("MujocoSimulateTime[ms]", physicsEngineRegistry);
+   private final YoLong mujocoTick = new YoLong("MujocoTick", physicsEngineRegistry);
+   private final YoTimer stepTimer = new YoTimer("mujocoStep", TimeUnit.MILLISECONDS, physicsEngineRegistry);
+   private final YoInteger nContacts = new YoInteger("mujocoNContacts", physicsEngineRegistry);
 
    private File workingDirectory;
    private boolean hasBeenInitialized = false;
@@ -94,6 +111,24 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          return;
       }
 
+      simulateDt = dt;
+      long now = System.nanoTime();
+      if (simulateCallStartTime != 0)
+         mujocoSimulateTimeMs.set((now - simulateCallStartTime) * 1.0e-6);
+      simulateCallStartTime = now;
+      if (realtimeRateSampleCounter == 0)
+      {
+         if (realtimeRateWindowStartTime != 0)
+         {
+            double elapsed = (now - realtimeRateWindowStartTime) * 1.0e-9;
+            mujocoRealtimeRate.set(REALTIME_RATE_SAMPLES * simulateDt / elapsed);
+         }
+         realtimeRateWindowStartTime = now;
+         realtimeRateSampleCounter = REALTIME_RATE_SAMPLES;
+      }
+      realtimeRateSampleCounter--;
+      mujocoTick.increment();
+
       dynamicsWorld.setGravity(gravity);
 
       for (MujocoRobot robot : robotList)
@@ -122,7 +157,11 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          robot.pushExternalWrenchesToMujoco(dynamicsWorld.getData().xfrc_applied());
       }
 
+      stepTimer.start();
       dynamicsWorld.step(globalSimulationParameters.getSubSteps());
+      stepTimer.stop();
+
+      nContacts.set(dynamicsWorld.getData().ncon());
       dynamicsWorld.logContactsIfDue(currentTime);
 
       for (MujocoRobot robot : robotList)
@@ -154,11 +193,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
                                                                pendingTerrain,
                                                                workingDirectory,
                                                                compileParams);
-      System.out.println("[MujocoPhysicsEngine] working dir: " + workingDirectory);
-      System.out.println("[MujocoPhysicsEngine] composite MJCF:\n" + mjcf);
       dynamicsWorld.compile(mjcf, new File(workingDirectory, "world.xml"));
-      System.out.println("[MujocoPhysicsEngine] mj_loadXML OK. nbody=" + dynamicsWorld.getModel().nbody()
-                         + " njnt=" + dynamicsWorld.getModel().njnt());
 
       for (Robot robot : pendingRobots)
       {
