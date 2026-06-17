@@ -1,0 +1,407 @@
+package us.ihmc.scs2.simulation.mujoco.physicsEngine;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.bytedeco.javacpp.DoublePointer;
+
+import us.ihmc.euclid.referenceFrame.FramePoint3D;
+import us.ihmc.euclid.referenceFrame.FrameVector3D;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.tuple3D.Vector3D;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.euclid.tuple4D.Quaternion;
+import us.ihmc.mecano.algorithms.SpatialAccelerationCalculator;
+import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
+import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
+import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
+import us.ihmc.mecano.spatial.Wrench;
+import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
+import us.ihmc.scs2.simulation.robot.Robot;
+import us.ihmc.scs2.simulation.robot.RobotExtension;
+import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
+import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
+import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
+import us.ihmc.yoVariables.registry.YoRegistry;
+
+/**
+ * SCS2-side wrapper that owns the mecano {@link Robot} and the parallel {@link MujocoMultiBodyRobot}.
+ * Implements the per-step state I/O: read controller torques into MuJoCo, then read MuJoCo state
+ * back into mecano so SCS2 frames, sensors, and YoVariables update correctly.
+ */
+public class MujocoRobot extends RobotExtension
+{
+   private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
+   private final YoRegistry yoRegistry;
+
+   private final Quaternion quaternion = new Quaternion();
+   private final Vector3D linearVelocity = new Vector3D();
+   private final Vector3D angularVelocity = new Vector3D();
+   private final Vector3D linearAcceleration = new Vector3D();
+   private final Vector3D angularAcceleration = new Vector3D();
+   private final Vector3D position = new Vector3D();
+
+   // Sensor plumbing: provide per-body external wrench (from MuJoCo cfrc_ext) and per-body
+   // spatial acceleration (from mecano's analytic calculator, driven by joint qdd pulled out of
+   // MuJoCo). RobotPhysicsOutput hands these to SimWrenchSensor.update / SimIMUSensor.update.
+   private final SpatialAccelerationCalculator accelerationCalculator;
+   private final RigidBodyWrenchRegistry wrenchRegistry = new RigidBodyWrenchRegistry();
+   private final RobotPhysicsOutput physicsOutput;
+   private final Map<Integer, SimRigidBodyBasics> mecanoBodyByMujocoId = new HashMap<>();
+
+   private final Wrench scratchWrench = new Wrench();
+   private final Wrench tmpExternalWrench = new Wrench();
+
+   // F/T moment-arm correction: cfrc_ext is at the body CoM, we register it at the body origin.
+   private final FrameVector3D comOffsetWorld = new FrameVector3D();
+   private final Vector3D forceWorld = new Vector3D();
+   private final Vector3D torqueShift = new Vector3D();
+
+   // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
+   private final Vector3D caccCoMShift = new Vector3D();
+
+   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
+   {
+      super(robot, physicsRegistry);
+      this.mujocoMultiBodyRobot = mujocoMultiBodyRobot;
+      this.yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
+      robot.getRegistry().addChild(yoRegistry);
+
+      // doVelocityTerms=true: include Coriolis and centripetal acceleration so IMU linear-acc
+      // readings include the v x w term. Matches BulletRobotPhysics.
+      accelerationCalculator = new SpatialAccelerationCalculator(robot.getRootBody(), robot.getInertialFrame(), true);
+      accelerationCalculator.setGravitionalAcceleration(-9.81);
+      physicsOutput = new RobotPhysicsOutput(accelerationCalculator, null, wrenchRegistry, null);
+
+      // Cache the mecano body for each MuJoCo body id once so per-tick cfrc_ext readout is an
+      // O(1) lookup rather than a name resolve through the SCS2 joint tree.
+      for (SimJointBasics joint : robot.getAllJoints())
+      {
+         SimRigidBodyBasics body = joint.getSuccessor();
+         if (body == null)
+            continue;
+         int bodyId = mujocoMultiBodyRobot.getBodyId(body.getName());
+         if (bodyId >= 0)
+            mecanoBodyByMujocoId.put(bodyId, body);
+      }
+   }
+
+   public MujocoMultiBodyRobot getMujocoMultiBodyRobot()
+   {
+      return mujocoMultiBodyRobot;
+   }
+
+   /**
+    * Pack per-body external wrenches from {@code mjData.cfrc_ext} into the registry, invalidate
+    * the spatial-acceleration cache, then walk every considered joint and update its sensor
+    * auxiliary data ({@code SimIMUSensor}, {@code SimWrenchSensor}, etc.).
+    *
+    * <p>{@code cfrc_ext[bodyId * 6 .. +5]} is laid out as {@code [torque (rot)|force (trans)]}
+    * (per {@code mjdata.h}'s "rotation:translation format" comment), expressed at the body's CoM
+    * in world frame. The registry stores the wrench at the body-fixed-frame origin, so we apply
+    * the standard wrench shift {@code T_origin = T_CoM + (CoM - origin) x F} -- a known ~10 N*m
+    * bias on Alex feet without this correction (CoM offset ~5 cm, contact force ~250 N).
+    */
+   public void updateSensors(DoublePointer cfrcExt)
+   {
+      ReferenceFrame worldFrame = getRobot().getInertialFrame();
+      wrenchRegistry.reset();
+      for (Map.Entry<Integer, SimRigidBodyBasics> entry : mecanoBodyByMujocoId.entrySet())
+      {
+         int base = entry.getKey() * 6;
+         SimRigidBodyBasics body = entry.getValue();
+
+         double torqueAtCoMX = cfrcExt.get(base);
+         double torqueAtCoMY = cfrcExt.get(base + 1);
+         double torqueAtCoMZ = cfrcExt.get(base + 2);
+         double forceX = cfrcExt.get(base + 3);
+         double forceY = cfrcExt.get(base + 4);
+         double forceZ = cfrcExt.get(base + 5);
+
+         // CoM offset is in body-fixed frame; rotating into world gives (CoM - origin) in world.
+         comOffsetWorld.setIncludingFrame(body.getInertia().getCenterOfMassOffset());
+         comOffsetWorld.changeFrame(worldFrame);
+         forceWorld.set(forceX, forceY, forceZ);
+         torqueShift.cross(comOffsetWorld, forceWorld);
+
+         scratchWrench.setToZero(body.getBodyFixedFrame(), worldFrame);
+         scratchWrench.getAngularPart().set(torqueAtCoMX + torqueShift.getX(),
+                                            torqueAtCoMY + torqueShift.getY(),
+                                            torqueAtCoMZ + torqueShift.getZ());
+         scratchWrench.getLinearPart().set(forceX, forceY, forceZ);
+         wrenchRegistry.addWrench(body, scratchWrench);
+      }
+
+      accelerationCalculator.reset();
+
+      for (SimJointBasics joint : getJointsToConsider())
+         joint.getAuxiliaryData().update(physicsOutput);
+   }
+
+   /**
+    * Copy every {@link us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint}'s current
+    * wrench into MuJoCo's per-body {@code xfrc_applied} array, in world frame at the body's
+    * CoM. Limitations in v1:
+    * <ul>
+    *   <li>{@code xfrc_applied} layout is {@code [torque | force]} (rotation:translation),
+    *       matching MuJoCo's {@code cfrc_ext} and {@code cacc} conventions.</li>
+    *   <li>Moment-arm transfer assumes the wrench application point coincides with the body CoM.
+    *       Bodies with non-zero CoM offset will see a moment error equal to
+    *       {@code (r_forcePoint - r_CoM) x F}.</li>
+    *   <li>{@code xfrc_applied} entries for managed bodies are zeroed at the start of each push
+    *       so persistent wrenches don't accumulate across steps.</li>
+    * </ul>
+    */
+   public void pushExternalWrenchesToMujoco(DoublePointer xfrcApplied)
+   {
+      // The SCS2 session's inertial frame is "world" within the session's frame tree. Using the
+      // global ReferenceFrame.getWorldFrame() here throws "frames do not have same roots"
+      // because SCS2 builds a separate root for each session.
+      us.ihmc.euclid.referenceFrame.ReferenceFrame worldFrame = getRobot().getInertialFrame();
+      for (us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics joint : getRobot().getAllJoints())
+      {
+         if (joint.getSuccessor() == null)
+            continue;
+         var wrenchPoints = joint.getAuxiliaryData().getExternalWrenchPoints();
+         if (wrenchPoints.isEmpty())
+            continue;
+         int bodyId = mujocoMultiBodyRobot.getBodyId(joint.getSuccessor().getName());
+         if (bodyId < 0)
+            continue;
+
+         int base = bodyId * 6;
+         for (int i = 0; i < 6; i++)
+            xfrcApplied.put(base + i, 0.0);
+
+         for (var wp : wrenchPoints)
+         {
+            tmpExternalWrench.setIncludingFrame(wp.getWrench());
+            tmpExternalWrench.changeFrame(worldFrame);
+            // MuJoCo xfrc_applied layout: [torque | force] (rotation:translation), world frame at body CoM.
+            // This matches cfrc_ext and cacc — angular/rotation components first, linear/force second.
+            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + tmpExternalWrench.getAngularPartX());
+            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + tmpExternalWrench.getAngularPartY());
+            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + tmpExternalWrench.getAngularPartZ());
+            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + tmpExternalWrench.getLinearPartX());
+            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + tmpExternalWrench.getLinearPartY());
+            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + tmpExternalWrench.getLinearPartZ());
+         }
+      }
+   }
+
+   /**
+    * Write joint efforts (torques/forces from the controller) into MuJoCo's {@code qfrc_applied}
+    * for each managed joint. Floating root contributes no controller torque.
+    */
+   public void pushStateToMujoco(DoublePointer qfrcApplied, DoublePointer qpos, DoublePointer qvel)
+   {
+      for (JointBasics joint : getJointsToConsider())
+      {
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null)
+            continue;
+         if (address.isFloatingRoot)
+            continue;
+         if (joint instanceof OneDoFJointBasics oneDoF)
+         {
+            qfrcApplied.put(address.qveladr, oneDoF.getTau());
+         }
+      }
+   }
+
+   // Once-per-sim-second diagnostic: print pelvis z and any body carrying significant Fz so we
+   // can see whether vertical drift lives in MuJoCo's qpos (pelvis_z climbs) or upstream
+   // (pelvis_z stable but feet wrenches misbehaving). Threshold deliberately lower than
+   // WrenchBasedFootSwitch's low threshold so we catch transient touchdown forces too.
+   private double nextDiagnosticTime = 0.0;
+   private final FramePoint3D diagBodyOrigin = new FramePoint3D();
+   private static final double DIAGNOSTIC_PERIOD_SECONDS = 1.0;
+   private static final double DIAGNOSTIC_FZ_THRESHOLD_N = 5.0;
+
+   /**
+    * Read MuJoCo {@code qpos} / {@code qvel} / {@code qacc} / {@code cacc} back into the mecano
+    * joint state so SCS2 frames, twists, and accelerations are consistent with the MuJoCo
+    * simulation.
+    *
+    * <p>For 1-DoF joints the scalar {@code qacc} is used directly (no frame ambiguity).
+    *
+    * <p>For the floating root, {@code cacc} (com-based spatial acceleration, already computed by
+    * {@code mj_rnePostConstraint} each step) is used instead of finite-differencing the twist.
+    * {@code cacc[bodyId*6..+5]} is [αx αy αz ax ay az] at the body CoM in world frame, in
+    * Featherstone spatial form. We rotate to body frame, shift from CoM to joint origin, and set
+    * the joint acceleration directly — no Coriolis correction needed because {@code cacc} is
+    * already spatial.
+    */
+   public void pullStateFromMujoco(double currentTime,
+                                   Vector3DReadOnly gravity,
+                                   DoublePointer qpos,
+                                   DoublePointer qvel,
+                                   DoublePointer qacc,
+                                   DoublePointer cacc)
+   {
+      for (JointBasics joint : getJointsToConsider())
+      {
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null)
+            continue;
+         if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
+         {
+            int qp = address.qposadr;
+            position.set(qpos.get(qp), qpos.get(qp + 1), qpos.get(qp + 2));
+            // MuJoCo quaternion order is (w, x, y, z).
+            quaternion.set(qpos.get(qp + 4), qpos.get(qp + 5), qpos.get(qp + 6), qpos.get(qp + 3));
+            floating.getJointPose().getPosition().set(position);
+            floating.getJointPose().getOrientation().set(quaternion);
+
+            int qv = address.qveladr;
+            linearVelocity.set(qvel.get(qv), qvel.get(qv + 1), qvel.get(qv + 2));
+            angularVelocity.set(qvel.get(qv + 3), qvel.get(qv + 4), qvel.get(qv + 5));
+            // MuJoCo freejoint qvel convention is split:
+            //   qvel[0:3] (linear) -- inertial/WORLD frame
+            //   qvel[3:6] (angular) -- BODY frame
+            // mecano's SixDoFJoint twist expects both parts in the body (after-joint) frame.
+            // So only the linear part needs rotation; angular passes through.
+            //   v_body = R^T * v_world
+            // Empirically verified: rotating the angular part as well regresses walking time
+            // (138 s -> ~20 s in non-perfect-sensor mode), confirming the per-component split.
+            quaternion.inverseTransform(linearVelocity);
+            floating.getJointTwist().getLinearPart().set(linearVelocity);
+            floating.getJointTwist().getAngularPart().set(angularVelocity);
+
+            // Read floating-root acceleration from cacc (com-based spatial acceleration).
+            // This is exact and lag-free compared to finite-differencing the joint twist.
+            int bodyId = mujocoMultiBodyRobot.getBodyId(floating.getSuccessor().getName());
+            if (bodyId >= 0)
+            {
+               int base = bodyId * 6;
+               // cacc layout: [αx αy αz ax ay az] at CoM in world frame.
+               // MuJoCo's cacc uses proper-acceleration convention (root reference = -g), so
+               // a body at rest reads +9.81 m/s² upward. SpatialAccelerationCalculator already
+               // applies the -g reference via setGravitionalAcceleration, which would double-count
+               // gravity. Add gravity here to convert back to the Featherstone mathematical
+               // convention (= 0 at rest) that the calculator expects.
+               angularAcceleration.set(cacc.get(base), cacc.get(base + 1), cacc.get(base + 2));
+               linearAcceleration.set(cacc.get(base + 3), cacc.get(base + 4), cacc.get(base + 5));
+               linearAcceleration.add(gravity); // world frame: +(-9.81 z) → 9.81 - 9.81 = 0 at rest
+
+               // Rotate both parts from world to body frame.
+               quaternion.inverseTransform(angularAcceleration);
+               quaternion.inverseTransform(linearAcceleration);
+
+               // Shift spatial linear acceleration from CoM to joint origin (body frame).
+               // For spatial accelerations: a_origin = a_CoM + α × r_{CoM→origin}
+               //                                      = a_CoM - α × comOffset
+               // (no centripetal ω×(ω×r) term — that only appears in classical acceleration)
+               caccCoMShift.cross(angularAcceleration, floating.getSuccessor().getInertia().getCenterOfMassOffset());
+               linearAcceleration.sub(caccCoMShift);
+
+               floating.getJointAcceleration().getAngularPart().set(angularAcceleration);
+               floating.getJointAcceleration().getLinearPart().set(linearAcceleration);
+               // cacc is already Featherstone spatial — addCrossToLinearPart is NOT needed.
+            }
+            else
+            {
+               floating.getJointAcceleration().setToZero();
+            }
+         }
+         else if (joint instanceof OneDoFJointBasics oneDoF)
+         {
+            oneDoF.setQ(qpos.get(address.qposadr));
+            oneDoF.setQd(qvel.get(address.qveladr));
+            // For 1-DoF joints qdd is a scalar second derivative -- no frame ambiguity, so we
+            // trust MuJoCo's qacc directly. (The freejoint above can't do this.)
+            oneDoF.setQdd(qacc.get(address.qveladr));
+         }
+      }
+
+      updateFrames();
+
+      logDiagnosticsIfDue(currentTime, qpos, qvel, qacc);
+   }
+
+   private void logDiagnosticsIfDue(double currentTime, DoublePointer qpos, DoublePointer qvel, DoublePointer qacc)
+   {
+      if (currentTime < nextDiagnosticTime)
+         return;
+      nextDiagnosticTime = currentTime + DIAGNOSTIC_PERIOD_SECONDS;
+
+      JointAddress root = mujocoMultiBodyRobot.getRootJointAddress();
+      if (root == null)
+         return;
+
+      ReferenceFrame inertial = getRobot().getInertialFrame();
+      StringBuilder line = new StringBuilder();
+      line.append(String.format("[MujocoRobot] t=%6.2fs pelvisZ=%.4f", currentTime, qpos.get(root.qposadr + 2)));
+
+      // wrenchRegistry was populated by updateSensors at the START of this tick from the
+      // cfrc_ext that mj_step computed during the previous tick. One-tick stale (~0.1 ms at
+      // Alex's 1e-4 simulateDT) which is fine for once-per-second diagnostics.
+      for (Map.Entry<Integer, SimRigidBodyBasics> entry : mecanoBodyByMujocoId.entrySet())
+      {
+         SimRigidBodyBasics body = entry.getValue();
+         WrenchReadOnly w = wrenchRegistry.apply(body);
+         if (w == null)
+            continue;
+         double fz = w.getLinearPartZ();
+         if (Math.abs(fz) < DIAGNOSTIC_FZ_THRESHOLD_N)
+            continue;
+         diagBodyOrigin.setToZero(body.getBodyFixedFrame());
+         diagBodyOrigin.changeFrame(inertial);
+         line.append(String.format(" | %s z=%.4f Fz=%6.1f", body.getName(), diagBodyOrigin.getZ(), fz));
+      }
+      System.out.println(line);
+
+      // qvel / qacc / mecano-twist comparison for the floating root.
+      //   MuJoCo qvel for freejoint -- linear: WORLD frame, angular: BODY frame (split!)
+      //   mecano SixDoFJoint twist:                                BOTH in BODY frame
+      // pullStateFromMujoco rotates only the linear part of qvel, so twst.lin should DIVERGE
+      // from qvel.lin during pelvis rotation (the rotation working) while twst.ang stays
+      // identical to qvel.ang. qacc is shown raw and is in world frame for both parts.
+      int qv = root.qveladr;
+      for (JointBasics joint : getJointsToConsider())
+      {
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null || !address.isFloatingRoot || !(joint instanceof SixDoFJointBasics floating))
+            continue;
+         System.out.printf("[MujocoRobot.frames] qvel.lin=%s qvel.ang=%s%n",
+                           fmtVec3(qvel.get(qv), qvel.get(qv + 1), qvel.get(qv + 2)),
+                           fmtVec3(qvel.get(qv + 3), qvel.get(qv + 4), qvel.get(qv + 5)));
+         System.out.printf("                     twst.lin=%s twst.ang=%s%n",
+                           fmtVec3(floating.getJointTwist().getLinearPartX(),
+                                   floating.getJointTwist().getLinearPartY(),
+                                   floating.getJointTwist().getLinearPartZ()),
+                           fmtVec3(floating.getJointTwist().getAngularPartX(),
+                                   floating.getJointTwist().getAngularPartY(),
+                                   floating.getJointTwist().getAngularPartZ()));
+         System.out.printf("                     qacc.lin=%s qacc.ang=%s%n",
+                           fmtVec3(qacc.get(qv), qacc.get(qv + 1), qacc.get(qv + 2)),
+                           fmtVec3(qacc.get(qv + 3), qacc.get(qv + 4), qacc.get(qv + 5)));
+         System.out.printf("                     macc.lin=%s macc.ang=%s%n",
+                           fmtVec3(floating.getJointAcceleration().getLinearPartX(),
+                                   floating.getJointAcceleration().getLinearPartY(),
+                                   floating.getJointAcceleration().getLinearPartZ()),
+                           fmtVec3(floating.getJointAcceleration().getAngularPartX(),
+                                   floating.getJointAcceleration().getAngularPartY(),
+                                   floating.getJointAcceleration().getAngularPartZ()));
+         // Pelvis yaw (about world Z). If this is large and qvel.lin disagrees with twst.lin,
+         // we've localised the frame bug.
+         double yawRad = 0.0;
+         try
+         {
+            yawRad = floating.getJointPose().getOrientation().getYaw();
+         }
+         catch (Exception ignored)
+         {
+         }
+         System.out.printf("                     pelvisYaw=%.3frad%n", yawRad);
+         break;
+      }
+   }
+
+   private static String fmtVec3(double x, double y, double z)
+   {
+      return String.format("(%+7.3f,%+7.3f,%+7.3f)", x, y, z);
+   }
+}
