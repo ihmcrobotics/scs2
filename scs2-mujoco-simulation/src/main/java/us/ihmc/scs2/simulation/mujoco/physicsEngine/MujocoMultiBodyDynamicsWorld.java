@@ -25,6 +25,8 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
  */
 public class MujocoMultiBodyDynamicsWorld
 {
+   private static final boolean ENABLE_CONTACT_LOGS = Boolean.getBoolean("scs2.mujoco.diagnostics");
+
    private mjModel model;
    private mjData data;
    private final List<MujocoMultiBodyRobot> robots = new ArrayList<>();
@@ -140,6 +142,9 @@ public class MujocoMultiBodyDynamicsWorld
 
    public void logContactsIfDue(double currentTime)
    {
+      if (!ENABLE_CONTACT_LOGS)
+         return;
+
       if (currentTime < nextContactLogTime)
          return;
       nextContactLogTime = currentTime + CONTACT_LOG_PERIOD_SECONDS;

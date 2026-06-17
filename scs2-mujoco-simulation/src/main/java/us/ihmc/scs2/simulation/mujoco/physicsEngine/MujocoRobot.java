@@ -33,6 +33,8 @@ import us.ihmc.yoVariables.registry.YoRegistry;
  */
 public class MujocoRobot extends RobotExtension
 {
+   private static final boolean ENABLE_DIAGNOSTIC_LOGS = Boolean.getBoolean("scs2.mujoco.diagnostics");
+
    private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
    private final YoRegistry yoRegistry;
 
@@ -323,6 +325,9 @@ public class MujocoRobot extends RobotExtension
 
    private void logDiagnosticsIfDue(double currentTime, DoublePointer qpos, DoublePointer qvel, DoublePointer qacc)
    {
+      if (!ENABLE_DIAGNOSTIC_LOGS)
+         return;
+
       if (currentTime < nextDiagnosticTime)
          return;
       nextDiagnosticTime = currentTime + DIAGNOSTIC_PERIOD_SECONDS;
