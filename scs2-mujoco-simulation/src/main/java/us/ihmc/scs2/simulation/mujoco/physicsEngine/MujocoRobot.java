@@ -144,17 +144,17 @@ public class MujocoRobot extends RobotExtension
 
    /**
     * Copy every {@link us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint}'s current
-    * wrench into MuJoCo's per-body {@code xfrc_applied} array, in world frame at the body's
-    * CoM. Limitations in v1:
-    * <ul>
-    *   <li>{@code xfrc_applied} layout is {@code [torque | force]} (rotation:translation),
-    *       matching MuJoCo's {@code cfrc_ext} and {@code cacc} conventions.</li>
-    *   <li>Moment-arm transfer assumes the wrench application point coincides with the body CoM.
-    *       Bodies with non-zero CoM offset will see a moment error equal to
-    *       {@code (r_forcePoint - r_CoM) x F}.</li>
-    *   <li>{@code xfrc_applied} entries for managed bodies are zeroed at the start of each push
-    *       so persistent wrenches don't accumulate across steps.</li>
-    * </ul>
+    * wrench into MuJoCo's per-body {@code xfrc_applied} array, in world frame at the body's CoM.
+    *
+    * <p>{@code xfrc_applied} layout is {@code [torque | force]} (rotation:translation), matching
+    * MuJoCo's {@code cfrc_ext} and {@code cacc} conventions.
+    *
+    * <p>The wrench is shifted from the ExternalWrenchPoint position to the body CoM before writing:
+    * {@code T_CoM = T_wp + (r_wp - r_CoM) × F}. This is the inverse of the correction applied in
+    * {@link #updateSensors} when reading {@code cfrc_ext} back out.
+    *
+    * <p>{@code xfrc_applied} entries for managed bodies are zeroed at the start of each push so
+    * persistent wrenches don't accumulate across steps.
     */
    public void pushExternalWrenchesToMujoco(DoublePointer xfrcApplied)
    {
@@ -169,7 +169,8 @@ public class MujocoRobot extends RobotExtension
          var wrenchPoints = joint.getAuxiliaryData().getExternalWrenchPoints();
          if (wrenchPoints.isEmpty())
             continue;
-         int bodyId = mujocoMultiBodyRobot.getBodyId(joint.getSuccessor().getName());
+         SimRigidBodyBasics body = joint.getSuccessor();
+         int bodyId = mujocoMultiBodyRobot.getBodyId(body.getName());
          if (bodyId < 0)
             continue;
 
@@ -177,18 +178,36 @@ public class MujocoRobot extends RobotExtension
          for (int i = 0; i < 6; i++)
             xfrcApplied.put(base + i, 0.0);
 
+         // Body CoM position in world — same for all EWPs on this body, so compute once.
+         pushBodyComPosWorld.setIncludingFrame(body.getInertia().getCenterOfMassOffset());
+         pushBodyComPosWorld.changeFrame(worldFrame);
+
          for (var wp : wrenchPoints)
          {
             tmpExternalWrench.setIncludingFrame(wp.getWrench());
             tmpExternalWrench.changeFrame(worldFrame);
-            // MuJoCo xfrc_applied layout: [torque | force] (rotation:translation), world frame at body CoM.
-            // This matches cfrc_ext and cacc — angular/rotation components first, linear/force second.
-            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + tmpExternalWrench.getAngularPartX());
-            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + tmpExternalWrench.getAngularPartY());
-            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + tmpExternalWrench.getAngularPartZ());
-            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + tmpExternalWrench.getLinearPartX());
-            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + tmpExternalWrench.getLinearPartY());
-            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + tmpExternalWrench.getLinearPartZ());
+
+            // Shift wrench reference point from EWP to body CoM.
+            // MuJoCo xfrc_applied expects [torque | force] at body CoM, world frame.
+            // T_CoM = T_wp + (r_wp - r_CoM) × F
+            pushWpPosWorld.setToZero(wp.getFrame());
+            pushWpPosWorld.changeFrame(worldFrame);
+            double rx = pushWpPosWorld.getX() - pushBodyComPosWorld.getX();
+            double ry = pushWpPosWorld.getY() - pushBodyComPosWorld.getY();
+            double rz = pushWpPosWorld.getZ() - pushBodyComPosWorld.getZ();
+            double fx = tmpExternalWrench.getLinearPartX();
+            double fy = tmpExternalWrench.getLinearPartY();
+            double fz = tmpExternalWrench.getLinearPartZ();
+            double torqueCorrX = ry * fz - rz * fy;
+            double torqueCorrY = rz * fx - rx * fz;
+            double torqueCorrZ = rx * fy - ry * fx;
+
+            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + tmpExternalWrench.getAngularPartX() + torqueCorrX);
+            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + tmpExternalWrench.getAngularPartY() + torqueCorrY);
+            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + tmpExternalWrench.getAngularPartZ() + torqueCorrZ);
+            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + fx);
+            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + fy);
+            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + fz);
          }
       }
    }
@@ -219,6 +238,10 @@ public class MujocoRobot extends RobotExtension
    // WrenchBasedFootSwitch's low threshold so we catch transient touchdown forces too.
    private double nextDiagnosticTime = 0.0;
    private final FramePoint3D diagBodyOrigin = new FramePoint3D();
+
+   // Scratch for pushExternalWrenchesToMujoco moment-arm correction.
+   private final FramePoint3D pushWpPosWorld = new FramePoint3D();
+   private final FramePoint3D pushBodyComPosWorld = new FramePoint3D();
    private static final double DIAGNOSTIC_PERIOD_SECONDS = 1.0;
    private static final double DIAGNOSTIC_FZ_THRESHOLD_N = 5.0;
 
@@ -356,8 +379,6 @@ public class MujocoRobot extends RobotExtension
          diagBodyOrigin.changeFrame(inertial);
          line.append(String.format(" | %s z=%.4f Fz=%6.1f", body.getName(), diagBodyOrigin.getZ(), fz));
       }
-      System.out.println(line);
-
       // qvel / qacc / mecano-twist comparison for the floating root.
       //   MuJoCo qvel for freejoint -- linear: WORLD frame, angular: BODY frame (split!)
       //   mecano SixDoFJoint twist:                                BOTH in BODY frame
@@ -370,37 +391,6 @@ public class MujocoRobot extends RobotExtension
          JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
          if (address == null || !address.isFloatingRoot || !(joint instanceof SixDoFJointBasics floating))
             continue;
-         System.out.printf("[MujocoRobot.frames] qvel.lin=%s qvel.ang=%s%n",
-                           fmtVec3(qvel.get(qv), qvel.get(qv + 1), qvel.get(qv + 2)),
-                           fmtVec3(qvel.get(qv + 3), qvel.get(qv + 4), qvel.get(qv + 5)));
-         System.out.printf("                     twst.lin=%s twst.ang=%s%n",
-                           fmtVec3(floating.getJointTwist().getLinearPartX(),
-                                   floating.getJointTwist().getLinearPartY(),
-                                   floating.getJointTwist().getLinearPartZ()),
-                           fmtVec3(floating.getJointTwist().getAngularPartX(),
-                                   floating.getJointTwist().getAngularPartY(),
-                                   floating.getJointTwist().getAngularPartZ()));
-         System.out.printf("                     qacc.lin=%s qacc.ang=%s%n",
-                           fmtVec3(qacc.get(qv), qacc.get(qv + 1), qacc.get(qv + 2)),
-                           fmtVec3(qacc.get(qv + 3), qacc.get(qv + 4), qacc.get(qv + 5)));
-         System.out.printf("                     macc.lin=%s macc.ang=%s%n",
-                           fmtVec3(floating.getJointAcceleration().getLinearPartX(),
-                                   floating.getJointAcceleration().getLinearPartY(),
-                                   floating.getJointAcceleration().getLinearPartZ()),
-                           fmtVec3(floating.getJointAcceleration().getAngularPartX(),
-                                   floating.getJointAcceleration().getAngularPartY(),
-                                   floating.getJointAcceleration().getAngularPartZ()));
-         // Pelvis yaw (about world Z). If this is large and qvel.lin disagrees with twst.lin,
-         // we've localised the frame bug.
-         double yawRad = 0.0;
-         try
-         {
-            yawRad = floating.getJointPose().getOrientation().getYaw();
-         }
-         catch (Exception ignored)
-         {
-         }
-         System.out.printf("                     pelvisYaw=%.3frad%n", yawRad);
          break;
       }
    }

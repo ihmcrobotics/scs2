@@ -130,6 +130,7 @@ public final class MujocoMultiBodyRobotFactory
           .append(parameters.getContactSolrefTimeconst()).append(" 1\" solimp=\"")
           .append(parameters.getContactSolimpDmin()).append(" ")
           .append(parameters.getContactSolimpDmax()).append(" 0.0007 0.5 2\" condim=\"4\"/>\n");
+      mjcf.append("    <joint armature=\"").append(parameters.getJointArmature()).append("\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
       mjcf.append("      <geom contype=\"1\" conaffinity=\"2\"/>\n");
       mjcf.append("    </default>\n");

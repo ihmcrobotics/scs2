@@ -13,6 +13,7 @@ public class MujocoSimulationParameters
    private double contactSolimpDmin = 0.9;
    private double contactSolimpDmax = 0.99;
    private int noslipIterations = 5;
+   private double jointArmature = 0.0;
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
@@ -89,6 +90,16 @@ public class MujocoSimulationParameters
       this.noslipIterations = noslipIterations;
    }
 
+   public double getJointArmature()
+   {
+      return jointArmature;
+   }
+
+   public void setJointArmature(double jointArmature)
+   {
+      this.jointArmature = jointArmature;
+   }
+
    public void set(MujocoSimulationParameters other)
    {
       this.timestep = other.timestep;
@@ -98,5 +109,6 @@ public class MujocoSimulationParameters
       this.contactSolimpDmin = other.contactSolimpDmin;
       this.contactSolimpDmax = other.contactSolimpDmax;
       this.noslipIterations = other.noslipIterations;
+      this.jointArmature = other.jointArmature;
    }
 }

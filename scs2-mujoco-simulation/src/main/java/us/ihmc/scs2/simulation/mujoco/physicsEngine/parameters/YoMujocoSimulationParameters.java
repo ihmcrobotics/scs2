@@ -17,6 +17,7 @@ public class YoMujocoSimulationParameters
    private final YoDouble contactSolimpDmin;
    private final YoDouble contactSolimpDmax;
    private final YoInteger noslipIterations;
+   private final YoDouble jointArmature;
 
    public YoMujocoSimulationParameters(String prefix, YoRegistry registry)
    {
@@ -27,6 +28,7 @@ public class YoMujocoSimulationParameters
       contactSolimpDmin = new YoDouble(prefix + "ContactSolimpDmin", registry);
       contactSolimpDmax = new YoDouble(prefix + "ContactSolimpDmax", registry);
       noslipIterations = new YoInteger(prefix + "NoslipIterations", registry);
+      jointArmature = new YoDouble(prefix + "JointArmature", registry);
 
       set(MujocoSimulationParameters.defaultMujocoSimulationParameters());
    }
@@ -40,6 +42,7 @@ public class YoMujocoSimulationParameters
       contactSolimpDmin.set(parameters.getContactSolimpDmin());
       contactSolimpDmax.set(parameters.getContactSolimpDmax());
       noslipIterations.set(parameters.getNoslipIterations());
+      jointArmature.set(parameters.getJointArmature());
    }
 
    public double getTimestep()
@@ -77,6 +80,11 @@ public class YoMujocoSimulationParameters
       return noslipIterations.getIntegerValue();
    }
 
+   public double getJointArmature()
+   {
+      return jointArmature.getDoubleValue();
+   }
+
    public MujocoSimulationParameters toPlainParameters()
    {
       MujocoSimulationParameters plain = new MujocoSimulationParameters();
@@ -87,6 +95,7 @@ public class YoMujocoSimulationParameters
       plain.setContactSolimpDmin(getContactSolimpDmin());
       plain.setContactSolimpDmax(getContactSolimpDmax());
       plain.setNoslipIterations(getNoslipIterations());
+      plain.setJointArmature(getJointArmature());
       return plain;
    }
 }

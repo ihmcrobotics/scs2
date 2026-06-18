@@ -155,28 +155,7 @@ public class MujocoMultiBodyDynamicsWorld
       StringBuilder line = new StringBuilder();
       line.append(String.format("[MujocoWorld] t=%6.2fs ncon=%d", currentTime, ncon));
       if (ncon == 0)
-      {
-         System.out.println(line);
          return;
-      }
-      System.out.println(line);
-
-      mjContact contact = data.contact();
-      for (int i = 0; i < ncon; i++)
-      {
-         contact.position(i);
-         int g1 = contact.geom1();
-         int g2 = contact.geom2();
-         double px = contact.pos(0);
-         double py = contact.pos(1);
-         double pz = contact.pos(2);
-         double dist = contact.dist();
-         int dim = contact.dim();
-         String g1Name = geomNameOrId(g1);
-         String g2Name = geomNameOrId(g2);
-         System.out.printf("  c%d: %s / %s pos=(%.3f,%.3f,%.4f) dist=%+.4f dim=%d%n",
-                           i, g1Name, g2Name, px, py, pz, dist, dim);
-      }
    }
 
    private String geomNameOrId(int geomId)
