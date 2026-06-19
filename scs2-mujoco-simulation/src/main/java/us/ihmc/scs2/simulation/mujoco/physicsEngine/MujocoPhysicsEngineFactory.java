@@ -1,6 +1,6 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 
 /**
@@ -9,7 +9,7 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
  */
 public interface MujocoPhysicsEngineFactory
 {
-   static PhysicsEngineFactory newMujocoPhysicsEngineFactory(MujocoSimulationParameters parameters)
+   static PhysicsEngineFactory newMujocoPhysicsEngineFactory(MujocoSimulationParametersReadOnly parameters)
    {
       return (frame, rootRegistry) -> new MujocoPhysicsEngine(frame, rootRegistry, parameters);
    }

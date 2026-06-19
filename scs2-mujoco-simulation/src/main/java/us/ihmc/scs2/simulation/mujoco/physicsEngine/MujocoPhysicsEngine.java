@@ -17,7 +17,7 @@ import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.YoTimer;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoSimulationParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -81,7 +81,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       this.hasBeenCompiled = new YoBoolean("mujocoHasBeenCompiled", physicsEngineRegistry);
    }
 
-   public MujocoPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry, MujocoSimulationParameters parameters)
+   public MujocoPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry, MujocoSimulationParametersReadOnly parameters)
    {
       this(inertialFrame, rootRegistry);
       globalSimulationParameters.set(parameters);
@@ -185,12 +185,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          throw new RuntimeException("Could not create MuJoCo working directory", e);
       }
 
-      MujocoSimulationParameters compileParams = new MujocoSimulationParameters();
-      compileParams.set(globalSimulationParameters.toPlainParameters());
       String mjcf = MujocoMultiBodyRobotFactory.buildWorldMjcf(pendingRobots,
                                                                pendingTerrain,
                                                                workingDirectory,
-                                                               compileParams);
+                                                               globalSimulationParameters);
       dynamicsWorld.compile(mjcf, new File(workingDirectory, "world.xml"));
 
       for (Robot robot : pendingRobots)

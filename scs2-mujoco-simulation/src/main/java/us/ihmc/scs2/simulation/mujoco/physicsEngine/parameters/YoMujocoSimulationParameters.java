@@ -9,7 +9,7 @@ import us.ihmc.yoVariables.variable.YoInteger;
  * YoVariable-backed mirror of {@link MujocoSimulationParameters}. Drop into a YoRegistry to expose
  * MuJoCo tuning knobs in the SCS2 visualizer.
  */
-public class YoMujocoSimulationParameters
+public class YoMujocoSimulationParameters implements MujocoSimulationParametersBasics
 {
    private final YoDouble timestep;
    private final YoInteger solverIterations;
@@ -39,100 +39,150 @@ public class YoMujocoSimulationParameters
       useEllipticFrictionCone = new YoBoolean(prefix + "UseEllipticFrictionCone", registry);
       frictionSlide = new YoDouble(prefix + "FrictionSlide", registry);
 
-      set(MujocoSimulationParameters.DefaultMujocoSimulationParameters());
+      set(MujocoSimulationParameters.defaultMujocoSimulationParameters());
    }
 
-   public void set(MujocoSimulationParameters parameters)
-   {
-      timestep.set(parameters.getTimestep());
-      solverIterations.set(parameters.getSolverIterations());
-      subSteps.set(parameters.getSubSteps());
-      contactSolrefTimeconst.set(parameters.getContactSolrefTimeconst());
-      contactSolrefDampRatio.set(parameters.getContactSolrefDampRatio());
-      contactSolimpDmin.set(parameters.getContactSolimpDmin());
-      contactSolimpDmax.set(parameters.getContactSolimpDmax());
-      noslipIterations.set(parameters.getNoslipIterations());
-      jointArmature.set(parameters.getJointArmature());
-      impratio.set(parameters.getImpratio());
-      useEllipticFrictionCone.set(parameters.getUseEllipticFrictionCone());
-      frictionSlide.set(parameters.getFrictionSlide());
-   }
-
+   @Override
    public double getTimestep()
    {
-      return timestep.getDoubleValue();
+      return timestep.getValue();
    }
 
+   @Override
+   public void setTimestep(double timestep)
+   {
+      this.timestep.set(timestep);
+   }
+
+   @Override
    public int getSolverIterations()
    {
-      return solverIterations.getIntegerValue();
+      return solverIterations.getValue();
    }
 
+   @Override
+   public void setSolverIterations(int solverIterations)
+   {
+      this.solverIterations.set(solverIterations);
+   }
+
+   @Override
    public int getSubSteps()
    {
-      return subSteps.getIntegerValue();
+      return subSteps.getValue();
    }
 
+   @Override
+   public void setSubSteps(int subSteps)
+   {
+      this.subSteps.set(subSteps);
+   }
+
+   @Override
    public double getContactSolrefTimeconst()
    {
-      return contactSolrefTimeconst.getDoubleValue();
+      return contactSolrefTimeconst.getValue();
    }
 
+   @Override
+   public void setContactSolrefTimeconst(double contactSolrefTimeconst)
+   {
+      this.contactSolrefTimeconst.set(contactSolrefTimeconst);
+   }
+
+   @Override
    public double getContactSolrefDampRatio()
    {
-      return contactSolrefDampRatio.getDoubleValue();
+      return contactSolrefDampRatio.getValue();
    }
 
+   @Override
+   public void setContactSolrefDampRatio(double contactSolrefDampRatio)
+   {
+      this.contactSolrefDampRatio.set(contactSolrefDampRatio);
+   }
+
+   @Override
    public double getContactSolimpDmin()
    {
-      return contactSolimpDmin.getDoubleValue();
+      return contactSolimpDmin.getValue();
    }
 
+   @Override
+   public void setContactSolimpDmin(double contactSolimpDmin)
+   {
+      this.contactSolimpDmin.set(contactSolimpDmin);
+   }
+
+   @Override
    public double getContactSolimpDmax()
    {
-      return contactSolimpDmax.getDoubleValue();
+      return contactSolimpDmax.getValue();
    }
 
+   @Override
+   public void setContactSolimpDmax(double contactSolimpDmax)
+   {
+      this.contactSolimpDmax.set(contactSolimpDmax);
+   }
+
+   @Override
    public int getNoslipIterations()
    {
-      return noslipIterations.getIntegerValue();
+      return noslipIterations.getValue();
    }
 
+   @Override
+   public void setNoslipIterations(int noslipIterations)
+   {
+      this.noslipIterations.set(noslipIterations);
+   }
+
+   @Override
    public double getJointArmature()
    {
-      return jointArmature.getDoubleValue();
+      return jointArmature.getValue();
    }
 
+   @Override
+   public void setJointArmature(double jointArmature)
+   {
+      this.jointArmature.set(jointArmature);
+   }
+
+   @Override
    public double getImpratio()
    {
-      return impratio.getDoubleValue();
+      return impratio.getValue();
    }
 
+   @Override
+   public void setImpratio(double impratio)
+   {
+      this.impratio.set(impratio);
+   }
+
+   @Override
    public boolean getUseEllipticFrictionCone()
    {
-      return useEllipticFrictionCone.getBooleanValue();
+      return useEllipticFrictionCone.getValue();
    }
 
+   @Override
+   public void setUseEllipticFrictionCone(boolean useEllipticFrictionCone)
+   {
+      this.useEllipticFrictionCone.set(useEllipticFrictionCone);
+   }
+
+   @Override
    public double getFrictionSlide()
    {
-      return frictionSlide.getDoubleValue();
+      return frictionSlide.getValue();
    }
 
-   public MujocoSimulationParameters toPlainParameters()
+   @Override
+   public void setFrictionSlide(double frictionSlide)
    {
-      MujocoSimulationParameters plain = new MujocoSimulationParameters();
-      plain.setTimestep(getTimestep());
-      plain.setSolverIterations(getSolverIterations());
-      plain.setSubSteps(getSubSteps());
-      plain.setContactSolrefTimeconst(getContactSolrefTimeconst());
-      plain.setContactSolrefDampRatio(getContactSolrefDampRatio());
-      plain.setContactSolimpDmin(getContactSolimpDmin());
-      plain.setContactSolimpDmax(getContactSolimpDmax());
-      plain.setNoslipIterations(getNoslipIterations());
-      plain.setJointArmature(getJointArmature());
-      plain.setImpratio(getImpratio());
-      plain.setUseEllipticFrictionCone(getUseEllipticFrictionCone());
-      plain.setFrictionSlide(getFrictionSlide());
-      return plain;
+      this.frictionSlide.set(frictionSlide);
    }
 }
