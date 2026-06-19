@@ -162,11 +162,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       stepTimer.stop();
 
       nContacts.set(dynamicsWorld.getData().ncon());
-      dynamicsWorld.logContactsIfDue(currentTime);
 
       for (MujocoRobot robot : robotList)
-         robot.pullStateFromMujoco(currentTime,
-                                   gravity,
+         robot.pullStateFromMujoco(gravity,
                                    dynamicsWorld.getData().qpos(),
                                    dynamicsWorld.getData().qvel(),
                                    dynamicsWorld.getData().qacc(),
@@ -310,20 +308,5 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       pendingRobots.clear();
       pendingTerrain.clear();
       dynamicsWorld.dispose();
-   }
-
-   public MujocoMultiBodyDynamicsWorld getMujocoMultiBodyDynamicsWorld()
-   {
-      return dynamicsWorld;
-   }
-
-   public List<MujocoRobot> getMujocoRobots()
-   {
-      return robotList;
-   }
-
-   public YoMujocoSimulationParameters getGlobalSimulationParameters()
-   {
-      return globalSimulationParameters;
    }
 }

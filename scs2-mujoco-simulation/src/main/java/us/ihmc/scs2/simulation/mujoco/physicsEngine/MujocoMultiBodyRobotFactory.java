@@ -83,54 +83,18 @@ public final class MujocoMultiBodyRobotFactory
           .append("\" impratio=\"").append(parameters.getImpratio())
           .append("\" cone=\"").append(parameters.getUseEllipticFrictionCone() ? "elliptic" : "pyramidal")
           .append("\"/>\n");
-      // MuJoCo 3.x removed the `coordinate` attribute (local is the only mode). `angle="radian"`
-      // is also the default in 3.x but kept here for clarity.
       mjcf.append("  <compiler angle=\"radian\"/>\n");
-      // Contact tuning notes:
-      // * friction: MuJoCo's default rolling friction (0.0001) is far too low for an engine SCS2
-      //   users would recognise -- spheres roll forever. friction string is
-      //   (sliding, torsional, rolling). Sliding is parameter-driven (default 1.0, MuJoCo's
-      //   default) via getFrictionSlide(). Torsional kept low (0.05) -- see the condim comment
-      //   below. Rolling at 0.01 (vs default 0.0001) so
-      //   the sphere demo settles in finite time; rolling is unused at condim=4 anyway.
-      // * solref="0.005 1": critically damped contact with a 5 ms time constant. Default is
-      //   (0.02, 1) which is too soft for closed-loop locomotion. Tried 0.002 to address visible
-      //   CoP wandering from constraint-solver slack on the 4 foot corners; result was harder
-      //   touchdown impacts that the IMU/state-estimator pipeline couldn't damp, walking time
-      //   regressed from 138 s to ~18 s. 0.005 is the empirical sweet spot for both penetration
-      //   (sub-mm) and impact smoothness.
-      // * condim="4" + low torsional friction: normal + 2D tangential + torsional, no rolling.
-      //   - Box-on-plane contact for a flat foot generates 4 contact points at the polygon
-      //     corners (mjc_BoxBox face-overlap routine). condim=4 gives each corner its own
-      //     torsional friction cone, summed across 4 corners during full stance.
-      //   - condim=3 (no torsional) failed in testing: with only tangential friction, body yaw
-      //     transferred into sideways foot slip via the 4 corners' coupled tangential constraints,
-      //     producing a wobbly squat-walking gait and visible state-estimator drift through IMU.
-      //   - condim=6 (adds rolling) prevented heel->sole pivoting during heel-strike: the heel
-      //     point contact "catches" and the foot can't roll forward.
-      //   - The torsional friction *value* matters: 0.1 made turn-in-place spiral outward
-      //     (4 corners x large cone = body-yaw resistance bigger than controller authority).
-      //     0.01 fixed turn-in-place but let the foot wobble freely during stance (visible as
-      //     yaw-induced lateral motion of the 4 corner markers in the visualizer; controller
-      //     fought it but eventually edge-loaded the foot and collapsed at ~132 s). 0.05 is
-      //     the empirical compromise. Re-tune if either symptom resurfaces.
-      // MuJoCo combines per-pair contact params: condim is max() of the two geoms, solref is
-      // averaged. Applying to all geoms keeps contact behaviour consistent between robot-robot
-      // and robot-terrain pairs.
-      //
-      // Collision groups: a humanoid's coarse collision hulls (especially the foot box, which
-      // is a rectangular slab much larger than the actual mechanical foot edge) self-collide in
-      // ways the real robot doesn't. Walking failure mode: swing-foot catches on the side of
-      // the stance-foot box, controller can't push through, robot collapses. ContactPointBased
-      // sidesteps this because its ground-contact points only test against the ground.
-      // We replicate that here via contype/conaffinity bitmasks:
-      //   robot   geoms: contype=1, conaffinity=2  -> tests only against group 2 (terrain)
-      //   terrain geoms: contype=2, conaffinity=1  -> tests only against group 1 (robot)
-      // A pair collides iff (contype1 & conaffinity2) != 0 OR (contype2 & conaffinity1) != 0.
-      //   robot-robot:   (1&2)|(1&2) = 0  -> excluded
-      //   robot-terrain: (1&1)|(2&2) = 3  -> tested
-      //   terrain-terr.: (2&1)|(2&1) = 0  -> excluded (irrelevant; tiles don't overlap)
-      // Selective self-collision (e.g. hand-on-torso for manipulation) is out of scope for v1.
+      // Contact tuning (empirical, for closed-loop locomotion):
+      // * friction "(slide torsional rolling)": slide is parameter-driven; rolling 0.01 (vs MuJoCo's
+      //   0.0001) so spheres settle in finite time; torsional 0.05 balances turn-in-place authority
+      //   against stance-foot yaw wobble.
+      // * solref "<timeconst> <damp>": critically damped contact. 0.005 s is the empirical sweet
+      //   spot -- 0.02 (MuJoCo default) is too soft for the controller; 0.002 gives harsh touchdowns.
+      // * condim=4 (normal + 2D tangential + torsional): the flat foot makes 4 corner contacts, and
+      //   per-corner torsional friction stops yaw-induced lateral foot slip (condim=3 wobbles).
+      // Collision groups: the coarse foot box would self-collide (swing foot catching the stance
+      // foot) in ways the real robot doesn't, so contype/conaffinity restrict robot geoms to test
+      // only against terrain (robot=1/2, terrain=2/1), mirroring ContactPointBased.
       mjcf.append("  <default>\n");
       mjcf.append("    <geom friction=\"").append(parameters.getFrictionSlide()).append(" 0.05 0.01\" solref=\"")
           .append(parameters.getContactSolrefTimeconst()).append(" ").append(parameters.getContactSolrefDampRatio()).append("\" solimp=\"")
@@ -386,11 +350,6 @@ public final class MujocoMultiBodyRobotFactory
          transform.set(joint.getTransformToParent());
       }
       return transform;
-   }
-
-   private static boolean isIdentity(RigidBodyTransform transform)
-   {
-      return !transform.hasRotation() && !transform.hasTranslation();
    }
 
    private static boolean isIdentity(us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly transform)

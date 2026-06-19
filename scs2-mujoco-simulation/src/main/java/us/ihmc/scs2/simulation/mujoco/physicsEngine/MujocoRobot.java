@@ -16,7 +16,6 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
-import us.ihmc.mecano.spatial.interfaces.WrenchReadOnly;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
@@ -94,15 +93,11 @@ public class MujocoRobot extends RobotExtension
    }
 
    /**
-    * Pack per-body external wrenches from {@code mjData.cfrc_ext} into the registry, invalidate
-    * the spatial-acceleration cache, then walk every considered joint and update its sensor
-    * auxiliary data ({@code SimIMUSensor}, {@code SimWrenchSensor}, etc.).
-    *
-    * <p>{@code cfrc_ext[bodyId * 6 .. +5]} is laid out as {@code [torque (rot)|force (trans)]}
-    * (per {@code mjdata.h}'s "rotation:translation format" comment), expressed at the body's CoM
-    * in world frame. The registry stores the wrench at the body-fixed-frame origin, so we apply
-    * the standard wrench shift {@code T_origin = T_CoM + (CoM - origin) x F} -- a known ~10 N*m
-    * bias on Alex feet without this correction (CoM offset ~5 cm, contact force ~250 N).
+    * Pack per-body external wrenches from {@code mjData.cfrc_ext} into the registry, invalidate the
+    * spatial-acceleration cache, then update every considered joint's sensor auxiliary data (IMU,
+    * wrench sensors, etc.). The cfrc_ext wrench is at the body CoM; it is shifted to the
+    * body-fixed-frame origin (a ~10 N*m bias on Alex feet without the shift). See inline notes for
+    * the {@code [torque|force]} layout.
     */
    public void updateSensors(DoublePointer cfrcExt)
    {
@@ -238,34 +233,16 @@ public class MujocoRobot extends RobotExtension
       }
    }
 
-   // Once-per-sim-second diagnostic: print pelvis z and any body carrying significant Fz so we
-   // can see whether vertical drift lives in MuJoCo's qpos (pelvis_z climbs) or upstream
-   // (pelvis_z stable but feet wrenches misbehaving). Threshold deliberately lower than
-   // WrenchBasedFootSwitch's low threshold so we catch transient touchdown forces too.
-   private double nextDiagnosticTime = 0.0;
-   private final FramePoint3D diagBodyOrigin = new FramePoint3D();
-
    // Scratch for pushExternalWrenchesToMujoco moment-arm correction.
    private final FramePoint3D pushBodyComPosWorld = new FramePoint3D();
-   private static final double DIAGNOSTIC_PERIOD_SECONDS = 1.0;
-   private static final double DIAGNOSTIC_FZ_THRESHOLD_N = 5.0;
 
    /**
-    * Read MuJoCo {@code qpos} / {@code qvel} / {@code qacc} / {@code cacc} back into the mecano
-    * joint state so SCS2 frames, twists, and accelerations are consistent with the MuJoCo
-    * simulation.
-    *
-    * <p>For 1-DoF joints the scalar {@code qacc} is used directly (no frame ambiguity).
-    *
-    * <p>For the floating root, {@code cacc} (com-based spatial acceleration, already computed by
-    * {@code mj_rnePostConstraint} each step) is used instead of finite-differencing the twist.
-    * {@code cacc[bodyId*6..+5]} is [αx αy αz ax ay az] at the body CoM in world frame, in
-    * Featherstone spatial form. We rotate to body frame, shift from CoM to joint origin, and set
-    * the joint acceleration directly — no Coriolis correction needed because {@code cacc} is
-    * already spatial.
+    * Read MuJoCo {@code qpos} / {@code qvel} / {@code qacc} / {@code cacc} back into the mecano joint
+    * state so SCS2 frames, twists, and accelerations stay consistent with the MuJoCo simulation. The
+    * floating root uses {@code cacc} (com-based spatial acceleration) rather than finite-differencing
+    * the twist; see the inline notes for the (subtle) MuJoCo frame conventions.
     */
-   public void pullStateFromMujoco(double currentTime,
-                                   Vector3DReadOnly gravity,
+   public void pullStateFromMujoco(Vector3DReadOnly gravity,
                                    DoublePointer qpos,
                                    DoublePointer qvel,
                                    DoublePointer qacc,
@@ -347,58 +324,5 @@ public class MujocoRobot extends RobotExtension
       }
 
       updateFrames();
-
-      logDiagnosticsIfDue(currentTime, qpos, qvel, qacc);
-   }
-
-   private void logDiagnosticsIfDue(double currentTime, DoublePointer qpos, DoublePointer qvel, DoublePointer qacc)
-   {
-      if (currentTime < nextDiagnosticTime)
-         return;
-      nextDiagnosticTime = currentTime + DIAGNOSTIC_PERIOD_SECONDS;
-
-      JointAddress root = mujocoMultiBodyRobot.getRootJointAddress();
-      if (root == null)
-         return;
-
-      ReferenceFrame inertial = getRobot().getInertialFrame();
-      StringBuilder line = new StringBuilder();
-      line.append(String.format("[MujocoRobot] t=%6.2fs pelvisZ=%.4f", currentTime, qpos.get(root.qposadr + 2)));
-
-      // wrenchRegistry was populated by updateSensors at the START of this tick from the
-      // cfrc_ext that mj_step computed during the previous tick. One-tick stale (~0.1 ms at
-      // Alex's 1e-4 simulateDT) which is fine for once-per-second diagnostics.
-      for (Map.Entry<Integer, SimRigidBodyBasics> entry : mecanoBodyByMujocoId.entrySet())
-      {
-         SimRigidBodyBasics body = entry.getValue();
-         WrenchReadOnly w = wrenchRegistry.apply(body);
-         if (w == null)
-            continue;
-         double fz = w.getLinearPartZ();
-         if (Math.abs(fz) < DIAGNOSTIC_FZ_THRESHOLD_N)
-            continue;
-         diagBodyOrigin.setToZero(body.getBodyFixedFrame());
-         diagBodyOrigin.changeFrame(inertial);
-         line.append(String.format(" | %s z=%.4f Fz=%6.1f", body.getName(), diagBodyOrigin.getZ(), fz));
-      }
-      // qvel / qacc / mecano-twist comparison for the floating root.
-      //   MuJoCo qvel for freejoint -- linear: WORLD frame, angular: BODY frame (split!)
-      //   mecano SixDoFJoint twist:                                BOTH in BODY frame
-      // pullStateFromMujoco rotates only the linear part of qvel, so twst.lin should DIVERGE
-      // from qvel.lin during pelvis rotation (the rotation working) while twst.ang stays
-      // identical to qvel.ang. qacc is shown raw and is in world frame for both parts.
-      int qv = root.qveladr;
-      for (JointBasics joint : getJointsToConsider())
-      {
-         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
-         if (address == null || !address.isFloatingRoot || !(joint instanceof SixDoFJointBasics floating))
-            continue;
-         break;
-      }
-   }
-
-   private static String fmtVec3(double x, double y, double z)
-   {
-      return String.format("(%+7.3f,%+7.3f,%+7.3f)", x, y, z);
    }
 }

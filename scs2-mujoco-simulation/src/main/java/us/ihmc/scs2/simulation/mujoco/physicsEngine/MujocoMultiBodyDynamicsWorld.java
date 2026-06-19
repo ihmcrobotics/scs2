@@ -131,39 +131,6 @@ public class MujocoMultiBodyDynamicsWorld
       model.opt().timestep(dt);
    }
 
-   // Once-per-sim-second contact dump. Hypothesis-validator for the foot-flat box-on-plane
-   // contact: MuJoCo should be generating ~4 contact points at the foot polygon corners during
-   // stance, not a single point contact. If ncon is consistently 1 or 2 during foot-flat stance,
-   // the box-box specialized routine isn't firing as expected and we need to revisit.
-   private double nextContactLogTime = 0.0;
-   private static final double CONTACT_LOG_PERIOD_SECONDS = 1.0;
-
-   public void logContactsIfDue(double currentTime)
-   {
-      if (currentTime < nextContactLogTime)
-         return;
-      nextContactLogTime = currentTime + CONTACT_LOG_PERIOD_SECONDS;
-      if (model == null || data == null)
-         return;
-
-      int ncon = data.ncon();
-      StringBuilder line = new StringBuilder();
-      line.append(String.format("[MujocoWorld] t=%6.2fs ncon=%d", currentTime, ncon));
-      if (ncon == 0)
-         return;
-   }
-
-   private String geomNameOrId(int geomId)
-   {
-      if (geomId < 0)
-         return "<none>";
-      BytePointer name = Mujoco.mj_id2name(model, Mujoco.mjOBJ_GEOM, geomId);
-      if (name == null || name.isNull())
-         return "geom#" + geomId;
-      String s = name.getString();
-      return s.isEmpty() ? "geom#" + geomId : s;
-   }
-
    public void dispose()
    {
       if (data != null && !data.isNull())
