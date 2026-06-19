@@ -100,10 +100,21 @@ public final class MujocoMultiBodyRobotFactory
       mjcf.append("      <geom contype=\"2\" conaffinity=\"1\"/>\n");
       mjcf.append("    </default>\n");
       mjcf.append("  </default>\n");
-      mjcf.append("  <worldbody>\n");
-      for (TerrainObjectDefinition terrain : terrainObjects)
+      // <asset> (mesh terrain) must precede <worldbody>. Only emitted when some terrain shape needs a
+      // mesh (convex polytope / ramp); primitive-only worlds produce an empty fragment and no block.
+      StringBuilder terrainAssets = new StringBuilder();
+      for (int i = 0; i < terrainObjects.size(); i++)
       {
-         mjcf.append(MujocoTerrainFactory.toMjcfWorldbodyFragment(terrain));
+         terrainAssets.append(MujocoTerrainFactory.toMjcfAssetFragment(terrainObjects.get(i), "terrain_" + i + "_"));
+      }
+      if (terrainAssets.length() > 0)
+      {
+         mjcf.append("  <asset>\n").append(terrainAssets).append("  </asset>\n");
+      }
+      mjcf.append("  <worldbody>\n");
+      for (int i = 0; i < terrainObjects.size(); i++)
+      {
+         mjcf.append(MujocoTerrainFactory.toMjcfWorldbodyFragment(terrainObjects.get(i), "terrain_" + i + "_"));
       }
       for (Robot robot : robots)
       {
