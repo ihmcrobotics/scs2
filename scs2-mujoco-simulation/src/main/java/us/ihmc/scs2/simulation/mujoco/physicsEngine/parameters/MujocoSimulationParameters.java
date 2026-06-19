@@ -2,7 +2,7 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
 /**
  * Holds tunable MuJoCo simulation parameters that map onto entries in {@code mjOption}. Applied
- * once at world compile time; runtime updates are out of scope for v1.
+ * once at world compile time.
  */
 public class MujocoSimulationParameters
 {
@@ -10,12 +10,16 @@ public class MujocoSimulationParameters
    private int solverIterations = 25;
    private int subSteps = 1;
    private double contactSolrefTimeconst = 0.02;
+   private double contactSolrefDampRatio = 1.0;
    private double contactSolimpDmin = 0.9;
    private double contactSolimpDmax = 0.99;
    private int noslipIterations = 5;
    private double jointArmature = 0.0;
+   private double impratio = 1.0;
+   private boolean useEllipticFrictionCone = false;
+   private double frictionSlide = 1.0;
 
-   public static MujocoSimulationParameters defaultMujocoSimulationParameters()
+   public static MujocoSimulationParameters DefaultMujocoSimulationParameters()
    {
       return new MujocoSimulationParameters();
    }
@@ -60,6 +64,16 @@ public class MujocoSimulationParameters
       this.contactSolrefTimeconst = contactSolrefTimeconst;
    }
 
+   public double getContactSolrefDampRatio()
+   {
+      return contactSolrefDampRatio;
+   }
+
+   public void setContactSolrefDampRatio(double contactSolrefDampRatio)
+   {
+      this.contactSolrefDampRatio = contactSolrefDampRatio;
+   }
+
    public double getContactSolimpDmin()
    {
       return contactSolimpDmin;
@@ -100,15 +114,49 @@ public class MujocoSimulationParameters
       this.jointArmature = jointArmature;
    }
 
+   public double getImpratio()
+   {
+      return impratio;
+   }
+
+   public void setImpratio(double impratio)
+   {
+      this.impratio = impratio;
+   }
+
+   public boolean getUseEllipticFrictionCone()
+   {
+      return useEllipticFrictionCone;
+   }
+
+   public void setUseEllipticFrictionCone(boolean useEllipticFrictionCone)
+   {
+      this.useEllipticFrictionCone = useEllipticFrictionCone;
+   }
+
+   public double getFrictionSlide()
+   {
+      return frictionSlide;
+   }
+
+   public void setFrictionSlide(double frictionSlide)
+   {
+      this.frictionSlide = frictionSlide;
+   }
+
    public void set(MujocoSimulationParameters other)
    {
       this.timestep = other.timestep;
       this.solverIterations = other.solverIterations;
       this.subSteps = other.subSteps;
       this.contactSolrefTimeconst = other.contactSolrefTimeconst;
+      this.contactSolrefDampRatio = other.contactSolrefDampRatio;
       this.contactSolimpDmin = other.contactSolimpDmin;
       this.contactSolimpDmax = other.contactSolimpDmax;
       this.noslipIterations = other.noslipIterations;
       this.jointArmature = other.jointArmature;
+      this.impratio = other.impratio;
+      this.useEllipticFrictionCone = other.useEllipticFrictionCone;
+      this.frictionSlide = other.frictionSlide;
    }
 }

@@ -73,10 +73,15 @@ public final class MujocoMultiBodyRobotFactory
 
       StringBuilder mjcf = new StringBuilder();
       mjcf.append("<mujoco>\n");
+      // impratio: frictional-to-normal constraint impedance ratio. cone: pyramidal (default) or
+      // elliptic friction cone. Both are key levers for foot slip under shear loads (see the
+      // contact tuning notes below and MujocoSimulationParameters).
       mjcf.append("  <option timestep=\"").append(parameters.getTimestep())
           .append("\" gravity=\"0 0 -9.81\" integrator=\"implicitfast\" solver=\"Newton\" iterations=\"")
           .append(parameters.getSolverIterations())
           .append("\" noslip_iterations=\"").append(parameters.getNoslipIterations())
+          .append("\" impratio=\"").append(parameters.getImpratio())
+          .append("\" cone=\"").append(parameters.getUseEllipticFrictionCone() ? "elliptic" : "pyramidal")
           .append("\"/>\n");
       // MuJoCo 3.x removed the `coordinate` attribute (local is the only mode). `angle="radian"`
       // is also the default in 3.x but kept here for clarity.
@@ -84,8 +89,9 @@ public final class MujocoMultiBodyRobotFactory
       // Contact tuning notes:
       // * friction: MuJoCo's default rolling friction (0.0001) is far too low for an engine SCS2
       //   users would recognise -- spheres roll forever. friction string is
-      //   (sliding, torsional, rolling). Sliding stays at MuJoCo default 1.0. Torsional kept
-      //   low (0.01) -- see the condim comment below. Rolling at 0.01 (vs default 0.0001) so
+      //   (sliding, torsional, rolling). Sliding is parameter-driven (default 1.0, MuJoCo's
+      //   default) via getFrictionSlide(). Torsional kept low (0.05) -- see the condim comment
+      //   below. Rolling at 0.01 (vs default 0.0001) so
       //   the sphere demo settles in finite time; rolling is unused at condim=4 anyway.
       // * solref="0.005 1": critically damped contact with a 5 ms time constant. Default is
       //   (0.02, 1) which is too soft for closed-loop locomotion. Tried 0.002 to address visible
@@ -126,8 +132,8 @@ public final class MujocoMultiBodyRobotFactory
       //   terrain-terr.: (2&1)|(2&1) = 0  -> excluded (irrelevant; tiles don't overlap)
       // Selective self-collision (e.g. hand-on-torso for manipulation) is out of scope for v1.
       mjcf.append("  <default>\n");
-      mjcf.append("    <geom friction=\"1.0 0.05 0.01\" solref=\"")
-          .append(parameters.getContactSolrefTimeconst()).append(" 1\" solimp=\"")
+      mjcf.append("    <geom friction=\"").append(parameters.getFrictionSlide()).append(" 0.05 0.01\" solref=\"")
+          .append(parameters.getContactSolrefTimeconst()).append(" ").append(parameters.getContactSolrefDampRatio()).append("\" solimp=\"")
           .append(parameters.getContactSolimpDmin()).append(" ")
           .append(parameters.getContactSolimpDmax()).append(" 0.0007 0.5 2\" condim=\"4\"/>\n");
       mjcf.append("    <joint armature=\"").append(parameters.getJointArmature()).append("\"/>\n");

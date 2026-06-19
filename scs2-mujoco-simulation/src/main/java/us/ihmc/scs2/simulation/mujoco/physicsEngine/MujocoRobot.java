@@ -144,12 +144,15 @@ public class MujocoRobot extends RobotExtension
     * Copy every {@link us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint}'s current
     * wrench into MuJoCo's per-body {@code xfrc_applied} array, in world frame at the body's CoM.
     *
-    * <p>{@code xfrc_applied} layout is {@code [torque | force]} (rotation:translation), matching
-    * MuJoCo's {@code cfrc_ext} and {@code cacc} conventions.
+    * <p>{@code xfrc_applied} layout is {@code [force | torque]} (translation:rotation). This is the
+    * exception among MuJoCo's per-body 6-vectors: the spatial arrays {@code cfrc_ext}, {@code cacc},
+    * and {@code cvel} use {@code [torque | force]} (rotation:translation), but {@code xfrc_applied}
+    * is consumed by {@code mj_applyFT(force, torque, point, ...)} in {@code mj_xfrcAccumulate}, so its
+    * first three entries are the force and its last three are the torque.
     *
-    * <p>The wrench is shifted from the ExternalWrenchPoint position to the body CoM before writing:
-    * {@code T_CoM = T_wp + (r_wp - r_CoM) × F}. This is the inverse of the correction applied in
-    * {@link #updateSensors} when reading {@code cfrc_ext} back out.
+    * <p>The moment is taken about the body CoM (what {@code xfrc_applied} expects). The wrench is
+    * first changed to world frame -- which expresses the moment about the world origin -- then shifted
+    * to the CoM: {@code M_CoM = M_worldOrigin - r_CoM x F}.
     *
     * <p>{@code xfrc_applied} entries for managed bodies are zeroed at the start of each push so
     * persistent wrenches don't accumulate across steps.
@@ -183,29 +186,34 @@ public class MujocoRobot extends RobotExtension
          for (var wp : wrenchPoints)
          {
             tmpExternalWrench.setIncludingFrame(wp.getWrench());
+            // changeFrame on a spatial force moves the moment reference point to the new frame's
+            // origin: after this the linear part is F in world, and the angular part is the moment
+            // about the WORLD ORIGIN (= M_wp + r_wp x F).
             tmpExternalWrench.changeFrame(worldFrame);
 
-            // Shift wrench reference point from EWP to body CoM.
-            // MuJoCo xfrc_applied expects [torque | force] at body CoM, world frame.
-            // T_CoM = T_wp + (r_wp - r_CoM) × F
-            pushWpPosWorld.setToZero(wp.getFrame());
-            pushWpPosWorld.changeFrame(worldFrame);
-            double rx = pushWpPosWorld.getX() - pushBodyComPosWorld.getX();
-            double ry = pushWpPosWorld.getY() - pushBodyComPosWorld.getY();
-            double rz = pushWpPosWorld.getZ() - pushBodyComPosWorld.getZ();
             double fx = tmpExternalWrench.getLinearPartX();
             double fy = tmpExternalWrench.getLinearPartY();
             double fz = tmpExternalWrench.getLinearPartZ();
-            double torqueCorrX = ry * fz - rz * fy;
-            double torqueCorrY = rz * fx - rx * fz;
-            double torqueCorrZ = rx * fy - ry * fx;
 
-            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + tmpExternalWrench.getAngularPartX() + torqueCorrX);
-            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + tmpExternalWrench.getAngularPartY() + torqueCorrY);
-            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + tmpExternalWrench.getAngularPartZ() + torqueCorrZ);
-            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + fx);
-            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + fy);
-            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + fz);
+            // MuJoCo xfrc_applied expects [force | torque] with the torque taken about the body CoM,
+            // in world frame. Shift the moment from the world origin to the CoM:
+            //   M_CoM = M_worldOrigin + (r_worldOrigin - r_CoM) x F = M_worldOrigin - r_CoM x F.
+            // (The earlier version added (r_wp - r_CoM) x F to the world-origin moment, which left a
+            // spurious r_wp x F term -- a ~10x phantom roll moment under a chest push.)
+            double comX = pushBodyComPosWorld.getX();
+            double comY = pushBodyComPosWorld.getY();
+            double comZ = pushBodyComPosWorld.getZ();
+            double shiftToComX = -(comY * fz - comZ * fy);
+            double shiftToComY = -(comZ * fx - comX * fz);
+            double shiftToComZ = -(comX * fy - comY * fx);
+
+            // xfrc_applied is [force | torque]: force in slots 0..2, torque in slots 3..5.
+            xfrcApplied.put(base + 0, xfrcApplied.get(base + 0) + fx);
+            xfrcApplied.put(base + 1, xfrcApplied.get(base + 1) + fy);
+            xfrcApplied.put(base + 2, xfrcApplied.get(base + 2) + fz);
+            xfrcApplied.put(base + 3, xfrcApplied.get(base + 3) + tmpExternalWrench.getAngularPartX() + shiftToComX);
+            xfrcApplied.put(base + 4, xfrcApplied.get(base + 4) + tmpExternalWrench.getAngularPartY() + shiftToComY);
+            xfrcApplied.put(base + 5, xfrcApplied.get(base + 5) + tmpExternalWrench.getAngularPartZ() + shiftToComZ);
          }
       }
    }
@@ -238,7 +246,6 @@ public class MujocoRobot extends RobotExtension
    private final FramePoint3D diagBodyOrigin = new FramePoint3D();
 
    // Scratch for pushExternalWrenchesToMujoco moment-arm correction.
-   private final FramePoint3D pushWpPosWorld = new FramePoint3D();
    private final FramePoint3D pushBodyComPosWorld = new FramePoint3D();
    private static final double DIAGNOSTIC_PERIOD_SECONDS = 1.0;
    private static final double DIAGNOSTIC_FZ_THRESHOLD_N = 5.0;
