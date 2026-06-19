@@ -9,11 +9,6 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
  */
 public interface MujocoPhysicsEngineFactory
 {
-   static PhysicsEngineFactory newMujocoPhysicsEngineFactory()
-   {
-      return (frame, rootRegistry) -> new MujocoPhysicsEngine(frame, rootRegistry);
-   }
-
    static PhysicsEngineFactory newMujocoPhysicsEngineFactory(MujocoSimulationParameters parameters)
    {
       return (frame, rootRegistry) -> new MujocoPhysicsEngine(frame, rootRegistry, parameters);
